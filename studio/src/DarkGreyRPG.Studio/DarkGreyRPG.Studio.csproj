@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DarkGreyRPG.Studio.Core\DarkGreyRPG.Studio.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <ApplicationIcon>Assets\DarkGreyRPGStudio.ico</ApplicationIcon>
+    <AssemblyName>DarkGreyRPGStudio</AssemblyName>
+    <Version>2.1.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
+    <Product>DarkGrey RPG Studio</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\DarkGreyRPGStudio.ico" />
+  </ItemGroup>
+
+</Project>

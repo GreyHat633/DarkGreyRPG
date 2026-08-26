@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "nodes": {
+    "empire_route": {
+      "x": 360,
+      "y": 70
+    },
+    "kingdom_route": {
+      "x": 319.6638655462184,
+      "y": 269.0420168067227
+    },
+    "royal_mystery": {
+      "x": 80,
+      "y": 70
+    },
+    "uncategorized": {
+      "x": 80,
+      "y": 240
+    }
+  }
+}

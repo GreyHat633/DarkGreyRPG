@@ -1,0 +1,85 @@
+<UserControl x:Class="DarkGreyRPG.Studio.Views.StoryFlowEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True"
+             AutomationProperties.Name="Story Flow 自由节点画布">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="34" Margin="4,0,0,0" Click="ZoomOut_OnClick" Content="−" AutomationProperties.Name="流程缩小" />
+                <TextBlock Width="58" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Zoom, StringFormat={}{0:P0}}" />
+                <Button Width="34" Margin="0,0,8,0" Click="ZoomIn_OnClick" Content="+" AutomationProperties.Name="流程放大" />
+                <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SaveStateText}" />
+            </StackPanel>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal">
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddStoryStartCommand}" Content="+ 开始" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddActorInteractCommand}" Content="+ 交互" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddPlayDialogueCommand}" Content="+ 对话" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddStartQuestCommand}" Content="+ 开始任务" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddWaitQuestCompleteCommand}" Content="+ 等待任务" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddDialogueExitBranchCommand}" Content="+ Exit 分支" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddEnterStoryCommand}" Content="+ 进入剧情" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddEndStoryCommand}" Content="+ 结束剧情" />
+                    <Button Padding="8,5" Command="{Binding AddEndCommand}" Content="+ 结束" />
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="10" /><ColumnDefinition Width="260" /></Grid.ColumnDefinitions>
+            <Border x:Name="CanvasViewport" ClipToBounds="True" Background="#14171B"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5"
+                    AutomationProperties.Name="Story Flow 自由节点画布">
+                <Canvas x:Name="GraphCanvas" Width="4000" Height="2600" Background="Transparent" Focusable="True"
+                        MouseWheel="GraphCanvas_OnMouseWheel"
+                        PreviewMouseLeftButtonDown="GraphCanvas_OnPreviewMouseLeftButtonDown"
+                        PreviewMouseRightButtonDown="GraphCanvas_OnPreviewMouseRightButtonDown"
+                        PreviewMouseMove="GraphCanvas_OnPreviewMouseMove"
+                        PreviewMouseUp="GraphCanvas_OnPreviewMouseUp"
+                        KeyDown="GraphCanvas_OnKeyDown" />
+            </Border>
+            <Border Grid.Column="2" Padding="12" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="5">
+                <Grid>
+                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="选择节点以编辑属性。&#x0a;从输出端口点击，再点击目标输入端口完成连线。">
+                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedNode}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                    </TextBlock>
+                    <StackPanel DataContext="{Binding SelectedNode}">
+                        <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="节点属性" />
+                        <TextBlock Margin="0,6,0,14" Foreground="{DynamicResource AccentFillColorDefaultBrush}" Text="{Binding TypeLabel}" />
+                        <TextBlock Margin="0,0,0,5" Text="节点 ID" />
+                        <TextBox Padding="7,4" Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Flow 节点 ID" />
+                        <StackPanel Margin="0,12,0,0">
+                            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ResourceKey.Length}" Value="0" /><DataTrigger Binding="{Binding ResourceKey}" Value="actor_id"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding ResourceKey}" Value="dialogue_id"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding ResourceKey}" Value="quest_id"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding ResourceKey}" Value="target_story_id"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                            <TextBlock Margin="0,0,0,5" DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}" Text="{Binding SelectedResourceLabel}" />
+                            <ComboBox Padding="7,4" DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                      ItemsSource="{Binding SelectedResourceCandidates}" SelectedValue="{Binding SelectedNode.ResourceValue, UpdateSourceTrigger=PropertyChanged}"
+                                      AutomationProperties.Name="Flow 资源选择器" />
+                        </StackPanel>
+                        <StackPanel Margin="0,12,0,0">
+                            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding CanonicalType}" Value="DialogueExitBranch"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                            <TextBlock Margin="0,0,0,5" Text="命名出口（逗号分隔）" />
+                            <TextBox Padding="7,4" Text="{Binding ExitNames, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Dialogue Exit 输出" />
+                        </StackPanel>
+                        <Separator Margin="0,14" />
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="拖动节点可自由排列；Ctrl/Shift 多选；拖动空白框选；右键拖动平移；滚轮缩放。" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+        <DockPanel Grid.Row="4">
+            <Button DockPanel.Dock="Right" Width="96" Height="32" Command="{Binding DataContext.SaveCurrentResourceCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{DynamicResource AccentButtonStyle}" Content="保存 Flow" AutomationProperties.Name="保存 Story Flow" />
+            <TextBlock Margin="0,7,12,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Text="{Binding ValidationText}" />
+            <TextBlock Margin="0,7,12,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Summary}" />
+        </DockPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "tavern_owner",
+  "display_name": "酒馆老板",
+  "notes": "Actor identity remains independent from Quests.",
+  "tags": [
+    "example"
+  ]
+}

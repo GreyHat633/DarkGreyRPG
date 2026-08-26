@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "id": "tavern_slime_request",
+  "title": "酒馆史莱姆委托",
+  "entry": "interact_owner",
+  "nodes": [
+    {
+      "id": "interact_owner",
+      "type": "interact_actor",
+      "position": {
+        "x": 0,
+        "y": 240
+      },
+      "properties": {
+        "actor_id": "tavern_owner"
+      }
+    },
+    {
+      "id": "not_started",
+      "type": "quest_state",
+      "position": {
+        "x": 260,
+        "y": 240
+      },
+      "properties": {
+        "quest_id": "kill_10_slimes",
+        "state": "NOT_STARTED"
+      }
+    },
+    {
+      "id": "offer_dialogue",
+      "type": "play_dialogue",
+      "position": {
+        "x": 520,
+        "y": 60
+      },
+      "properties": {
+        "dialogue_id": "tavern_offer"
+      }
+    },
+    {
+      "id": "start_quest",
+      "type": "start_quest",
+      "position": {
+        "x": 780,
+        "y": 20
+      },
+      "properties": {
+        "quest_id": "kill_10_slimes"
+      }
+    },
+    {
+      "id": "started_message",
+      "type": "send_message",
+      "position": {
+        "x": 1020,
+        "y": 20
+      },
+      "properties": {
+        "message": "任务已开始：消灭十只史莱姆。"
+      }
+    },
+    {
+      "id": "wait_completion",
+      "type": "quest_completed",
+      "position": {
+        "x": 1260,
+        "y": 20
+      },
+      "properties": {
+        "quest_id": "kill_10_slimes"
+      }
+    },
+    {
+      "id": "interact_return",
+      "type": "interact_actor",
+      "position": {
+        "x": 1480,
+        "y": 20
+      },
+      "properties": {
+        "actor_id": "tavern_owner"
+      }
+    },
+    {
+      "id": "end_refused",
+      "type": "end",
+      "position": {
+        "x": 780,
+        "y": 130
+      },
+      "properties": {}
+    },
+    {
+      "id": "is_completed",
+      "type": "quest_state",
+      "position": {
+        "x": 520,
+        "y": 360
+      },
+      "properties": {
+        "quest_id": "kill_10_slimes",
+        "state": "COMPLETED"
+      }
+    },
+    {
+      "id": "active_message",
+      "type": "send_message",
+      "position": {
+        "x": 780,
+        "y": 500
+      },
+      "properties": {
+        "message": "地窖里的史莱姆还没有清理完。"
+      }
+    },
+    {
+      "id": "end_active",
+      "type": "end",
+      "position": {
+        "x": 1020,
+        "y": 500
+      },
+      "properties": {}
+    },
+    {
+      "id": "reward_claimed",
+      "type": "branch",
+      "position": {
+        "x": 780,
+        "y": 300
+      },
+      "properties": {
+        "variable": "reward_claimed",
+        "operator": "equals",
+        "value": "true"
+      }
+    },
+    {
+      "id": "already_rewarded",
+      "type": "send_message",
+      "position": {
+        "x": 1020,
+        "y": 240
+      },
+      "properties": {
+        "message": "这份委托的报酬已经领取过了。"
+      }
+    },
+    {
+      "id": "end_already",
+      "type": "end",
+      "position": {
+        "x": 1260,
+        "y": 240
+      },
+      "properties": {}
+    },
+    {
+      "id": "complete_dialogue",
+      "type": "play_dialogue",
+      "position": {
+        "x": 1020,
+        "y": 360
+      },
+      "properties": {
+        "dialogue_id": "tavern_complete"
+      }
+    },
+    {
+      "id": "give_xp",
+      "type": "give_xp",
+      "position": {
+        "x": 1260,
+        "y": 360
+      },
+      "properties": {
+        "amount": 50
+      }
+    },
+    {
+      "id": "give_emeralds",
+      "type": "give_item",
+      "position": {
+        "x": 1480,
+        "y": 360
+      },
+      "properties": {
+        "item": "minecraft:emerald",
+        "metadata": 0,
+        "amount": 3
+      }
+    },
+    {
+      "id": "mark_rewarded",
+      "type": "set_variable",
+      "position": {
+        "x": 1700,
+        "y": 360
+      },
+      "properties": {
+        "variable": "reward_claimed",
+        "value": "true"
+      }
+    },
+    {
+      "id": "reward_message",
+      "type": "send_message",
+      "position": {
+        "x": 1920,
+        "y": 360
+      },
+      "properties": {
+        "message": "获得 50 经验和 3 枚绿宝石。"
+      }
+    },
+    {
+      "id": "end_reward",
+      "type": "end",
+      "position": {
+        "x": 2160,
+        "y": 360
+      },
+      "properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "from": "interact_owner",
+      "output": "next",
+      "to": "not_started"
+    },
+    {
+      "from": "not_started",
+      "output": "true",
+      "to": "offer_dialogue"
+    },
+    {
+      "from": "not_started",
+      "output": "false",
+      "to": "is_completed"
+    },
+    {
+      "from": "offer_dialogue",
+      "output": "accept",
+      "to": "start_quest"
+    },
+    {
+      "from": "offer_dialogue",
+      "output": "refuse",
+      "to": "end_refused"
+    },
+    {
+      "from": "start_quest",
+      "output": "next",
+      "to": "started_message"
+    },
+    {
+      "from": "started_message",
+      "output": "next",
+      "to": "wait_completion"
+    },
+    {
+      "from": "wait_completion",
+      "output": "next",
+      "to": "interact_return"
+    },
+    {
+      "from": "interact_return",
+      "output": "next",
+      "to": "reward_claimed"
+    },
+    {
+      "from": "is_completed",
+      "output": "true",
+      "to": "reward_claimed"
+    },
+    {
+      "from": "is_completed",
+      "output": "false",
+      "to": "active_message"
+    },
+    {
+      "from": "active_message",
+      "output": "next",
+      "to": "end_active"
+    },
+    {
+      "from": "reward_claimed",
+      "output": "true",
+      "to": "already_rewarded"
+    },
+    {
+      "from": "reward_claimed",
+      "output": "false",
+      "to": "complete_dialogue"
+    },
+    {
+      "from": "already_rewarded",
+      "output": "next",
+      "to": "end_already"
+    },
+    {
+      "from": "complete_dialogue",
+      "output": "done",
+      "to": "give_xp"
+    },
+    {
+      "from": "give_xp",
+      "output": "next",
+      "to": "give_emeralds"
+    },
+    {
+      "from": "give_emeralds",
+      "output": "next",
+      "to": "mark_rewarded"
+    },
+    {
+      "from": "mark_rewarded",
+      "output": "next",
+      "to": "reward_message"
+    },
+    {
+      "from": "reward_message",
+      "output": "next",
+      "to": "end_reward"
+    }
+  ],
+  "metadata": {
+    "notes": "Complete Phase 4 tavern workflow. Actor, Dialogues, Quest, and Story remain separate resources.",
+    "tags": [
+      "example",
+      "acceptance"
+    ]
+  }
+}

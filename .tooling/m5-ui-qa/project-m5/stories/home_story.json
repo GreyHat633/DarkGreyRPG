@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "id": "home_story",
+  "display_name": "港镇序章",
+  "description": "M5 对话与任务编辑器真实窗口验收。",
+  "tags": ["m5", "acceptance"],
+  "entry_presentation": { "mode": "none", "eyebrow": "", "title": "", "duration_seconds": 4 },
+  "owned_resources": { "actors": ["hero"], "dialogues": ["greeting"], "quests": ["first_task"] },
+  "referenced_resources": { "actors": [], "dialogues": [], "quests": [] },
+  "flow_ref": "home_story",
+  "title": "港镇序章",
+  "entry": "end",
+  "nodes": [ { "id": "end", "type": "END", "position": { "x": 0, "y": 0 }, "properties": {} } ],
+  "connections": [],
+  "metadata": { "notes": "", "tags": [] }
+}

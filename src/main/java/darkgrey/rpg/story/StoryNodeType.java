@@ -1,0 +1,24 @@
+package darkgrey.rpg.story;
+
+public enum StoryNodeType {
+    STORY_START,
+    INTERACT_ACTOR,
+    ENTER_REGION,
+    QUEST_COMPLETED,
+    PLAY_DIALOGUE,
+    DIALOGUE_EXIT_BRANCH,
+    START_QUEST,
+    COMPLETE_QUEST,
+    BRANCH,
+    SEQUENCE,
+    QUEST_STATE,
+    HAS_ITEM,
+    VARIABLE_COMPARE,
+    GIVE_ITEM,
+    GIVE_XP,
+    SEND_MESSAGE,
+    SET_VARIABLE,
+    ENTER_STORY,
+    END_STORY,
+    END
+}

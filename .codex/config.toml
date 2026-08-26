@@ -1,0 +1,48 @@
+# >>> Codex Agent Switch managed profile >>>
+# Generated from the active Codex Agent Switch profile. Do not place credentials in this file.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+agents.enabled = true
+agents.max_concurrent_threads_per_session = 3
+
+[agents.cas_luna_worker]
+description = "Configured native worker role cas_luna_worker; use only for bounded delegated work."
+config_file = "./agents/cas-luna-worker.toml"
+
+[mcp_servers.codex_agent_switch]
+command = "E:\\AISPace\\Codex Agent Switch\\ToolHost\\CodexAgentSwitch.ToolHost.exe"
+args = ["--pipe", "CodexAgentSwitch-Scheduler-3475AF36862DD39C"]
+startup_timeout_sec = 5
+tool_timeout_sec = 7200
+enabled = true
+required = true
+# <<< Codex Agent Switch managed profile <<<
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,79 @@
+<Window x:Class="DarkGreyRPG.Studio.Views.ProjectCreationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}"
+        Width="620" Height="540" MinWidth="560" MinHeight="500"
+        ResizeMode="CanResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition Height="12" />
+            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+            <RowDefinition Height="Auto" /><RowDefinition Height="16" />
+            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+            <RowDefinition Height="Auto" /><RowDefinition Height="*" />
+            <RowDefinition Height="Auto" /><RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding Title}" />
+        <TextBlock Grid.Row="2" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   TextWrapping="Wrap" Text="选择父文件夹并填写项目文件夹名，或直接填写完整目标路径。完整目标路径优先。" />
+
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="130" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBlock VerticalAlignment="Center" Text="父文件夹" />
+            <TextBox Grid.Column="1" Margin="10,0,8,0" Padding="8,5"
+                     Text="{Binding ParentDirectory, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="2" Padding="12,5" Content="浏览…" Click="BrowseParent_OnClick" />
+        </Grid>
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="130" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <TextBlock VerticalAlignment="Center" Text="项目文件夹名" />
+            <TextBox Grid.Column="1" Margin="10,0,0,0" Padding="8,5"
+                     Text="{Binding ProjectFolderName, UpdateSourceTrigger=PropertyChanged}" />
+        </Grid>
+
+        <Grid Grid.Row="8">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="130" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBlock VerticalAlignment="Center" Text="完整目标路径" />
+            <TextBox Grid.Column="1" Margin="10,0,8,0" Padding="8,5"
+                     Text="{Binding FullDestination, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="2" Padding="12,5" Content="浏览…" Click="BrowseDestination_OnClick" />
+        </Grid>
+        <StackPanel Grid.Row="10" Margin="130,0,0,0" Orientation="Horizontal">
+            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="目标：" />
+            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Text="{Binding DestinationDirectory}" />
+        </StackPanel>
+
+        <Grid Grid.Row="12" Margin="0,16,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+                <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+                <RowDefinition Height="Auto" /><RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="130" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <TextBlock VerticalAlignment="Center" Text="项目 ID" />
+            <TextBox Grid.Column="1" Padding="8,5" Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><DataTrigger Binding="{Binding HasSuggestion}" Value="False"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style>
+                </StackPanel.Style>
+                <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="建议（点击应用）：" />
+                <Button Margin="8,0,0,0" Padding="8,3" Command="{Binding ApplySuggestionCommand}" Content="{Binding NormalizedSuggestion}" />
+            </StackPanel>
+            <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="显示名称" />
+            <TextBox Grid.Row="4" Grid.Column="1" Padding="8,5" Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,10,0,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap" Text="{Binding ValidationText}" />
+        </Grid>
+
+        <StackPanel Grid.Row="14" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button Width="96" Height="34" Margin="0,0,8,0" IsCancel="True" Content="取消" />
+            <Button Width="110" Height="34" IsDefault="True" IsEnabled="{Binding CanConfirm}"
+                    Style="{DynamicResource AccentButtonStyle}" Click="ConfirmButton_OnClick" Content="{Binding ActionText}" />
+        </StackPanel>
+    </Grid>
+</Window>

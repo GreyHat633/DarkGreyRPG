@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "tavern_offer",
+  "title": "史莱姆委托",
+  "speakers": [
+    "tavern_owner"
+  ],
+  "entry": "offer",
+  "nodes": [
+    {
+      "id": "offer",
+      "type": "line",
+      "speaker": "tavern_owner",
+      "text": "地窖里至少有十只史莱姆。",
+      "next": "answer"
+    },
+    {
+      "id": "answer",
+      "type": "choice",
+      "prompt": "如何回答？",
+      "choices": [
+        {
+          "text": "我知道了。",
+          "next": "accept"
+        },
+        {
+          "text": "暂时没空。",
+          "next": "refuse"
+        }
+      ]
+    },
+    {
+      "id": "accept",
+      "type": "end",
+      "result": "accept"
+    },
+    {
+      "id": "refuse",
+      "type": "end",
+      "result": "refuse"
+    }
+  ],
+  "metadata": {
+    "notes": "Still returns a Result only; Phase 4 will connect it to a Quest.",
+    "tags": [
+      "example"
+    ]
+  }
+}

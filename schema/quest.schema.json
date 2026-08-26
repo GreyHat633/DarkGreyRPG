@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://darkgrey-rpg.local/schema/quest.schema.json",
+  "title": "DarkGrey RPG Quest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "description",
+    "objectives",
+    "objective_groups",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/resource_id"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/kill_entity"
+          },
+          {
+            "$ref": "#/$defs/collect_item"
+          },
+          {
+            "$ref": "#/$defs/reach_location"
+          },
+          {
+            "$ref": "#/$defs/interact_actor"
+          }
+        ]
+      }
+    },
+    "objective_groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/objective_group"
+      }
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "resource_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+    },
+    "objective_base": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "kill_entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "description",
+        "entity",
+        "required"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "type": {
+          "const": "kill_entity"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "collect_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "description",
+        "item",
+        "metadata",
+        "required"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "type": {
+          "const": "collect_item"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "item": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metadata": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "required": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "reach_location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "description",
+        "dimension",
+        "x",
+        "y",
+        "z",
+        "radius"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "type": {
+          "const": "reach_location"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dimension": {
+          "type": "integer"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "interact_actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "description",
+        "actor_id",
+        "required"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "type": {
+          "const": "interact_actor"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "required": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "objective_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mode",
+        "objectives"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "mode": {
+          "enum": [
+            "ALL",
+            "ANY",
+            "SEQUENCE"
+          ]
+        },
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/resource_id"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notes": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

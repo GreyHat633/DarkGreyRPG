@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "id": "tavern_offer",
+  "title": "史莱姆委托",
+  "speakers": [
+    "tavern_owner"
+  ],
+  "entry": "intro",
+  "nodes": [
+    {
+      "id": "intro",
+      "type": "line",
+      "speaker": "tavern_owner",
+      "text": "最近酒馆地窖里全是史莱姆。它们撞翻了两桶麦酒，客人都快跑光了。",
+      "next": "ask"
+    },
+    {
+      "id": "ask",
+      "type": "choice",
+      "prompt": "酒馆老板等着你的答复。",
+      "choices": [
+        {
+          "text": "我来处理。",
+          "next": "accept_line"
+        },
+        {
+          "text": "我再想想。",
+          "next": "refuse_line"
+        },
+        {
+          "text": "先说说具体情况。",
+          "next": "more"
+        }
+      ]
+    },
+    {
+      "id": "more",
+      "type": "line",
+      "speaker": "tavern_owner",
+      "text": "至少有十只。别打坏酒桶，清理完再回来找我。",
+      "next": "back_to_ask"
+    },
+    {
+      "id": "back_to_ask",
+      "type": "jump",
+      "target": "ask"
+    },
+    {
+      "id": "accept_line",
+      "type": "line",
+      "speaker": "tavern_owner",
+      "text": "好。等你的消息。",
+      "next": "accept"
+    },
+    {
+      "id": "accept",
+      "type": "end",
+      "result": "accept"
+    },
+    {
+      "id": "refuse_line",
+      "type": "line",
+      "speaker": "tavern_owner",
+      "text": "行吧。想通了再来。",
+      "next": "refuse"
+    },
+    {
+      "id": "refuse",
+      "type": "end",
+      "result": "refuse"
+    }
+  ],
+  "metadata": {
+    "notes": "Dialogue returns a named result and does not start a Quest.",
+    "tags": [
+      "example",
+      "offer"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "id": "final_confrontation",
+  "title": "最终质询",
+  "display_name": "最终质询",
+  "home_story_id": "royal_mystery",
+  "speakers": ["detective"],
+  "entry": "question",
+  "nodes": [
+    { "id": "question", "type": "line", "speaker": "detective", "text": "证物就在你手里。现在，作出选择。", "next": "decision" },
+    { "id": "decision", "type": "choice", "prompt": "如何处理证物？", "choices": [
+      { "text": "交出证物", "next": "hand_over" },
+      { "text": "隐瞒证物", "next": "conceal" }
+    ] },
+    { "id": "hand_over", "type": "end", "result": "hand_over" },
+    { "id": "conceal", "type": "end", "result": "conceal" }
+  ],
+  "metadata": { "notes": "Only returns named exits.", "tags": ["acceptance"] }
+}

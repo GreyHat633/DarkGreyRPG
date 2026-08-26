@@ -1,0 +1,1319 @@
+DarkGrey_RPG — Codex 全阶段开发总计划（任务 / 对话 / 剧情专注版）
+项目路径：E:\Java\MinecraftMod\DarkGrey_RPG
+目标平台：Minecraft 1.7.10 / Forge 1.7.10
+项目名：DarkGrey_RPG
+Mod ID：darkgrey_rpg
+Studio：Godot 4.x / GDScript
+
+======================================================================
+一、项目重新定位
+======================================================================
+
+DarkGrey_RPG 当前阶段只做一件事：
+
+“给 Minecraft 1.7.10 提供一个现代化、可长期使用的 RPG 任务 / 对话 / 剧情制作工具。”
+
+当前明确不做：
+
+- 自研 Native NPC 系统
+- 自研复杂 NPC AI
+- Boss 战框架
+- Boss 技能系统
+- 战斗演出编辑器
+- 自定义怪物系统
+- 自研模型 / 动画系统
+- 用 DarkGrey_RPG 取代 CustomNPC+ 的 NPC 本体能力
+
+当前直接使用 CustomNPC+ 作为 NPC 实体来源。
+
+DarkGrey_RPG 的职责是：
+
+1. 管理 RPG Actor 身份
+2. 管理 Dialogue
+3. 管理 Quest
+4. 管理 Story / Interaction
+5. 管理玩家 RPG 状态
+6. 提供 Godot 式外部 Studio
+7. 提供 Minecraft 内的运行时、测试与世界选择能力
+8. 与 CustomNPC+ NPC 绑定
+9. 完全绕开 CustomNPC+ 自带的 Quest / Dialogue 编辑逻辑
+
+因此当前架构简化为：
+
+DarkGrey_RPG Studio
+        │
+        ▼
+DarkGrey_RPG Runtime
+        │
+        ├─ Actor Reference
+        ├─ Dialogue
+        ├─ Quest
+        ├─ Story
+        ├─ Variables
+        └─ Debug/Test
+        │
+        ▼
+CustomNPC+ NPC
+
+CustomNPC+ 负责：
+- NPC 实体
+- 外观
+- 模型
+- AI
+- 战斗属性
+- 移动
+- 动画
+- 其它 NPC 本体能力
+
+DarkGrey_RPG 负责：
+- “这个 NPC 在 RPG 系统中是谁”
+- “玩家和他交互时发生什么”
+- “他说什么”
+- “什么任务与剧情正在运行”
+
+======================================================================
+二、最重要的设计原则
+======================================================================
+
+1. 不复制 CNPC 的数据组织方式。
+
+禁止：
+
+NPC
+└─ Dialogue
+   └─ Quest
+
+必须：
+
+Actor
+Dialogue
+Quest
+Story
+
+四者是平级资源。
+
+2. Actor 不是 NPC 本体。
+
+Actor 只是 RPG 世界中的“角色身份”。
+
+例如：
+
+Actor:
+tavern_owner
+
+可以绑定到一个 CustomNPC+ NPC。
+
+ActorDefinition 不负责：
+- 模型
+- AI
+- 战斗
+- 血量
+
+这些继续由 CNPC+ 管理。
+
+3. Dialogue 不拥有 Quest。
+
+Dialogue 只负责：
+- 说话
+- 选择
+- 对话分支
+- 返回出口 Result
+
+例如：
+
+dialogue_exit = accept
+dialogue_exit = refuse
+
+但它本身不能：
+
+StartQuest("xxx")
+
+4. Quest 不拥有 NPC。
+
+Quest 只描述：
+- 任务目标
+- 任务进度
+- 完成条件
+- 玩家任务状态
+
+它不应该知道“谁发布了这个任务”。
+
+5. Story 是资源编排层。
+
+只有 Story 负责把：
+
+Actor
+Dialogue
+Quest
+Trigger
+Condition
+Action
+
+连接起来。
+
+6. Studio 是主要作者工具。
+
+Minecraft 不是主要编辑器。
+
+Minecraft 的作用：
+- 世界视口
+- NPC 选择
+- 坐标 / 区域选择
+- 测试窗口
+- 实际运行环境
+
+7. UI 操作逻辑尽量接近 Godot / Blender。
+
+主要结构：
+
+Project Tree
+Workspace
+Inspector
+Output
+Problems
+Debugger
+Project / Live
+Play / Stop
+
+======================================================================
+三、开发阶段总览
+======================================================================
+
+项目缩减为 5 个阶段。
+
+PHASE 1
+Runtime 骨架 + CNPC Actor Binding + Godot Studio Shell
+
+PHASE 2
+Dialogue 系统
+
+PHASE 3
+Quest 系统
+
+PHASE 4
+Story / Interaction Graph
+
+PHASE 5
+Live Bridge + Debugger + Test Workflow + Content Build
+
+完成 Phase 5 后，
+DarkGrey_RPG 当前目标即视为完成。
+
+不要自行继续开发：
+Native NPC
+Boss
+Combat Framework
+
+======================================================================
+PHASE 1
+Runtime 骨架 + CNPC Actor Binding + Studio Shell
+======================================================================
+
+目标：
+
+证明：
+
+Studio
+→ RPG Project
+→ Minecraft Runtime
+→ CustomNPC+ NPC
+
+这条链可以正常工作。
+
+----------------------------------------------------------------------
+1.1 项目目录
+----------------------------------------------------------------------
+
+E:\Java\MinecraftMod\DarkGrey_RPG
+
+建议：
+
+DarkGrey_RPG/
+├─ build.gradle
+├─ gradlew
+├─ gradlew.bat
+├─ gradle/
+├─ gradle.properties
+├─ settings.gradle
+├─ README.md
+│
+├─ libs/
+│  └─ CustomNPC-Plus-1.11.1-fixed-v1.jar
+│
+├─ src/
+│  └─ main/
+│     ├─ java/
+│     └─ resources/
+│
+├─ studio/
+├─ schema/
+├─ examples/
+├─ docs/
+└─ run/
+   ├─ mods/
+   └─ darkgrey_rpg_project/
+
+开发运行环境：
+
+CustomNPC-Plus-1.11.1-fixed-v1.jar
++unimixins-all-1.7.10-0.3.1.jar
+
+----------------------------------------------------------------------
+1.2 CustomNPC+ 定位
+----------------------------------------------------------------------
+
+本项目当前阶段可以把 CustomNPC+ 作为实际运行依赖。
+
+也就是说：
+
+DarkGrey_RPG 当前版本可以要求服务器安装：
+
+CustomNPC+
+UniMixins
+DarkGrey_RPG
+
+不再为了“未来 Native NPC”增加不必要的 Provider 抽象复杂度。
+
+但是：
+
+核心 RPG 数据结构禁止直接使用：
+
+ICustomNpc
+EntityCustomNpc
+
+作为 Actor / Dialogue / Quest / Story 的数据类型。
+
+CNPC 相关代码仍然集中于：
+
+darkgrey.rpg.compat.customnpcs
+
+这样以后如果真的需要更换 NPC 后端，
+不会污染 RPG 逻辑。
+
+----------------------------------------------------------------------
+1.3 Actor Reference
+----------------------------------------------------------------------
+
+ActorDefinition 非常轻量。
+
+例如：
+
+{
+  "schema_version": 1,
+  "id": "tavern_owner",
+  "display_name": "酒馆老板"
+}
+
+它描述的是：
+
+“剧情角色酒馆老板”
+
+不是：
+
+“NPC 实体模板”。
+
+游戏中的某个 CNPC NPC 可以绑定：
+
+darkgrey_rpg.actor_id = tavern_owner
+
+一个 Actor 可以允许：
+- 单实例绑定
+- 多实例绑定（以后）
+- 动态 Actor（以后）
+
+第一阶段只做单 NPC 绑定即可。
+
+----------------------------------------------------------------------
+1.4 CNPC Actor Binding
+----------------------------------------------------------------------
+
+加入 DarkGrey RPG Editor Tool。
+
+使用方式：
+
+Studio：
+创建 Actor：
+tavern_owner
+
+Minecraft：
+找到已经由 CNPC+ 创建好的酒馆老板。
+
+使用 DarkGrey RPG Editor Tool 右键。
+
+然后执行：
+
+/dgrpg actor bind tavern_owner
+
+或更好的交互：
+先 select actor，再右键 CNPC。
+
+绑定完成后：
+
+CNPC NPC
+↔
+Actor ID: tavern_owner
+
+重要：
+
+DarkGrey_RPG 第一阶段不负责生成 CNPC 模型和属性。
+
+NPC 的：
+- 模型
+- 皮肤
+- AI
+- 战斗参数
+
+继续通过 CNPC+ 管理。
+
+DarkGrey_RPG 只绑定 Actor 身份。
+
+----------------------------------------------------------------------
+1.5 Actor ID 持久化
+----------------------------------------------------------------------
+
+优先使用 CNPC API：
+
+storedData
+
+保存：
+
+darkgrey_rpg.actor_id
+
+测试：
+
+绑定
+→ 保存世界
+→ 退出
+→ 重进
+→ 仍然可以识别
+
+----------------------------------------------------------------------
+1.6 RPG Project
+----------------------------------------------------------------------
+
+项目：
+
+project.json
+
+目录：
+
+actors/
+dialogues/
+quests/
+stories/
+resources/
+
+第一阶段只真正实现：
+
+actors/
+
+----------------------------------------------------------------------
+1.7 Command
+----------------------------------------------------------------------
+
+实现：
+
+/dgrpg status
+/dgrpg reload
+
+/dgrpg actor list
+/dgrpg actor info <id>
+/dgrpg actor select <id>
+/dgrpg actor bind <id>
+/dgrpg actor unbind
+
+右键 CNPC 时可显示：
+
+Actor:
+tavern_owner
+
+CNPC:
+<entity info>
+
+----------------------------------------------------------------------
+1.8 Studio Shell
+----------------------------------------------------------------------
+
+使用：
+
+Godot 4.x
+GDScript
+
+UI：
+
+┌──────────────────────────────────────────────────────────┐
+│ File  Edit  Project  Debug                  ● Offline    │
+├──────────────┬────────────────────────────┬──────────────┤
+│ Project      │ Workspace                  │ Inspector    │
+│              │                            │              │
+│ Actors       │                            │              │
+│ Dialogues    │                            │              │
+│ Quests       │                            │              │
+│ Stories      │                            │              │
+├──────────────┴────────────────────────────┴──────────────┤
+│ Output | Problems | Debugger | Minecraft                │
+└──────────────────────────────────────────────────────────┘
+
+第一阶段：
+
+Actors 可用。
+
+其它显示：
+Coming in Phase X
+
+Actor Inspector：
+
+ID
+Display Name
+Notes
+Tags
+
+不编辑 CNPC 模型 / 血量 / AI。
+
+----------------------------------------------------------------------
+PHASE 1 验收
+----------------------------------------------------------------------
+
+[ ] Forge 工程能 build
+[ ] DarkGrey_RPG + CNPC+ 正常进入世界
+[ ] Studio 能创建 Actor
+[ ] Actor JSON 可保存
+[ ] Runtime reload 可读取
+[ ] 可以将一个已有 CNPC NPC 绑定为 tavern_owner
+[ ] 保存世界重启后 Actor ID 仍存在
+[ ] 右键 CNPC 能查看 Actor 信息
+[ ] Actor 不包含 Dialogue / Quest 字段
+
+通过后停止。
+
+======================================================================
+PHASE 2
+Dialogue System
+======================================================================
+
+目标：
+
+彻底替代 CNPC 自带 Dialogue 制作体验。
+
+重点不是功能数量，
+而是让“长期写大量对白”真正舒服。
+
+----------------------------------------------------------------------
+2.1 Dialogue Resource
+----------------------------------------------------------------------
+
+DialogueDefinition：
+
+- id
+- title
+- nodes
+- speakers
+- metadata
+
+第一批 Node：
+
+Line
+Choice
+Jump
+End
+
+Dialogue 只负责：
+
+对白流。
+
+----------------------------------------------------------------------
+2.2 Dialogue Result
+----------------------------------------------------------------------
+
+Dialogue 可以返回命名出口。
+
+例如：
+
+accept
+refuse
+ask_more
+leave
+
+但不能直接：
+StartQuest
+
+例如：
+
+[Choice]
+“我接受。”
+→ Exit: accept
+
+Story 之后处理：
+
+accept
+→ Start Quest
+
+----------------------------------------------------------------------
+2.3 Dialogue Editor
+----------------------------------------------------------------------
+
+目标体验：
+
+类似轻量化剧情脚本编辑器，
+而不是 CNPC 多层弹窗。
+
+必须支持：
+
+- 一次看到大量对白
+- 快速连续新增
+- 多行文本编辑
+- Choice 可展开
+- Drag reorder
+- Duplicate
+- Delete
+- Ctrl+Z / Ctrl+Y
+- Search
+- Replace
+- Resource Picker
+- Speaker Picker
+
+避免：
+
+每编辑一句话打开一个新窗口。
+
+----------------------------------------------------------------------
+2.4 Speaker
+----------------------------------------------------------------------
+
+Speaker 引用 Actor：
+
+speaker = tavern_owner
+
+Actor 只是被 Dialogue 引用。
+
+Dialogue 不属于 Actor。
+
+----------------------------------------------------------------------
+2.5 Minecraft Dialogue UI
+----------------------------------------------------------------------
+
+制作独立玩家对话 UI。
+
+支持：
+
+- NPC 名
+- 文本
+- Choice
+- 长文本
+- 滚动
+- 可选头像
+- 键盘/鼠标选择
+- 清晰状态
+
+彻底不使用 CNPC Dialogue GUI。
+
+----------------------------------------------------------------------
+PHASE 2 验收
+----------------------------------------------------------------------
+
+[ ] 能在 Studio 中快速制作长对话
+[ ] Dialogue 独立存在
+[ ] Dialogue 能引用 Actor
+[ ] Choice 支持多个出口
+[ ] Minecraft 正常播放
+[ ] 玩家选择会返回正确 Result
+[ ] Dialogue 不存在 StartQuest 等任务逻辑
+
+======================================================================
+PHASE 3
+Quest System
+======================================================================
+
+目标：
+
+彻底替代 CNPC Quest 制作体验。
+
+Quest 是独立 Resource。
+
+----------------------------------------------------------------------
+3.1 Quest Resource
+----------------------------------------------------------------------
+
+QuestDefinition：
+
+- id
+- title
+- description
+- objectives
+- objective_groups
+- metadata
+
+不包含：
+
+issuerNpc
+dialogue
+story
+
+----------------------------------------------------------------------
+3.2 Objective
+----------------------------------------------------------------------
+
+第一批：
+
+KillEntity
+CollectItem
+ReachLocation
+InteractActor
+
+后续：
+CustomCounter
+
+----------------------------------------------------------------------
+3.3 Objective Group
+----------------------------------------------------------------------
+
+支持：
+
+ALL
+ANY
+SEQUENCE
+
+先保持简单。
+
+----------------------------------------------------------------------
+3.4 Quest Editor
+----------------------------------------------------------------------
+
+类似 Godot Inspector + Tree。
+
+左：
+任务资源
+
+中：
+任务结构
+
+右：
+选中 Objective 的 Inspector
+
+操作：
+
++ Objective
++ Group
+拖动排序
+Duplicate
+Delete
+Undo
+Redo
+
+不允许 CNPC 式“任务类型只能选一种”。
+
+----------------------------------------------------------------------
+3.5 Quest Runtime
+----------------------------------------------------------------------
+
+实现：
+
+PlayerQuestData
+
+- Active
+- Progress
+- Completed
+- Failed（可预留）
+
+统一事件追踪：
+
+Forge Event
+→ Quest Event Adapter
+→ Objective Tracker
+
+不要每个 Quest 创建自己的 Event Handler。
+
+----------------------------------------------------------------------
+3.6 Quest Journal
+----------------------------------------------------------------------
+
+游戏内独立任务日志。
+
+显示：
+
+Active
+Completed
+
+目标进度。
+
+第一版不做导航箭头和小地图。
+
+----------------------------------------------------------------------
+PHASE 3 验收
+----------------------------------------------------------------------
+
+[ ] Kill Slime ×10 可建立
+[ ] Studio 编辑体验稳定
+[ ] Quest 不引用 Actor
+[ ] Quest 不引用 Dialogue
+[ ] 游戏正确记录 10 个 Slime
+[ ] 玩家退出后进度保存
+[ ] 多玩家进度独立
+[ ] Quest Journal 正确显示
+
+======================================================================
+PHASE 4
+Story / Interaction Graph
+======================================================================
+
+这是项目核心阶段。
+
+这里才负责连接：
+
+Actor
+Dialogue
+Quest
+Condition
+Trigger
+Action
+
+----------------------------------------------------------------------
+4.1 Story Resource
+----------------------------------------------------------------------
+
+StoryDefinition：
+
+- id
+- title
+- graph nodes
+- connections
+- entry
+- metadata
+
+----------------------------------------------------------------------
+4.2 初版节点
+----------------------------------------------------------------------
+
+Trigger：
+
+InteractActor
+EnterRegion
+QuestCompleted
+
+Dialogue：
+
+PlayDialogue
+
+Quest：
+
+StartQuest
+CompleteQuest
+
+Flow：
+
+Branch
+Sequence
+
+Condition：
+
+QuestState
+HasItem
+VariableCompare
+
+Action：
+
+GiveItem
+GiveXP
+SendMessage
+SetVariable
+
+End
+
+----------------------------------------------------------------------
+4.3 酒馆老板任务正确制作方式
+----------------------------------------------------------------------
+
+Actor：
+
+tavern_owner
+
+Dialogue：
+
+tavern_offer
+tavern_complete
+
+Quest：
+
+kill_10_slimes
+
+Story：
+
+tavern_slime_request
+
+Graph：
+
+[InteractActor: tavern_owner]
+        ↓
+[QuestState: NOT_STARTED]
+        ↓
+[PlayDialogue: tavern_offer]
+        ↓ accept
+[StartQuest: kill_10_slimes]
+
+另一个流：
+
+[QuestCompleted: kill_10_slimes]
+        ↓
+[InteractActor: tavern_owner]
+        ↓
+[PlayDialogue: tavern_complete]
+        ↓
+[GiveReward]
+        ↓
+[End]
+
+关键：
+
+任务没有塞进对话。
+
+对话没有塞进 NPC。
+
+NPC 不知道任务存在。
+
+Story 负责组织关系。
+
+----------------------------------------------------------------------
+4.4 Story Editor
+----------------------------------------------------------------------
+
+风格：
+
+Godot GraphEdit
++
+Blender Geometry Nodes
+
+要求：
+
+- 无限/大画布
+- 平移
+- 缩放
+- 节点拖拽
+- 端口连接
+- 框选
+- Duplicate
+- Copy/Paste
+- Undo/Redo
+- 搜索节点
+- Add Node 搜索
+- Inspector 编辑节点属性
+
+----------------------------------------------------------------------
+4.5 Problems
+----------------------------------------------------------------------
+
+自动检测：
+
+- Missing Actor
+- Missing Dialogue
+- Missing Quest
+- Unconnected Node
+- No Exit
+- Invalid Connection
+- Duplicate ID
+- Broken Resource Reference
+
+双击问题：
+定位对应节点。
+
+----------------------------------------------------------------------
+4.6 Story Runtime
+----------------------------------------------------------------------
+
+实现：
+
+StoryInstance
+StoryState
+StoryNodeExecutor
+StoryEventBus
+
+Node Executor Registry。
+
+禁止单文件巨型 switch。
+
+----------------------------------------------------------------------
+PHASE 4 验收
+----------------------------------------------------------------------
+
+必须完整制作：
+
+“酒馆老板委托玩家杀 10 只史莱姆，
+玩家接受，
+杀完回来，
+领取报酬。”
+
+要求：
+
+[ ] Actor 独立
+[ ] Dialogue 独立
+[ ] Quest 独立
+[ ] Story 连接资源
+[ ] 全过程不使用 CNPC Quest GUI
+[ ] 全过程不使用 CNPC Dialogue GUI
+[ ] 不手改 JSON
+[ ] Graph 能一眼看懂任务流程
+[ ] 修改发任务 NPC 不需要修改 Quest 本体
+
+======================================================================
+PHASE 5
+Live Bridge + Debugger + Test Workflow + Content Build
+======================================================================
+
+目标：
+
+让实际工作体验接近：
+
+Godot Editor + Running Game。
+
+----------------------------------------------------------------------
+5.1 Live Bridge
+----------------------------------------------------------------------
+
+Studio
+↔
+Minecraft
+
+localhost TCP
+
+127.0.0.1
+
+JSON Lines
+
+Studio 离线时也能编辑。
+
+----------------------------------------------------------------------
+5.2 Project / Live
+----------------------------------------------------------------------
+
+Project：
+
+Actors
+Dialogues
+Quests
+Stories
+
+Live：
+
+当前运行：
+
+Actors
+Player Quest
+Story Instance
+Variables
+
+类似 Godot Local / Remote。
+
+----------------------------------------------------------------------
+5.3 Pick In Minecraft
+----------------------------------------------------------------------
+
+Studio：
+
+[Pick Actor In Minecraft]
+[Pick Position]
+[Pick Region]
+[Pick Item]
+[Pick Entity Type]
+
+点击后：
+
+Minecraft Editor Tool 进入选择模式。
+
+选完直接回传 Studio。
+
+----------------------------------------------------------------------
+5.4 Locate
+----------------------------------------------------------------------
+
+Studio 选 Actor：
+
+[Locate In Minecraft]
+
+Minecraft 临时：
+
+高亮 / 粒子 / HUD。
+
+----------------------------------------------------------------------
+5.5 Hot Reload
+----------------------------------------------------------------------
+
+Ctrl+S：
+
+Studio
+→ notify Runtime
+→ reload changed resource
+
+不用：
+
+手动 /dgrpg reload
+
+但保留命令作为 fallback。
+
+----------------------------------------------------------------------
+5.6 Debugger
+----------------------------------------------------------------------
+
+必须成为重点功能。
+
+可以查看：
+
+Player：
+- Active Quest
+- Completed Quest
+- Quest Progress
+- Variables
+
+Story：
+- Active Story
+- Current Node
+- Previous Nodes
+- Waiting Event
+- Conditions
+
+Graph 实时高亮：
+
+Current
+Executed
+Waiting
+Error
+
+----------------------------------------------------------------------
+5.7 Why Not Triggered
+----------------------------------------------------------------------
+
+非常重要。
+
+当某个 Story / Dialogue 没触发时，
+Debugger 可以显示：
+
+Story: tavern_slime_request
+
+InteractActor
+✓ Actor = tavern_owner
+
+QuestState
+✗ Expected = COMPLETED
+  Actual = ACTIVE
+
+因此作者直接知道问题在哪。
+
+这是需要重点超过 CNPC 的能力。
+
+----------------------------------------------------------------------
+5.8 Play Test
+----------------------------------------------------------------------
+
+Studio：
+
+▶ Test
+■ Stop
+
+目标：
+
+快速测试剧情。
+
+至少支持：
+
+- 保存玩家 RPG 状态快照
+- 清理指定 Quest/Story 状态
+- 从指定 Story Node 开始
+- 停止测试
+- 恢复 RPG 状态
+
+不要每次测试都重新跑几小时剧情。
+
+----------------------------------------------------------------------
+5.9 Content Build
+----------------------------------------------------------------------
+
+Studio：
+
+Project → Build Content Pack
+
+输出：
+
+project.json
+actors/
+dialogues/
+quests/
+stories/
+resources/
+
+正式运行：
+
+Minecraft Server
++ CNPC+
++ DarkGrey_RPG
++ DarkGrey Content Pack
+
+Studio 不需要安装在服务器。
+
+普通玩家也不安装 Studio。
+
+----------------------------------------------------------------------
+5.10 Schema / Backup
+----------------------------------------------------------------------
+
+所有资源：
+
+schema_version
+
+Studio：
+
+Autosave
+Backup
+Atomic Write
+
+防止项目损坏。
+
+----------------------------------------------------------------------
+PHASE 5 验收
+----------------------------------------------------------------------
+
+[ ] Studio 显示 Minecraft Connected
+[ ] Actor 可从 Minecraft Pick
+[ ] Position / Region 可 Pick
+[ ] Ctrl+S 自动 reload
+[ ] Story Graph 显示实时执行节点
+[ ] Quest Progress 实时显示
+[ ] Why Not Triggered 能解释失败条件
+[ ] Test / Stop 可快速反复测试剧情
+[ ] 可 Build Content Pack
+[ ] 正式服务器加载 Content Pack
+[ ] 玩家不需要 Studio
+
+======================================================================
+当前明确排除的未来功能
+======================================================================
+
+以下内容不要进入当前 Roadmap：
+
+- Native NPC
+- Custom Entity Renderer
+- NPC Model Editor
+- Complex AI
+- Boss Editor
+- Boss Phase Graph
+- Skill System
+- Combat Timeline
+- Projectile Editor
+- Cutscene Camera Timeline
+- 自定义动画引擎
+
+除非未来用户明确重新提出。
+
+当前 DarkGrey_RPG 的定义始终是：
+
+“Minecraft 1.7.10 的任务、对话、剧情 Authoring Framework。”
+
+======================================================================
+版本路线
+======================================================================
+
+0.1.x
+Phase 1
+Actor Binding + Studio Shell
+
+0.2.x
+Phase 2
+Dialogue
+
+0.3.x
+Phase 3
+Quest
+
+0.4.x
+Phase 4
+Story Graph
+
+0.5.x
+Phase 5
+Live / Debug / Test / Build
+
+0.6+
+根据实际长期使用反馈继续打磨：
+
+- Studio UX
+- Dialogue UX
+- Quest UX
+- Story Nodes
+- Debugger
+- Collaboration
+- Localization
+
+不要因为版本号到了 0.6 就自动进入 NPC/Boss 开发。
+
+======================================================================
+Codex 当前执行规则
+======================================================================
+
+当前只允许执行 Phase 1。
+
+工作目录：
+
+E:\Java\MinecraftMod\DarkGrey_RPG
+
+先完成：
+
+Studio Actor
+→ JSON
+→ Runtime Reload
+→ Bind Existing CustomNPC+
+→ Actor ID Persistence
+
+达到 Phase 1 全部验收项后停止。
+
+不要自行开发 Phase 2。
+
+更不要开发：
+
+Native NPC
+Boss
+Combat
+
+每个阶段：
+
+1. build
+2. test
+3. document
+4. report
+5. stop
+
+等待用户确认后继续。
+
+======================================================================
+最终目标体验
+======================================================================
+
+用户主要在 DarkGrey_RPG Studio 工作。
+
+Minecraft 中：
+- 用 CNPC+ 创建 / 调整 NPC 本体
+- 用 DarkGrey Editor Tool 选择世界对象
+- 测试 RPG
+
+Studio 中：
+
+Project
+├─ Actors
+├─ Dialogues
+├─ Quests
+└─ Stories
+
+例如：
+
+Actors
+└─ 酒馆老板
+
+Dialogues
+├─ 史莱姆委托
+└─ 史莱姆完成
+
+Quests
+└─ 消灭10只史莱姆
+
+Stories
+└─ 酒馆史莱姆委托
+
+Story Graph 负责把这四类独立资源组合起来。
+
+这才是 DarkGrey_RPG 当前阶段唯一需要做到的事情。

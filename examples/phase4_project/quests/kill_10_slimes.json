@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "kill_10_slimes",
+  "title": "清理地窖的史莱姆",
+  "description": "消灭十只史莱姆。",
+  "objectives": [
+    {
+      "id": "kill_slimes",
+      "type": "kill_entity",
+      "description": "消灭史莱姆",
+      "entity": "Slime",
+      "required": 10
+    }
+  ],
+  "objective_groups": [
+    {
+      "id": "main",
+      "mode": "ALL",
+      "objectives": [
+        "kill_slimes"
+      ]
+    }
+  ],
+  "metadata": {
+    "notes": "No issuer, Dialogue, or Story fields.",
+    "tags": [
+      "combat"
+    ]
+  }
+}

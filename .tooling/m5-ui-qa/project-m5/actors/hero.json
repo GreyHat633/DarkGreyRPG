@@ -1,0 +1,8 @@
+{
+  "schema_version": 2,
+  "id": "hero",
+  "display_name": "旅行者",
+  "notes": "",
+  "tags": ["player"],
+  "home_story_id": "home_story"
+}

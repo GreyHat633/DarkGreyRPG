@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "id": "empire_detective",
+  "display_name": "帝国线侦探",
+  "notes": "从侦探导入后形成的独立资源。",
+  "tags": [
+    "empire",
+    "independent"
+  ],
+  "home_story_id": "empire_route"
+}

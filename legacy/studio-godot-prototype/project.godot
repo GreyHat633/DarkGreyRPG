@@ -1,0 +1,28 @@
+; Engine configuration file.
+; Edit this file through the Godot editor when possible.
+
+config_version=5
+
+[application]
+
+config/name="DarkGrey RPG Studio"
+config/version="0.5.0"
+run/main_scene="res://Main.tscn"
+
+[debug]
+
+file_logging/enable_file_logging=false
+
+[display]
+
+window/size/viewport_width=1440
+window/size/viewport_height=900
+window/size/window_width_override=1440
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.055, 0.061, 0.075, 1)

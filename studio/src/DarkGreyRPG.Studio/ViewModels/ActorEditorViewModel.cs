@@ -1,0 +1,235 @@
+using System.ComponentModel;
+using DarkGreyRPG.Studio.Core.Actors;
+
+namespace DarkGreyRPG.Studio.ViewModels;
+
+public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorViewModel
+{
+    private readonly Stack<EditorSnapshot> _undoHistory = [];
+    private readonly Stack<EditorSnapshot> _redoHistory = [];
+    private string _tagsText;
+    private EditorSnapshot _lastSnapshot;
+    private bool _isApplyingEdit;
+    private bool _isRestoringSnapshot;
+
+    public ActorEditorViewModel(ActorDocument document)
+    {
+        Document = document ?? throw new ArgumentNullException(nameof(document));
+        _tagsText = string.Join(", ", document.Tags);
+        _lastSnapshot = CaptureSnapshot();
+        UndoCommand = new RelayCommand(Undo, () => CanUndo);
+        RedoCommand = new RelayCommand(Redo, () => CanRedo);
+        Document.PropertyChanged += OnDocumentPropertyChanged;
+    }
+
+    public ActorDocument Document { get; }
+
+    public string Id => Document.Id;
+
+    public string DisplayName
+    {
+        get => Document.DisplayName;
+        set
+        {
+            var next = value ?? string.Empty;
+            if (string.Equals(Document.DisplayName, next, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            ApplyEdit(() => Document.DisplayName = next);
+        }
+    }
+
+    public string Notes
+    {
+        get => Document.Notes;
+        set
+        {
+            var next = value ?? string.Empty;
+            if (string.Equals(Document.Notes, next, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            ApplyEdit(() => Document.Notes = next);
+        }
+    }
+
+    public string TagsText
+    {
+        get => _tagsText;
+        set
+        {
+            var next = value ?? string.Empty;
+            if (string.Equals(_tagsText, next, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            ApplyEdit(() =>
+            {
+                SetProperty(ref _tagsText, next);
+                Document.SetTags(ParseTags(next));
+            });
+        }
+    }
+
+    public RelayCommand UndoCommand { get; }
+
+    public RelayCommand RedoCommand { get; }
+
+    public bool CanUndo => _undoHistory.Count > 0;
+
+    public bool CanRedo => _redoHistory.Count > 0;
+
+    public bool CanSave => Document.IsDirty && Document.ValidationErrors.Count == 0;
+
+    public bool IsDirty => Document.IsDirty;
+
+    public IReadOnlyList<DarkGreyRPG.Studio.Core.Validation.ValidationIssue> ValidationIssues =>
+        Document.ValidationIssues;
+
+    public string SaveStateText => Document.IsDirty ? "未保存" : "已保存";
+
+    public string ValidationText => string.Join(
+        Environment.NewLine,
+        Document.ValidationErrors.Select(issue => issue.Message));
+
+    private void Undo()
+    {
+        if (!_undoHistory.TryPop(out var target))
+        {
+            return;
+        }
+
+        _redoHistory.Push(CaptureSnapshot());
+        RestoreSnapshot(target);
+        NotifyHistoryChanged();
+    }
+
+    private void Redo()
+    {
+        if (!_redoHistory.TryPop(out var target))
+        {
+            return;
+        }
+
+        _undoHistory.Push(CaptureSnapshot());
+        RestoreSnapshot(target);
+        NotifyHistoryChanged();
+    }
+
+    private void ApplyEdit(Action edit)
+    {
+        var before = CaptureSnapshot();
+        _isApplyingEdit = true;
+        try
+        {
+            edit();
+        }
+        finally
+        {
+            _isApplyingEdit = false;
+        }
+
+        var after = CaptureSnapshot();
+        _lastSnapshot = after;
+        if (SnapshotsEqual(before, after))
+        {
+            return;
+        }
+
+        _undoHistory.Push(before);
+        _redoHistory.Clear();
+        NotifyHistoryChanged();
+    }
+
+    private void RestoreSnapshot(EditorSnapshot snapshot)
+    {
+        _isRestoringSnapshot = true;
+        try
+        {
+            Document.DisplayName = snapshot.DisplayName;
+            Document.Notes = snapshot.Notes;
+            Document.SetTags(snapshot.Tags);
+
+            if (!string.Equals(_tagsText, snapshot.TagsText, StringComparison.Ordinal))
+            {
+                _tagsText = snapshot.TagsText;
+                OnPropertyChanged(nameof(TagsText));
+            }
+        }
+        finally
+        {
+            _isRestoringSnapshot = false;
+        }
+
+        _lastSnapshot = CaptureSnapshot();
+    }
+
+    private EditorSnapshot CaptureSnapshot() => new(
+        Document.DisplayName,
+        Document.Notes,
+        _tagsText,
+        [.. Document.Tags]);
+
+    private static bool SnapshotsEqual(EditorSnapshot left, EditorSnapshot right) =>
+        string.Equals(left.DisplayName, right.DisplayName, StringComparison.Ordinal) &&
+        string.Equals(left.Notes, right.Notes, StringComparison.Ordinal) &&
+        string.Equals(left.TagsText, right.TagsText, StringComparison.Ordinal) &&
+        left.Tags.SequenceEqual(right.Tags, StringComparer.Ordinal);
+
+    private void NotifyHistoryChanged()
+    {
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        UndoCommand.RaiseCanExecuteChanged();
+        RedoCommand.RaiseCanExecuteChanged();
+    }
+
+    private static IEnumerable<string> ParseTags(string value) => value.Split(
+        [',', '，', ';', '；', '\r', '\n'],
+        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName == nameof(ActorDocument.Tags) &&
+            !_isApplyingEdit &&
+            !_isRestoringSnapshot)
+        {
+            var tagsText = string.Join(", ", Document.Tags);
+            if (!string.Equals(_tagsText, tagsText, StringComparison.Ordinal))
+            {
+                _tagsText = tagsText;
+                OnPropertyChanged(nameof(TagsText));
+            }
+        }
+
+        var currentSnapshot = CaptureSnapshot();
+        if (!_isApplyingEdit &&
+            !_isRestoringSnapshot &&
+            !SnapshotsEqual(_lastSnapshot, currentSnapshot))
+        {
+            _undoHistory.Push(_lastSnapshot);
+            _redoHistory.Clear();
+            NotifyHistoryChanged();
+        }
+
+        _lastSnapshot = currentSnapshot;
+        if (!string.IsNullOrWhiteSpace(eventArgs.PropertyName))
+        {
+            OnPropertyChanged(eventArgs.PropertyName);
+        }
+
+        OnPropertyChanged(nameof(CanSave));
+        OnPropertyChanged(nameof(SaveStateText));
+        OnPropertyChanged(nameof(ValidationText));
+    }
+
+    private sealed record EditorSnapshot(
+        string DisplayName,
+        string Notes,
+        string TagsText,
+        IReadOnlyList<string> Tags);
+}

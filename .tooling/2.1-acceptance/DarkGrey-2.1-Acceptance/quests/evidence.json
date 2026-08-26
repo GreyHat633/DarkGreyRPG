@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "id": "evidence",
+  "title": "搜集证物",
+  "display_name": "搜集证物",
+  "description": "收集三份案件证物。",
+  "home_story_id": "royal_mystery",
+  "objectives": [
+    { "id": "collect_evidence", "type": "collect_item", "description": "收集案件证物", "item": "minecraft:paper", "metadata": -1, "required": 3 }
+  ],
+  "objective_groups": [ { "id": "main", "mode": "ALL", "objectives": ["collect_evidence"] } ],
+  "metadata": { "notes": "No issuer.", "tags": ["acceptance"] }
+}

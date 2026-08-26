@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://darkgrey-rpg.local/schema/story.schema.json",
+  "title": "DarkGrey RPG Story",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "entry",
+    "nodes",
+    "connections",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/resource_id"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entry": {
+      "$ref": "#/$defs/resource_id"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "connections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/connection"
+      }
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "resource_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "position",
+        "properties"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "type": {
+          "enum": [
+            "interact_actor",
+            "enter_region",
+            "quest_completed",
+            "play_dialogue",
+            "start_quest",
+            "complete_quest",
+            "branch",
+            "sequence",
+            "quest_state",
+            "has_item",
+            "variable_compare",
+            "give_item",
+            "give_xp",
+            "send_message",
+            "set_variable",
+            "end"
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        }
+      }
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "output",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/resource_id"
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "$ref": "#/$defs/resource_id"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notes": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

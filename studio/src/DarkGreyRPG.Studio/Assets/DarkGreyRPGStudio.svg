@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#46515d"/>
+      <stop offset="1" stop-color="#1d242b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7ce8ff"/>
+      <stop offset="1" stop-color="#168fc2"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#plate)" stroke="#9aa7b2" stroke-width="8" d="M128 12 224 68v120l-96 56-96-56V68z"/>
+  <path fill="#11171c" opacity=".72" d="M128 34 204 78v100l-76 44-76-44V78z"/>
+  <path fill="#d8e0e6" d="M67 76h48c35 0 57 20 57 52s-22 52-57 52H67zm25 22v60h20c21 0 34-11 34-30s-13-30-34-30z"/>
+  <path fill="url(#accent)" d="M151 78h39v20h-39zm22 20h20v48h-20zm-22 48h42v20h-42z"/>
+  <path fill="none" stroke="#7ce8ff" stroke-width="6" stroke-linecap="round" d="m79 203 49-28 49 28"/>
+  <circle cx="79" cy="203" r="10" fill="#d8e0e6" stroke="#168fc2" stroke-width="5"/>
+  <circle cx="128" cy="175" r="10" fill="#d8e0e6" stroke="#168fc2" stroke-width="5"/>
+  <circle cx="177" cy="203" r="10" fill="#d8e0e6" stroke="#168fc2" stroke-width="5"/>
+</svg>

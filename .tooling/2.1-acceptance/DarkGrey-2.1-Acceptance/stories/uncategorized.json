@@ -1,0 +1,9 @@
+{
+  "schema_version": 2, "id": "uncategorized", "display_name": "未分类", "description": "", "tags": [],
+  "entry_presentation": { "mode": "none", "eyebrow": "", "title": "", "duration_seconds": 4 },
+  "owned_resources": { "actors": [], "dialogues": [], "quests": [] },
+  "referenced_resources": { "actors": [], "dialogues": [], "quests": [] },
+  "flow_ref": "uncategorized", "title": "未分类", "entry": "end",
+  "nodes": [ { "id": "end", "type": "end", "position": { "x": 100, "y": 100 }, "properties": {} } ],
+  "connections": [], "metadata": { "notes": "", "tags": [] }
+}

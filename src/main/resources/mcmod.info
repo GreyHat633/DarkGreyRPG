@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "darkgrey_rpg",
+    "name": "DarkGrey RPG",
+    "description": "RPG authoring framework. Version 0.5.x adds localhost Live Bridge, Debugger, Play Test, and Content Build.",
+    "version": "${modVersion}",
+    "mcversion": "${minecraftVersion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": ["GreyHat"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": ["required-after:customnpcs"]
+  }
+]

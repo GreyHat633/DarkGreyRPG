@@ -1,0 +1,9 @@
+{
+  "schema_version": 2, "id": "empire_route", "display_name": "帝国线", "description": "隐瞒证物后的剧情。", "tags": ["route", "empire"],
+  "entry_presentation": { "mode": "title", "eyebrow": "路线", "title": "帝国线", "duration_seconds": 4 },
+  "owned_resources": { "actors": ["empire_detective"], "dialogues": [], "quests": [] },
+  "referenced_resources": { "actors": [], "dialogues": [], "quests": [] },
+  "flow_ref": "empire_route", "title": "帝国线", "entry": "start",
+  "nodes": [ { "id": "start", "type": "story_start", "position": { "x": 100, "y": 100 }, "properties": {} }, { "id": "end", "type": "end", "position": { "x": 380, "y": 100 }, "properties": {} } ],
+  "connections": [ { "from": "start", "output": "next", "to": "end" } ], "metadata": { "notes": "", "tags": [] }
+}

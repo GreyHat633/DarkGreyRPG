@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "id": "detective",
+  "display_name": "侦探",
+  "notes": "王城迷案与王国线共享的同一资源。",
+  "tags": [
+    "mystery",
+    "shared"
+  ],
+  "home_story_id": "royal_mystery"
+}

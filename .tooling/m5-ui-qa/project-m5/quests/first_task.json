@@ -1,0 +1,41 @@
+{
+  "schema_version": 2,
+  "id": "first_task",
+  "title": "寻找航海图",
+  "display_name": "寻找航海图",
+  "description": "真实窗口已完成任务编辑与保存。",
+  "home_story_id": "home_story",
+  "objectives": [
+    {
+      "id": "collect_map",
+      "type": "collect_item",
+      "description": "取得航海图",
+      "item": "minecraft:map",
+      "metadata": -1,
+      "required": 1
+    },
+    {
+      "id": "kill",
+      "type": "kill_entity",
+      "description": "击杀目标",
+      "entity": "Zombie",
+      "required": 1
+    }
+  ],
+  "objective_groups": [
+    {
+      "id": "main",
+      "mode": "ALL",
+      "objectives": [
+        "collect_map",
+        "kill"
+      ]
+    }
+  ],
+  "metadata": {
+    "notes": "M5 initial quest",
+    "tags": [
+      "opening"
+    ]
+  }
+}

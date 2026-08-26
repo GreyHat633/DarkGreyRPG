@@ -1,0 +1,166 @@
+{
+  "schema_version": 2,
+  "id": "royal_mystery",
+  "display_name": "王城迷案",
+  "description": "最终验收主剧情。",
+  "tags": [
+    "main",
+    "mystery"
+  ],
+  "entry_presentation": {
+    "mode": "title",
+    "eyebrow": "第一章",
+    "title": "王城迷案",
+    "duration_seconds": 4
+  },
+  "owned_resources": {
+    "actors": [
+      "detective"
+    ],
+    "dialogues": [
+      "final_confrontation"
+    ],
+    "quests": [
+      "evidence"
+    ]
+  },
+  "referenced_resources": {
+    "actors": [],
+    "dialogues": [],
+    "quests": []
+  },
+  "flow_ref": "royal_mystery",
+  "title": "王城迷案",
+  "entry": "start",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "story_start",
+      "position": {
+        "x": 92.26890756302521,
+        "y": 144.20168067226894
+      },
+      "properties": {}
+    },
+    {
+      "id": "start_evidence",
+      "type": "start_quest",
+      "position": {
+        "x": 320,
+        "y": 120
+      },
+      "properties": {
+        "quest_id": "evidence"
+      }
+    },
+    {
+      "id": "wait_evidence",
+      "type": "quest_completed",
+      "position": {
+        "x": 580,
+        "y": 120
+      },
+      "properties": {
+        "quest_id": "evidence"
+      }
+    },
+    {
+      "id": "interact_detective",
+      "type": "interact_actor",
+      "position": {
+        "x": 840,
+        "y": 120
+      },
+      "properties": {
+        "actor_id": "detective"
+      }
+    },
+    {
+      "id": "play_final",
+      "type": "play_dialogue",
+      "position": {
+        "x": 1100,
+        "y": 120
+      },
+      "properties": {
+        "dialogue_id": "final_confrontation"
+      }
+    },
+    {
+      "id": "exit_branch",
+      "type": "dialogue_exit_branch",
+      "position": {
+        "x": 1360,
+        "y": 120
+      },
+      "properties": {
+        "exit_names": "hand_over, conceal"
+      }
+    },
+    {
+      "id": "enter_kingdom",
+      "type": "enter_story",
+      "position": {
+        "x": 1640,
+        "y": 30
+      },
+      "properties": {
+        "target_story_id": "kingdom_route"
+      }
+    },
+    {
+      "id": "enter_empire",
+      "type": "enter_story",
+      "position": {
+        "x": 1640,
+        "y": 230
+      },
+      "properties": {
+        "target_story_id": "empire_route"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from": "start_evidence",
+      "output": "next",
+      "to": "wait_evidence"
+    },
+    {
+      "from": "wait_evidence",
+      "output": "next",
+      "to": "interact_detective"
+    },
+    {
+      "from": "interact_detective",
+      "output": "next",
+      "to": "play_final"
+    },
+    {
+      "from": "play_final",
+      "output": "next",
+      "to": "exit_branch"
+    },
+    {
+      "from": "exit_branch",
+      "output": "hand_over",
+      "to": "enter_kingdom"
+    },
+    {
+      "from": "exit_branch",
+      "output": "conceal",
+      "to": "enter_empire"
+    },
+    {
+      "from": "start",
+      "output": "next",
+      "to": "start_evidence"
+    }
+  ],
+  "metadata": {
+    "notes": "M6/M7/M8 final acceptance flow.",
+    "tags": [
+      "acceptance"
+    ]
+  }
+}

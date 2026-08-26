@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "id": "objective_showcase",
+  "title": "目标类型展示",
+  "description": "用于验证第一批四种 Objective 与三种 Objective Group。",
+  "objectives": [
+    {
+      "id": "meet_owner",
+      "type": "interact_actor",
+      "description": "与酒馆老板交谈",
+      "actor_id": "tavern_owner",
+      "required": 1
+    },
+    {
+      "id": "reach_cellar",
+      "type": "reach_location",
+      "description": "到达地窖入口",
+      "dimension": 0,
+      "x": 0.0,
+      "y": 64.0,
+      "z": 0.0,
+      "radius": 4.0
+    },
+    {
+      "id": "collect_supplies",
+      "type": "collect_item",
+      "description": "收集圆石",
+      "item": "minecraft:cobblestone",
+      "metadata": -1,
+      "required": 3
+    },
+    {
+      "id": "kill_one_slime",
+      "type": "kill_entity",
+      "description": "消灭一只史莱姆",
+      "entity": "Slime",
+      "required": 1
+    }
+  ],
+  "objective_groups": [
+    {
+      "id": "route",
+      "mode": "SEQUENCE",
+      "objectives": [
+        "meet_owner",
+        "reach_cellar"
+      ]
+    },
+    {
+      "id": "supplies",
+      "mode": "ANY",
+      "objectives": [
+        "collect_supplies"
+      ]
+    },
+    {
+      "id": "combat",
+      "mode": "ALL",
+      "objectives": [
+        "kill_one_slime"
+      ]
+    }
+  ],
+  "metadata": {
+    "notes": "Authoring and runtime behavior probe.",
+    "tags": [
+      "showcase"
+    ]
+  }
+}

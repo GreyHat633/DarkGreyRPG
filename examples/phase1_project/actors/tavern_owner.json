@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "tavern_owner",
+  "display_name": "酒馆老板",
+  "notes": "Phase 1 actor binding acceptance target.",
+  "tags": [
+    "example",
+    "tavern"
+  ]
+}

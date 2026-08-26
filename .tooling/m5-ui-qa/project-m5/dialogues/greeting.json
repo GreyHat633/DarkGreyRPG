@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "id": "greeting",
+  "title": "港口问候（已验收）",
+  "display_name": "港口问候（已验收）",
+  "home_story_id": "home_story",
+  "speakers": [
+    "hero"
+  ],
+  "entry": "line_1",
+  "nodes": [
+    {
+      "id": "line_1",
+      "type": "line",
+      "speaker": "hero",
+      "text": "UI 自动化保存成功。",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "end",
+      "result": "continue"
+    }
+  ],
+  "metadata": {
+    "notes": "M5 initial dialogue",
+    "tags": [
+      "opening"
+    ]
+  }
+}
