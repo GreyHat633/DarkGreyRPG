@@ -228,6 +228,26 @@ public sealed class GateFWpfTests
         Assert.IsFalse(shell.StoryWorkspace.Quests.Items.Any(item => item.Id == "discard"));
     }
 
+    [TestMethod]
+    public void DirtyQuestDraftCanBeDiscardedFromResourceCommand()
+    {
+        using var project = CreateProject();
+        var dialogs = new TestDialogs { CreateResult = new("discard_command", "Discard command") };
+        var shell = OpenQuests(project, dialogs);
+        shell.NewStoryResourceCommand.Execute(null);
+
+        Assert.AreEqual("放弃草稿", shell.SelectedStoryResourceActionText);
+        shell.CurrentQuest!.AddFirstKillCommand.Execute(null);
+        Assert.IsTrue(shell.CurrentQuest.IsDirty);
+        Assert.IsTrue(shell.DeleteStoryResourceCommand.CanExecute(null));
+
+        shell.DeleteStoryResourceCommand.Execute(null);
+
+        Assert.IsFalse(shell.StoryWorkspace.Quests!.Items.Any(item => item.Id == "discard_command"));
+        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "quests", "discard_command.json")));
+        Assert.AreEqual("删除资源", shell.SelectedStoryResourceActionText);
+    }
+
     private static TestProject CreateProject(bool withOtherQuest = false)
     {
         var root = Path.Combine(AppContext.BaseDirectory, ".gate-f-test-data", Guid.NewGuid().ToString("N"));
@@ -272,6 +292,7 @@ public sealed class GateFWpfTests
         public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
         public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
         public bool ConfirmDelete(ResourceDescriptor resource) => false;
+        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => true;
         public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;

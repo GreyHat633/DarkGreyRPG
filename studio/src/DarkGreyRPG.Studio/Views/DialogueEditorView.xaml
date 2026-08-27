@@ -19,20 +19,20 @@
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions><ColumnDefinition Width="220" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-            <Border Grid.ColumnSpan="3" Panel.ZIndex="5" Padding="24" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4">
-                <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStarterEmptyState}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+            <Border Grid.ColumnSpan="3" Padding="24" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
+                <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsEmptyState}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
                     <TextBlock HorizontalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="这个对话目前还没有台词。" />
-                    <TextBlock Margin="0,10,0,18" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="当前命名出口：" />
-                    <TextBlock Margin="0,0,0,18" HorizontalAlignment="Center" FontWeight="SemiBold" Text="{Binding NamedEndDisplayName}" />
+                    <TextBlock Margin="0,10,0,18" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="请选择要创建的第一个节点。" />
                     <WrapPanel HorizontalAlignment="Center">
                         <Button Margin="0,0,8,0" Padding="10,6" Command="{Binding AddFirstLineCommand}" Style="{DynamicResource AccentButtonStyle}" Content="添加第一句台词" AutomationProperties.Name="添加第一句台词" />
                         <Button Margin="0,0,8,0" Padding="10,6" Command="{Binding AddPlayerChoiceCommand}" Content="添加玩家选择" AutomationProperties.Name="添加玩家选择" />
-                        <Button Padding="10,6" Command="{Binding EditNamedEndCommand}" Content="编辑命名出口" AutomationProperties.Name="编辑命名出口" />
+                        <Button Padding="10,6" Command="{Binding AddEndCommand}" Content="添加命名出口" AutomationProperties.Name="添加命名出口" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
             <Grid>
+                <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><DataTrigger Binding="{Binding IsEmptyState}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></Grid.Style>
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="8" /><RowDefinition Height="*" /><RowDefinition Height="8" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <WrapPanel>
                     <Button Margin="0,0,6,6" Padding="9,5" Command="{Binding AddLineCommand}" Content="+ 台词" AutomationProperties.Name="添加台词" />
@@ -45,10 +45,11 @@
                 <StackPanel Grid.Row="4" Orientation="Horizontal">
                     <Button Width="64" Margin="0,0,6,0" Command="{Binding MoveNodeUpCommand}" Content="上移" />
                     <Button Width="64" Margin="0,0,6,0" Command="{Binding MoveNodeDownCommand}" Content="下移" />
-                    <Button Width="64" Command="{Binding DeleteNodeCommand}" Content="删除" />
+                    <Button Width="64" Command="{Binding DeleteNodeCommand}" Content="删除" AutomationProperties.Name="删除 Dialogue 节点" />
                 </StackPanel>
             </Grid>
             <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style><Style TargetType="ScrollViewer"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><DataTrigger Binding="{Binding IsEmptyState}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></ScrollViewer.Style>
                 <StackPanel>
                     <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="入口节点" /><ComboBox Grid.Column="1" Padding="7,4" ItemsSource="{Binding Nodes}" DisplayMemberPath="Id" SelectedValuePath="Id" SelectedValue="{Binding Entry, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Dialogue 入口节点" /></Grid>
                     <Border Padding="14" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4">
@@ -64,7 +65,7 @@
                                     <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLine}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                                     <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="Speaker" /><TextBox Grid.Column="1" Padding="7,4" AutomationProperties.Name="Dialogue Speaker" Text="{Binding Speaker, UpdateSourceTrigger=PropertyChanged}" /></Grid>
                                     <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Top" Margin="0,6,0,0" Text="台词" /><TextBox Grid.Column="1" MinHeight="70" Padding="7" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="Dialogue 台词" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" /></Grid>
-                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="下一节点" /><TextBox Grid.Column="1" Padding="7,4" Text="{Binding Next, UpdateSourceTrigger=PropertyChanged}" /></Grid>
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="下一节点" /><TextBox Grid.Column="1" Padding="7,4" AutomationProperties.Name="Dialogue 下一节点" Text="{Binding Next, UpdateSourceTrigger=PropertyChanged}" /></Grid>
                                 </StackPanel>
                                 <StackPanel>
                                     <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsChoice}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>

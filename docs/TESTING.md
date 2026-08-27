@@ -168,7 +168,8 @@ and InformationalVersion `2.1.3`; the Java Runtime remains `0.5.0`.
 WPF application and operates only on a copied project below `.tooling`. It
 checks the copied fixture's baseline JSON/membership invariants, Project Home
 default selection, unified Actor/Dialogue/Quest library automation names,
-real-window visibility/navigation, Dialogue/Quest Draft and first Save,
+real-window visibility/navigation, true-empty Dialogue/Quest Drafts, explicit
+node/objective creation and last-item deletion, Draft context menu and first Save,
 Duplicate independence, Reference shared identity/Home Story, physical
 resource-library scrollbar dragging, restart persistence, screenshots,
 current-host DPI, process survival, and clean stop. Each run writes a distinct
@@ -181,11 +182,14 @@ window), manual 100%/150% DPI and client observation, Runtime Gradle probes,
 and packaging/hash checks. Passing static or isolated UI checks is not
 Minecraft client acceptance. The accepted 2026-08-27 runs include
 `20260827T114913.246Z`, `20260827T115039.063Z`, and the independent Main run
-`20260827T115232.475Z`; all live markers passed. The resource-list physical
+`20260827T115232.475Z`; all live markers passed. Corrective run
+`20260827T124425.066Z` additionally passed no implicit Dialogue End, no empty-state
+overlap, right-click `放弃草稿`, sole-End deletion, and sole-Quest-objective
+deletion. The resource-list physical
 drag changed its exact `ScrollPattern` from 0 to 100. The current host reports
 119 DPI (approximately 125%); separate 100% and 150% visual comparisons remain
 manual. The final local single-file EXE reports FileVersion `2.1.3.0` and
-SHA-256 `f0113fc9ac8f9cf1b2f4eebd3af65cb190b75e191cd4fb05c96b9d00c14f9879`.
+SHA-256 `28a575bce806bd80c983b27ffc2a1f71b7512a85329121b041cf130996cc053c`.
 The packaged-EXE smoke test passed with `DOTNET_BUNDLE_EXTRACT_BASE_DIR`,
 `TEMP`, and `TMP` redirected to repository `.tooling` on E:. The host C: drive
 had zero free bytes, so a default `%TEMP%\.net` extraction correctly failed for

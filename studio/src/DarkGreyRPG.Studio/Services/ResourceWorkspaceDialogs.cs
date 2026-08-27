@@ -60,6 +60,19 @@ public sealed class ResourceWorkspaceDialogs(Func<Window?> ownerProvider) : IRes
             MessageBoxResult.No) == MessageBoxResult.Yes;
     }
 
+    public bool ConfirmDiscardDraft(ResourceDescriptor resource)
+    {
+        ArgumentNullException.ThrowIfNull(resource);
+        var label = ResourceIdentityDialogViewModel.ChineseLabel(resource.Type);
+        return MessageBox.Show(
+            ownerProvider(),
+            $"确定要放弃尚未保存的{label}“{resource.DisplayName}”({resource.Id}) 吗？\n草稿内容将丢失，但不会删除任何已保存的资源文件。",
+            $"放弃{label}草稿",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+    }
+
     public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName)
     {
         ArgumentNullException.ThrowIfNull(resource);

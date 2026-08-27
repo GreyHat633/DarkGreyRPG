@@ -404,7 +404,17 @@ public sealed class ProjectService
     { if (_openDialogueDocuments.TryGetValue(id, out var existing)) return existing; return RegisterOpenDialogue(RequireCurrentProject().Dialogues.LoadDialogue(id)); }
     public DialogueDocument CreateDialogue(string id, string displayName) => RegisterOpenDialogue(RequireCurrentProject().Dialogues.CreateDialogue(id, displayName));
     public DialogueDocument CreateDialogueInStory(string storyId, string id, string displayName)
-    { var current = RequireCurrentProject(); _ = current.Stories.LoadStory(storyId); var doc = current.Dialogues.CreateDialogue(id, displayName); doc.HomeStoryId = storyId; current.Dialogues.SaveDialogue(doc); current.Registry.AddReference(storyId, ProjectResourceType.Dialogue, id, owned: true); return RegisterOpenDialogue(doc); }
+    {
+        var current = RequireCurrentProject();
+        _ = current.Stories.LoadStory(storyId);
+        var document = current.Dialogues.CreateDialogue(id, displayName);
+        document.HomeStoryId = storyId;
+        document.Entry = "end";
+        document.AddNode(DialogueNodeResource.End("end", "complete"));
+        current.Dialogues.SaveDialogue(document);
+        current.Registry.AddReference(storyId, ProjectResourceType.Dialogue, id, owned: true);
+        return RegisterOpenDialogue(document);
+    }
     /// <summary>Creates an in-memory Dialogue draft. No resource or Story file is written until SaveDialogue.</summary>
     public DialogueDocument CreateDialogueDraftInStory(string storyId, string id, string displayName)
     {

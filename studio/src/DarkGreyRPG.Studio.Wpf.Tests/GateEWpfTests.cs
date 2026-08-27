@@ -46,7 +46,7 @@ public sealed class GateEWpfTests
     }
 
     [TestMethod]
-    public void FirstLineUsesExactGateESkeletonAndNamedEndActionShowsEditor()
+    public void FirstLineAndChoiceCreationAreExplicitAndNamedEndRequiresAction()
     {
         using var project = CreateProject();
         var shell = OpenDialogues(project, new GateEDialogs { CreateResult = new("draft", "Draft") });
@@ -58,16 +58,38 @@ public sealed class GateEWpfTests
 
         var line = editor.Document.Nodes.Single(node => node.Type == "line");
         Assert.AreEqual("line_1", line.Id);
-        Assert.AreEqual("end", line.Next);
+        Assert.AreEqual(string.Empty, line.Next);
+        Assert.HasCount(1, editor.Document.Nodes);
         Assert.AreEqual("line_1", editor.Document.Entry);
 
         using var namedEndProject = CreateProject();
         var namedEndShell = OpenDialogues(namedEndProject, new GateEDialogs { CreateResult = new("draft", "Draft") });
         namedEndShell.NewStoryResourceCommand.Execute(null);
         var namedEndEditor = namedEndShell.CurrentDialogue!;
-        namedEndEditor.EditNamedEndCommand.Execute(null);
+        namedEndEditor.AddEndCommand.Execute(null);
         Assert.IsFalse(namedEndEditor.IsStarterEmptyState);
         Assert.IsTrue(namedEndEditor.SelectedNode!.IsEnd);
+    }
+
+    [TestMethod]
+    public void ChoiceCreationDoesNotCreateImplicitEndsAndLastNodeCanBeDeleted()
+    {
+        using var project = CreateProject();
+        var shell = OpenDialogues(project, new GateEDialogs { CreateResult = new("draft", "Draft") });
+        shell.NewStoryResourceCommand.Execute(null);
+        var editor = shell.CurrentDialogue!;
+
+        editor.AddChoiceCommand.Execute(null);
+        Assert.HasCount(1, editor.Nodes);
+        Assert.IsTrue(editor.Nodes.Single().IsChoice);
+        Assert.IsTrue(editor.Nodes.Single().Choices.All(choice => string.IsNullOrEmpty(choice.Next)));
+        Assert.AreEqual(editor.Nodes.Single().Id, editor.Entry);
+
+        editor.DeleteNodeCommand.Execute(null);
+        Assert.IsEmpty(editor.Nodes);
+        Assert.AreEqual(string.Empty, editor.Entry);
+        Assert.IsNull(editor.SelectedNode);
+        Assert.IsFalse(editor.DeleteNodeCommand.CanExecute(null));
     }
 
     [TestMethod]
@@ -150,6 +172,7 @@ public sealed class GateEWpfTests
         var saveDialogs = new GateEDialogs { CreateResult = new("save", "Save"), CloseChoice = UnsavedChangesChoice.Save };
         var saveShell = OpenDialogues(saveProject, saveDialogs);
         saveShell.NewStoryResourceCommand.Execute(null);
+        saveShell.CurrentDialogue!.AddEndCommand.Execute(null);
         Assert.IsTrue(saveShell.TryClose());
         Assert.IsTrue(File.Exists(Path.Combine(saveProject.Root, "dialogues", "save.json")));
 
@@ -235,6 +258,7 @@ public sealed class GateEWpfTests
         public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
         public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
         public bool ConfirmDelete(ResourceDescriptor resource) => false;
+        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
         public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;

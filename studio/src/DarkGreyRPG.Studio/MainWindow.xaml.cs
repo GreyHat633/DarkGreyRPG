@@ -174,6 +174,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         e.Handled = true;
     }
 
+    private void StoryResourceList_OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is not ShellViewModel shell || sender is not ListBox list)
+            return;
+
+        var item = FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
+        if (item?.DataContext is not StoryResourceMembershipViewModel resource)
+            return;
+
+        list.SelectedItem = resource;
+        shell.SelectedStoryResource = resource;
+        item.IsSelected = true;
+        item.Focus();
+
+        var menu = FluentContextMenuFactory.Create(item);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "打开资源",
+            () => shell.SelectedStoryResource = resource));
+        menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            shell.SelectedStoryResourceActionText,
+            () => shell.DeleteStoryResourceCommand.Execute(null),
+            shell.DeleteStoryResourceCommand.CanExecute(null),
+            critical: true));
+        item.ContextMenu = menu;
+        menu.IsOpen = true;
+        e.Handled = true;
+    }
+
     private static T? FindVisualAncestor<T>(DependencyObject? source) where T : DependencyObject
     {
         while (source is not null)

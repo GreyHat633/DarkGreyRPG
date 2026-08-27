@@ -118,18 +118,18 @@ public sealed class M5EditorViewModelTests
 
         var dialogs = new FakeResourceWorkspaceDialogs
         {
-            CreateResult = new ResourceIdentityRequest("source_beta", "Beta Source"),
+            ImportResult = new ResourceIdentityRequest("source_beta", "Beta Source"),
+            PickResult = sourceDescriptor,
             Confirmed = true,
         };
         var shell = CreateShell(directory.Root, dialogs);
         shell.OpenProjectCommand.Execute(null);
         OpenStoryRoute(shell, "beta", StoryWorkspaceRoutes.Dialogues);
-        shell.NewStoryResourceCommand.Execute(null);
+        shell.DuplicateStoryResourceCommand.Execute(null);
         shell.CurrentDialogue!.Notes = "independent";
         shell.SaveCurrentResourceCommand.Execute(null);
         Assert.AreEqual("template", new DialogueRepository(directory.Root).LoadDialogue("source").Metadata.Notes);
 
-        dialogs.CreationMode = null;
         dialogs.PickResult = sourceDescriptor;
         shell.ReferenceStoryResourceCommand.Execute(null);
         Assert.IsTrue(shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "source").IsReferenced);
@@ -165,6 +165,7 @@ public sealed class M5EditorViewModelTests
         public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => ImportResult;
         public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => PickResult;
         public bool ConfirmDelete(ResourceDescriptor resource) => Confirmed;
+        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => Confirmed;
         public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => Confirmed;
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) => LastReferences = references;
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => Confirmed;

@@ -9,6 +9,16 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class GateEFCoreTests
 {
     [TestMethod]
+    public void NewDialogueDraftStartsTrulyEmpty()
+    {
+        var document = DialogueDocument.CreateNew("greeting", "Greeting");
+
+        Assert.AreEqual(string.Empty, document.Entry);
+        Assert.IsEmpty(document.Nodes);
+        Assert.IsTrue(document.IsNewDraft);
+    }
+
+    [TestMethod]
     public void DraftCreationDoesNotWriteResourceOrMembershipAndDiscardUnregisters()
     {
         using var project = new TestProjectDirectory();
@@ -36,6 +46,7 @@ public sealed class GateEFCoreTests
         service.OpenProject(project.Root);
         service.CreateStory("intro", "Intro");
         var draft = service.CreateDialogueDraftInStory("intro", "greeting", "Greeting");
+        AddCompleteExit(draft);
 
         service.SaveDialogue(draft);
 
@@ -57,6 +68,7 @@ public sealed class GateEFCoreTests
         service.OpenProject(project.Root);
         service.CreateStory("intro", "Intro");
         var draft = service.CreateDialogueDraftInStory("intro", "greeting", "Greeting");
+        AddCompleteExit(draft);
 
         Assert.ThrowsExactly<DarkGreyRPG.Studio.Core.Dialogues.DialogueRepositoryException>(() => service.SaveDialogue(draft));
         Assert.IsTrue(draft.IsNewDraft);
@@ -77,6 +89,7 @@ public sealed class GateEFCoreTests
         var storyPath = Path.Combine(project.Root, "stories", "intro.json");
         var original = File.ReadAllBytes(storyPath);
         var draft = service.CreateDialogueDraftInStory("intro", "greeting", "Greeting");
+        AddCompleteExit(draft);
         writer.FailStoryWrites = true;
 
         Assert.ThrowsExactly<IOException>(() => service.SaveDialogue(draft));
@@ -119,9 +132,10 @@ public sealed class GateEFCoreTests
         service.OpenProject(project.Root);
         service.CreateStory("intro", "Intro");
         var draft = service.CreateDialogueDraftInStory("intro", "greeting", "Greeting");
+        AddCompleteExit(draft);
         var path = Path.Combine(project.Root, "dialogues", "greeting.json");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var existing = DialogueSerializer.Serialize(DialogueDocument.CreateNew("greeting", "Existing").ToResource());
+        var existing = DialogueSerializer.Serialize(AddCompleteExit(DialogueDocument.CreateNew("greeting", "Existing")).ToResource());
         File.WriteAllText(path, existing);
 
         Assert.ThrowsExactly<DialogueCollisionException>(() => service.SaveDialogue(draft));
@@ -165,6 +179,7 @@ public sealed class GateEFCoreTests
         service.CreateStory("intro", "Intro");
         service.CreateStory("other", "Other");
         var draft = service.CreateDialogueDraftInStory("intro", "greeting", "Greeting");
+        AddCompleteExit(draft);
         draft.HomeStoryId = "other";
 
         service.SaveDialogue(draft);
@@ -311,12 +326,19 @@ public sealed class GateEFCoreTests
         var sourceBytes = File.ReadAllBytes(sourcePath);
         var draft = service.CreateDialogueDraftFromExistingInStory("target", "source", "copy", "Copy");
         var copyPath = Path.Combine(project.Root, "dialogues", "copy.json");
-        File.WriteAllText(copyPath, DialogueSerializer.Serialize(DialogueDocument.CreateNew("copy", "Racer").ToResource()));
+        File.WriteAllText(copyPath, DialogueSerializer.Serialize(AddCompleteExit(DialogueDocument.CreateNew("copy", "Racer")).ToResource()));
 
         Assert.ThrowsExactly<DialogueCollisionException>(() => service.SaveDialogue(draft));
         Assert.IsTrue(draft.IsNewDraft);
         CollectionAssert.AreEqual(sourceBytes, File.ReadAllBytes(sourcePath));
         Assert.IsEmpty(service.CurrentProject!.Stories.LoadStory("target").OwnedResources.Dialogues);
+    }
+
+    private static DialogueDocument AddCompleteExit(DialogueDocument document)
+    {
+        document.Entry = "end";
+        document.AddNode(DialogueNodeResource.End("end", "complete"));
+        return document;
     }
 
     private sealed class SelectiveFailingWriter : IAtomicFileWriter

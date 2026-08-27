@@ -315,6 +315,7 @@ public sealed class ShellViewModel : ObservableObject
             }
 
             if (!SetProperty(ref _selectedStoryResource, value)) return;
+            OnPropertyChanged(nameof(SelectedStoryResourceActionText));
             if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Dialogues && StoryWorkspace.Dialogues is not null)
                 StoryWorkspace.Dialogues.SelectedItem = value;
             if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Quests && StoryWorkspace.Quests is not null)
@@ -323,6 +324,9 @@ public sealed class ShellViewModel : ObservableObject
             RaiseWorkspaceCommandStates();
         }
     }
+
+    public string SelectedStoryResourceActionText =>
+        SelectedStoryResource?.IsDraft == true ? "放弃草稿" : "删除资源";
 
     public bool TryClose()
     {
@@ -987,7 +991,9 @@ public sealed class ShellViewModel : ObservableObject
             CurrentDialogue = null;
             _selectedStoryResource = null;
             OnPropertyChanged(nameof(SelectedStoryResource));
+            OnPropertyChanged(nameof(SelectedStoryResourceActionText));
             ReportSuccess($"Dialogue 草稿 '{id}' 已放弃。", $"dialogue/{id}");
+            RaiseWorkspaceCommandStates();
             return true;
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
@@ -1009,7 +1015,9 @@ public sealed class ShellViewModel : ObservableObject
             CurrentQuest = null;
             _selectedStoryResource = null;
             OnPropertyChanged(nameof(SelectedStoryResource));
+            OnPropertyChanged(nameof(SelectedStoryResourceActionText));
             ReportSuccess($"Quest 草稿 '{id}' 已放弃。", $"quest/{id}");
+            RaiseWorkspaceCommandStates();
             return true;
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
@@ -1824,6 +1832,21 @@ public sealed class ShellViewModel : ObservableObject
     {
         _lastUiCommand = nameof(DeleteStoryResource);
         var membership = SelectedStoryResource;
+        if (membership is null) return;
+        if (membership.IsDraft)
+        {
+            var draft = new ResourceDescriptor(
+                membership.ResourceType,
+                membership.Id,
+                membership.DisplayName,
+                string.Empty);
+            if (!_resourceWorkspaceDialogs.ConfirmDiscardDraft(draft)) return;
+            if (membership.ResourceType == ProjectResourceType.Dialogue)
+                DiscardCurrentDialogueDraft();
+            else
+                DiscardCurrentQuestDraft();
+            return;
+        }
         var descriptor = membership?.Descriptor;
         if (descriptor is null) return;
         var resourceType = descriptor.Type;
@@ -1867,6 +1890,7 @@ public sealed class ShellViewModel : ObservableObject
         SelectedStoryResource?.IsReferenced == true && ActiveEditor?.IsDirty != true;
 
     private bool CanDeleteSelectedStoryResource() =>
+        SelectedStoryResource?.IsDraft == true ||
         SelectedStoryResource is { IsReferenced: false, Descriptor: not null } && ActiveEditor?.IsDirty != true;
 
     private bool CanDeleteCurrentResource() => StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Actors
@@ -2403,6 +2427,7 @@ public sealed class ShellViewModel : ObservableObject
         public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
         public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
         public bool ConfirmDelete(ResourceDescriptor resource) => false;
+        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
         public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;

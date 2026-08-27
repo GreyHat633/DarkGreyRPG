@@ -35,6 +35,8 @@ public interface IResourceWorkspaceDialogs
 
     bool ConfirmDelete(ResourceDescriptor resource);
 
+    bool ConfirmDiscardDraft(ResourceDescriptor resource);
+
     bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName);
 
     void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references);

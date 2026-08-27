@@ -32,7 +32,7 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
         AddFirstLineCommand = new RelayCommand(AddLine);
         AddPlayerChoiceCommand = new RelayCommand(AddChoice);
         EditNamedEndCommand = new RelayCommand(SelectNamedEnd);
-        DeleteNodeCommand = new RelayCommand(DeleteNode, () => SelectedNode is not null && Nodes.Count > 1);
+        DeleteNodeCommand = new RelayCommand(DeleteNode, () => SelectedNode is not null);
         MoveNodeUpCommand = new RelayCommand(() => MoveSelectedNode(-1), () => SelectedNode is not null && Nodes.IndexOf(SelectedNode) > 0);
         MoveNodeDownCommand = new RelayCommand(() => MoveSelectedNode(1), () => SelectedNode is not null && Nodes.IndexOf(SelectedNode) is var index && index >= 0 && index < Nodes.Count - 1);
         UndoCommand = new RelayCommand(Undo, () => _undoHistory.Count > 0);
@@ -93,7 +93,8 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
 
     public bool IsDirty => Document.IsDirty;
     public bool IsDraft => Document.IsNewDraft;
-    public bool IsStarterEmptyState => IsDraft && !_starterOverlayDismissed && Nodes.All(node => !node.IsLine && !node.IsChoice);
+    public bool IsEmptyState => Nodes.Count == 0;
+    public bool IsStarterEmptyState => IsDraft && !_starterOverlayDismissed && IsEmptyState;
     public string NamedEndDisplayName => Nodes.FirstOrDefault(node => node.IsEnd)?.Result ?? string.Empty;
     public bool CanSave => IsDirty && Document.ValidationErrors.Count == 0;
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
@@ -104,7 +105,7 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
     {
         ApplyEdit(() =>
         {
-            var id = IsStarterEmptyState ? "line_1" : AllocateNodeId("line");
+            var id = IsEmptyState ? "line_1" : AllocateNodeId("line");
             var speaker = AvailableActorIds.FirstOrDefault() ?? string.Empty;
             var end = Nodes.FirstOrDefault(node => node.IsEnd);
             var next = end?.Id ?? string.Empty;
@@ -113,7 +114,7 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
             previous?.SetNextSilently(id);
             Nodes.Insert(end is null ? Nodes.Count : Nodes.IndexOf(end), node);
             SelectedNode = node;
-            if (string.Equals(Entry, end?.Id, StringComparison.Ordinal) || Nodes.Count == 2)
+            if (string.IsNullOrWhiteSpace(Entry) || string.Equals(Entry, end?.Id, StringComparison.Ordinal) || Nodes.Count == 2)
                 _entry = id;
         });
     }
@@ -123,17 +124,13 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
         ApplyEdit(() =>
         {
             var choiceId = AllocateNodeId("choice");
-            var firstEndId = AllocateNodeId(choiceId + "_first_end");
-            var secondEndId = AllocateNodeId(choiceId + "_second_end");
             var choice = CreateNodeEditor(DialogueNodeResource.Choice(
                 choiceId,
                 "请选择",
-                [new DialogueChoiceResource { Text = "选项一", Next = firstEndId },
-                 new DialogueChoiceResource { Text = "选项二", Next = secondEndId }]));
+                [new DialogueChoiceResource { Text = "选项一", Next = string.Empty },
+                 new DialogueChoiceResource { Text = "选项二", Next = string.Empty }]));
             Nodes.Add(choice);
-            Nodes.Add(CreateNodeEditor(DialogueNodeResource.End(firstEndId, "choice_one")));
-            Nodes.Add(CreateNodeEditor(DialogueNodeResource.End(secondEndId, "choice_two")));
-            if (string.Equals(Entry, "end", StringComparison.Ordinal) && Nodes.Count == 4)
+            if (string.IsNullOrWhiteSpace(Entry))
                 _entry = choiceId;
             SelectedNode = choice;
         });
@@ -153,20 +150,22 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
             var id = AllocateNodeId("end");
             var node = CreateNodeEditor(DialogueNodeResource.End(id, "complete"));
             Nodes.Add(node);
+            if (string.IsNullOrWhiteSpace(Entry))
+                _entry = id;
             SelectedNode = node;
         });
     }
 
     private void DeleteNode()
     {
-        if (SelectedNode is null || Nodes.Count <= 1) return;
+        if (SelectedNode is null) return;
         ApplyEdit(() =>
         {
             var index = Nodes.IndexOf(SelectedNode);
             var removedId = SelectedNode.Id;
             Nodes.Remove(SelectedNode);
-            if (string.Equals(Entry, removedId, StringComparison.Ordinal)) _entry = Nodes[0].Id;
-            SelectedNode = Nodes[Math.Clamp(index, 0, Nodes.Count - 1)];
+            if (string.Equals(Entry, removedId, StringComparison.Ordinal)) _entry = Nodes.FirstOrDefault()?.Id ?? string.Empty;
+            SelectedNode = Nodes.Count == 0 ? null : Nodes[Math.Clamp(index, 0, Nodes.Count - 1)];
         });
     }
 
@@ -313,6 +312,7 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(SaveStateText));
         OnPropertyChanged(nameof(IsDraft));
+        OnPropertyChanged(nameof(IsEmptyState));
         OnPropertyChanged(nameof(IsStarterEmptyState));
         OnPropertyChanged(nameof(NamedEndDisplayName));
         OnPropertyChanged(nameof(ValidationText));

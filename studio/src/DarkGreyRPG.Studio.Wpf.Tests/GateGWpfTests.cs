@@ -273,6 +273,7 @@ public sealed class GateGWpfTests
             return PickResult;
         }
         public bool ConfirmDelete(ResourceDescriptor resource) => false;
+        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
         public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;

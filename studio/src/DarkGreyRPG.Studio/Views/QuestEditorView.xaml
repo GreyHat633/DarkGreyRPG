@@ -21,14 +21,14 @@
                 <ListBox Grid.Row="2" ItemsSource="{Binding Objectives}" SelectedItem="{Binding SelectedObjective}" BorderThickness="0" HorizontalContentAlignment="Stretch" AutomationProperties.Name="Quest 目标列表">
                     <ListBox.ItemTemplate><DataTemplate><Border Margin="0,0,0,6" Padding="10" Background="{DynamicResource LayerFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4"><DockPanel><TextBlock DockPanel.Dock="Right" Foreground="{DynamicResource AccentFillColorDefaultBrush}" Text="{Binding TypeLabel}" /><StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding Id}" /><TextBlock Margin="0,3,40,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" Text="{Binding Description}" /></StackPanel></DockPanel></Border></DataTemplate></ListBox.ItemTemplate>
                 </ListBox>
-                <StackPanel Grid.Row="4" Orientation="Horizontal"><Button Width="64" Margin="0,0,6,0" Command="{Binding MoveObjectiveUpCommand}" Content="上移" /><Button Width="64" Margin="0,0,6,0" Command="{Binding MoveObjectiveDownCommand}" Content="下移" /><Button Width="64" Command="{Binding DeleteObjectiveCommand}" Content="删除" /></StackPanel>
+                <StackPanel Grid.Row="4" Orientation="Horizontal"><Button Width="64" Margin="0,0,6,0" Command="{Binding MoveObjectiveUpCommand}" Content="上移" /><Button Width="64" Margin="0,0,6,0" Command="{Binding MoveObjectiveDownCommand}" Content="下移" /><Button Width="64" Command="{Binding DeleteObjectiveCommand}" Content="删除" AutomationProperties.Name="删除 Quest 目标" /></StackPanel>
             </Grid>
             <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="100" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="完成规则" /><ComboBox Grid.Column="1" Padding="7,4" IsEnabled="{Binding HasObjectives}" ItemsSource="{Binding CompletionModeOptions}" SelectedValuePath="Value" SelectedValue="{Binding CompletionMode, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="Label" AutomationProperties.Name="Quest 完成规则" /></Grid>
-                    <Border Padding="14" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4">
+                    <Border Padding="14" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
+                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsEmptyState}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsEmptyState}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                             <TextBlock HorizontalAlignment="Center" FontSize="17" FontWeight="SemiBold" Text="这个任务还没有目标。" />
                             <TextBlock Margin="0,6,0,12" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="选择第一个任务目标：" />
                             <WrapPanel HorizontalAlignment="Center">
@@ -39,6 +39,7 @@
                         </StackPanel>
                     </Border>
                     <Border Padding="14" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4">
+                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><DataTrigger Binding="{Binding IsEmptyState}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></Border.Style>
                         <Grid>
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="从左侧选择任务目标开始编辑。"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedObjective}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
                             <StackPanel DataContext="{Binding SelectedObjective}">

@@ -235,7 +235,16 @@ public sealed class ProjectResourceRegistry
         return document.ToResource();
     }
     private DialogueResource CreateDialogue(string id, string displayName, string? homeStoryId)
-    { var story = RequireStory(homeStoryId ?? "uncategorized"); var doc = _dialogues.CreateDialogue(id, displayName); doc.HomeStoryId = story.Id; _dialogues.SaveDialogue(doc); AddReference(story.Id, ProjectResourceType.Dialogue, id, true); return doc.ToResource(); }
+    {
+        var story = RequireStory(homeStoryId ?? "uncategorized");
+        var document = _dialogues.CreateDialogue(id, displayName);
+        document.HomeStoryId = story.Id;
+        document.Entry = "end";
+        document.AddNode(DialogueNodeResource.End("end", "complete"));
+        _dialogues.SaveDialogue(document);
+        AddReference(story.Id, ProjectResourceType.Dialogue, id, true);
+        return document.ToResource();
+    }
     private QuestResource CreateQuest(string id, string displayName, string? homeStoryId)
     { var story = RequireStory(homeStoryId ?? "uncategorized"); var doc = _quests.CreateQuest(id, displayName); doc.HomeStoryId = story.Id; _quests.SaveQuest(doc); AddReference(story.Id, ProjectResourceType.Quest, id, true); return doc.ToResource(); }
     private ActorResource? TryActor(string id) { try { return _actors.LoadActor(id).ToResource(); } catch (ActorNotFoundException) { return null; } }

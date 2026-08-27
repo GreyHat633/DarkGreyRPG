@@ -302,6 +302,28 @@ function Select-ListItemContaining([System.Windows.Automation.AutomationElement]
     }
     throw "No selectable ListItem contains '$ChildName'."
 }
+function Open-ContextMenu([System.Windows.Automation.AutomationElement]$Element, [System.Windows.Automation.AutomationElement]$Window) {
+    $rect = $Element.Current.BoundingRectangle
+    [void][Studio213ResourceAcceptanceNative]::SetForegroundWindow($Window.Current.NativeWindowHandle)
+    [void][Studio213ResourceAcceptanceNative]::SetCursorPos([int]($rect.X + $rect.Width / 2), [int]($rect.Y + $rect.Height / 2))
+    [Studio213ResourceAcceptanceNative]::mouse_event(0x0008, 0, 0, 0, [UIntPtr]::Zero)
+    [Studio213ResourceAcceptanceNative]::mouse_event(0x0010, 0, 0, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 450
+}
+function Find-ControlNamed([System.Windows.Automation.AutomationElement]$Root, [string]$Name, [System.Windows.Automation.ControlType]$ControlType, [int]$TimeoutSeconds = 8) {
+    $condition = [System.Windows.Automation.AndCondition]::new(
+        [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $Name),
+        [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, $ControlType))
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $element = $Root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition) | Where-Object {
+            $_.Current.BoundingRectangle.Width -gt 0 -and $_.Current.BoundingRectangle.Height -gt 0 -and -not $_.Current.IsOffscreen
+        } | Select-Object -First 1
+        if ($null -ne $element) { return $element }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "Visible $ControlType '$Name' was not found."
+}
 function Invoke-ResourceIdentity([int]$ProcessId, [string]$Id, [string]$DisplayName, [string]$DialogTitleFragment) {
     try { $dialog = Find-DialogWindow $ProcessId $DialogTitleFragment 3 }
     catch { $dialog = $desktop }
@@ -585,7 +607,14 @@ try {
         if ($currentDpi -le 0) { throw 'GetDpiForWindow returned no current-host DPI.' }
         Record-Result 'CURRENT_DPI_VISIBILITY' PASS "GetDpiForWindow reported $currentDpi DPI for the live Release window; alternate-scale comparison remains manual."
 
-        $storyList = Find-Named $window '剧情导航列表' 60
+        try {
+            $storyList = Find-Named $window '剧情导航列表' 15
+        } catch {
+            # WPF can replace the UIA provider while restoring the project. Reacquire
+            # the process-owned top-level element rather than keeping a stale root.
+            $window = Find-Window $process.Id 15
+            $storyList = Find-Named $window '剧情导航列表' 45
+        }
         $overview = Find-Named $window '选中剧情完整概览' 60
         Record-Result 'PROJECT_HOME_DEFAULT_SELECTION' PASS 'Story list and selected Story Overview are visible after project restore.'
         $screenshot = Save-Screenshot $window '00-project-home-2.1.3.png'
@@ -603,8 +632,9 @@ try {
         Find-Named $window '搜索 Quest' | Out-Null
         Record-Result 'UNIFIED_RESOURCE_LIBRARIES' PASS 'Real Release window exposed one Actor, Dialogue, and Quest library with stable command bars.'
 
-        # Dialogue: create is a draft-only operation, then add the first line and
-        # perform the first disk Save. The End skeleton must remain named complete.
+        # Dialogue: creation must be truly empty. Prove the empty card, right-click
+        # draft action, explicit End creation/deletion, then explicitly build a
+        # valid line -> End chain for the first disk Save.
         Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
         Invoke-Named $window '创建 Dialogue' | Out-Null
         Invoke-ResourceIdentity $process.Id $dialogueId 'QA 2.1.3 对话' '新建 Dialogue'
@@ -613,12 +643,30 @@ try {
         Assert-Contains $royalDraft.owned_resources.dialogues 'final_confrontation' 'Royal baseline Dialogue membership'
         if ($dialogueId -in @($royalDraft.owned_resources.dialogues)) { throw 'Dialogue draft unexpectedly changed Story membership before Save.' }
         $draftItem = Find-Named $window $dialogueId 10
-        Select-ListItemContaining $window $dialogueId | Out-Null
+        $draftListItem = Select-ListItemContaining $window $dialogueId
         if ($null -eq (Find-Named $window '添加第一句台词' 10)) { throw 'Dialogue starter empty state did not expose first-line action.' }
-        if ($null -eq (Find-Named $window 'complete' 10)) { throw 'New Dialogue did not expose the default complete End.' }
+        if ($null -eq (Find-Named $window '添加命名出口' 10)) { throw 'Dialogue empty state did not expose explicit named-exit creation.' }
+        $implicitEnd = $null
+        try { $implicitEnd = Find-Named $window 'complete' 1 } catch { }
+        if ($null -ne $implicitEnd) { throw 'New Dialogue still exposed an implicit complete End.' }
+        $entryEditor = $null
+        try { $entryEditor = Find-Named $window 'Dialogue 入口节点' 1 } catch { }
+        if ($null -ne $entryEditor) { throw 'Dialogue normal property editor overlapped the empty-state card.' }
+        $emptyShot = Save-Screenshot $window '04-dialogue-true-empty-2.1.3.png'
+        Open-ContextMenu $draftListItem $window
+        $discardMenuItem = Find-ControlNamed $desktop '放弃草稿' ([System.Windows.Automation.ControlType]::MenuItem) 10
+        $openMenuItem = Find-ControlNamed $desktop '打开资源' ([System.Windows.Automation.ControlType]::MenuItem) 10
+        $contextMenuShot = Save-Screenshot $window '05-dialogue-context-menu-2.1.3.png'
+        Invoke-Element $openMenuItem
+        Invoke-Named $window '添加命名出口' | Out-Null
+        Invoke-Named $window '删除 Dialogue 节点' | Out-Null
+        if ($null -eq (Find-Named $window '添加第一句台词' 10)) { throw 'Deleting the sole End node did not return Dialogue to its true-empty state.' }
         Invoke-Named $window '添加第一句台词' | Out-Null
+        Invoke-Named $window '添加命名出口' | Out-Null
+        Select-ListItemContaining $window 'line_1' | Out-Null
         Set-Text $window 'Dialogue Speaker' 'detective' | Out-Null
         Set-Text $window 'Dialogue 台词' 'QA 2.1.3 first line' | Out-Null
+        Set-Text $window 'Dialogue 下一节点' 'end' | Out-Null
         $dialogueLine = Find-Named $window 'QA 2.1.3 first line' 10
         Invoke-Named $window '保存 Dialogue' | Out-Null
         if (-not (Test-Path -LiteralPath $dialoguePath)) { throw 'Dialogue first Save did not create its JSON file.' }
@@ -627,7 +675,7 @@ try {
         if (-not (@($savedDialogue.nodes) | Where-Object { $_.type -eq 'line' -and $_.text -eq 'QA 2.1.3 first line' })) { throw 'Saved Dialogue is missing the first line.' }
         $royalAfterDialogue = Read-Json $royalPath
         Assert-Contains $royalAfterDialogue.owned_resources.dialogues $dialogueId 'Saved Dialogue owned membership'
-        Record-Result 'DIALOGUE_END_AND_FIRST_LINE' PASS "Draft had no file/membership, default End complete, then first line routed to line_1 and saved to $dialoguePath."
+        Record-Result 'DIALOGUE_TRUE_EMPTY_DELETE_AND_MENU' PASS "Draft had zero implicit nodes and no overlapping property editor; right-click exposed 放弃草稿; the sole explicit End was deletable; explicit line_1 -> end saved to $dialoguePath. Screenshots: $emptyShot; $contextMenuShot"
 
         # Quest: start from a real empty draft (no actor_id and no objectives),
         # add Collect, exercise all completion modes, then save.
@@ -644,6 +692,10 @@ try {
         try { $fakeActorField = Find-Named $window 'InteractActor 角色' 1 } catch { }
         if ($null -ne $fakeActorField) { throw 'Empty Quest exposed a fake actor editor.' }
         Set-Text $window 'Quest 描述' 'QA 2.1.3 quest description' | Out-Null
+        Invoke-Named $window '第一个目标：收集物品' | Out-Null
+        Invoke-Named $window '删除 Quest 目标' | Out-Null
+        if ($null -eq (Find-Named $window '第一个目标：收集物品' 10)) { throw 'Deleting the sole Quest objective did not return to the readable empty state.' }
+        $questEmptyShot = Save-Screenshot $window '06-quest-true-empty-2.1.3.png'
         Invoke-Named $window '第一个目标：收集物品' | Out-Null
         Set-Text $window 'CollectItem 物品' 'minecraft:paper' | Out-Null
         Select-ComboOption $window 'Quest 完成规则' '任意一个目标完成'
@@ -669,7 +721,7 @@ try {
         if ([string]$savedQuest.objectives[0].type -ne 'collect_item' -or [string]$savedQuest.objective_groups[0].mode -ne 'ALL') { throw 'Saved Quest did not persist Collect and ALL completion mode.' }
         $royalAfterQuest = Read-Json $royalPath
         Assert-Contains $royalAfterQuest.owned_resources.quests $questId 'Saved Quest owned membership'
-        Record-Result 'QUEST_EMPTY_AND_MODES' PASS "True-empty Quest had no fake actor, first Collect objective, ALL/ANY/SEQUENCE UI changes, and persisted ALL to $questPath."
+        Record-Result 'QUEST_EMPTY_AND_MODES' PASS "True-empty Quest had no fake actor, deleting the sole objective restored the empty state, then Collect and ALL/ANY/SEQUENCE persisted to $questPath. Screenshot: $questEmptyShot"
 
         # Duplicate an existing persisted Dialogue, edit only the copy, then
         # prove the source bytes/content and Home Story are unchanged.
