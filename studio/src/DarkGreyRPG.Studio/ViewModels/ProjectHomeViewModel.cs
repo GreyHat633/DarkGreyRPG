@@ -521,6 +521,7 @@ public sealed class ProjectHomeViewModel : ObservableObject
 {
     private string _searchText = string.Empty;
     private StoryListItemViewModel? _selectedStory;
+    private string? _selectionBeforeSearchId;
     private ProjectHomeRoute _route = ProjectHomeRoute.Home;
     private ProjectGraphViewModel _graph = new([], null);
 
@@ -528,19 +529,30 @@ public sealed class ProjectHomeViewModel : ObservableObject
     {
         _graph.OpenStoryRequested += GraphOnOpenStoryRequested;
         _graph.OpenStoryOverviewRequested += GraphOnOpenStoryOverviewRequested;
+        ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty, () => IsSearchActive);
     }
     public event EventHandler<string>? OpenStoryFlowRequested;
     public event EventHandler<string>? OpenStoryRequested;
 
     public ObservableCollection<StoryListItemViewModel> Stories { get; } = [];
     public ObservableCollection<StoryListItemViewModel> FilteredStories { get; } = [];
+    public RelayCommand ClearSearchCommand { get; }
 
     public string SearchText
     {
         get => _searchText;
         set
         {
-            if (SetProperty(ref _searchText, value ?? string.Empty)) RefreshFilter();
+            var next = value ?? string.Empty;
+            if (string.Equals(_searchText, next, StringComparison.Ordinal)) return;
+            var wasActive = IsSearchActive;
+            var isActive = !string.IsNullOrWhiteSpace(next);
+            if (!wasActive && isActive) _selectionBeforeSearchId = SelectedStory?.Id;
+            if (SetProperty(ref _searchText, next))
+            {
+                RefreshFilter(wasActive && !isActive);
+                ClearSearchCommand.RaiseCanExecuteChanged();
+            }
         }
     }
 
@@ -565,8 +577,14 @@ public sealed class ProjectHomeViewModel : ObservableObject
     public bool IsGraphVisible => Route == ProjectHomeRoute.Graph;
     public bool IsHomeVisible => Route == ProjectHomeRoute.Home;
     public bool HasStories => Stories.Count > 0;
-    public string EmptyStateTitle => "还没有剧情";
+    public bool HasFilteredStories => FilteredStories.Count > 0;
+    public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchText);
+    public bool IsSearchNoResults => HasStories && IsSearchActive && !HasFilteredStories;
+    public bool IsEmptyProject => !HasStories;
+    public string EmptyStateTitle => "当前项目还没有剧情";
     public string EmptyStateDescription => "剧情是 DarkGrey RPG 中的主要创作单元。";
+    public string SearchNoResultsTitle => "没有匹配当前搜索条件的剧情";
+    public string SearchNoResultsDescription => "清空搜索后可查看项目中的全部剧情。";
     public string CurrentRoute => Route.ToString();
     public ProjectGraphViewModel Graph
     {
@@ -585,14 +603,20 @@ public sealed class ProjectHomeViewModel : ObservableObject
     public void ReplaceStories(IReadOnlyList<StoryResource> stories, string? homeStoryId = null, string? projectDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(stories);
+        var previousSelectedId = SelectedStory?.Id ?? _selectionBeforeSearchId;
+        var previousSelectedIndex = SelectedStory is null
+            ? -1
+            : Stories.IndexOf(SelectedStory);
+
         Stories.Clear();
         foreach (var story in stories.OrderBy(
                      story => string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName,
                      StringComparer.CurrentCultureIgnoreCase))
             Stories.Add(new StoryListItemViewModel(story));
         OnPropertyChanged(nameof(HasStories));
+        OnPropertyChanged(nameof(IsEmptyProject));
         RefreshFilter();
-        SelectedStory = null;
+        ReconcileSelection(previousSelectedId, previousSelectedIndex);
         Graph = new ProjectGraphViewModel(stories, homeStoryId, projectDirectory);
         ShowHome();
     }
@@ -603,7 +627,7 @@ public sealed class ProjectHomeViewModel : ObservableObject
     private void GraphOnOpenStoryRequested(object? sender, string storyId) => OpenStoryFlowRequested?.Invoke(this, storyId);
     private void GraphOnOpenStoryOverviewRequested(object? sender, string storyId) => OpenStoryRequested?.Invoke(this, storyId);
 
-    private void RefreshFilter()
+    private void RefreshFilter(bool restoringSearchSelection = false)
     {
         var query = SearchText.Trim();
         FilteredStories.Clear();
@@ -615,5 +639,52 @@ public sealed class ProjectHomeViewModel : ObservableObject
         {
             FilteredStories.Add(story);
         }
+
+        OnPropertyChanged(nameof(HasFilteredStories));
+        OnPropertyChanged(nameof(IsSearchActive));
+        OnPropertyChanged(nameof(IsSearchNoResults));
+        ClearSearchCommand.RaiseCanExecuteChanged();
+
+        if (restoringSearchSelection)
+        {
+            var restored = _selectionBeforeSearchId is null
+                ? null
+                : Stories.FirstOrDefault(item => item.Id == _selectionBeforeSearchId);
+            SelectedStory = restored ?? FilteredStories.FirstOrDefault();
+            _selectionBeforeSearchId = null;
+            return;
+        }
+
+        if (!IsSearchActive) return;
+        if (SelectedStory is not null && FilteredStories.Any(item => item.Id == SelectedStory.Id)) return;
+        SelectedStory = FilteredStories.FirstOrDefault();
+    }
+
+    private void ReconcileSelection(string? previousSelectedId, int previousSelectedIndex)
+    {
+        if (Stories.Count == 0)
+        {
+            SelectedStory = null;
+            return;
+        }
+
+        if (IsSearchActive)
+        {
+            SelectedStory = previousSelectedId is null
+                ? FilteredStories.FirstOrDefault()
+                : FilteredStories.FirstOrDefault(item => item.Id == previousSelectedId)
+                    ?? FilteredStories.FirstOrDefault();
+            return;
+        }
+
+        SelectedStory = previousSelectedId is not null
+            ? Stories.FirstOrDefault(item => item.Id == previousSelectedId)
+            : null;
+        if (SelectedStory is not null) return;
+
+        var fallbackIndex = previousSelectedIndex < 0
+            ? 0
+            : Math.Clamp(previousSelectedIndex, 0, Stories.Count - 1);
+        SelectedStory = Stories[fallbackIndex];
     }
 }

@@ -103,3 +103,21 @@
 - Missing-target Problems navigate to the source EnterStory
   `target_story_id`; all graph interactions remain logic-read-only and are
   hash-checked against Story JSON.
+
+## 2026-08-27 — Studio 2.1.3 resource lifecycle and library boundary
+
+- Actor, Dialogue, and Quest remain project-level resources. Create and
+  Duplicate are in-memory Drafts until first valid Save; Reference adds only
+  Referenced membership and preserves the shared resource's Home Story.
+- First Save validates and writes resource plus Owned Story membership with
+  rollback on membership/write failure. A failed transaction keeps the Draft
+  repairable and must not leave an orphan resource or membership.
+- Dialogue Drafts begin with End/`complete` and no line; Quest Drafts begin with
+  no objectives/groups and no fake actor. Dialogue owns lines/choices/exits;
+  Quest owns objectives/completion modes; Story Flow owns transitions/rewards.
+- Actor, Dialogue, and Quest each expose one compact, virtualized library that
+  mixes Owned and Referenced entries. The shared link icon, missing warning
+  icon, Home Story tooltip, and persisted 220–380 DIP width are UI contracts.
+- Project Home selection, Core/WPF tests, Release UI automation, manual DPI and
+  Minecraft client observation, Runtime probes, and packaging remain separate
+  evidence categories. Studio 2.1.3 does not change Runtime 0.5.0.

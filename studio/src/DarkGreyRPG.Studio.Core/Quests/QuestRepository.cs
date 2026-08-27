@@ -5,7 +5,19 @@ public sealed class QuestRepository
     private readonly IAtomicFileWriter _writer; public QuestRepository(string projectDirectory, IAtomicFileWriter? writer = null) { ProjectDirectory = Path.GetFullPath(projectDirectory); QuestsDirectory = Path.Combine(ProjectDirectory, "quests"); _writer = writer ?? new AtomicFileWriter(); } public string ProjectDirectory { get; } public string QuestsDirectory { get; }
     public IReadOnlyList<QuestResourceInfo> ListQuests() { Ensure(); return Directory.EnumerateFiles(QuestsDirectory, "*.json").OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase).Select(path => { var r = QuestSerializer.Read(path); return new QuestResourceInfo(r.Id, r.DisplayName, path, r.Objectives.Count); }).ToArray(); }
     public QuestDocument LoadQuest(string id) { Validate(id, false); var p = PathFor(id); if (!File.Exists(p)) throw new QuestNotFoundException(id); return QuestDocument.FromResource(QuestSerializer.Read(p), p); }
-    public QuestDocument CreateQuest() => CreateQuest(GetAvailableId("new_quest"), "新任务"); public QuestDocument CreateQuest(string id, string displayName) { Validate(id, true); if (File.Exists(PathFor(id))) throw new QuestCollisionException(id); return QuestDocument.CreateNew(id, displayName); }
+    public QuestDocument CreateQuest() => CreateQuest(GetAvailableId("new_quest"), "新任务");
+    public QuestDocument CreateQuest(string id, string displayName)
+    {
+        Validate(id, true); if (File.Exists(PathFor(id))) throw new QuestCollisionException(id);
+        // Preserve the established immediate-create API's valid starter quest. Draft callers
+        // explicitly clear this compatibility starter before registering their in-memory draft.
+        var document = QuestDocument.CreateNew(id, displayName);
+        document.Description = "新任务";
+        var objective = QuestObjectiveResource.Interact("objective", "与角色交互", "actor");
+        document.ReplaceObjectives([objective]);
+        document.ReplaceGroups([new ObjectiveGroupResource { Id = "all", Mode = "ALL", Objectives = [objective.Id] }]);
+        return document;
+    }
     public QuestDocument SaveQuest(QuestDocument document) { ArgumentNullException.ThrowIfNull(document); Ensure(); var r = document.ToResource(); var p = PathFor(r.Id); if (document.IsNew && File.Exists(p)) throw new QuestCollisionException(r.Id); if (!document.IsNew && !string.Equals(Path.GetFullPath(document.SourcePath ?? string.Empty), p, StringComparison.OrdinalIgnoreCase)) throw new QuestRepositoryException("Changing a saved Quest ID requires an explicit rename operation."); try { _writer.Write(p, QuestSerializer.Serialize(r, document.IsNew ? ActorIdPolicy.NewResource : ActorIdPolicy.ExistingResource), temp => QuestSerializer.Deserialize(File.ReadAllText(temp))); } catch (QuestException) { throw; } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { throw new QuestRepositoryException($"Could not save Quest '{r.Id}'.", ex); } document.MarkSaved(p); return document; }
     public void DeleteQuest(string id) { Validate(id, false); var p = PathFor(id); if (!File.Exists(p)) throw new QuestNotFoundException(id); File.Delete(p); } public string GetAvailableId(string baseId) { Validate(baseId, true); if (!File.Exists(PathFor(baseId))) return baseId; for (var n = 2; n < int.MaxValue; n++) { var c = $"{baseId}_{n}"; if (!File.Exists(PathFor(c))) return c; } throw new QuestRepositoryException("Could not allocate Quest ID."); }
     private string PathFor(string id) => Path.Combine(QuestsDirectory, id + ".json"); private void Ensure() => Directory.CreateDirectory(QuestsDirectory); private static void Validate(string id, bool newer) { var i = QuestValidator.ValidateId(id, newer ? ActorIdPolicy.NewResource : ActorIdPolicy.ExistingResource); if (i.Any(x => x.Severity == DarkGreyRPG.Studio.Core.Validation.ValidationSeverity.Error)) throw new QuestValidationException(i); }

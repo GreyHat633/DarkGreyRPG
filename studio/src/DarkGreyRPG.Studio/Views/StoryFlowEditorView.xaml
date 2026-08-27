@@ -12,15 +12,19 @@
             <RowDefinition Height="8" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <DockPanel>
+        <DockPanel AutomationProperties.Name="Story 流程页面命令栏" AutomationProperties.AutomationId="StoryFlowCommandBar">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                <TextBlock MaxWidth="220" FontWeight="SemiBold" Text="{Binding DataContext.StoryWorkspace.StoryDisplayName, RelativeSource={RelativeSource AncestorType=Window}}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="/ 流程" />
+            </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <TextBlock Margin="0,0,10,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Summary}" />
                 <Button Margin="0,0,4,0" Padding="8,4" Click="Zoom100_OnClick" Content="100%" AutomationProperties.Name="流程缩放到百分之百" />
                 <Button Margin="0,0,4,0" Padding="8,4" Click="FitAll_OnClick" Content="适应" AutomationProperties.Name="适应全部流程节点" />
                 <Button Margin="0,0,4,0" Padding="8,4" Click="ResetView_OnClick" Content="重置" AutomationProperties.Name="重置流程视图" />
                 <Button Width="34" Margin="4,0,0,0" Click="ZoomOut_OnClick" Content="−" AutomationProperties.Name="流程缩小" />
                 <TextBlock Width="58" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Zoom, StringFormat={}{0:P0}}" />
                 <Button Width="34" Margin="0,0,8,0" Click="ZoomIn_OnClick" Content="+" AutomationProperties.Name="流程放大" />
-                <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SaveStateText}" />
             </StackPanel>
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <StackPanel Orientation="Horizontal">
@@ -54,7 +58,6 @@
         <DockPanel Grid.Row="4">
             <Button DockPanel.Dock="Right" Width="96" Height="32" Command="{Binding DataContext.SaveCurrentResourceCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{DynamicResource AccentButtonStyle}" Content="保存 Flow" AutomationProperties.Name="保存 Story Flow" />
             <StackPanel Orientation="Horizontal">
-                <TextBlock Margin="0,7,14,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Summary}" />
                 <TextBlock Margin="0,7,14,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SaveStateText}" />
                 <Button Margin="0,2,4,0" Padding="6,3" Background="Transparent" BorderThickness="0" Click="Problems_OnClick"
                         Foreground="{DynamicResource SystemFillColorCriticalBrush}" AutomationProperties.Name="打开当前 Flow 错误">

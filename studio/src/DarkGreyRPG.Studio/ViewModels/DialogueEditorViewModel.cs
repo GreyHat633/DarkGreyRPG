@@ -15,6 +15,7 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
     private string _tagsText;
     private string _entry;
     private DialogueNodeEditorItem? _selectedNode;
+    private bool _starterOverlayDismissed;
 
     public DialogueEditorViewModel(DialogueDocument document, IReadOnlyList<string>? availableActorIds = null)
     {
@@ -28,6 +29,9 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
         AddLineCommand = new RelayCommand(AddLine);
         AddChoiceCommand = new RelayCommand(AddChoice);
         AddEndCommand = new RelayCommand(AddEnd);
+        AddFirstLineCommand = new RelayCommand(AddLine);
+        AddPlayerChoiceCommand = new RelayCommand(AddChoice);
+        EditNamedEndCommand = new RelayCommand(SelectNamedEnd);
         DeleteNodeCommand = new RelayCommand(DeleteNode, () => SelectedNode is not null && Nodes.Count > 1);
         MoveNodeUpCommand = new RelayCommand(() => MoveSelectedNode(-1), () => SelectedNode is not null && Nodes.IndexOf(SelectedNode) > 0);
         MoveNodeDownCommand = new RelayCommand(() => MoveSelectedNode(1), () => SelectedNode is not null && Nodes.IndexOf(SelectedNode) is var index && index >= 0 && index < Nodes.Count - 1);
@@ -44,6 +48,9 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
     public RelayCommand AddLineCommand { get; }
     public RelayCommand AddChoiceCommand { get; }
     public RelayCommand AddEndCommand { get; }
+    public RelayCommand AddFirstLineCommand { get; }
+    public RelayCommand AddPlayerChoiceCommand { get; }
+    public RelayCommand EditNamedEndCommand { get; }
     public RelayCommand DeleteNodeCommand { get; }
     public RelayCommand MoveNodeUpCommand { get; }
     public RelayCommand MoveNodeDownCommand { get; }
@@ -85,6 +92,9 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
     }
 
     public bool IsDirty => Document.IsDirty;
+    public bool IsDraft => Document.IsNewDraft;
+    public bool IsStarterEmptyState => IsDraft && !_starterOverlayDismissed && Nodes.All(node => !node.IsLine && !node.IsChoice);
+    public string NamedEndDisplayName => Nodes.FirstOrDefault(node => node.IsEnd)?.Result ?? string.Empty;
     public bool CanSave => IsDirty && Document.ValidationErrors.Count == 0;
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
     public string ValidationText => string.Join(Environment.NewLine, Document.ValidationErrors.Select(issue => issue.Message));
@@ -94,13 +104,17 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
     {
         ApplyEdit(() =>
         {
-            var id = AllocateNodeId("line");
+            var id = IsStarterEmptyState ? "line_1" : AllocateNodeId("line");
             var speaker = AvailableActorIds.FirstOrDefault() ?? string.Empty;
-            var next = Nodes.LastOrDefault()?.Id ?? string.Empty;
+            var end = Nodes.FirstOrDefault(node => node.IsEnd);
+            var next = end?.Id ?? string.Empty;
             var node = CreateNodeEditor(DialogueNodeResource.Line(id, speaker, "新台词", next));
-            Nodes.Insert(Math.Max(0, Nodes.Count - 1), node);
+            var previous = end is null ? null : Nodes.FirstOrDefault(candidate => candidate.IsLine && candidate.Next == end.Id);
+            previous?.SetNextSilently(id);
+            Nodes.Insert(end is null ? Nodes.Count : Nodes.IndexOf(end), node);
             SelectedNode = node;
-            Entry = Nodes.Count == 1 ? id : Entry;
+            if (string.Equals(Entry, end?.Id, StringComparison.Ordinal) || Nodes.Count == 2)
+                _entry = id;
         });
     }
 
@@ -119,8 +133,17 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
             Nodes.Add(choice);
             Nodes.Add(CreateNodeEditor(DialogueNodeResource.End(firstEndId, "choice_one")));
             Nodes.Add(CreateNodeEditor(DialogueNodeResource.End(secondEndId, "choice_two")));
+            if (string.Equals(Entry, "end", StringComparison.Ordinal) && Nodes.Count == 4)
+                _entry = choiceId;
             SelectedNode = choice;
         });
+    }
+
+    private void SelectNamedEnd()
+    {
+        _starterOverlayDismissed = true;
+        OnPropertyChanged(nameof(IsStarterEmptyState));
+        SelectedNode = Nodes.FirstOrDefault(node => node.IsEnd);
     }
 
     private void AddEnd()
@@ -197,6 +220,7 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
         try
         {
             _displayName = snapshot.Resource.DisplayName;
+            _starterOverlayDismissed = false;
             _notes = snapshot.Resource.Metadata.Notes;
             _tagsText = string.Join(", ", snapshot.Resource.Metadata.Tags);
             _entry = snapshot.Resource.Entry;
@@ -288,6 +312,9 @@ public sealed class DialogueEditorViewModel : ObservableObject, IWorkspaceEditor
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(SaveStateText));
+        OnPropertyChanged(nameof(IsDraft));
+        OnPropertyChanged(nameof(IsStarterEmptyState));
+        OnPropertyChanged(nameof(NamedEndDisplayName));
         OnPropertyChanged(nameof(ValidationText));
         OnPropertyChanged(nameof(ValidationIssues));
     }
@@ -337,6 +364,13 @@ public sealed class DialogueNodeEditorItem : ObservableObject
     public string Prompt { get => _prompt; set => SetEdited(_prompt, value ?? string.Empty, next => _prompt = next, nameof(Prompt)); }
     public string Target { get => _target; set => SetEdited(_target, value ?? string.Empty, next => _target = next, nameof(Target)); }
     public string Result { get => _result; set => SetEdited(_result, value ?? string.Empty, next => _result = next, nameof(Result)); }
+
+    internal void SetNextSilently(string value)
+    {
+        if (string.Equals(_next, value, StringComparison.Ordinal)) return;
+        _next = value;
+        OnPropertyChanged(nameof(Next));
+    }
 
     public void RemoveChoice(DialogueChoiceEditorItem choice) => _applyEdit(() => Choices.Remove(choice));
 

@@ -19,6 +19,19 @@
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions><ColumnDefinition Width="220" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <Border Grid.ColumnSpan="3" Panel.ZIndex="5" Padding="24" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4">
+                <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStarterEmptyState}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                    <TextBlock HorizontalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="这个对话目前还没有台词。" />
+                    <TextBlock Margin="0,10,0,18" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="当前命名出口：" />
+                    <TextBlock Margin="0,0,0,18" HorizontalAlignment="Center" FontWeight="SemiBold" Text="{Binding NamedEndDisplayName}" />
+                    <WrapPanel HorizontalAlignment="Center">
+                        <Button Margin="0,0,8,0" Padding="10,6" Command="{Binding AddFirstLineCommand}" Style="{DynamicResource AccentButtonStyle}" Content="添加第一句台词" AutomationProperties.Name="添加第一句台词" />
+                        <Button Margin="0,0,8,0" Padding="10,6" Command="{Binding AddPlayerChoiceCommand}" Content="添加玩家选择" AutomationProperties.Name="添加玩家选择" />
+                        <Button Padding="10,6" Command="{Binding EditNamedEndCommand}" Content="编辑命名出口" AutomationProperties.Name="编辑命名出口" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
             <Grid>
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="8" /><RowDefinition Height="*" /><RowDefinition Height="8" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <WrapPanel>

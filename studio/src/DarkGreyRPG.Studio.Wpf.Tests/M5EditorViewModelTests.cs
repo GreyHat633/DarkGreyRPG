@@ -89,7 +89,7 @@ public sealed class M5EditorViewModelTests
         dialogs.CreateResult = new ResourceIdentityRequest("case", "案件任务");
         OpenStoryRoute(shell, "beta", StoryWorkspaceRoutes.Quests);
         shell.NewStoryResourceCommand.Execute(null);
-        shell.CurrentQuest!.SelectedObjective!.ActorId = "hero";
+        shell.CurrentQuest!.AddFirstKillCommand.Execute(null);
         shell.CurrentQuest.Description = "调查现场。";
         shell.SaveCurrentResourceCommand.Execute(null);
 
@@ -118,9 +118,7 @@ public sealed class M5EditorViewModelTests
 
         var dialogs = new FakeResourceWorkspaceDialogs
         {
-            CreationMode = ResourceCreationMode.ImportAsNew,
-            PickResult = sourceDescriptor,
-            ImportResult = new ResourceIdentityRequest("source_beta", "Beta Source"),
+            CreateResult = new ResourceIdentityRequest("source_beta", "Beta Source"),
             Confirmed = true,
         };
         var shell = CreateShell(directory.Root, dialogs);

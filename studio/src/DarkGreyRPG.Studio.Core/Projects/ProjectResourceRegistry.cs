@@ -8,7 +8,12 @@ namespace DarkGreyRPG.Studio.Core.Projects;
 
 public enum ProjectResourceType { Actor, Dialogue, Quest, Story }
 
-public sealed record ResourceDescriptor(ProjectResourceType Type, string Id, string DisplayName, string Path);
+public sealed record ResourceDescriptor(
+    ProjectResourceType Type,
+    string Id,
+    string DisplayName,
+    string Path,
+    string? HomeStoryDisplayName = null);
 
 /// <summary>Project-level resource index. Story membership is authoritative for references.</summary>
 public sealed class ProjectResourceRegistry

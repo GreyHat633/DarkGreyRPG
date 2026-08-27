@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Dialogues;
 using DarkGreyRPG.Studio.Core.Projects;
+using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.ViewModels;
@@ -47,9 +49,13 @@ public sealed class StoryActorMembershipViewModel : ObservableObject
     public bool IsReferenced => Kind == StoryMembershipKind.Referenced;
     public ActorResourceInfo? Actor { get; }
     public bool IsResolved => Actor is not null;
+    public bool IsMissing => !IsResolved;
     public string DisplayName => Actor?.DisplayName ?? $"缺失角色：{Id}";
     public string SourcePath => Actor?.SourcePath ?? string.Empty;
     public IReadOnlyList<string> Tags => Actor?.Tags ?? [];
+    public string MembershipTooltip => IsMissing
+        ? $"缺失角色：{Id}"
+        : IsReferenced ? $"引用资源\n来源剧情：{HomeStoryDisplayName ?? "未知剧情"}" : $"{DisplayName}\n{Id}";
 }
 
 public sealed class StoryActorsViewModel : ObservableObject
@@ -74,14 +80,13 @@ public sealed class StoryActorsViewModel : ObservableObject
             StoryMembershipKind.Referenced,
             actorById,
             homeStoryNames);
+        SortMemberships();
         RefreshFilter();
     }
 
     public StoryResource Story { get; }
     public ObservableCollection<StoryActorMembershipViewModel> Memberships { get; } = [];
     public ObservableCollection<StoryActorMembershipViewModel> FilteredMemberships { get; } = [];
-    public ObservableCollection<StoryActorMembershipViewModel> FilteredOwnedMemberships { get; } = [];
-    public ObservableCollection<StoryActorMembershipViewModel> FilteredReferencedMemberships { get; } = [];
 
     public string SearchText
     {
@@ -120,8 +125,6 @@ public sealed class StoryActorsViewModel : ObservableObject
     {
         var query = SearchText.Trim();
         FilteredMemberships.Clear();
-        FilteredOwnedMemberships.Clear();
-        FilteredReferencedMemberships.Clear();
         foreach (var membership in Memberships.Where(item =>
                      query.Length == 0 ||
                      item.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -129,30 +132,63 @@ public sealed class StoryActorsViewModel : ObservableObject
                      item.Tags.Any(tag => tag.Contains(query, StringComparison.CurrentCultureIgnoreCase))))
         {
             FilteredMemberships.Add(membership);
-            if (membership.IsOwned) FilteredOwnedMemberships.Add(membership);
-            else FilteredReferencedMemberships.Add(membership);
         }
+
+        if (_selectedMembership is not null && !FilteredMemberships.Contains(_selectedMembership))
+            SelectedMembership = null;
+    }
+
+    private void SortMemberships()
+    {
+        var sorted = Memberships
+            .OrderBy(item => item.IsReferenced ? 1 : 0)
+            .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Id, StringComparer.Ordinal)
+            .ToArray();
+        Memberships.Clear();
+        foreach (var item in sorted) Memberships.Add(item);
     }
 }
 
 public sealed class StoryResourceMembershipViewModel
 {
-    public StoryResourceMembershipViewModel(string id, StoryMembershipKind kind, ResourceDescriptor? descriptor)
+    public StoryResourceMembershipViewModel(
+        string id,
+        StoryMembershipKind kind,
+        ResourceDescriptor? descriptor,
+        string? homeStoryDisplayName = null,
+        bool isDraft = false,
+        string? draftDisplayName = null,
+        ProjectResourceType resourceType = ProjectResourceType.Dialogue)
     {
         Id = id;
         Kind = kind;
         Descriptor = descriptor;
+        HomeStoryDisplayName = homeStoryDisplayName;
+        IsDraft = isDraft;
+        DraftDisplayName = draftDisplayName;
+        ResourceType = resourceType;
     }
 
     public string Id { get; }
     public StoryMembershipKind Kind { get; }
-    public string MembershipKind => Kind == StoryMembershipKind.Owned ? "本剧情" : "引用";
-    public bool IsOwned => Kind == StoryMembershipKind.Owned;
+    public string MembershipKind => IsDraft ? "草稿" : Kind == StoryMembershipKind.Owned ? "本剧情" : "引用";
+    public bool IsOwned => !IsDraft && Kind == StoryMembershipKind.Owned;
     public bool IsReferenced => Kind == StoryMembershipKind.Referenced;
+    public bool IsDraft { get; }
+    public string? DraftDisplayName { get; }
+    public ProjectResourceType ResourceType { get; }
     public ResourceDescriptor? Descriptor { get; }
-    public bool IsResolved => Descriptor is not null;
-    public string DisplayName => Descriptor?.DisplayName ?? $"缺失资源：{Id}";
+    public string? HomeStoryDisplayName { get; }
+    public bool IsResolved => Descriptor is not null || IsDraft;
+    public bool IsMissing => !IsResolved;
+    public string DisplayName => IsDraft ? DraftDisplayName ?? Id : Descriptor?.DisplayName ?? $"缺失资源：{Id}";
     public string SourcePath => Descriptor?.Path ?? string.Empty;
+    public string DraftBadge => IsDraft ? "未保存" : string.Empty;
+    public string MembershipTooltip => IsMissing
+        ? $"缺失资源：{Id}"
+        : IsDraft ? $"{(ResourceType == ProjectResourceType.Quest ? "任务" : "对话")}草稿\n{DisplayName}\n尚未保存到正式资源库"
+        : IsReferenced ? $"引用资源\n来源剧情：{HomeStoryDisplayName ?? "未知剧情"}" : $"{DisplayName}\n{Id}";
 }
 
 public abstract class StoryResourceMembershipListViewModel : ObservableObject
@@ -163,7 +199,10 @@ public abstract class StoryResourceMembershipListViewModel : ObservableObject
     protected StoryResourceMembershipListViewModel(
         StoryResource story,
         ProjectResourceType resourceType,
-        IReadOnlyList<ResourceDescriptor> descriptors)
+        IReadOnlyList<ResourceDescriptor> descriptors,
+        IReadOnlyDictionary<string, string>? homeStoryNames = null,
+        IReadOnlyList<DialogueDocument>? dialogueDrafts = null,
+        IReadOnlyList<QuestDocument>? questDrafts = null)
     {
         Story = story;
         var descriptorById = descriptors
@@ -176,8 +215,27 @@ public abstract class StoryResourceMembershipListViewModel : ObservableObject
             ? story.ReferencedResources.Dialogues
             : story.ReferencedResources.Quests;
 
-        Add(owned, StoryMembershipKind.Owned, descriptorById);
-        Add(referenced.Where(id => !owned.Contains(id, StringComparer.Ordinal)), StoryMembershipKind.Referenced, descriptorById);
+        homeStoryNames ??= new Dictionary<string, string>(StringComparer.Ordinal);
+        Add(owned, StoryMembershipKind.Owned, descriptorById, homeStoryNames, resourceType);
+        Add(referenced.Where(id => !owned.Contains(id, StringComparer.Ordinal)), StoryMembershipKind.Referenced, descriptorById, homeStoryNames, resourceType);
+        if (resourceType == ProjectResourceType.Dialogue)
+        {
+            foreach (var draft in dialogueDrafts ?? [])
+            {
+                if (draft.IsNewDraft && !Items.Any(item => item.Id == draft.Id))
+                    Items.Add(new StoryResourceMembershipViewModel(draft.Id, StoryMembershipKind.Owned, null, null, true, draft.DisplayName));
+            }
+        }
+        else
+        {
+            foreach (var draft in questDrafts ?? [])
+            {
+                if (draft.IsNewDraft && !Items.Any(item => item.Id == draft.Id))
+                    Items.Add(new StoryResourceMembershipViewModel(draft.Id, StoryMembershipKind.Owned, null, null, true, draft.DisplayName, resourceType));
+            }
+        }
+        SortItems();
+        RefreshFilter();
     }
 
     public StoryResource Story { get; }
@@ -186,6 +244,28 @@ public abstract class StoryResourceMembershipListViewModel : ObservableObject
     public int OwnedCount => Items.Count(item => item.IsOwned);
     public int ReferencedCount => Items.Count(item => item.IsReferenced);
     public bool HasMissingResources => Items.Any(item => !item.IsResolved);
+
+    public void RemoveDraft(string id)
+    {
+        foreach (var item in Items.Where(item => item.IsDraft && item.Id == id).ToArray())
+        {
+            Items.Remove(item);
+            FilteredItems.Remove(item);
+            if (ReferenceEquals(SelectedItem, item)) SelectedItem = null;
+        }
+        OnPropertyChanged(nameof(OwnedCount));
+    }
+
+    public StoryResourceMembershipViewModel? PromoteDraft(string id, ResourceDescriptor descriptor)
+    {
+        var index = Items.IndexOf(Items.FirstOrDefault(item => item.IsDraft && item.Id == id)!);
+        if (index < 0) return null;
+        var promoted = new StoryResourceMembershipViewModel(id, StoryMembershipKind.Owned, descriptor);
+        Items[index] = promoted;
+        RefreshFilter();
+        OnPropertyChanged(nameof(OwnedCount));
+        return promoted;
+    }
 
     public string SearchText
     {
@@ -205,15 +285,27 @@ public abstract class StoryResourceMembershipListViewModel : ObservableObject
     private void Add(
         IEnumerable<string> ids,
         StoryMembershipKind kind,
-        IReadOnlyDictionary<string, ResourceDescriptor> descriptorById)
+        IReadOnlyDictionary<string, ResourceDescriptor> descriptorById,
+        IReadOnlyDictionary<string, string> homeStoryNames,
+        ProjectResourceType resourceType)
     {
         foreach (var id in ids.Distinct(StringComparer.Ordinal))
         {
             descriptorById.TryGetValue(id, out var descriptor);
-            Items.Add(new StoryResourceMembershipViewModel(id, kind, descriptor));
+            homeStoryNames.TryGetValue(id, out var homeStoryName);
+            Items.Add(new StoryResourceMembershipViewModel(id, kind, descriptor, homeStoryName, resourceType: resourceType));
         }
+    }
 
-        RefreshFilter();
+    private void SortItems()
+    {
+        var sorted = Items
+            .OrderBy(item => item.IsDraft ? 0 : item.IsReferenced ? 2 : 1)
+            .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Id, StringComparer.Ordinal)
+            .ToArray();
+        Items.Clear();
+        foreach (var item in sorted) Items.Add(item);
     }
 
     private void RefreshFilter()
@@ -227,19 +319,22 @@ public abstract class StoryResourceMembershipListViewModel : ObservableObject
         {
             FilteredItems.Add(item);
         }
+
+        if (_selectedItem is not null && !FilteredItems.Contains(_selectedItem))
+            SelectedItem = null;
     }
 }
 
 public sealed class StoryDialoguesViewModel : StoryResourceMembershipListViewModel
 {
-    public StoryDialoguesViewModel(StoryResource story, IReadOnlyList<ResourceDescriptor> descriptors)
-        : base(story, ProjectResourceType.Dialogue, descriptors) { }
+    public StoryDialoguesViewModel(StoryResource story, IReadOnlyList<ResourceDescriptor> descriptors, IReadOnlyDictionary<string, string>? homeStoryNames = null, IReadOnlyList<DialogueDocument>? dialogueDrafts = null)
+        : base(story, ProjectResourceType.Dialogue, descriptors, homeStoryNames, dialogueDrafts) { }
 }
 
 public sealed class StoryQuestsViewModel : StoryResourceMembershipListViewModel
 {
-    public StoryQuestsViewModel(StoryResource story, IReadOnlyList<ResourceDescriptor> descriptors)
-        : base(story, ProjectResourceType.Quest, descriptors) { }
+    public StoryQuestsViewModel(StoryResource story, IReadOnlyList<ResourceDescriptor> descriptors, IReadOnlyDictionary<string, string>? homeStoryNames = null, IReadOnlyList<QuestDocument>? questDrafts = null)
+        : base(story, ProjectResourceType.Quest, descriptors, homeStoryNames, questDrafts: questDrafts) { }
 }
 
 public sealed record StoryFlowNodeViewModel(string Id, string Type, string Label, double X, double Y);
@@ -347,15 +442,19 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
         StoryResource story,
         IReadOnlyList<ActorResourceInfo> actors,
         IReadOnlyList<ResourceDescriptor>? descriptors = null,
-        IReadOnlyDictionary<string, string>? actorHomeStoryNames = null)
+        IReadOnlyDictionary<string, string>? actorHomeStoryNames = null,
+        IReadOnlyDictionary<string, string>? dialogueHomeStoryNames = null,
+        IReadOnlyDictionary<string, string>? questHomeStoryNames = null,
+        IReadOnlyList<DialogueDocument>? dialogueDrafts = null,
+        IReadOnlyList<QuestDocument>? questDrafts = null)
     {
         ArgumentNullException.ThrowIfNull(story);
         ArgumentNullException.ThrowIfNull(actors);
         descriptors ??= [];
         Story = story;
         Actors = new StoryActorsViewModel(story, actors, actorHomeStoryNames);
-        Dialogues = new StoryDialoguesViewModel(story, descriptors);
-        Quests = new StoryQuestsViewModel(story, descriptors);
+        Dialogues = new StoryDialoguesViewModel(story, descriptors, dialogueHomeStoryNames, dialogueDrafts);
+        Quests = new StoryQuestsViewModel(story, descriptors, questHomeStoryNames, questDrafts);
         Flow = new StoryFlowViewModel(story);
         OnPropertyChanged(nameof(StoryId));
         OnPropertyChanged(nameof(StoryDisplayName));

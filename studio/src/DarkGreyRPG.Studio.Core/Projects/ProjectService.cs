@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Stories;
@@ -404,10 +405,87 @@ public sealed class ProjectService
     public DialogueDocument CreateDialogue(string id, string displayName) => RegisterOpenDialogue(RequireCurrentProject().Dialogues.CreateDialogue(id, displayName));
     public DialogueDocument CreateDialogueInStory(string storyId, string id, string displayName)
     { var current = RequireCurrentProject(); _ = current.Stories.LoadStory(storyId); var doc = current.Dialogues.CreateDialogue(id, displayName); doc.HomeStoryId = storyId; current.Dialogues.SaveDialogue(doc); current.Registry.AddReference(storyId, ProjectResourceType.Dialogue, id, owned: true); return RegisterOpenDialogue(doc); }
+    /// <summary>Creates an in-memory Dialogue draft. No resource or Story file is written until SaveDialogue.</summary>
+    public DialogueDocument CreateDialogueDraftInStory(string storyId, string id, string displayName)
+    {
+        var current = RequireCurrentProject();
+        _ = current.Stories.LoadStory(storyId);
+        EnsureDraftIdAvailable(current, ProjectResourceType.Dialogue, id, _openDialogueDocuments.ContainsKey(id));
+        var document = current.Dialogues.CreateDialogue(id, displayName);
+        document.HomeStoryId = storyId;
+        document.SetDraftOwnerStoryId(storyId);
+        return RegisterOpenDialogue(document);
+    }
+    /// <summary>
+    /// Creates an independent, unsaved Dialogue draft by copying an existing resource.
+    /// The source must already be persisted; only the first SaveDialogue writes the copy
+    /// and its Owned Story membership.
+    /// </summary>
+    public DialogueDocument CreateDialogueDraftFromExistingInStory(
+        string storyId,
+        string sourceId,
+        string newId,
+        string newDisplayName)
+    {
+        var current = RequireCurrentProject();
+        _ = current.Stories.LoadStory(storyId);
+        EnsureDraftIdAvailable(current, ProjectResourceType.Dialogue, newId, _openDialogueDocuments.ContainsKey(newId));
+
+        // Registry existence rejects drafts/other resource types without creating any state.
+        if (!current.Registry.Exists(ProjectResourceType.Dialogue, sourceId))
+            throw new ProjectException($"Dialogue '{sourceId}' does not exist.");
+
+        // Prefer the open saved document so a user's current in-memory source is cloned,
+        // while the registry check above guarantees it is a persisted resource.
+        var source = _openDialogueDocuments.TryGetValue(sourceId, out var openSource) && !openSource.IsNewDraft
+            ? openSource
+            : current.Dialogues.LoadDialogue(sourceId);
+        var sourceResource = source.ToResource();
+        var document = current.Dialogues.CreateDialogue(newId, newDisplayName);
+        document.Title = newDisplayName;
+        document.DisplayName = newDisplayName;
+        document.HomeStoryId = storyId;
+        document.SetSpeakers(sourceResource.Speakers);
+        document.Entry = sourceResource.Entry;
+        document.ReplaceNodes(sourceResource.Nodes);
+        document.SetMetadata(sourceResource.Metadata);
+        document.SourceTemplateId = sourceId;
+        document.SetDraftOwnerStoryId(storyId);
+        return RegisterOpenDialogue(document);
+    }
+    public bool DiscardDialogueDraft(string id)
+    {
+        if (!_openDialogueDocuments.TryGetValue(id, out var document) || !document.IsNewDraft) return false;
+        _openDialogueDocuments.Remove(id);
+        return true;
+    }
+    public bool DiscardDialogueDraft(DialogueDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return _openDialogueDocuments.TryGetValue(document.Id, out var open) && ReferenceEquals(open, document)
+            && DiscardDialogueDraft(document.Id);
+    }
     public DialogueDocument ImportDialogueAsNew(string sourceId, string newId, string storyId)
     { var current = RequireCurrentProject(); var imported = current.Registry.ImportAsNew(ProjectResourceType.Dialogue, sourceId, newId, storyId); return RegisterOpenDialogue(current.Dialogues.LoadDialogue(((DialogueResource)imported).Id)); }
     public DialogueDocument SaveDialogue(DialogueDocument document)
-    { ArgumentNullException.ThrowIfNull(document); if (!_openDialogueDocuments.Values.Contains(document)) throw new ProjectException("The Dialogue document is not open in the current project."); var current = RequireCurrentProject(); _ = current.Stories.LoadStory(document.HomeStoryId); var old = document.IsNew ? null : current.Dialogues.LoadDialogue(document.Id).HomeStoryId; var saved = current.Dialogues.SaveDialogue(document); if (!string.IsNullOrWhiteSpace(old) && old != saved.HomeStoryId) current.Registry.RemoveOwnership(old, ProjectResourceType.Dialogue, saved.Id); current.Registry.AddReference(saved.HomeStoryId, ProjectResourceType.Dialogue, saved.Id, owned: true); return RegisterOpenDialogue(saved); }
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        if (!_openDialogueDocuments.Values.Contains(document)) throw new ProjectException("The Dialogue document is not open in the current project.");
+        var current = RequireCurrentProject();
+        if (document.IsNewDraft)
+        {
+            var ownerStoryId = RequireDraftOwner(document.DraftOwnerStoryId, ProjectResourceType.Dialogue, document.Id);
+            _ = current.Stories.LoadStory(ownerStoryId);
+            if (!string.Equals(document.HomeStoryId, ownerStoryId, StringComparison.Ordinal)) document.HomeStoryId = ownerStoryId;
+            return SaveNewDialogueDraft(current, document);
+        }
+        _ = current.Stories.LoadStory(document.HomeStoryId);
+        var old = current.Dialogues.LoadDialogue(document.Id).HomeStoryId;
+        var saved = current.Dialogues.SaveDialogue(document);
+        if (!string.IsNullOrWhiteSpace(old) && old != saved.HomeStoryId) current.Registry.RemoveOwnership(old, ProjectResourceType.Dialogue, saved.Id);
+        current.Registry.AddReference(saved.HomeStoryId, ProjectResourceType.Dialogue, saved.Id, owned: true);
+        return RegisterOpenDialogue(saved);
+    }
     public void AddDialogueReference(string storyId, string dialogueId) => RequireCurrentProject().Registry.AddReference(storyId, ProjectResourceType.Dialogue, dialogueId);
     public void RemoveDialogueReference(string storyId, string dialogueId) => RequireCurrentProject().Registry.RemoveReference(storyId, ProjectResourceType.Dialogue, dialogueId);
     public IReadOnlyList<ResourceDescriptor> GetDialogueReferences(string id) => RequireCurrentProject().Registry.GetReferences(ProjectResourceType.Dialogue, id);
@@ -419,10 +497,90 @@ public sealed class ProjectService
     public QuestDocument CreateQuest(string id, string displayName) => RegisterOpenQuest(RequireCurrentProject().Quests.CreateQuest(id, displayName));
     public QuestDocument CreateQuestInStory(string storyId, string id, string displayName)
     { var current = RequireCurrentProject(); _ = current.Stories.LoadStory(storyId); var doc = current.Quests.CreateQuest(id, displayName); doc.HomeStoryId = storyId; current.Quests.SaveQuest(doc); current.Registry.AddReference(storyId, ProjectResourceType.Quest, id, owned: true); return RegisterOpenQuest(doc); }
+    /// <summary>Creates an in-memory Quest draft. No resource or Story file is written until SaveQuest.</summary>
+    public QuestDocument CreateQuestDraftInStory(string storyId, string id, string displayName)
+    {
+        var current = RequireCurrentProject();
+        _ = current.Stories.LoadStory(storyId);
+        EnsureDraftIdAvailable(current, ProjectResourceType.Quest, id, _openQuestDocuments.ContainsKey(id));
+        var document = current.Quests.CreateQuest(id, displayName);
+        document.Description = string.Empty;
+        document.ReplaceObjectives([]);
+        document.ReplaceGroups([]);
+        document.HomeStoryId = storyId;
+        document.SetDraftOwnerStoryId(storyId);
+        return RegisterOpenQuest(document);
+    }
+    /// <summary>
+    /// Creates an independent, unsaved Quest draft by copying an existing resource.
+    /// The source must already be persisted; only the first SaveQuest writes the copy
+    /// and its Owned Story membership.
+    /// </summary>
+    public QuestDocument CreateQuestDraftFromExistingInStory(
+        string storyId,
+        string sourceId,
+        string newId,
+        string newDisplayName)
+    {
+        var current = RequireCurrentProject();
+        _ = current.Stories.LoadStory(storyId);
+        EnsureDraftIdAvailable(current, ProjectResourceType.Quest, newId, _openQuestDocuments.ContainsKey(newId));
+
+        // Registry existence rejects drafts/other resource types without creating any state.
+        if (!current.Registry.Exists(ProjectResourceType.Quest, sourceId))
+            throw new ProjectException($"Quest '{sourceId}' does not exist.");
+
+        // Prefer the open saved document so a user's current in-memory source is cloned,
+        // while the registry check above guarantees it is a persisted resource.
+        var source = _openQuestDocuments.TryGetValue(sourceId, out var openSource) && !openSource.IsNewDraft
+            ? openSource
+            : current.Quests.LoadQuest(sourceId);
+        var sourceResource = source.ToResource();
+        var document = current.Quests.CreateQuest(newId, newDisplayName);
+        document.Title = newDisplayName;
+        document.DisplayName = newDisplayName;
+        document.Description = sourceResource.Description;
+        document.HomeStoryId = storyId;
+        document.ReplaceObjectives(sourceResource.Objectives);
+        document.ReplaceGroups(sourceResource.ObjectiveGroups);
+        document.Metadata = sourceResource.Metadata;
+        document.SourceTemplateId = sourceId;
+        document.SetDraftOwnerStoryId(storyId);
+        return RegisterOpenQuest(document);
+    }
+    public bool DiscardQuestDraft(string id)
+    {
+        if (!_openQuestDocuments.TryGetValue(id, out var document) || !document.IsNewDraft) return false;
+        _openQuestDocuments.Remove(id);
+        return true;
+    }
+    public bool DiscardQuestDraft(QuestDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return _openQuestDocuments.TryGetValue(document.Id, out var open) && ReferenceEquals(open, document)
+            && DiscardQuestDraft(document.Id);
+    }
     public QuestDocument ImportQuestAsNew(string sourceId, string newId, string storyId)
     { var c = RequireCurrentProject(); var imported = c.Registry.ImportAsNew(ProjectResourceType.Quest, sourceId, newId, storyId); return RegisterOpenQuest(c.Quests.LoadQuest(((QuestResource)imported).Id)); }
     public QuestDocument SaveQuest(QuestDocument document)
-    { ArgumentNullException.ThrowIfNull(document); if (!_openQuestDocuments.Values.Contains(document)) throw new ProjectException("The Quest document is not open in the current project."); var c = RequireCurrentProject(); _ = c.Stories.LoadStory(document.HomeStoryId); var old = document.IsNew ? null : c.Quests.LoadQuest(document.Id).HomeStoryId; var saved = c.Quests.SaveQuest(document); if (!string.IsNullOrWhiteSpace(old) && old != saved.HomeStoryId) c.Registry.RemoveOwnership(old, ProjectResourceType.Quest, saved.Id); c.Registry.AddReference(saved.HomeStoryId, ProjectResourceType.Quest, saved.Id, owned: true); return RegisterOpenQuest(saved); }
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        if (!_openQuestDocuments.Values.Contains(document)) throw new ProjectException("The Quest document is not open in the current project.");
+        var c = RequireCurrentProject();
+        if (document.IsNewDraft)
+        {
+            var ownerStoryId = RequireDraftOwner(document.DraftOwnerStoryId, ProjectResourceType.Quest, document.Id);
+            _ = c.Stories.LoadStory(ownerStoryId);
+            if (!string.Equals(document.HomeStoryId, ownerStoryId, StringComparison.Ordinal)) document.HomeStoryId = ownerStoryId;
+            return SaveNewQuestDraft(c, document);
+        }
+        _ = c.Stories.LoadStory(document.HomeStoryId);
+        var old = c.Quests.LoadQuest(document.Id).HomeStoryId;
+        var saved = c.Quests.SaveQuest(document);
+        if (!string.IsNullOrWhiteSpace(old) && old != saved.HomeStoryId) c.Registry.RemoveOwnership(old, ProjectResourceType.Quest, saved.Id);
+        c.Registry.AddReference(saved.HomeStoryId, ProjectResourceType.Quest, saved.Id, owned: true);
+        return RegisterOpenQuest(saved);
+    }
     public void AddQuestReference(string storyId, string questId) => RequireCurrentProject().Registry.AddReference(storyId, ProjectResourceType.Quest, questId);
     public void RemoveQuestReference(string storyId, string questId) => RequireCurrentProject().Registry.RemoveReference(storyId, ProjectResourceType.Quest, questId);
     public IReadOnlyList<ResourceDescriptor> GetQuestReferences(string id) => RequireCurrentProject().Registry.GetReferences(ProjectResourceType.Quest, id);
@@ -446,6 +604,117 @@ public sealed class ProjectService
 
     private DialogueDocument RegisterOpenDialogue(DialogueDocument document) { if (_openDialogueDocuments.TryGetValue(document.Id, out var existing) && !ReferenceEquals(existing, document)) throw new ProjectException($"Dialogue '{document.Id}' already has an open document."); _openDialogueDocuments[document.Id] = document; return document; }
     private QuestDocument RegisterOpenQuest(QuestDocument document) { if (_openQuestDocuments.TryGetValue(document.Id, out var existing) && !ReferenceEquals(existing, document)) throw new ProjectException($"Quest '{document.Id}' already has an open document."); _openQuestDocuments[document.Id] = document; return document; }
+    private DialogueDocument SaveNewDialogueDraft(ProjectSession current, DialogueDocument document)
+    {
+        var resourcePath = Path.Combine(current.Dialogues.DialoguesDirectory, document.Id + ".json");
+        var storyPath = Path.Combine(current.Stories.StoriesDirectory, document.HomeStoryId + ".json");
+        var resourceExisted = File.Exists(resourcePath);
+        var originalStory = File.ReadAllBytes(storyPath);
+        try
+        {
+            current.Dialogues.SaveDialogue(document);
+        }
+        catch
+        {
+            document.MarkDraft();
+            throw;
+        }
+
+        try
+        {
+            current.Registry.AddReference(document.HomeStoryId, ProjectResourceType.Dialogue, document.Id, owned: true);
+            return RegisterOpenDialogue(document);
+        }
+        catch (Exception originalException)
+        {
+            try { RestoreStoryBytes(storyPath, originalStory); }
+            catch (Exception rollbackException)
+            {
+                document.MarkDraft();
+                throw new ProjectException(
+                    $"Could not roll back Dialogue draft '{document.Id}' after Story membership failure.",
+                    new AggregateException(originalException, rollbackException));
+            }
+            Exception? deleteException = !resourceExisted ? TryDeleteNewResource(resourcePath) : null;
+            document.MarkDraft();
+            if (deleteException is not null)
+            {
+                throw new ProjectException(
+                    $"Could not remove Dialogue draft resource '{document.Id}' during rollback.",
+                    new AggregateException(originalException, deleteException));
+            }
+            throw;
+        }
+    }
+
+    private QuestDocument SaveNewQuestDraft(ProjectSession current, QuestDocument document)
+    {
+        var resourcePath = Path.Combine(current.Quests.QuestsDirectory, document.Id + ".json");
+        var storyPath = Path.Combine(current.Stories.StoriesDirectory, document.HomeStoryId + ".json");
+        var resourceExisted = File.Exists(resourcePath);
+        var originalStory = File.ReadAllBytes(storyPath);
+        try
+        {
+            current.Quests.SaveQuest(document);
+        }
+        catch
+        {
+            document.MarkDraft();
+            throw;
+        }
+
+        try
+        {
+            current.Registry.AddReference(document.HomeStoryId, ProjectResourceType.Quest, document.Id, owned: true);
+            return RegisterOpenQuest(document);
+        }
+        catch (Exception originalException)
+        {
+            try { RestoreStoryBytes(storyPath, originalStory); }
+            catch (Exception rollbackException)
+            {
+                document.MarkDraft();
+                throw new ProjectException(
+                    $"Could not roll back Quest draft '{document.Id}' after Story membership failure.",
+                    new AggregateException(originalException, rollbackException));
+            }
+            Exception? deleteException = !resourceExisted ? TryDeleteNewResource(resourcePath) : null;
+            document.MarkDraft();
+            if (deleteException is not null)
+            {
+                throw new ProjectException(
+                    $"Could not remove Quest draft resource '{document.Id}' during rollback.",
+                    new AggregateException(originalException, deleteException));
+            }
+            throw;
+        }
+    }
+
+    private static void RestoreStoryBytes(string path, byte[] bytes)
+    {
+        // Use an independent writer so an injected project writer that failed the membership stage
+        // cannot prevent rollback. UTF-8 decoding preserves the original JSON bytes for repository files.
+        new AtomicFileWriter().Write(path, Encoding.UTF8.GetString(bytes), temp => StorySerializer.Deserialize(File.ReadAllText(temp)));
+    }
+
+    private static Exception? TryDeleteNewResource(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); return null; }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { return exception; }
+    }
+
+    private static void EnsureDraftIdAvailable(ProjectSession current, ProjectResourceType type, string id, bool openCollision)
+    {
+        if (openCollision || current.Registry.Exists(type, id))
+            throw new ProjectException($"{type} '{id}' already exists.");
+    }
+
+    private static string RequireDraftOwner(string? ownerStoryId, ProjectResourceType type, string resourceId)
+    {
+        if (string.IsNullOrWhiteSpace(ownerStoryId))
+            throw new ProjectException($"{type} draft '{resourceId}' has no DraftOwnerStoryId.");
+        return ownerStoryId;
+    }
     private static void EnsureClean<T>(T? document, string id, string operation) where T : class { var dirty = document switch { DialogueDocument d => d.IsDirty, QuestDocument q => q.IsDirty, _ => false }; if (dirty) throw new ProjectException($"Cannot {operation} resource '{id}' because its open document has unsaved changes. Save it first."); }
 
     private ActorDocument RegisterOpenDocument(ActorDocument document)
@@ -590,6 +859,8 @@ public sealed class ProjectService
     private ProjectSession SetCurrent(string root, ProjectResource resource)
     {
         _openActorDocuments.Clear();
+        _openDialogueDocuments.Clear();
+        _openQuestDocuments.Clear();
         var registry = new ProjectResourceRegistry(root, _atomicFileWriter);
         CurrentProject = new ProjectSession(
             root,

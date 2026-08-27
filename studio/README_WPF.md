@@ -1,13 +1,21 @@
-# DarkGrey RPG Studio 2.1.2 (WPF)
+# DarkGrey RPG Studio 2.1.3 (WPF)
 
 The current Studio is a Windows WPF application targeting .NET 10. It uses the repository's Studio Core project and has no third-party UI, MVVM, serialization, logging, or packaging dependencies.
 
-Studio 2.1.2 uses Story-first navigation, dedicated Actor/Dialogue/Quest editors,
+Studio 2.1.3 uses Story-first navigation, dedicated Actor/Dialogue/Quest editors,
 a free-form Story Flow node canvas, and a logic-read-only Project Story Graph.
 See `docs/2.1_ARCHITECTURE.md` and `docs/TESTING.md` for product boundaries and
 the accepted verification matrix.
 
-Canvas controls follow the 2.1.2 convention: left drag moves nodes, middle drag
+Actor, Dialogue, and Quest use one compact Story resource library for Owned and
+Referenced memberships. Create and Duplicate open an in-memory Draft and do
+not write JSON or membership until the first valid Save; Reference keeps the
+same project resource and its Home Story. Dialogue starts with End/`complete`,
+while Quest starts with no objectives or fake actor. See
+`docs/2.1.3_RESOURCE_CREATION_MODEL.md` and
+`docs/2.1.3_STORY_RESOURCE_LIBRARY.md` for the lifecycle and visual contracts.
+
+Canvas controls follow the 2.1.2 convention retained in 2.1.3: left drag moves nodes, middle drag
 pans, the wheel zooms around the cursor, and right click opens context actions.
 Project Story Graph remains logic-read-only; only Story Flow edits Runtime logic.
 

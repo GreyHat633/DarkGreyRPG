@@ -26,7 +26,7 @@ through Phase 5 of the master plan plus the Windows WPF Studio 2.1 workflow:
   variables, conditions, and Why Not Triggered explanations;
 - Minecraft Pick/Locate, automatic save-triggered reload, reversible Play
   Test sessions, autosave/backups, and Content Pack builds.
-- a self-contained WPF Studio 2.1 with Story-first navigation, formal
+- a self-contained WPF Studio 2.1.3 with Story-first navigation, formal
   Create/Import/Reference semantics, dedicated Dialogue and Quest editors,
   a freely draggable/connected Story Flow canvas, and a derived read-only
   Project Story Graph;
@@ -58,14 +58,18 @@ $env:GRADLE_USER_HOME='E:\Java\gradle-home-darkgrey'
 
 The mod jar is written to `build/libs/darkgrey_rpg-0.5.0.jar`.
 
-## WPF Studio 2.1
+## WPF Studio 2.1.3
 
 Run `Studio/package-studio.ps1` to publish the self-contained Windows x64
 single-file application to `dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe`.
 Open or create a Project from the File menu, enter a Story, author its Actor,
 Dialogue, Quest, and Flow pages, then use the Project Story Graph for derived
-cross-Story navigation. `docs/2.1_RESOURCE_MODEL.md` defines reference versus
-import semantics; `docs/TESTING.md` contains the final acceptance commands.
+cross-Story navigation. Create and Duplicate use unsaved Drafts until the
+first explicit Save; Reference keeps the shared project resource and its Home
+Story. `docs/2.1.3_RESOURCE_CREATION_MODEL.md` and
+`docs/2.1.3_STORY_RESOURCE_LIBRARY.md` define these contracts;
+`docs/TESTING.md` contains the separate Core, WPF, Release UI, Runtime, and
+manual acceptance boundaries.
 
 ## First run
 

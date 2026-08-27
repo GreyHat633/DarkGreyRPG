@@ -97,6 +97,66 @@ public sealed class SettingsServiceTests
     }
 
     [TestMethod]
+    public void SaveAndLoad_RoundTripsStoryResourceLibraryWidthSeparately()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            var service = new SettingsService(settingsPath);
+            service.Save(new StudioSettings { ResourceBrowserWidth = 320, StoryResourceLibraryWidth = 360 });
+
+            var loaded = service.Load();
+
+            Assert.AreEqual(320, loaded.ResourceBrowserWidth);
+            Assert.AreEqual(360, loaded.StoryResourceLibraryWidth);
+        }
+        finally
+        {
+            DeleteTempDirectory(settingsPath);
+        }
+    }
+
+    [TestMethod]
+    public void Load_WithoutStoryResourceLibraryWidthUsesDefault()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            File.WriteAllText(settingsPath, "{ \"schema_version\": 1, \"theme\": \"System\", \"resource_browser_width\": 340 }");
+
+            var loaded = new SettingsService(settingsPath).Load();
+
+            Assert.AreEqual(340, loaded.ResourceBrowserWidth);
+            Assert.AreEqual(StudioSettings.DefaultStoryResourceLibraryWidth, loaded.StoryResourceLibraryWidth);
+        }
+        finally
+        {
+            DeleteTempDirectory(settingsPath);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(100)]
+    [DataRow(500)]
+    [DataRow(double.NaN)]
+    public void Load_ClampsUnsafeStoryResourceLibraryWidthToDefault(double width)
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            File.WriteAllText(settingsPath, $"{{ \"schema_version\": 1, \"theme\": \"System\", \"story_resource_library_width\": {width.ToString(System.Globalization.CultureInfo.InvariantCulture)} }}");
+
+            var loaded = new SettingsService(settingsPath).Load();
+
+            Assert.AreEqual(StudioSettings.DefaultStoryResourceLibraryWidth, loaded.StoryResourceLibraryWidth);
+        }
+        finally
+        {
+            DeleteTempDirectory(settingsPath);
+        }
+    }
+
+    [TestMethod]
     public void SaveAndLoad_RoundTripsRecentProjects()
     {
         var settingsPath = CreateTempSettingsPath();

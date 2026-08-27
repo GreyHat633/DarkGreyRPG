@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Markup;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Dialogues;
 using DarkGreyRPG.Studio.Core.Projects;
@@ -20,6 +21,7 @@ public sealed class ShellViewModel : ObservableObject
     private readonly IResourceWorkspaceDialogs _resourceWorkspaceDialogs;
     private readonly IProjectWorkspaceDialogs _projectWorkspaceDialogs;
     private readonly IFlowWorkspaceDialogs _flowWorkspaceDialogs;
+    private readonly ICrashLogService _crashLogService;
     private readonly HashSet<string> _ignoredFlowRecoveries = new(StringComparer.Ordinal);
     private StoryFlowRecoveryStore? _flowRecoveryStore;
     private ActorResourceInfo? _selectedActor;
@@ -32,11 +34,14 @@ public sealed class ShellViewModel : ObservableObject
     private QuestEditorViewModel? _currentQuest;
     private StoryFlowEditorViewModel? _currentFlow;
     private StoryResourceMembershipViewModel? _selectedStoryResource;
+    private readonly Dictionary<string, DialogueDocument> _dialogueDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, QuestDocument> _questDrafts = new(StringComparer.Ordinal);
     private string _searchText = string.Empty;
     private bool _isResourceBrowserVisible = true;
     private string _projectDisplayName = "未打开项目";
     private string _projectDirectory = "请选择包含 project.json 与 actors 目录的项目文件夹。";
     private string _statusMessage = "就绪";
+    private string _lastUiCommand = "(none)";
 
     public ShellViewModel(
         ProjectService projectService,
@@ -44,7 +49,8 @@ public sealed class ShellViewModel : ObservableObject
         IActorWorkspaceDialogs? actorWorkspaceDialogs = null,
         IProjectWorkspaceDialogs? projectWorkspaceDialogs = null,
         IResourceWorkspaceDialogs? resourceWorkspaceDialogs = null,
-        IFlowWorkspaceDialogs? flowWorkspaceDialogs = null)
+        IFlowWorkspaceDialogs? flowWorkspaceDialogs = null,
+        ICrashLogService? crashLogService = null)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         _projectFolderPicker = projectFolderPicker ?? throw new ArgumentNullException(nameof(projectFolderPicker));
@@ -52,6 +58,7 @@ public sealed class ShellViewModel : ObservableObject
         _projectWorkspaceDialogs = projectWorkspaceDialogs ?? new NullProjectWorkspaceDialogs();
         _resourceWorkspaceDialogs = resourceWorkspaceDialogs ?? new NullResourceWorkspaceDialogs();
         _flowWorkspaceDialogs = flowWorkspaceDialogs ?? new NullFlowWorkspaceDialogs();
+        _crashLogService = crashLogService ?? new CrashLogService();
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
@@ -71,6 +78,7 @@ public sealed class ShellViewModel : ObservableObject
         ViewStoryResourceReferencesCommand = new RelayCommand(ViewStoryResourceReferences, () => SelectedStoryResource?.Descriptor is not null);
         DeleteStoryResourceCommand = new RelayCommand(DeleteStoryResource, CanDeleteSelectedStoryResource);
         DeleteCurrentResourceCommand = new RelayCommand(DeleteCurrentResource, CanDeleteCurrentResource);
+        DuplicateStoryResourceCommand = new RelayCommand(DuplicateStoryResource, CanCreateOrReferenceStoryResource);
         SaveAllCommand = new RelayCommand(SaveAll, CanSaveAll);
         OpenProjectDirectoryCommand = new RelayCommand(OpenProjectDirectory, () => HasProject);
         ValidateProjectCommand = new RelayCommand(ValidateProject, () => HasProject);
@@ -114,6 +122,27 @@ public sealed class ShellViewModel : ObservableObject
 
     public ToastViewModel Toast { get; } = new();
 
+    public string LastUiCommand => _lastUiCommand;
+
+    public IReadOnlyDictionary<string, string?> GetCrashLogDetails() => new Dictionary<string, string?>(StringComparer.Ordinal)
+    {
+        ["Current Project"] = HasProject ? ProjectDirectory : null,
+        ["Current Story"] = StoryWorkspace.HasStory ? StoryWorkspace.StoryId : null,
+        ["Current Route"] = StoryWorkspace.HasStory ? StoryWorkspace.CurrentRoute : null,
+        ["Last UI Command"] = LastUiCommand,
+    };
+
+    public void ReportUnhandledUiException(Exception exception, string context, bool alreadyLogged = false)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        if (!alreadyLogged)
+        {
+            LogCrash(exception, context);
+        }
+
+        ReportFailure("界面操作", exception, writeCrashLog: false);
+    }
+
     public RelayCommand OpenProjectCommand { get; }
 
     public RelayCommand NewProjectCommand { get; }
@@ -151,6 +180,8 @@ public sealed class ShellViewModel : ObservableObject
     public RelayCommand DeleteStoryResourceCommand { get; }
 
     public RelayCommand DeleteCurrentResourceCommand { get; }
+
+    public RelayCommand DuplicateStoryResourceCommand { get; }
 
     public RelayCommand SaveAllCommand { get; }
 
@@ -307,6 +338,28 @@ public sealed class ShellViewModel : ObservableObject
             };
         }
 
+        if (CurrentDialogue?.Document.IsNewDraft == true && SelectedStoryResource is { } draftMembership)
+        {
+            var draftResource = new ResourceDescriptor(ProjectResourceType.Dialogue, draftMembership.Id, draftMembership.DisplayName, string.Empty);
+            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
+            {
+                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
+                UnsavedChangesChoice.Discard => DiscardCurrentDialogueDraft(),
+                _ => false,
+            };
+        }
+
+        if (CurrentQuest?.Document.IsNewDraft == true && SelectedStoryResource is { } questDraftMembership)
+        {
+            var draftResource = new ResourceDescriptor(ProjectResourceType.Quest, questDraftMembership.Id, questDraftMembership.DisplayName, string.Empty);
+            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
+            {
+                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
+                UnsavedChangesChoice.Discard => DiscardCurrentQuestDraft(),
+                _ => false,
+            };
+        }
+
         if (ActiveEditor?.IsDirty != true || SelectedStoryResource?.Descriptor is not { } resource)
         {
             return true;
@@ -352,7 +405,7 @@ public sealed class ShellViewModel : ObservableObject
             return false;
         }
 
-        if (HasUnsavedDocuments())
+        if (!TryResolveStoryResourceDraftBeforeProjectSwitch() || HasUnsavedDocuments())
         {
             ReportWarning("当前项目有未保存的资源；请先保存后再打开其他项目。", "Project");
             return false;
@@ -518,7 +571,7 @@ public sealed class ShellViewModel : ObservableObject
             return;
         }
 
-        if (HasUnsavedDocuments())
+        if (!TryResolveStoryResourceDraftBeforeProjectSwitch() || HasUnsavedDocuments())
         {
             ReportWarning("当前项目有未保存的资源；请先保存后再打开其他项目。", "Project");
             return;
@@ -532,6 +585,8 @@ public sealed class ShellViewModel : ObservableObject
         try
         {
             var project = _projectService.OpenProject(projectDirectory);
+            _dialogueDrafts.Clear();
+            _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
@@ -577,7 +632,7 @@ public sealed class ShellViewModel : ObservableObject
 
     private void NewProject()
     {
-        if (HasUnsavedDocuments())
+        if (!TryResolveStoryResourceDraftBeforeProjectSwitch() || HasUnsavedDocuments())
         {
             ReportWarning("当前项目有未保存的资源；请先保存后再新建项目。", "Project");
             return;
@@ -598,6 +653,8 @@ public sealed class ShellViewModel : ObservableObject
                 request.ProjectDirectory,
                 request.Id,
                 request.DisplayName);
+            _dialogueDrafts.Clear();
+            _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
@@ -662,8 +719,16 @@ public sealed class ShellViewModel : ObservableObject
         {
             var story = project.Stories.LoadStory(selected.Id);
             var actors = project.Actors.ListActors();
-            var descriptors = GetResourceDescriptors(project, story);
-            StoryWorkspace.OpenStory(story, actors, descriptors, GetActorHomeStoryNames(project, actors));
+            var descriptors = GetResourceDescriptors(project, story, _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id));
+            StoryWorkspace.OpenStory(
+                story,
+                actors,
+                descriptors,
+                GetActorHomeStoryNames(project, actors),
+                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Dialogue),
+                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Quest),
+                _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray(),
+                _questDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray());
             ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(item => item.Id == story.Id);
             _selectedStoryActor = null;
             OnPropertyChanged(nameof(SelectedStoryActor));
@@ -705,7 +770,7 @@ public sealed class ShellViewModel : ObservableObject
             Output.Append(StatusMessage, OutputKind.Success, $"story/{story.Id}");
             Toast.Show(StatusMessage, ToastKind.Success);
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
             ReportFailure("新建剧情", exception);
         }
@@ -856,6 +921,10 @@ public sealed class ShellViewModel : ObservableObject
         return TryLeaveRoute(StoryWorkspace.CurrentRoute);
     }
 
+    private bool TryResolveStoryResourceDraftBeforeProjectSwitch() =>
+        (CurrentDialogue?.Document.IsNewDraft != true && CurrentQuest?.Document.IsNewDraft != true)
+        || TryLeaveCurrentStoryResourceEditor();
+
     private bool TryResolveUnsavedFlow()
     {
         if (CurrentFlow?.IsDirty != true) return true;
@@ -879,12 +948,78 @@ public sealed class ShellViewModel : ObservableObject
 
     private bool TryLeaveCurrentStoryResourceEditor()
     {
+        if (CurrentDialogue?.Document.IsNewDraft == true && SelectedStoryResource is { } draftMembership)
+        {
+            var draftResource = new ResourceDescriptor(ProjectResourceType.Dialogue, draftMembership.Id, draftMembership.DisplayName, string.Empty);
+            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
+            {
+                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
+                UnsavedChangesChoice.Discard => DiscardCurrentDialogueDraft(),
+                _ => false,
+            };
+        }
+
+        if (CurrentQuest?.Document.IsNewDraft == true && SelectedStoryResource is { } questDraftMembership)
+        {
+            var draftResource = new ResourceDescriptor(ProjectResourceType.Quest, questDraftMembership.Id, questDraftMembership.DisplayName, string.Empty);
+            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
+            {
+                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
+                UnsavedChangesChoice.Discard => DiscardCurrentQuestDraft(),
+                _ => false,
+            };
+        }
+
         if (ActiveEditor?.IsDirty != true || SelectedStoryResource?.Descriptor is not { } resource) return true;
         if (!_resourceWorkspaceDialogs.ConfirmSaveBeforeSwitch(resource)) return false;
         return TrySaveCurrentStoryResource();
     }
 
-    private static IReadOnlyList<ResourceDescriptor> GetResourceDescriptors(ProjectSession project, StoryResource story)
+    private bool DiscardCurrentDialogueDraft()
+    {
+        if (CurrentDialogue?.Document is not { IsNewDraft: true } document) return true;
+        var id = document.Id;
+        try
+        {
+            _projectService.DiscardDialogueDraft(document);
+            _dialogueDrafts.Remove(id);
+            StoryWorkspace.Dialogues?.RemoveDraft(id);
+            CurrentDialogue = null;
+            _selectedStoryResource = null;
+            OnPropertyChanged(nameof(SelectedStoryResource));
+            ReportSuccess($"Dialogue 草稿 '{id}' 已放弃。", $"dialogue/{id}");
+            return true;
+        }
+        catch (Exception exception) when (IsWorkspaceException(exception))
+        {
+            ReportResourceFailure("放弃 Dialogue 草稿", exception, ProjectResourceType.Dialogue, id);
+            return false;
+        }
+    }
+
+    private bool DiscardCurrentQuestDraft()
+    {
+        if (CurrentQuest?.Document is not { IsNewDraft: true } document) return true;
+        var id = document.Id;
+        try
+        {
+            _projectService.DiscardQuestDraft(document);
+            _questDrafts.Remove(id);
+            StoryWorkspace.Quests?.RemoveDraft(id);
+            CurrentQuest = null;
+            _selectedStoryResource = null;
+            OnPropertyChanged(nameof(SelectedStoryResource));
+            ReportSuccess($"Quest 草稿 '{id}' 已放弃。", $"quest/{id}");
+            return true;
+        }
+        catch (Exception exception) when (IsWorkspaceException(exception))
+        {
+            ReportResourceFailure("放弃 Quest 草稿", exception, ProjectResourceType.Quest, id);
+            return false;
+        }
+    }
+
+    private static IReadOnlyList<ResourceDescriptor> GetResourceDescriptors(ProjectSession project, StoryResource story, IEnumerable<DialogueDocument>? dialogueDrafts = null)
     {
         var dialogueIds = story.OwnedResources.Dialogues.Concat(story.ReferencedResources.Dialogues).ToHashSet(StringComparer.Ordinal);
         var questIds = story.OwnedResources.Quests.Concat(story.ReferencedResources.Quests).ToHashSet(StringComparer.Ordinal);
@@ -908,6 +1043,23 @@ public sealed class ShellViewModel : ObservableObject
             var homeStory = project.Registry.GetHomeStory(ProjectResourceType.Actor, actor.Id);
             if (homeStory is null) continue;
             values[actor.Id] = string.IsNullOrWhiteSpace(homeStory.DisplayName)
+                ? homeStory.Id
+                : homeStory.DisplayName;
+        }
+        return values;
+    }
+
+    private static IReadOnlyDictionary<string, string> GetResourceHomeStoryNames(
+        ProjectSession project,
+        IReadOnlyList<ResourceDescriptor> descriptors,
+        ProjectResourceType resourceType)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var descriptor in descriptors.Where(item => item.Type == resourceType))
+        {
+            var homeStory = project.Registry.GetHomeStory(descriptor.Type, descriptor.Id);
+            if (homeStory is null) continue;
+            values[descriptor.Id] = string.IsNullOrWhiteSpace(homeStory.DisplayName)
                 ? homeStory.Id
                 : homeStory.DisplayName;
         }
@@ -956,16 +1108,47 @@ public sealed class ShellViewModel : ObservableObject
     {
         var descriptor = SelectedStoryResource?.Descriptor;
         var project = _projectService.CurrentProject;
-        if (descriptor is null || project is null)
+        if (project is null)
         {
             CurrentDialogue = null;
             CurrentQuest = null;
             return;
         }
 
+        if (descriptor is null && SelectedStoryResource?.IsDraft != true)
+        {
+            CurrentDialogue = null;
+            CurrentQuest = null;
+            return;
+        }
+
+            var resourceType = descriptor?.Type ?? SelectedStoryResource?.ResourceType ?? ProjectResourceType.Dialogue;
+        var resourceId = descriptor?.Id ?? SelectedStoryResource?.Id ?? string.Empty;
         try
         {
             var actorIds = project.Actors.ListActors().Select(actor => actor.Id).ToArray();
+            if (SelectedStoryResource?.IsDraft == true && _dialogueDrafts.TryGetValue(SelectedStoryResource.Id, out var draft))
+            {
+                CurrentQuest = null;
+                CurrentDialogue = new DialogueEditorViewModel(draft, actorIds);
+                StatusMessage = $"已加载 Dialogue 草稿：{draft.Id}";
+                Output.Append(StatusMessage, source: $"dialogue/{draft.Id}");
+                return;
+            }
+            if (SelectedStoryResource?.IsDraft == true && _questDrafts.TryGetValue(SelectedStoryResource.Id, out var questDraft))
+            {
+                CurrentDialogue = null;
+                CurrentQuest = new QuestEditorViewModel(questDraft, actorIds);
+                StatusMessage = $"已加载 Quest 草稿：{questDraft.Id}";
+                Output.Append(StatusMessage, source: $"quest/{questDraft.Id}");
+                return;
+            }
+            if (descriptor is null)
+            {
+                CurrentDialogue = null;
+                CurrentQuest = null;
+                return;
+            }
             if (descriptor.Type == ProjectResourceType.Dialogue)
             {
                 CurrentQuest = null;
@@ -983,7 +1166,7 @@ public sealed class ShellViewModel : ObservableObject
         {
             CurrentDialogue = null;
             CurrentQuest = null;
-            ReportResourceFailure($"加载 {descriptor.Type}", exception, descriptor.Type, descriptor.Id);
+            ReportResourceFailure($"加载 {resourceType}", exception, resourceType, resourceId);
         }
     }
 
@@ -1014,14 +1197,35 @@ public sealed class ShellViewModel : ObservableObject
         {
             if (CurrentDialogue is not null)
             {
+                var wasDraft = CurrentDialogue.Document.IsNewDraft;
+                var dialogueId = CurrentDialogue.Id;
                 _projectService.SaveDialogue(CurrentDialogue.Document);
-                ReportSuccess($"Dialogue '{CurrentDialogue.Id}' 已保存到磁盘。", $"dialogue/{CurrentDialogue.Id}");
+                if (wasDraft)
+                {
+                    _dialogueDrafts.Remove(dialogueId);
+                    if (_projectService.CurrentProject?.Dialogues.ListDialogues().FirstOrDefault(item => item.Id == dialogueId) is { } saved)
+                    {
+                        StoryWorkspace.Dialogues?.PromoteDraft(
+                            dialogueId,
+                            new ResourceDescriptor(ProjectResourceType.Dialogue, saved.Id, saved.DisplayName, saved.Path));
+                    }
+                }
+                ReportSuccess($"Dialogue '{dialogueId}' 已保存到磁盘。", $"dialogue/{dialogueId}");
                 return true;
             }
             if (CurrentQuest is not null)
             {
+                var wasDraft = CurrentQuest.Document.IsNewDraft;
+                var questId = CurrentQuest.Id;
                 _projectService.SaveQuest(CurrentQuest.Document);
-                ReportSuccess($"Quest '{CurrentQuest.Id}' 已保存到磁盘。", $"quest/{CurrentQuest.Id}");
+                if (wasDraft && _projectService.CurrentProject?.Quests.ListQuests().FirstOrDefault(item => item.Id == questId) is { } savedQuest)
+                {
+                    _questDrafts.Remove(questId);
+                    StoryWorkspace.Quests?.PromoteDraft(
+                        questId,
+                        new ResourceDescriptor(ProjectResourceType.Quest, savedQuest.Id, savedQuest.DisplayName, savedQuest.Path));
+                }
+                ReportSuccess($"Quest '{questId}' 已保存到磁盘。", $"quest/{questId}");
                 return true;
             }
             return true;
@@ -1456,109 +1660,151 @@ public sealed class ShellViewModel : ObservableObject
 
     private void NewStoryResource()
     {
+        _lastUiCommand = nameof(NewStoryResource);
         var project = _projectService.CurrentProject;
         var type = CurrentStoryResourceType;
-        if (project is null || type is null || !StoryWorkspace.HasStory || !TryLeaveCurrentStoryResourceEditor()) return;
-        var mode = _resourceWorkspaceDialogs.RequestCreationMode(type.Value, StoryWorkspace.StoryDisplayName);
-        if (mode is null) return;
-
         try
         {
-            if (mode == ResourceCreationMode.Blank)
+            if (project is null || type is null || !StoryWorkspace.HasStory || !TryLeaveCurrentStoryResourceEditor()) return;
+            if (type == ProjectResourceType.Dialogue)
             {
-                var suggestedId = type == ProjectResourceType.Dialogue
-                    ? project.Dialogues.GetAvailableId("new_dialogue")
-                    : project.Quests.GetAvailableId("new_quest");
-                var request = _resourceWorkspaceDialogs.RequestCreate(type.Value, suggestedId);
-                if (request is null) return;
-                if (type == ProjectResourceType.Dialogue)
-                    _projectService.CreateDialogueInStory(StoryWorkspace.StoryId, request.Id, request.DisplayName);
-                else
-                    _projectService.CreateQuestInStory(StoryWorkspace.StoryId, request.Id, request.DisplayName);
-                RefreshCurrentStory(selectedResourceId: request.Id);
-                ReportSuccess($"{type.Value} '{request.Id}' 已创建并归入“{StoryWorkspace.StoryDisplayName}”。", $"{type.Value.ToString().ToLowerInvariant()}/{request.Id}");
+                var draftRequest = _resourceWorkspaceDialogs.RequestCreate(
+                    ProjectResourceType.Dialogue,
+                    project.Dialogues.GetAvailableId("new_dialogue"));
+                if (draftRequest is null) return;
+                var draft = _projectService.CreateDialogueDraftInStory(
+                    StoryWorkspace.StoryId,
+                    draftRequest.Id,
+                    draftRequest.DisplayName);
+                _dialogueDrafts[draft.Id] = draft;
+                RefreshCurrentStory(selectedResourceId: draft.Id);
+                ReportSuccess($"Dialogue 草稿 '{draft.Id}' 已创建。", $"dialogue/{draft.Id}");
                 return;
             }
 
+            if (type == ProjectResourceType.Quest)
+            {
+                var draftRequest = _resourceWorkspaceDialogs.RequestCreate(
+                    ProjectResourceType.Quest,
+                    project.Quests.GetAvailableId("new_quest"));
+                if (draftRequest is null) return;
+                var draft = _projectService.CreateQuestDraftInStory(
+                    StoryWorkspace.StoryId,
+                    draftRequest.Id,
+                    draftRequest.DisplayName);
+                _questDrafts[draft.Id] = draft;
+                RefreshCurrentStory(selectedResourceId: draft.Id);
+                ReportSuccess($"Quest 草稿 '{draft.Id}' 已创建。", $"quest/{draft.Id}");
+                return;
+            }
+        }
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
+        {
+            ReportResourceFailure($"创建 {type}", exception, type ?? ProjectResourceType.Dialogue, SelectedStoryResource?.Id);
+        }
+    }
+
+    private void DuplicateStoryResource()
+    {
+        _lastUiCommand = nameof(DuplicateStoryResource);
+        var project = _projectService.CurrentProject;
+        var type = CurrentStoryResourceType;
+        ResourceDescriptor? source = null;
+        try
+        {
+            if (project is null || type is null || !StoryWorkspace.HasStory || !TryLeaveCurrentStoryResourceEditor()) return;
+
+            // The picker is deliberately typed and contains only persisted resources. The
+            // identity dialog and Core draft API are the only later mutation points.
             var candidates = GetAllProjectResourceDescriptors(project, type.Value);
-            var source = _resourceWorkspaceDialogs.PickResource(type.Value, candidates, ResourcePickerMode.ImportAsNew, StoryWorkspace.StoryDisplayName);
+            source = _resourceWorkspaceDialogs.PickResource(
+                type.Value,
+                candidates,
+                ResourcePickerMode.ImportAsNew,
+                StoryWorkspace.StoryDisplayName);
             if (source is null) return;
-            var suggestedImportId = type == ProjectResourceType.Dialogue
+
+            var suggestedId = type == ProjectResourceType.Dialogue
                 ? project.Dialogues.GetAvailableId(source.Id + "_copy")
                 : project.Quests.GetAvailableId(source.Id + "_copy");
-            var importRequest = _resourceWorkspaceDialogs.RequestImportIdentity(type.Value, source, suggestedImportId);
-            if (importRequest is null) return;
+            var identity = _resourceWorkspaceDialogs.RequestImportIdentity(type.Value, source, suggestedId);
+            if (identity is null) return;
+
             if (type == ProjectResourceType.Dialogue)
             {
-                var document = _projectService.ImportDialogueAsNew(source.Id, importRequest.Id, StoryWorkspace.StoryId);
-                document.DisplayName = importRequest.DisplayName;
-                document.Title = importRequest.DisplayName;
-                _projectService.SaveDialogue(document);
+                var draft = _projectService.CreateDialogueDraftFromExistingInStory(
+                    StoryWorkspace.StoryId, source.Id, identity.Id, identity.DisplayName);
+                _dialogueDrafts[draft.Id] = draft;
             }
             else
             {
-                var document = _projectService.ImportQuestAsNew(source.Id, importRequest.Id, StoryWorkspace.StoryId);
-                document.DisplayName = importRequest.DisplayName;
-                document.Title = importRequest.DisplayName;
-                _projectService.SaveQuest(document);
+                var draft = _projectService.CreateQuestDraftFromExistingInStory(
+                    StoryWorkspace.StoryId, source.Id, identity.Id, identity.DisplayName);
+                _questDrafts[draft.Id] = draft;
             }
-            RefreshCurrentStory(selectedResourceId: importRequest.Id);
-            ReportSuccess($"{type.Value} '{importRequest.Id}' 已作为独立副本导入。", $"{type.Value.ToString().ToLowerInvariant()}/{importRequest.Id}");
+
+            RefreshCurrentStory(selectedResourceId: identity.Id);
+            ReportSuccess($"{type.Value} 草稿 '{identity.Id}' 已从 '{source.Id}' 创建。", $"{type.Value.ToString().ToLowerInvariant()}/{identity.Id}");
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
-            ReportResourceFailure($"创建 {type}", exception, type.Value, SelectedStoryResource?.Id);
+            ReportResourceFailure($"复制 {type}", exception, type ?? ProjectResourceType.Dialogue, source?.Id);
         }
     }
 
     private void ReferenceStoryResource()
     {
+        _lastUiCommand = nameof(ReferenceStoryResource);
         var project = _projectService.CurrentProject;
         var type = CurrentStoryResourceType;
-        if (project is null || type is null || !TryLeaveCurrentStoryResourceEditor()) return;
-        var page = type == ProjectResourceType.Dialogue
-            ? (StoryResourceMembershipListViewModel?)StoryWorkspace.Dialogues
-            : StoryWorkspace.Quests;
-        var existingIds = page?.Items.Select(item => item.Id).ToHashSet(StringComparer.Ordinal) ?? [];
-        var candidates = GetAllProjectResourceDescriptors(project, type.Value)
-            .Where(resource => !existingIds.Contains(resource.Id)).ToArray();
-        var selected = _resourceWorkspaceDialogs.PickResource(type.Value, candidates, ResourcePickerMode.Reference, StoryWorkspace.StoryDisplayName);
-        if (selected is null) return;
-
+        ResourceDescriptor? selected = null;
         try
         {
+            if (project is null || type is null || !TryLeaveCurrentStoryResourceEditor()) return;
+            var page = type == ProjectResourceType.Dialogue
+                ? (StoryResourceMembershipListViewModel?)StoryWorkspace.Dialogues
+                : StoryWorkspace.Quests;
+            var existingIds = page?.Items.Select(item => item.Id).ToHashSet(StringComparer.Ordinal) ?? [];
+            var candidates = GetAllProjectResourceDescriptors(project, type.Value)
+                .Where(resource => !existingIds.Contains(resource.Id)).ToArray();
+            selected = _resourceWorkspaceDialogs.PickResource(type.Value, candidates, ResourcePickerMode.Reference, StoryWorkspace.StoryDisplayName);
+            if (selected is null) return;
+
             if (type == ProjectResourceType.Dialogue) _projectService.AddDialogueReference(StoryWorkspace.StoryId, selected.Id);
             else _projectService.AddQuestReference(StoryWorkspace.StoryId, selected.Id);
             RefreshCurrentStory(selectedResourceId: selected.Id);
             ReportSuccess($"已引用 {type.Value} '{selected.Id}'；多个剧情共享同一份数据。", $"{type.Value.ToString().ToLowerInvariant()}/{selected.Id}");
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
-            ReportResourceFailure($"引用 {type}", exception, type.Value, selected.Id);
+            ReportResourceFailure($"引用 {type}", exception, type ?? ProjectResourceType.Dialogue, selected?.Id);
         }
     }
 
     private void RemoveStoryResourceReference()
     {
+        _lastUiCommand = nameof(RemoveStoryResourceReference);
         var membership = SelectedStoryResource;
         var type = CurrentStoryResourceType;
-        if (membership?.Descriptor is not { } descriptor || type is null || !membership.IsReferenced || !TryLeaveCurrentStoryResourceEditor()) return;
-        if (!_resourceWorkspaceDialogs.ConfirmRemoveReference(descriptor, StoryWorkspace.StoryDisplayName)) return;
         try
         {
+            if (membership?.Descriptor is not { } descriptor || type is null || !membership.IsReferenced || !TryLeaveCurrentStoryResourceEditor()) return;
+            if (!_resourceWorkspaceDialogs.ConfirmRemoveReference(descriptor, StoryWorkspace.StoryDisplayName)) return;
+
             if (type == ProjectResourceType.Dialogue) _projectService.RemoveDialogueReference(StoryWorkspace.StoryId, membership.Id);
             else _projectService.RemoveQuestReference(StoryWorkspace.StoryId, membership.Id);
             RefreshCurrentStory();
             ReportSuccess($"已解除 {type.Value} '{membership.Id}' 的剧情引用；资源文件未删除。", $"{type.Value.ToString().ToLowerInvariant()}/{membership.Id}");
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
-            ReportResourceFailure($"解除 {type} 引用", exception, type.Value, membership.Id);
+            ReportResourceFailure($"解除 {type} 引用", exception, type ?? ProjectResourceType.Dialogue, membership?.Id);
         }
     }
 
     private void ViewStoryResourceReferences()
     {
+        _lastUiCommand = nameof(ViewStoryResourceReferences);
         var descriptor = SelectedStoryResource?.Descriptor;
         if (descriptor is null) return;
         try
@@ -1568,7 +1814,7 @@ public sealed class ShellViewModel : ObservableObject
                 : _projectService.GetQuestReferences(descriptor.Id);
             _resourceWorkspaceDialogs.ShowReferences(descriptor, references);
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
             ReportResourceFailure("查看资源引用", exception, descriptor.Type, descriptor.Id);
         }
@@ -1576,11 +1822,15 @@ public sealed class ShellViewModel : ObservableObject
 
     private void DeleteStoryResource()
     {
+        _lastUiCommand = nameof(DeleteStoryResource);
         var membership = SelectedStoryResource;
         var descriptor = membership?.Descriptor;
-        if (descriptor is null || membership!.IsReferenced || !TryLeaveCurrentStoryResourceEditor()) return;
+        if (descriptor is null) return;
+        var resourceType = descriptor.Type;
+        var resourceId = descriptor.Id;
         try
         {
+            if (membership!.IsReferenced || !TryLeaveCurrentStoryResourceEditor()) return;
             var references = descriptor.Type == ProjectResourceType.Dialogue
                 ? _projectService.GetDialogueReferences(descriptor.Id)
                 : _projectService.GetQuestReferences(descriptor.Id);
@@ -1598,9 +1848,9 @@ public sealed class ShellViewModel : ObservableObject
             RefreshCurrentStory();
             ReportSuccess($"{descriptor.Type} '{descriptor.Id}' 已从磁盘删除。", $"{descriptor.Type.ToString().ToLowerInvariant()}/{descriptor.Id}");
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
-            ReportResourceFailure($"删除 {descriptor.Type}", exception, descriptor.Type, descriptor.Id);
+            ReportResourceFailure($"删除 {resourceType}", exception, resourceType, resourceId);
         }
     }
 
@@ -1623,10 +1873,20 @@ public sealed class ShellViewModel : ObservableObject
         ? CanDeleteSelectedActor()
         : CanDeleteSelectedStoryResource();
 
-    private static IReadOnlyList<ResourceDescriptor> GetAllProjectResourceDescriptors(ProjectSession project, ProjectResourceType type) =>
-        type == ProjectResourceType.Dialogue
-            ? project.Dialogues.ListDialogues().Select(resource => new ResourceDescriptor(type, resource.Id, resource.DisplayName, resource.Path)).ToArray()
-            : project.Quests.ListQuests().Select(resource => new ResourceDescriptor(type, resource.Id, resource.DisplayName, resource.Path)).ToArray();
+    private static IReadOnlyList<ResourceDescriptor> GetAllProjectResourceDescriptors(ProjectSession project, ProjectResourceType type)
+    {
+        var resources = type == ProjectResourceType.Dialogue
+            ? project.Dialogues.ListDialogues().Select(resource => (resource.Id, resource.DisplayName, resource.Path))
+            : project.Quests.ListQuests().Select(resource => (resource.Id, resource.DisplayName, resource.Path));
+        return resources.Select(resource =>
+        {
+            var homeStory = project.Registry.GetHomeStory(type, resource.Id);
+            var homeStoryName = homeStory is null
+                ? null
+                : string.IsNullOrWhiteSpace(homeStory.DisplayName) ? homeStory.Id : homeStory.DisplayName;
+            return new ResourceDescriptor(type, resource.Id, resource.DisplayName, resource.Path, homeStoryName);
+        }).ToArray();
+    }
 
     private void ExecuteWorkspaceOperation(
         Func<ActorDocument> operation,
@@ -1691,11 +1951,16 @@ public sealed class ShellViewModel : ObservableObject
 
         var story = project.Stories.LoadStory(storyId);
         var actors = project.Actors.ListActors();
+        var descriptors = GetResourceDescriptors(project, story, _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id));
         StoryWorkspace.OpenStory(
             story,
             actors,
-            GetResourceDescriptors(project, story),
-            GetActorHomeStoryNames(project, actors));
+            descriptors,
+            GetActorHomeStoryNames(project, actors),
+                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Dialogue),
+                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Quest),
+                _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray(),
+                _questDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray());
         StoryWorkspace.SelectRoute(route);
         CurrentFlow = CreateFlowEditor(storyId);
         ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(item => item.Id == storyId);
@@ -1716,6 +1981,29 @@ public sealed class ShellViewModel : ObservableObject
         exception is ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
             or DialogueException or QuestException
             or StoryRepositoryException or StoryNotFoundException or StoryDataException or StoryValidationException;
+
+    internal static bool IsRecoverableUiException(Exception exception) =>
+        exception is InvalidOperationException or ArgumentException or InvalidCastException or XamlParseException;
+
+    internal static bool IsRecoverableGlobalUiException(Exception exception)
+    {
+        if (exception is XamlParseException)
+        {
+            return true;
+        }
+
+        if (exception is not (InvalidOperationException or ArgumentException or InvalidCastException))
+        {
+            return false;
+        }
+
+        // A global boundary may only recover failures whose stack identifies
+        // WPF/UI plumbing. Generic InvalidOperationException instances can
+        // indicate corrupted application state and must remain unhandled.
+        var stack = exception.ToString();
+        return stack.Contains("System.Windows", StringComparison.Ordinal)
+            || stack.Contains("MS.Internal.Data", StringComparison.Ordinal);
+    }
 
     private void OnProjectHomePropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
@@ -1835,6 +2123,7 @@ public sealed class ShellViewModel : ObservableObject
         ViewStoryResourceReferencesCommand.RaiseCanExecuteChanged();
         DeleteStoryResourceCommand.RaiseCanExecuteChanged();
         DeleteCurrentResourceCommand.RaiseCanExecuteChanged();
+        DuplicateStoryResourceCommand.RaiseCanExecuteChanged();
         SaveCurrentResourceCommand.RaiseCanExecuteChanged();
         UndoCurrentCommand.RaiseCanExecuteChanged();
         RedoCurrentCommand.RaiseCanExecuteChanged();
@@ -1937,8 +2226,17 @@ public sealed class ShellViewModel : ObservableObject
         Toast.Show(message, ToastKind.Warning);
     }
 
-    private void ReportFailure(string action, Exception exception, string? actorId = null)
+    private void ReportFailure(
+        string action,
+        Exception exception,
+        string? actorId = null,
+        bool writeCrashLog = true)
     {
+        if (writeCrashLog)
+        {
+            LogCrash(exception, action);
+        }
+
         var message = $"{action}失败：{exception.Message}";
         var source = actorId is null ? exception.GetType().Name : $"actor/{actorId}";
         StatusMessage = message;
@@ -1967,8 +2265,14 @@ public sealed class ShellViewModel : ObservableObject
         string action,
         Exception exception,
         ProjectResourceType type,
-        string? resourceId)
+        string? resourceId,
+        bool writeCrashLog = true)
     {
+        if (writeCrashLog)
+        {
+            LogCrash(exception, action);
+        }
+
         var id = resourceId ?? "unknown";
         var source = $"{type.ToString().ToLowerInvariant()}/{id}";
         var message = $"{action}失败：{exception.Message}";
@@ -1990,6 +2294,19 @@ public sealed class ShellViewModel : ObservableObject
         else
         {
             Problems.ReplaceForSource(source, [new ProblemItem(ValidationSeverity.Error, "operation.failure", message, Source: source)]);
+        }
+    }
+
+    private void LogCrash(Exception exception, string context)
+    {
+        try
+        {
+            _crashLogService.Log(exception, context, GetCrashLogDetails());
+        }
+        catch (Exception)
+        {
+            // CrashLogService is defensive by contract; retain this guard for
+            // injected test implementations and future service replacements.
         }
     }
 

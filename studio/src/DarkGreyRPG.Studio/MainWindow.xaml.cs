@@ -13,14 +13,18 @@ using DarkGreyRPG.Studio.Views;
 
 namespace DarkGreyRPG.Studio;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private readonly DispatcherTimer _toastTimer = new();
     private readonly ISettingsService _settingsService;
     private readonly ShellViewModel _shell;
     private GridLength _resourceBrowserWidth = new(260);
+    private GridLength _storyResourceLibraryWidth = new(StudioSettings.DefaultStoryResourceLibraryWidth);
 
-    public MainWindow(ThemeSettingsViewModel themeSettings, ISettingsService settingsService)
+    public MainWindow(
+        ThemeSettingsViewModel themeSettings,
+        ISettingsService settingsService,
+        ICrashLogService? crashLogService = null)
     {
         ThemeSettings = themeSettings ?? throw new ArgumentNullException(nameof(themeSettings));
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
@@ -31,7 +35,8 @@ public partial class MainWindow : Window
             new ActorWorkspaceDialogs(() => this),
             new ProjectWorkspaceDialogs(() => this),
             new ResourceWorkspaceDialogs(() => this),
-            new FlowWorkspaceDialogs(() => this));
+            new FlowWorkspaceDialogs(() => this),
+            crashLogService ?? new CrashLogService(settingsService.SettingsPath));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
@@ -42,10 +47,51 @@ public partial class MainWindow : Window
 
     public ThemeSettingsViewModel ThemeSettings { get; }
 
+    public ShellViewModel Shell => _shell;
+
+    public IReadOnlyDictionary<string, string?> GetCrashLogDetails()
+    {
+        var details = new Dictionary<string, string?>(_shell.GetCrashLogDetails(), StringComparer.Ordinal)
+        {
+            ["Theme"] = ThemeSettings.SelectedTheme.ToString(),
+        };
+        try
+        {
+            var dpi = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11;
+            details["DPI"] = dpi is > 0
+                ? $"{dpi.Value:0.###}x"
+                : "(unavailable)";
+        }
+        catch (Exception)
+        {
+            details["DPI"] = "(unavailable)";
+        }
+
+        return details;
+    }
+
+    public GridLength StoryResourceLibraryWidth
+    {
+        get => _storyResourceLibraryWidth;
+        set
+        {
+            var width = value.IsAbsolute ? Math.Clamp(value.Value, StudioSettings.StoryResourceLibraryMinWidth, StudioSettings.StoryResourceLibraryMaxWidth) : StudioSettings.DefaultStoryResourceLibraryWidth;
+            if (Math.Abs(_storyResourceLibraryWidth.Value - width) < 0.1)
+            {
+                return;
+            }
+
+            _storyResourceLibraryWidth = new GridLength(width);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StoryResourceLibraryWidth)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 2.1.2\nStory-first authoring with unified Flow and read-only Story Graph interactions",
+            "DarkGrey RPG Studio 2.1.3\nStory-first resource creation with unified libraries, Draft save, and read-only Story Graph interactions",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -188,6 +234,7 @@ public partial class MainWindow : Window
                 WindowHeight = bounds.Height,
                 WindowMaximized = WindowState == WindowState.Maximized,
                 ResourceBrowserWidth = browserWidth,
+                StoryResourceLibraryWidth = StoryResourceLibraryWidth.Value,
                 BottomPanelHeight = _shell.BottomPanel.ExpandedHeight,
                 LastProject = _shell.HasProject ? _shell.ProjectDirectory : null,
                 RecentProjects = _shell.RecentProjectDirectories,
@@ -208,6 +255,7 @@ public partial class MainWindow : Window
         Height = sizeIsSafe ? settings.WindowHeight : Math.Min(StudioSettings.DefaultWindowHeight, workArea.Height);
         _resourceBrowserWidth = new GridLength(Math.Clamp(settings.ResourceBrowserWidth, 180, 400));
         ResourceBrowserColumn.Width = _resourceBrowserWidth;
+        StoryResourceLibraryWidth = new GridLength(settings.StoryResourceLibraryWidth);
         _shell.BottomPanel.ExpandedHeight = Math.Clamp(
             settings.BottomPanelHeight,
             BottomPanelViewModel.MinimumExpandedHeight,

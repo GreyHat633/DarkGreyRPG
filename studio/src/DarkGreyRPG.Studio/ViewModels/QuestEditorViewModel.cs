@@ -5,8 +5,17 @@ using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
+public sealed record QuestCompletionModeOption(string Value, string Label);
+
 public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorViewModel
 {
+    private static IReadOnlyList<QuestCompletionModeOption> CompletionModes { get; } =
+    [
+        new("ALL", "全部目标完成"),
+        new("ANY", "任意一个目标完成"),
+        new("SEQUENCE", "按顺序完成"),
+    ];
+    public IReadOnlyList<QuestCompletionModeOption> CompletionModeOptions => CompletionModes;
     private readonly Stack<QuestEditorSnapshot> _undoHistory = [];
     private readonly Stack<QuestEditorSnapshot> _redoHistory = [];
     private List<ObjectiveGroupResource> _groups;
@@ -15,6 +24,7 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
     private string _description;
     private string _notes;
     private string _tagsText;
+    private string _pendingCompletionMode = "ALL";
     private QuestObjectiveEditorItem? _selectedObjective;
 
     public QuestEditorViewModel(QuestDocument document, IReadOnlyList<string>? availableActorIds = null)
@@ -26,11 +36,14 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
         _notes = document.Metadata.Notes;
         _tagsText = string.Join(", ", document.Metadata.Tags);
         _groups = document.ObjectiveGroups.Select(group => group.Clone()).ToList();
+        _pendingCompletionMode = _groups.FirstOrDefault(group => group.Id == "main")?.Mode
+            ?? _groups.FirstOrDefault()?.Mode
+            ?? "ALL";
         ReplaceObjectiveEditors(document.Objectives);
         AddKillCommand = new RelayCommand(() => AddObjective("kill_entity"));
         AddCollectCommand = new RelayCommand(() => AddObjective("collect_item"));
         AddInteractCommand = new RelayCommand(() => AddObjective("interact_actor"));
-        DeleteObjectiveCommand = new RelayCommand(DeleteObjective, () => SelectedObjective is not null && Objectives.Count > 1);
+        DeleteObjectiveCommand = new RelayCommand(DeleteObjective, () => SelectedObjective is not null);
         MoveObjectiveUpCommand = new RelayCommand(() => MoveSelectedObjective(-1), () => SelectedObjective is not null && Objectives.IndexOf(SelectedObjective) > 0);
         MoveObjectiveDownCommand = new RelayCommand(() => MoveSelectedObjective(1), () => SelectedObjective is not null && Objectives.IndexOf(SelectedObjective) is var index && index >= 0 && index < Objectives.Count - 1);
         UndoCommand = new RelayCommand(Undo, () => _undoHistory.Count > 0);
@@ -43,6 +56,7 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
     public string Id => Document.Id;
     public IReadOnlyList<string> AvailableActorIds { get; }
     public ObservableCollection<QuestObjectiveEditorItem> Objectives { get; } = [];
+    public IReadOnlyList<ObjectiveGroupResource> ObjectiveGroups => _groups;
     public RelayCommand AddKillCommand { get; }
     public RelayCommand AddCollectCommand { get; }
     public RelayCommand AddInteractCommand { get; }
@@ -51,6 +65,9 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
     public RelayCommand MoveObjectiveDownCommand { get; }
     public RelayCommand UndoCommand { get; }
     public RelayCommand RedoCommand { get; }
+    public RelayCommand AddFirstKillCommand => AddKillCommand;
+    public RelayCommand AddFirstCollectCommand => AddCollectCommand;
+    public RelayCommand AddFirstInteractCommand => AddInteractCommand;
 
     public string DisplayName
     {
@@ -84,6 +101,35 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
     }
 
     public string GroupSummary => string.Join(", ", _groups.Select(group => $"{group.Id} ({group.Mode})"));
+    public bool HasObjectives => Objectives.Count > 0;
+    public bool IsEmptyState => !HasObjectives;
+    public bool IsStarterEmptyState => IsEmptyState;
+    public string CompletionMode
+    {
+        get => MainGroup?.Mode ?? _pendingCompletionMode;
+        set
+        {
+            var mode = CompletionModes.Any(option => option.Value == value) ? value : "ALL";
+            _pendingCompletionMode = mode;
+            if (Objectives.Count == 0 && _groups.Count == 0)
+            {
+                if (string.Equals(_pendingCompletionMode, mode, StringComparison.Ordinal)) return;
+                _pendingCompletionMode = mode;
+                OnPropertyChanged(nameof(CompletionMode));
+                OnPropertyChanged(nameof(CompletionModeLabel));
+                return;
+            }
+            ApplyEdit(() =>
+            {
+                var group = EnsureDefaultGroup();
+                var index = _groups.IndexOf(group);
+                _groups[index] = new ObjectiveGroupResource { Id = group.Id, Mode = mode, Objectives = group.Objectives.ToList() };
+                OnPropertyChanged(nameof(CompletionMode));
+                OnPropertyChanged(nameof(CompletionModeLabel));
+            });
+        }
+    }
+    public string CompletionModeLabel => CompletionModes.First(option => option.Value == CompletionMode).Label;
     public bool IsDirty => Document.IsDirty;
     public bool CanSave => IsDirty && Document.ValidationErrors.Count == 0;
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
@@ -102,29 +148,35 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
             });
             var resource = type switch
             {
-                "kill_entity" => QuestObjectiveResource.Kill(id, "击杀目标", "Zombie", 1),
-                "collect_item" => QuestObjectiveResource.Collect(id, "收集物品", "minecraft:stone", -1, 1),
-                _ => QuestObjectiveResource.Interact(id, "与角色交互", AvailableActorIds.FirstOrDefault() ?? "actor", 1),
+                "kill_entity" => QuestObjectiveResource.Kill(id, "消灭史莱姆", "minecraft:slime", 10),
+                "collect_item" => QuestObjectiveResource.Collect(id, "收集史莱姆凝胶", "modid:slime_gel", 0, 5),
+                _ => QuestObjectiveResource.Interact(id, "向角色复命", AvailableActorIds.FirstOrDefault() ?? string.Empty, 1),
             };
             var item = CreateObjectiveEditor(resource);
             Objectives.Add(item);
             EnsureDefaultGroup().Objectives.Add(id);
             SelectedObjective = item;
+            OnPropertyChanged(nameof(HasObjectives));
+            OnPropertyChanged(nameof(IsEmptyState));
+            OnPropertyChanged(nameof(IsStarterEmptyState));
             OnPropertyChanged(nameof(GroupSummary));
         });
     }
 
     private void DeleteObjective()
     {
-        if (SelectedObjective is null || Objectives.Count <= 1) return;
+        if (SelectedObjective is null) return;
         ApplyEdit(() =>
         {
             var index = Objectives.IndexOf(SelectedObjective);
             var id = SelectedObjective.Id;
             Objectives.Remove(SelectedObjective);
             foreach (var group in _groups) group.Objectives.RemoveAll(value => value == id);
-            _groups.RemoveAll(group => group.Objectives.Count == 0 && _groups.Count > 1);
-            SelectedObjective = Objectives[Math.Clamp(index, 0, Objectives.Count - 1)];
+            _groups.RemoveAll(group => group.Objectives.Count == 0);
+            SelectedObjective = Objectives.Count == 0 ? null : Objectives[Math.Clamp(index, 0, Objectives.Count - 1)];
+            OnPropertyChanged(nameof(HasObjectives));
+            OnPropertyChanged(nameof(IsEmptyState));
+            OnPropertyChanged(nameof(IsStarterEmptyState));
             OnPropertyChanged(nameof(GroupSummary));
         });
     }
@@ -182,6 +234,9 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
             _notes = snapshot.Resource.Metadata.Notes;
             _tagsText = string.Join(", ", snapshot.Resource.Metadata.Tags);
             _groups = snapshot.Resource.ObjectiveGroups.Select(group => group.Clone()).ToList();
+            _pendingCompletionMode = _groups.FirstOrDefault(group => group.Id == "main")?.Mode
+                ?? _groups.FirstOrDefault()?.Mode
+                ?? "ALL";
             ReplaceObjectiveEditors(snapshot.Resource.Objectives);
             SelectedObjective = Objectives.FirstOrDefault(item => item.Id == snapshot.SelectedObjectiveId) ?? Objectives.FirstOrDefault();
             OnPropertyChanged(nameof(DisplayName));
@@ -189,6 +244,11 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
             OnPropertyChanged(nameof(Notes));
             OnPropertyChanged(nameof(TagsText));
             OnPropertyChanged(nameof(GroupSummary));
+            OnPropertyChanged(nameof(CompletionMode));
+            OnPropertyChanged(nameof(CompletionModeLabel));
+            OnPropertyChanged(nameof(HasObjectives));
+            OnPropertyChanged(nameof(IsEmptyState));
+            OnPropertyChanged(nameof(IsStarterEmptyState));
             CommitToDocument();
         }
         finally
@@ -232,9 +292,11 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
     private QuestObjectiveEditorItem CreateObjectiveEditor(QuestObjectiveResource value) => new(value, ApplyEdit);
     private ObjectiveGroupResource EnsureDefaultGroup()
     {
-        if (_groups.Count == 0) _groups.Add(new ObjectiveGroupResource { Id = "all", Mode = "ALL", Objectives = [] });
+        if (_groups.Count == 0) _groups.Add(new ObjectiveGroupResource { Id = "main", Mode = _pendingCompletionMode, Objectives = [] });
         return _groups[0];
     }
+
+    private ObjectiveGroupResource? MainGroup => _groups.FirstOrDefault(group => group.Id == "main") ?? _groups.FirstOrDefault();
 
     private string AllocateObjectiveId(string baseId)
     {
@@ -259,6 +321,8 @@ public sealed class QuestEditorViewModel : ObservableObject, IWorkspaceEditorVie
         DeleteObjectiveCommand.RaiseCanExecuteChanged();
         MoveObjectiveUpCommand.RaiseCanExecuteChanged();
         MoveObjectiveDownCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CompletionMode));
+        OnPropertyChanged(nameof(CompletionModeLabel));
     }
     private void RaiseHistoryStates()
     {

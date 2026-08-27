@@ -8,6 +8,9 @@ public sealed record StudioSettings
     public const double DefaultWindowWidth = 1180;
     public const double DefaultWindowHeight = 760;
     public const double DefaultResourceBrowserWidth = 260;
+    public const double StoryResourceLibraryMinWidth = 220;
+    public const double StoryResourceLibraryMaxWidth = 380;
+    public const double DefaultStoryResourceLibraryWidth = 280;
     public const double DefaultBottomPanelHeight = 220;
 
     [JsonPropertyName("schema_version")]
@@ -27,6 +30,9 @@ public sealed record StudioSettings
 
     [JsonPropertyName("resource_browser_width")]
     public double ResourceBrowserWidth { get; init; } = DefaultResourceBrowserWidth;
+
+    [JsonPropertyName("story_resource_library_width")]
+    public double StoryResourceLibraryWidth { get; init; } = DefaultStoryResourceLibraryWidth;
 
     [JsonPropertyName("bottom_panel_height")]
     public double BottomPanelHeight { get; init; } = DefaultBottomPanelHeight;

@@ -126,6 +126,7 @@ public sealed class SettingsService : ISettingsService
         WindowWidth = NormalizeDimension(settings.WindowWidth, 900, 7680, StudioSettings.DefaultWindowWidth),
         WindowHeight = NormalizeDimension(settings.WindowHeight, 560, 4320, StudioSettings.DefaultWindowHeight),
         ResourceBrowserWidth = NormalizeDimension(settings.ResourceBrowserWidth, 180, 400, StudioSettings.DefaultResourceBrowserWidth),
+        StoryResourceLibraryWidth = NormalizeDimension(settings.StoryResourceLibraryWidth, StudioSettings.StoryResourceLibraryMinWidth, StudioSettings.StoryResourceLibraryMaxWidth, StudioSettings.DefaultStoryResourceLibraryWidth),
         BottomPanelHeight = NormalizeDimension(settings.BottomPanelHeight, 120, 520, StudioSettings.DefaultBottomPanelHeight),
         LastProject = string.IsNullOrWhiteSpace(settings.LastProject)
             ? null
