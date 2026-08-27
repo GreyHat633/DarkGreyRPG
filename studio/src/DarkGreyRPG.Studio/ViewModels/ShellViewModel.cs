@@ -19,6 +19,9 @@ public sealed class ShellViewModel : ObservableObject
     private readonly IActorWorkspaceDialogs _actorWorkspaceDialogs;
     private readonly IResourceWorkspaceDialogs _resourceWorkspaceDialogs;
     private readonly IProjectWorkspaceDialogs _projectWorkspaceDialogs;
+    private readonly IFlowWorkspaceDialogs _flowWorkspaceDialogs;
+    private readonly HashSet<string> _ignoredFlowRecoveries = new(StringComparer.Ordinal);
+    private StoryFlowRecoveryStore? _flowRecoveryStore;
     private ActorResourceInfo? _selectedActor;
     private StoryActorMembershipViewModel? _selectedStoryActor;
     private StoryActorsViewModel? _observedStoryActors;
@@ -40,13 +43,15 @@ public sealed class ShellViewModel : ObservableObject
         IProjectFolderPicker projectFolderPicker,
         IActorWorkspaceDialogs? actorWorkspaceDialogs = null,
         IProjectWorkspaceDialogs? projectWorkspaceDialogs = null,
-        IResourceWorkspaceDialogs? resourceWorkspaceDialogs = null)
+        IResourceWorkspaceDialogs? resourceWorkspaceDialogs = null,
+        IFlowWorkspaceDialogs? flowWorkspaceDialogs = null)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         _projectFolderPicker = projectFolderPicker ?? throw new ArgumentNullException(nameof(projectFolderPicker));
         _actorWorkspaceDialogs = actorWorkspaceDialogs ?? new NullActorWorkspaceDialogs();
         _projectWorkspaceDialogs = projectWorkspaceDialogs ?? new NullProjectWorkspaceDialogs();
         _resourceWorkspaceDialogs = resourceWorkspaceDialogs ?? new NullResourceWorkspaceDialogs();
+        _flowWorkspaceDialogs = flowWorkspaceDialogs ?? new NullFlowWorkspaceDialogs();
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
@@ -72,6 +77,8 @@ public sealed class ShellViewModel : ObservableObject
         PrepareRuntimeReloadCommand = new RelayCommand(PrepareRuntimeReload, () => HasProject);
         ShowProjectSettingsCommand = new RelayCommand(ShowProjectSettings, () => HasProject);
         OpenSelectedStoryCommand = new RelayCommand(OpenSelectedStory, () => HasProject && ProjectHome.SelectedStory is not null);
+        CreateStoryCommand = new RelayCommand(CreateStory, () => HasProject);
+        DeleteSelectedStoryCommand = new RelayCommand(DeleteSelectedStory, () => HasProject && ProjectHome.SelectedStory is not null);
         ShowProjectHomeCommand = new RelayCommand(ShowProjectHome, () => HasProject);
         ShowProjectGraphCommand = new RelayCommand(ShowProjectGraph, () => HasProject);
         ToggleResourceBrowserCommand = new RelayCommand(
@@ -82,6 +89,7 @@ public sealed class ShellViewModel : ObservableObject
         StoryWorkspace.CanLeaveRoute = TryLeaveRoute;
         ProjectHome.PropertyChanged += OnProjectHomePropertyChanged;
         ProjectHome.OpenStoryFlowRequested += ProjectHomeOnOpenStoryFlowRequested;
+        ProjectHome.OpenStoryRequested += ProjectHomeOnOpenStoryRequested;
         StoryWorkspace.PropertyChanged += OnStoryWorkspacePropertyChanged;
         Output.Append("DarkGrey RPG Studio 已启动。", source: "Studio");
     }
@@ -89,6 +97,8 @@ public sealed class ShellViewModel : ObservableObject
     public ObservableCollection<ActorResourceInfo> Actors { get; } = [];
 
     public ObservableCollection<ActorResourceInfo> FilteredActors { get; } = [];
+
+    public ObservableCollection<RecentProjectItemViewModel> RecentProjects { get; } = [];
 
     public ProjectHomeViewModel ProjectHome { get; } = new();
 
@@ -154,6 +164,10 @@ public sealed class ShellViewModel : ObservableObject
 
     public RelayCommand OpenSelectedStoryCommand { get; }
 
+    public RelayCommand CreateStoryCommand { get; }
+
+    public RelayCommand DeleteSelectedStoryCommand { get; }
+
     public RelayCommand ShowProjectHomeCommand { get; }
 
     public RelayCommand ShowProjectGraphCommand { get; }
@@ -163,6 +177,9 @@ public sealed class ShellViewModel : ObservableObject
     public RelayCommand ToggleBottomPanelCommand { get; }
 
     public bool HasProject => _projectService.CurrentProject is not null;
+
+    public IReadOnlyList<string> RecentProjectDirectories =>
+        RecentProjects.Select(project => project.ProjectDirectory).ToArray();
 
     public string ProjectDisplayName
     {
@@ -278,6 +295,8 @@ public sealed class ShellViewModel : ObservableObject
 
     public bool TryClose()
     {
+        if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
+
         if (CurrentActor?.Document.IsDirty == true && SelectedActor is not null)
         {
             return _actorWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(SelectedActor) switch
@@ -311,9 +330,43 @@ public sealed class ShellViewModel : ObservableObject
         return OpenProjectFromDirectory(projectDirectory, isRestore: true);
     }
 
+    public void SetRecentProjects(IEnumerable<string>? projectDirectories)
+    {
+        RecentProjects.Clear();
+        if (projectDirectories is null) return;
+
+        foreach (var directory in projectDirectories)
+        {
+            if (!IsExistingProjectDirectory(directory)
+                || RecentProjects.Any(project => PathsEqual(project.ProjectDirectory, directory))) continue;
+            AddRecentProject(directory);
+        }
+    }
+
+    public bool OpenRecentProject(string projectDirectory)
+    {
+        if (!IsExistingProjectDirectory(projectDirectory))
+        {
+            RemoveRecentProject(projectDirectory);
+            ReportWarning($"最近项目已不存在：{projectDirectory}", "Project");
+            return false;
+        }
+
+        if (HasUnsavedDocuments())
+        {
+            ReportWarning("当前项目有未保存的资源；请先保存后再打开其他项目。", "Project");
+            return false;
+        }
+
+        return OpenProjectFromDirectory(projectDirectory, isRestore: false);
+    }
+
     public void OpenProblem(ProblemItem problem)
     {
         ArgumentNullException.ThrowIfNull(problem);
+        if (TryOpenProjectGraphProblem(problem)) return;
+        if (TryOpenFlowProblem(problem)) return;
+
         const string actorPrefix = "actor/";
         if (problem.Source?.StartsWith(actorPrefix, StringComparison.Ordinal) != true)
         {
@@ -332,6 +385,50 @@ public sealed class ShellViewModel : ObservableObject
         // while Story is the only content-oriented top-level navigation item.
         Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
         SelectedActor = actor;
+    }
+
+    private bool TryOpenProjectGraphProblem(ProblemItem problem)
+    {
+        var parts = problem.Source?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts is not { Length: >= 1 } || !string.Equals(parts[0], "project-graph", StringComparison.Ordinal))
+            return false;
+        if (problem.Code == "project_graph.target.missing" && parts.Length >= 3)
+        {
+            OpenStoryFlowNode(parts[1], parts[2], "target_story_id");
+            return true;
+        }
+
+        ShowProjectGraph();
+        if (parts.Length >= 2 && ProjectHome.IsGraphVisible && !ProjectHome.Graph.RequestProblemFocus(parts[1]))
+            ReportWarning($"图谱问题引用的 Story '{parts[1]}' 当前不存在。", problem.Source);
+        return true;
+    }
+
+    private bool TryOpenFlowProblem(ProblemItem problem)
+    {
+        var parts = problem.Source?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts is not { Length: >= 4 } ||
+            !string.Equals(parts[0], "story", StringComparison.Ordinal) ||
+            !string.Equals(parts[2], "flow", StringComparison.Ordinal))
+            return false;
+
+        var storyId = parts[1];
+        var nodeId = parts[3];
+        if (CurrentFlow?.Id == storyId && StoryWorkspace.StoryId == storyId)
+        {
+            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
+            StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
+        }
+        else
+        {
+            OpenStoryFlow(storyId);
+        }
+        if (CurrentFlow?.Id != storyId) return true;
+        if (!CurrentFlow.RequestProblemFocus(nodeId, problem.Field))
+            ReportWarning($"问题引用的 Flow 节点 '{nodeId}' 当前不存在。", problem.Source);
+        else
+            StatusMessage = $"已定位 Story Flow 问题：{storyId}/{nodeId}/{problem.Field ?? "node"}";
+        return true;
     }
 
     public ActorEditorViewModel? CurrentActor
@@ -387,9 +484,19 @@ public sealed class ShellViewModel : ObservableObject
         get => _currentFlow;
         private set
         {
-            if (_currentFlow is not null) _currentFlow.PropertyChanged -= OnCurrentResourceEditorPropertyChanged;
+            if (_currentFlow is not null)
+            {
+                _currentFlow.PropertyChanged -= OnCurrentResourceEditorPropertyChanged;
+                _currentFlow.UndoCommand.CanExecuteChanged -= OnFlowHistoryCanExecuteChanged;
+                _currentFlow.RedoCommand.CanExecuteChanged -= OnFlowHistoryCanExecuteChanged;
+            }
             if (!SetProperty(ref _currentFlow, value)) return;
-            if (_currentFlow is not null) _currentFlow.PropertyChanged += OnCurrentResourceEditorPropertyChanged;
+            if (_currentFlow is not null)
+            {
+                _currentFlow.PropertyChanged += OnCurrentResourceEditorPropertyChanged;
+                _currentFlow.UndoCommand.CanExecuteChanged += OnFlowHistoryCanExecuteChanged;
+                _currentFlow.RedoCommand.CanExecuteChanged += OnFlowHistoryCanExecuteChanged;
+            }
             RaiseCurrentEditorStates();
         }
     }
@@ -425,8 +532,11 @@ public sealed class ShellViewModel : ObservableObject
         try
         {
             var project = _projectService.OpenProject(projectDirectory);
+            _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
+            _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
+            RememberProject(project.ProjectDirectory);
             LoadActorList();
             LoadStoryList();
             CurrentActor = null;
@@ -443,6 +553,7 @@ public sealed class ShellViewModel : ObservableObject
                     ? $"已恢复上次项目，共 {Actors.Count} 个 Actor。"
                     : $"项目已打开，共 {Actors.Count} 个 Actor。",
                 "Project");
+            ReportPendingFlowRecoveries();
             OnPropertyChanged(nameof(HasProject));
             RaiseWorkspaceCommandStates();
             return true;
@@ -487,8 +598,11 @@ public sealed class ShellViewModel : ObservableObject
                 request.ProjectDirectory,
                 request.Id,
                 request.DisplayName);
+            _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
+            _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
+            RememberProject(project.ProjectDirectory);
             LoadActorList();
             LoadStoryList();
             CurrentActor = null;
@@ -502,7 +616,7 @@ public sealed class ShellViewModel : ObservableObject
             OnPropertyChanged(nameof(HasProject));
             RaiseWorkspaceCommandStates();
             RefreshProblems();
-            ReportSuccess("项目已创建，可开始新建 Actor。", "Project");
+            ReportSuccess("项目已创建，可开始新建剧情。", "Project");
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
         {
@@ -532,6 +646,7 @@ public sealed class ShellViewModel : ObservableObject
             ?? throw new ProjectException("No project is open.");
         var stories = project.Stories.ListStories();
         ProjectHome.ReplaceStories(stories, projectDirectory: project.ProjectDirectory);
+        UpdateProjectGraphProblems();
         OnPropertyChanged(nameof(ProjectHome));
         OpenSelectedStoryCommand.RaiseCanExecuteChanged();
     }
@@ -561,12 +676,77 @@ public sealed class ShellViewModel : ObservableObject
             CurrentQuest = null;
             CurrentFlow = CreateFlowEditor(story.Id);
             Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-            StatusMessage = $"已打开 Story：{story.Id}（概览）";
+            StatusMessage = $"已打开 Story：{story.Id}（角色）";
             Output.Append(StatusMessage, source: $"story/{story.Id}");
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
         {
             ReportFailure("打开 Story", exception);
+        }
+    }
+
+    private void CreateStory()
+    {
+        var project = _projectService.CurrentProject;
+        if (project is null) return;
+
+        try
+        {
+            var request = _resourceWorkspaceDialogs.RequestCreate(
+                ProjectResourceType.Story,
+                project.Stories.GetAvailableId("new_story"));
+            if (request is null) return;
+
+            var story = _projectService.CreateStory(request.Id, request.DisplayName);
+            LoadStoryList();
+            ProjectHome.SelectedStory = ProjectHome.Stories.Single(item => item.Id == story.Id);
+            ProjectHome.ShowHome();
+            StatusMessage = $"剧情 '{story.Id}' 已创建。";
+            Output.Append(StatusMessage, OutputKind.Success, $"story/{story.Id}");
+            Toast.Show(StatusMessage, ToastKind.Success);
+        }
+        catch (Exception exception) when (IsWorkspaceException(exception))
+        {
+            ReportFailure("新建剧情", exception);
+        }
+        finally
+        {
+            RaiseWorkspaceCommandStates();
+        }
+    }
+
+    private void DeleteSelectedStory()
+    {
+        var selected = ProjectHome.SelectedStory;
+        if (selected is null || _projectService.CurrentProject is null) return;
+
+        try
+        {
+            var plan = _projectService.GetStoryDeletionPlan(selected.Id);
+            if (plan.Blockers.Count > 0)
+            {
+                ReportWarning(
+                    $"无法删除剧情 '{selected.Id}'：{string.Join("；", plan.Blockers)}",
+                    $"story/{selected.Id}");
+                return;
+            }
+            var resourcesToDelete = plan.ActorIds.Select(id => $"角色：{id}")
+                .Concat(plan.DialogueIds.Select(id => $"对话：{id}"))
+                .Concat(plan.QuestIds.Select(id => $"任务：{id}"))
+                .ToArray();
+            if (!_projectWorkspaceDialogs.ConfirmDeleteStory(selected.Id, selected.DisplayName, resourcesToDelete)) return;
+
+            _projectService.DeleteStory(selected.Id);
+            _flowRecoveryStore?.Delete(selected.Id);
+            LoadStoryList();
+            ProjectHome.ShowHome();
+            StatusMessage = $"剧情 '{selected.Id}' 已从项目中删除。";
+            Output.Append(StatusMessage, OutputKind.Success, $"story/{selected.Id}");
+            Toast.Show(StatusMessage, ToastKind.Success);
+        }
+        catch (Exception exception) when (IsWorkspaceException(exception))
+        {
+            ReportFailure("删除剧情", exception, selected.Id);
         }
     }
 
@@ -588,11 +768,45 @@ public sealed class ShellViewModel : ObservableObject
         Output.Append(StatusMessage, source: $"story/{storyId}/flow");
     }
 
+    public void OpenStoryFlowNode(string storyId, string nodeId, string? field = null)
+    {
+        if (CurrentFlow?.Id == storyId && StoryWorkspace.StoryId == storyId)
+        {
+            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
+            StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
+        }
+        else
+        {
+            OpenStoryFlow(storyId);
+        }
+        if (CurrentFlow?.Id != storyId) return;
+        if (!CurrentFlow.RequestProblemFocus(nodeId, field))
+            ReportWarning($"Story Flow '{storyId}' 中不存在节点 '{nodeId}'。", $"story/{storyId}/flow/{nodeId}");
+    }
+
+    public void FocusCurrentFlowProblems()
+    {
+        if (CurrentFlow is not null)
+            ReplaceFlowValidationSource(CurrentFlow);
+        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
+        BottomPanel.IsExpanded = true;
+    }
+
+    public void FocusProjectGraphProblems()
+    {
+        UpdateProjectGraphProblems();
+        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
+        BottomPanel.IsExpanded = true;
+    }
+
     private void ShowProjectHome()
     {
         if (!TryLeaveCurrentEditor()) return;
+        var storyId = StoryWorkspace.StoryId;
         ClearAllEditorSelections();
         StoryWorkspace.CloseStory();
+        LoadStoryList();
+        ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == storyId);
         ProjectHome.ShowHome();
         Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
     }
@@ -632,11 +846,36 @@ public sealed class ShellViewModel : ObservableObject
     {
         StoryWorkspaceRoutes.Actors => TryLeaveActorEditor(),
         StoryWorkspaceRoutes.Dialogues or StoryWorkspaceRoutes.Quests => TryLeaveCurrentStoryResourceEditor(),
-        StoryWorkspaceRoutes.Flow => TrySaveCurrentFlow(),
+        StoryWorkspaceRoutes.Flow => true,
         _ => true,
     };
 
-    private bool TryLeaveCurrentEditor() => TryLeaveRoute(StoryWorkspace.CurrentRoute);
+    private bool TryLeaveCurrentEditor()
+    {
+        if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
+        return TryLeaveRoute(StoryWorkspace.CurrentRoute);
+    }
+
+    private bool TryResolveUnsavedFlow()
+    {
+        if (CurrentFlow?.IsDirty != true) return true;
+        return _flowWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(CurrentFlow) switch
+        {
+            UnsavedChangesChoice.Save => TrySaveCurrentFlow(),
+            UnsavedChangesChoice.Discard => DiscardCurrentFlowDraft(),
+            _ => false,
+        };
+    }
+
+    private bool DiscardCurrentFlowDraft()
+    {
+        if (CurrentFlow is null) return true;
+        var storyId = CurrentFlow.Id;
+        _flowRecoveryStore?.Delete(storyId);
+        CurrentFlow = CreateFlowEditor(storyId);
+        Problems.RemoveSourceTree($"story/{storyId}/flow");
+        return true;
+    }
 
     private bool TryLeaveCurrentStoryResourceEditor()
     {
@@ -800,11 +1039,34 @@ public sealed class ShellViewModel : ObservableObject
     {
         var project = _projectService.CurrentProject ?? throw new ProjectException("No project is open.");
         var story = project.Stories.LoadStory(storyId);
-        var actorIds = story.OwnedResources.Actors.Concat(story.ReferencedResources.Actors).Distinct(StringComparer.Ordinal).ToArray();
-        var dialogueIds = story.OwnedResources.Dialogues.Concat(story.ReferencedResources.Dialogues).Distinct(StringComparer.Ordinal).ToArray();
-        var questIds = story.OwnedResources.Quests.Concat(story.ReferencedResources.Quests).Distinct(StringComparer.Ordinal).ToArray();
+        var actorIds = project.Actors.ListActors().Select(actor => actor.Id).Distinct(StringComparer.Ordinal).ToArray();
+        var dialogueIds = project.Dialogues.ListDialogues().Select(dialogue => dialogue.Id).Distinct(StringComparer.Ordinal).ToArray();
+        var questIds = project.Quests.ListQuests().Select(quest => quest.Id).Distinct(StringComparer.Ordinal).ToArray();
+        var storyActorIds = story.OwnedResources.Actors.Concat(story.ReferencedResources.Actors).Distinct(StringComparer.Ordinal).ToArray();
+        var storyDialogueIds = story.OwnedResources.Dialogues.Concat(story.ReferencedResources.Dialogues).Distinct(StringComparer.Ordinal).ToArray();
+        var storyQuestIds = story.OwnedResources.Quests.Concat(story.ReferencedResources.Quests).Distinct(StringComparer.Ordinal).ToArray();
         var storyIds = project.Stories.ListStories().Select(candidate => candidate.Id).ToArray();
-        return new StoryFlowEditorViewModel(project.Stories.LoadStoryDocument(storyId), actorIds, dialogueIds, questIds, storyIds);
+        var document = project.Stories.LoadStoryDocument(storyId);
+        var recovery = _ignoredFlowRecoveries.Contains(storyId) ? null : _flowRecoveryStore?.Load(storyId);
+        if (recovery?.Resource is not null)
+        {
+            switch (_flowWorkspaceDialogs.ChooseRecovery(recovery))
+            {
+                case StoryFlowRecoveryChoice.Recover:
+                    document.Replace(recovery.Resource);
+                    ReportWarning($"已恢复 Story Flow '{storyId}' 的编辑器草稿；正式 Story JSON 尚未改变。", $"story/{storyId}/flow");
+                    break;
+                case StoryFlowRecoveryChoice.Delete:
+                    _flowRecoveryStore?.Delete(storyId);
+                    break;
+                default:
+                    _ignoredFlowRecoveries.Add(storyId);
+                    break;
+            }
+        }
+        return new StoryFlowEditorViewModel(
+            document, actorIds, dialogueIds, questIds, storyIds,
+            storyActorIds, storyDialogueIds, storyQuestIds);
     }
 
     private bool TrySaveCurrentFlow()
@@ -814,13 +1076,17 @@ public sealed class ShellViewModel : ObservableObject
         {
             if (CurrentFlow.ValidationErrors.Count != 0)
             {
-                Problems.ReplaceFromValidationIssues(CurrentFlow.ValidationIssues, $"story/{CurrentFlow.Id}/flow");
+                ReplaceFlowValidationSource(CurrentFlow);
                 BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
+                BottomPanel.IsExpanded = true;
                 ReportWarning($"Story Flow '{CurrentFlow.Id}' 仍有校验错误，尚未保存。", $"story/{CurrentFlow.Id}/flow");
                 return false;
             }
             var project = _projectService.CurrentProject ?? throw new ProjectException("No project is open.");
             project.Stories.SaveStory(CurrentFlow.Document);
+            _flowRecoveryStore?.Delete(CurrentFlow.Id);
+            _ignoredFlowRecoveries.Remove(CurrentFlow.Id);
+            Problems.RemoveSourceTree($"story/{CurrentFlow.Id}/flow");
             ReportSuccess($"Story Flow '{CurrentFlow.Id}' 已保存到磁盘。", $"story/{CurrentFlow.Id}/flow");
             return true;
         }
@@ -913,11 +1179,56 @@ public sealed class ShellViewModel : ObservableObject
                 Arguments = $"\"{_projectService.CurrentProject.ProjectDirectory}\"",
                 UseShellExecute = true,
             });
-            Output.Append("已在文件资源管理器中打开项目目录。", source: "Project");
+            Output.Append("已在文件资源管理器中打开项目文件夹。", source: "Project");
         }
         catch (Exception exception) when (exception is SystemException)
         {
-            ReportFailure("打开项目目录", exception);
+            ReportFailure("打开项目文件夹", exception);
+        }
+    }
+
+    private void RememberProject(string projectDirectory)
+    {
+        RemoveRecentProject(projectDirectory);
+        RecentProjects.Insert(0, CreateRecentProject(projectDirectory));
+        while (RecentProjects.Count > 10) RecentProjects.RemoveAt(RecentProjects.Count - 1);
+    }
+
+    private void AddRecentProject(string projectDirectory) =>
+        RecentProjects.Add(CreateRecentProject(projectDirectory));
+
+    private RecentProjectItemViewModel CreateRecentProject(string projectDirectory) =>
+        new(projectDirectory, () => OpenRecentProject(projectDirectory));
+
+    private void RemoveRecentProject(string projectDirectory)
+    {
+        var existing = RecentProjects.FirstOrDefault(project => PathsEqual(project.ProjectDirectory, projectDirectory));
+        if (existing is not null) RecentProjects.Remove(existing);
+    }
+
+    private static bool IsExistingProjectDirectory(string? projectDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(projectDirectory)) return false;
+        try
+        {
+            var fullPath = Path.GetFullPath(projectDirectory.Trim());
+            return Directory.Exists(fullPath) && File.Exists(Path.Combine(fullPath, "project.json"));
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
+    private static bool PathsEqual(string left, string right)
+    {
+        try
+        {
+            return string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
         }
     }
 
@@ -926,7 +1237,7 @@ public sealed class ShellViewModel : ObservableObject
         try
         {
             var issues = _projectService.ValidateProject();
-            Problems.ReplaceFromValidationIssues(issues, "project");
+            ReplaceValidationSource("project", issues);
             BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
             if (issues.Count == 0)
             {
@@ -952,7 +1263,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         SaveAll();
         var issues = _projectService.ValidateProject();
-        Problems.ReplaceFromValidationIssues(issues, "project");
+        ReplaceValidationSource("project", issues);
         if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
         {
             BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
@@ -1409,10 +1720,21 @@ public sealed class ShellViewModel : ObservableObject
     private void OnProjectHomePropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(ProjectHomeViewModel.SelectedStory))
+        {
             OpenSelectedStoryCommand.RaiseCanExecuteChanged();
+            DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
+        }
     }
 
     private void ProjectHomeOnOpenStoryFlowRequested(object? sender, string storyId) => OpenStoryFlow(storyId);
+    private void ProjectHomeOnOpenStoryRequested(object? sender, string storyId)
+    {
+        if (ProjectHome.Stories.FirstOrDefault(story => story.Id == storyId) is not { } story) return;
+        ProjectHome.SelectedStory = story;
+        ProjectHome.ShowHome();
+        StatusMessage = $"已选择 Story：{story.Id}（概览）";
+        Output.Append(StatusMessage, source: $"story/{story.Id}");
+    }
 
     private void OnStoryWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
@@ -1522,39 +1844,83 @@ public sealed class ShellViewModel : ObservableObject
         PrepareRuntimeReloadCommand.RaiseCanExecuteChanged();
         ShowProjectSettingsCommand.RaiseCanExecuteChanged();
         OpenSelectedStoryCommand.RaiseCanExecuteChanged();
+        CreateStoryCommand.RaiseCanExecuteChanged();
+        DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
         ShowProjectHomeCommand.RaiseCanExecuteChanged();
         ShowProjectGraphCommand.RaiseCanExecuteChanged();
     }
 
     private void RefreshProblems()
     {
+        if (CurrentFlow is not null)
+            ReplaceFlowValidationSource(CurrentFlow);
+
         if (CurrentActor is not null)
         {
-            Problems.ReplaceFromValidationIssues(
-                CurrentActor.Document.ValidationIssues,
-                $"actor/{CurrentActor.Id}");
+            ReplaceValidationSource($"actor/{CurrentActor.Id}", CurrentActor.Document.ValidationIssues);
             return;
         }
 
         if (CurrentDialogue is not null)
         {
-            Problems.ReplaceFromValidationIssues(CurrentDialogue.ValidationIssues, $"dialogue/{CurrentDialogue.Id}");
+            ReplaceValidationSource($"dialogue/{CurrentDialogue.Id}", CurrentDialogue.ValidationIssues);
             return;
         }
 
         if (CurrentQuest is not null)
         {
-            Problems.ReplaceFromValidationIssues(CurrentQuest.ValidationIssues, $"quest/{CurrentQuest.Id}");
+            ReplaceValidationSource($"quest/{CurrentQuest.Id}", CurrentQuest.ValidationIssues);
             return;
         }
 
         if (_projectService.CurrentProject is not null)
         {
-            Problems.ReplaceFromValidationIssues(_projectService.ValidateProject(), "project");
+            ReplaceValidationSource("project", _projectService.ValidateProject());
+            UpdateProjectGraphProblems();
             return;
         }
 
-        Problems.Clear();
+        Problems.ClearAll();
+    }
+
+    private void ReplaceValidationSource(string source, IEnumerable<ValidationIssue> issues) =>
+        Problems.ReplaceForSource(
+            source,
+            issues.Select(issue => new ProblemItem(issue.Severity, issue.Code, issue.Message, issue.Field, source)));
+
+    private void ReplaceFlowValidationSource(StoryFlowEditorViewModel flow)
+    {
+        var rootSource = $"story/{flow.Id}/flow";
+        Problems.ReplaceForSourceTree(
+            rootSource,
+            flow.ValidationIssues.Select(issue => new ProblemItem(
+                issue.Severity,
+                issue.Code,
+                issue.Message,
+                issue.Field,
+                string.IsNullOrWhiteSpace(issue.NodeId) ? rootSource : $"{rootSource}/{issue.NodeId}")));
+    }
+
+    private void UpdateProjectGraphProblems()
+    {
+        var problems = ProjectHome.Graph.Diagnostics.Select(issue => new ProblemItem(
+                issue.Code == "project_graph.target.missing" ? ValidationSeverity.Error : ValidationSeverity.Warning,
+                issue.Code,
+                issue.Message,
+                issue.NodeId is null ? null : "target_story_id",
+                string.IsNullOrWhiteSpace(issue.StoryId)
+                    ? "project-graph"
+                    : issue.NodeId is null
+                        ? $"project-graph/{issue.StoryId}"
+                        : $"project-graph/{issue.StoryId}/{issue.NodeId}"))
+            .ToList();
+        if (!string.IsNullOrWhiteSpace(ProjectHome.Graph.PersistenceWarning))
+            problems.Add(new ProblemItem(
+                ValidationSeverity.Warning,
+                "project_graph.layout.persistence",
+                ProjectHome.Graph.PersistenceWarning,
+                Source: "project-graph"));
+        Problems.ReplaceForSourceTree("project-graph", problems);
     }
 
     private void ReportSuccess(string message, string? source = null)
@@ -1581,12 +1947,12 @@ public sealed class ShellViewModel : ObservableObject
 
         if (exception is ActorValidationException validationException)
         {
-            Problems.ReplaceFromValidationIssues(validationException.Issues, source);
+            ReplaceValidationSource(source, validationException.Issues);
             BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
         }
         else
         {
-            Problems.Replace(
+            Problems.ReplaceForSource(source,
             [
                 new ProblemItem(
                     ValidationSeverity.Error,
@@ -1618,12 +1984,12 @@ public sealed class ShellViewModel : ObservableObject
         };
         if (issues is not null)
         {
-            Problems.ReplaceFromValidationIssues(issues, source);
+            ReplaceValidationSource(source, issues);
             BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
         }
         else
         {
-            Problems.Replace([new ProblemItem(ValidationSeverity.Error, "operation.failure", message, Source: source)]);
+            Problems.ReplaceForSource(source, [new ProblemItem(ValidationSeverity.Error, "operation.failure", message, Source: source)]);
         }
     }
 
@@ -1633,8 +1999,41 @@ public sealed class ShellViewModel : ObservableObject
         RaiseCurrentEditorStates();
     }
 
-    private void OnCurrentResourceEditorPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs) =>
+    private void OnCurrentResourceEditorPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (sender is StoryFlowEditorViewModel flow && eventArgs.PropertyName == nameof(StoryFlowEditorViewModel.IsDirty))
+            CaptureFlowRecovery(flow);
         RaiseCurrentEditorStates();
+    }
+
+    private void OnFlowHistoryCanExecuteChanged(object? sender, EventArgs eventArgs)
+    {
+        UndoCurrentCommand.RaiseCanExecuteChanged();
+        RedoCurrentCommand.RaiseCanExecuteChanged();
+    }
+
+    private void CaptureFlowRecovery(StoryFlowEditorViewModel flow)
+    {
+        if (_flowRecoveryStore is null) return;
+        try
+        {
+            if (flow.IsDirty)
+                _flowRecoveryStore.Save(flow.Document.ToResource(), flow.Document.SourcePath);
+            else
+                _flowRecoveryStore.Delete(flow.Id);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidDataException)
+        {
+            ReportWarning($"Story Flow '{flow.Id}' 的恢复草稿写入失败：{exception.Message}", $"story/{flow.Id}/flow/recovery");
+        }
+    }
+
+    private void ReportPendingFlowRecoveries()
+    {
+        var count = _flowRecoveryStore?.Enumerate().Count ?? 0;
+        if (count > 0)
+            ReportWarning($"检测到 {count} 个 Story Flow 恢复草稿；打开对应 Story 时可恢复、忽略或删除。", "story/recovery");
+    }
 
     private void RaiseCurrentEditorStates()
     {
@@ -1677,6 +2076,7 @@ public sealed class ShellViewModel : ObservableObject
     private sealed class NullProjectWorkspaceDialogs : IProjectWorkspaceDialogs
     {
         public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 
     private sealed class NullResourceWorkspaceDialogs : IResourceWorkspaceDialogs
@@ -1690,5 +2090,10 @@ public sealed class ShellViewModel : ObservableObject
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
         public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
+    }
+
+    private sealed class NullFlowWorkspaceDialogs : IFlowWorkspaceDialogs
+    {
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(StoryFlowEditorViewModel flow) => UnsavedChangesChoice.Cancel;
     }
 }

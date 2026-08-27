@@ -130,7 +130,54 @@ public sealed class SettingsService : ISettingsService
         LastProject = string.IsNullOrWhiteSpace(settings.LastProject)
             ? null
             : Path.GetFullPath(settings.LastProject.Trim()),
+        RecentProjects = NormalizeRecentProjects(settings.RecentProjects),
     };
+
+    private static IReadOnlyList<string> NormalizeRecentProjects(IEnumerable<string>? recentProjects)
+    {
+        if (recentProjects is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var normalized = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var projectPath in recentProjects)
+        {
+            if (string.IsNullOrWhiteSpace(projectPath))
+            {
+                continue;
+            }
+
+            string fullPath;
+            try
+            {
+                fullPath = Path.GetFullPath(projectPath.Trim());
+            }
+            catch (ArgumentException)
+            {
+                continue;
+            }
+            catch (NotSupportedException)
+            {
+                continue;
+            }
+
+            if (!seen.Add(fullPath))
+            {
+                continue;
+            }
+
+            normalized.Add(fullPath);
+            if (normalized.Count == 10)
+            {
+                break;
+            }
+        }
+
+        return normalized;
+    }
 
     private static double NormalizeDimension(double value, double minimum, double maximum, double fallback) =>
         double.IsFinite(value) && value >= minimum && value <= maximum ? value : fallback;

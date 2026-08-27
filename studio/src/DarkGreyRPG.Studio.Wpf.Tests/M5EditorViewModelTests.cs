@@ -15,7 +15,8 @@ public sealed class M5EditorViewModelTests
     {
         using var directory = new M5ProjectDirectory();
         var service = new ProjectService();
-        service.CreateProject(directory.Root, "m5_editors", "M5 Editors");
+        var session = service.CreateProject(directory.Root, "m5_editors", "M5 Editors");
+        session.Stories.CreateStory("uncategorized", "未分类");
         service.CreateActorInStory("uncategorized", "hero", "Hero");
 
         var dialogue = service.CreateDialogueInStory("uncategorized", "intro", "Intro");
@@ -108,6 +109,7 @@ public sealed class M5EditorViewModelTests
         using var directory = new M5ProjectDirectory();
         var setup = new ProjectService();
         var session = setup.CreateProject(directory.Root, "m5_lifecycle", "M5 Lifecycle");
+        session.Stories.CreateStory("uncategorized", "未分类");
         session.Stories.CreateStory("beta", "Beta");
         var source = setup.CreateDialogueInStory("uncategorized", "source", "Source");
         source.Metadata = new DialogueMetadata { Notes = "template" };

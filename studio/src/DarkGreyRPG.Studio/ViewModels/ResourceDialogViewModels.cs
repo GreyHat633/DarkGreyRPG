@@ -29,7 +29,7 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
     }
 
     public ProjectResourceType Type { get; }
-    public string TypeLabel => Type == ProjectResourceType.Dialogue ? "Dialogue" : "Quest";
+    public string TypeLabel => Label(Type);
     public string Title { get; }
     public string ActionText { get; }
     public string Description { get; }
@@ -77,9 +77,17 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
             type,
             $"新建 {Label(type)}",
             "创建",
-            $"创建独立的新{ChineseLabel(type)}，并归入当前剧情。",
+            type == ProjectResourceType.Story
+                ? "在当前项目中新建一条独立剧情。"
+                : $"创建独立的新{ChineseLabel(type)}，并归入当前剧情。",
             suggestedId,
-            type == ProjectResourceType.Dialogue ? "新对话" : "新任务");
+            type switch
+            {
+                ProjectResourceType.Dialogue => "新对话",
+                ProjectResourceType.Quest => "新任务",
+                ProjectResourceType.Story => "新剧情",
+                _ => throw new ArgumentOutOfRangeException(nameof(type)),
+            });
 
     public static ResourceIdentityDialogViewModel ForImport(
         ProjectResourceType type,
@@ -97,6 +105,7 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
     {
         ProjectResourceType.Dialogue => "Dialogue",
         ProjectResourceType.Quest => "Quest",
+        ProjectResourceType.Story => "Story",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -104,6 +113,7 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
     {
         ProjectResourceType.Dialogue => "对话",
         ProjectResourceType.Quest => "任务",
+        ProjectResourceType.Story => "剧情",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 

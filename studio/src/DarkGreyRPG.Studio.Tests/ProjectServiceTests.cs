@@ -1,5 +1,6 @@
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -22,6 +23,30 @@ public sealed class ProjectServiceTests
         }
 
         StringAssert.Contains(File.ReadAllText(Path.Combine(directory.Root, "project.json")), "\"display_name\": \"学校 RPG\"");
+        Assert.IsEmpty(Directory.EnumerateFiles(Path.Combine(directory.Root, "stories"), "*.json"));
+
+        service.CloseProject();
+        var reopened = new ProjectService().OpenProject(directory.Root);
+        Assert.IsEmpty(reopened.Stories.ListStories());
+    }
+
+    [TestMethod]
+    public void CreateStoryIsExplicitAndAllocatesStableIds()
+    {
+        using var directory = new TestProjectDirectory(createProjectFile: false);
+        var service = new ProjectService();
+        var session = service.CreateProject(directory.Root, "school_rpg", "学校 RPG");
+
+        var created = service.CreateStory("intro", "开场");
+
+        Assert.AreEqual("intro", created.Id);
+        Assert.AreEqual("end", created.Entry);
+        Assert.AreEqual("END", created.Nodes.Single().Type);
+        Assert.IsEmpty(StoryValidator.Validate(created));
+        Assert.AreEqual("intro_2", session.Stories.GetAvailableId("intro"));
+        session.Stories.CreateStory("intro_2", "第二章");
+        Assert.AreEqual("intro_3", session.Stories.GetAvailableId("intro"));
+        Assert.ThrowsExactly<StoryRepositoryException>(() => service.CreateStory("intro", "重复"));
     }
 
     [TestMethod]

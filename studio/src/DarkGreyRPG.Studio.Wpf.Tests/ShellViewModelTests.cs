@@ -23,10 +23,16 @@ public sealed class ShellViewModelTests
                 CreateResult = new ActorIdentityRequest("teacher", "老师"),
             },
             new FakeProjectWorkspaceDialogs(
-                new ProjectCreationRequest(destination, "school_rpg", "学校 RPG")));
+                new ProjectCreationRequest(destination, "school_rpg", "学校 RPG")),
+            new FakeResourceWorkspaceDialogs
+            {
+                CreateResult = new ResourceIdentityRequest("school_story", "校园剧情"),
+            });
 
         shell.NewProjectCommand.Execute(null);
-        OpenUncategorizedActors(shell);
+        Assert.IsEmpty(shell.ProjectHome.Stories);
+        shell.CreateStoryCommand.Execute(null);
+        OpenStoryActors(shell, "school_story");
         shell.NewActorCommand.Execute(null);
         shell.CurrentActor!.Notes = "学校中的任务 NPC";
         shell.CurrentActor.TagsText = "school, quest";
@@ -113,7 +119,7 @@ public sealed class ShellViewModelTests
         };
         var shell = CreateShell(directory.Root, dialogs);
         shell.OpenProjectCommand.Execute(null);
-        OpenUncategorizedActors(shell);
+        OpenStoryActors(shell, "uncategorized");
 
         shell.NewActorCommand.Execute(null);
         Assert.IsTrue(File.Exists(Path.Combine(directory.Root, "actors", "student.json")));
@@ -134,12 +140,61 @@ public sealed class ShellViewModelTests
     }
 
     [TestMethod]
+    public void DeleteSelectedStoryRequiresConfirmationAndRefreshesProjectHome()
+    {
+        using var directory = new TestProjectDirectory();
+        var projectDirectory = Path.Combine(directory.Root, "story_delete_project");
+        var setup = new ProjectService();
+        var session = setup.CreateProject(projectDirectory, "story_delete", "Story Delete");
+        session.Stories.CreateStory("deletable", "Deletable Story");
+        setup.CreateActorInStory("deletable", "cascade_actor", "Cascade Actor");
+        setup.CreateDialogueInStory("deletable", "cascade_dialogue", "Cascade Dialogue");
+        setup.CreateQuestInStory("deletable", "cascade_quest", "Cascade Quest");
+        setup.CloseProject(discardUnsavedChanges: true);
+
+        var dialogs = new FakeProjectWorkspaceDialogs(null);
+        var shell = new ShellViewModel(
+            new ProjectService(),
+            new FixedProjectFolderPicker(projectDirectory),
+            projectWorkspaceDialogs: dialogs);
+        shell.OpenProjectCommand.Execute(null);
+        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "deletable");
+
+        Assert.IsTrue(shell.DeleteSelectedStoryCommand.CanExecute(null));
+        shell.DeleteSelectedStoryCommand.Execute(null);
+
+        Assert.AreEqual(1, dialogs.DeleteStoryConfirmationCount);
+        Assert.AreEqual("deletable", dialogs.LastDeleteStoryId);
+        CollectionAssert.AreEquivalent(
+            new[] { "角色：cascade_actor", "对话：cascade_dialogue", "任务：cascade_quest" },
+            dialogs.LastDeleteStoryResources.ToArray());
+        Assert.IsTrue(File.Exists(Path.Combine(projectDirectory, "stories", "deletable.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(projectDirectory, "actors", "cascade_actor.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(projectDirectory, "dialogues", "cascade_dialogue.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(projectDirectory, "quests", "cascade_quest.json")));
+
+        dialogs.DeleteStoryConfirmed = true;
+        shell.DeleteSelectedStoryCommand.Execute(null);
+
+        Assert.AreEqual(2, dialogs.DeleteStoryConfirmationCount);
+        Assert.IsFalse(File.Exists(Path.Combine(projectDirectory, "stories", "deletable.json")));
+        Assert.IsFalse(File.Exists(Path.Combine(projectDirectory, "actors", "cascade_actor.json")));
+        Assert.IsFalse(File.Exists(Path.Combine(projectDirectory, "dialogues", "cascade_dialogue.json")));
+        Assert.IsFalse(File.Exists(Path.Combine(projectDirectory, "quests", "cascade_quest.json")));
+        Assert.IsFalse(shell.ProjectHome.Stories.Any(story => story.Id == "deletable"));
+        Assert.IsNull(shell.ProjectHome.SelectedStory);
+        Assert.IsEmpty(shell.ProjectHome.Stories);
+        Assert.IsFalse(File.Exists(Path.Combine(projectDirectory, "stories", "uncategorized.json")));
+    }
+
+    [TestMethod]
     public void M4BlankAndImportCreationPersistSelectedStoryAndIndependentData()
     {
         using var directory = new TestProjectDirectory();
         var projectDirectory = Path.Combine(directory.Root, "m4_create_project");
         var setup = new ProjectService();
         var session = setup.CreateProject(projectDirectory, "m4_create", "M4 Create");
+        session.Stories.CreateStory("uncategorized", "未分类");
         session.Stories.CreateStory("beta", "Beta Story");
         var source = setup.CreateActorInStory("uncategorized", "source", "Source");
         source.Notes = "template notes";
@@ -186,6 +241,7 @@ public sealed class ShellViewModelTests
         var projectDirectory = Path.Combine(directory.Root, "m4_reference_project");
         var setup = new ProjectService();
         var session = setup.CreateProject(projectDirectory, "m4_reference", "M4 Reference");
+        session.Stories.CreateStory("uncategorized", "未分类");
         session.Stories.CreateStory("beta", "Beta Story");
         setup.CreateActorInStory("uncategorized", "shared", "Shared Actor");
         var repository = new ActorRepository(projectDirectory);
@@ -372,6 +428,56 @@ public sealed class ShellViewModelTests
         {
             Assert.IsTrue(Directory.Exists(Path.Combine(destination, name)), name);
         }
+        Assert.IsEmpty(Directory.EnumerateFiles(Path.Combine(destination, "stories"), "*.json"));
+        Assert.IsEmpty(shell.ProjectHome.Stories);
+        Assert.IsTrue(shell.StatusMessage.Contains("新建剧情", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void CreateStoryCommandPersistsStoryAndSelectsItsOverview()
+    {
+        using var directory = new TestProjectDirectory();
+        var destination = Path.Combine(directory.Root, "created_story_project");
+        var resourceDialogs = new FakeResourceWorkspaceDialogs
+        {
+            CreateResult = new ResourceIdentityRequest("opening", "开场剧情"),
+        };
+        var shell = new ShellViewModel(
+            new ProjectService(),
+            new FixedProjectFolderPicker(directory.Root),
+            projectWorkspaceDialogs: new FakeProjectWorkspaceDialogs(
+                new ProjectCreationRequest(destination, "story_project", "Story Project")),
+            resourceWorkspaceDialogs: resourceDialogs);
+
+        shell.NewProjectCommand.Execute(null);
+        shell.CreateStoryCommand.Execute(null);
+
+        Assert.IsTrue(File.Exists(Path.Combine(destination, "stories", "opening.json")));
+        Assert.AreEqual("opening", shell.ProjectHome.SelectedStory?.Id);
+        Assert.AreEqual("开场剧情", shell.ProjectHome.SelectedStory?.DisplayName);
+        Assert.AreEqual(1, shell.ProjectHome.SelectedStory?.Overview.FlowNodeCount);
+        Assert.IsTrue(shell.StatusMessage.Contains("opening", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void RecentProjectsTrackExistingOpenedProjectsAndSwitchWithoutDiskScan()
+    {
+        using var first = new TestProjectDirectory();
+        using var second = new TestProjectDirectory();
+        var missing = Path.Combine(AppContext.BaseDirectory, ".test-data", Guid.NewGuid().ToString("N"));
+        var shell = CreateShell(first.Root);
+
+        shell.SetRecentProjects([missing, second.Root, first.Root, second.Root]);
+
+        CollectionAssert.AreEqual(
+            new[] { Path.GetFullPath(second.Root), Path.GetFullPath(first.Root) },
+            shell.RecentProjectDirectories.ToArray());
+        Assert.IsTrue(shell.OpenRecentProject(first.Root));
+        Assert.AreEqual(first.Root, shell.ProjectDirectory);
+        Assert.AreEqual(Path.GetFullPath(first.Root), shell.RecentProjectDirectories[0]);
+        Assert.IsFalse(shell.OpenRecentProject(missing));
+        Assert.IsFalse(shell.RecentProjectDirectories.Any(path =>
+            string.Equals(path, missing, StringComparison.OrdinalIgnoreCase)));
     }
 
     [TestMethod]
@@ -411,11 +517,6 @@ public sealed class ShellViewModelTests
 
     private static ShellViewModel CreateShell(string projectDirectory, IActorWorkspaceDialogs dialogs) =>
         new(new ProjectService(), new FixedProjectFolderPicker(projectDirectory), dialogs);
-
-    private static void OpenUncategorizedActors(ShellViewModel shell)
-    {
-        OpenStoryActors(shell, "uncategorized");
-    }
 
     private static void OpenStoryActors(ShellViewModel shell, string storyId)
     {
@@ -473,9 +574,34 @@ public sealed class ShellViewModelTests
         public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ActorResourceInfo actor) => CloseChoice;
     }
 
+    private sealed class FakeResourceWorkspaceDialogs : IResourceWorkspaceDialogs
+    {
+        public ResourceIdentityRequest? CreateResult { get; init; }
+        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName) => ResourceCreationMode.Blank;
+        public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) => CreateResult;
+        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
+        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
+        public bool ConfirmDelete(ResourceDescriptor resource) => false;
+        public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
+        public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
+        public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
+    }
+
     private sealed class FakeProjectWorkspaceDialogs(ProjectCreationRequest? result) : IProjectWorkspaceDialogs
     {
+        public bool DeleteStoryConfirmed { get; set; }
+        public int DeleteStoryConfirmationCount { get; private set; }
+        public string? LastDeleteStoryId { get; private set; }
+        public IReadOnlyList<string> LastDeleteStoryResources { get; private set; } = [];
         public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => result;
+        public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete)
+        {
+            DeleteStoryConfirmationCount++;
+            LastDeleteStoryId = storyId;
+            LastDeleteStoryResources = resourcesToDelete;
+            return DeleteStoryConfirmed;
+        }
     }
 
     private sealed class TestProjectDirectory : IDisposable

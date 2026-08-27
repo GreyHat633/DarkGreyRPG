@@ -54,6 +54,71 @@ public sealed class ProblemsViewModel : ObservableObject
         }
     }
 
+    public void ReplaceForSource(string source, IEnumerable<ProblemItem> problems)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+        ArgumentNullException.ThrowIfNull(problems);
+
+        var replacement = problems
+            .Select(problem =>
+            {
+                ArgumentNullException.ThrowIfNull(problem);
+                return problem with { Source = source };
+            })
+            .ToArray();
+
+        RemoveSource(source);
+        for (var index = replacement.Length - 1; index >= 0; index--)
+        {
+            Problems.Insert(0, replacement[index]);
+        }
+    }
+
+    public void ReplaceForSourceTree(string rootSource, IEnumerable<ProblemItem> problems)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(rootSource);
+        ArgumentNullException.ThrowIfNull(problems);
+
+        var prefix = rootSource + "/";
+        var replacement = problems.Select(problem =>
+        {
+            ArgumentNullException.ThrowIfNull(problem);
+            var source = string.IsNullOrWhiteSpace(problem.Source) ? rootSource : problem.Source;
+            if (!string.Equals(source, rootSource, StringComparison.Ordinal) &&
+                !source.StartsWith(prefix, StringComparison.Ordinal))
+                throw new ArgumentException("Problem source must be inside the requested source tree.", nameof(problems));
+            return problem with { Source = source };
+        }).ToArray();
+
+        RemoveSourceTree(rootSource);
+        for (var index = replacement.Length - 1; index >= 0; index--) Problems.Insert(0, replacement[index]);
+    }
+
+    public void RemoveSource(string source)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+
+        for (var index = Problems.Count - 1; index >= 0; index--)
+        {
+            if (string.Equals(Problems[index].Source, source, StringComparison.Ordinal))
+            {
+                Problems.RemoveAt(index);
+            }
+        }
+    }
+
+    public void RemoveSourceTree(string rootSource)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(rootSource);
+        var prefix = rootSource + "/";
+        for (var index = Problems.Count - 1; index >= 0; index--)
+            if (string.Equals(Problems[index].Source, rootSource, StringComparison.Ordinal) ||
+                Problems[index].Source?.StartsWith(prefix, StringComparison.Ordinal) == true)
+                Problems.RemoveAt(index);
+    }
+
+    public void ClearAll() => Problems.Clear();
+
     public void Replace(IEnumerable<ProblemItem> problems)
     {
         ArgumentNullException.ThrowIfNull(problems);
@@ -66,7 +131,7 @@ public sealed class ProblemsViewModel : ObservableObject
         }
     }
 
-    public void Clear() => Problems.Clear();
+    public void Clear() => ClearAll();
 
     private void OnProblemsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {

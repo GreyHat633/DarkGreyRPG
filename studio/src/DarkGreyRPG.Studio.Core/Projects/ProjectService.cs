@@ -4,11 +4,19 @@ using System.Text.Json.Serialization;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Stories.Definitions;
 using DarkGreyRPG.Studio.Core.Dialogues;
 using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.Core.Projects;
+
+public sealed record StoryDeletionPlan(
+    string StoryId,
+    IReadOnlyList<string> ActorIds,
+    IReadOnlyList<string> DialogueIds,
+    IReadOnlyList<string> QuestIds,
+    IReadOnlyList<string> Blockers);
 
 public sealed class ProjectService
 {
@@ -69,8 +77,14 @@ public sealed class ProjectService
             DisplayName = displayName.Trim(),
         };
         WriteProjectFile(projectPath, resource);
-        new StoryRepository(root, _atomicFileWriter).SaveStory(StoryResource.CreateUncategorized());
         return SetCurrent(root, resource);
+    }
+
+    /// <summary>Creates and persists a Story in the currently open project.</summary>
+    public StoryResource CreateStory(string id, string displayName)
+    {
+        var current = RequireCurrentProject();
+        return current.Stories.CreateStory(id, displayName);
     }
 
     public ProjectSession OpenProject(string projectDirectory)
@@ -273,6 +287,84 @@ public sealed class ProjectService
         }
     }
 
+    public StoryDeletionPlan GetStoryDeletionPlan(string id)
+    {
+        var current = RequireCurrentProject();
+        var story = current.Stories.LoadStory(id);
+        var blockers = new List<string>();
+
+        var actorIds = FindHomeStoryResourceIds(current, story.Id, ProjectResourceType.Actor);
+        var dialogueIds = FindHomeStoryResourceIds(current, story.Id, ProjectResourceType.Dialogue);
+        var questIds = FindHomeStoryResourceIds(current, story.Id, ProjectResourceType.Quest);
+        foreach (var (type, ids) in new[]
+        {
+            (ProjectResourceType.Actor, actorIds),
+            (ProjectResourceType.Dialogue, dialogueIds),
+            (ProjectResourceType.Quest, questIds),
+        })
+        {
+            foreach (var resourceId in ids)
+            {
+                var hasUnsavedChanges = type switch
+                {
+                    ProjectResourceType.Actor => _openActorDocuments.TryGetValue(resourceId, out var actor) && actor.IsDirty,
+                    ProjectResourceType.Dialogue => _openDialogueDocuments.TryGetValue(resourceId, out var dialogue) && dialogue.IsDirty,
+                    ProjectResourceType.Quest => _openQuestDocuments.TryGetValue(resourceId, out var quest) && quest.IsDirty,
+                    _ => false,
+                };
+                if (hasUnsavedChanges)
+                {
+                    blockers.Add($"资源“{resourceId}”仍有未保存的修改，请先保存或放弃修改");
+                }
+
+                var references = current.Registry.GetReferences(type, resourceId);
+                if (references.Count > 0)
+                {
+                    blockers.Add($"资源“{resourceId}”仍被其他剧情引用：{string.Join("、", references.Select(reference => reference.Id).Order(StringComparer.Ordinal))}");
+                }
+            }
+        }
+
+        var incomingTransitions = FindIncomingStoryTransitions(current, story.Id);
+        if (incomingTransitions.Count > 0)
+        {
+            blockers.Add($"其他剧情仍通过“进入剧情”节点指向它：{string.Join("、", incomingTransitions)}。请先移除或改连这些节点");
+        }
+
+        return new StoryDeletionPlan(story.Id, actorIds, dialogueIds, questIds, blockers);
+    }
+
+    public IReadOnlyList<string> GetStoryDeletionBlockers(string id) => GetStoryDeletionPlan(id).Blockers;
+
+    public bool CanDeleteStory(string id) => GetStoryDeletionPlan(id).Blockers.Count == 0;
+
+    public void DeleteStory(string id)
+    {
+        var current = RequireCurrentProject();
+        var plan = GetStoryDeletionPlan(id);
+        if (plan.Blockers.Count > 0)
+        {
+            throw new ProjectException($"Cannot delete Story '{id}': {string.Join(" ", plan.Blockers)}");
+        }
+
+        foreach (var resourceId in plan.ActorIds)
+        {
+            current.Actors.DeleteActor(resourceId);
+            _openActorDocuments.Remove(resourceId);
+        }
+        foreach (var resourceId in plan.DialogueIds)
+        {
+            current.Dialogues.DeleteDialogue(resourceId);
+            _openDialogueDocuments.Remove(resourceId);
+        }
+        foreach (var resourceId in plan.QuestIds)
+        {
+            current.Quests.DeleteQuest(resourceId);
+            _openQuestDocuments.Remove(resourceId);
+        }
+        current.Stories.DeleteStory(id);
+    }
+
     public ActorDocument SaveActor(ActorDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
@@ -402,6 +494,97 @@ public sealed class ProjectService
         {
             _openActorDocuments.Remove(key);
         }
+    }
+
+    private List<string> FindHomeStoryResourceIds(ProjectSession current, string storyId, ProjectResourceType type)
+    {
+        var resources = new List<string>();
+
+        if (type == ProjectResourceType.Actor)
+        {
+            foreach (var info in current.Actors.ListActors())
+            {
+                if (string.Equals(current.Actors.LoadActor(info.Id).HomeStoryId, storyId, StringComparison.Ordinal))
+                    resources.Add(info.Id);
+            }
+        }
+        else if (type == ProjectResourceType.Dialogue && Directory.Exists(current.Dialogues.DialoguesDirectory))
+        {
+            foreach (var info in current.Dialogues.ListDialogues())
+            {
+                if (string.Equals(current.Dialogues.LoadDialogue(info.Id).HomeStoryId, storyId, StringComparison.Ordinal))
+                    resources.Add(info.Id);
+            }
+        }
+        else if (type == ProjectResourceType.Quest && Directory.Exists(current.Quests.QuestsDirectory))
+        {
+            foreach (var info in current.Quests.ListQuests())
+            {
+                if (string.Equals(current.Quests.LoadQuest(info.Id).HomeStoryId, storyId, StringComparison.Ordinal))
+                    resources.Add(info.Id);
+            }
+        }
+
+        if (type == ProjectResourceType.Actor)
+        {
+            foreach (var document in _openActorDocuments.Values)
+                if (string.Equals(document.HomeStoryId, storyId, StringComparison.Ordinal)) resources.Add(document.Id);
+        }
+        else if (type == ProjectResourceType.Dialogue)
+        {
+            foreach (var document in _openDialogueDocuments.Values)
+                if (string.Equals(document.HomeStoryId, storyId, StringComparison.Ordinal)) resources.Add(document.Id);
+        }
+        else if (type == ProjectResourceType.Quest)
+        {
+            foreach (var document in _openQuestDocuments.Values)
+                if (string.Equals(document.HomeStoryId, storyId, StringComparison.Ordinal)) resources.Add(document.Id);
+        }
+
+        return resources.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+    }
+
+    private static List<string> FindIncomingStoryTransitions(ProjectSession current, string targetStoryId)
+    {
+        var transitions = new List<string>();
+        foreach (var source in current.Stories.ListStories().OrderBy(story => story.Id, StringComparer.Ordinal))
+        {
+            if (string.Equals(source.Id, targetStoryId, StringComparison.Ordinal)) continue;
+            foreach (var node in (source.Nodes ?? []).OrderBy(node => node.Id, StringComparer.Ordinal))
+            {
+                if (!TryGetEnterStoryTarget(node, out var target)
+                    || !string.Equals(target, targetStoryId, StringComparison.Ordinal)) continue;
+                transitions.Add($"{source.Id}/{node.Id}");
+            }
+        }
+
+        return transitions.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    private static bool TryGetEnterStoryTarget(StoryNodeResource node, out string target)
+    {
+        target = string.Empty;
+        if (!StoryNodeDefinitionRegistry.TryGet(node.Type, out var definition)
+            || !string.Equals(definition.CanonicalType, "EnterStory", StringComparison.Ordinal)
+            || node.Properties is null) return false;
+
+        var property = definition.Properties.FirstOrDefault(property =>
+            string.Equals(property.Name, "target_story_id", StringComparison.Ordinal));
+        var keys = property is null
+            ? new[] { "target_story_id", "story_id", "story", "target" }
+            : new[] { property.Name }.Concat(property.Aliases).ToArray();
+        foreach (var key in keys)
+        {
+            if (node.Properties.TryGetValue(key, out var value)
+                && value.ValueKind == System.Text.Json.JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(value.GetString()))
+            {
+                target = value.GetString()!;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private ProjectSession SetCurrent(string root, ProjectResource resource)

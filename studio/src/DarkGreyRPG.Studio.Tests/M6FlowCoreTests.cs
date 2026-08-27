@@ -36,6 +36,9 @@ public sealed class M6FlowCoreTests
         StringAssert.Contains(string.Join("|", issues.Select(i => i.Code)), "story.node.position.invalid");
         StringAssert.Contains(string.Join("|", issues.Select(i => i.Code)), "story.node.actor.required");
         StringAssert.Contains(string.Join("|", issues.Select(i => i.Code)), "story.connection.output.duplicate");
+        var actorIssue = issues.Single(issue => issue.Code == "story.node.actor.required");
+        Assert.AreEqual("a", actorIssue.NodeId);
+        Assert.AreEqual("actor_id", actorIssue.Field);
     }
 
     [TestMethod]

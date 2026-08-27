@@ -1,4 +1,5 @@
 using DarkGreyRPG.Studio.Settings;
+using System.Text.Json;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
 
@@ -88,6 +89,96 @@ public sealed class SettingsServiceTests
             Assert.AreEqual(320, loaded.ResourceBrowserWidth);
             Assert.AreEqual(240, loaded.BottomPanelHeight);
             Assert.AreEqual(Path.GetFullPath(project), loaded.LastProject);
+        }
+        finally
+        {
+            DeleteTempDirectory(settingsPath);
+        }
+    }
+
+    [TestMethod]
+    public void SaveAndLoad_RoundTripsRecentProjects()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            var directory = Path.GetDirectoryName(settingsPath)!;
+            var relativeProject = Path.Combine("projects", "relative");
+            var absoluteProject = Path.Combine(directory, "projects", "absolute");
+            var service = new SettingsService(settingsPath);
+
+            service.Save(new StudioSettings
+            {
+                RecentProjects = [relativeProject, absoluteProject],
+            });
+
+            var loaded = service.Load();
+
+            CollectionAssert.AreEqual(
+                new[] { Path.GetFullPath(relativeProject), Path.GetFullPath(absoluteProject) },
+                loaded.RecentProjects.ToArray());
+        }
+        finally
+        {
+            DeleteTempDirectory(settingsPath);
+        }
+    }
+
+    [TestMethod]
+    public void Load_SchemaV1WithoutRecentProjectsUsesEmptyHistory()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            File.WriteAllText(settingsPath, "{ \"schema_version\": 1, \"theme\": \"Dark\" }");
+
+            var loaded = new SettingsService(settingsPath).Load();
+
+            Assert.AreEqual(ThemePreference.Dark, loaded.Theme);
+            CollectionAssert.AreEqual(Array.Empty<string>(), loaded.RecentProjects.ToArray());
+        }
+        finally
+        {
+            DeleteTempDirectory(settingsPath);
+        }
+    }
+
+    [TestMethod]
+    public void Load_NormalizesRecentProjectsByTrimmingResolvingDeduplicatingAndCapping()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            var directory = Path.GetDirectoryName(settingsPath)!;
+            var first = Path.Combine(directory, "first");
+            var second = Path.Combine(directory, "second");
+            var additional = Enumerable.Range(0, 10)
+                .Select(index => Path.Combine(directory, $"additional-{index}"))
+                .ToArray();
+            var entries = new List<string?>
+            {
+                " ",
+                null,
+                $"  {first}  ",
+                first.ToUpperInvariant(),
+                $" {second} ",
+            };
+            entries.AddRange(additional);
+            var json = JsonSerializer.Serialize(new
+            {
+                schema_version = 1,
+                theme = "System",
+                recent_projects = entries,
+            });
+            File.WriteAllText(settingsPath, json);
+
+            var loaded = new SettingsService(settingsPath).Load();
+
+            var expected = new[] { first, second }
+                .Concat(additional.Take(8))
+                .Select(Path.GetFullPath)
+                .ToArray();
+            CollectionAssert.AreEqual(expected, loaded.RecentProjects.ToArray());
         }
         finally
         {

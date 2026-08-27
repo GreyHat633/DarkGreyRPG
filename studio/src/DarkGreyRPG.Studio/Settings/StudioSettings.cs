@@ -33,4 +33,7 @@ public sealed record StudioSettings
 
     [JsonPropertyName("last_project")]
     public string? LastProject { get; init; }
+
+    [JsonPropertyName("recent_projects")]
+    public IReadOnlyList<string> RecentProjects { get; init; } = Array.Empty<string>();
 }

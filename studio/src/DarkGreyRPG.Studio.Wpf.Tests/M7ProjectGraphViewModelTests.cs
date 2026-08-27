@@ -88,6 +88,91 @@ public sealed class M7ProjectGraphViewModelTests
         Assert.IsEmpty(new ProjectGraphViewModel(project.Stories.ListStories()).Edges);
     }
 
+    [TestMethod]
+    public void CycleDiagnosticsAreWarningsAndAutomaticLayoutTerminatesWithFinitePositions()
+    {
+        var alpha = Story("alpha", "Alpha", Enter("to_beta", "beta"));
+        var beta = Story("beta", "Beta", Enter("to_alpha", "alpha"));
+        var graph = new ProjectGraphViewModel([alpha, beta], "alpha");
+
+        Assert.HasCount(2, graph.Edges);
+        Assert.HasCount(2, graph.Diagnostics.Where(issue => issue.Code == "project_graph.story.cycle"));
+        Assert.IsTrue(graph.Nodes.All(node => node.HasWarning));
+
+        graph.AutoLayout();
+
+        Assert.IsTrue(graph.Nodes.All(node => double.IsFinite(node.X) && double.IsFinite(node.Y)));
+        Assert.AreEqual(graph.Nodes[0].X, graph.Nodes[1].X);
+        Assert.AreNotEqual(graph.Nodes[0].Y, graph.Nodes[1].Y);
+    }
+
+    [TestMethod]
+    public void SelfLoopProducesCycleWarningWithoutBlockingGraphConstruction()
+    {
+        var loop = Story("loop", "Loop", Enter("to_self", "loop"));
+        var graph = new ProjectGraphViewModel([loop]);
+
+        Assert.HasCount(1, graph.Edges);
+        Assert.IsTrue(graph.Diagnostics.Any(issue => issue.Code == "project_graph.story.cycle" && issue.StoryId == "loop"));
+
+        graph.AutoLayout();
+
+        var node = graph.Nodes.Single();
+        Assert.IsTrue(double.IsFinite(node.X) && double.IsFinite(node.Y));
+    }
+
+    [TestMethod]
+    public void ParallelEnterStoryNodesAggregateWithStableBranchDetailsAndSelfLoopFlag()
+    {
+        var source = Story("source", "Source",
+            Enter("z_enter", "target"), Enter("a_enter", "target"), Enter("m_enter", "target"));
+        source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "conceal", To = "z_enter" });
+        source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "accept", To = "z_enter" });
+        source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "accept", To = "z_enter" });
+        source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "fallback", To = "a_enter" });
+        var target = Story("target", "Target");
+
+        var graph = new ProjectGraphViewModel([source, target]);
+
+        var edge = graph.Edges.Single();
+        Assert.AreEqual(3, edge.Count);
+        Assert.AreEqual("a_enter", edge.NodeId);
+        CollectionAssert.AreEqual(new[] { "a_enter", "m_enter", "z_enter" }, edge.Transitions.Select(item => item.NodeId).ToArray());
+        CollectionAssert.AreEqual(new[] { "accept", "conceal" }, edge.Transitions.Single(item => item.NodeId == "z_enter").IncomingBranchOutputs.ToArray());
+        CollectionAssert.AreEqual(new[] { "a_enter", "m_enter", "z_enter" }, edge.EnterStoryNodeIds.ToArray());
+        Assert.IsFalse(edge.IsSelfLoop);
+        StringAssert.Contains(edge.Tooltip, "z_enter");
+
+        var self = new ProjectGraphViewModel([Story("self", "Self", Enter("self_enter", "self"))]).Edges.Single();
+        Assert.IsTrue(self.IsSelfLoop);
+        Assert.AreEqual(1, self.Count);
+    }
+
+    [TestMethod]
+    public void MissingTargetDiagnosticCarriesPreciseStoryAndEnterStoryNodeIds()
+    {
+        var graph = new ProjectGraphViewModel([Story("source", "Source", Enter("enter_missing", "missing"))]);
+
+        var issue = graph.Diagnostics.Single(item => item.Code == "project_graph.target.missing");
+        Assert.AreEqual("source", issue.StoryId);
+        Assert.AreEqual("enter_missing", issue.NodeId);
+        StringAssert.Contains(issue.Message, "source.enter_missing");
+    }
+
+    [TestMethod]
+    public void ProblemFocusRequestMakesStoryVisibleAndCarriesStableSequence()
+    {
+        var graph = new ProjectGraphViewModel([Story("source", "Source"), Story("other", "Other")]);
+        graph.SearchText = "other";
+        Assert.IsFalse(graph.Nodes.Single(node => node.Id == "source").IsVisible);
+
+        Assert.IsTrue(graph.RequestProblemFocus("source"));
+
+        Assert.AreEqual("source", graph.ProblemFocusRequest?.StoryId);
+        Assert.IsTrue(graph.Nodes.Single(node => node.Id == "source").IsVisible);
+        Assert.IsFalse(graph.RequestProblemFocus("missing"));
+    }
+
     private static StoryResource Story(string id, string displayName, params StoryNodeResource[] nodes) => new()
     {
         Id = id, DisplayName = displayName, Title = displayName,

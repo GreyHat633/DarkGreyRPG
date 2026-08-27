@@ -134,43 +134,39 @@ if (-not $eventAdapter.Contains('event.setCanceled(true)')) {
     Add-CheckError 'Bound Story Actor interaction must suppress the CustomNPC+ interaction GUI path'
 }
 
-$store = Get-Content -LiteralPath (Join-Path $projectRoot 'studio\scripts\RpgProjectStore.gd') -Raw -Encoding UTF8
+$flowEditor = Get-Content -LiteralPath (
+    Join-Path $projectRoot 'studio\src\DarkGreyRPG.Studio\Views\StoryFlowEditorView.xaml.cs'
+) -Raw -Encoding UTF8
 foreach ($required in @(
-    'Missing Actor',
-    'Missing Dialogue',
-    'Missing Quest',
-    'Unconnected Node',
-    'No Exit',
-    'Invalid Connection',
-    'Duplicate Story ID',
-    'Broken Resource Reference'
+    'GraphViewportController',
+    'BeginWireDrag',
+    'CancelPointerGesture',
+    'WireDragSession',
+    'HandleProblemFocus'
 )) {
-    if (-not $store.Contains($required)) {
-        Add-CheckError "Studio Story Problems is missing '$required'"
+    if (-not $flowEditor.Contains($required)) {
+        Add-CheckError "WPF Story Flow editor is missing '$required'"
     }
 }
 
-$editor = Get-Content -LiteralPath (Join-Path $projectRoot 'studio\scripts\StoryEditorWindow.gd') -Raw -Encoding UTF8
+$graphView = Get-Content -LiteralPath (
+    Join-Path $projectRoot 'studio\src\DarkGreyRPG.Studio\Views\ProjectGraphView.xaml.cs'
+) -Raw -Encoding UTF8
 foreach ($required in @(
-    'GraphEdit.new',
-    'minimap_enabled',
-    'connection_request',
-    'disconnection_request',
-    '_duplicate_selected',
-    '_copy_selected',
-    '_paste_node',
-    '_undo',
-    '_redo',
-    'Search Add Node types',
-    'Find node ID, type, or property',
-    '_search_nodes',
-    '_refresh_inspector',
-    'item_activated',
-    'scroll_offset'
+    'ProjectGraphEdgeGeometry',
+    'ProjectGraphAccessiblePath',
+    'CreateArrow',
+    'OpenSourceTransition',
+    'HandleProblemFocus'
 )) {
-    if (-not $editor.Contains($required)) {
-        Add-CheckError "Studio Story editor is missing '$required'"
+    if (-not $graphView.Contains($required)) {
+        Add-CheckError "WPF Project Graph is missing '$required'"
     }
+}
+
+$recoveryStorePath = Join-Path $projectRoot 'studio\src\DarkGreyRPG.Studio.Core\Stories\StoryFlowRecoveryStore.cs'
+if (-not (Test-Path -LiteralPath $recoveryStorePath -PathType Leaf)) {
+    Add-CheckError 'WPF Studio Story Flow Recovery store is missing'
 }
 
 if ($errors.Count -gt 0) {
@@ -185,5 +181,5 @@ Write-Host 'STORY_NODE_TYPES=16'
 Write-Host 'EXECUTOR_REGISTRY_NO_GIANT_SWITCH=PASS'
 Write-Host 'STORY_EVENT_INTEGRATION=PASS'
 Write-Host 'CNPC_INTERACTION_GUI_SUPPRESSION=PASS'
-Write-Host 'STUDIO_STORY_PROBLEMS=PASS'
-Write-Host 'STUDIO_GRAPH_UX_MARKERS=PASS'
+Write-Host 'STUDIO_WPF_FLOW_PROBLEMS_RECOVERY=PASS'
+Write-Host 'STUDIO_WPF_PROJECT_GRAPH_UX=PASS'

@@ -74,11 +74,25 @@ public sealed class StoryRepository
 
     public StoryDocument SaveDocument(StoryDocument document) => SaveStory(document);
 
+    public void DeleteStory(string id)
+    {
+        ValidateExistingId(id);
+        var path = GetStoryPath(id);
+        if (!File.Exists(path)) throw new StoryNotFoundException(id);
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            throw new StoryRepositoryException($"Could not delete Story '{id}'.", exception);
+        }
+    }
+
     public StoryResource CreateStory(string id, string displayName)
     {
-        var normalized = ActorValidator.NormalizeId(id);
-        if (!string.Equals(normalized, id, StringComparison.Ordinal) || string.IsNullOrWhiteSpace(id))
-            throw new StoryRepositoryException($"Invalid Story ID '{id}'.");
+        ThrowIfInvalidNewId(id);
         var path = GetStoryPath(id);
         if (File.Exists(path)) throw new StoryRepositoryException($"Story '{id}' already exists.");
         var story = new StoryResource
@@ -91,7 +105,35 @@ public sealed class StoryRepository
         return story;
     }
 
+    public string GetAvailableId(string baseId)
+    {
+        ThrowIfInvalidNewId(baseId);
+        if (!File.Exists(GetStoryPath(baseId))) return baseId;
+
+        for (var suffix = 2; suffix < int.MaxValue; suffix++)
+        {
+            var candidate = $"{baseId}_{suffix}";
+            if (!File.Exists(GetStoryPath(candidate))) return candidate;
+        }
+
+        throw new StoryRepositoryException($"Could not allocate an available Story ID based on '{baseId}'.");
+    }
+
     private string GetStoryPath(string id) => Path.Combine(StoriesDirectory, id + ".json");
+
+    private static void ValidateExistingId(string id)
+    {
+        var issues = ActorValidator.ValidateId(id, ActorIdPolicy.ExistingResource);
+        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
+            throw new StoryRepositoryException($"Invalid Story ID '{id}'.");
+    }
+
+    private static void ThrowIfInvalidNewId(string id)
+    {
+        var issues = ActorValidator.ValidateId(id, ActorIdPolicy.NewResource);
+        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
+            throw new StoryRepositoryException($"Invalid Story ID '{id}'.");
+    }
 }
 
 public sealed class StoryNotFoundException : Exception

@@ -3,11 +3,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using System.Windows.Threading;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.Settings;
 using DarkGreyRPG.Studio.ViewModels;
+using DarkGreyRPG.Studio.Views;
 
 namespace DarkGreyRPG.Studio;
 
@@ -28,7 +30,8 @@ public partial class MainWindow : Window
             new ProjectFolderPicker(),
             new ActorWorkspaceDialogs(() => this),
             new ProjectWorkspaceDialogs(() => this),
-            new ResourceWorkspaceDialogs(() => this));
+            new ResourceWorkspaceDialogs(() => this),
+            new FlowWorkspaceDialogs(() => this));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
@@ -42,7 +45,7 @@ public partial class MainWindow : Window
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 2.1\nStory-first authoring, Flow canvas, and derived Story Graph",
+            "DarkGrey RPG Studio 2.1.2\nStory-first authoring with unified Flow and read-only Story Graph interactions",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -82,6 +85,57 @@ public partial class MainWindow : Window
             shell.OpenStory(story);
             e.Handled = true;
         }
+    }
+
+    private void StoryList_OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is not ShellViewModel shell) return;
+
+        var item = FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
+        var menuTarget = item ?? sender as UIElement ?? StoryList;
+        var menu = FluentContextMenuFactory.Create(menuTarget);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "新建剧情",
+            () => shell.CreateStoryCommand.Execute(null),
+            shell.CreateStoryCommand.CanExecute(null)));
+
+        if (item?.DataContext is not StoryListItemViewModel story)
+        {
+            StoryList.ContextMenu = menu;
+            menu.IsOpen = true;
+            e.Handled = true;
+            return;
+        }
+
+        shell.ProjectHome.SelectedStory = story;
+        item.IsSelected = true;
+        item.Focus();
+
+        var openItem = FluentContextMenuFactory.CreateItem("打开剧情", () => shell.OpenStory(story));
+        var deleteItem = FluentContextMenuFactory.CreateItem(
+            "删除剧情",
+            action: null,
+            enabled: shell.DeleteSelectedStoryCommand.CanExecute(null),
+            critical: true);
+        deleteItem.Command = shell.DeleteSelectedStoryCommand;
+
+        menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
+        menu.Items.Add(openItem);
+        menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
+        menu.Items.Add(deleteItem);
+        item.ContextMenu = menu;
+        menu.IsOpen = true;
+        e.Handled = true;
+    }
+
+    private static T? FindVisualAncestor<T>(DependencyObject? source) where T : DependencyObject
+    {
+        while (source is not null)
+        {
+            if (source is T match) return match;
+            source = VisualTreeHelper.GetParent(source);
+        }
+        return null;
     }
 
     private void Shell_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -136,6 +190,7 @@ public partial class MainWindow : Window
                 ResourceBrowserWidth = browserWidth,
                 BottomPanelHeight = _shell.BottomPanel.ExpandedHeight,
                 LastProject = _shell.HasProject ? _shell.ProjectDirectory : null,
+                RecentProjects = _shell.RecentProjectDirectories,
             });
         }
         catch (SettingsPersistenceException exception)
@@ -162,6 +217,7 @@ public partial class MainWindow : Window
             WindowState = WindowState.Maximized;
         }
 
+        _shell.SetRecentProjects(settings.RecentProjects);
         _shell.RestoreLastProject(settings.LastProject);
     }
 

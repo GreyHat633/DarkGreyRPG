@@ -1,4 +1,5 @@
 using DarkGreyRPG.Studio.ViewModels;
+using DarkGreyRPG.Studio.Core.Projects;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
 
@@ -32,5 +33,19 @@ public sealed class ActorIdentityDialogViewModelTests
         Assert.IsTrue(rename.CanConfirm);
         Assert.IsFalse(rename.IsDisplayNameVisible);
     }
-}
 
+    [TestMethod]
+    public void StoryIdentityUsesExplicitStoryCopyAndValidation()
+    {
+        var viewModel = ResourceIdentityDialogViewModel.ForCreate(ProjectResourceType.Story, "new_story");
+
+        Assert.AreEqual("Story", viewModel.TypeLabel);
+        Assert.AreEqual("新建 Story", viewModel.Title);
+        Assert.AreEqual("新剧情", viewModel.DisplayName);
+        Assert.IsTrue(viewModel.Description.Contains("独立剧情", StringComparison.Ordinal));
+        Assert.IsTrue(viewModel.CanConfirm);
+
+        viewModel.Id = "Bad Story!";
+        Assert.IsFalse(viewModel.CanConfirm);
+    }
+}

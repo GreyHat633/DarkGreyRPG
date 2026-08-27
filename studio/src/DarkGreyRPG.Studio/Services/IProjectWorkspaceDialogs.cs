@@ -11,4 +11,8 @@ public sealed record ProjectCreationRequest(
 public interface IProjectWorkspaceDialogs
 {
     ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null);
+    bool ConfirmDeleteStory(
+        string storyId,
+        string displayName,
+        IReadOnlyList<string> resourcesToDelete);
 }

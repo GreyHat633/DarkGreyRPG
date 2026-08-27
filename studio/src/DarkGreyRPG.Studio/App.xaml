@@ -3,5 +3,42 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ThemeMode="System">
     <Application.Resources>
+        <Style x:Key="FluentContextMenuStyle"
+               TargetType="{x:Type ContextMenu}"
+               BasedOn="{StaticResource DefaultContextMenuStyle}">
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        </Style>
+        <Style x:Key="FluentContextMenuItemStyle"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource DefaultMenuItemStyle}">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        </Style>
+        <Style x:Key="FluentContextMenuCriticalItemStyle"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource FluentContextMenuItemStyle}">
+            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+        </Style>
+        <Style x:Key="FluentContextMenuSeparatorStyle" TargetType="{x:Type Separator}">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="36,4,8,4" />
+            <Setter Property="Background" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Separator}">
+                        <Border Height="1" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Application.Resources>
 </Application>

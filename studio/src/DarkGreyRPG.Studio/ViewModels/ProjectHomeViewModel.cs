@@ -5,9 +5,10 @@ using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
-public sealed class StoryListItemViewModel
+/// <summary>Route-independent summary data for the selected Story on Project Home.</summary>
+public sealed class StoryOverviewViewModel : ObservableObject
 {
-    public StoryListItemViewModel(StoryResource story)
+    public StoryOverviewViewModel(StoryResource story)
     {
         Story = story ?? throw new ArgumentNullException(nameof(story));
     }
@@ -17,10 +18,35 @@ public sealed class StoryListItemViewModel
     public string DisplayName => string.IsNullOrWhiteSpace(Story.DisplayName) ? Story.Title : Story.DisplayName;
     public string Description => Story.Description;
     public IReadOnlyList<string> Tags => Story.Tags;
+    public int OwnedActorCount => Story.OwnedResources.Actors.Count;
+    public int ReferencedActorCount => Story.ReferencedResources.Actors.Count;
+    public int DialogueCount => Story.OwnedResources.Dialogues.Count + Story.ReferencedResources.Dialogues.Count;
+    public int QuestCount => Story.OwnedResources.Quests.Count + Story.ReferencedResources.Quests.Count;
+    public int FlowNodeCount => Story.Nodes.Count;
+    public string MembershipSummary =>
+        $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
+}
+
+public sealed class StoryListItemViewModel
+{
+    public StoryListItemViewModel(StoryResource story)
+    {
+        Story = story ?? throw new ArgumentNullException(nameof(story));
+        Overview = new StoryOverviewViewModel(Story);
+    }
+
+    public StoryResource Story { get; }
+    public StoryOverviewViewModel Overview { get; }
+    public string Id => Story.Id;
+    public string DisplayName => string.IsNullOrWhiteSpace(Story.DisplayName) ? Story.Title : Story.DisplayName;
+    public string Description => Story.Description;
+    public IReadOnlyList<string> Tags => Story.Tags;
     public string TagsText => string.Join(", ", Story.Tags);
     public int ActorCount => Story.OwnedResources.Actors.Count + Story.ReferencedResources.Actors.Count;
     public int DialogueCount => Story.OwnedResources.Dialogues.Count + Story.ReferencedResources.Dialogues.Count;
     public int QuestCount => Story.OwnedResources.Quests.Count + Story.ReferencedResources.Quests.Count;
+    public string MembershipSummary => Overview.MembershipSummary;
+    public int FlowNodeCount => Overview.FlowNodeCount;
 }
 
 public sealed class ProjectGraphNodeViewModel : ObservableObject
@@ -44,8 +70,75 @@ public sealed class ProjectGraphNodeViewModel : ObservableObject
     internal void SetPosition(double x, double y) { X = x; Y = y; }
 }
 
-public sealed record ProjectGraphEdgeViewModel(string SourceStoryId, string TargetStoryId, string NodeId);
-public sealed record ProjectGraphDiagnosticViewModel(string Code, string Message, string? StoryId);
+/// <summary>A single EnterStory transition retained inside an aggregate project-graph edge.</summary>
+public sealed record ProjectGraphTransitionViewModel(
+    string NodeId,
+    IReadOnlyList<string> IncomingBranchOutputs)
+{
+    public string EnterStoryNodeId => NodeId;
+    public IReadOnlyList<string> IncomingOutputs => IncomingBranchOutputs;
+    public IReadOnlyList<string> BranchReasons => IncomingBranchOutputs;
+    public IReadOnlyList<string> IncomingBranchReasons => IncomingBranchOutputs;
+    public string IncomingBranchOutput => string.Join(", ", IncomingBranchOutputs);
+    public string BranchReason => IncomingBranchOutput;
+    public string Tooltip => IncomingBranchOutputs.Count == 0
+        ? $"来源 EnterStory：{NodeId}"
+        : $"来源 EnterStory：{NodeId}（入线分支：{string.Join("、", IncomingBranchOutputs)}）";
+}
+
+/// <summary>One derived edge per source/target pair; the underlying EnterStory nodes remain available as details.</summary>
+public sealed record ProjectGraphEdgeViewModel(string SourceStoryId, string TargetStoryId, string NodeId)
+{
+    public int Count { get; init; } = 1;
+    public int TransitionCount => Count;
+    public bool IsSelfLoop => string.Equals(SourceStoryId, TargetStoryId, StringComparison.Ordinal);
+    public bool SelfLoop => IsSelfLoop;
+    public IReadOnlyList<ProjectGraphTransitionViewModel> Transitions { get; init; } =
+        Array.AsReadOnly(Array.Empty<ProjectGraphTransitionViewModel>());
+    public IReadOnlyList<ProjectGraphTransitionViewModel> TransitionDetails => Transitions;
+    public IReadOnlyList<string> EnterStoryNodeIds => Transitions.Select(transition => transition.NodeId).ToArray();
+    public IReadOnlyList<string> NodeIds => EnterStoryNodeIds;
+    public IReadOnlyList<string> IncomingBranchOutputs => Transitions
+        .SelectMany(transition => transition.IncomingBranchOutputs)
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(output => output, StringComparer.Ordinal)
+        .ToArray();
+    public IReadOnlyList<string> BranchReasons => IncomingBranchOutputs;
+    public string Tooltip => Transitions.Count == 0
+        ? $"{SourceStoryId} → {TargetStoryId}"
+        : $"{SourceStoryId} → {TargetStoryId}（{string.Join("；", Transitions.Select(transition => transition.Tooltip))}）";
+    public string TooltipText => Tooltip;
+
+    public ProjectGraphEdgeViewModel(
+        string sourceStoryId,
+        string targetStoryId,
+        IReadOnlyList<ProjectGraphTransitionViewModel> transitions)
+        : this(sourceStoryId, targetStoryId, transitions.FirstOrDefault()?.NodeId ?? string.Empty)
+    {
+        Transitions = Array.AsReadOnly(transitions.ToArray());
+        Count = transitions.Count;
+    }
+}
+
+public sealed record ProjectGraphDiagnosticViewModel(
+    string Code,
+    string Message,
+    string? StoryId)
+{
+    public string? NodeId { get; init; }
+    public string? SourceStoryId => StoryId;
+    public string? StoryNodeId => NodeId;
+
+    public ProjectGraphDiagnosticViewModel(
+        string code,
+        string message,
+        string? storyId,
+        string? nodeId)
+        : this(code, message, storyId)
+    {
+        NodeId = nodeId;
+    }
+}
 
 /// <summary>Read-only project Story graph snapshot for the M3 Project Graph route.</summary>
 public sealed class ProjectGraphViewModel : ObservableObject
@@ -57,13 +150,15 @@ public sealed class ProjectGraphViewModel : ObservableObject
     private double _panX;
     private double _panY;
     private string _persistenceWarning = string.Empty;
+    private long _problemFocusSequence;
+    private ProjectGraphFocusRequest? _problemFocusRequest;
 
     public ProjectGraphViewModel(IReadOnlyList<StoryResource> stories, string? homeStoryId = null, string? projectDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(stories);
         _layoutStore = string.IsNullOrWhiteSpace(projectDirectory) ? null : new ProjectGraphLayoutStore(projectDirectory);
         var storyIds = stories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal);
-        var edges = new List<ProjectGraphEdgeViewModel>();
+        var transitions = new List<(string SourceStoryId, string TargetStoryId, ProjectGraphTransitionViewModel Transition)>();
         var diagnostics = new List<ProjectGraphDiagnosticViewModel>();
         var warnedStories = new HashSet<string>(StringComparer.Ordinal);
         foreach (var story in stories)
@@ -74,19 +169,63 @@ public sealed class ProjectGraphViewModel : ObservableObject
                 if (string.IsNullOrWhiteSpace(target) || !storyIds.Contains(target))
                 {
                     var label = string.IsNullOrWhiteSpace(target) ? "<empty>" : target;
-                    diagnostics.Add(new("project_graph.target.missing", $"{story.Id}.{node.Id} 指向不存在的 Story '{label}'。", story.Id));
+                    diagnostics.Add(new("project_graph.target.missing", $"{story.Id}.{node.Id} 指向不存在的 Story '{label}'。", story.Id, node.Id));
                     warnedStories.Add(story.Id);
                     continue;
                 }
-                edges.Add(new(story.Id, target, node.Id));
+                var incomingOutputs = story.Connections
+                    .Where(connection => string.Equals(connection.To, node.Id, StringComparison.Ordinal))
+                    .Select(connection => connection.Output)
+                    .Where(output => !string.IsNullOrWhiteSpace(output))
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(output => output, StringComparer.Ordinal)
+                    .ToArray();
+                transitions.Add((story.Id, target, new ProjectGraphTransitionViewModel(node.Id, Array.AsReadOnly(incomingOutputs))));
             }
         }
+
+        var edges = transitions
+            .GroupBy(item => (item.SourceStoryId, item.TargetStoryId))
+            .OrderBy(group => group.Key.SourceStoryId, StringComparer.Ordinal)
+            .ThenBy(group => group.Key.TargetStoryId, StringComparer.Ordinal)
+            .Select(group => new ProjectGraphEdgeViewModel(
+                group.Key.SourceStoryId,
+                group.Key.TargetStoryId,
+                group.OrderBy(item => item.Transition.NodeId, StringComparer.Ordinal)
+                    .ThenBy(item => item.Transition.IncomingBranchOutput, StringComparer.Ordinal)
+                    .Select(item => item.Transition)
+                    .ToArray()))
+            .ToList();
 
         var connected = edges.SelectMany(edge => new[] { edge.SourceStoryId, edge.TargetStoryId }).ToHashSet(StringComparer.Ordinal);
         foreach (var story in stories.Where(story => !connected.Contains(story.Id)))
         {
             diagnostics.Add(new("project_graph.story.isolated", $"Story '{story.Id}' 未连接到任何 EnterStory 转场。", story.Id));
             warnedStories.Add(story.Id);
+        }
+
+        var adjacency = storyIds.ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
+        foreach (var edge in edges)
+            adjacency[edge.SourceStoryId].Add(edge.TargetStoryId);
+        foreach (var targets in adjacency.Values)
+        {
+            targets.Sort(StringComparer.Ordinal);
+            for (var index = targets.Count - 1; index > 0; index--)
+                if (string.Equals(targets[index], targets[index - 1], StringComparison.Ordinal)) targets.RemoveAt(index);
+        }
+
+        foreach (var component in FindStronglyConnectedComponents(storyIds, adjacency)
+                     .Where(component => component.Count > 1 || adjacency[component[0]].Contains(component[0], StringComparer.Ordinal)))
+        {
+            var members = string.Join("、", component);
+            foreach (var storyId in component)
+            {
+                diagnostics.Add(new(
+                    "project_graph.story.cycle",
+                    $"Story '{storyId}' 位于循环路径（{members}）。",
+                    storyId));
+                warnedStories.Add(storyId);
+            }
         }
         Edges = new ReadOnlyCollection<ProjectGraphEdgeViewModel>(edges);
         Diagnostics = new ReadOnlyCollection<ProjectGraphDiagnosticViewModel>(diagnostics);
@@ -116,18 +255,47 @@ public sealed class ProjectGraphViewModel : ObservableObject
     public IReadOnlyList<string> FilterOptions { get; } = ["全部", "已连接", "孤立", "有警告"];
     public RelayCommand AutoLayoutCommand { get; }
     public event EventHandler<string>? OpenStoryRequested;
+    public event EventHandler<string>? OpenStoryOverviewRequested;
     public bool IsEmpty => Nodes.Count == 0;
-    public string Summary => $"{Nodes.Count} 个剧情 · {Edges.Count} 条转场 · {Diagnostics.Count} 个诊断";
+    public string Summary => $"{Nodes.Count} 个剧情 · {Edges.Sum(edge => edge.Count)} 条转场 / {Edges.Count} 组关系 · {Diagnostics.Count} 个诊断";
+    public int ErrorCount => Diagnostics.Count(issue => issue.Code == "project_graph.target.missing");
+    public int WarningCount => Diagnostics.Count - ErrorCount + (string.IsNullOrWhiteSpace(PersistenceWarning) ? 0 : 1);
     public string SearchText { get => _searchText; set { if (SetProperty(ref _searchText, value ?? string.Empty)) RefreshVisibility(); } }
     public string SelectedFilter { get => _selectedFilter; set { if (SetProperty(ref _selectedFilter, value ?? "全部")) RefreshVisibility(); } }
     public double Zoom { get => _zoom; set => SetProperty(ref _zoom, Math.Clamp(value, .25, 2.5)); }
     public double PanX { get => _panX; set => SetProperty(ref _panX, value); }
     public double PanY { get => _panY; set => SetProperty(ref _panY, value); }
-    public string PersistenceWarning { get => _persistenceWarning; private set => SetProperty(ref _persistenceWarning, value); }
+    public ProjectGraphFocusRequest? ProblemFocusRequest
+    {
+        get => _problemFocusRequest;
+        private set => SetProperty(ref _problemFocusRequest, value);
+    }
+    public string PersistenceWarning
+    {
+        get => _persistenceWarning;
+        private set
+        {
+            if (SetProperty(ref _persistenceWarning, value)) OnPropertyChanged(nameof(WarningCount));
+        }
+    }
 
     public void OpenStoryFlow(string storyId)
     {
         if (Nodes.Any(node => node.Id == storyId)) OpenStoryRequested?.Invoke(this, storyId);
+    }
+
+    public void OpenStoryOverview(string storyId)
+    {
+        if (Nodes.Any(node => node.Id == storyId)) OpenStoryOverviewRequested?.Invoke(this, storyId);
+    }
+
+    public bool RequestProblemFocus(string storyId)
+    {
+        if (!Nodes.Any(node => string.Equals(node.Id, storyId, StringComparison.Ordinal))) return false;
+        SearchText = string.Empty;
+        SelectedFilter = "全部";
+        ProblemFocusRequest = new(storyId, ++_problemFocusSequence);
+        return true;
     }
 
     public void MoveNode(string storyId, double x, double y)
@@ -165,30 +333,138 @@ public sealed class ProjectGraphViewModel : ObservableObject
 
     private Dictionary<string, ProjectGraphNodeLayout> CreateAutomaticPositions()
     {
-        var incoming = Nodes.ToDictionary(node => node.Id, _ => 0, StringComparer.Ordinal);
-        foreach (var edge in Edges) incoming[edge.TargetStoryId]++;
-        var levels = new Dictionary<string, int>(StringComparer.Ordinal);
-        var queue = new Queue<string>(Nodes.Where(node => node.IsHomeStory || incoming[node.Id] == 0).Select(node => node.Id));
-        foreach (var id in queue) levels[id] = 0;
-        while (queue.TryDequeue(out var source))
+        var nodeIds = Nodes.Select(node => node.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        var adjacency = nodeIds.ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
+        foreach (var edge in Edges)
+            adjacency[edge.SourceStoryId].Add(edge.TargetStoryId);
+        foreach (var targets in adjacency.Values)
         {
-            foreach (var edge in Edges.Where(edge => edge.SourceStoryId == source))
+            targets.Sort(StringComparer.Ordinal);
+            for (var index = targets.Count - 1; index > 0; index--)
+                if (string.Equals(targets[index], targets[index - 1], StringComparison.Ordinal)) targets.RemoveAt(index);
+        }
+
+        var components = FindStronglyConnectedComponents(nodeIds, adjacency);
+        var componentByNode = components
+            .SelectMany((component, index) => component.Select(id => (id, index)))
+            .ToDictionary(item => item.id, item => item.index, StringComparer.Ordinal);
+        var componentOutgoing = components.Select(_ => new HashSet<int>()).ToArray();
+        foreach (var edge in Edges)
+        {
+            var source = componentByNode[edge.SourceStoryId];
+            var target = componentByNode[edge.TargetStoryId];
+            if (source != target) componentOutgoing[source].Add(target);
+        }
+
+        var componentIncoming = componentOutgoing.Select(_ => 0).ToArray();
+        foreach (var targets in componentOutgoing)
+            foreach (var target in targets) componentIncoming[target]++;
+        var levelsByComponent = new int[components.Count];
+        var ready = new SortedSet<int>(Comparer<int>.Create((left, right) =>
+        {
+            var comparison = string.Compare(components[left][0], components[right][0], StringComparison.Ordinal);
+            return comparison != 0 ? comparison : left.CompareTo(right);
+        }));
+        for (var index = 0; index < componentIncoming.Length; index++)
+            if (componentIncoming[index] == 0) ready.Add(index);
+        var processed = 0;
+        while (ready.Count > 0)
+        {
+            var source = ready.Min;
+            ready.Remove(source);
+            processed++;
+            foreach (var target in componentOutgoing[source].OrderBy(index => components[index][0], StringComparer.Ordinal))
             {
-                var next = levels[source] + 1;
-                if (levels.TryGetValue(edge.TargetStoryId, out var existing) && existing >= next) continue;
-                levels[edge.TargetStoryId] = next;
-                queue.Enqueue(edge.TargetStoryId);
+                levelsByComponent[target] = Math.Max(levelsByComponent[target], levelsByComponent[source] + 1);
+                if (--componentIncoming[target] == 0) ready.Add(target);
             }
         }
-        foreach (var node in Nodes) levels.TryAdd(node.Id, 0);
+        // Condensation is a DAG, but retain a finite fallback if malformed input ever violates that invariant.
+        if (processed != components.Count)
+            for (var index = 0; index < components.Count; index++) levelsByComponent[index] = 0;
+        var levels = nodeIds.ToDictionary(id => id, id => levelsByComponent[componentByNode[id]], StringComparer.Ordinal);
         var positions = new Dictionary<string, ProjectGraphNodeLayout>(StringComparer.Ordinal);
+
+        if (components.All(component => component.Count == 1 && !adjacency[component[0]].Contains(component[0], StringComparer.Ordinal)))
+        {
+            foreach (var group in Nodes.GroupBy(node => levels[node.Id]).OrderBy(group => group.Key))
+            {
+                var index = 0;
+                foreach (var node in group.OrderByDescending(node => node.IsHomeStory).ThenBy(node => node.DisplayName, StringComparer.CurrentCultureIgnoreCase).ThenBy(node => node.Id, StringComparer.Ordinal))
+                    positions[node.Id] = new ProjectGraphNodeLayout { X = 80 + group.Key * 280, Y = 70 + index++ * 170 };
+            }
+            return positions;
+        }
+
+        var nodeById = Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
         foreach (var group in Nodes.GroupBy(node => levels[node.Id]).OrderBy(group => group.Key))
         {
-            var index = 0;
-            foreach (var node in group.OrderByDescending(node => node.IsHomeStory).ThenBy(node => node.DisplayName, StringComparer.CurrentCultureIgnoreCase))
-                positions[node.Id] = new ProjectGraphNodeLayout { X = 80 + group.Key * 280, Y = 70 + index++ * 170 };
+            var y = 70d;
+            foreach (var componentIndex in group.Select(node => componentByNode[node.Id]).Distinct().OrderBy(index => components[index][0], StringComparer.Ordinal))
+            {
+                var component = components[componentIndex];
+                var members = component
+                    .Select(id => nodeById[id])
+                    .OrderByDescending(node => node.IsHomeStory)
+                    .ThenBy(node => node.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                    .ThenBy(node => node.Id, StringComparer.Ordinal)
+                    .ToArray();
+                var spacing = component.Count > 1 || adjacency[component[0]].Contains(component[0], StringComparer.Ordinal) ? 110d : 170d;
+                foreach (var node in members)
+                {
+                    positions[node.Id] = new ProjectGraphNodeLayout { X = 80 + group.Key * 280, Y = y };
+                    y += spacing;
+                }
+            }
         }
         return positions;
+    }
+
+    private static IReadOnlyList<IReadOnlyList<string>> FindStronglyConnectedComponents(
+        IEnumerable<string> nodeIds,
+        IReadOnlyDictionary<string, List<string>> adjacency)
+    {
+        var nextIndex = 0;
+        var indexes = new Dictionary<string, int>(StringComparer.Ordinal);
+        var lowLinks = new Dictionary<string, int>(StringComparer.Ordinal);
+        var stack = new Stack<string>();
+        var onStack = new HashSet<string>(StringComparer.Ordinal);
+        var components = new List<IReadOnlyList<string>>();
+
+        void Visit(string nodeId)
+        {
+            indexes[nodeId] = nextIndex;
+            lowLinks[nodeId] = nextIndex++;
+            stack.Push(nodeId);
+            onStack.Add(nodeId);
+            foreach (var target in adjacency[nodeId])
+            {
+                if (!indexes.ContainsKey(target))
+                {
+                    Visit(target);
+                    lowLinks[nodeId] = Math.Min(lowLinks[nodeId], lowLinks[target]);
+                }
+                else if (onStack.Contains(target))
+                    lowLinks[nodeId] = Math.Min(lowLinks[nodeId], indexes[target]);
+            }
+
+            if (lowLinks[nodeId] != indexes[nodeId]) return;
+            var component = new List<string>();
+            string member;
+            do
+            {
+                member = stack.Pop();
+                onStack.Remove(member);
+                component.Add(member);
+            } while (!string.Equals(member, nodeId, StringComparison.Ordinal));
+            component.Sort(StringComparer.Ordinal);
+            components.Add(component);
+        }
+
+        foreach (var nodeId in nodeIds.OrderBy(id => id, StringComparer.Ordinal))
+            if (!indexes.ContainsKey(nodeId)) Visit(nodeId);
+        components.Sort((left, right) => string.Compare(left[0], right[0], StringComparison.Ordinal));
+        return components;
     }
 
     private void ApplyPositions(IReadOnlyDictionary<string, ProjectGraphNodeLayout> positions)
@@ -232,6 +508,8 @@ public sealed class ProjectGraphViewModel : ObservableObject
     }
 }
 
+public sealed record ProjectGraphFocusRequest(string StoryId, long Sequence);
+
 public enum ProjectHomeRoute
 {
     Home,
@@ -246,8 +524,13 @@ public sealed class ProjectHomeViewModel : ObservableObject
     private ProjectHomeRoute _route = ProjectHomeRoute.Home;
     private ProjectGraphViewModel _graph = new([], null);
 
-    public ProjectHomeViewModel() => _graph.OpenStoryRequested += GraphOnOpenStoryRequested;
+    public ProjectHomeViewModel()
+    {
+        _graph.OpenStoryRequested += GraphOnOpenStoryRequested;
+        _graph.OpenStoryOverviewRequested += GraphOnOpenStoryOverviewRequested;
+    }
     public event EventHandler<string>? OpenStoryFlowRequested;
+    public event EventHandler<string>? OpenStoryRequested;
 
     public ObservableCollection<StoryListItemViewModel> Stories { get; } = [];
     public ObservableCollection<StoryListItemViewModel> FilteredStories { get; } = [];
@@ -292,8 +575,10 @@ public sealed class ProjectHomeViewModel : ObservableObject
         {
             if (ReferenceEquals(_graph, value)) return;
             _graph.OpenStoryRequested -= GraphOnOpenStoryRequested;
+            _graph.OpenStoryOverviewRequested -= GraphOnOpenStoryOverviewRequested;
             if (!SetProperty(ref _graph, value)) return;
             _graph.OpenStoryRequested += GraphOnOpenStoryRequested;
+            _graph.OpenStoryOverviewRequested += GraphOnOpenStoryOverviewRequested;
         }
     }
 
@@ -316,6 +601,7 @@ public sealed class ProjectHomeViewModel : ObservableObject
     public void ShowGraph() => Route = ProjectHomeRoute.Graph;
 
     private void GraphOnOpenStoryRequested(object? sender, string storyId) => OpenStoryFlowRequested?.Invoke(this, storyId);
+    private void GraphOnOpenStoryOverviewRequested(object? sender, string storyId) => OpenStoryRequested?.Invoke(this, storyId);
 
     private void RefreshFilter()
     {

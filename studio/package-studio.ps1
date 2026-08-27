@@ -50,10 +50,10 @@ $publishArguments = @(
     '-p:IncludeNativeLibrariesForSelfExtract=true',
     '-p:DebugType=None',
     '-p:DebugSymbols=false',
-    '-p:Version=2.1.0',
-    '-p:AssemblyVersion=2.1.0.0',
-    '-p:FileVersion=2.1.0.0',
-    '-p:InformationalVersion=2.1.0'
+    '-p:Version=2.1.2',
+    '-p:AssemblyVersion=2.1.2.0',
+    '-p:FileVersion=2.1.2.0',
+    '-p:InformationalVersion=2.1.2'
 )
 
 Write-Host "Publishing DarkGrey RPG Studio to $outputPath"

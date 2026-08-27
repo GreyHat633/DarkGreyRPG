@@ -9,7 +9,6 @@ namespace DarkGreyRPG.Studio.ViewModels;
 /// <summary>Stable route identifiers used by the Story workspace and its XAML bindings.</summary>
 public static class StoryWorkspaceRoutes
 {
-    public const string Overview = "Overview";
     public const string Actors = "Actors";
     public const string Dialogues = "Dialogues";
     public const string Quests = "Quests";
@@ -17,28 +16,6 @@ public static class StoryWorkspaceRoutes
 }
 
 public sealed record StoryRouteViewModel(string Page, string Title);
-
-/// <summary>Route-independent summary data for the selected Story.</summary>
-public sealed class StoryOverviewViewModel : ObservableObject
-{
-    public StoryOverviewViewModel(StoryResource story)
-    {
-        Story = story ?? throw new ArgumentNullException(nameof(story));
-    }
-
-    public StoryResource Story { get; }
-    public string Id => Story.Id;
-    public string DisplayName => string.IsNullOrWhiteSpace(Story.DisplayName) ? Story.Title : Story.DisplayName;
-    public string Description => Story.Description;
-    public IReadOnlyList<string> Tags => Story.Tags;
-    public int OwnedActorCount => Story.OwnedResources.Actors.Count;
-    public int ReferencedActorCount => Story.ReferencedResources.Actors.Count;
-    public int DialogueCount => Story.OwnedResources.Dialogues.Count + Story.ReferencedResources.Dialogues.Count;
-    public int QuestCount => Story.OwnedResources.Quests.Count + Story.ReferencedResources.Quests.Count;
-    public int FlowNodeCount => Story.Nodes.Count;
-    public string MembershipSummary =>
-        $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
-}
 
 public enum StoryMembershipKind
 {
@@ -306,14 +283,12 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
     {
         Routes = new ReadOnlyCollection<StoryRouteViewModel>(
         [
-            new(StoryWorkspaceRoutes.Overview, "概览"),
             new(StoryWorkspaceRoutes.Actors, "角色"),
             new(StoryWorkspaceRoutes.Dialogues, "对话"),
             new(StoryWorkspaceRoutes.Quests, "任务"),
             new(StoryWorkspaceRoutes.Flow, "流程"),
         ]);
         _selectedRoute = Routes[0];
-        SelectOverviewCommand = new RelayCommand(() => SelectRoute(StoryWorkspaceRoutes.Overview), () => Story is not null);
         SelectActorsCommand = new RelayCommand(() => SelectRoute(StoryWorkspaceRoutes.Actors), () => Story is not null);
         SelectDialoguesCommand = new RelayCommand(() => SelectRoute(StoryWorkspaceRoutes.Dialogues), () => Story is not null);
         SelectQuestsCommand = new RelayCommand(() => SelectRoute(StoryWorkspaceRoutes.Quests), () => Story is not null);
@@ -345,7 +320,6 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
     public string CurrentRoute => SelectedRoute.Page;
     public object? CurrentPage => SelectedRoute.Page switch
     {
-        StoryWorkspaceRoutes.Overview => Overview,
         StoryWorkspaceRoutes.Actors => Actors,
         StoryWorkspaceRoutes.Dialogues => Dialogues,
         StoryWorkspaceRoutes.Quests => Quests,
@@ -353,13 +327,11 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
         _ => null,
     };
 
-    public StoryOverviewViewModel? Overview { get; private set; }
     public StoryActorsViewModel? Actors { get; private set; }
     public StoryDialoguesViewModel? Dialogues { get; private set; }
     public StoryQuestsViewModel? Quests { get; private set; }
     public StoryFlowViewModel? Flow { get; private set; }
 
-    public RelayCommand SelectOverviewCommand { get; }
     public RelayCommand SelectActorsCommand { get; }
     public RelayCommand SelectDialoguesCommand { get; }
     public RelayCommand SelectQuestsCommand { get; }
@@ -381,7 +353,6 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(actors);
         descriptors ??= [];
         Story = story;
-        Overview = new StoryOverviewViewModel(story);
         Actors = new StoryActorsViewModel(story, actors, actorHomeStoryNames);
         Dialogues = new StoryDialoguesViewModel(story, descriptors);
         Quests = new StoryQuestsViewModel(story, descriptors);
@@ -389,19 +360,17 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
         OnPropertyChanged(nameof(StoryId));
         OnPropertyChanged(nameof(StoryDisplayName));
         OnPropertyChanged(nameof(HasStory));
-        OnPropertyChanged(nameof(Overview));
         OnPropertyChanged(nameof(Actors));
         OnPropertyChanged(nameof(Dialogues));
         OnPropertyChanged(nameof(Quests));
         OnPropertyChanged(nameof(Flow));
-        SelectRoute(StoryWorkspaceRoutes.Overview);
+        SelectRoute(StoryWorkspaceRoutes.Actors);
         RaiseRouteCommandStates();
     }
 
     public void CloseStory()
     {
         Story = null;
-        Overview = null;
         Actors = null;
         Dialogues = null;
         Quests = null;
@@ -409,12 +378,11 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
         OnPropertyChanged(nameof(StoryId));
         OnPropertyChanged(nameof(StoryDisplayName));
         OnPropertyChanged(nameof(HasStory));
-        OnPropertyChanged(nameof(Overview));
         OnPropertyChanged(nameof(Actors));
         OnPropertyChanged(nameof(Dialogues));
         OnPropertyChanged(nameof(Quests));
         OnPropertyChanged(nameof(Flow));
-        SelectRoute(StoryWorkspaceRoutes.Overview);
+        SelectRoute(StoryWorkspaceRoutes.Actors);
         RaiseRouteCommandStates();
     }
 
@@ -422,7 +390,7 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
     {
         var route = Routes.FirstOrDefault(item => string.Equals(item.Page, page, StringComparison.Ordinal));
         if (route is null) throw new ArgumentException($"Unknown Story route '{page}'.", nameof(page));
-        if (!HasStory && !string.Equals(page, StoryWorkspaceRoutes.Overview, StringComparison.Ordinal)) return;
+        if (!HasStory && !string.Equals(page, StoryWorkspaceRoutes.Actors, StringComparison.Ordinal)) return;
         if (!string.Equals(SelectedRoute.Page, page, StringComparison.Ordinal) &&
             CanLeaveRoute is not null &&
             !CanLeaveRoute(SelectedRoute.Page))
@@ -444,7 +412,6 @@ public sealed class StoryWorkspaceViewModel : ObservableObject
 
     private void RaiseRouteCommandStates()
     {
-        SelectOverviewCommand.RaiseCanExecuteChanged();
         SelectActorsCommand.RaiseCanExecuteChanged();
         SelectDialoguesCommand.RaiseCanExecuteChanged();
         SelectQuestsCommand.RaiseCanExecuteChanged();

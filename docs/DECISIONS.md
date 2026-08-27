@@ -67,3 +67,39 @@
 - M8 is accepted at the Plan's required data-layer vertical slice plus real Forge server lifecycle: both named branches, project load/reload, Story list/info, legacy regressions, and CustomNPC+ stored-data binding persistence are proved.
 - The Project Graph remains editor-only; its layout file is not a Runtime input and Story JSON hashes are checked around graph interaction.
 - Final UI acceptance edits and restores the same referenced Actor across two Stories, edits an imported independent Actor, and verifies Bottom Dock and project restoration in the real Release WPF process.
+
+## 2026-08-26 — Studio 2.1.1 graph interaction boundary
+
+- Flow and Project Graph share coordinate, pan, zoom, fit, and reset math, while each retains its own editing authority.
+- Flow ports are real rendered controls and connections anchor to their measured centers; Project Graph edges remain derived and expose no editable ports.
+- Project Graph cycles are warnings computed from SCCs. Layout runs on the condensed DAG and never changes Runtime Story JSON.
+- Story page changes preserve an invalid Flow draft in memory. Save/Discard/Cancel is reserved for leaving the Story/project/application boundary.
+- Project registry presence and Story Membership are distinct: missing is Error, present-but-unorganized is Warning, and reference insertion requires an explicit user action.
+- Problems are replaced per source so Flow, project validation, and Project Graph diagnostics can coexist.
+
+## 2026-08-27 — Studio 2.1.2 connection and recovery boundary
+
+- One registry defines every supported Story node's Runtime type, aliases,
+  localized label, category, property metadata, and output strategy.
+- Inputs and outputs can both begin a connection gesture. Outputs remain
+  single-target; inputs may have multiple sources and require an explicit fan
+  handle when the source connection would otherwise be ambiguous.
+- Reconnect and disconnect operations are atomic Undo units. Escape, lost
+  capture, deactivation, view unload, and context-menu opening cancel the shared
+  pointer state without leaking a partial connection.
+- Invalid dirty Flow data is recoverable only from the editor recovery store.
+  Runtime enumeration and official Story saves never consume that store.
+- Validation coordinates include Story, node, and field so Problems navigation
+  can focus the exact inline editor without reopening an already dirty Flow.
+
+## 2026-08-27 — Studio 2.1.2 derived graph edge boundary
+
+- Parallel EnterStory transitions aggregate per source/target while retaining
+  their source node IDs and incoming branch reasons for tooltips and navigation.
+- A graph edge has separate hit-test, visible stroke, arrow, and count visuals.
+  The hit shape exposes an automation Invoke pattern as well as mouse input.
+- Self-loops use explicit non-zero geometry. Cyclic layouts operate on SCCs and
+  terminate with finite positions.
+- Missing-target Problems navigate to the source EnterStory
+  `target_story_id`; all graph interactions remain logic-read-only and are
+  hash-checked against Story JSON.

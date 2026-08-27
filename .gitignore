@@ -1,5 +1,6 @@
 /.gradle/
 /.gradle-user-home/
+/.nuget/
 /.idea/
 /build/
 /run/
@@ -15,6 +16,7 @@
 **/.godot/
 **/TestResults/
 **/.migration-backups/
+**/resources/editor/recovery/
 **/_probe.txt
 *.bak
 *.log
