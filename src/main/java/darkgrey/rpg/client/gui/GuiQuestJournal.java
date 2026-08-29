@@ -15,6 +15,7 @@ public final class GuiQuestJournal extends GuiScreen {
 
     private static final int PANEL_WIDTH = 420;
     private static final int PANEL_HEIGHT = 300;
+    private static final QuestStatus[] VISIBLE_TABS = { QuestStatus.ACTIVE, QuestStatus.COMPLETED, QuestStatus.FAILED };
     private final List<QuestJournalEntry> entries;
     private QuestStatus tab = QuestStatus.ACTIVE;
     private int scrollOffset;
@@ -23,15 +24,22 @@ public final class GuiQuestJournal extends GuiScreen {
         this.entries = entries;
     }
 
+    /** Package-private structural seam for the Stage 4 UI probe. */
+    static QuestStatus[] visibleTabs() {
+        return VISIBLE_TABS.clone();
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public void initGui() {
         buttonList.clear();
+        int panelHeight = panelHeight();
         int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - PANEL_HEIGHT) / 2;
+        int top = (height - panelHeight) / 2;
         buttonList.add(new GuiModernButton(1, left + 16, top + 30, 110, 20, "Active"));
         buttonList.add(new GuiModernButton(2, left + 132, top + 30, 110, 20, "Completed"));
-        buttonList.add(new GuiModernButton(0, left + PANEL_WIDTH - 76, top + PANEL_HEIGHT - 30, 60, 20, "Close"));
+        buttonList.add(new GuiModernButton(3, left + 248, top + 30, 110, 20, "Failed"));
+        buttonList.add(new GuiModernButton(0, left + PANEL_WIDTH - 76, top + panelHeight - 30, 60, 20, "Close"));
     }
 
     @Override
@@ -43,6 +51,9 @@ public final class GuiQuestJournal extends GuiScreen {
             scrollOffset = 0;
         } else if (button.id == 2) {
             tab = QuestStatus.COMPLETED;
+            scrollOffset = 0;
+        } else if (button.id == 3) {
+            tab = QuestStatus.FAILED;
             scrollOffset = 0;
         }
     }
@@ -59,17 +70,18 @@ public final class GuiQuestJournal extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
+        int panelHeight = panelHeight();
         int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - PANEL_HEIGHT) / 2;
-        drawRect(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xF02B2F4A); // Deep Space
+        int top = (height - panelHeight) / 2;
+        drawRect(left, top, left + PANEL_WIDTH, top + panelHeight, 0xF02B2F4A); // Deep Space
         drawRect(left, top, left + PANEL_WIDTH, top + 2, 0xFF7D8CFF); // Deep Space Accent
-        drawRect(left + 8, top + 58, left + PANEL_WIDTH - 8, top + PANEL_HEIGHT - 38, 0xCC1E213A); // Inner dark panel
+        drawRect(left + 8, top + 58, left + PANEL_WIDTH - 8, top + panelHeight - 38, 0xCC1E213A); // Inner dark panel
         drawCenteredString(fontRendererObj, "Quest Journal", width / 2, top + 10, 0xFFEEF0FF); // Light title
 
         List<String> lines = buildLines();
         int y = top + 66 - scrollOffset;
         int clipTop = top + 62;
-        int clipBottom = top + PANEL_HEIGHT - 42;
+        int clipBottom = top + panelHeight - 42;
         for (String line : lines) {
             if (y >= clipTop && y <= clipBottom) {
                 fontRendererObj.drawString(line, left + 18, y, line.startsWith("  ") ? 0xAAEEF0FF : 0xFFEEF0FF); // Secondary
@@ -80,6 +92,11 @@ public final class GuiQuestJournal extends GuiScreen {
             y += 12;
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    /** Keeps the fixed design height on large screens while fitting the 854x480 scale-2 client. */
+    private int panelHeight() {
+        return Math.max(1, Math.min(PANEL_HEIGHT, height - 20));
     }
 
     private List<String> buildLines() {
@@ -96,7 +113,9 @@ public final class GuiQuestJournal extends GuiScreen {
             lines.add("");
         }
         if (lines.isEmpty()) {
-            lines.add(tab == QuestStatus.ACTIVE ? "No active quests." : "No completed quests.");
+            if (tab == QuestStatus.ACTIVE) lines.add("No active quests.");
+            else if (tab == QuestStatus.COMPLETED) lines.add("No completed quests.");
+            else lines.add("No failed quests.");
         }
         return lines;
     }

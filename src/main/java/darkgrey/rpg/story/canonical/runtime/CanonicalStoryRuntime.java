@@ -1,0 +1,871 @@
+package darkgrey.rpg.story.canonical.runtime;
+
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import com.google.gson.JsonElement;
+
+import darkgrey.rpg.graph.canonical.CanonicalGraph;
+import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
+import darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind;
+import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
+import darkgrey.rpg.graph.canonical.CanonicalGraphPort;
+import darkgrey.rpg.graph.canonical.CanonicalGraphPortDirection;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceException;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
+import darkgrey.rpg.story.canonical.CanonicalStoryPendingContinuation;
+import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
+import darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus;
+
+/** Pure, server-neutral, single-cursor executor for one canonical Story resource. */
+public final class CanonicalStoryRuntime {
+
+    private static final int MAX_AUTOMATIC_TRANSITIONS = 512;
+    private static final Set<String> FLOW_TYPES = set(
+        "start",
+        "terminate",
+        "session",
+        "task",
+        "condition",
+        "action",
+        "enter_story",
+        "interact_actor",
+        "enter_region");
+    private static final Set<String> LOGIC_TYPES = set("and", "or", "not");
+
+    private final CanonicalGraphResource resource;
+    private final String resourceFingerprint;
+    private final Map<String, CanonicalGraphNode> nodes;
+    private final Map<String, Boolean> aggregateLogic = new LinkedHashMap<String, Boolean>();
+    private CanonicalStoryStatus status;
+    private CanonicalStoryRepeatPolicy repeatPolicy;
+    private String triggerPortId;
+    private String currentNodeId;
+    private String currentInputPortId;
+    private CanonicalStoryWaitKind waitKind;
+    private String waitResourceId;
+    private Integer waitDimension;
+    private Double waitX;
+    private Double waitY;
+    private Double waitZ;
+    private Double waitRadius;
+    private String targetStoryId;
+
+    private CanonicalStoryRuntime(CanonicalGraphResource resource) {
+        validateEnvelope(resource);
+        this.resource = resource;
+        this.nodes = indexNodes(resource.getGraph());
+        validateGraph();
+        this.resourceFingerprint = fingerprint(resource);
+    }
+
+    public static CanonicalStoryRuntime start(CanonicalGraphResource resource, String triggerPortId,
+        CanonicalStoryRepeatPolicy repeatPolicy) {
+        CanonicalStoryRuntime runtime = new CanonicalStoryRuntime(resource);
+        runtime.status = CanonicalStoryStatus.ACTIVE;
+        runtime.repeatPolicy = requirePolicy(repeatPolicy);
+        runtime.triggerPortId = requireId(triggerPortId, "Story trigger port ID");
+        runtime.waitKind = CanonicalStoryWaitKind.NONE;
+        CanonicalGraphNode start = runtime.uniqueNode("start");
+        runtime.requirePort(
+            start,
+            runtime.triggerPortId,
+            CanonicalGraphPortDirection.OUTPUT,
+            CanonicalGraphInterfaceKind.FLOW);
+        runtime.transitionFrom(start, runtime.triggerPortId);
+        runtime.resolveAutomatic();
+        return runtime;
+    }
+
+    public static CanonicalStoryRuntime restore(CanonicalGraphResource resource, CanonicalStorySnapshot snapshot) {
+        if (snapshot == null) throw new IllegalArgumentException("Canonical Story snapshot is required.");
+        CanonicalStoryRuntime runtime = new CanonicalStoryRuntime(resource);
+        if (!resource.getId()
+            .equals(snapshot.getResourceId())) throw failure("story.restore.resource", "Story resource ID changed.");
+        if (!runtime.resourceFingerprint.equals(snapshot.getResourceFingerprint()))
+            throw failure("story.restore.fingerprint", "Story resource changed after the cursor was saved.");
+        runtime.status = snapshot.getStatus();
+        runtime.repeatPolicy = snapshot.getRepeatPolicy();
+        runtime.triggerPortId = snapshot.getTriggerPortId();
+        runtime.currentNodeId = snapshot.getCurrentNodeId();
+        runtime.currentInputPortId = snapshot.getCurrentInputPortId();
+        runtime.waitKind = snapshot.getWaitKind();
+        runtime.waitResourceId = snapshot.getWaitResourceId();
+        runtime.waitDimension = snapshot.getWaitDimension();
+        runtime.waitX = snapshot.getWaitX();
+        runtime.waitY = snapshot.getWaitY();
+        runtime.waitZ = snapshot.getWaitZ();
+        runtime.waitRadius = snapshot.getWaitRadius();
+        runtime.aggregateLogic.putAll(snapshot.getLogicValues());
+        runtime.targetStoryId = snapshot.getTargetStoryId();
+        runtime.validateRestoredCursor();
+        return runtime;
+    }
+
+    public CanonicalStorySnapshot snapshot() {
+        ensureInitialized();
+        return new CanonicalStorySnapshot(
+            resource.getId(),
+            resourceFingerprint,
+            status,
+            repeatPolicy,
+            triggerPortId,
+            currentNodeId,
+            currentInputPortId,
+            waitKind,
+            waitResourceId,
+            waitDimension,
+            waitX,
+            waitY,
+            waitZ,
+            waitRadius,
+            aggregateLogic,
+            targetStoryId);
+    }
+
+    public CanonicalGraphResource getResource() {
+        return resource;
+    }
+
+    public CanonicalStoryStatus getStatus() {
+        ensureInitialized();
+        return status;
+    }
+
+    public CanonicalStoryWaitKind getWaitKind() {
+        ensureInitialized();
+        return waitKind;
+    }
+
+    public String getCurrentNodeId() {
+        ensureInitialized();
+        return currentNodeId;
+    }
+
+    public String getWaitResourceId() {
+        ensureInitialized();
+        return waitResourceId;
+    }
+
+    public String getWaitActorId() {
+        ensureInitialized();
+        return waitKind.isActorInteraction() ? waitResourceId : null;
+    }
+
+    public String getWaitInteractActorId() {
+        return getWaitActorId();
+    }
+
+    public Integer getWaitDimension() {
+        ensureInitialized();
+        return waitDimension;
+    }
+
+    public Double getWaitX() {
+        ensureInitialized();
+        return waitX;
+    }
+
+    public Double getWaitY() {
+        ensureInitialized();
+        return waitY;
+    }
+
+    public Double getWaitZ() {
+        ensureInitialized();
+        return waitZ;
+    }
+
+    public Double getWaitRadius() {
+        ensureInitialized();
+        return waitRadius;
+    }
+
+    public boolean matchesActor(String actorId) {
+        ensureInitialized();
+        return status == CanonicalStoryStatus.ACTIVE && waitKind.isActorInteraction()
+            && actorId != null
+            && actorId.equals(waitResourceId);
+    }
+
+    public boolean matchesActorEvent(String actorId) {
+        return matchesActor(actorId);
+    }
+
+    public boolean matchesRegion(int dimension, double x, double y, double z) {
+        ensureInitialized();
+        if (status != CanonicalStoryStatus.ACTIVE || waitKind != CanonicalStoryWaitKind.ENTER_REGION
+            || waitDimension == null
+            || waitDimension.intValue() != dimension
+            || !finite(x)
+            || !finite(y)
+            || !finite(z)) return false;
+        double dx = x - waitX.doubleValue();
+        double dy = y - waitY.doubleValue();
+        double dz = z - waitZ.doubleValue();
+        double radius = waitRadius.doubleValue();
+        return dx * dx + dy * dy + dz * dz <= radius * radius;
+    }
+
+    public boolean matchesRegionEvent(int dimension, double x, double y, double z) {
+        return matchesRegion(dimension, x, y, z);
+    }
+
+    public boolean resumeActor(String actorId) {
+        ensureInitialized();
+        if (status != CanonicalStoryStatus.ACTIVE || !waitKind.isActorInteraction())
+            throw failure("story.wait.state", "Story cursor is not waiting for ActorInteract.");
+        if (!matchesActor(actorId))
+            throw failure("story.actor.identity", "Actor interaction does not match the waiting Story cursor.");
+        CanonicalGraphNode placement = currentNode();
+        clearWait();
+        transitionFrom(placement, "flow_out");
+        resolveAutomatic();
+        return true;
+    }
+
+    public boolean resumeActorInteract(String actorId) {
+        return resumeActor(actorId);
+    }
+
+    public boolean resumeRegion(int dimension, double x, double y, double z) {
+        requireWait(CanonicalStoryWaitKind.ENTER_REGION);
+        if (!matchesRegion(dimension, x, y, z))
+            throw failure("story.region.identity", "Region position does not match the waiting Story cursor.");
+        CanonicalGraphNode placement = currentNode();
+        clearWait();
+        transitionFrom(placement, "flow_out");
+        resolveAutomatic();
+        return true;
+    }
+
+    public boolean resumeEnterRegion(int dimension, double x, double y, double z) {
+        return resumeRegion(dimension, x, y, z);
+    }
+
+    public String getTargetStoryId() {
+        ensureInitialized();
+        return targetStoryId;
+    }
+
+    /** Logic input supplied to the Session aggregate currently blocking the cursor. */
+    public boolean getSessionActivationLogic() {
+        requireWait(CanonicalStoryWaitKind.SESSION);
+        return logicInputValue(currentNode(), "logic_in", new HashMap<String, Boolean>());
+    }
+
+    public Map<String, JsonElement> getPendingActionProperties() {
+        requireWait(CanonicalStoryWaitKind.ACTION);
+        return currentNode().getProperties();
+    }
+
+    /** Applies the already-routed, persisted completion and advances the same cursor exactly once. */
+    public boolean resumeSession(CanonicalStoryPendingContinuation continuation) {
+        requireWait(CanonicalStoryWaitKind.SESSION);
+        if (continuation == null) throw new IllegalArgumentException("Pending Session continuation is required.");
+        if (!resource.getId()
+            .equals(continuation.getStoryId()) || !currentNodeId.equals(continuation.getAggregatePlacementId())
+            || !waitResourceId.equals(continuation.getSessionResourceId()))
+            throw failure("story.session.identity", "Session continuation does not match the waiting Story cursor.");
+        requirePort(
+            currentNode(),
+            continuation.getSelectedEndPortId(),
+            CanonicalGraphPortDirection.OUTPUT,
+            CanonicalGraphInterfaceKind.FLOW);
+        CanonicalGraphConnection transition = uniqueOutgoing(
+            currentNode(),
+            continuation.getSelectedEndPortId(),
+            CanonicalGraphInterfaceKind.FLOW);
+        if (transition == null || !transition.getToNodeId()
+            .equals(continuation.getTargetNodeId())
+            || !transition.getToPortId()
+                .equals(continuation.getTargetPortId()))
+            throw failure("story.session.route", "Session continuation does not match the current Story edge.");
+        publishAggregateLogic(currentNode(), continuation.getPublicLogic());
+        moveTo(continuation.getTargetNodeId(), continuation.getTargetPortId());
+        clearWait();
+        resolveAutomatic();
+        return true;
+    }
+
+    /** Applies one settled Task snapshot; settled Task state remains queryable and is not consumed here. */
+    public boolean resumeTask(CanonicalTaskInstanceSnapshot task) {
+        requireWait(CanonicalStoryWaitKind.TASK);
+        if (task == null || task.getStatus() != CanonicalTaskInstanceStatus.SETTLED)
+            throw failure("story.task.unsettled", "Story can resume only from one settled Task.");
+        if (!resource.getId()
+            .equals(task.getStoryInstanceId()) || !currentNodeId.equals(task.getTaskNodePlacementId())
+            || !waitResourceId.equals(task.getTaskResourceId()))
+            throw failure("story.task.identity", "Task result does not match the waiting Story cursor.");
+        publishAggregateLogic(
+            currentNode(),
+            task.getRuntimeSnapshot()
+                .getPublicLogicOutputs());
+        CanonicalGraphNode placement = currentNode();
+        String resultPortId = requireId(task.getResultPortId(), "Task result port ID");
+        requirePort(placement, resultPortId, CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+        clearWait();
+        transitionFrom(placement, resultPortId);
+        resolveAutomatic();
+        return true;
+    }
+
+    /** A server action owner calls this only after the current action was durably applied or idempotently replayed. */
+    public boolean completeAction(String actionNodeId) {
+        requireWait(CanonicalStoryWaitKind.ACTION);
+        if (!currentNodeId.equals(requireId(actionNodeId, "Action node ID")))
+            throw failure("story.action.identity", "Action acknowledgement does not match the waiting Story cursor.");
+        CanonicalGraphNode action = currentNode();
+        clearWait();
+        transitionFrom(action, "flow_out");
+        resolveAutomatic();
+        return true;
+    }
+
+    public boolean markError() {
+        ensureInitialized();
+        if (status != CanonicalStoryStatus.ACTIVE) return false;
+        status = CanonicalStoryStatus.ERROR;
+        clearWait();
+        targetStoryId = null;
+        return true;
+    }
+
+    private void resolveAutomatic() {
+        for (int count = 0; count < MAX_AUTOMATIC_TRANSITIONS; count++) {
+            if (status != CanonicalStoryStatus.ACTIVE || waitKind != CanonicalStoryWaitKind.NONE) return;
+            CanonicalGraphNode node = currentNode();
+            String type = node.getType();
+            if ("terminate".equals(type)) {
+                status = CanonicalStoryStatus.TERMINATED;
+                return;
+            }
+            if ("condition".equals(type)) {
+                boolean value = logicInputValue(node, "logic_in", new HashMap<String, Boolean>());
+                transitionFrom(node, value ? "flow_true" : "flow_false");
+                continue;
+            }
+            if ("session".equals(type)) {
+                waitKind = CanonicalStoryWaitKind.SESSION;
+                waitResourceId = requiredString(node, "resource_id", "story.session.resource");
+                return;
+            }
+            if ("task".equals(type)) {
+                waitKind = CanonicalStoryWaitKind.TASK;
+                waitResourceId = requiredString(node, "resource_id", "story.task.resource");
+                return;
+            }
+            if ("action".equals(type)) {
+                waitKind = CanonicalStoryWaitKind.ACTION;
+                return;
+            }
+            if ("interact_actor".equals(type)) {
+                waitKind = CanonicalStoryWaitKind.ACTOR_INTERACT;
+                waitResourceId = requiredString(node, "actor_id", "story.actor.actor_id");
+                return;
+            }
+            if ("enter_region".equals(type)) {
+                waitKind = CanonicalStoryWaitKind.ENTER_REGION;
+                waitDimension = Integer.valueOf(requiredInteger(node, "dimension", "story.region.dimension"));
+                waitX = Double.valueOf(requiredFinite(node, "x", "story.region.x"));
+                waitY = Double.valueOf(requiredFinite(node, "y", "story.region.y"));
+                waitZ = Double.valueOf(requiredFinite(node, "z", "story.region.z"));
+                waitRadius = Double.valueOf(requiredPositiveFinite(node, "radius", "story.region.radius"));
+                return;
+            }
+            if ("enter_story".equals(type)) {
+                targetStoryId = requiredString(node, "target_story_id", "story.enter.target");
+                status = CanonicalStoryStatus.TRANSFERRED;
+                return;
+            }
+            throw failure("story.flow.node", "Node type '" + type + "' cannot own the Story Flow cursor.");
+        }
+        throw failure("story.runtime.cycle_guard", "Automatic Story transitions exceeded the deterministic guard.");
+    }
+
+    private boolean logicInputValue(CanonicalGraphNode node, String portId, Map<String, Boolean> visiting) {
+        CanonicalGraphConnection incoming = uniqueIncoming(node, portId, CanonicalGraphInterfaceKind.LOGIC);
+        if (incoming == null) return false;
+        return evaluateOutput(nodes.get(incoming.getFromNodeId()), incoming.getFromPortId(), visiting);
+    }
+
+    private boolean evaluateOutput(CanonicalGraphNode node, String portId, Map<String, Boolean> visiting) {
+        String endpoint = endpoint(node.getId(), portId);
+        Boolean published = aggregateLogic.get(endpoint);
+        if (published != null) return published.booleanValue();
+        if (Boolean.TRUE.equals(visiting.get(endpoint)))
+            throw failure("story.logic.cycle", "Canonical Story Logic graph contains a cycle.");
+        visiting.put(endpoint, Boolean.TRUE);
+        String type = node.getType();
+        boolean value;
+        if ("and".equals(type) || "or".equals(type)) {
+            boolean all = "and".equals(type);
+            value = all;
+            int inputs = 0;
+            for (CanonicalGraphPort port : node.getPorts())
+                if (port != null && port.isInput() && port.getKind() == CanonicalGraphInterfaceKind.LOGIC) {
+                    inputs++;
+                    boolean input = logicInputValue(node, port.getId(), visiting);
+                    value = all ? value && input : value || input;
+                }
+            if (inputs < 2) throw failure("story.logic.input.cardinality", "And/Or requires at least two inputs.");
+        } else if ("not".equals(type)) value = !logicInputValue(node, "logic_in", visiting);
+        else if ("session".equals(type) || "task".equals(type)) value = false;
+        else throw failure("story.logic.output", "Unsupported Story Logic source: " + endpoint);
+        visiting.remove(endpoint);
+        return value;
+    }
+
+    private void publishAggregateLogic(CanonicalGraphNode placement, Map<String, Boolean> values) {
+        if (values == null) throw new IllegalArgumentException("Aggregate Logic values are required.");
+        Set<String> expected = new HashSet<String>();
+        for (CanonicalGraphPort port : placement.getPorts())
+            if (port != null && port.isOutput() && port.getKind() == CanonicalGraphInterfaceKind.LOGIC)
+                expected.add(port.getId());
+        if (!expected.equals(values.keySet()))
+            throw failure("story.aggregate.logic", "Aggregate public Logic values do not match the Story placement.");
+        for (Map.Entry<String, Boolean> entry : values.entrySet()) {
+            if (entry.getValue() == null) throw failure("story.aggregate.logic", "Aggregate Logic value is null.");
+            aggregateLogic.put(endpoint(placement.getId(), entry.getKey()), entry.getValue());
+        }
+    }
+
+    private void transitionFrom(CanonicalGraphNode node, String portId) {
+        requirePort(node, portId, CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+        CanonicalGraphConnection transition = uniqueOutgoing(node, portId, CanonicalGraphInterfaceKind.FLOW);
+        if (transition == null)
+            throw failure("story.flow.unconnected", "Flow output is not connected: " + endpoint(node.getId(), portId));
+        moveTo(transition.getToNodeId(), transition.getToPortId());
+    }
+
+    private void moveTo(String nodeId, String portId) {
+        CanonicalGraphNode target = nodes.get(requireId(nodeId, "Story target node ID"));
+        if (target == null) throw failure("story.flow.target", "Story target node does not exist: " + nodeId);
+        requirePort(target, portId, CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+        currentNodeId = nodeId;
+        currentInputPortId = portId;
+    }
+
+    private void validateGraph() {
+        CanonicalGraph graph = resource.getGraph();
+        if (graph == null) throw failure("story.graph.missing", "Canonical Story graph is required.");
+        int starts = 0;
+        for (CanonicalGraphNode node : graph.getNodes()) {
+            if ("start".equals(node.getType())) starts++;
+            if (!FLOW_TYPES.contains(node.getType()) && !LOGIC_TYPES.contains(node.getType()))
+                throw failure("story.node.unsupported", "Unsupported canonical Story node type: " + node.getType());
+            validatePorts(node);
+            validateNodeShape(node);
+        }
+        if (starts != 1) throw failure("story.start.cardinality", "Canonical Story requires exactly one Start node.");
+        Map<String, Integer> flowOutgoing = new HashMap<String, Integer>();
+        Map<String, Integer> logicIncoming = new HashMap<String, Integer>();
+        for (CanonicalGraphConnection edge : graph.getConnections()) {
+            if (edge == null) throw failure("story.edge.null", "Canonical Story contains a null connection.");
+            CanonicalGraphNode from = nodes.get(edge.getFromNodeId());
+            CanonicalGraphNode to = nodes.get(edge.getToNodeId());
+            if (from == null || to == null) throw failure("story.edge.node", "Connection endpoint node is missing.");
+            requirePort(from, edge.getFromPortId(), CanonicalGraphPortDirection.OUTPUT, edge.getInterfaceKind());
+            requirePort(to, edge.getToPortId(), CanonicalGraphPortDirection.INPUT, edge.getInterfaceKind());
+            if (edge.getInterfaceKind() == CanonicalGraphInterfaceKind.FLOW) {
+                String key = endpoint(edge.getFromNodeId(), edge.getFromPortId());
+                int count = integer(flowOutgoing.get(key)) + 1;
+                flowOutgoing.put(key, Integer.valueOf(count));
+                if (count > 1) throw failure("story.flow.output.multiple_targets", "Flow output has multiple targets.");
+            } else {
+                String key = endpoint(edge.getToNodeId(), edge.getToPortId());
+                int count = integer(logicIncoming.get(key)) + 1;
+                logicIncoming.put(key, Integer.valueOf(count));
+                if (count > 1) throw failure("story.logic.input.multiple_sources", "Logic input has multiple sources.");
+            }
+        }
+        validateLogicAcyclic();
+    }
+
+    private void validateNodeShape(CanonicalGraphNode node) {
+        String type = node.getType();
+        if ("start".equals(type)) {
+            int outputs = 0;
+            for (CanonicalGraphPort port : node.getPorts()) {
+                if (!port.isOutput() || port.getKind() != CanonicalGraphInterfaceKind.FLOW)
+                    throw failure("story.start.port", "Start may contain only Flow outputs.");
+                outputs++;
+            }
+            if (outputs < 1)
+                throw failure("story.start.trigger.required", "Start requires at least one trigger output.");
+        } else if ("terminate".equals(type) || "enter_story".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            if ("enter_story".equals(type)) requiredString(node, "target_story_id", "story.enter.target");
+        } else if ("condition".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
+            requirePort(node, "flow_true", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "flow_false", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+        } else if ("session".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
+            requiredString(node, "resource_id", "story.session.resource");
+        } else if ("task".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requiredString(node, "resource_id", "story.task.resource");
+        } else if ("action".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+        } else if ("interact_actor".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+            requiredString(node, "actor_id", "story.actor.actor_id");
+        } else if ("enter_region".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+            requiredInteger(node, "dimension", "story.region.dimension");
+            requiredFinite(node, "x", "story.region.x");
+            requiredFinite(node, "y", "story.region.y");
+            requiredFinite(node, "z", "story.region.z");
+            requiredPositiveFinite(node, "radius", "story.region.radius");
+        } else if ("not".equals(type)) {
+            requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
+            requirePort(node, "logic_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.LOGIC);
+        } else if ("and".equals(type) || "or".equals(type)) {
+            requirePort(node, "logic_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.LOGIC);
+            int inputs = 0;
+            for (CanonicalGraphPort port : node.getPorts())
+                if (port.isInput() && port.getKind() == CanonicalGraphInterfaceKind.LOGIC) inputs++;
+            if (inputs < 2) throw failure("story.logic.input.cardinality", "And/Or requires at least two inputs.");
+        }
+    }
+
+    private void validatePorts(CanonicalGraphNode node) {
+        Set<String> ids = new HashSet<String>();
+        Set<Integer> orders = new HashSet<Integer>();
+        for (CanonicalGraphPort port : node.getPorts()) {
+            if (port == null || blank(port.getId())
+                || blank(port.getDisplayName())
+                || port.getDirection() == null
+                || port.getKind() == null
+                || port.getOrder() < 0) throw failure("story.port.invalid", "Invalid canonical Story port.");
+            if (!ids.add(port.getId()))
+                throw failure("story.port.duplicate", "Duplicate port ID on node " + node.getId());
+            if (!orders.add(Integer.valueOf(port.getOrder())))
+                throw failure("story.port.order", "Duplicate port order on node " + node.getId());
+        }
+    }
+
+    private void validateLogicAcyclic() {
+        Map<String, Integer> state = new HashMap<String, Integer>();
+        for (CanonicalGraphConnection edge : resource.getGraph()
+            .getConnections())
+            if (edge.getInterfaceKind() == CanonicalGraphInterfaceKind.LOGIC) visitLogic(edge.getFromNodeId(), state);
+    }
+
+    private void visitLogic(String nodeId, Map<String, Integer> state) {
+        Integer known = state.get(nodeId);
+        if (known != null && known.intValue() == 1)
+            throw failure("story.logic.cycle", "Canonical Story Logic graph contains a cycle.");
+        if (known != null && known.intValue() == 2) return;
+        state.put(nodeId, Integer.valueOf(1));
+        for (CanonicalGraphConnection edge : resource.getGraph()
+            .getConnections())
+            if (edge.getInterfaceKind() == CanonicalGraphInterfaceKind.LOGIC && nodeId.equals(edge.getFromNodeId()))
+                visitLogic(edge.getToNodeId(), state);
+        state.put(nodeId, Integer.valueOf(2));
+    }
+
+    private Map<String, CanonicalGraphNode> indexNodes(CanonicalGraph graph) {
+        if (graph == null || graph.getNodes() == null || graph.getConnections() == null)
+            throw failure("story.graph.missing", "Canonical Story graph is required.");
+        LinkedHashMap<String, CanonicalGraphNode> result = new LinkedHashMap<String, CanonicalGraphNode>();
+        for (CanonicalGraphNode node : graph.getNodes()) {
+            if (node == null || blank(node.getId()) || blank(node.getType()) || blank(node.getDisplayName()))
+                throw failure("story.node.invalid", "Invalid canonical Story node.");
+            if (result.put(node.getId(), node) != null)
+                throw failure("story.node.duplicate", "Duplicate canonical Story node ID: " + node.getId());
+        }
+        return result;
+    }
+
+    private void validateRestoredCursor() {
+        ensureInitialized();
+        uniqueNode("start");
+        if (status == CanonicalStoryStatus.ACTIVE) {
+            CanonicalGraphNode current = currentNode();
+            requirePort(
+                current,
+                currentInputPortId,
+                CanonicalGraphPortDirection.INPUT,
+                CanonicalGraphInterfaceKind.FLOW);
+            if (waitKind == CanonicalStoryWaitKind.SESSION && !"session".equals(current.getType()))
+                throw failure("story.restore.wait", "Restored Session wait is not on a Session placement.");
+            if (waitKind == CanonicalStoryWaitKind.TASK && !"task".equals(current.getType()))
+                throw failure("story.restore.wait", "Restored Task wait is not on a Task placement.");
+            if (waitKind == CanonicalStoryWaitKind.ACTION && !"action".equals(current.getType()))
+                throw failure("story.restore.wait", "Restored Action wait is not on an Action node.");
+            if (waitKind.isActorInteraction()) {
+                if (!"interact_actor".equals(current.getType())
+                    || !requiredString(current, "actor_id", "story.actor.actor_id").equals(waitResourceId))
+                    throw failure("story.restore.wait", "Restored Actor wait is invalid.");
+            }
+            if (waitKind == CanonicalStoryWaitKind.ENTER_REGION) {
+                if (!"enter_region".equals(current.getType()) || waitDimension == null
+                    || waitX == null
+                    || waitY == null
+                    || waitZ == null
+                    || waitRadius == null
+                    || waitDimension.intValue() != requiredInteger(current, "dimension", "story.region.dimension")
+                    || Double.compare(waitX.doubleValue(), requiredFinite(current, "x", "story.region.x")) != 0
+                    || Double.compare(waitY.doubleValue(), requiredFinite(current, "y", "story.region.y")) != 0
+                    || Double.compare(waitZ.doubleValue(), requiredFinite(current, "z", "story.region.z")) != 0
+                    || Double.compare(
+                        waitRadius.doubleValue(),
+                        requiredPositiveFinite(current, "radius", "story.region.radius")) != 0)
+                    throw failure("story.restore.wait", "Restored Region wait is invalid.");
+            }
+        }
+        for (String endpoint : aggregateLogic.keySet()) {
+            int separator = endpoint.indexOf('\u0000');
+            if (separator <= 0 || separator == endpoint.length() - 1)
+                throw failure("story.restore.logic", "Malformed restored aggregate Logic endpoint.");
+            CanonicalGraphNode node = nodes.get(endpoint.substring(0, separator));
+            if (node == null) throw failure("story.restore.logic", "Restored aggregate Logic node is missing.");
+            requirePort(
+                node,
+                endpoint.substring(separator + 1),
+                CanonicalGraphPortDirection.OUTPUT,
+                CanonicalGraphInterfaceKind.LOGIC);
+        }
+    }
+
+    private CanonicalGraphConnection uniqueOutgoing(CanonicalGraphNode node, String portId,
+        CanonicalGraphInterfaceKind kind) {
+        CanonicalGraphConnection found = null;
+        for (CanonicalGraphConnection edge : resource.getGraph()
+            .getConnections())
+            if (node.getId()
+                .equals(edge.getFromNodeId()) && portId.equals(edge.getFromPortId())
+                && kind == edge.getInterfaceKind()) {
+                    if (found != null)
+                        throw failure("story.flow.output.multiple_targets", "Flow output has multiple targets.");
+                    found = edge;
+                }
+        return found;
+    }
+
+    private CanonicalGraphConnection uniqueIncoming(CanonicalGraphNode node, String portId,
+        CanonicalGraphInterfaceKind kind) {
+        CanonicalGraphConnection found = null;
+        for (CanonicalGraphConnection edge : resource.getGraph()
+            .getConnections())
+            if (node.getId()
+                .equals(edge.getToNodeId()) && portId.equals(edge.getToPortId())
+                && kind == edge.getInterfaceKind()) {
+                    if (found != null)
+                        throw failure("story.logic.input.multiple_sources", "Logic input has multiple sources.");
+                    found = edge;
+                }
+        return found;
+    }
+
+    private CanonicalGraphNode uniqueNode(String type) {
+        CanonicalGraphNode found = null;
+        for (CanonicalGraphNode node : nodes.values()) if (type.equals(node.getType())) {
+            if (found != null)
+                throw failure("story." + type + ".cardinality", "Canonical Story has multiple " + type + " nodes.");
+            found = node;
+        }
+        if (found == null) throw failure("story." + type + ".missing", "Canonical Story is missing " + type + ".");
+        return found;
+    }
+
+    private CanonicalGraphNode currentNode() {
+        CanonicalGraphNode node = nodes.get(currentNodeId);
+        if (node == null) throw failure("story.cursor.node", "Story cursor node no longer exists.");
+        return node;
+    }
+
+    private CanonicalGraphPort requirePort(CanonicalGraphNode node, String portId,
+        CanonicalGraphPortDirection direction, CanonicalGraphInterfaceKind kind) {
+        CanonicalGraphPort found = null;
+        for (CanonicalGraphPort port : node.getPorts()) if (portId.equals(port.getId())) {
+            if (found != null) throw failure("story.port.duplicate", "Duplicate port ID on node " + node.getId());
+            found = port;
+        }
+        if (found == null || found.getDirection() != direction || found.getKind() != kind)
+            throw failure("story.port.shape", "Missing or incompatible port: " + endpoint(node.getId(), portId));
+        return found;
+    }
+
+    private String requiredString(CanonicalGraphNode node, String key, String code) {
+        JsonElement value = node.getProperties()
+            .get(key);
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isString())
+            throw failure(code, "Required Story property is missing: " + key);
+        return requireId(value.getAsString(), "Story property " + key);
+    }
+
+    private int requiredInteger(CanonicalGraphNode node, String key, String code) {
+        JsonElement value = node.getProperties()
+            .get(key);
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isNumber())
+            throw failure(code, "Required integer Story property is missing: " + key);
+        double number = value.getAsDouble();
+        int result = value.getAsInt();
+        if (Double.isNaN(number) || Double.isInfinite(number) || number != result)
+            throw failure(code, "Required integer Story property is invalid: " + key);
+        return result;
+    }
+
+    private double requiredFinite(CanonicalGraphNode node, String key, String code) {
+        JsonElement value = node.getProperties()
+            .get(key);
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isNumber())
+            throw failure(code, "Required numeric Story property is missing: " + key);
+        double result = value.getAsDouble();
+        if (!finite(result)) throw failure(code, "Required finite Story property is invalid: " + key);
+        return result;
+    }
+
+    private double requiredPositiveFinite(CanonicalGraphNode node, String key, String code) {
+        double result = requiredFinite(node, key, code);
+        if (result <= 0D) throw failure(code, "Required positive Story property is invalid: " + key);
+        return result;
+    }
+
+    private void requireWait(CanonicalStoryWaitKind expected) {
+        ensureInitialized();
+        if (status != CanonicalStoryStatus.ACTIVE || waitKind != expected)
+            throw failure("story.wait.state", "Story cursor is not waiting for " + expected + ".");
+    }
+
+    private void clearWait() {
+        waitKind = CanonicalStoryWaitKind.NONE;
+        waitResourceId = null;
+        waitDimension = null;
+        waitX = null;
+        waitY = null;
+        waitZ = null;
+        waitRadius = null;
+    }
+
+    private void ensureInitialized() {
+        if (status == null || repeatPolicy == null || triggerPortId == null || waitKind == null)
+            throw new IllegalStateException("Canonical Story runtime is not initialized.");
+    }
+
+    private static void validateEnvelope(CanonicalGraphResource resource) {
+        if (resource == null || resource.getSchemaVersion() != CanonicalGraphResource.CURRENT_SCHEMA_VERSION
+            || resource.getResourceKind() != CanonicalGraphResourceKind.STORY
+            || blank(resource.getId())
+            || blank(resource.getDisplayName())
+            || resource.getGraph() == null)
+            throw failure("story.resource.invalid", "Invalid canonical Story resource.");
+    }
+
+    private static CanonicalStoryRepeatPolicy requirePolicy(CanonicalStoryRepeatPolicy value) {
+        if (value == null) throw new IllegalArgumentException("Story repeat policy is required.");
+        return value;
+    }
+
+    private static String requireId(String value, String label) {
+        if (blank(value)) throw new IllegalArgumentException(label + " is required.");
+        return value;
+    }
+
+    private static String endpoint(String nodeId, String portId) {
+        return nodeId + "\u0000" + portId;
+    }
+
+    private static int integer(Integer value) {
+        return value == null ? 0 : value.intValue();
+    }
+
+    private static boolean blank(String value) {
+        return value == null || value.trim()
+            .isEmpty();
+    }
+
+    private static boolean finite(double value) {
+        return !Double.isNaN(value) && !Double.isInfinite(value);
+    }
+
+    private static Set<String> set(String... values) {
+        Set<String> result = new HashSet<String>();
+        for (String value : values) result.add(value);
+        return result;
+    }
+
+    private static CanonicalGraphResourceException failure(String code, String message) {
+        return new CanonicalGraphResourceException(code, message);
+    }
+
+    private static String fingerprint(CanonicalGraphResource resource) {
+        StringBuilder text = new StringBuilder();
+        text.append(resource.getSchemaVersion())
+            .append('|')
+            .append(resource.getResourceKind())
+            .append('|')
+            .append(resource.getId())
+            .append('|')
+            .append(resource.getDisplayName());
+        for (CanonicalGraphNode node : resource.getGraph()
+            .getNodes()) {
+            text.append("|n:")
+                .append(node.getId())
+                .append(':')
+                .append(node.getType())
+                .append(':')
+                .append(node.getDisplayName());
+            for (CanonicalGraphPort port : node.getPorts()) text.append("|p:")
+                .append(port.getId())
+                .append(':')
+                .append(port.getDisplayName())
+                .append(':')
+                .append(port.getDirection())
+                .append(':')
+                .append(port.getKind())
+                .append(':')
+                .append(port.getOrder());
+            for (Map.Entry<String, JsonElement> property : node.getProperties()
+                .entrySet())
+                text.append("|v:")
+                    .append(property.getKey())
+                    .append(':')
+                    .append(property.getValue());
+        }
+        for (CanonicalGraphConnection edge : resource.getGraph()
+            .getConnections())
+            text.append("|e:")
+                .append(edge.getFromNodeId())
+                .append(':')
+                .append(edge.getFromPortId())
+                .append("->")
+                .append(edge.getToNodeId())
+                .append(':')
+                .append(edge.getToPortId())
+                .append(':')
+                .append(edge.getInterfaceKind());
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(
+                    text.toString()
+                        .getBytes(Charset.forName("UTF-8")));
+            StringBuilder result = new StringBuilder();
+            for (byte value : digest) result.append(String.format("%02x", Integer.valueOf(value & 0xff)));
+            return result.toString();
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable.", impossible);
+        }
+    }
+}

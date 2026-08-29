@@ -2,7 +2,7 @@
   {
     "modid": "darkgrey_rpg",
     "name": "DarkGrey RPG",
-    "description": "RPG authoring framework. Version 0.5.x adds localhost Live Bridge, Debugger, Play Test, and Content Build.",
+    "description": "Story-first RPG authoring framework with canonical Story Flow, Session, and Task runtime support.",
     "version": "${modVersion}",
     "mcversion": "${minecraftVersion}",
     "url": "",
