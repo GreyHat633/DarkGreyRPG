@@ -78,14 +78,14 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
             $"新建 {Label(type)}",
             "创建",
             type == ProjectResourceType.Story
-                ? "在当前项目中新建一条独立剧情。"
-                : $"创建独立的新{ChineseLabel(type)}，并归入当前剧情。",
+                ? "在当前项目中新建一条独立故事。"
+                : $"创建独立的新{ChineseLabel(type)}，并归入当前故事。",
             suggestedId,
             type switch
             {
                 ProjectResourceType.Dialogue => "新对话",
                 ProjectResourceType.Quest => "新任务",
-                ProjectResourceType.Story => "新剧情",
+                ProjectResourceType.Story => "新故事",
                 _ => throw new ArgumentOutOfRangeException(nameof(type)),
             });
 
@@ -113,7 +113,7 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
     {
         ProjectResourceType.Dialogue => "对话",
         ProjectResourceType.Quest => "任务",
-        ProjectResourceType.Story => "剧情",
+        ProjectResourceType.Story => "故事",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -136,7 +136,7 @@ public sealed class ResourceCreationChoiceViewModel : ObservableObject
     public ResourceCreationChoiceViewModel(ProjectResourceType type, string storyDisplayName)
     {
         Type = type;
-        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前剧情" : storyDisplayName;
+        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前故事" : storyDisplayName;
     }
 
     public ProjectResourceType Type { get; }
@@ -181,7 +181,7 @@ public sealed class ResourcePickerViewModel : ObservableObject
         Type = type;
         _resources = resources ?? throw new ArgumentNullException(nameof(resources));
         Mode = mode;
-        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前剧情" : storyDisplayName;
+        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前故事" : storyDisplayName;
         RefreshFilter();
     }
 
@@ -241,6 +241,6 @@ public sealed class ResourceReferencesViewModel
     public IReadOnlyList<ResourceDescriptor> References { get; }
     public string Title => $"“{Resource.DisplayName}”的引用";
     public string Summary => References.Count == 0
-        ? "当前没有其它剧情引用这个资源。"
-        : $"以下 {References.Count} 个剧情仍引用这个资源：";
+        ? "当前没有其它故事引用这个资源。"
+        : $"以下 {References.Count} 个故事仍引用这个资源：";
 }

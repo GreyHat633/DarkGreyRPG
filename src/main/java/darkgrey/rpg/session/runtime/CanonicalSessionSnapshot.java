@@ -19,6 +19,9 @@ public final class CanonicalSessionSnapshot {
     private final boolean activationLogic;
     private final Map<String, String> latestChoiceSelections;
     private final List<String> selectedChoiceNodeIds;
+    private final Map<String, Boolean> externalLogicInputs;
+    private final boolean waitingCondition;
+    private final Boolean waitingConditionValue;
 
     public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
         List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
@@ -33,7 +36,10 @@ public final class CanonicalSessionSnapshot {
             publicLogicOutputs,
             false,
             Collections.<String, String>emptyMap(),
-            Collections.<String>emptyList());
+            Collections.<String>emptyList(),
+            Collections.<String, Boolean>emptyMap(),
+            false,
+            null);
     }
 
     public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
@@ -49,7 +55,10 @@ public final class CanonicalSessionSnapshot {
             publicLogicOutputs,
             activationLogic,
             Collections.<String, String>emptyMap(),
-            Collections.<String>emptyList());
+            Collections.<String>emptyList(),
+            Collections.<String, Boolean>emptyMap(),
+            false,
+            null);
     }
 
     /** Full state constructor retaining the old constructors for callers. */
@@ -57,6 +66,27 @@ public final class CanonicalSessionSnapshot {
         List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
         Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
         List<String> selectedChoiceNodeIds) {
+        this(
+            sessionResourceId,
+            currentNodeId,
+            status,
+            selectedOptionIds,
+            internalLogicValues,
+            finalEndPortId,
+            publicLogicOutputs,
+            activationLogic,
+            latestChoiceSelections,
+            selectedChoiceNodeIds,
+            Collections.<String, Boolean>emptyMap(),
+            false,
+            null);
+    }
+
+    public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
+        List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
+        Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
+        List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
+        Boolean waitingConditionValue) {
         this.sessionResourceId = sessionResourceId;
         this.currentNodeId = currentNodeId;
         this.status = status;
@@ -67,6 +97,11 @@ public final class CanonicalSessionSnapshot {
         this.activationLogic = activationLogic;
         this.latestChoiceSelections = immutableStringMap(latestChoiceSelections);
         this.selectedChoiceNodeIds = immutableList(selectedChoiceNodeIds);
+        this.externalLogicInputs = immutableMap(externalLogicInputs);
+        this.waitingCondition = waitingCondition;
+        this.waitingConditionValue = waitingConditionValue;
+        if (waitingCondition != (waitingConditionValue != null))
+            throw new IllegalArgumentException("Session Condition wait state and value must be supplied together.");
     }
 
     public String getSessionResourceId() {
@@ -127,6 +162,22 @@ public final class CanonicalSessionSnapshot {
 
     public List<String> getSelectedChoiceNodeIds() {
         return selectedChoiceNodeIds;
+    }
+
+    public Map<String, Boolean> getExternalLogicInputs() {
+        return externalLogicInputs;
+    }
+
+    public Map<String, Boolean> getLogicInputs() {
+        return externalLogicInputs;
+    }
+
+    public boolean isWaitingCondition() {
+        return waitingCondition;
+    }
+
+    public Boolean getWaitingConditionValue() {
+        return waitingConditionValue;
     }
 
     private static List<String> immutableList(List<String> values) {

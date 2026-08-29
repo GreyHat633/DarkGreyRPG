@@ -8,7 +8,7 @@
     <Grid Margin="24">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="16" /><RowDefinition Height="*" /><RowDefinition Height="18" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
         <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding Title}" />
-        <TextBlock Grid.Row="1" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"><Run Text="归入剧情：" /><Run FontWeight="SemiBold" Text="{Binding StoryDisplayName, Mode=OneWay}" /></TextBlock>
+        <TextBlock Grid.Row="1" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"><Run Text="归入故事：" /><Run FontWeight="SemiBold" Text="{Binding StoryDisplayName, Mode=OneWay}" /></TextBlock>
         <StackPanel Grid.Row="3">
             <Border Padding="14" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5">
                 <RadioButton GroupName="CreationMode" IsChecked="{Binding IsBlank}" AutomationProperties.Name="空白创建">

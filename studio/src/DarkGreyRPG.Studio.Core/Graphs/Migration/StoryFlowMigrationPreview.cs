@@ -169,8 +169,9 @@ public static class StoryFlowMigrationPreview
             return Failure(source, issues);
 
         var graph = new GraphDocument(graphNodes, graphConnections);
-        issues.AddRange(GraphScopePolicy.Validate(graph, GraphScope.StoryFlow));
-        issues.AddRange(GraphNodeShapeValidator.Validate(graph, GraphScope.StoryFlow));
+        var containsLegacyEnterStory = graphNodes.Any(node => node.Type == "enter_story");
+        issues.AddRange(GraphScopePolicy.Validate(graph, GraphScope.StoryFlow, compatibilityMode: containsLegacyEnterStory));
+        issues.AddRange(GraphNodeShapeValidator.Validate(graph, GraphScope.StoryFlow, compatibilityMode: containsLegacyEnterStory));
         if (issues.Count != 0)
             return Failure(source, issues);
 
@@ -229,7 +230,10 @@ public static class StoryFlowMigrationPreview
             case "EndStory":
                 return GraphNodeFactory.Create(GraphScope.StoryFlow, "terminate", node.Id, node.Id);
             case "EnterStory":
-                var enter = GraphNodeFactory.Create(GraphScope.StoryFlow, "enter_story", node.Id, node.Id);
+                // Inter-story rewiring needs project-wide context. Preserve old
+                // EnterStory explicitly as compatibility data; new authoring
+                // cannot create it and a later project migration may replace it.
+                var enter = GraphNodeFactory.Create(GraphScope.StoryFlow, "enter_story", node.Id, node.Id, compatibilityMode: true);
                 if (!TryRead(node, ["target_story_id", "story_id", "story", "target"], out var target))
                     issues.Add(Issue("migration.story.enter_story.target.required", "EnterStory target is required.", "target_story_id", node.Id));
                 else enter.Properties["target_story_id"] = target;
@@ -238,8 +242,7 @@ public static class StoryFlowMigrationPreview
                 var item = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", node.Id, node.Id);
                 item.Properties.Clear();
                 item.Properties[CanonicalStoryActionSchema.TypeProperty] = JsonSerializer.SerializeToElement(CanonicalStoryActionSchema.GiveItem);
-                CopyRequired(node, item, "item", ["item", "item_id", "itemId"], issues);
-                CopyRequired(node, item, "metadata", ["metadata", "damage"], issues);
+                CopyRequired(node, item, CanonicalStoryActionSchema.ItemIdProperty, ["item_id", "itemId", "item"], issues);
                 CopyRequired(node, item, "amount", ["amount", "count"], issues);
                 return item;
             case "SendMessage":

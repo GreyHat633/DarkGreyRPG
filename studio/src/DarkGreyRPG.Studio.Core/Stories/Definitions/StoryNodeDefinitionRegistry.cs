@@ -173,7 +173,7 @@ public static class StoryNodeDefinitionRegistry
 
         return
         [
-            Node("StoryStart", "story_start", "剧情开始", "触发", false, StoryNodeOutputStrategy.SingleNext, aliases: ["storystart", "start"]),
+            Node("StoryStart", "story_start", "故事开始", "触发", false, StoryNodeOutputStrategy.SingleNext, aliases: ["storystart", "start"]),
             Node("ActorInteract", "interact_actor", "角色交互", "触发", true, StoryNodeOutputStrategy.SingleNext, properties: [Ref("actor_id", "角色", "actor", "actorId")], aliases: ["actorinteract", "actor_interact", "interact"]),
             Node("EnterRegion", "enter_region", "进入区域", "触发", true, StoryNodeOutputStrategy.SingleNext,
                 properties:
@@ -203,8 +203,8 @@ public static class StoryNodeDefinitionRegistry
                 properties: [Required("message", "消息", "")], aliases: ["sendmessage"]),
             Node("SetVariable", "set_variable", "设置变量", "动作 / 奖励", true, StoryNodeOutputStrategy.SingleNext,
                 properties: [Required("variable", "变量", ""), Required("value", "值", "")], aliases: ["setvariable"]),
-            Node("EnterStory", "enter_story", "进入剧情", "剧情", true, StoryNodeOutputStrategy.Terminal, true, [Ref("target_story_id", "目标剧情", "story_id", "story", "target")], aliases: ["enterstory", "enter"]),
-            Node("EndStory", "end_story", "结束当前剧情", "剧情", true, StoryNodeOutputStrategy.Terminal, true, aliases: ["endstory", "story_end"]),
+            Node("EnterStory", "enter_story", "进入故事", "故事", true, StoryNodeOutputStrategy.Terminal, true, [Ref("target_story_id", "目标故事", "story_id", "story", "target")], aliases: ["enterstory", "enter"]),
+            Node("EndStory", "end_story", "结束当前故事", "故事", true, StoryNodeOutputStrategy.Terminal, true, aliases: ["endstory", "story_end"]),
             Node("End", "end", "结束", "结束", true, StoryNodeOutputStrategy.Terminal, true, aliases: ["terminal"]),
         ];
     }

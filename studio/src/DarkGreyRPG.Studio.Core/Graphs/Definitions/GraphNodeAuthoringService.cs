@@ -237,8 +237,9 @@ public sealed class GraphNodeAuthoringService
                 NodeId: nodeId));
             }
         }
-        else if ((scope == GraphScope.Session && nodeType is "end" or "logic_output")
-            || (scope == GraphScope.Task && nodeType == "logic_output"))
+        else if ((scope == GraphScope.Session && nodeType is "end" or "logic_input" or "logic_output")
+            || (scope == GraphScope.Task && nodeType is "logic_input" or "logic_output")
+            || (scope == GraphScope.StoryFlow && nodeType is "logic_input" or "logic_output"))
         {
             string? publicPortId;
             try { publicPortId = _dynamicPortIdSource(); }
@@ -281,7 +282,12 @@ public sealed class GraphNodeAuthoringService
             }
 
             candidate.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement(publicPortId);
-            var publicDisplayName = nodeType == "end" ? "结束" : "逻辑输出";
+            var publicDisplayName = nodeType switch
+            {
+                "end" => "结束",
+                "logic_input" => "逻辑输入",
+                _ => "逻辑输出",
+            };
             if (scope == GraphScope.Task)
                 publicDisplayName = NextTaskPublicDisplayName(existingNodes, publicDisplayName);
             candidate.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement(publicDisplayName);
@@ -469,7 +475,7 @@ public sealed class GraphNodeAuthoringService
             if (node.Type == "settle")
                 names.AddRange((node.Ports ?? []).Where(port => port is not null)
                     .Select(port => port.DisplayName));
-            if (node.Type == "logic_output"
+            if (node.Type is "logic_input" or "logic_output"
                 && (node.Properties ?? []).TryGetValue("display_name", out var value)
                 && value.ValueKind == System.Text.Json.JsonValueKind.String)
                 names.Add(value.GetString() ?? string.Empty);

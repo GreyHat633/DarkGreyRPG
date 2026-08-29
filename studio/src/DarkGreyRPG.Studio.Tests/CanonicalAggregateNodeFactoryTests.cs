@@ -12,8 +12,9 @@ public sealed class CanonicalAggregateNodeFactoryTests
     public void SessionAggregateBindsResourceAndProjectsBoundariesInChildOrder()
     {
         var end = BoundaryNode(GraphScope.Session, "end", "end", "accepted", "Accepted");
+        var input = BoundaryNode(GraphScope.Session, "logic_input", "input", "available", "Available");
         var logic = BoundaryNode(GraphScope.Session, "logic_output", "logic", "known", "Known");
-        var source = new GraphResourceEnvelope(GraphResourceKind.Session, "session-1", "会话", new GraphDocument([end, logic]));
+        var source = new GraphResourceEnvelope(GraphResourceKind.Session, "session-1", "会话", new GraphDocument([end, input, logic]));
         var target = new GraphDocument();
         var before = source.ToJson();
 
@@ -23,7 +24,7 @@ public sealed class CanonicalAggregateNodeFactoryTests
         var candidate = result.Candidate!;
         Assert.AreEqual("session", candidate.Type);
         Assert.AreEqual("session-1", candidate.Properties["resource_id"].GetString());
-        CollectionAssert.AreEqual(new[] { "flow_in", "logic_in", "accepted", "known" }, candidate.Ports.Select(port => port.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "flow_in", "available", "accepted", "known" }, candidate.Ports.Select(port => port.Id).ToArray());
         Assert.IsTrue(candidate.Ports[1].IsInput);
         Assert.AreEqual(GraphInterfaceKind.Logic, candidate.Ports[1].InterfaceKind);
         Assert.IsTrue(candidate.Ports.Skip(2).All(port => port.IsOutput));

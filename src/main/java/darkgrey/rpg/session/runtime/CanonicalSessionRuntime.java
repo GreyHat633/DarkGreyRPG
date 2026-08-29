@@ -34,11 +34,14 @@ public final class CanonicalSessionRuntime {
     private final Map<String, String> selectedChoiceOptions = new LinkedHashMap<String, String>();
     private final Map<String, Boolean> internalLogicValues = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
+    private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
     private CanonicalSessionStatus status;
     private String currentNodeId;
     private String finalEndPortId;
     private CanonicalSessionStep currentStep;
     private boolean activationLogic;
+    private boolean waitingCondition;
+    private Boolean waitingConditionValue;
 
     private CanonicalSessionRuntime(CanonicalGraphResource resource, boolean initialize, boolean activationLogic) {
         if (resource == null) throw failure("session.resource.required", "Session resource is required.");
@@ -59,6 +62,14 @@ public final class CanonicalSessionRuntime {
 
     public static CanonicalSessionRuntime start(CanonicalGraphResource resource, boolean activationLogic) {
         return new CanonicalSessionRuntime(resource, true, activationLogic);
+    }
+
+    public static CanonicalSessionRuntime start(CanonicalGraphResource resource, boolean activationLogic,
+        Map<String, Boolean> logicInputs) {
+        CanonicalSessionRuntime runtime = new CanonicalSessionRuntime(resource, false, activationLogic);
+        runtime.setInitialLogicInputs(logicInputs);
+        runtime.initialize(activationLogic);
+        return runtime;
     }
 
     public static CanonicalSessionRuntime begin(CanonicalGraphResource resource) {
@@ -152,6 +163,39 @@ public final class CanonicalSessionRuntime {
         return getPublicLogicOutputs();
     }
 
+    public Map<String, Boolean> getExternalLogicInputs() {
+        return detachedMap(externalLogicInputs);
+    }
+
+    public Map<String, Boolean> getLogicInputs() {
+        return getExternalLogicInputs();
+    }
+
+    public boolean setLogicInput(String portId, boolean value) {
+        requireInputPort(portId);
+        Boolean previous = externalLogicInputs.put(portId, Boolean.valueOf(value));
+        recomputeLogic();
+        boolean changed = previous == null ? value : previous.booleanValue() != value;
+        if (waitingCondition && changed) {
+            CanonicalGraphNode condition = currentNode();
+            boolean now = logicInputValue(condition, "logic_in");
+            waitingConditionValue = Boolean.valueOf(now);
+            String output = now ? "flow_true" : "flow_false";
+            if (flowOutgoing(condition, output) == 1) {
+                waitingCondition = false;
+                waitingConditionValue = null;
+                transitionFrom(condition, output);
+                resolveAutomatic();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean setExternalLogicInput(String portId, boolean value) {
+        return setLogicInput(portId, value);
+    }
+
     public boolean getActivationLogic() {
         return activationLogic;
     }
@@ -159,14 +203,18 @@ public final class CanonicalSessionRuntime {
     public CanonicalSessionStep continueLine() {
         requireActive();
         CanonicalGraphNode node = currentNode();
-        if (!"line".equals(node.getType()))
-            throw fail("session.line.expected", "Session is not paused at a line node.");
+        if (!"line".equals(node.getType()) && !"narration".equals(node.getType()))
+            throw fail("session.line.expected", "Session is not paused at a line or narration node.");
         transitionFrom(node, "flow_out");
         resolveAutomatic();
         return currentStep;
     }
 
     public CanonicalSessionStep continueCurrentLine() {
+        return continueLine();
+    }
+
+    public CanonicalSessionStep continueNarration() {
         return continueLine();
     }
 
@@ -203,7 +251,10 @@ public final class CanonicalSessionRuntime {
             publicLogicOutputs,
             activationLogic,
             selectedChoiceOptions,
-            selectedChoiceNodeIds);
+            selectedChoiceNodeIds,
+            externalLogicInputs,
+            waitingCondition,
+            waitingConditionValue);
     }
 
     public CanonicalSessionSnapshot createSnapshot() {
@@ -228,6 +279,11 @@ public final class CanonicalSessionRuntime {
                 currentStep = lineStep(node);
                 return;
             }
+            if ("narration".equals(type)) {
+                currentStep = CanonicalSessionStep
+                    .narration(node.getId(), requiredString(node, "text", "session.narration"));
+                return;
+            }
             if ("choice".equals(type)) {
                 currentStep = CanonicalSessionStep
                     .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
@@ -245,7 +301,15 @@ public final class CanonicalSessionRuntime {
                 continue;
             }
             if ("condition".equals(type)) {
-                transitionFrom(node, logicInputValue(node, "logic_in") ? "flow_true" : "flow_false");
+                boolean value = logicInputValue(node, "logic_in");
+                String output = value ? "flow_true" : "flow_false";
+                if (flowOutgoing(node, output) == 0) {
+                    waitingCondition = true;
+                    waitingConditionValue = Boolean.valueOf(value);
+                    currentStep = null;
+                    return;
+                }
+                transitionFrom(node, output);
                 continue;
             }
             throw fail(
@@ -278,7 +342,10 @@ public final class CanonicalSessionRuntime {
         String type = node.getType();
         boolean value;
         if ("start".equals(type)) value = activationLogic;
-        else if ("choice".equals(type)) value = portId.equals(selectedChoiceOptions.get(node.getId()));
+        else if ("logic_input".equals(type)) {
+            Boolean external = externalLogicInputs.get(requiredString(node, "port_id", "session.logic_input"));
+            value = external != null && external.booleanValue();
+        } else if ("choice".equals(type)) value = portId.equals(selectedChoiceOptions.get(node.getId()));
         else if ("and".equals(type) || "or".equals(type)) {
             boolean all = "and".equals(type);
             value = all;
@@ -340,6 +407,13 @@ public final class CanonicalSessionRuntime {
                     spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW));
                 requiredString(node, "speaker_actor_id", "session.line");
                 requiredString(node, "text", "session.line");
+            } else if ("narration".equals(type)) {
+                validateFixedPorts(
+                    node,
+                    "narration",
+                    spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW),
+                    spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW));
+                requiredString(node, "text", "session.narration");
             } else if ("end".equals(type)) {
                 validateFixedPorts(node, "end", spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW));
                 requiredString(node, "port_id", "session.end");
@@ -361,6 +435,10 @@ public final class CanonicalSessionRuntime {
                 validateFixedPorts(node, "logic_output", spec("logic_in", true, CanonicalGraphInterfaceKind.LOGIC));
                 requiredString(node, "port_id", "session.logic_output");
                 requiredString(node, "display_name", "session.logic_output");
+            } else if ("logic_input".equals(type)) {
+                validateFixedPorts(node, "logic_input", spec("logic_out", false, CanonicalGraphInterfaceKind.LOGIC));
+                requiredString(node, "port_id", "session.logic_input");
+                requiredString(node, "display_name", "session.logic_input");
             } else if ("and".equals(type) || "or".equals(type)) validateAndOr(node);
             else if ("legacy_jump".equals(type)) validateLegacyJump(node);
             else throw failure("session.node.unsupported", "Session node type '" + type + "' is unsupported.");
@@ -369,10 +447,18 @@ public final class CanonicalSessionRuntime {
     }
 
     private void validatePublicBoundaries() {
+        Set<String> inputIds = new HashSet<String>();
         Set<String> publicIds = new HashSet<String>();
         Set<String> publicNames = new HashSet<String>();
         for (CanonicalGraphNode node : nodes.values()) {
             String type = node.getType();
+            if ("logic_input".equals(type)) {
+                String inputId = requiredString(node, "port_id", "session.logic_input");
+                if (!inputIds.add(inputId)) throw failure(
+                    "session.logic_input.duplicate",
+                    "Session Logic input port_id is duplicated: " + inputId);
+                continue;
+            }
             if (!"end".equals(type) && !"logic_output".equals(type)) continue;
             String prefix = "end".equals(type) ? "session.end" : "session.logic_output";
             String id = requiredString(node, "port_id", prefix);
@@ -637,26 +723,49 @@ public final class CanonicalSessionRuntime {
         selectedOptionIds.addAll(snapshot.getSelectedOptionIds());
         selectedChoiceNodeIds.addAll(snapshot.getSelectedChoiceNodeIds());
         selectedChoiceOptions.putAll(snapshot.getLatestChoiceSelections());
+        for (Map.Entry<String, Boolean> entry : snapshot.getExternalLogicInputs()
+            .entrySet()) {
+            if (blank(entry.getKey()) || entry.getValue() == null)
+                throw failure("session.snapshot.logic", "Snapshot contains an invalid external Logic input.");
+            requireInputPort(entry.getKey());
+        }
+        externalLogicInputs.putAll(snapshot.getExternalLogicInputs());
         currentNodeId = snapshot.getCurrentNodeId();
         status = snapshot.getStatus();
         finalEndPortId = snapshot.getFinalEndPortId();
         activationLogic = snapshot.getActivationLogic();
+        waitingCondition = snapshot.isWaitingCondition();
+        waitingConditionValue = snapshot.getWaitingConditionValue();
+        if (waitingCondition != (waitingConditionValue != null))
+            throw failure("session.snapshot.state", "Condition wait state and value must be supplied together.");
         recomputeLogic();
         if (!internalLogicValues.equals(snapshot.getInternalLogicValues())
             || !publicLogicOutputs.equals(snapshot.getPublicLogicOutputs()))
             throw failure("session.snapshot.logic", "Snapshot Logic maps are stale, unknown, or incomplete.");
         CanonicalGraphNode node = currentNode();
-        if (status == CanonicalSessionStatus.ACTIVE && "line".equals(node.getType())) currentStep = lineStep(node);
-        else if (status == CanonicalSessionStatus.ACTIVE && "choice".equals(node.getType()))
-            currentStep = CanonicalSessionStep
-                .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
-        else if (status == CanonicalSessionStatus.COMPLETED && "end".equals(node.getType()))
-            currentStep = CanonicalSessionStep.end(
-                node.getId(),
-                requiredString(node, "port_id", "session.end"),
-                requiredString(node, "display_name", "session.end"));
-        else if (status != CanonicalSessionStatus.FAILED)
-            throw failure("session.snapshot.state", "Snapshot cursor does not point at a valid paused state.");
+        if (status == CanonicalSessionStatus.ACTIVE && waitingCondition) {
+            if (!"condition".equals(node.getType()))
+                throw failure("session.snapshot.state", "Condition wait must point at a Condition node.");
+            boolean currentValue = logicInputValue(node, "logic_in");
+            String output = currentValue ? "flow_true" : "flow_false";
+            if (currentValue != waitingConditionValue.booleanValue() || flowOutgoing(node, output) != 0)
+                throw failure("session.snapshot.state", "Condition wait state is stale.");
+            currentStep = null;
+        } else
+            if (status == CanonicalSessionStatus.ACTIVE && "line".equals(node.getType())) currentStep = lineStep(node);
+            else if (status == CanonicalSessionStatus.ACTIVE && "narration".equals(node.getType()))
+                currentStep = CanonicalSessionStep
+                    .narration(node.getId(), requiredString(node, "text", "session.narration"));
+            else if (status == CanonicalSessionStatus.ACTIVE && "choice".equals(node.getType()))
+                currentStep = CanonicalSessionStep
+                    .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
+            else if (status == CanonicalSessionStatus.COMPLETED && "end".equals(node.getType()))
+                currentStep = CanonicalSessionStep.end(
+                    node.getId(),
+                    requiredString(node, "port_id", "session.end"),
+                    requiredString(node, "display_name", "session.end"));
+            else if (status != CanonicalSessionStatus.FAILED)
+                throw failure("session.snapshot.state", "Snapshot cursor does not point at a valid paused state.");
     }
 
     private boolean knownOptionId(String id) {
@@ -676,6 +785,25 @@ public final class CanonicalSessionRuntime {
             node.getId(),
             requiredString(node, "speaker_actor_id", "session.line"),
             requiredString(node, "text", "session.line"));
+    }
+
+    private void setInitialLogicInputs(Map<String, Boolean> values) {
+        if (values == null) throw new IllegalArgumentException("Session Logic inputs are required.");
+        for (Map.Entry<String, Boolean> entry : values.entrySet()) {
+            String id = entry.getKey();
+            if (blank(id)) throw new IllegalArgumentException("Session Logic input port ID is required.");
+            if (entry.getValue() == null) throw new IllegalArgumentException("Session Logic input value is required.");
+            requireInputPort(id);
+            externalLogicInputs.put(id, entry.getValue());
+        }
+        recomputeLogic();
+    }
+
+    private void requireInputPort(String portId) {
+        if (blank(portId)) throw new IllegalArgumentException("Session Logic input port ID is required.");
+        for (CanonicalGraphNode node : nodes.values()) if ("logic_input".equals(node.getType())
+            && portId.equals(requiredString(node, "port_id", "session.logic_input"))) return;
+        throw failure("session.logic_input.missing", "Unknown Session Logic input: " + portId);
     }
 
     private List<CanonicalSessionChoiceOption> parseChoiceOptions(CanonicalGraphNode node) {

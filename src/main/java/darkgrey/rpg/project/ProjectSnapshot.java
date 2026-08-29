@@ -16,6 +16,8 @@ public final class ProjectSnapshot {
     private final ProjectDefinition project;
     private final Map<String, ActorDefinition> actors;
     private final Map<String, DialogueDefinition> dialogues;
+    private final Map<String, ItemResourceDefinition> items;
+    private final Map<String, ItemResourceDefinition> itemGroups;
     private final Map<String, QuestDefinition> quests;
     private final Map<String, StoryDefinition> stories;
     private final CanonicalProjectContent canonicalContent;
@@ -29,9 +31,26 @@ public final class ProjectSnapshot {
     public ProjectSnapshot(ProjectDefinition project, Map<String, ActorDefinition> actors,
         Map<String, DialogueDefinition> dialogues, Map<String, QuestDefinition> quests,
         Map<String, StoryDefinition> stories, CanonicalProjectContent canonicalContent) {
+        this(
+            project,
+            actors,
+            Collections.<String, ItemResourceDefinition>emptyMap(),
+            Collections.<String, ItemResourceDefinition>emptyMap(),
+            dialogues,
+            quests,
+            stories,
+            canonicalContent);
+    }
+
+    public ProjectSnapshot(ProjectDefinition project, Map<String, ActorDefinition> actors,
+        Map<String, ItemResourceDefinition> items, Map<String, ItemResourceDefinition> itemGroups,
+        Map<String, DialogueDefinition> dialogues, Map<String, QuestDefinition> quests,
+        Map<String, StoryDefinition> stories, CanonicalProjectContent canonicalContent) {
         if (canonicalContent == null) throw new IllegalArgumentException("canonicalContent cannot be null.");
         this.project = project;
         this.actors = Collections.unmodifiableMap(new LinkedHashMap<String, ActorDefinition>(actors));
+        this.items = Collections.unmodifiableMap(new LinkedHashMap<String, ItemResourceDefinition>(items));
+        this.itemGroups = Collections.unmodifiableMap(new LinkedHashMap<String, ItemResourceDefinition>(itemGroups));
         this.dialogues = Collections.unmodifiableMap(new LinkedHashMap<String, DialogueDefinition>(dialogues));
         this.quests = Collections.unmodifiableMap(new LinkedHashMap<String, QuestDefinition>(quests));
         this.stories = Collections.unmodifiableMap(new LinkedHashMap<String, StoryDefinition>(stories));
@@ -65,6 +84,22 @@ public final class ProjectSnapshot {
 
     public DialogueDefinition getDialogue(String id) {
         return dialogues.get(id);
+    }
+
+    public Map<String, ItemResourceDefinition> getItems() {
+        return items;
+    }
+
+    public ItemResourceDefinition getItem(String id) {
+        return items.get(id);
+    }
+
+    public Map<String, ItemResourceDefinition> getItemGroups() {
+        return itemGroups;
+    }
+
+    public ItemResourceDefinition getItemGroup(String id) {
+        return itemGroups.get(id);
     }
 
     public Map<String, QuestDefinition> getQuests() {

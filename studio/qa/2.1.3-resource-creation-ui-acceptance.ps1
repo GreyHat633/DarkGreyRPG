@@ -541,9 +541,9 @@ function Select-RouteAndWait(
                 } | Select-Object -First 1
                 if ($null -eq $stable) {
                     $stableAutomationId = switch ($StablePageName) {
-                        '剧情 Actor 列表' { 'StoryActorCommandBar' }
-                        '剧情 Dialogue 列表' { 'StoryDialogueCommandBar' }
-                        '剧情 Quest 列表' { 'StoryQuestCommandBar' }
+                        '故事 Actor 列表' { 'StoryActorCommandBar' }
+                        '故事 Dialogue 列表' { 'StoryDialogueCommandBar' }
+                        '故事 Quest 列表' { 'StoryQuestCommandBar' }
                         default { $null }
                     }
                     if ($null -ne $stableAutomationId) {
@@ -598,7 +598,7 @@ try {
         $started = Start-Studio $settingsPath
         $process = $started.Process
         $window = $started.Window
-        if ($window.Current.Name -notlike 'DarkGrey RPG Studio 0.3.0.0*') { throw "Unexpected window title: $($window.Current.Name)" }
+        if ($window.Current.Name -notlike 'DarkGrey RPG Studio 0.3.1.0*') { throw "Unexpected window title: $($window.Current.Name)" }
         Record-Result 'RELEASE_WPF_PROCESS' PASS "PID $($process.Id), title '$($window.Current.Name)'."
         $windowBounds = $window.Current.BoundingRectangle
         if ($windowBounds.Width -lt 1100 -or $windowBounds.Height -lt 700) { throw "Window did not honor the 1100x700 minimum test surface: $($windowBounds.Width)x$($windowBounds.Height)." }
@@ -608,34 +608,34 @@ try {
         Record-Result 'CURRENT_DPI_VISIBILITY' PASS "GetDpiForWindow reported $currentDpi DPI for the live Release window; alternate-scale comparison remains manual."
 
         try {
-            $storyList = Find-Named $window '剧情导航列表' 15
+            $storyList = Find-Named $window '故事导航列表' 15
         } catch {
             # WPF can replace the UIA provider while restoring the project. Reacquire
             # the process-owned top-level element rather than keeping a stale root.
             $window = Find-Window $process.Id 15
-            $storyList = Find-Named $window '剧情导航列表' 45
+            $storyList = Find-Named $window '故事导航列表' 45
         }
-        $overview = Find-Named $window '选中剧情完整概览' 60
+        $overview = Find-Named $window '选中故事完整概览' 60
         Record-Result 'PROJECT_HOME_DEFAULT_SELECTION' PASS 'Story list and selected Story Overview are visible after project restore.'
         $screenshot = Save-Screenshot $window '00-project-home-2.1.3.png'
         Record-Result 'PROJECT_HOME_SCREENSHOT' PASS $screenshot
 
         # Select a deterministic home Story before exercising its resource library.
         Select-ListItemContaining $storyList 'royal_mystery' | Out-Null
-        Invoke-Element (Find-Named $window '进入选中剧情')
-        $routeList = Find-Named $window '剧情页面列表' 20
-        Select-RouteAndWait $routeList $window '角色' '剧情 Actor 列表'
-        Find-Named $window '搜索剧情角色' | Out-Null
-        Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
+        Invoke-Element (Find-Named $window '进入选中故事')
+        $routeList = Find-Named $window '故事页面列表' 20
+        Select-RouteAndWait $routeList $window '角色' '故事 Actor 列表'
+        Find-Named $window '搜索故事角色' | Out-Null
+        Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
         Find-Named $window '搜索 Dialogue' | Out-Null
-        Select-RouteAndWait $routeList $window '任务' '剧情 Quest 列表'
+        Select-RouteAndWait $routeList $window '任务' '故事 Quest 列表'
         Find-Named $window '搜索 Quest' | Out-Null
         Record-Result 'UNIFIED_RESOURCE_LIBRARIES' PASS 'Real Release window exposed one Actor, Dialogue, and Quest library with stable command bars.'
 
         # Dialogue: creation must be truly empty. Prove the empty card, right-click
         # draft action, explicit End creation/deletion, then explicitly build a
         # valid line -> End chain for the first disk Save.
-        Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
+        Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
         Invoke-Named $window '创建 Dialogue' | Out-Null
         Invoke-ResourceIdentity $process.Id $dialogueId 'QA 2.1.3 对话' '新建 Dialogue'
         if (Test-Path -LiteralPath $dialoguePath) { throw 'Dialogue draft unexpectedly wrote a JSON file before Save.' }
@@ -679,7 +679,7 @@ try {
 
         # Quest: start from a real empty draft (no actor_id and no objectives),
         # add Collect, exercise all completion modes, then save.
-        Select-RouteAndWait $routeList $window '任务' '剧情 Quest 列表'
+        Select-RouteAndWait $routeList $window '任务' '故事 Quest 列表'
         Invoke-Named $window '创建 Quest' | Out-Null
         Invoke-ResourceIdentity $process.Id $questId 'QA 2.1.3 任务' '新建 Quest'
         if (Test-Path -LiteralPath $questPath) { throw 'Quest draft unexpectedly wrote a JSON file before Save.' }
@@ -725,7 +725,7 @@ try {
 
         # Duplicate an existing persisted Dialogue, edit only the copy, then
         # prove the source bytes/content and Home Story are unchanged.
-        Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
+        Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
         Invoke-Named $window '从现有复制 Dialogue' | Out-Null
         Invoke-ResourcePicker $process.Id 'final_confrontation' '下一步' | Out-Null
         Invoke-ImportIdentity $process.Id $duplicateId 'QA 2.1.3 独立副本'
@@ -745,11 +745,11 @@ try {
         # Reference the shared source from a different Story; only membership
         # should change and the source Home Story/file must remain royal_mystery.
         Invoke-Named $window '← 返回项目首页' | Out-Null
-        $storyList = Find-Named $window '剧情导航列表' 12
+        $storyList = Find-Named $window '故事导航列表' 12
         Select-ListItemContaining $storyList 'kingdom_route' | Out-Null
-        Invoke-Named $window '进入选中剧情' | Out-Null
-        $routeList = Find-Named $window '剧情页面列表' 12
-        Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
+        Invoke-Named $window '进入选中故事' | Out-Null
+        $routeList = Find-Named $window '故事页面列表' 12
+        Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
         Invoke-Named $window '引用 Dialogue' | Out-Null
         Invoke-ResourcePicker $process.Id 'final_confrontation' '引用' | Out-Null
         $kingdomAfterReference = Read-Json $kingdomPath
@@ -764,16 +764,16 @@ try {
         # move. Alternate 100%/150% DPI comparison remains deliberately manual.
         try {
             Invoke-Named $window '← 返回项目首页' | Out-Null
-            $storyList = Find-Named $window '剧情导航列表' 12
+            $storyList = Find-Named $window '故事导航列表' 12
             Select-ListItemContaining $storyList 'royal_mystery' | Out-Null
-            Invoke-Named $window '进入选中剧情' | Out-Null
-            $routeList = Find-Named $window '剧情页面列表' 12
-            Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
-            $dialogueListCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, '剧情 Dialogue 列表')
+            Invoke-Named $window '进入选中故事' | Out-Null
+            $routeList = Find-Named $window '故事页面列表' 12
+            Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
+            $dialogueListCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, '故事 Dialogue 列表')
             $dialogueLibraries = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $dialogueListCondition) | Where-Object {
                 $_.Current.BoundingRectangle.Width -gt 0 -and $_.Current.BoundingRectangle.Height -gt 0 -and -not $_.Current.IsOffscreen
             }
-            if ($null -eq $dialogueLibraries -or @($dialogueLibraries).Count -eq 0) { throw "Visible '剧情 Dialogue 列表' root was not found for ScrollBar proof." }
+            if ($null -eq $dialogueLibraries -or @($dialogueLibraries).Count -eq 0) { throw "Visible '故事 Dialogue 列表' root was not found for ScrollBar proof." }
             $scrollEvidence = $null
             $scrollFailure = $null
             foreach ($dialogueLibrary in @($dialogueLibraries)) {
@@ -794,16 +794,22 @@ try {
         $started = Start-Studio $settingsPath
         $process = $started.Process
         $window = $started.Window
-        $storyList = Find-Named $window '剧情导航列表' 20
+        try { $storyList = Find-Named $window '故事导航列表' 5 }
+        catch {
+            # A clean restart may restore the last open Story workspace. Return
+            # through the real UI before verifying the project-level list.
+            Invoke-Named $window '← 返回项目首页' | Out-Null
+            $storyList = Find-Named $window '故事导航列表' 20
+        }
         Select-ListItemContaining $storyList 'royal_mystery' | Out-Null
-        Invoke-Named $window '进入选中剧情' | Out-Null
-        $routeList = Find-Named $window '剧情页面列表' 12
-        Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
+        Invoke-Named $window '进入选中故事' | Out-Null
+        $routeList = Find-Named $window '故事页面列表' 12
+        Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
         Select-ListItemContaining $window $dialogueId | Out-Null
         Find-Named $window 'QA 2.1.3 first line' 10 | Out-Null
         Select-ListItemContaining $window $duplicateId | Out-Null
         Find-Named $window 'QA 2.1.3 edited copy' 10 | Out-Null
-        Select-RouteAndWait $routeList $window '任务' '剧情 Quest 列表'
+        Select-RouteAndWait $routeList $window '任务' '故事 Quest 列表'
         Select-ListItemContaining $window $questId | Out-Null
         $reloadedCollectItem = Find-Named $window 'CollectItem 物品' 10
         $reloadedCollectValue = $null
@@ -812,11 +818,11 @@ try {
             throw "Reloaded Quest Collect item did not persist 'minecraft:paper'."
         }
         Invoke-Named $window '← 返回项目首页' | Out-Null
-        $storyList = Find-Named $window '剧情导航列表' 12
+        $storyList = Find-Named $window '故事导航列表' 12
         Select-ListItemContaining $storyList 'kingdom_route' | Out-Null
-        Invoke-Named $window '进入选中剧情' | Out-Null
-        $routeList = Find-Named $window '剧情页面列表' 12
-        Select-RouteAndWait $routeList $window '对话' '剧情 Dialogue 列表'
+        Invoke-Named $window '进入选中故事' | Out-Null
+        $routeList = Find-Named $window '故事页面列表' 12
+        Select-RouteAndWait $routeList $window '对话' '故事 Dialogue 列表'
         Select-ListItemContaining $window 'final_confrontation' | Out-Null
         Record-Result 'DRAFT_SAVE_RESTART' PASS "Dialogue $dialogueId, Quest $questId, and duplicate $duplicateId were reloaded by a fresh Release process; kingdom reference remained visible."
         Record-Result 'PROCESS_SURVIVAL' PASS 'Process remained alive after navigation and screenshot capture.'

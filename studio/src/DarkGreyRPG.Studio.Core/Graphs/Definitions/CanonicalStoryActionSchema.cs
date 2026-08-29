@@ -8,8 +8,8 @@ public static class CanonicalStoryActionSchema
 {
     public const string NodeType = "action";
     public const string TypeProperty = "action_type";
-    public const string ItemProperty = "item";
-    public const string MetadataProperty = "metadata";
+    public const string ItemIdProperty = "item_id";
+    public const string ItemProperty = ItemIdProperty;
     public const string AmountProperty = "amount";
     public const string MessageProperty = "message";
 
@@ -19,11 +19,11 @@ public static class CanonicalStoryActionSchema
 
     public static IReadOnlyList<string> ActionTypes { get; } = [GiveItem, GiveXp, SendMessage];
     public static IReadOnlySet<string> AllProperties { get; } = new HashSet<string>(
-        [TypeProperty, ItemProperty, MetadataProperty, AmountProperty, MessageProperty], StringComparer.Ordinal);
+        [TypeProperty, ItemIdProperty, AmountProperty, MessageProperty], StringComparer.Ordinal);
 
     public static IReadOnlySet<string> PropertiesFor(string type) => type switch
     {
-        GiveItem => new HashSet<string>([TypeProperty, ItemProperty, MetadataProperty, AmountProperty], StringComparer.Ordinal),
+        GiveItem => new HashSet<string>([TypeProperty, ItemIdProperty, AmountProperty], StringComparer.Ordinal),
         GiveXp => new HashSet<string>([TypeProperty, AmountProperty], StringComparer.Ordinal),
         SendMessage => new HashSet<string>([TypeProperty, MessageProperty], StringComparer.Ordinal),
         _ => new HashSet<string>(StringComparer.Ordinal),
@@ -63,8 +63,7 @@ public static class CanonicalStoryActionSchema
         switch (type)
         {
             case GiveItem:
-                ValidateString(properties, ItemProperty, issues, node.Id);
-                ValidateInteger(properties, MetadataProperty, 0, issues, node.Id);
+                ValidateString(properties, ItemIdProperty, issues, node.Id);
                 ValidateInteger(properties, AmountProperty, 1, issues, node.Id);
                 break;
             case GiveXp:
@@ -87,8 +86,7 @@ public static class CanonicalStoryActionSchema
         switch (type)
         {
             case GiveItem:
-                properties[ItemProperty] = JsonSerializer.SerializeToElement("darkgrey_rpg:copper_coin");
-                properties[MetadataProperty] = JsonSerializer.SerializeToElement(0);
+                properties[ItemIdProperty] = JsonSerializer.SerializeToElement("starter_reward");
                 properties[AmountProperty] = JsonSerializer.SerializeToElement(10);
                 break;
             case GiveXp:

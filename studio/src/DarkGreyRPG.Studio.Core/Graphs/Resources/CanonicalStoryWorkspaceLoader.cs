@@ -1,4 +1,5 @@
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -36,6 +37,8 @@ public sealed class CanonicalStoryWorkspaceSnapshot
         GraphResourceEnvelope story,
         CanonicalStoryMembershipManifest membership,
         IReadOnlyList<CanonicalStoryWorkspaceEntry<ActorDocument>> actors,
+        IReadOnlyList<CanonicalStoryWorkspaceEntry<IndividualItemResource>> items,
+        IReadOnlyList<CanonicalStoryWorkspaceEntry<CollectiveItemResource>> itemGroups,
         IReadOnlyList<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> sessions,
         IReadOnlyList<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> tasks,
         IReadOnlyList<ValidationIssue> validationIssues)
@@ -43,6 +46,8 @@ public sealed class CanonicalStoryWorkspaceSnapshot
         _story = CloneEnvelope(story);
         _membership = CloneMembership(membership);
         Actors = actors.ToArray();
+        Items = items.ToArray();
+        ItemGroups = itemGroups.ToArray();
         Sessions = sessions.ToArray();
         Tasks = tasks.ToArray();
         ValidationIssues = validationIssues.ToArray();
@@ -55,6 +60,8 @@ public sealed class CanonicalStoryWorkspaceSnapshot
     public CanonicalStoryMembershipManifest Membership => CloneMembership(_membership);
 
     public IReadOnlyList<CanonicalStoryWorkspaceEntry<ActorDocument>> Actors { get; }
+    public IReadOnlyList<CanonicalStoryWorkspaceEntry<IndividualItemResource>> Items { get; }
+    public IReadOnlyList<CanonicalStoryWorkspaceEntry<CollectiveItemResource>> ItemGroups { get; }
     public IReadOnlyList<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> Sessions { get; }
     public IReadOnlyList<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> Tasks { get; }
     public IReadOnlyList<ValidationIssue> ValidationIssues { get; }
@@ -80,13 +87,16 @@ public sealed class CanonicalStoryWorkspaceLoader
 {
     private readonly CanonicalProjectGraphStore _store;
     private readonly ActorRepository _actors;
+    private readonly ItemRepository _items;
 
     public CanonicalStoryWorkspaceLoader(
         CanonicalProjectGraphStore store,
-        ActorRepository? actors = null)
+        ActorRepository? actors = null,
+        ItemRepository? items = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _actors = actors ?? new ActorRepository(store.ProjectDirectory);
+        _items = items ?? new ItemRepository(store.ProjectDirectory);
     }
 
     /// <summary>
@@ -97,13 +107,21 @@ public sealed class CanonicalStoryWorkspaceLoader
     /// </summary>
     public CanonicalStoryWorkspaceSnapshot Load(string storyId)
     {
-        // These are intentionally the only root loads. Both repositories
+        // These are intentionally the only root loads. The repositories
         // enforce canonical schema, kind, filename, and stable identity.
         var story = _store.Stories.Load(storyId);
         var membership = _store.Memberships.Load(storyId);
 
         var issues = new List<ValidationIssue>();
         var actors = ResolveActors(membership, issues);
+        var items = ResolveItems(
+            membership.OwnedResources.Items,
+            membership.ReferencedResources.Items,
+            issues);
+        var itemGroups = ResolveItemGroups(
+            membership.OwnedResources.ItemGroups,
+            membership.ReferencedResources.ItemGroups,
+            issues);
         var sessions = ResolveGraphResources(
             membership.OwnedResources.Sessions,
             membership.ReferencedResources.Sessions,
@@ -117,7 +135,64 @@ public sealed class CanonicalStoryWorkspaceLoader
             "Task",
             issues);
 
-        return new CanonicalStoryWorkspaceSnapshot(story, membership, actors, sessions, tasks, issues);
+        return new CanonicalStoryWorkspaceSnapshot(story, membership, actors, items, itemGroups, sessions, tasks, issues);
+    }
+
+    private IReadOnlyList<CanonicalStoryWorkspaceEntry<IndividualItemResource>> ResolveItems(
+        IEnumerable<string> ownedIds,
+        IEnumerable<string> referencedIds,
+        ICollection<ValidationIssue> issues)
+    {
+        var result = new List<CanonicalStoryWorkspaceEntry<IndividualItemResource>>();
+        ResolveItemList(ownedIds, CanonicalStoryWorkspaceMembershipKind.Owned, result, issues);
+        ResolveItemList(referencedIds, CanonicalStoryWorkspaceMembershipKind.Referenced, result, issues);
+        return result;
+    }
+
+    private IReadOnlyList<CanonicalStoryWorkspaceEntry<CollectiveItemResource>> ResolveItemGroups(
+        IEnumerable<string> ownedIds,
+        IEnumerable<string> referencedIds,
+        ICollection<ValidationIssue> issues)
+    {
+        var result = new List<CanonicalStoryWorkspaceEntry<CollectiveItemResource>>();
+        ResolveItemGroupList(ownedIds, CanonicalStoryWorkspaceMembershipKind.Owned, result, issues);
+        ResolveItemGroupList(referencedIds, CanonicalStoryWorkspaceMembershipKind.Referenced, result, issues);
+        return result;
+    }
+
+    private void ResolveItemList(
+        IEnumerable<string> ids,
+        CanonicalStoryWorkspaceMembershipKind membershipKind,
+        ICollection<CanonicalStoryWorkspaceEntry<IndividualItemResource>> result,
+        ICollection<ValidationIssue> issues)
+    {
+        foreach (var id in ids) result.Add(ResolveItem(id, membershipKind, issues));
+    }
+
+    private CanonicalStoryWorkspaceEntry<IndividualItemResource> ResolveItem(
+        string id,
+        CanonicalStoryWorkspaceMembershipKind membershipKind,
+        ICollection<ValidationIssue> issues)
+    {
+        IndividualItemResource? resource = null;
+        try { resource = _items.LoadItem(id); }
+        catch (ItemNotFoundException) { issues.Add(MissingIssue("Item", id, "items")); }
+        return new(id, membershipKind, resource);
+    }
+
+    private void ResolveItemGroupList(
+        IEnumerable<string> ids,
+        CanonicalStoryWorkspaceMembershipKind membershipKind,
+        ICollection<CanonicalStoryWorkspaceEntry<CollectiveItemResource>> result,
+        ICollection<ValidationIssue> issues)
+    {
+        foreach (var id in ids)
+        {
+            CollectiveItemResource? resource = null;
+            try { resource = _items.LoadGroup(id); }
+            catch (ItemNotFoundException) { issues.Add(MissingIssue("ItemGroup", id, "item_groups")); }
+            result.Add(new(id, membershipKind, resource));
+        }
     }
 
     private IReadOnlyList<CanonicalStoryWorkspaceEntry<ActorDocument>> ResolveActors(

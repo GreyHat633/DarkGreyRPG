@@ -7,11 +7,14 @@ import net.minecraftforge.common.config.Configuration;
 public final class RpgConfiguration {
 
     private final String projectDirectory;
+    private final String storyPackageDirectory;
     private final boolean liveBridgeEnabled;
     private final int liveBridgePort;
 
-    private RpgConfiguration(String projectDirectory, boolean liveBridgeEnabled, int liveBridgePort) {
+    private RpgConfiguration(String projectDirectory, String storyPackageDirectory, boolean liveBridgeEnabled,
+        int liveBridgePort) {
         this.projectDirectory = projectDirectory;
+        this.storyPackageDirectory = storyPackageDirectory;
         this.liveBridgeEnabled = liveBridgeEnabled;
         this.liveBridgePort = liveBridgePort;
     }
@@ -27,6 +30,13 @@ public final class RpgConfiguration {
                 "darkgrey_rpg_project",
                 "Absolute path or path relative to the Minecraft working directory.")
             .getString();
+        String packageDirectory = configuration
+            .get(
+                "story_packages",
+                "directory",
+                "darkgrey_rpg_story_packages",
+                "Server-owned Story Package install directory. Clients cannot override this path.")
+            .getString();
         boolean liveEnabled = configuration
             .get(
                 "live_bridge",
@@ -41,7 +51,7 @@ public final class RpgConfiguration {
         if (configuration.hasChanged()) {
             configuration.save();
         }
-        return new RpgConfiguration(directory.trim(), liveEnabled, livePort);
+        return new RpgConfiguration(directory.trim(), packageDirectory.trim(), liveEnabled, livePort);
     }
 
     public File resolveProjectDirectory(File modConfigurationDirectory) {
@@ -56,6 +66,13 @@ public final class RpgConfiguration {
 
     public boolean isLiveBridgeEnabled() {
         return liveBridgeEnabled;
+    }
+
+    public File resolveStoryPackageDirectory(File modConfigurationDirectory) {
+        File configured = new File(storyPackageDirectory);
+        if (configured.isAbsolute()) return configured;
+        File gameDirectory = modConfigurationDirectory.getParentFile();
+        return new File(gameDirectory, storyPackageDirectory);
     }
 
     public int getLiveBridgePort() {

@@ -43,7 +43,7 @@ public sealed class StoryDocument : INotifyPropertyChanged
     public IReadOnlyList<ValidationIssue> ValidationIssues => _issues;
     public IReadOnlyList<ValidationIssue> ValidationErrors => _issues.Where(i => i.Severity == ValidationSeverity.Error).ToArray();
 
-    public static StoryDocument CreateNew(string id, string title = "新剧情")
+    public static StoryDocument CreateNew(string id, string title = "新故事")
     {
         var start = new StoryNodeResource { Id = "start", Type = "story_start" };
         var end = new StoryNodeResource { Id = "end", Type = "end" };

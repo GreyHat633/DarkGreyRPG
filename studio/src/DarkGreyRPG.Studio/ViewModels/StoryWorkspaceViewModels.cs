@@ -42,9 +42,9 @@ public sealed class StoryActorMembershipViewModel : ObservableObject
 
     public string Id { get; }
     public StoryMembershipKind Kind { get; }
-    public string MembershipKind => Kind == StoryMembershipKind.Owned ? "本剧情" : "引用";
+    public string MembershipKind => Kind == StoryMembershipKind.Owned ? "本故事" : "引用";
     public string? HomeStoryDisplayName { get; }
-    public string SourceLabel => IsOwned ? "本剧情" : $"来自：{HomeStoryDisplayName ?? "未知剧情"}";
+    public string SourceLabel => IsOwned ? "本故事" : $"来自：{HomeStoryDisplayName ?? "未知故事"}";
     public bool IsOwned => Kind == StoryMembershipKind.Owned;
     public bool IsReferenced => Kind == StoryMembershipKind.Referenced;
     public ActorResourceInfo? Actor { get; }
@@ -55,7 +55,7 @@ public sealed class StoryActorMembershipViewModel : ObservableObject
     public IReadOnlyList<string> Tags => Actor?.Tags ?? [];
     public string MembershipTooltip => IsMissing
         ? $"缺失角色：{Id}"
-        : IsReferenced ? $"引用资源\n来源剧情：{HomeStoryDisplayName ?? "未知剧情"}" : $"{DisplayName}\n{Id}";
+        : IsReferenced ? $"引用资源\n来源故事：{HomeStoryDisplayName ?? "未知故事"}" : $"{DisplayName}\n{Id}";
 }
 
 public sealed class StoryActorsViewModel : ObservableObject
@@ -172,7 +172,7 @@ public sealed class StoryResourceMembershipViewModel
 
     public string Id { get; }
     public StoryMembershipKind Kind { get; }
-    public string MembershipKind => IsDraft ? "草稿" : Kind == StoryMembershipKind.Owned ? "本剧情" : "引用";
+    public string MembershipKind => IsDraft ? "草稿" : Kind == StoryMembershipKind.Owned ? "本故事" : "引用";
     public bool IsOwned => !IsDraft && Kind == StoryMembershipKind.Owned;
     public bool IsReferenced => Kind == StoryMembershipKind.Referenced;
     public bool IsDraft { get; }
@@ -188,7 +188,7 @@ public sealed class StoryResourceMembershipViewModel
     public string MembershipTooltip => IsMissing
         ? $"缺失资源：{Id}"
         : IsDraft ? $"{(ResourceType == ProjectResourceType.Quest ? "任务" : "对话")}草稿\n{DisplayName}\n尚未保存到正式资源库"
-        : IsReferenced ? $"引用资源\n来源剧情：{HomeStoryDisplayName ?? "未知剧情"}" : $"{DisplayName}\n{Id}";
+        : IsReferenced ? $"引用资源\n来源故事：{HomeStoryDisplayName ?? "未知故事"}" : $"{DisplayName}\n{Id}";
 }
 
 public abstract class StoryResourceMembershipListViewModel : ObservableObject

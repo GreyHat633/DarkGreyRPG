@@ -17,9 +17,9 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.AreSame(workspace.StoryEditor, workspace.ActiveEditor);
         Assert.IsTrue(workspace.IsStoryFlowActive);
         CollectionAssert.AreEqual(
-            new[] { CanonicalStoryFolderKind.Actors, CanonicalStoryFolderKind.Sessions, CanonicalStoryFolderKind.Tasks },
+            new[] { CanonicalStoryFolderKind.Actors, CanonicalStoryFolderKind.Items, CanonicalStoryFolderKind.Sessions, CanonicalStoryFolderKind.Tasks },
             workspace.Folders.Select(folder => folder.Kind).ToArray());
-        CollectionAssert.AreEqual(new[] { "角色", "会话", "任务" },
+        CollectionAssert.AreEqual(new[] { "角色", "物品", "会话", "任务" },
             workspace.Folders.Select(folder => folder.DisplayName).ToArray());
         Assert.HasCount(1, workspace.Breadcrumbs);
         Assert.AreEqual(GraphResourceKind.Story, workspace.Breadcrumbs[0].ResourceKind);

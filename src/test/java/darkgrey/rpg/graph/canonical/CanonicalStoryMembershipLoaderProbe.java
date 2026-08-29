@@ -28,12 +28,39 @@ public final class CanonicalStoryMembershipLoaderProbe {
             write(memberships.resolve("story_a.json"), json("story_a"));
             CanonicalStoryMembershipLoader loader = new CanonicalStoryMembershipLoader();
             verifyValid(loader, memberships);
+            verifySchemaTwo(loader, memberships);
             verifyFailures(loader, memberships);
             verifyDirectory(loader, root, memberships);
             System.out.println("CANONICAL_STORY_MEMBERSHIP_PROBE=PASS");
         } finally {
             delete(root);
         }
+    }
+
+    private static void verifySchemaTwo(CanonicalStoryMembershipLoader loader, Path directory) throws Exception {
+        Path file = directory.resolve("story_items.json");
+        write(
+            file,
+            "{\"schema_version\":2,\"story_id\":\"story_items\","
+                + "\"owned_resources\":{\"actors\":[],\"items\":[\"royal_key\"],"
+                + "\"item_groups\":[\"swords\"],\"sessions\":[],\"tasks\":[]},"
+                + "\"referenced_resources\":{\"actors\":[],\"items\":[],\"item_groups\":[],"
+                + "\"sessions\":[],\"tasks\":[]}}");
+        CanonicalStoryMembership membership = loader.load(file);
+        require(membership.getSchemaVersion() == 2, "Schema 2 identity changed");
+        require(
+            Arrays.asList("royal_key")
+                .equals(
+                    membership.getOwnedResources()
+                        .getItems()),
+            "Item membership changed");
+        require(
+            Arrays.asList("swords")
+                .equals(
+                    membership.getOwnedResources()
+                        .getItemGroups()),
+            "Item Group membership changed");
+        Files.delete(file);
     }
 
     private static void verifyValid(CanonicalStoryMembershipLoader loader, Path directory) throws Exception {
@@ -77,7 +104,7 @@ public final class CanonicalStoryMembershipLoaderProbe {
         expect(
             loader,
             file,
-            json("bad").replace("\"schema_version\":1", "\"schema_version\":2"),
+            json("bad").replace("\"schema_version\":1", "\"schema_version\":99"),
             "story.membership.schema_version.unsupported");
         expect(
             loader,

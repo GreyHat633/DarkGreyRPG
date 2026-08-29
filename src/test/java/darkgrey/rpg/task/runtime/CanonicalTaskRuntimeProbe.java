@@ -23,6 +23,7 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 public final class CanonicalTaskRuntimeProbe {
 
     public static void main(String[] args) {
+        canonical0310TaskSemantics();
         parallelSequentialAndTypes();
         priorityAndUnconnectedFalse();
         activationSettlementAndPostSettlement();
@@ -30,6 +31,100 @@ public final class CanonicalTaskRuntimeProbe {
         immutableSnapshotRestore();
         malformedFailsClosed();
         System.out.println("TASK_RUNTIME_PROBE_PASS");
+    }
+
+    private static void canonical0310TaskSemantics() {
+        CanonicalTaskRuntime runtime = CanonicalTaskRuntime.start(canonical0310Resource());
+        require(runtime.isActive(), "Task without activate starts Active");
+        require(runtime.isObjectiveActive("default"), "Objective without conditions is active by default");
+        require(!runtime.isObjectiveActive("gated"), "False condition gates objective");
+        require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Default objective accepts event");
+        require(
+            runtime.getProgress()
+                .get("default")
+                .intValue() == 1,
+            "Default objective progress");
+        require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Gated objective pauses counting");
+        require(
+            runtime.getProgress()
+                .get("gated")
+                .intValue() == 0,
+            "Gated objective remains at zero");
+        require(runtime.setLogicInput("night", true), "First condition changes");
+        require(!runtime.isObjectiveActive("gated"), "AND gate remains false with one input");
+        require(runtime.setLogicInput("armed", true), "Second condition changes");
+        require(runtime.isObjectiveActive("gated"), "AND gate activates objective");
+        require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Gated objective counts when enabled");
+        require(
+            runtime.getProgress()
+                .get("gated")
+                .intValue() == 1,
+            "Gated objective progress");
+        CanonicalTaskSnapshot saved = runtime.snapshot();
+        runtime = CanonicalTaskRuntime.restore(canonical0310Resource(), saved);
+        require(!runtime.setLogicInput("night", true), "Restored first input survives");
+        require(!runtime.setLogicInput("armed", true), "Restored second input survives");
+        require(runtime.isObjectiveActive("gated"), "Restored gate remains active");
+        require(
+            runtime.getProgress()
+                .get("gated")
+                .intValue() == 1,
+            "Restored progress survives");
+        require(runtime.setLogicInput("armed", false), "Gate can pause dynamically");
+        require(!runtime.isObjectiveActive("gated"), "Dynamic false pauses objective");
+        require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Paused objective ignores new event");
+        require(
+            runtime.getProgress()
+                .get("gated")
+                .intValue() == 1,
+            "Paused objective retains progress");
+        require(runtime.setLogicInput("armed", true), "Gate resumes");
+        require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Resumed objective completes");
+        require(runtime.isSettled() && "success".equals(runtime.getResultPortId()), "First settlement slot wins");
+        require(
+            runtime.getPublicLogicOutputs()
+                .get("gated_done")
+                .booleanValue(),
+            "Logic output is updated");
+        require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Settled Task ignores events");
+    }
+
+    private static CanonicalGraphResource canonical0310Resource() {
+        List<CanonicalGraphNode> nodes = Arrays.asList(
+            node(
+                "night",
+                "logic_input",
+                ports(out("logic_out", 0)),
+                props("port_id", "night", "display_name", "Night")),
+            node(
+                "armed",
+                "logic_input",
+                ports(out("logic_out", 0)),
+                props("port_id", "armed", "display_name", "Armed")),
+            node("default", "objective", ports(out("logic_status", 0)), objective("kill_entity", "slime", null, 1)),
+            node(
+                "gated",
+                "objective",
+                ports(in("night_condition", 0), in("armed_condition", 1), out("logic_status", 2)),
+                objective("kill_entity", "slime", null, 2)),
+            node(
+                "published",
+                "logic_output",
+                ports(in("logic_in", 0)),
+                props("port_id", "gated_done", "display_name", "Gated done")),
+            node("settle", "settle", ports(in("success", 0), in("fallback", 1)), empty()));
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "canonical_0310",
+            "Canonical 0.3.1.0",
+            new CanonicalGraph(
+                nodes,
+                Arrays.asList(
+                    edge("night", "logic_out", "gated", "night_condition"),
+                    edge("armed", "logic_out", "gated", "armed_condition"),
+                    edge("gated", "logic_status", "published", "logic_in"),
+                    edge("gated", "logic_status", "settle", "success"))));
     }
 
     private static void parallelSequentialAndTypes() {

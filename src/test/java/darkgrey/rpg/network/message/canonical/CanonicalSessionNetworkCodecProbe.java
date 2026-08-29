@@ -55,6 +55,15 @@ public final class CanonicalSessionNetworkCodecProbe {
             Arrays.asList(
                 new CanonicalSessionChoiceOption("option-左", "左边"),
                 new CanonicalSessionChoiceOption("option-右", "右边")));
+        CanonicalSessionFrame narration = new CanonicalSessionFrame(
+            9L,
+            "故事-1",
+            "session-资源",
+            "旁白",
+            CanonicalSessionFrame.Kind.NARRATION,
+            "",
+            "风穿过没有说话人的走廊。",
+            Collections.<CanonicalSessionChoiceOption>emptyList());
         CanonicalSessionClose close = new CanonicalSessionClose(8L, "故事-1");
         require(roundTrip(continueAction).getKind() == CanonicalSessionAction.Kind.CONTINUE, "CONTINUE round-trip");
         require("option-右".equals(roundTrip(choiceAction).getOptionId()), "CHOICE option round-trip");
@@ -68,6 +77,14 @@ public final class CanonicalSessionNetworkCodecProbe {
             !choiceDecoded.canContinue() && choiceDecoded.getChoices()
                 .size() == 2,
             "CHOICE shape");
+        CanonicalSessionFrame narrationDecoded = roundTrip(narration);
+        require(
+            narrationDecoded.getKind() == CanonicalSessionFrame.Kind.NARRATION && narrationDecoded.canContinue()
+                && narrationDecoded.getSpeaker()
+                    .isEmpty()
+                && narrationDecoded.getChoices()
+                    .isEmpty(),
+            "NARRATION shape");
         require(
             "option-右".equals(
                 choiceDecoded.getChoices()

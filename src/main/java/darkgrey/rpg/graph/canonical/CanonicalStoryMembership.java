@@ -1,9 +1,10 @@
 package darkgrey.rpg.graph.canonical;
 
-/** Immutable schema-version-1 canonical Story membership manifest. */
+/** Immutable schema-version-1/2 canonical Story membership manifest. */
 public final class CanonicalStoryMembership {
 
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int LEGACY_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     private final int schemaVersion;
     private final String storyId;

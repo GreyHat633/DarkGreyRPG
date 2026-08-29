@@ -15,6 +15,10 @@ public static class CanonicalTaskObjectiveSchema
     public const string ItemProperty = "item";
     public const string MetadataProperty = "metadata";
     public const string ActorIdProperty = "actor_id";
+    /// <summary>Stable fixed output carrying the objective completion state.</summary>
+    public const string CompletionPortId = "logic_status";
+    public const string CompletionDisplayName = "Logic Complete";
+    public const string ActivationPortPrefix = "logic_enable";
 
     public const string KillEntity = "kill_entity";
     public const string CollectItem = "collect_item";
@@ -179,6 +183,8 @@ public static class CanonicalTaskObjectiveSchema
 public static class TaskObjectiveSchema
 {
     public static IReadOnlyList<string> ObjectiveTypes => CanonicalTaskObjectiveSchema.ObjectiveTypes;
+    public const string CompletionPortId = CanonicalTaskObjectiveSchema.CompletionPortId;
+    public const string CompletionDisplayName = CanonicalTaskObjectiveSchema.CompletionDisplayName;
     public static IReadOnlyList<ValidationIssue> Validate(GraphNode node) => CanonicalTaskObjectiveSchema.Validate(node);
     public static bool IsValid(GraphNode node) => CanonicalTaskObjectiveSchema.IsValid(node);
     public static void InitializeDefault(GraphNode node) => CanonicalTaskObjectiveSchema.InitializeDefault(node);

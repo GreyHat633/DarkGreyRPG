@@ -455,3 +455,118 @@ tasks.register<JavaExec>("canonicalStorySessionCompletionRouterProbe") {
     ) + configurations.getByName("testRuntimeClasspath")
     mainClass.set("darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRouterProbe")
 }
+
+tasks.register<JavaExec>("npcIdentitySavedDataProbe") {
+    group = "verification"
+    description = "Runs the 0.3.1.0 external unique NPC identity registry and restart probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.identity.NpcIdentitySavedDataProbe")
+}
+
+tasks.register<JavaExec>("entityDgrIdentityResolverProbe") {
+    group = "verification"
+    description = "Runs the external NPC, nominator, group-combination, and precedence probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.identity.EntityDgrIdentityResolverProbe")
+}
+
+tasks.register<JavaExec>("itemIdentitySavedDataProbe") {
+    group = "verification"
+    description = "Runs the 0.3.1.0 Item ID and exact/fuzzy Group persistence probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.item.identity.ItemIdentitySavedDataProbe")
+}
+
+tasks.register<JavaExec>("nominatorStage4Probe") {
+    group = "verification"
+    description = "Runs the Stage 4 nominator search, permission, conflict, and multi-group probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.nominator.NominatorStage4Probe")
+}
+
+tasks.register<JavaExec>("entityToolsStage5Probe") {
+    group = "verification"
+    description = "Runs the pure Stage 5 Copier and Storage Box core probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.entitytools.EntityToolsStage5Probe")
+}
+
+tasks.register<JavaExec>("copierTemplateActionCodecProbe") {
+    group = "verification"
+    description = "Runs the strict Copier template-management packet codec probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.network.message.entitytools.CopierTemplateActionCodecProbe")
+}
+
+tasks.register<JavaExec>("playerRpgSavedDataProbe") {
+    group = "verification"
+    description = "Runs the 0.3.1.0 UUID-isolated player fact, choice, and reward persistence probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.player.PlayerRpgSavedDataProbe")
+}
+
+tasks.register<JavaExec>("actorSchema3ProjectRepositoryProbe") {
+    group = "verification"
+    description = "Runs the 0.3.1 identity-only Actor runtime/reload probe."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.ActorSchema3ProjectRepositoryProbe")
+    args(layout.buildDirectory.dir("actor-schema3-project-repository-probe").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("storyPackageLoaderProbe") {
+    group = "verification"
+    description = "Runs the Stage 3 Story Package load/replace/rollback/isolation probe."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.StoryPackageLoaderProbe")
+}

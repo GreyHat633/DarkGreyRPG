@@ -217,7 +217,7 @@ public sealed class GraphEditorCommandBridgeTests
     public void TaskScopeFlowCompletionIsRejectedByCore()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [new("out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("source", "objective", "Source", [new("out", "Out", false, GraphInterfaceKind.Flow)]),
             new GraphNode("target", "settle", "Target", [new("in", "In", true, GraphInterfaceKind.Flow)])]);
         var bridge = new GraphEditorCommandBridge(new GraphEditSession(graph, GraphScope.Task));
 
@@ -240,7 +240,7 @@ public sealed class GraphEditorCommandBridgeTests
         {
             GraphScope.StoryFlow => (Source: "start", Target: "terminate"),
             GraphScope.Session => (Source: "start", Target: "end"),
-            _ => (Source: "activate", Target: "settle"),
+            _ => (Source: "objective", Target: "settle"),
         };
         var kind = scope == GraphScope.Task ? GraphInterfaceKind.Logic : GraphInterfaceKind.Flow;
         return new GraphDocument([

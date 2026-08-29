@@ -186,17 +186,13 @@ public static class CanonicalLegacyMigrationPreview
         var group = source.ObjectiveGroups[0];
         var objectiveById = source.Objectives.ToDictionary(objective => objective.Id, StringComparer.Ordinal);
         var usedIds = source.Objectives.Select(objective => objective.Id).ToHashSet(StringComparer.Ordinal);
-        var activateId = SyntheticId("activate", usedIds);
-        usedIds.Add(activateId);
         var settleId = SyntheticId("settle", usedIds);
         var graphNodes = new List<GraphNode>();
         var graphConnections = new List<GraphConnection>();
 
-        var activate = GraphNodeFactory.Create(GraphScope.Task, "activate", activateId, "激活");
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", settleId, "结算");
         const string completionPortId = "completion";
         settle.Ports.Add(new GraphPort(completionPortId, "完成", true, GraphInterfaceKind.Logic, 0));
-        graphNodes.Add(activate);
         graphNodes.Add(settle);
 
         foreach (var objective in source.Objectives)
@@ -229,6 +225,8 @@ public static class CanonicalLegacyMigrationPreview
                     node.Properties[CanonicalTaskObjectiveSchema.ActorIdProperty] = JsonSerializer.SerializeToElement(objective.ActorId!);
                     break;
             }
+            if (group.Mode == "SEQUENCE" && !string.Equals(objective.Id, group.Objectives[0], StringComparison.Ordinal))
+                node.Ports.Add(new GraphPort("logic_enable", "生效条件", true, GraphInterfaceKind.Logic, 0));
             graphNodes.Add(node);
         }
 
@@ -238,7 +236,6 @@ public static class CanonicalLegacyMigrationPreview
         var orderedIds = group.Objectives;
         if (orderedIds.Count == 1)
         {
-            Connect(graphConnections, activateId, "logic_out", orderedIds[0], "logic_enable");
             Connect(graphConnections, orderedIds[0], "logic_status", settleId, completionPortId);
         }
         else if (group.Mode is "ALL" or "ANY")
@@ -251,14 +248,12 @@ public static class CanonicalLegacyMigrationPreview
             for (var index = 0; index < orderedIds.Count; index++)
             {
                 var objectiveId = orderedIds[index];
-                Connect(graphConnections, activateId, "logic_out", objectiveId, "logic_enable");
                 Connect(graphConnections, objectiveId, "logic_status", combineId, $"dynamic_port_{index}");
             }
             Connect(graphConnections, combineId, "logic_out", settleId, completionPortId);
         }
         else // SEQUENCE
         {
-            Connect(graphConnections, activateId, "logic_out", orderedIds[0], "logic_enable");
             for (var index = 0; index < orderedIds.Count - 1; index++)
                 Connect(graphConnections, orderedIds[index], "logic_status", orderedIds[index + 1], "logic_enable");
             Connect(graphConnections, orderedIds[^1], "logic_status", settleId, completionPortId);

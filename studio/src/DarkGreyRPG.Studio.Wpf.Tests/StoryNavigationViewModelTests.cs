@@ -115,7 +115,7 @@ public sealed class StoryNavigationViewModelTests
         var canonicalOnly = home.Stories.Single(item => item.Id == "canonical_only");
         Assert.IsTrue(canonicalOnly.IsCanonicalOnly);
         Assert.IsFalse(canonicalOnly.CanDeleteLegacyStory);
-        Assert.AreEqual("1 个本剧情角色 · 2 个引用角色 · 3 个会话 · 4 个任务",
+        Assert.AreEqual("1 个本故事角色 · 2 个引用角色 · 3 个会话 · 4 个任务",
             canonicalOnly.MembershipSummary);
         Assert.AreEqual(5, canonicalOnly.FlowNodeCount);
         var broken = home.Stories.Single(item => item.Id == "broken");
@@ -159,7 +159,7 @@ public sealed class StoryNavigationViewModelTests
         home.ShowGraph();
         Assert.IsTrue(home.IsGraphVisible);
         Assert.HasCount(2, home.Graph.Nodes);
-        Assert.AreEqual("2 个剧情 · 1 条转场 / 1 组关系 · 0 个诊断", home.Graph.Summary);
+        Assert.AreEqual("2 个故事 · 1 条转场 / 1 组关系 · 0 个诊断", home.Graph.Summary);
         Assert.AreEqual("kingdom", home.Graph.Edges.Single().TargetStoryId);
     }
 
@@ -186,7 +186,7 @@ public sealed class StoryNavigationViewModelTests
         Assert.AreEqual("Castle Mystery", home.SelectedStory.Overview.DisplayName);
         Assert.AreEqual("castle_mystery", home.SelectedStory.Overview.Id);
         Assert.AreEqual(story.Description, home.SelectedStory.Overview.Description);
-        Assert.AreEqual("1 个本剧情角色 · 2 个引用角色 · 2 个对话 · 2 个任务", home.SelectedStory.Overview.MembershipSummary);
+        Assert.AreEqual("1 个本故事角色 · 2 个引用角色 · 2 个对话 · 2 个任务", home.SelectedStory.Overview.MembershipSummary);
         Assert.AreEqual(1, home.SelectedStory.Overview.FlowNodeCount);
         Assert.AreEqual(home.SelectedStory.Overview.MembershipSummary, home.SelectedStory.MembershipSummary);
         Assert.AreEqual(home.SelectedStory.Overview.FlowNodeCount, home.SelectedStory.FlowNodeCount);

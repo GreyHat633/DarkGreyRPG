@@ -143,7 +143,7 @@ public sealed class GateGWpfTests
         CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(sourcePath));
         var card = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "source");
         Assert.IsTrue(card.IsReferenced);
-        StringAssert.Contains(card.MembershipTooltip, "来源剧情");
+        StringAssert.Contains(card.MembershipTooltip, "来源故事");
     }
 
     [TestMethod]
@@ -171,7 +171,7 @@ public sealed class GateGWpfTests
         CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(sourcePath));
         var card = shell.StoryWorkspace.Quests!.Items.Single(item => item.Id == "source");
         Assert.IsTrue(card.IsReferenced);
-        StringAssert.Contains(card.MembershipTooltip, "来源剧情");
+        StringAssert.Contains(card.MembershipTooltip, "来源故事");
     }
 
     [TestMethod]

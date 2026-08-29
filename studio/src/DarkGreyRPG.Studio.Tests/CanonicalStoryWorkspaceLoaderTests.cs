@@ -1,6 +1,7 @@
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Items;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -87,6 +88,71 @@ public sealed class CanonicalStoryWorkspaceLoaderTests
         Assert.IsTrue(loaded.ValidationErrors.All(issue => issue.Code == "story.workspace.member.missing"));
         StringAssert.Contains(loaded.ValidationErrors.Single(issue => issue.NodeId == "missing_task").Message, "Task");
         StringAssert.Contains(loaded.ValidationErrors.Single(issue => issue.NodeId == "missing_task").Message, "missing_task");
+    }
+
+    [TestMethod]
+    public void LoadsNamedItemsAndGroupsWithOwnedReferencedProvenance()
+    {
+        using var project = new TestProjectDirectory(createProjectFile: false);
+        var store = new CanonicalProjectGraphStore(project.Root);
+        var items = new ItemRepository(project.Root);
+        items.SaveItem(new IndividualItemResource { ItemId = "owned_item", DisplayName = "Owned Item" });
+        items.SaveItem(new IndividualItemResource { ItemId = "referenced_item", DisplayName = "Referenced Item" });
+        items.SaveGroup(new CollectiveItemResource { GroupId = "owned_group", DisplayName = "Owned Group" });
+        items.SaveGroup(new CollectiveItemResource { GroupId = "referenced_group", DisplayName = "Referenced Group" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "story",
+            new CanonicalStoryMembershipSet
+            {
+                Items = ["owned_item"],
+                ItemGroups = ["owned_group"],
+            },
+            new CanonicalStoryMembershipSet
+            {
+                Items = ["referenced_item"],
+                ItemGroups = ["referenced_group"],
+            }));
+
+        var loaded = new CanonicalStoryWorkspaceLoader(store, items: items).Load("story");
+
+        CollectionAssert.AreEqual(new[] { "owned_item", "referenced_item" },
+            loaded.Items.Select(item => item.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "owned_group", "referenced_group" },
+            loaded.ItemGroups.Select(group => group.Id).ToArray());
+        Assert.IsTrue(loaded.Items[0].IsOwned);
+        Assert.IsTrue(loaded.Items[1].IsReferenced);
+        Assert.IsTrue(loaded.ItemGroups.All(group => group.IsResolved));
+        Assert.IsEmpty(loaded.ValidationIssues);
+    }
+
+    [TestMethod]
+    public void MissingItemsAndGroupsRemainInOrderAndAreReported()
+    {
+        using var project = new TestProjectDirectory(createProjectFile: false);
+        var store = new CanonicalProjectGraphStore(project.Root);
+        var items = new ItemRepository(project.Root);
+        items.SaveItem(new IndividualItemResource { ItemId = "present_item", DisplayName = "Present Item" });
+        items.SaveGroup(new CollectiveItemResource { GroupId = "present_group", DisplayName = "Present Group" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "story",
+            new CanonicalStoryMembershipSet
+            {
+                Items = ["missing_item", "present_item"],
+                ItemGroups = ["missing_group", "present_group"],
+            }));
+
+        var loaded = new CanonicalStoryWorkspaceLoader(store, items: items).Load("story");
+
+        Assert.IsTrue(loaded.Items[0].IsMissing);
+        Assert.IsTrue(loaded.Items[1].IsResolved);
+        Assert.IsTrue(loaded.ItemGroups[0].IsMissing);
+        Assert.IsTrue(loaded.ItemGroups[1].IsResolved);
+        CollectionAssert.AreEquivalent(new[] { "missing_item", "missing_group" },
+            loaded.ValidationErrors.Select(issue => issue.NodeId).ToArray());
+        Assert.AreEqual("items", loaded.ValidationErrors.Single(issue => issue.NodeId == "missing_item").Field);
+        Assert.AreEqual("item_groups", loaded.ValidationErrors.Single(issue => issue.NodeId == "missing_group").Field);
     }
 
     [TestMethod]

@@ -8,7 +8,7 @@ public sealed class ActorCreationChoiceViewModel : ObservableObject
 
     public ActorCreationChoiceViewModel(string storyDisplayName)
     {
-        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前剧情" : storyDisplayName;
+        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前故事" : storyDisplayName;
     }
 
     public string StoryDisplayName { get; }

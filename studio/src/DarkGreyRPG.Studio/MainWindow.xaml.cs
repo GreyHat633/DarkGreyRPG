@@ -37,7 +37,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             new ResourceWorkspaceDialogs(() => this),
             new FlowWorkspaceDialogs(() => this),
             crashLogService ?? new CrashLogService(settingsService.SettingsPath),
-            new CanonicalStoryResourceDialogs(() => this));
+            new CanonicalStoryResourceDialogs(() => this),
+            itemWorkspaceDialogs: new ItemWorkspaceDialogs(() => this));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
@@ -92,7 +93,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 0.3.0.0\nStory-first resource creation with unified libraries, Draft save, and read-only Story Graph interactions",
+            "DarkGrey RPG Studio 0.3.1.0\nStory packages, real entity/item identities, and server-authoritative RPG runtime",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -147,7 +148,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var menuTarget = item ?? sender as UIElement ?? StoryList;
         var menu = FluentContextMenuFactory.Create(menuTarget);
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
-            "新建剧情",
+            "新建故事",
             () => shell.CreateStoryCommand.Execute(null),
             shell.CreateStoryCommand.CanExecute(null)));
 
@@ -163,9 +164,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         item.IsSelected = true;
         item.Focus();
 
-        var openItem = FluentContextMenuFactory.CreateItem("打开剧情", () => shell.OpenStory(story));
+        var openItem = FluentContextMenuFactory.CreateItem("打开故事", () => shell.OpenStory(story));
         var deleteItem = FluentContextMenuFactory.CreateItem(
-            "删除剧情",
+            "删除故事",
             action: null,
             enabled: shell.DeleteSelectedStoryCommand.CanExecute(null),
             critical: true);

@@ -18,6 +18,9 @@ public static class StoryStartSchema
     public const string ActorInteraction = "interact_actor";
     public const string RegionEntry = "enter_region";
     public const string EnterStory = "enter_story";
+    /// <summary>Optional per-trigger Logic condition port identity.</summary>
+    public const string LogicPortIdProperty = "logic_port_id";
+    public const string ConditionPortIdProperty = LogicPortIdProperty;
     public const string ActorIdProperty = "actor_id";
     public const string DimensionProperty = "dimension";
     public const string XProperty = "x";
@@ -26,7 +29,10 @@ public static class StoryStartSchema
     public const string RadiusProperty = "radius";
 
     public static IReadOnlyList<string> SupportedTriggerTypes { get; } =
-        [ActorInteraction, RegionEntry, EnterStory];
+        [ActorInteraction, RegionEntry];
+
+    /// <summary>Legacy trigger types accepted only when loading old data.</summary>
+    public static IReadOnlyList<string> LegacyTriggerTypes { get; } = [EnterStory];
 
     public static IReadOnlyList<string> SupportedRepeatPolicies { get; } = [Once, Repeatable];
 
@@ -48,7 +54,6 @@ public static class StoryStartSchema
                 [ZProperty] = JsonSerializer.SerializeToElement(0d),
                 [RadiusProperty] = JsonSerializer.SerializeToElement(3d),
             },
-            EnterStory => new Dictionary<string, JsonElement>(StringComparer.Ordinal),
             _ => new Dictionary<string, JsonElement>(StringComparer.Ordinal),
         };
 
@@ -57,7 +62,9 @@ public static class StoryStartSchema
         => DefaultTriggerProperties(triggerType, actorId);
 
     /// <summary>Creates the minimum valid Start shape with one stable trigger.</summary>
-    public static void InitializeDefault(GraphNode node, string portId)
+    public static void InitializeDefault(GraphNode node, string portId,
+        string triggerType = RegionEntry, string? actorId = null,
+        string? logicPortId = null)
     {
         ArgumentNullException.ThrowIfNull(node);
         if (!string.Equals(node.Type, "start", StringComparison.Ordinal))
@@ -65,23 +72,33 @@ public static class StoryStartSchema
         if (string.IsNullOrWhiteSpace(portId))
             throw new ArgumentException("Story Start trigger port_id is required.", nameof(portId));
 
+        if (!SupportedTriggerTypes.Contains(triggerType, StringComparer.Ordinal))
+            throw new ArgumentException($"Unsupported Story Start trigger type '{triggerType}'.", nameof(triggerType));
+        if (triggerType == ActorInteraction && string.IsNullOrWhiteSpace(actorId))
+            throw new ArgumentException("An actor ID is required for interact_actor.", nameof(actorId));
+        if (logicPortId is not null && string.IsNullOrWhiteSpace(logicPortId))
+            throw new ArgumentException("A Logic condition port ID cannot be blank.", nameof(logicPortId));
+
+        var properties = DefaultTriggerProperties(triggerType, actorId);
         node.Properties[RepeatPolicyProperty] = JsonSerializer.SerializeToElement(Once);
-        node.Properties[TriggersProperty] = JsonSerializer.SerializeToElement(new[]
+        var trigger = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            new
-            {
-                port_id = portId,
-                display_name = "进入剧情",
-                trigger_type = EnterStory,
-                trigger_properties = new Dictionary<string, string>(StringComparer.Ordinal),
-                order = 0,
-            },
-        });
-        node.Ports.Add(new GraphPort(portId, "进入剧情", false, GraphInterfaceKind.Flow, 0));
+            ["port_id"] = portId,
+            ["display_name"] = triggerType == RegionEntry ? "进入区域" : "角色交互",
+            ["trigger_type"] = triggerType,
+            ["trigger_properties"] = properties,
+            ["order"] = 0,
+        };
+        if (logicPortId is not null)
+            trigger[LogicPortIdProperty] = logicPortId;
+        node.Properties[TriggersProperty] = JsonSerializer.SerializeToElement(new[] { trigger });
+        node.Ports.Add(new GraphPort(portId, triggerType == RegionEntry ? "进入区域" : "角色交互", false, GraphInterfaceKind.Flow, 0));
+        if (logicPortId is not null)
+            node.Ports.Add(new GraphPort(logicPortId, "条件", true, GraphInterfaceKind.Logic, 0));
     }
 
     /// <summary>Validates trigger metadata and its one-to-one Flow projection.</summary>
-    public static IReadOnlyList<ValidationIssue> Validate(GraphNode node)
+    public static IReadOnlyList<ValidationIssue> Validate(GraphNode node, bool compatibilityMode = false)
     {
         ArgumentNullException.ThrowIfNull(node);
         var issues = new List<ValidationIssue>();
@@ -108,7 +125,7 @@ public static class StoryStartSchema
 
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var orders = new HashSet<int>();
-        var expectedPorts = new List<(string Id, string Name, int Order)>();
+        var expectedPorts = new List<(string Id, string Name, int Order, string? LogicPortId)>();
         var index = 0;
         foreach (var item in triggers.EnumerateArray())
         {
@@ -122,7 +139,9 @@ public static class StoryStartSchema
 
             var names = item.EnumerateObject().Select(property => property.Name).ToArray();
             var required = new[] { "port_id", "display_name", "trigger_type", "trigger_properties", "order" };
-            if (names.Length != required.Length || required.Any(name => !names.Contains(name, StringComparer.Ordinal)))
+            var allowedNames = required.Append(LogicPortIdProperty).ToArray();
+            if (names.Any(name => !allowedNames.Contains(name, StringComparer.Ordinal))
+                || required.Any(name => !names.Contains(name, StringComparer.Ordinal)))
             {
                 issues.Add(Issue("graph.story.start.trigger.fields", "Story Start triggers require exactly port_id, display_name, trigger_type, trigger_properties, and order.", field, node.Id));
                 index++;
@@ -136,11 +155,20 @@ public static class StoryStartSchema
                 issues.Add(Issue("graph.story.start.trigger.value", "Story Start trigger identity, display name, and type must be nonblank strings.", field, node.Id));
             if (portId is not null && !ids.Add(portId))
                 issues.Add(Issue("graph.story.start.trigger.port_id.duplicate", $"Story Start trigger port_id '{portId}' is duplicated.", field, node.Id));
-            if (triggerType is not null && !SupportedTriggerTypes.Contains(triggerType, StringComparer.Ordinal))
+            if (triggerType is not null && !SupportedTriggerTypes.Contains(triggerType, StringComparer.Ordinal)
+                && !(compatibilityMode && LegacyTriggerTypes.Contains(triggerType, StringComparer.Ordinal)))
                 issues.Add(Issue("graph.story.start.trigger.type.unsupported", $"Unsupported Story Start trigger type '{triggerType}'.", field, node.Id));
 
+            var logicPortId = ReadString(item, LogicPortIdProperty);
+            if (item.TryGetProperty(LogicPortIdProperty, out var logicPortElement)
+                && logicPortElement.ValueKind != JsonValueKind.Null && logicPortId is null)
+                issues.Add(Issue("graph.story.start.trigger.logic_port_id.invalid", "logic_port_id must be a nonblank string or null.", field, node.Id));
+            if (logicPortId is not null && !ids.Add(logicPortId))
+                issues.Add(Issue("graph.story.start.trigger.port_id.duplicate", $"Story Start trigger logic_port_id '{logicPortId}' is duplicated.", field, node.Id));
+
             var properties = item.GetProperty("trigger_properties");
-            if (triggerType is not null)
+            if (triggerType is not null && (SupportedTriggerTypes.Contains(triggerType, StringComparer.Ordinal)
+                || (compatibilityMode && LegacyTriggerTypes.Contains(triggerType, StringComparer.Ordinal))))
                 ValidateTriggerProperties(triggerType, properties, $"{field}.trigger_properties", node.Id, issues);
 
             var orderElement = item.GetProperty("order");
@@ -149,7 +177,7 @@ public static class StoryStartSchema
             else if (!orders.Add(order))
                 issues.Add(Issue("graph.story.start.trigger.order.duplicate", "Story Start trigger order must be unique.", $"{field}.order", node.Id));
             else if (portId is not null && displayName is not null)
-                expectedPorts.Add((portId, displayName, order));
+                expectedPorts.Add((portId, displayName, order, logicPortId));
             index++;
         }
 
@@ -175,10 +203,31 @@ public static class StoryStartSchema
                 || matches[0].Order != expected.Order)
                 issues.Add(Issue("graph.story.start.trigger.port.presentation", $"Trigger port '{expected.Id}' label/order is out of sync with metadata.", $"ports[{expected.Id}]", node.Id));
         }
+        var expectedLogic = expectedPorts
+            .Where(item => item.LogicPortId is not null)
+            .Select(item => (Id: item.LogicPortId!, Name: $"条件：{item.Name}", Order: item.Order))
+            .OrderBy(item => item.Order).ThenBy(item => item.Id, StringComparer.Ordinal).ToArray();
+        var logicInputs = ports.Where(port => port.IsInput && port.InterfaceKind == GraphInterfaceKind.Logic).ToArray();
+        if (logicInputs.Length != expectedLogic.Length)
+            issues.Add(Issue("graph.story.start.trigger.logic_port.count", "Story Start requires exactly one Logic condition input per configured trigger condition.", "ports", node.Id));
+        foreach (var expected in expectedLogic)
+        {
+            var matches = logicInputs.Where(port => string.Equals(port.Id, expected.Id, StringComparison.Ordinal)).ToArray();
+            if (matches.Length != 1)
+            {
+                issues.Add(Issue("graph.story.start.trigger.logic_port.mapping", $"Trigger Logic port '{expected.Id}' must occur exactly once as a Logic input.", $"ports[{expected.Id}]", node.Id));
+                continue;
+            }
+            if (matches[0].Order != expected.Order)
+                issues.Add(Issue("graph.story.start.trigger.logic_port.presentation", $"Trigger Logic port '{expected.Id}' order is out of sync with metadata.", $"ports[{expected.Id}]", node.Id));
+        }
         return issues;
     }
 
     public static bool IsValid(GraphNode node) => Validate(node).Count == 0;
+
+    public static bool IsValid(GraphNode node, bool compatibilityMode)
+        => Validate(node, compatibilityMode).Count == 0;
 
     public static IReadOnlyList<StoryStartTriggerSlot> ReadTriggers(GraphNode node)
     {
@@ -194,7 +243,8 @@ public static class StoryStartSchema
                 || !item.TryGetProperty("order", out var orderElement)
                 || !orderElement.TryGetInt32(out var order)
                 || !item.TryGetProperty("trigger_properties", out var properties)) continue;
-            result.Add(new(portId, displayName, type, properties.Clone(), order));
+            var logicPortId = ReadString(item, LogicPortIdProperty);
+            result.Add(new(portId, displayName, type, properties.Clone(), order, logicPortId));
         }
         return result.OrderBy(item => item.Order).ThenBy(item => item.PortId, StringComparer.Ordinal).ToArray();
     }
@@ -252,8 +302,10 @@ public sealed record StoryStartTriggerSlot(
     string DisplayName,
     string TriggerType,
     JsonElement TriggerProperties,
-    int Order)
+    int Order,
+    string? LogicPortId = null)
 {
     public string Id => PortId;
     public string Type => TriggerType;
+    public string? ConditionPortId => LogicPortId;
 }

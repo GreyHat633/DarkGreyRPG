@@ -162,7 +162,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             "Completion Session did not route reward and termination");
         check(gateway.actions == 1, "Reward Action did not execute exactly once");
         check(
-            "darkgrey_rpg:copper_coin".equals(gateway.rewardItem) && gateway.rewardAmount == 10,
+            "starter_reward".equals(gateway.rewardItem) && gateway.rewardAmount == 10,
             "Reward Action was not the authored ten-coin payload");
         check(
             gateway.cleaned.equals(Collections.singletonList("bartender_story")),
@@ -493,8 +493,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             props("resource_id", "thanks"));
         Map<String, JsonElement> rewardProperties = new LinkedHashMap<String, JsonElement>();
         rewardProperties.put("action_type", json("\"give_item\""));
-        rewardProperties.put("item", json("\"darkgrey_rpg:copper_coin\""));
-        rewardProperties.put("metadata", json("0"));
+        rewardProperties.put("item_id", json("\"starter_reward\""));
         rewardProperties.put("amount", json("10"));
         CanonicalGraphNode reward = node(
             "reward",

@@ -18,7 +18,7 @@ public sealed class ActorResourcePickerViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(actors);
         _actors = actors;
         Mode = mode;
-        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前剧情" : storyDisplayName;
+        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前故事" : storyDisplayName;
         RefreshFilter();
     }
 

@@ -332,7 +332,7 @@ public sealed class ProjectService
                 var references = current.Registry.GetReferences(type, resourceId);
                 if (references.Count > 0)
                 {
-                    blockers.Add($"资源“{resourceId}”仍被其他剧情引用：{string.Join("、", references.Select(reference => reference.Id).Order(StringComparer.Ordinal))}");
+                    blockers.Add($"资源“{resourceId}”仍被其他故事引用：{string.Join("、", references.Select(reference => reference.Id).Order(StringComparer.Ordinal))}");
                 }
             }
         }
@@ -340,7 +340,7 @@ public sealed class ProjectService
         var incomingTransitions = FindIncomingStoryTransitions(current, story.Id);
         if (incomingTransitions.Count > 0)
         {
-            blockers.Add($"其他剧情仍通过“进入剧情”节点指向它：{string.Join("、", incomingTransitions)}。请先移除或改连这些节点");
+            blockers.Add($"其他故事仍通过“进入故事”节点指向它：{string.Join("、", incomingTransitions)}。请先移除或改连这些节点");
         }
 
         return new StoryDeletionPlan(story.Id, actorIds, dialogueIds, questIds, blockers);

@@ -23,6 +23,8 @@ public final class CanonicalStorySnapshot {
     private final Double waitRadius;
     private final Map<String, Boolean> logicValues;
     private final String targetStoryId;
+    private final Map<String, Boolean> externalLogicInputs;
+    private final Boolean waitingConditionValue;
 
     public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
         CanonicalStoryRepeatPolicy repeatPolicy, String triggerPortId, String currentNodeId, String currentInputPortId,
@@ -44,13 +46,41 @@ public final class CanonicalStorySnapshot {
             null,
             null,
             logicValues,
-            targetStoryId);
+            targetStoryId,
+            Collections.<String, Boolean>emptyMap(),
+            null);
     }
 
     public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
         CanonicalStoryRepeatPolicy repeatPolicy, String triggerPortId, String currentNodeId, String currentInputPortId,
         CanonicalStoryWaitKind waitKind, String waitResourceId, Integer waitDimension, Double waitX, Double waitY,
         Double waitZ, Double waitRadius, Map<String, Boolean> logicValues, String targetStoryId) {
+        this(
+            resourceId,
+            resourceFingerprint,
+            status,
+            repeatPolicy,
+            triggerPortId,
+            currentNodeId,
+            currentInputPortId,
+            waitKind,
+            waitResourceId,
+            waitDimension,
+            waitX,
+            waitY,
+            waitZ,
+            waitRadius,
+            logicValues,
+            targetStoryId,
+            Collections.<String, Boolean>emptyMap(),
+            null);
+    }
+
+    public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
+        CanonicalStoryRepeatPolicy repeatPolicy, String triggerPortId, String currentNodeId, String currentInputPortId,
+        CanonicalStoryWaitKind waitKind, String waitResourceId, Integer waitDimension, Double waitX, Double waitY,
+        Double waitZ, Double waitRadius, Map<String, Boolean> logicValues, String targetStoryId,
+        Map<String, Boolean> externalLogicInputs, Boolean waitingConditionValue) {
         if (blank(resourceId) || blank(resourceFingerprint)
             || status == null
             || repeatPolicy == null
@@ -61,6 +91,8 @@ public final class CanonicalStorySnapshot {
             throw new IllegalArgumentException("Active canonical Story requires one cursor.");
         if (status != CanonicalStoryStatus.ACTIVE && waitKind != CanonicalStoryWaitKind.NONE)
             throw new IllegalArgumentException("Terminal canonical Story cannot wait on a child boundary.");
+        if ((waitKind == CanonicalStoryWaitKind.CONDITION) != (waitingConditionValue != null))
+            throw new IllegalArgumentException("Story Condition wait state and value must be supplied together.");
         if (waitKind == CanonicalStoryWaitKind.SESSION || waitKind == CanonicalStoryWaitKind.TASK
             || waitKind.isActorInteraction()) {
             if (blank(waitResourceId)) throw new IllegalArgumentException("Aggregate wait requires a resource ID.");
@@ -90,6 +122,14 @@ public final class CanonicalStorySnapshot {
                 throw new IllegalArgumentException("Invalid canonical Story Logic snapshot.");
             detached.put(entry.getKey(), entry.getValue());
         }
+        if (externalLogicInputs == null)
+            throw new IllegalArgumentException("Story external Logic snapshot is required.");
+        LinkedHashMap<String, Boolean> external = new LinkedHashMap<String, Boolean>();
+        for (Map.Entry<String, Boolean> entry : externalLogicInputs.entrySet()) {
+            if (blank(entry.getKey()) || entry.getValue() == null)
+                throw new IllegalArgumentException("Invalid Story external Logic snapshot.");
+            external.put(entry.getKey(), entry.getValue());
+        }
         this.resourceId = resourceId;
         this.resourceFingerprint = resourceFingerprint;
         this.status = status;
@@ -106,6 +146,8 @@ public final class CanonicalStorySnapshot {
         this.waitRadius = waitRadius;
         this.logicValues = Collections.unmodifiableMap(detached);
         this.targetStoryId = targetStoryId;
+        this.externalLogicInputs = Collections.unmodifiableMap(external);
+        this.waitingConditionValue = waitingConditionValue;
     }
 
     public String getResourceId() {
@@ -206,6 +248,18 @@ public final class CanonicalStorySnapshot {
 
     public String getTargetStoryId() {
         return targetStoryId;
+    }
+
+    public Map<String, Boolean> getExternalLogicInputs() {
+        return externalLogicInputs;
+    }
+
+    public Map<String, Boolean> getLogicInputs() {
+        return externalLogicInputs;
+    }
+
+    public Boolean getWaitingConditionValue() {
+        return waitingConditionValue;
     }
 
     private static boolean blank(String value) {

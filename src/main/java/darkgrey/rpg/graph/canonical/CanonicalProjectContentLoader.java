@@ -37,6 +37,16 @@ public final class CanonicalProjectContentLoader {
 
     public CanonicalProjectContent load(Path projectDirectory, Set<String> actorIds)
         throws CanonicalProjectContentException {
+        return load(projectDirectory, actorIds, new HashSet<String>(), new HashSet<String>());
+    }
+
+    public CanonicalProjectContent load(File projectDirectory, Set<String> actorIds, Set<String> itemIds,
+        Set<String> itemGroupIds) throws CanonicalProjectContentException {
+        return load(projectDirectory == null ? null : projectDirectory.toPath(), actorIds, itemIds, itemGroupIds);
+    }
+
+    public CanonicalProjectContent load(Path projectDirectory, Set<String> actorIds, Set<String> itemIds,
+        Set<String> itemGroupIds) throws CanonicalProjectContentException {
         if (projectDirectory == null) throw CanonicalProjectContentException.failure(
             "project.content.project.directory.required",
             "Canonical project content requires a project directory.");
@@ -50,6 +60,9 @@ public final class CanonicalProjectContentLoader {
         if (actorIds == null) throw CanonicalProjectContentException.failure(
             "project.content.actor_ids.required",
             "Already-loaded Actor IDs are required when canonical content exists.");
+        if (itemIds == null || itemGroupIds == null) throw CanonicalProjectContentException.failure(
+            "project.content.item_ids.required",
+            "Already-loaded Item and Item Group IDs are required when canonical content exists.");
 
         Path storiesDirectory = requireDirectory(canonicalRoot, "stories");
         Path sessionsDirectory = requireDirectory(canonicalRoot, "sessions");
@@ -65,7 +78,7 @@ public final class CanonicalProjectContentLoader {
         Map<String, CanonicalGraphResource> sessions = resources(sessionValues);
         Map<String, CanonicalGraphResource> tasks = resources(taskValues);
         Map<String, CanonicalStoryMembership> memberships = memberships(membershipValues);
-        validate(stories, sessions, tasks, memberships, actorIds);
+        validate(stories, sessions, tasks, memberships, actorIds, itemIds, itemGroupIds);
         return new CanonicalProjectContent(stories, sessions, tasks, memberships);
     }
 
@@ -130,7 +143,8 @@ public final class CanonicalProjectContentLoader {
 
     private static void validate(Map<String, CanonicalGraphResource> stories,
         Map<String, CanonicalGraphResource> sessions, Map<String, CanonicalGraphResource> tasks,
-        Map<String, CanonicalStoryMembership> memberships, Set<String> actorIds) {
+        Map<String, CanonicalStoryMembership> memberships, Set<String> actorIds, Set<String> itemIds,
+        Set<String> itemGroupIds) {
         for (String storyId : stories.keySet())
             if (!memberships.containsKey(storyId)) throw CanonicalProjectContentException
                 .failure("project.content.membership.missing", "Canonical Story has no same-ID membership: " + storyId);
@@ -140,10 +154,36 @@ public final class CanonicalProjectContentLoader {
 
         Set<String> knownActors = new HashSet<String>(actorIds);
         Set<String> ownedActors = new HashSet<String>();
+        Set<String> ownedItems = new HashSet<String>();
+        Set<String> ownedItemGroups = new HashSet<String>();
         Set<String> ownedSessions = new HashSet<String>();
         Set<String> ownedTasks = new HashSet<String>();
         for (CanonicalStoryMembership membership : memberships.values()) {
             checkActors(membership, knownActors, ownedActors);
+            checkIdentityResources(
+                membership.getOwnedResources()
+                    .getItems(),
+                itemIds,
+                ownedItems,
+                "item");
+            checkIdentityResources(
+                membership.getReferencedResources()
+                    .getItems(),
+                itemIds,
+                null,
+                "item");
+            checkIdentityResources(
+                membership.getOwnedResources()
+                    .getItemGroups(),
+                itemGroupIds,
+                ownedItemGroups,
+                "item_group");
+            checkIdentityResources(
+                membership.getReferencedResources()
+                    .getItemGroups(),
+                itemGroupIds,
+                null,
+                "item_group");
             checkResources(
                 membership.getOwnedResources()
                     .getSessions(),
@@ -187,6 +227,17 @@ public final class CanonicalProjectContentLoader {
     private static void requireActor(Set<String> actorIds, String id) {
         if (!actorIds.contains(id)) throw CanonicalProjectContentException
             .failure("project.content.actor.missing", "Canonical membership references an unknown Actor: " + id);
+    }
+
+    private static void checkIdentityResources(List<String> ids, Set<String> known, Set<String> owned, String kind) {
+        for (String id : ids) {
+            if (!known.contains(id)) throw CanonicalProjectContentException.failure(
+                "project.content." + kind + ".missing",
+                "Canonical membership references an unknown " + kind + ": " + id);
+            if (owned != null && !owned.add(id)) throw CanonicalProjectContentException.failure(
+                "project.content." + kind + ".ownership.duplicate",
+                kind + " is owned by more than one canonical Story: " + id);
+        }
     }
 
     private static void checkResources(List<String> ids, Map<String, CanonicalGraphResource> resources,

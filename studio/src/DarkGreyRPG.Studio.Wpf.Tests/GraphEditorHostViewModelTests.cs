@@ -250,7 +250,7 @@ public sealed class GraphEditorHostViewModelTests
         };
         var kind = scope == GraphScope.Task ? GraphInterfaceKind.Logic : GraphInterfaceKind.Flow;
         return new GraphDocument([
-            new GraphNode("source", scope == GraphScope.Task ? "activate" : "start", "Source",
+            new GraphNode("source", scope == GraphScope.Task ? "objective" : "start", "Source",
                 [new("out", "Out", false, kind)]),
             new GraphNode("target", targetType, "Target", [new("in", "In", true, kind)])]);
     }

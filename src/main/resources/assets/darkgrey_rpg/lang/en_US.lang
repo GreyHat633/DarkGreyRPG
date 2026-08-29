@@ -1,5 +1,9 @@
-item.darkgrey_rpg.editor_tool.name=DarkGrey RPG Editor Tool
+item.darkgrey_rpg.editor_tool.name=DarkGrey RPG Editor
 item.darkgrey_rpg.copper_coin.name=Copper Coin
+item.darkgrey_rpg.nominator.name=DarkGrey RPG Nominator
+item.darkgrey_rpg.copier.name=DarkGrey RPG Copier
+item.darkgrey_rpg.storage_box.name=DarkGrey RPG Storage Box
+item.darkgrey_rpg.body.name=DarkGrey RPG Body
 itemGroup.darkgrey_rpg=DarkGrey RPG
 key.darkgrey_rpg.quest_journal=Open Quest Journal
 key.categories.darkgrey_rpg=DarkGrey RPG

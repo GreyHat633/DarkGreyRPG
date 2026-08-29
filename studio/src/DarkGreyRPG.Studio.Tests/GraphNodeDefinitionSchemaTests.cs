@@ -12,7 +12,7 @@ public sealed class GraphNodeDefinitionSchemaTests
     {
         AssertPorts(GraphScope.StoryFlow, "start", []);
         AssertPorts(GraphScope.StoryFlow, "terminate", ["flow_in"]);
-        AssertPorts(GraphScope.StoryFlow, "session", ["flow_in", "logic_in"]);
+        AssertPorts(GraphScope.StoryFlow, "session", ["flow_in"]);
         AssertPorts(GraphScope.StoryFlow, "task", ["flow_in"]);
         AssertPorts(GraphScope.StoryFlow, "condition", ["flow_in", "logic_in", "flow_true", "flow_false"]);
         AssertPorts(GraphScope.StoryFlow, "and", ["logic_out"]);
@@ -22,24 +22,29 @@ public sealed class GraphNodeDefinitionSchemaTests
         AssertPorts(GraphScope.StoryFlow, "interact_actor", ["flow_in", "flow_out"]);
         AssertPorts(GraphScope.StoryFlow, "enter_region", ["flow_in", "flow_out"]);
         AssertPorts(GraphScope.StoryFlow, "enter_story", ["flow_in"]);
+        AssertPorts(GraphScope.StoryFlow, "logic_input", ["logic_out"]);
+        AssertPorts(GraphScope.StoryFlow, "logic_output", ["logic_in"]);
 
         AssertPorts(GraphScope.Session, "start", ["flow_out", "logic_out"]);
         AssertPorts(GraphScope.Session, "line", ["flow_in", "flow_out"]);
         AssertPorts(GraphScope.Session, "choice", ["flow_in"]);
+        AssertPorts(GraphScope.Session, "narration", ["flow_in", "flow_out"]);
         AssertPorts(GraphScope.Session, "condition", ["flow_in", "logic_in", "flow_true", "flow_false"]);
         AssertPorts(GraphScope.Session, "and", ["logic_out"]);
         AssertPorts(GraphScope.Session, "or", ["logic_out"]);
         AssertPorts(GraphScope.Session, "not", ["logic_in", "logic_out"]);
         AssertPorts(GraphScope.Session, "logic_output", ["logic_in"]);
+        AssertPorts(GraphScope.Session, "logic_input", ["logic_out"]);
         AssertPorts(GraphScope.Session, "end", ["flow_in"]);
         AssertPorts(GraphScope.Session, "legacy_jump", []);
 
         AssertPorts(GraphScope.Task, "activate", ["logic_out"]);
-        AssertPorts(GraphScope.Task, "objective", ["logic_enable", "logic_status"]);
+        AssertPorts(GraphScope.Task, "objective", ["logic_status"]);
         AssertPorts(GraphScope.Task, "and", ["logic_out"]);
         AssertPorts(GraphScope.Task, "or", ["logic_out"]);
         AssertPorts(GraphScope.Task, "not", ["logic_in", "logic_out"]);
         AssertPorts(GraphScope.Task, "logic_output", ["logic_in"]);
+        AssertPorts(GraphScope.Task, "logic_input", ["logic_out"]);
         AssertPorts(GraphScope.Task, "settle", []);
         Assert.IsTrue(GraphNodeDefinitionRegistry.ForScope(GraphScope.Task)
             .SelectMany(definition => definition.FixedPorts)
@@ -68,15 +73,19 @@ public sealed class GraphNodeDefinitionSchemaTests
             [(GraphScope.StoryFlow, "action")] = "动作",
             [(GraphScope.StoryFlow, "interact_actor")] = "角色交互",
             [(GraphScope.StoryFlow, "enter_region")] = "进入区域",
-            [(GraphScope.StoryFlow, "enter_story")] = "进入剧情",
+            [(GraphScope.StoryFlow, "enter_story")] = "进入故事",
+            [(GraphScope.StoryFlow, "logic_input")] = "逻辑输入",
+            [(GraphScope.StoryFlow, "logic_output")] = "逻辑输出",
             [(GraphScope.Session, "start")] = "起始",
             [(GraphScope.Session, "line")] = "台词",
             [(GraphScope.Session, "choice")] = "选择",
+            [(GraphScope.Session, "narration")] = "旁白",
             [(GraphScope.Session, "condition")] = "条件",
             [(GraphScope.Session, "and")] = "与",
             [(GraphScope.Session, "or")] = "或",
             [(GraphScope.Session, "not")] = "非",
             [(GraphScope.Session, "logic_output")] = "逻辑输出",
+            [(GraphScope.Session, "logic_input")] = "逻辑输入",
             [(GraphScope.Session, "end")] = "结束",
             [(GraphScope.Session, "legacy_jump")] = "旧 Jump",
             [(GraphScope.Task, "activate")] = "激活",
@@ -85,10 +94,11 @@ public sealed class GraphNodeDefinitionSchemaTests
             [(GraphScope.Task, "or")] = "或",
             [(GraphScope.Task, "not")] = "非",
             [(GraphScope.Task, "logic_output")] = "逻辑输出",
+            [(GraphScope.Task, "logic_input")] = "逻辑输入",
             [(GraphScope.Task, "settle")] = "结算",
         };
 
-        Assert.AreEqual(29, GraphNodeDefinitionRegistry.Definitions.Count);
+        Assert.AreEqual(34, GraphNodeDefinitionRegistry.Definitions.Count);
         foreach (var definition in GraphNodeDefinitionRegistry.Definitions)
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(definition.DisplayName));
@@ -101,7 +111,7 @@ public sealed class GraphNodeDefinitionSchemaTests
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Select(item => item.Type).ToArray());
         Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Any(item => item.Type == "legacy_jump"));
         CollectionAssert.AreEqual(
-            GraphNodeDefinitionRegistry.ForScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray(),
+            GraphNodeDefinitionRegistry.ForScope(GraphScope.StoryFlow).Where(item => !item.CompatibilityOnly).Select(item => item.Type).ToArray(),
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray());
     }
 
@@ -136,14 +146,13 @@ public sealed class GraphNodeDefinitionSchemaTests
         CollectionAssert.AreEqual(new[]
         {
             CanonicalStoryActionSchema.TypeProperty,
-            CanonicalStoryActionSchema.ItemProperty,
-            CanonicalStoryActionSchema.MetadataProperty,
+            CanonicalStoryActionSchema.ItemIdProperty,
             CanonicalStoryActionSchema.AmountProperty,
             CanonicalStoryActionSchema.MessageProperty,
         }, action.PropertyDefinitions.Select(property => property.Name).ToArray());
         CollectionAssert.AreEqual(new[]
         {
-            JsonValueKind.String, JsonValueKind.String, JsonValueKind.Number, JsonValueKind.Number, JsonValueKind.String,
+            JsonValueKind.String, JsonValueKind.String, JsonValueKind.Number, JsonValueKind.String,
         }, action.PropertyDefinitions.Select(property => property.ValueKind).ToArray());
         Assert.IsTrue(action.PropertyDefinitions.Single(property => property.Name == CanonicalStoryActionSchema.TypeProperty).Required);
         Assert.AreEqual(CanonicalStoryActionSchema.SendMessage,

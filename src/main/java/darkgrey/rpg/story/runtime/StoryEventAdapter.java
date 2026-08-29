@@ -9,8 +9,8 @@ import net.minecraftforge.event.entity.player.EntityInteractEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
 import darkgrey.rpg.content.ModItems;
+import darkgrey.rpg.identity.EntityDgrIdentityResolver;
 import darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeManager;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRegionEntryTracker;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryTriggerIndex;
@@ -33,21 +33,20 @@ public final class StoryEventAdapter {
 
     @SubscribeEvent
     public void onEntityInteract(EntityInteractEvent event) {
-        if (!(event.entityPlayer instanceof EntityPlayerMP) || !CustomNpcActorBinding.isCustomNpc(event.target)) {
+        if (!(event.entityPlayer instanceof EntityPlayerMP)) {
             return;
         }
         ItemStack held = event.entityPlayer.getHeldItem();
         if (held != null && held.getItem() == ModItems.editorTool) {
             return;
         }
-        String actorId = CustomNpcActorBinding.getActorId(event.target);
-        if (actorId != null) {
+        List<String> actorIds = EntityDgrIdentityResolver.resolveActorIds(event.target);
+        if (!actorIds.isEmpty()) {
             event.setCanceled(true);
-            eventBus
-                .post((EntityPlayerMP) event.entityPlayer, StoryEvent.target(StoryEvent.Type.INTERACT_ACTOR, actorId));
-            if (canonicalStories != null) {
-                EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
-                canonicalStories.handleActorInteraction(player, actorId);
+            EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
+            for (String actorId : actorIds) {
+                eventBus.post(player, StoryEvent.target(StoryEvent.Type.INTERACT_ACTOR, actorId));
+                if (canonicalStories != null) canonicalStories.handleActorInteraction(player, actorId);
             }
         }
     }

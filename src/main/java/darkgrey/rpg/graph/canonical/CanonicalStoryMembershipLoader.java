@@ -27,7 +27,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-/** Strict, read-only loader for schema-version-1 Story membership manifests. */
+/** Strict, read-only loader for schema-version-1/2 Story membership manifests. */
 public final class CanonicalStoryMembershipLoader {
 
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9_-]*$");
@@ -36,7 +36,8 @@ public final class CanonicalStoryMembershipLoader {
         "story_id",
         "owned_resources",
         "referenced_resources");
-    private static final Set<String> MEMBERSHIP = set("actors", "sessions", "tasks");
+    private static final Set<String> LEGACY_MEMBERSHIP = set("actors", "sessions", "tasks");
+    private static final Set<String> CURRENT_MEMBERSHIP = set("actors", "items", "item_groups", "sessions", "tasks");
 
     public CanonicalStoryMembership load(File file) throws CanonicalStoryMembershipException {
         return load(file == null ? null : file.toPath());
@@ -124,16 +125,20 @@ public final class CanonicalStoryMembershipLoader {
         }
         exact(root, ROOT, "story.membership.root");
         int version = integer(root, "schema_version", "story.membership.root");
-        if (version != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION) throw CanonicalStoryMembershipException.failure(
-            "story.membership.schema_version.unsupported",
-            "Unsupported Story membership schema_version " + version + ".");
+        if (version != CanonicalStoryMembership.LEGACY_SCHEMA_VERSION
+            && version != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
+            throw CanonicalStoryMembershipException.failure(
+                "story.membership.schema_version.unsupported",
+                "Unsupported Story membership schema_version " + version + ".");
         String storyId = string(root, "story_id", "story.membership.root");
         CanonicalStoryMembershipSet owned = membershipSet(
             required(root, "owned_resources", "story.membership.root"),
-            "owned_resources");
+            "owned_resources",
+            version);
         CanonicalStoryMembershipSet referenced = membershipSet(
             required(root, "referenced_resources", "story.membership.root"),
-            "referenced_resources");
+            "referenced_resources",
+            version);
         CanonicalStoryMembership result = new CanonicalStoryMembership(version, storyId, owned, referenced);
         validate(result);
         String expectedFile = storyId + ".json";
@@ -143,14 +148,19 @@ public final class CanonicalStoryMembershipLoader {
         return result;
     }
 
-    private static CanonicalStoryMembershipSet membershipSet(JsonElement element, String path)
+    private static CanonicalStoryMembershipSet membershipSet(JsonElement element, String path, int version)
         throws CanonicalStoryMembershipException {
         if (!element.isJsonObject()) throw CanonicalStoryMembershipException
             .failure("story.membership.set.invalid", "'" + path + "' must be an object.");
         JsonObject object = element.getAsJsonObject();
-        exact(object, MEMBERSHIP, "story.membership.set");
+        boolean current = version == CanonicalStoryMembership.CURRENT_SCHEMA_VERSION;
+        exact(object, current ? CURRENT_MEMBERSHIP : LEGACY_MEMBERSHIP, "story.membership.set");
         return new CanonicalStoryMembershipSet(
             ids(required(object, "actors", "story.membership.set"), path + ".actors"),
+            current ? ids(required(object, "items", "story.membership.set"), path + ".items")
+                : Collections.<String>emptyList(),
+            current ? ids(required(object, "item_groups", "story.membership.set"), path + ".item_groups")
+                : Collections.<String>emptyList(),
             ids(required(object, "sessions", "story.membership.set"), path + ".sessions"),
             ids(required(object, "tasks", "story.membership.set"), path + ".tasks"));
     }
@@ -170,7 +180,8 @@ public final class CanonicalStoryMembershipLoader {
     }
 
     private static void validate(CanonicalStoryMembership membership) throws CanonicalStoryMembershipException {
-        if (membership.getSchemaVersion() != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
+        if (membership.getSchemaVersion() != CanonicalStoryMembership.LEGACY_SCHEMA_VERSION
+            && membership.getSchemaVersion() != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
             throw CanonicalStoryMembershipException.failure(
                 "story.membership.schema_version.unsupported",
                 "Unsupported Story membership schema_version " + membership.getSchemaVersion() + ".");
@@ -191,6 +202,16 @@ public final class CanonicalStoryMembershipLoader {
             "task",
             "owned_resources.tasks");
         validateList(
+            membership.getOwnedResources()
+                .getItems(),
+            "item",
+            "owned_resources.items");
+        validateList(
+            membership.getOwnedResources()
+                .getItemGroups(),
+            "item_group",
+            "owned_resources.item_groups");
+        validateList(
             membership.getReferencedResources()
                 .getActors(),
             "actor",
@@ -205,6 +226,16 @@ public final class CanonicalStoryMembershipLoader {
                 .getTasks(),
             "task",
             "referenced_resources.tasks");
+        validateList(
+            membership.getReferencedResources()
+                .getItems(),
+            "item",
+            "referenced_resources.items");
+        validateList(
+            membership.getReferencedResources()
+                .getItemGroups(),
+            "item_group",
+            "referenced_resources.item_groups");
         overlap(
             membership.getOwnedResources()
                 .getActors(),
@@ -223,6 +254,18 @@ public final class CanonicalStoryMembershipLoader {
             membership.getReferencedResources()
                 .getTasks(),
             "task");
+        overlap(
+            membership.getOwnedResources()
+                .getItems(),
+            membership.getReferencedResources()
+                .getItems(),
+            "item");
+        overlap(
+            membership.getOwnedResources()
+                .getItemGroups(),
+            membership.getReferencedResources()
+                .getItemGroups(),
+            "item_group");
     }
 
     private static void validateList(List<String> ids, String kind, String path)

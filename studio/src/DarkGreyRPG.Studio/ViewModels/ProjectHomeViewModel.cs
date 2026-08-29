@@ -34,7 +34,7 @@ public sealed class StoryOverviewViewModel : ObservableObject
         QuestCount = story.OwnedResources.Quests.Count + story.ReferencedResources.Quests.Count;
         FlowNodeCount = story.Nodes.Count;
         MembershipSummary =
-            $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
+            $"{OwnedActorCount} 个本故事角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
     }
 
     public StoryOverviewViewModel(CanonicalStoryHomeEntry story)
@@ -43,7 +43,7 @@ public sealed class StoryOverviewViewModel : ObservableObject
         Id = story.Id;
         DisplayName = string.IsNullOrWhiteSpace(story.DisplayName) ? story.Id : story.DisplayName;
         Description = story.IsValid && story.IsComplete
-            ? "0.3.0.0 Canonical Story"
+            ? "0.3.1.0 Canonical Story"
             : string.Join(Environment.NewLine, story.Diagnostics);
         Tags = [];
         OwnedActorCount = story.OwnedActorCount;
@@ -52,7 +52,7 @@ public sealed class StoryOverviewViewModel : ObservableObject
         QuestCount = story.TaskCount;
         FlowNodeCount = story.FlowNodeCount;
         MembershipSummary =
-            $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个会话 · {QuestCount} 个任务";
+            $"{OwnedActorCount} 个本故事角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个会话 · {QuestCount} 个任务";
     }
 
     public StoryResource? Story { get; }
@@ -411,7 +411,7 @@ public sealed class ProjectGraphViewModel : ObservableObject
     public event EventHandler<string>? OpenStoryRequested;
     public event EventHandler<string>? OpenStoryOverviewRequested;
     public bool IsEmpty => Nodes.Count == 0;
-    public string Summary => $"{Nodes.Count} 个剧情 · {Edges.Sum(edge => edge.Count)} 条转场 / {Edges.Count} 组关系 · {Diagnostics.Count} 个诊断";
+    public string Summary => $"{Nodes.Count} 个故事 · {Edges.Sum(edge => edge.Count)} 条转场 / {Edges.Count} 组关系 · {Diagnostics.Count} 个诊断";
     public int ErrorCount => Diagnostics.Count(IsErrorDiagnostic);
     public int WarningCount => Diagnostics.Count - ErrorCount + (string.IsNullOrWhiteSpace(PersistenceWarning) ? 0 : 1);
     public string SearchText { get => _searchText; set { if (SetProperty(ref _searchText, value ?? string.Empty)) RefreshVisibility(); } }
@@ -741,10 +741,10 @@ public sealed class ProjectHomeViewModel : ObservableObject
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchText);
     public bool IsSearchNoResults => HasStories && IsSearchActive && !HasFilteredStories;
     public bool IsEmptyProject => !HasStories;
-    public string EmptyStateTitle => "当前项目还没有剧情";
-    public string EmptyStateDescription => "剧情是 DarkGrey RPG 中的主要创作单元。";
-    public string SearchNoResultsTitle => "没有匹配当前搜索条件的剧情";
-    public string SearchNoResultsDescription => "清空搜索后可查看项目中的全部剧情。";
+    public string EmptyStateTitle => "当前项目还没有故事";
+    public string EmptyStateDescription => "故事是 DarkGrey RPG 中的主要创作单元。";
+    public string SearchNoResultsTitle => "没有匹配当前搜索条件的故事";
+    public string SearchNoResultsDescription => "清空搜索后可查看项目中的全部故事。";
     public string CurrentRoute => Route.ToString();
     public ProjectGraphViewModel Graph
     {

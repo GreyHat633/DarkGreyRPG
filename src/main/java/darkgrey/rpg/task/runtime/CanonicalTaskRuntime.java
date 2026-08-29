@@ -30,6 +30,7 @@ public final class CanonicalTaskRuntime {
 
     private static final String ACTIVATE = "activate";
     private static final String OBJECTIVE = "objective";
+    private static final String LOGIC_INPUT = "logic_input";
     private static final String AND = "and";
     private static final String OR = "or";
     private static final String NOT = "not";
@@ -47,6 +48,7 @@ public final class CanonicalTaskRuntime {
     private final Map<String, CanonicalTaskObjectiveStatus> objectiveStatuses = new LinkedHashMap<String, CanonicalTaskObjectiveStatus>();
     private final Map<String, Boolean> logicValues = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
+    private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
     private boolean activationLogic;
     private CanonicalTaskStatus status;
     private String resultPortId;
@@ -97,6 +99,26 @@ public final class CanonicalTaskRuntime {
 
     public boolean getActivationLogic() {
         return activationLogic;
+    }
+
+    /**
+     * Updates a Task Logic Input boundary and re-evaluates dynamic objective
+     * gates. New Tasks have no implicit activation node; their external
+     * lifecycle is Active from {@link #start(CanonicalGraphResource)}.
+     */
+    public boolean setLogicInput(String portId, boolean value) {
+        if (blank(portId)) throw failure("task.logic_input.id", "Logic Input port ID is required.");
+        if (!externalLogicInputs.containsKey(portId))
+            throw failure("task.logic_input.unknown", "Unknown Task Logic Input port '" + portId + "'.");
+        boolean changed = externalLogicInputs.get(portId)
+            .booleanValue() != value;
+        externalLogicInputs.put(portId, Boolean.valueOf(value));
+        if (changed) refreshState();
+        return changed;
+    }
+
+    public boolean setLogicInputValue(String portId, boolean value) {
+        return setLogicInput(portId, value);
     }
 
     public String getResultPortId() {
@@ -205,7 +227,11 @@ public final class CanonicalTaskRuntime {
 
     private void initialize() {
         status = CanonicalTaskStatus.ACTIVE;
+        // Legacy direct resources retain their old activation output solely
+        // for compatibility; canonical resources have no activation node.
         activationLogic = true;
+        for (CanonicalGraphNode node : nodes.values()) if (LOGIC_INPUT.equals(node.getType()))
+            externalLogicInputs.put(requiredString(node, "port_id", "task.logic_input"), Boolean.FALSE);
         for (String id : objectives.keySet()) {
             progress.put(id, Integer.valueOf(0));
             objectiveStatuses.put(id, CanonicalTaskObjectiveStatus.INACTIVE);
@@ -218,10 +244,16 @@ public final class CanonicalTaskRuntime {
             recomputeLogic();
             boolean changed = false;
             if (isActive()) for (Map.Entry<String, CanonicalGraphNode> entry : objectives.entrySet()) {
-                if (objectiveStatuses.get(entry.getKey()) == CanonicalTaskObjectiveStatus.INACTIVE
-                    && logicInputValue(entry.getValue(), "logic_enable", new HashMap<String, Boolean>())) {
-                    objectiveStatuses.put(entry.getKey(), CanonicalTaskObjectiveStatus.ACTIVE);
-                    changed = true;
+                String id = entry.getKey();
+                CanonicalTaskObjectiveStatus current = objectiveStatuses.get(id);
+                if (current != CanonicalTaskObjectiveStatus.COMPLETED) {
+                    CanonicalTaskObjectiveStatus next = objectiveEnabled(entry.getValue())
+                        ? CanonicalTaskObjectiveStatus.ACTIVE
+                        : CanonicalTaskObjectiveStatus.INACTIVE;
+                    if (current != next) {
+                        objectiveStatuses.put(id, next);
+                        changed = true;
+                    }
                 }
             }
             if (!changed) break;
@@ -266,6 +298,7 @@ public final class CanonicalTaskRuntime {
         String type = node.getType();
         boolean value;
         if (ACTIVATE.equals(type)) value = activationLogic;
+        else if (LOGIC_INPUT.equals(type)) value = externalLogicValue(node);
         else if (OBJECTIVE.equals(type))
             value = objectiveStatuses.get(node.getId()) == CanonicalTaskObjectiveStatus.COMPLETED;
         else if (AND.equals(type) || OR.equals(type)) {
@@ -320,8 +353,19 @@ public final class CanonicalTaskRuntime {
                 if (!publicNames.add(publicName))
                     throw failure("task.public_port.display_name.duplicate", "Duplicate public Logic display name.");
             }
+            if (LOGIC_INPUT.equals(node.getType())) {
+                String publicId = requiredString(node, "port_id", "task.logic_input");
+                String publicName = requiredString(node, "display_name", "task.logic_input");
+                if ("flow_in".equals(publicId) || "logic_in".equals(publicId))
+                    throw failure("task.public_port.id.reserved", "Reserved public port ID.");
+                if (!publicIds.add(publicId))
+                    throw failure("task.public_port.id.duplicate", "Duplicate public Logic port ID.");
+                if (!publicNames.add(publicName))
+                    throw failure("task.public_port.display_name.duplicate", "Duplicate public Logic display name.");
+            }
         }
-        if (activateCount != 1) throw failure("task.node.activate.unique", "Task requires exactly one activate node.");
+        if (activateCount > 1)
+            throw failure("task.node.activate.unique", "Legacy Task has more than one activate node.");
         if (settleCount != 1) throw failure("task.node.settle.unique", "Task requires exactly one settle node.");
         for (CanonicalGraphPort slot : settlementSlots) {
             if ("flow_in".equals(slot.getId()) || "logic_in".equals(slot.getId()))
@@ -338,6 +382,7 @@ public final class CanonicalTaskRuntime {
     private void validateNodeShape(CanonicalGraphNode node) {
         String type = node.getType();
         if (!ACTIVATE.equals(type) && !OBJECTIVE.equals(type)
+            && !LOGIC_INPUT.equals(type)
             && !AND.equals(type)
             && !OR.equals(type)
             && !NOT.equals(type)
@@ -349,8 +394,7 @@ public final class CanonicalTaskRuntime {
             requirePorts(node, 0, 1, "logic_out");
             requireDirection(node, "logic_out", false);
         } else if (OBJECTIVE.equals(type)) {
-            requirePorts(node, 1, 1, "logic_enable", "logic_status");
-            requireDirection(node, "logic_enable", true);
+            requireObjectivePorts(node);
             requireDirection(node, "logic_status", false);
             validateObjective(node);
             objectives.put(node.getId(), node);
@@ -368,6 +412,12 @@ public final class CanonicalTaskRuntime {
             requireDirection(node, "logic_in", true);
             requiredString(node, "port_id", "task.logic_output");
             requiredString(node, "display_name", "task.logic_output");
+        } else if (LOGIC_INPUT.equals(type)) {
+            requireProperties(node, "port_id", "display_name");
+            requirePorts(node, 0, 1, "logic_out");
+            requireDirection(node, "logic_out", false);
+            requiredString(node, "port_id", "task.logic_input");
+            requiredString(node, "display_name", "task.logic_input");
         } else if (SETTLE.equals(type)) {
             requireProperties(node);
             if (node.getPorts()
@@ -423,6 +473,32 @@ public final class CanonicalTaskRuntime {
             requireProperties(node, "objective_type", "description", "required", "item", "metadata");
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type))
             requireProperties(node, "objective_type", "description", "required", "actor_id");
+    }
+
+    private void requireObjectivePorts(CanonicalGraphNode node) {
+        int outputs = 0;
+        for (CanonicalGraphPort port : node.getPorts()) {
+            if (port.isInput()) continue;
+            outputs++;
+            if (!"logic_status".equals(port.getId()))
+                throw failure("task.objective.ports", "Objective has an unsupported output port.");
+        }
+        if (outputs != 1 || !portsContain(node, "logic_status"))
+            throw failure("task.objective.ports", "Objective requires exactly one logic_status output.");
+    }
+
+    private boolean objectiveEnabled(CanonicalGraphNode node) {
+        for (CanonicalGraphPort port : node.getPorts()) if (port.isInput()) {
+            if (!logicInputValue(node, port.getId(), new HashMap<String, Boolean>())) return false;
+        }
+        // No condition ports means the objective is active by default.
+        return true;
+    }
+
+    private boolean externalLogicValue(CanonicalGraphNode node) {
+        String id = requiredString(node, "port_id", "task.logic_input");
+        Boolean value = externalLogicInputs.get(id);
+        return value != null && value.booleanValue();
     }
 
     private void requireProperties(CanonicalGraphNode node, String... allowed) {
@@ -503,9 +579,9 @@ public final class CanonicalTaskRuntime {
                 throw failure("task.snapshot.progress", "Active objective progress must be below required.");
             if (objectiveStatus == CanonicalTaskObjectiveStatus.COMPLETED && value != required(objectives.get(id)))
                 throw failure("task.snapshot.progress", "Completed objective progress is contradictory.");
-            if (objectiveStatus == CanonicalTaskObjectiveStatus.INACTIVE && value != 0)
-                throw failure("task.snapshot.progress", "Inactive objective has progress.");
+            // INACTIVE is a live gate state, so it may retain partial progress.
         }
+        restoreExternalLogicInputs(snapshot.getLogicValues());
         status = snapshot.getStatus();
         resultPortId = snapshot.getResultPortId();
         activationLogic = snapshot.getActivationLogic();
@@ -523,7 +599,7 @@ public final class CanonicalTaskRuntime {
                         .keySet()))
                 throw failure("task.snapshot.public_logic", "Snapshot public Logic ports differ.");
             for (String id : objectives.keySet()) {
-                boolean enabled = logicInputValue(objectives.get(id), "logic_enable", new HashMap<String, Boolean>());
+                boolean enabled = objectiveEnabled(objectives.get(id));
                 if (objectiveStatuses.get(id) == CanonicalTaskObjectiveStatus.INACTIVE && enabled)
                     throw failure("task.snapshot.active_objective", "Enabled objective is marked inactive.");
             }
@@ -536,7 +612,7 @@ public final class CanonicalTaskRuntime {
             activationLogic = true;
             recomputeLogic();
             for (String id : objectives.keySet()) if (objectiveStatuses.get(id) == CanonicalTaskObjectiveStatus.INACTIVE
-                && logicInputValue(objectives.get(id), "logic_enable", new HashMap<String, Boolean>()))
+                && objectiveEnabled(objectives.get(id)))
                 throw failure("task.snapshot.active_objective", "Enabled objective is marked inactive.");
             String reconstructedResult = firstTrueSettlement();
             if (!resultPortId.equals(reconstructedResult))
@@ -551,6 +627,22 @@ public final class CanonicalTaskRuntime {
         if (status == CanonicalTaskStatus.SETTLED) {
             publicLogicOutputs.clear();
             publicLogicOutputs.putAll(snapshot.getPublicLogicOutputs());
+        }
+    }
+
+    /**
+     * Logic Input values are already part of the internal Logic snapshot. Do
+     * not add a second persistence shape: recover each boundary from its
+     * canonical output endpoint before any gate or settlement is evaluated.
+     */
+    private void restoreExternalLogicInputs(Map<String, Boolean> savedLogic) {
+        externalLogicInputs.clear();
+        for (CanonicalGraphNode node : nodes.values()) if (LOGIC_INPUT.equals(node.getType())) {
+            String id = requiredString(node, "port_id", "task.logic_input");
+            String key = endpoint(node.getId(), "logic_out");
+            if (!savedLogic.containsKey(key) || savedLogic.get(key) == null)
+                throw failure("task.snapshot.logic_input", "Snapshot is missing Logic Input state for '" + id + "'.");
+            externalLogicInputs.put(id, savedLogic.get(key));
         }
     }
 

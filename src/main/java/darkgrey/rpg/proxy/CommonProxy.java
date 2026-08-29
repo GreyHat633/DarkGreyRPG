@@ -1,6 +1,29 @@
 package darkgrey.rpg.proxy;
 
+import java.util.List;
+import java.util.UUID;
+
+import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemStack;
+
+import darkgrey.rpg.nominator.NominatorCatalog;
+
 public class CommonProxy {
 
     public void registerClientDialogueNetwork() {}
+
+    public void openNominatorEntityGui(Entity entity) {}
+
+    public void openNominatorEntityGui(int entityId, UUID entityUuid, String individual, List<String> groups,
+        String story, long revision) {}
+
+    public void openNominatorEntityGui(int entityId, UUID entityUuid, String displayName, String entityType,
+        String individual, List<String> groups, List<String> typeGroups, String story, long revision,
+        NominatorCatalog catalog) {}
+
+    public void openNominatorInventoryGui() {}
+
+    public void openNominatorInventoryGui(NominatorCatalog catalog, long revision, int selectedSlot) {}
+
+    public void openCopierGui(ItemStack stack) {}
 }

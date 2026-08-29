@@ -29,7 +29,7 @@ public class CanonicalResourceIdentityDialogViewModel : ObservableObject
     public string ChineseTypeLabel => ChineseLabel(ResourceKind);
     public string Title => $"新建 {TypeLabel}";
     public string ActionText => "创建";
-    public string Description => $"创建独立的新{ChineseTypeLabel}，并归入当前剧情。";
+    public string Description => $"创建独立的新{ChineseTypeLabel}，并归入当前故事。";
     public RelayCommand ApplySuggestionCommand { get; }
 
     public string Id
@@ -138,7 +138,7 @@ public class CanonicalResourcePickerViewModel : ObservableObject
         if (candidates.Any(candidate => candidate.ResourceKind != resourceKind))
             throw new ArgumentException("Canonical reference candidates must match the requested resource kind.", nameof(candidates));
         _resources = candidates.ToArray();
-        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前剧情" : storyDisplayName.Trim();
+        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前故事" : storyDisplayName.Trim();
         RefreshFilter();
     }
 

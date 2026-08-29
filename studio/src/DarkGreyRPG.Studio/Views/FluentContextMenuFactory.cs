@@ -68,9 +68,9 @@ internal static class FluentContextMenuFactory
     {
         var glyph = header switch
         {
-            "编辑剧情" => "\uE70F",
-            "进入剧情" => "\uE8A7",
-            "删除剧情" or "删除节点" or "删除连接" => "\uE74D",
+            "编辑故事" => "\uE70F",
+            "进入故事" => "\uE8A7",
+            "删除故事" or "删除节点" or "删除连接" => "\uE74D",
             "复制" or "复制 Story ID" => "\uE8C8",
             "粘贴" => "\uE77F",
             "创建副本" => "\uE8B9",

@@ -27,12 +27,15 @@ public static class GraphDynamicPortPolicy
     private static readonly IReadOnlyList<GraphDynamicPortRole> _roles =
     [
         new(GraphScope.StoryFlow, "start", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1),
+        new(GraphScope.StoryFlow, "start", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
         // These are projections of child-resource public boundaries. They are
         // shape-valid dynamic ports, but are never local authoring slots.
         new(GraphScope.StoryFlow, "session", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0, false),
         new(GraphScope.StoryFlow, "session", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0, false),
+        new(GraphScope.StoryFlow, "session", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.StoryFlow, "task", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0, false),
         new(GraphScope.StoryFlow, "task", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0, false),
+        new(GraphScope.StoryFlow, "task", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.StoryFlow, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.StoryFlow, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Session, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
@@ -43,6 +46,7 @@ public static class GraphDynamicPortPolicy
         new(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 1, false),
         new(GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
+        new(GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
         new(GraphScope.Task, "settle", GraphPortDirection.Input, GraphInterfaceKind.Logic, 1),
     ];
 

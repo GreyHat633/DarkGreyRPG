@@ -47,7 +47,7 @@ public sealed class CanonicalGraphEditorViewTests
     public void ArrangedViewProjectsOrderedPortIdentityKindAndStyledHitPaths()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [
+            new GraphNode("source", "objective", "Source", [
                 new("z", "Same", false, GraphInterfaceKind.Logic, 2),
                 new("a", "Same", false, GraphInterfaceKind.Logic, 1)]),
             new GraphNode("target", "settle", "Target", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
@@ -111,7 +111,7 @@ public sealed class CanonicalGraphEditorViewTests
     public void ConnectionSelectionClearsNodeAndDeleteRemovesOnlyConnection()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
             new GraphNode("target", "settle", "Target", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
         var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
         Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
@@ -254,7 +254,7 @@ public sealed class CanonicalGraphEditorViewTests
     public void DirectConnectedLogicOutputCreatesFanOutWhileExplicitHitReconnectCarriesOriginal()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
             new GraphNode("one", "settle", "One", [new("in", "Input", true, GraphInterfaceKind.Logic)]),
             new GraphNode("two", "settle", "Two", [new("in", "Input", true, GraphInterfaceKind.Logic)]),
             new GraphNode("three", "settle", "Three", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
@@ -282,7 +282,7 @@ public sealed class CanonicalGraphEditorViewTests
     public void ExistingConnectionHitNearInputReplacesInputAndKeepsOutput()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
             new GraphNode("one", "settle", "One", [new("in", "Input", true, GraphInterfaceKind.Logic)]),
             new GraphNode("two", "settle", "Two", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
         var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
@@ -311,8 +311,8 @@ public sealed class CanonicalGraphEditorViewTests
     public void ExistingConnectionHitNearOutputReplacesOutputAndKeepsInput()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
-            new GraphNode("replacement", "activate", "Replacement", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("replacement", "objective", "Replacement", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
             new GraphNode("target", "settle", "Target", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
         var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
         Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
@@ -344,7 +344,7 @@ public sealed class CanonicalGraphEditorViewTests
     public void ExistingConnectionBlankDropDisconnectsFromInputSide()
     {
         var graph = new GraphDocument([
-            new GraphNode("source", "activate", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
             new GraphNode("target", "settle", "Target", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
         var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
         Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
@@ -378,7 +378,7 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
 
         CollectionAssert.AreEqual(
-            new[] { "start", "line", "choice", "condition", "and", "or", "not", "logic_output", "end" },
+            new[] { "start", "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
         CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },
@@ -513,7 +513,7 @@ public sealed class CanonicalGraphEditorViewTests
         var kind = scope == GraphScope.Task ? GraphInterfaceKind.Logic : GraphInterfaceKind.Flow;
         var targetType = scope switch { GraphScope.StoryFlow => "terminate", GraphScope.Session => "end", _ => "settle" };
         return new GraphDocument([
-            new GraphNode("source", scope == GraphScope.Task ? "activate" : "start", "Source", [new("out", "Output", false, kind)]),
+            new GraphNode("source", scope == GraphScope.Task ? "objective" : "start", "Source", [new("out", "Output", false, kind)]),
             new GraphNode("target", targetType, "Target", [new("in", "Input", true, kind)])]);
     }
 

@@ -69,14 +69,12 @@ public sealed class CanonicalNodeInspectorViewModelTests
             .Single(option => option.Value == CanonicalStoryActionSchema.GiveItem);
 
         Assert.IsTrue(inspector.IsGiveItemAction);
-        Assert.AreEqual("darkgrey_rpg:copper_coin", inspector.StoryActionItem);
-        Assert.AreEqual("0", inspector.StoryActionMetadataText);
+        Assert.AreEqual("starter_reward", inspector.StoryActionItem);
         Assert.AreEqual("10", inspector.StoryActionAmountText);
         CollectionAssert.AreEquivalent(new[]
         {
             CanonicalStoryActionSchema.TypeProperty,
             CanonicalStoryActionSchema.ItemProperty,
-            CanonicalStoryActionSchema.MetadataProperty,
             CanonicalStoryActionSchema.AmountProperty,
         }, editor.Host.Graph.Nodes.Single().Properties.Keys.ToArray());
 
@@ -320,7 +318,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         settle.Ports.Add(new GraphPort("result_b", "B", true, GraphInterfaceKind.Logic, 1));
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
             GraphResourceKind.Task, "task", "Task", new GraphDocument([
-                GraphNodeFactory.Create(GraphScope.Task, "activate", "activate"), settle])));
+                GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"), settle])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "settle"));
 
@@ -341,14 +339,14 @@ public sealed class CanonicalNodeInspectorViewModelTests
     [TestMethod]
     public void TaskSettleReferencedRemoveConfirmsAndCleansEdgeAsOneUndoUnit()
     {
-        var activate = GraphNodeFactory.Create(GraphScope.Task, "activate", "activate");
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
         settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
         settle.Ports.Add(new GraphPort("other", "Other", true, GraphInterfaceKind.Logic, 1));
         settle.Ports.Add(new GraphPort("third", "Third", true, GraphInterfaceKind.Logic, 2));
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([activate, settle], [
-                new GraphConnection("activate", "logic_out", "settle", "result", GraphInterfaceKind.Logic)])));
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective, settle], [
+                new GraphConnection("objective", "logic_status", "settle", "result", GraphInterfaceKind.Logic)])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "settle"));
         var confirmationCount = 0;
@@ -378,7 +376,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
             new GraphDocument(), GraphScope.Task, "logic_output", "logic").Candidate!;
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
             GraphResourceKind.Task, "task", "Task", new GraphDocument([
-                GraphNodeFactory.Create(GraphScope.Task, "activate", "activate"),
+                GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"),
                 GraphNodeFactory.Create(GraphScope.Task, "settle", "settle"), output])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "logic"));
@@ -395,11 +393,17 @@ public sealed class CanonicalNodeInspectorViewModelTests
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
             GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
-        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(),
+            [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "actor.json", []))]);
 
-        Assert.IsTrue(inspector.AddStoryStartTrigger());
+        // Story Start authoring accepts only supported trigger types;
+        // EnterStory remains a compatibility-only persisted trigger.
+        Assert.IsTrue(inspector.AddStoryStartTrigger(
+            displayName: "角色触发", triggerType: StoryStartSchema.ActorInteraction,
+            triggerProperties: StoryStartSchema.DefaultTriggerProperties(
+                StoryStartSchema.ActorInteraction, "actor")));
         var trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId != "opaque-start");
-        Assert.AreEqual(StoryStartSchema.EnterStory, trigger.TriggerType);
+        Assert.AreEqual(StoryStartSchema.ActorInteraction, trigger.TriggerType);
         Assert.IsFalse(string.IsNullOrWhiteSpace(trigger.StablePortId));
         Assert.IsTrue(inspector.SetStoryStartTriggerType(trigger.StablePortId, StoryStartSchema.RegionEntry));
         trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId == trigger.StablePortId);

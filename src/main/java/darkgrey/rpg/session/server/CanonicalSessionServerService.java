@@ -103,8 +103,9 @@ public final class CanonicalSessionServerService {
             .getStatus() != CanonicalSessionStatus.ACTIVE) throw new IllegalStateException("Session is not active.");
         CanonicalSessionStep next;
         if (action.getKind() == CanonicalSessionAction.Kind.CONTINUE) {
-            if (current.getKind() != CanonicalSessionStep.Kind.LINE)
-                throw new IllegalStateException("Continue requires a Session Line.");
+            if (current.getKind() != CanonicalSessionStep.Kind.LINE
+                && current.getKind() != CanonicalSessionStep.Kind.NARRATION)
+                throw new IllegalStateException("Continue requires a Session Line or Narration.");
             next = savedData
                 .continueLine(playerUuid, expectedStoryId, action.getTransportId(), action.getCurrentNodeId());
         } else if (action.getKind() == CanonicalSessionAction.Kind.CHOICE) {
@@ -175,7 +176,9 @@ public final class CanonicalSessionServerService {
                 .equals(step.getNodeId()))
             throw new IllegalStateException("Session snapshot has no coherent current step.");
         if (status == CanonicalSessionStatus.ACTIVE) {
-            if (step.getKind() != CanonicalSessionStep.Kind.LINE && step.getKind() != CanonicalSessionStep.Kind.CHOICE)
+            if (step.getKind() != CanonicalSessionStep.Kind.LINE
+                && step.getKind() != CanonicalSessionStep.Kind.NARRATION
+                && step.getKind() != CanonicalSessionStep.Kind.CHOICE)
                 throw new IllegalStateException("Active Session snapshot has an incoherent step.");
             return CanonicalSessionDispatch.frame(frame(snapshot, step));
         }
@@ -211,6 +214,15 @@ public final class CanonicalSessionServerService {
                 step.getText(),
                 java.util.Collections.<CanonicalSessionChoiceOption>emptyList());
         }
+        if (step.getKind() == CanonicalSessionStep.Kind.NARRATION) return new CanonicalSessionFrame(
+            snapshot.getTransportId(),
+            snapshot.getStoryId(),
+            snapshot.getSessionResourceId(),
+            step.getNodeId(),
+            CanonicalSessionFrame.Kind.NARRATION,
+            "",
+            step.getText(),
+            java.util.Collections.<CanonicalSessionChoiceOption>emptyList());
         java.util.ArrayList<CanonicalSessionChoiceOption> choices = new java.util.ArrayList<CanonicalSessionChoiceOption>();
         for (darkgrey.rpg.session.runtime.CanonicalSessionChoiceOption option : step.getOptions())
             choices.add(new CanonicalSessionChoiceOption(option.getOptionId(), option.getDisplayText()));

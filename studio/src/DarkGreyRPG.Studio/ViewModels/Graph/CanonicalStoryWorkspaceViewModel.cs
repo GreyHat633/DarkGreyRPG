@@ -4,6 +4,7 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.ViewModels.Graph;
@@ -11,6 +12,7 @@ namespace DarkGreyRPG.Studio.ViewModels.Graph;
 public enum CanonicalStoryFolderKind
 {
     Actors,
+    Items,
     Sessions,
     Tasks,
 }
@@ -28,6 +30,19 @@ public sealed record CanonicalStoryActorItem(
 {
     public string Id => Actor.Id;
     public string DisplayName => Actor.DisplayName;
+    public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
+    public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
+}
+
+public sealed record CanonicalStoryItemItem(
+    ItemResource Item,
+    CanonicalStoryWorkspaceMembershipKind MembershipKind = CanonicalStoryWorkspaceMembershipKind.Owned)
+    : ICanonicalStoryTreeItem
+{
+    public string Id => Item.Id;
+    public string DisplayName => Item.DisplayName;
+    public string Type => Item.Type;
+    public IReadOnlyList<string> Tags => Item.Tags;
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
 }
@@ -113,7 +128,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         GraphResourceEnvelope story,
         IEnumerable<ActorResourceInfo>? actors = null,
         IEnumerable<GraphResourceEnvelope>? sessions = null,
-        IEnumerable<GraphResourceEnvelope>? tasks = null)
+        IEnumerable<GraphResourceEnvelope>? tasks = null,
+        IEnumerable<ItemResource>? items = null)
     {
         ArgumentNullException.ThrowIfNull(story);
         if (story.ResourceKind != GraphResourceKind.Story)
@@ -156,11 +172,17 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             .ThenBy(actor => actor.Id, StringComparer.Ordinal)
             .Select(actor => new CanonicalStoryActorItem(actor))
             .ToArray();
+        ItemItems = (items ?? [])
+            .OrderBy(item => item.DisplayName, StringComparer.Ordinal)
+            .ThenBy(item => item.Id, StringComparer.Ordinal)
+            .Select(item => new CanonicalStoryItemItem(item))
+            .ToArray();
         SessionItems = SessionEditors.Select(editor => new CanonicalStoryGraphItem(editor)).ToArray();
         TaskItems = TaskEditors.Select(editor => new CanonicalStoryGraphItem(editor)).ToArray();
         Folders =
         [
             new(CanonicalStoryFolderKind.Actors, "角色", ActorItems),
+            new(CanonicalStoryFolderKind.Items, "物品", ItemItems),
             new(CanonicalStoryFolderKind.Sessions, "会话", SessionItems),
             new(CanonicalStoryFolderKind.Tasks, "任务", TaskItems),
         ];
@@ -192,13 +214,18 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             SnapshotStory(snapshot),
             SnapshotActors(snapshot),
             SnapshotGraphs(snapshot, GraphResourceKind.Session),
-            SnapshotGraphs(snapshot, GraphResourceKind.Task))
+            SnapshotGraphs(snapshot, GraphResourceKind.Task),
+            SnapshotItems(snapshot))
     {
         ValidationIssues = snapshot.ValidationIssues.ToArray();
 
         var actorsById = ActorItems.ToDictionary(item => item.Id, StringComparer.Ordinal);
         var sessionsById = SessionItems.ToDictionary(item => item.Id, StringComparer.Ordinal);
         var tasksById = TaskItems.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        var individualItemsById = ItemItems.Where(item => item.Item is IndividualItemResource)
+            .ToDictionary(item => item.Id, StringComparer.Ordinal);
+        var collectiveItemsById = ItemItems.Where(item => item.Item is CollectiveItemResource)
+            .ToDictionary(item => item.Id, StringComparer.Ordinal);
         var missing = new List<CanonicalStoryMissingItem>();
 
         var actorFolderItems = AdaptEntries(
@@ -213,6 +240,19 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             sessionsById,
             missing,
             (item, membershipKind) => new CanonicalStoryGraphItem(item.Editor, membershipKind));
+        var itemFolderItems = AdaptEntries(
+                snapshot.Items,
+                CanonicalStoryFolderKind.Items,
+                individualItemsById,
+                missing,
+                (item, membershipKind) => new CanonicalStoryItemItem(item.Item, membershipKind))
+            .Concat(AdaptEntries(
+                snapshot.ItemGroups,
+                CanonicalStoryFolderKind.Items,
+                collectiveItemsById,
+                missing,
+                (item, membershipKind) => new CanonicalStoryItemItem(item.Item, membershipKind)))
+            .ToArray();
         var taskFolderItems = AdaptEntries(
             snapshot.Tasks,
             CanonicalStoryFolderKind.Tasks,
@@ -221,12 +261,14 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             (item, membershipKind) => new CanonicalStoryGraphItem(item.Editor, membershipKind));
 
         ActorItems = actorFolderItems.OfType<CanonicalStoryActorItem>().ToArray();
+        ItemItems = itemFolderItems.OfType<CanonicalStoryItemItem>().ToArray();
         SessionItems = sessionFolderItems.OfType<CanonicalStoryGraphItem>().ToArray();
         TaskItems = taskFolderItems.OfType<CanonicalStoryGraphItem>().ToArray();
         MissingItems = missing.ToArray();
         Folders =
         [
             new(CanonicalStoryFolderKind.Actors, "角色", actorFolderItems),
+            new(CanonicalStoryFolderKind.Items, "物品", itemFolderItems),
             new(CanonicalStoryFolderKind.Sessions, "会话", sessionFolderItems),
             new(CanonicalStoryFolderKind.Tasks, "任务", taskFolderItems),
         ];
@@ -236,6 +278,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public IReadOnlyList<CanonicalGraphResourceEditorViewModel> SessionEditors { get; }
     public IReadOnlyList<CanonicalGraphResourceEditorViewModel> TaskEditors { get; }
     public IReadOnlyList<CanonicalStoryActorItem> ActorItems { get; }
+    public IReadOnlyList<CanonicalStoryItemItem> ItemItems { get; }
     public IReadOnlyList<CanonicalStoryGraphItem> SessionItems { get; }
     public IReadOnlyList<CanonicalStoryGraphItem> TaskItems { get; }
     public IReadOnlyList<CanonicalStoryMissingItem> MissingItems { get; private set; } = [];
@@ -254,6 +297,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public Action<GraphResourceKind>? ReferenceResourceRequested { get; set; }
     public Action? CreateActorRequested { get; set; }
     public Action? ReferenceActorRequested { get; set; }
+    public Action? CreateItemRequested { get; set; }
+    public Action? ReferenceItemRequested { get; set; }
     public Action<ICanonicalStoryTreeItem>? DeleteResourceRequested { get; set; }
 
     /// <summary>Optional shell-owned unsaved-changes gate for graph switching.</summary>
@@ -298,6 +343,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     {
         CanonicalNodeInspectorViewModel node => node.DisplayName,
         CanonicalStoryActorItem actor => actor.DisplayName,
+        CanonicalStoryItemItem item => item.DisplayName,
         CanonicalStoryMissingItem missing => missing.DisplayName,
         CanonicalGraphResourceEditorViewModel editor => editor.DisplayName,
         _ => StoryEditor.DisplayName,
@@ -307,7 +353,10 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     {
         CanonicalNodeInspectorViewModel node => node.NodeType,
         CanonicalStoryActorItem => "角色",
+        CanonicalStoryItemItem { Item: IndividualItemResource } => "个体物品",
+        CanonicalStoryItemItem { Item: CollectiveItemResource } => "集体物品",
         CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors } => "缺失角色",
+        CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Items } => "缺失物品",
         CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Sessions } => "缺失会话",
         CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Tasks } => "缺失任务",
         CanonicalGraphResourceEditorViewModel { ResourceKind: GraphResourceKind.Session } => "会话",
@@ -319,6 +368,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     {
         CanonicalNodeInspectorViewModel node => node.NodeId,
         CanonicalStoryActorItem actor => actor.Id,
+        CanonicalStoryItemItem item => item.Id,
         CanonicalStoryMissingItem missing => missing.Id,
         CanonicalGraphResourceEditorViewModel editor => editor.Id,
         _ => StoryEditor.Id,
@@ -347,6 +397,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         {
             if (!SetProperty(ref _selectedTreeItem, value)) return;
             OnPropertyChanged(nameof(SelectedActor));
+            OnPropertyChanged(nameof(SelectedItem));
             OnPropertyChanged(nameof(SelectedGraphResource));
             OnPropertyChanged(nameof(SelectedMissingResource));
             OpenSelectedResourceCommand.RaiseCanExecuteChanged();
@@ -374,6 +425,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     };
 
     public CanonicalStoryActorItem? SelectedActor => SelectedTreeItem as CanonicalStoryActorItem;
+    public CanonicalStoryItemItem? SelectedItem => SelectedTreeItem as CanonicalStoryItemItem;
     public CanonicalStoryGraphItem? SelectedGraphResource => SelectedTreeItem as CanonicalStoryGraphItem;
     public CanonicalStoryMissingItem? SelectedMissingResource => SelectedTreeItem as CanonicalStoryMissingItem;
 
@@ -440,6 +492,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         InspectorSelection = item switch
         {
             CanonicalStoryActorItem actor => actor,
+            CanonicalStoryItemItem itemResource => itemResource,
             CanonicalStoryGraphItem graph => graph.Editor,
             CanonicalStoryMissingItem missing => missing,
             _ => ActiveEditor,
@@ -613,6 +666,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
     private bool Contains(ICanonicalStoryTreeItem item)
         => ActorItems.Any(candidate => ReferenceEquals(candidate, item))
+            || ItemItems.Any(candidate => ReferenceEquals(candidate, item))
             || SessionItems.Any(candidate => ReferenceEquals(candidate, item))
             || TaskItems.Any(candidate => ReferenceEquals(candidate, item))
             || MissingItems.Any(candidate => ReferenceEquals(candidate, item));
@@ -632,8 +686,9 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         => DeleteResourceRequested is not null && SelectedTreeItem switch
         {
             CanonicalStoryActorItem => true,
+            CanonicalStoryItemItem => true,
             CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Session or GraphResourceKind.Task } => true,
-            CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors or CanonicalStoryFolderKind.Sessions or CanonicalStoryFolderKind.Tasks } => true,
+            CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors or CanonicalStoryFolderKind.Items or CanonicalStoryFolderKind.Sessions or CanonicalStoryFolderKind.Tasks } => true,
             _ => false,
         };
 
@@ -641,6 +696,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         => SelectedFolderKind switch
         {
             CanonicalStoryFolderKind.Actors => CreateActorRequested is not null,
+            CanonicalStoryFolderKind.Items => CreateItemRequested is not null,
             CanonicalStoryFolderKind.Sessions or CanonicalStoryFolderKind.Tasks =>
                 SelectedResourceKind is not null && CreateResourceRequested is not null,
             _ => false,
@@ -650,6 +706,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         => SelectedFolderKind switch
         {
             CanonicalStoryFolderKind.Actors => ReferenceActorRequested is not null,
+            CanonicalStoryFolderKind.Items => ReferenceItemRequested is not null,
             CanonicalStoryFolderKind.Sessions or CanonicalStoryFolderKind.Tasks =>
                 SelectedResourceKind is not null && ReferenceResourceRequested is not null,
             _ => false,
@@ -662,6 +719,11 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             CreateActorRequested?.Invoke();
             return;
         }
+        if (SelectedFolderKind == CanonicalStoryFolderKind.Items)
+        {
+            CreateItemRequested?.Invoke();
+            return;
+        }
         if (SelectedResourceKind is { } kind)
             CreateResourceRequested?.Invoke(kind);
     }
@@ -671,6 +733,11 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         if (SelectedFolderKind == CanonicalStoryFolderKind.Actors)
         {
             ReferenceActorRequested?.Invoke();
+            return;
+        }
+        if (SelectedFolderKind == CanonicalStoryFolderKind.Items)
+        {
+            ReferenceItemRequested?.Invoke();
             return;
         }
         if (SelectedResourceKind is { } kind)
@@ -686,6 +753,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     private static CanonicalStoryFolderKind FolderFor(ICanonicalStoryTreeItem item) => item switch
     {
         CanonicalStoryActorItem => CanonicalStoryFolderKind.Actors,
+        CanonicalStoryItemItem => CanonicalStoryFolderKind.Items,
         CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Session } => CanonicalStoryFolderKind.Sessions,
         CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Task } => CanonicalStoryFolderKind.Tasks,
         CanonicalStoryMissingItem missing => missing.FolderKind,
@@ -712,6 +780,13 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         return (kind == GraphResourceKind.Session ? snapshot.Sessions : snapshot.Tasks)
             .Where(entry => entry.Resource is not null)
             .Select(entry => entry.Resource!);
+    }
+
+    private static IEnumerable<ItemResource> SnapshotItems(CanonicalStoryWorkspaceSnapshot? snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Items.Where(entry => entry.Resource is not null).Select(entry => (ItemResource)entry.Resource!)
+            .Concat(snapshot.ItemGroups.Where(entry => entry.Resource is not null).Select(entry => (ItemResource)entry.Resource!));
     }
 
     private IReadOnlyList<ICanonicalStoryTreeItem> AdaptEntries<TEntry, TItem>(
@@ -750,11 +825,14 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     }
 
     private static bool FieldMatchesFolder(string? field, CanonicalStoryFolderKind folderKind)
-        => string.Equals(field, FolderField(folderKind), StringComparison.Ordinal);
+        => folderKind == CanonicalStoryFolderKind.Items
+            ? field is "items" or "item_groups"
+            : string.Equals(field, FolderField(folderKind), StringComparison.Ordinal);
 
     private static string FolderField(CanonicalStoryFolderKind folderKind) => folderKind switch
     {
         CanonicalStoryFolderKind.Actors => "actors",
+        CanonicalStoryFolderKind.Items => "items",
         CanonicalStoryFolderKind.Sessions => "sessions",
         CanonicalStoryFolderKind.Tasks => "tasks",
         _ => throw new ArgumentOutOfRangeException(nameof(folderKind)),

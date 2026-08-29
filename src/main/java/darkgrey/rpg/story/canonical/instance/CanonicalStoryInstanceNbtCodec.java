@@ -1,6 +1,7 @@
 package darkgrey.rpg.story.canonical.instance;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -157,6 +158,11 @@ public final class CanonicalStoryInstanceNbtCodec {
             logic.appendTag(item);
         }
         tag.setTag("logic", logic);
+        tag.setTag("external_logic_inputs", booleans(value.getExternalLogicInputs()));
+        if (value.getWaitingConditionValue() != null) tag.setByte(
+            "waiting_condition_value",
+            (byte) (value.getWaitingConditionValue()
+                .booleanValue() ? 1 : 0));
         return tag;
     }
 
@@ -184,7 +190,25 @@ public final class CanonicalStoryInstanceNbtCodec {
         legacy.remove("wait_y");
         legacy.remove("wait_z");
         legacy.remove("wait_radius");
-        if (!keys(tag).equals(required) && !keys(tag).equals(legacy)) throw malformed("unknown or missing runtime key");
+        Set<String> extended = new HashSet<String>(required);
+        extended.add("external_logic_inputs");
+        Set<String> extendedWait = new HashSet<String>(required);
+        extendedWait.add("waiting_condition_value");
+        Set<String> extendedFull = new HashSet<String>(extended);
+        extendedFull.add("waiting_condition_value");
+        Set<String> extendedLegacy = new HashSet<String>(legacy);
+        extendedLegacy.add("external_logic_inputs");
+        Set<String> extendedLegacyWait = new HashSet<String>(legacy);
+        extendedLegacyWait.add("waiting_condition_value");
+        Set<String> extendedLegacyFull = new HashSet<String>(extendedLegacy);
+        extendedLegacyFull.add("waiting_condition_value");
+        if (!keys(tag).equals(required) && !keys(tag).equals(legacy)
+            && !keys(tag).equals(extended)
+            && !keys(tag).equals(extendedWait)
+            && !keys(tag).equals(extendedFull)
+            && !keys(tag).equals(extendedLegacy)
+            && !keys(tag).equals(extendedLegacyWait)
+            && !keys(tag).equals(extendedLegacyFull)) throw malformed("unknown or missing runtime key");
         CanonicalStoryStatus status = enumeration(CanonicalStoryStatus.class, string(tag, "status"), "status");
         CanonicalStoryRepeatPolicy repeat;
         try {
@@ -206,6 +230,18 @@ public final class CanonicalStoryInstanceNbtCodec {
             if (value != 0 && value != 1) throw malformed("invalid logic value");
             if (logic.put(endpoint, Boolean.valueOf(value == 1)) != null) throw malformed("duplicate logic endpoint");
         }
+        Map<String, Boolean> external = tag.hasKey("external_logic_inputs")
+            ? decodeBooleans(tag, "external_logic_inputs")
+            : Collections.<String, Boolean>emptyMap();
+        Boolean waitingValue = null;
+        if (tag.hasKey("waiting_condition_value")) {
+            requireType(tag, "waiting_condition_value", BYTE);
+            byte value = tag.getByte("waiting_condition_value");
+            if (value != 0 && value != 1) throw malformed("invalid waiting_condition_value");
+            waitingValue = Boolean.valueOf(value == 1);
+        }
+        if (wait != CanonicalStoryWaitKind.CONDITION && waitingValue != null)
+            throw malformed("waiting_condition_value requires Condition wait");
         return new CanonicalStorySnapshot(
             string(tag, "resource_id"),
             string(tag, "resource_fingerprint"),
@@ -222,7 +258,42 @@ public final class CanonicalStoryInstanceNbtCodec {
             optionalDouble(tag, "wait_z"),
             optionalDouble(tag, "wait_radius"),
             logic,
-            optionalString(tag, "target_story_id"));
+            optionalString(tag, "target_story_id"),
+            external,
+            waitingValue);
+    }
+
+    private static NBTTagList booleans(Map<String, Boolean> values) {
+        NBTTagList list = new NBTTagList();
+        java.util.List<String> keys = new java.util.ArrayList<String>(values.keySet());
+        java.util.Collections.sort(keys);
+        for (String key : keys) {
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("key", key);
+            item.setByte(
+                "value",
+                (byte) (values.get(key)
+                    .booleanValue() ? 1 : 0));
+            list.appendTag(item);
+        }
+        return list;
+    }
+
+    private static Map<String, Boolean> decodeBooleans(NBTTagCompound tag, String key) {
+        requireType(tag, key, LIST);
+        NBTTagList list = (NBTTagList) tag.getTag(key);
+        if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND) throw malformed("invalid " + key + " list type");
+        java.util.LinkedHashMap<String, Boolean> result = new java.util.LinkedHashMap<String, Boolean>();
+        for (int index = 0; index < list.tagCount(); index++) {
+            NBTTagCompound item = list.getCompoundTagAt(index);
+            requireKeys(item, set("key", "value"), key + " entry");
+            String name = string(item, "key");
+            requireType(item, "value", BYTE);
+            byte value = item.getByte("value");
+            if (value != 0 && value != 1) throw malformed("invalid " + key + " value");
+            if (result.put(name, Boolean.valueOf(value == 1)) != null) throw malformed("duplicate " + key + " key");
+        }
+        return result;
     }
 
     private static UUID uuid(NBTTagCompound tag, String key) {

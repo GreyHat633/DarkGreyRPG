@@ -18,10 +18,10 @@ public sealed class StoryNodeDefinitionRegistryTests
         Assert.AreEqual("条件分支", branch.DisplayName);
         Assert.AreEqual("条件", branch.Category);
         CollectionAssert.AreEqual(new[] { "true", "false" }, branch.ResolveStaticOutputs());
-        Assert.AreEqual("剧情", StoryNodeDefinitionRegistry.Get("enter_story")!.Category);
-        Assert.AreEqual("剧情", StoryNodeDefinitionRegistry.Get("end_story")!.Category);
+        Assert.AreEqual("故事", StoryNodeDefinitionRegistry.Get("enter_story")!.Category);
+        Assert.AreEqual("故事", StoryNodeDefinitionRegistry.Get("end_story")!.Category);
         Assert.AreEqual("结束", StoryNodeDefinitionRegistry.Get("end")!.Category);
-        CollectionAssert.AreEqual(new[] { "触发", "条件", "对话", "任务", "动作 / 奖励", "流程控制", "剧情", "结束" }.OrderBy(category => category, StringComparer.Ordinal).ToArray(),
+        CollectionAssert.AreEqual(new[] { "触发", "条件", "对话", "任务", "动作 / 奖励", "流程控制", "故事", "结束" }.OrderBy(category => category, StringComparer.Ordinal).ToArray(),
             StoryNodeDefinitionRegistry.Definitions.Select(definition => definition.Category).Distinct(StringComparer.Ordinal).OrderBy(category => category, StringComparer.Ordinal).ToArray());
     }
 

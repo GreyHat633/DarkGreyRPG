@@ -22,7 +22,7 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
         Assert.IsTrue(GraphScopePolicy.IsValid(session.Graph!, GraphScope.Session));
         Assert.IsTrue(GraphScopePolicy.IsValid(task.Graph!, GraphScope.Task));
         CollectionAssert.AreEqual(new[] { "start" }, session.Graph!.Nodes.Select(node => node.Id).ToArray());
-        CollectionAssert.AreEqual(new[] { "activate", "settle" }, task.Graph!.Nodes.Select(node => node.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "settle" }, task.Graph!.Nodes.Select(node => node.Id).ToArray());
         var settle = task.Graph.Nodes.Single(node => node.Type == "settle");
         Assert.HasCount(1, settle.Ports);
         Assert.IsTrue(settle.Ports[0].IsInput);

@@ -22,15 +22,73 @@ public static partial class ActorValidator
         ArgumentNullException.ThrowIfNull(resource);
 
         var issues = new List<ValidationIssue>();
-        if (resource.SchemaVersion is not (ActorResource.LegacySchemaVersion or ActorResource.CurrentSchemaVersion))
+        if (resource.SchemaVersion is not (ActorResource.LegacySchemaVersion or ActorResource.StorySchemaVersion or ActorResource.CurrentSchemaVersion))
         {
             issues.Add(new(
                 "actor.schema.unsupported",
-                $"Actor schema_version must be {ActorResource.LegacySchemaVersion} or {ActorResource.CurrentSchemaVersion}.",
+                $"Actor schema_version must be {ActorResource.LegacySchemaVersion}, {ActorResource.StorySchemaVersion}, or {ActorResource.CurrentSchemaVersion}.",
                 nameof(ActorResource.SchemaVersion)));
         }
 
-        ValidateId(resource.Id, idPolicy, issues);
+        // A few 2.x callers used CurrentSchemaVersion while constructing the
+        // old id/notes object. Keep that in-memory form writable as schema 2;
+        // JSON schema 3 still requires the explicit type and identity fields.
+        var legacyCompatibility = resource.SchemaVersion == ActorResource.CurrentSchemaVersion
+            && string.IsNullOrWhiteSpace(resource.Type)
+            && !string.IsNullOrWhiteSpace(resource.Id)
+            && string.IsNullOrWhiteSpace(resource.NpcId)
+            && string.IsNullOrWhiteSpace(resource.GroupId);
+        var isV3 = resource.SchemaVersion == ActorResource.CurrentSchemaVersion && !legacyCompatibility;
+        if (isV3)
+        {
+            if (resource.HasExplicitLegacyId)
+            {
+                issues.Add(new("actor.id.forbidden", "Schema 3 Actor resources derive their ID from the type-specific identity.", nameof(ActorResource.Id)));
+            }
+            var individual = string.Equals(resource.Type, IndividualActorResource.ResourceType, StringComparison.Ordinal);
+            var collective = string.Equals(resource.Type, CollectiveActorResource.ResourceType, StringComparison.Ordinal);
+            if (!individual && !collective)
+            {
+                issues.Add(new("actor.type.unsupported", "Actor type must be 'individual' or 'collective'.", nameof(ActorResource.Type)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(resource.Notes))
+            {
+                issues.Add(new("actor.notes.forbidden", "Schema 3 Actor resources must not contain notes.", nameof(ActorResource.Notes)));
+            }
+
+            if (individual)
+            {
+                ValidateId(resource.NpcId, idPolicy, issues, "npc_id");
+                if (!string.IsNullOrWhiteSpace(resource.GroupId))
+                {
+                    issues.Add(new("actor.identity.both", "An individual Actor cannot also contain group_id.", nameof(ActorResource.GroupId)));
+                }
+            }
+            else if (collective)
+            {
+                ValidateId(resource.GroupId, idPolicy, issues, "group_id");
+                if (!string.IsNullOrWhiteSpace(resource.NpcId))
+                {
+                    issues.Add(new("actor.identity.both", "A collective Actor cannot also contain npc_id.", nameof(ActorResource.NpcId)));
+                }
+            }
+        }
+        else
+        {
+            ValidateId(resource.Id, idPolicy, issues);
+            if (resource.SchemaVersion == ActorResource.LegacySchemaVersion
+                && !string.IsNullOrWhiteSpace(resource.HomeStoryId))
+            {
+                issues.Add(new("actor.home_story_id.forbidden", "Schema 1 Actor resources must not contain home_story_id.", nameof(ActorResource.HomeStoryId)));
+            }
+            if (!string.IsNullOrWhiteSpace(resource.Type)
+                || !string.IsNullOrWhiteSpace(resource.NpcId)
+                || !string.IsNullOrWhiteSpace(resource.GroupId))
+            {
+                issues.Add(new("actor.v3_fields.forbidden", "Schema 1/2 Actor resources cannot contain schema 3 identity fields.", nameof(ActorResource.Type)));
+            }
+        }
 
         if (string.IsNullOrWhiteSpace(resource.DisplayName))
         {
@@ -40,7 +98,7 @@ public static partial class ActorValidator
                 nameof(ActorResource.DisplayName)));
         }
 
-        if (resource.Notes is null)
+        if (!isV3 && resource.Notes is null)
         {
             issues.Add(new(
                 "actor.notes.type",
@@ -63,13 +121,13 @@ public static partial class ActorValidator
                 nameof(ActorResource.Tags)));
         }
 
-        if (resource.SchemaVersion >= ActorResource.CurrentSchemaVersion)
+        if (resource.SchemaVersion == ActorResource.StorySchemaVersion || legacyCompatibility || isV3)
         {
             if (string.IsNullOrWhiteSpace(resource.HomeStoryId))
             {
                 issues.Add(new(
                     "actor.home_story_id.required",
-                    "Actor schema_version 2 requires home_story_id.",
+                    $"Actor schema_version {resource.SchemaVersion} requires home_story_id.",
                     nameof(ActorResource.HomeStoryId)));
             }
             else if (!RuntimeIdRegex().IsMatch(resource.HomeStoryId))
@@ -158,36 +216,36 @@ public static partial class ActorValidator
         return result;
     }
 
-    private static void ValidateId(string? id, ActorIdPolicy idPolicy, ICollection<ValidationIssue> issues)
+    private static void ValidateId(string? id, ActorIdPolicy idPolicy, ICollection<ValidationIssue> issues, string field = "id")
     {
         if (string.IsNullOrWhiteSpace(id))
         {
-            issues.Add(new("actor.id.required", "Actor ID is required.", nameof(ActorResource.Id)));
+            issues.Add(new($"actor.{field}.required", $"Actor {field} is required.", field));
             return;
         }
 
         if (!RuntimeIdRegex().IsMatch(id))
         {
             issues.Add(new(
-                "actor.id.invalid",
-                $"Actor ID '{id}' is not Runtime-compatible. Expected {RuntimeIdPattern}.",
-                nameof(ActorResource.Id)));
+                $"actor.{field}.invalid",
+                $"Actor {field} '{id}' is not Runtime-compatible. Expected {RuntimeIdPattern}.",
+                field));
             return;
         }
 
         if (idPolicy == ActorIdPolicy.NewResource && !NewResourceIdRegex().IsMatch(id))
         {
             issues.Add(new(
-                "actor.id.new_resource_invalid",
-                $"New Actor ID '{id}' must match {NewResourceIdPattern}.",
-                nameof(ActorResource.Id)));
+                $"actor.{field}.new_resource_invalid",
+                $"New Actor {field} '{id}' must match {NewResourceIdPattern}.",
+                field));
         }
         else if (idPolicy == ActorIdPolicy.ExistingResource && !NewResourceIdRegex().IsMatch(id))
         {
             issues.Add(new(
-                "actor.id.legacy_compatible",
-                "This existing Actor ID is Runtime-compatible but uses the legacy dot form. Rename it explicitly to remove the compatibility warning.",
-                nameof(ActorResource.Id),
+                $"actor.{field}.legacy_compatible",
+                $"This existing Actor {field} is Runtime-compatible but uses the legacy dot form. Rename it explicitly to remove the compatibility warning.",
+                field,
                 ValidationSeverity.Warning));
         }
     }

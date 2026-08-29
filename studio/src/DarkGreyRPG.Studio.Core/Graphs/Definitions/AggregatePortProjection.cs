@@ -44,6 +44,24 @@ public static class GraphAggregatePortProjection
         return ports;
     }
 
+    /// <summary>Projects a Session aggregate including named Logic inputs.</summary>
+    public static IReadOnlyList<GraphPort> ProjectSession(
+        IEnumerable<GraphBoundary>? endBoundaries,
+        IEnumerable<GraphBoundary>? logicOutputBoundaries,
+        IEnumerable<GraphBoundary>? logicInputBoundaries)
+    {
+        var flow = Materialize(endBoundaries);
+        var logic = Materialize(logicOutputBoundaries);
+        var inputs = Materialize(logicInputBoundaries);
+        var issues = ValidateBoundaries(flow, logic, inputs, GraphScope.Session);
+        ThrowIfInvalid(issues);
+        var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        ports.AddRange(ToInputPorts(inputs));
+        ports.AddRange(ToOutputPorts(flow));
+        ports.AddRange(ToOutputPorts(logic));
+        return ports;
+    }
+
     public static IReadOnlyList<GraphPort> ProjectTask(
         IEnumerable<GraphBoundary>? settlementBoundaries,
         IEnumerable<GraphBoundary>? logicOutputBoundaries)
@@ -54,6 +72,24 @@ public static class GraphAggregatePortProjection
         ThrowIfInvalid(issues);
 
         var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        ports.AddRange(ToOutputPorts(flow));
+        ports.AddRange(ToOutputPorts(logic));
+        return ports;
+    }
+
+    /// <summary>Projects a Task aggregate including named Logic inputs.</summary>
+    public static IReadOnlyList<GraphPort> ProjectTask(
+        IEnumerable<GraphBoundary>? settlementBoundaries,
+        IEnumerable<GraphBoundary>? logicOutputBoundaries,
+        IEnumerable<GraphBoundary>? logicInputBoundaries)
+    {
+        var flow = Materialize(settlementBoundaries);
+        var logic = Materialize(logicOutputBoundaries);
+        var inputs = Materialize(logicInputBoundaries);
+        var issues = ValidateBoundaries(flow, logic, inputs, GraphScope.Task);
+        ThrowIfInvalid(issues);
+        var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        ports.AddRange(ToInputPorts(inputs));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
         return ports;
@@ -70,6 +106,18 @@ public static class GraphAggregatePortProjection
         IEnumerable<GraphBoundary>? logicOutputBoundaries)
         => ProjectTask(settlementBoundaries, logicOutputBoundaries);
 
+    public static IReadOnlyList<GraphPort> ProjectSessionPorts(
+        IEnumerable<GraphBoundary>? endBoundaries,
+        IEnumerable<GraphBoundary>? logicOutputBoundaries,
+        IEnumerable<GraphBoundary>? logicInputBoundaries)
+        => ProjectSession(endBoundaries, logicOutputBoundaries, logicInputBoundaries);
+
+    public static IReadOnlyList<GraphPort> ProjectTaskPorts(
+        IEnumerable<GraphBoundary>? settlementBoundaries,
+        IEnumerable<GraphBoundary>? logicOutputBoundaries,
+        IEnumerable<GraphBoundary>? logicInputBoundaries)
+        => ProjectTask(settlementBoundaries, logicOutputBoundaries, logicInputBoundaries);
+
     public static IReadOnlyList<ValidationIssue> ValidateSession(
         IEnumerable<GraphBoundary>? endBoundaries,
         IEnumerable<GraphBoundary>? logicOutputBoundaries,
@@ -85,12 +133,31 @@ public static class GraphAggregatePortProjection
         IEnumerable<GraphBoundary>? logicOutputBoundaries)
         => ValidateBoundaries(Materialize(settlementBoundaries), Materialize(logicOutputBoundaries), GraphScope.Task);
 
+    public static IReadOnlyList<ValidationIssue> ValidateSession(
+        IEnumerable<GraphBoundary>? endBoundaries,
+        IEnumerable<GraphBoundary>? logicOutputBoundaries,
+        IEnumerable<GraphBoundary>? logicInputBoundaries)
+        => ValidateBoundaries(Materialize(endBoundaries), Materialize(logicOutputBoundaries), Materialize(logicInputBoundaries), GraphScope.Session);
+
+    public static IReadOnlyList<ValidationIssue> ValidateTask(
+        IEnumerable<GraphBoundary>? settlementBoundaries,
+        IEnumerable<GraphBoundary>? logicOutputBoundaries,
+        IEnumerable<GraphBoundary>? logicInputBoundaries)
+        => ValidateBoundaries(Materialize(settlementBoundaries), Materialize(logicOutputBoundaries), Materialize(logicInputBoundaries), GraphScope.Task);
+
     private static List<GraphBoundary> Materialize(IEnumerable<GraphBoundary>? boundaries)
         => boundaries?.Where(boundary => boundary is not null).ToList() ?? [];
 
     private static List<ValidationIssue> ValidateBoundaries(
         IReadOnlyList<GraphBoundary> flow,
         IReadOnlyList<GraphBoundary> logic,
+        GraphScope scope)
+        => ValidateBoundaries(flow, logic, [], scope);
+
+    private static List<ValidationIssue> ValidateBoundaries(
+        IReadOnlyList<GraphBoundary> flow,
+        IReadOnlyList<GraphBoundary> logic,
+        IReadOnlyList<GraphBoundary> inputs,
         GraphScope scope)
     {
         var issues = new List<ValidationIssue>();
@@ -116,14 +183,25 @@ public static class GraphAggregatePortProjection
             if (boundary.IsInput)
                 issues.Add(Issue("graph.aggregate.boundary.direction.invalid", $"Boundary '{boundary.PortId}' must be an output."));
         }
+        foreach (var boundary in inputs)
+        {
+            if (string.IsNullOrWhiteSpace(boundary.PortId))
+                issues.Add(Issue("graph.aggregate.port.id.required", "Aggregate boundary port ID is required."));
+            if (string.IsNullOrWhiteSpace(boundary.DisplayName))
+                issues.Add(Issue("graph.aggregate.port.display_name.required", "Aggregate boundary display name is required."));
+            if (boundary.Kind != GraphInterfaceKind.Logic)
+                issues.Add(Issue("graph.aggregate.boundary.kind.invalid", $"{scope} Logic input boundary '{boundary.PortId}' must have kind logic."));
+            if (!boundary.IsInput)
+                issues.Add(Issue("graph.aggregate.boundary.direction.invalid", $"Boundary '{boundary.PortId}' must be an input."));
+        }
 
-        var all = flow.Concat(logic).ToArray();
+        var all = flow.Concat(logic).Concat(inputs).ToArray();
         foreach (var group in all.Where(item => !string.IsNullOrWhiteSpace(item.PortId)).GroupBy(item => item.PortId, StringComparer.Ordinal))
             if (group.Count() > 1)
                 issues.Add(Issue("graph.aggregate.port.id.duplicate", $"Aggregate port ID '{group.Key}' is duplicated."));
         foreach (var group in all.Where(item => !string.IsNullOrWhiteSpace(item.DisplayName)).GroupBy(item => item.DisplayName, StringComparer.Ordinal))
             if (group.Count() > 1)
-                issues.Add(Issue("graph.aggregate.port.display_name.duplicate", $"Aggregate display name '{group.Key}' is duplicated across flow and logic outputs."));
+                issues.Add(Issue("graph.aggregate.port.display_name.duplicate", $"Aggregate display name '{group.Key}' is duplicated across boundary ports."));
         foreach (var boundary in all.Where(item => string.Equals(item.PortId, FlowInputId, StringComparison.Ordinal)
                                                    || string.Equals(item.PortId, LogicInputId, StringComparison.Ordinal)))
             issues.Add(Issue("graph.aggregate.port.reserved_id", $"Boundary port ID '{boundary.PortId}' is reserved."));
@@ -133,6 +211,10 @@ public static class GraphAggregatePortProjection
     private static IEnumerable<GraphPort> ToOutputPorts(IEnumerable<GraphBoundary> boundaries)
         => boundaries.OrderBy(boundary => boundary.Order).ThenBy(boundary => boundary.PortId, StringComparer.Ordinal)
             .Select(boundary => new GraphPort(boundary.PortId, boundary.DisplayName, false, boundary.Kind, boundary.Order));
+
+    private static IEnumerable<GraphPort> ToInputPorts(IEnumerable<GraphBoundary> boundaries)
+        => boundaries.OrderBy(boundary => boundary.Order).ThenBy(boundary => boundary.PortId, StringComparer.Ordinal)
+            .Select(boundary => new GraphPort(boundary.PortId, boundary.DisplayName, true, boundary.Kind, boundary.Order));
 
     private static ValidationIssue Issue(string code, string message)
         => new(code, message, "ports");
@@ -160,4 +242,12 @@ public static class AggregatePortProjector
         => GraphAggregatePortProjection.ProjectSession(end, logic, includeLogicInput);
     public static IReadOnlyList<GraphPort> ProjectTask(IEnumerable<GraphBoundary>? settle, IEnumerable<GraphBoundary>? logic)
         => GraphAggregatePortProjection.ProjectTask(settle, logic);
+
+    public static IReadOnlyList<GraphPort> ProjectSession(IEnumerable<GraphBoundary>? end,
+        IEnumerable<GraphBoundary>? logic, IEnumerable<GraphBoundary>? logicInputs)
+        => GraphAggregatePortProjection.ProjectSession(end, logic, logicInputs);
+
+    public static IReadOnlyList<GraphPort> ProjectTask(IEnumerable<GraphBoundary>? settle,
+        IEnumerable<GraphBoundary>? logic, IEnumerable<GraphBoundary>? logicInputs)
+        => GraphAggregatePortProjection.ProjectTask(settle, logic, logicInputs);
 }

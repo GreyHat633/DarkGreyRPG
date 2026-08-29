@@ -20,7 +20,7 @@ public final class CanonicalTaskStage4SurfaceProbe {
 
     public static void main(String[] args) throws Exception {
         require(
-            "/dgrpg task <list|info|start|journal|progress>".equals(CommandDarkGreyRpg.taskUsage(null)),
+            "/dgr task <list|info|start|journal|progress>".equals(CommandDarkGreyRpg.taskUsage(null)),
             "task usage");
         require(
             CommandDarkGreyRpg.taskUsage(new String[] { "task", "start" })

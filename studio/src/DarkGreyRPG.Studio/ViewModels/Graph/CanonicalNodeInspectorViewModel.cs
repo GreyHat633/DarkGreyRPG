@@ -35,7 +35,6 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private string _repeatPolicy = StoryStartSchema.Once;
     private string _actionType = CanonicalStoryActionSchema.SendMessage;
     private string _actionItem = string.Empty;
-    private string _actionMetadataText = string.Empty;
     private string _actionAmountText = string.Empty;
     private string _actionMessage = string.Empty;
 
@@ -106,12 +105,6 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     {
         get => _actionItem;
         set => SetActionString(CanonicalStoryActionSchema.ItemProperty, value, ref _actionItem, nameof(StoryActionItem));
-    }
-    public string StoryActionMetadataText
-    {
-        get => _actionMetadataText;
-        set => SetActionInteger(CanonicalStoryActionSchema.MetadataProperty, value, 0, ref _actionMetadataText,
-            nameof(StoryActionMetadataText));
     }
     public string StoryActionAmountText
     {
@@ -626,8 +619,6 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             : string.Empty;
         _actionType = ReadString(current, CanonicalStoryActionSchema.TypeProperty);
         _actionItem = ReadString(current, CanonicalStoryActionSchema.ItemProperty);
-        _actionMetadataText = current.Properties.TryGetValue(CanonicalStoryActionSchema.MetadataProperty, out var actionMetadata)
-            && actionMetadata.ValueKind == JsonValueKind.Number ? actionMetadata.ToString() : string.Empty;
         _actionAmountText = current.Properties.TryGetValue(CanonicalStoryActionSchema.AmountProperty, out var actionAmount)
             && actionAmount.ValueKind == JsonValueKind.Number ? actionAmount.ToString() : string.Empty;
         _actionMessage = ReadString(current, CanonicalStoryActionSchema.MessageProperty);
@@ -721,7 +712,6 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(StoryActionType));
         OnPropertyChanged(nameof(SelectedStoryActionType));
         OnPropertyChanged(nameof(StoryActionItem));
-        OnPropertyChanged(nameof(StoryActionMetadataText));
         OnPropertyChanged(nameof(StoryActionAmountText));
         OnPropertyChanged(nameof(StoryActionMessage));
         OnPropertyChanged(nameof(IsGiveItemAction));
@@ -870,7 +860,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
 
     public IReadOnlyList<CanonicalStoryStartTriggerTypeOption> TriggerTypeOptions { get; } =
     [
-        new(StoryStartSchema.EnterStory, "进入剧情"),
+        new(StoryStartSchema.EnterStory, "进入故事"),
         new(StoryStartSchema.ActorInteraction, "角色交互"),
         new(StoryStartSchema.RegionEntry, "进入区域"),
     ];

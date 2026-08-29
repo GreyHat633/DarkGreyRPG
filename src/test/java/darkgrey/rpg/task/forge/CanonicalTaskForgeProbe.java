@@ -43,6 +43,7 @@ public final class CanonicalTaskForgeProbe {
         managerLifecycle();
         adapterShape();
         System.out.println("CANONICAL_TASK_FORGE_NORMALIZATION=PASS");
+        System.out.println("CANONICAL_TASK_MULTI_INTERACTION_DISPATCH=PASS");
         System.out.println("CANONICAL_TASK_FORGE_MANAGER_BIND_START_JOURNAL=PASS");
         System.out.println("CANONICAL_TASK_FORGE_NO_TICK_STAGE5_BOUNDARY=PASS");
     }
@@ -108,6 +109,25 @@ public final class CanonicalTaskForgeProbe {
         CanonicalTaskEvent interact = CanonicalTaskForgeEventNormalizer.interact(" actor_7 ");
         require(interact != null && "actor_7".equals(interact.get("actor_id")), "interact mapping");
         require(CanonicalTaskForgeEventNormalizer.interact(" ") == null, "blank actor rejected");
+
+        List<CanonicalTaskEvent> interactions = CanonicalTaskForgeEventNormalizer
+            .interactEventsForIds(Arrays.asList(" primary ", "guards", "primary", "", "guards", null, "town"));
+        require(interactions.size() == 3, "multi-interaction deduplication");
+        require(
+            "primary".equals(
+                interactions.get(0)
+                    .get("actor_id")),
+            "multi-interaction primary ordering");
+        require(
+            "guards".equals(
+                interactions.get(1)
+                    .get("actor_id")),
+            "multi-interaction group ordering");
+        require(
+            "town".equals(
+                interactions.get(2)
+                    .get("actor_id")),
+            "multi-interaction tail ordering");
     }
 
     private static void managerLifecycle() {

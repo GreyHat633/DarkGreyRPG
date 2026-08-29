@@ -114,6 +114,7 @@ public static class CanonicalAggregateNodeFactory
         var nodes = (graph.Nodes ?? []).Where(node => node is not null).ToArray();
         var flowBoundaries = new List<GraphBoundary>();
         var logicBoundaries = new List<GraphBoundary>();
+        var logicInputBoundaries = new List<GraphBoundary>();
 
         if (resource.ResourceKind == GraphResourceKind.Session)
         {
@@ -160,6 +161,15 @@ public static class CanonicalAggregateNodeFactory
                 logicBoundaries.Add(boundary with { Order = logicBoundaries.Count });
         }
 
+        foreach (var node in nodes.Where(node => node.Type == "logic_input"))
+        {
+            var scope = resource.ResourceKind == GraphResourceKind.Session
+                ? GraphScope.Session : GraphScope.Task;
+            ValidateBoundaryNode(node, scope, boundaryIssues);
+            if (TryReadPublicBoundary(node, GraphInterfaceKind.Logic, boundaryIssues, out var boundary))
+                logicInputBoundaries.Add(boundary with { IsInput = true, Order = logicInputBoundaries.Count });
+        }
+
         if (boundaryIssues.Count != 0)
             return FailureIssues(boundaryIssues);
 
@@ -167,8 +177,8 @@ public static class CanonicalAggregateNodeFactory
         try
         {
             projectedPorts = resource.ResourceKind == GraphResourceKind.Session
-                ? GraphAggregatePortProjection.ProjectSession(flowBoundaries, logicBoundaries, includeLogicInput: true)
-                : GraphAggregatePortProjection.ProjectTask(flowBoundaries, logicBoundaries);
+                ? GraphAggregatePortProjection.ProjectSession(flowBoundaries, logicBoundaries, logicInputBoundaries)
+                : GraphAggregatePortProjection.ProjectTask(flowBoundaries, logicBoundaries, logicInputBoundaries);
         }
         catch (AggregatePortProjectionException exception)
         {
@@ -178,9 +188,8 @@ public static class CanonicalAggregateNodeFactory
         var type = resource.ResourceKind == GraphResourceKind.Session ? "session" : "task";
         var candidate = GraphNodeFactory.Create(GraphScope.StoryFlow, type, nodeId, resource.DisplayName);
         candidate.Properties["resource_id"] = JsonSerializer.SerializeToElement(resource.Id);
-        // The registry owns the aggregate's fixed inputs. Projection repeats
-        // those inputs before the child-owned public outputs, so only append
-        // the tail after the complete fixed prefix (Session has Flow + Logic).
+        // The registry owns the aggregate's fixed Flow input. Projection repeats
+        // that input before the child-owned named Logic inputs and public outputs.
         candidate.Ports.AddRange(projectedPorts.Skip(candidate.Ports.Count).Select(ClonePort));
 
         var shapeIssues = GraphNodeShapeValidator.Validate(candidate, GraphScope.StoryFlow);

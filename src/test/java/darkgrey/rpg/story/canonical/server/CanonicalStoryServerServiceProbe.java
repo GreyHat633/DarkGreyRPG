@@ -231,8 +231,8 @@ public final class CanonicalStoryServerServiceProbe {
     private static CanonicalGraphResource story() {
         CanonicalGraphNode start = startNode(
             "once",
-            "[{\"port_id\":\"entry\",\"display_name\":\"进入剧情\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]",
-            ports(flowOut("entry", "进入剧情", 0)));
+            "[{\"port_id\":\"entry\",\"display_name\":\"进入故事\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]",
+            ports(flowOut("entry", "进入故事", 0)));
         CanonicalGraphNode aggregate = node(
             "session_place",
             "session",
@@ -250,14 +250,14 @@ public final class CanonicalStoryServerServiceProbe {
 
     private static CanonicalGraphResource typedTriggerStory() {
         String triggers = "["
-            + "{\"port_id\":\"entry_port\",\"display_name\":\"进入剧情\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
+            + "{\"port_id\":\"entry_port\",\"display_name\":\"进入故事\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
             + "{\"port_id\":\"actor_port\",\"display_name\":\"酒馆老板\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"bartender\"},\"order\":1},"
             + "{\"port_id\":\"region_port\",\"display_name\":\"酒馆入口\",\"trigger_type\":\"enter_region\",\"trigger_properties\":{\"dimension\":0,\"x\":10,\"y\":64,\"z\":10,\"radius\":2},\"order\":2}]";
         CanonicalGraphNode start = startNode(
             "repeatable",
             triggers,
             ports(
-                flowOut("entry_port", "进入剧情", 0),
+                flowOut("entry_port", "进入故事", 0),
                 flowOut("actor_port", "酒馆老板", 1),
                 flowOut("region_port", "酒馆入口", 2)));
         CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());

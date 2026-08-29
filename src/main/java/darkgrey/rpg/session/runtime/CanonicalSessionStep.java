@@ -9,6 +9,7 @@ public final class CanonicalSessionStep {
 
     public enum Kind {
         LINE,
+        NARRATION,
         CHOICE,
         END
     }
@@ -39,6 +40,18 @@ public final class CanonicalSessionStep {
             Kind.LINE,
             nodeId,
             speakerActorId,
+            text,
+            null,
+            Collections.<CanonicalSessionChoiceOption>emptyList(),
+            null,
+            null);
+    }
+
+    public static CanonicalSessionStep narration(String nodeId, String text) {
+        return new CanonicalSessionStep(
+            Kind.NARRATION,
+            nodeId,
+            null,
             text,
             null,
             Collections.<CanonicalSessionChoiceOption>emptyList(),

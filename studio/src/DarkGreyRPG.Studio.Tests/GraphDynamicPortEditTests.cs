@@ -13,10 +13,13 @@ public sealed class GraphDynamicPortEditTests
         var expected = new[]
         {
             (GraphScope.StoryFlow, "start", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1),
+            (GraphScope.StoryFlow, "start", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
             (GraphScope.StoryFlow, "session", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0),
             (GraphScope.StoryFlow, "session", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0),
+            (GraphScope.StoryFlow, "session", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
             (GraphScope.StoryFlow, "task", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0),
             (GraphScope.StoryFlow, "task", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0),
+            (GraphScope.StoryFlow, "task", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
             (GraphScope.StoryFlow, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.StoryFlow, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Session, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
@@ -25,6 +28,7 @@ public sealed class GraphDynamicPortEditTests
             (GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 1),
             (GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
+            (GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
             (GraphScope.Task, "settle", GraphPortDirection.Input, GraphInterfaceKind.Logic, 1),
         };
         Assert.HasCount(expected.Length, GraphDynamicPortPolicy.Roles);
@@ -143,8 +147,9 @@ public sealed class GraphDynamicPortEditTests
         settle.Ports.Add(new GraphPort("first", "First", true, GraphInterfaceKind.Logic, 0));
         settle.Ports.Add(new GraphPort("middle", "Middle", true, GraphInterfaceKind.Logic, 1));
         settle.Ports.Add(new GraphPort("last", "Last", true, GraphInterfaceKind.Logic, 2));
-        var graph = new GraphDocument([settle, GraphNodeFactory.Create(GraphScope.Task, "activate", "activate")], [
-            new GraphConnection("activate", "logic_out", "settle", "middle", GraphInterfaceKind.Logic)]);
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        var graph = new GraphDocument([settle, objective], [
+            new GraphConnection("objective", CanonicalTaskObjectiveSchema.CompletionPortId, "settle", "middle", GraphInterfaceKind.Logic)]);
         var session = new GraphEditSession(graph, GraphScope.Task);
 
         Assert.IsFalse(session.RemoveDynamicPort("settle", "middle"));

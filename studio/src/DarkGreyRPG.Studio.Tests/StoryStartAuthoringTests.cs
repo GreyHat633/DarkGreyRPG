@@ -15,7 +15,8 @@ public sealed class StoryStartAuthoringTests
         Assert.IsTrue(StoryStartSchema.IsValid(node));
         var trigger = StoryStartSchema.ReadTriggers(node).Single();
         Assert.AreEqual("opaque_start", trigger.PortId);
-        Assert.AreEqual("进入剧情", trigger.DisplayName);
+        Assert.AreEqual("进入区域", trigger.DisplayName);
+        Assert.AreEqual(StoryStartSchema.RegionEntry, trigger.TriggerType);
         Assert.AreEqual(StoryStartSchema.Once, node.Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
         Assert.AreEqual("opaque_start", node.Ports.Single().Id);
     }
@@ -77,8 +78,8 @@ public sealed class StoryStartAuthoringTests
         var slot = StoryStartSchema.ReadTriggers(graph.Nodes.Single()).Single();
         Assert.AreEqual(StoryStartSchema.RegionEntry, slot.TriggerType);
         Assert.HasCount(5, slot.TriggerProperties.EnumerateObject());
-        Assert.IsTrue(session.SetStoryStartTriggerType("start", "opaque", StoryStartSchema.EnterStory));
-        Assert.IsEmpty(StoryStartSchema.ReadTriggers(graph.Nodes.Single()).Single().TriggerProperties.EnumerateObject());
+        Assert.IsFalse(session.SetStoryStartTriggerType("start", "opaque", StoryStartSchema.EnterStory));
+        Assert.AreEqual("graph.story.start.trigger.type.unsupported", session.LastValidationIssues.Single().Code);
         Assert.AreEqual("opaque", graph.Nodes.Single().Ports.Single().Id);
     }
 }

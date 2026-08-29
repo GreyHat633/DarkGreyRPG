@@ -15,6 +15,6 @@ public sealed class ActorReferencesViewModel
     public IReadOnlyList<ResourceDescriptor> References { get; }
     public string Title => $"“{Actor.DisplayName}”的引用";
     public string Summary => References.Count == 0
-        ? "当前没有其它剧情引用这个角色。"
-        : $"以下 {References.Count} 个剧情仍引用这个角色：";
+        ? "当前没有其它故事引用这个角色。"
+        : $"以下 {References.Count} 个故事仍引用这个角色：";
 }

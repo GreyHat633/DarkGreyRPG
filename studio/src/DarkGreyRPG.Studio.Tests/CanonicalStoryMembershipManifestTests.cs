@@ -18,13 +18,29 @@ public sealed class CanonicalStoryMembershipManifestTests
             new[] { "schema_version", "story_id", "owned_resources", "referenced_resources" },
             document.RootElement.EnumerateObject().Select(property => property.Name).ToArray());
         CollectionAssert.AreEqual(
-            new[] { "actors", "sessions", "tasks" },
+            new[] { "actors", "items", "item_groups", "sessions", "tasks" },
             document.RootElement.GetProperty("owned_resources").EnumerateObject()
                 .Select(property => property.Name).ToArray());
         CollectionAssert.AreEqual(new[] { "actor_b", "actor_a" }, restored.OwnedResources.Actors);
+        CollectionAssert.AreEqual(new[] { "item_b", "item_a" }, restored.OwnedResources.Items);
+        CollectionAssert.AreEqual(new[] { "group_a" }, restored.ReferencedResources.ItemGroups);
         CollectionAssert.AreEqual(new[] { "session_a", "session_b" }, restored.ReferencedResources.Sessions);
         Assert.IsTrue(json.EndsWith("}\n", StringComparison.Ordinal));
         Assert.AreNotEqual('\n', json[^2]);
+    }
+
+    [TestMethod]
+    public void ReorderedValidSchemaTwoFieldsAreAcceptedAndCanonicalizedOnSerialization()
+    {
+        var canonical = Manifest().ToJson(indented: false).TrimEnd();
+        var reordered = canonical.Replace(
+            "\"actors\":[\"actor_b\",\"actor_a\"],\"items\":[\"item_b\",\"item_a\"],\"item_groups\":[],\"sessions\":[],\"tasks\":[\"task_a\"]",
+            "\"tasks\":[\"task_a\"],\"item_groups\":[],\"actors\":[\"actor_b\",\"actor_a\"],\"sessions\":[],\"items\":[\"item_b\",\"item_a\"]",
+            StringComparison.Ordinal);
+
+        var restored = CanonicalStoryMembershipManifest.FromJson(reordered);
+
+        Assert.AreEqual(canonical + "\n", restored.ToJson(indented: false));
     }
 
     [TestMethod]
@@ -46,8 +62,8 @@ public sealed class CanonicalStoryMembershipManifestTests
         foreach (var (json, code) in new[]
         {
             (valid.Replace("\"story_id\":", "\"extra\":true,\"story_id\":", StringComparison.Ordinal), "story.membership.root.member.unsupported"),
-            (valid.Replace(",\"referenced_resources\":{\"actors\":[],\"sessions\":[\"session_a\",\"session_b\"],\"tasks\":[\"task_b\"]}", string.Empty, StringComparison.Ordinal), "story.membership.root.member.required"),
-            (valid.Replace("\"schema_version\":1", "\"schema_version\":2", StringComparison.Ordinal), "story.membership.schema_version.unsupported"),
+            (valid.Replace(",\"referenced_resources\":{\"actors\":[],\"items\":[],\"item_groups\":[\"group_a\"],\"sessions\":[\"session_a\",\"session_b\"],\"tasks\":[\"task_b\"]}", string.Empty, StringComparison.Ordinal), "story.membership.root.member.required"),
+            (valid.Replace("\"schema_version\":2", "\"schema_version\":99", StringComparison.Ordinal), "story.membership.schema_version.unsupported"),
             (valid.Replace("\"actors\":[\"actor_b\",\"actor_a\"]", "\"actors\":[\"actor_b\",\"actor_a\"],\"dialogues\":[]", StringComparison.Ordinal), "story.membership.set.member.unsupported"),
             ("{\"schema_version\":2,\"id\":\"legacy\",\"owned_resources\":{}}", "story.membership.root.member.unsupported"),
         })
@@ -91,18 +107,52 @@ public sealed class CanonicalStoryMembershipManifestTests
                     valid.Replace("\"tasks\":[\"task_a\"]", "\"tasks\":[3]", StringComparison.Ordinal))).Code);
     }
 
+    [TestMethod]
+    public void LegacySchemaOneKeepsItsExactShapeOnOrdinarySerialization()
+    {
+        var legacy = new CanonicalStoryMembershipManifest(
+            "legacy",
+            new CanonicalStoryMembershipSet { Actors = ["actor"], Sessions = ["session"], Tasks = ["task"] })
+        { SchemaVersion = CanonicalStoryMembershipManifest.LegacySchemaVersion };
+
+        var json = legacy.ToJson(indented: false);
+        using var document = JsonDocument.Parse(json);
+        var fields = document.RootElement.GetProperty("owned_resources").EnumerateObject()
+            .Select(property => property.Name).ToArray();
+        CollectionAssert.AreEqual(new[] { "actors", "sessions", "tasks" }, fields);
+        var restored = CanonicalStoryMembershipManifest.FromJson(json);
+        Assert.AreEqual(CanonicalStoryMembershipManifest.LegacySchemaVersion, restored.SchemaVersion);
+        Assert.AreEqual(json, restored.ToJson(indented: false));
+    }
+
+    [TestMethod]
+    public void LegacySchemaOneCannotSilentlyDropItemMembership()
+    {
+        var legacy = new CanonicalStoryMembershipManifest(
+            "legacy",
+            new CanonicalStoryMembershipSet { Items = ["key"] })
+        { SchemaVersion = CanonicalStoryMembershipManifest.LegacySchemaVersion };
+
+        Assert.AreEqual("story.membership.schema_version.legacy_items",
+            Assert.ThrowsExactly<CanonicalStoryMembershipException>(() => legacy.ToJson()).Code);
+    }
+
     private static CanonicalStoryMembershipManifest Manifest()
         => new(
             "story",
             new CanonicalStoryMembershipSet
             {
                 Actors = ["actor_b", "actor_a"],
+                Items = ["item_b", "item_a"],
+                ItemGroups = [],
                 Sessions = [],
                 Tasks = ["task_a"],
             },
             new CanonicalStoryMembershipSet
             {
                 Actors = [],
+                Items = [],
+                ItemGroups = ["group_a"],
                 Sessions = ["session_a", "session_b"],
                 Tasks = ["task_b"],
             });

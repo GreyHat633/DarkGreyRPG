@@ -1,8 +1,11 @@
 package darkgrey.rpg.task.forge;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -11,7 +14,7 @@ import net.minecraft.entity.EntityList;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
+import darkgrey.rpg.identity.EntityDgrIdentityResolver;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 
 /** Forge-to-canonical value normalization. This class has no dispatch side effects. */
@@ -119,10 +122,32 @@ public final class CanonicalTaskForgeEventNormalizer {
     }
 
     public static CanonicalTaskEvent interact(Entity target) {
-        if (target == null || !CustomNpcActorBinding.isCustomNpc(target)) return null;
-        String actorId = CustomNpcActorBinding.getActorId(target);
+        if (target == null) return null;
+        String actorId = EntityDgrIdentityResolver.resolveActorId(target);
         return actorId == null || actorId.trim()
             .isEmpty() ? null : CanonicalTaskEvent.interactActor(actorId.trim());
+    }
+
+    /** Normalizes every resolved identity in stable order for one Forge interaction. */
+    public static List<CanonicalTaskEvent> interactEvents(Entity target) {
+        if (target == null) return Collections.emptyList();
+        return interactEventsForIds(EntityDgrIdentityResolver.resolveActorIds(target));
+    }
+
+    /** Testable multi-identity seam; duplicate and blank IDs are ignored. */
+    public static List<CanonicalTaskEvent> interactEventsForIds(List<String> actorIds) {
+        if (actorIds == null || actorIds.isEmpty()) return Collections.emptyList();
+        LinkedHashSet<String> unique = new LinkedHashSet<String>();
+        for (String actorId : actorIds) if (actorId != null && !actorId.trim()
+            .isEmpty()) unique.add(actorId.trim());
+        if (unique.isEmpty()) return Collections.emptyList();
+        List<CanonicalTaskEvent> events = new ArrayList<CanonicalTaskEvent>();
+        for (String actorId : unique) events.add(CanonicalTaskEvent.interactActor(actorId));
+        return Collections.unmodifiableList(events);
+    }
+
+    public static List<CanonicalTaskEvent> interactAll(Entity target) {
+        return interactEvents(target);
     }
 
     public static CanonicalTaskEvent interactEvent(Entity target) {

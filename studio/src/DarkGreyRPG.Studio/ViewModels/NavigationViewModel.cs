@@ -23,7 +23,7 @@ public sealed class NavigationViewModel : ObservableObject
         [
             new(
                 "Story",
-                "剧情",
+                "故事",
                 Geometry.Parse("M3,4 C6,3 9,4 11,6 V20 C8,18 6,18 3,19 Z M13,6 C15,4 18,3 21,4 V19 C18,18 16,18 13,20 Z")),
             new(
                 "Settings",

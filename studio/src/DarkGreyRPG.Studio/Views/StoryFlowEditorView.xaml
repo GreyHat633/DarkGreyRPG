@@ -34,8 +34,8 @@
                     <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddStartQuestCommand}" Content="+ 开始任务" />
                     <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddWaitQuestCompleteCommand}" Content="+ 等待任务" />
                     <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddDialogueExitBranchCommand}" Content="+ Exit 分支" />
-                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddEnterStoryCommand}" Content="+ 进入剧情" />
-                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddEndStoryCommand}" Content="+ 结束剧情" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddEnterStoryCommand}" Content="+ 进入故事" />
+                    <Button Margin="0,0,5,0" Padding="8,5" Command="{Binding AddEndStoryCommand}" Content="+ 结束故事" />
                     <Button Padding="8,5" Command="{Binding AddEndCommand}" Content="+ 结束" />
                 </StackPanel>
             </ScrollViewer>

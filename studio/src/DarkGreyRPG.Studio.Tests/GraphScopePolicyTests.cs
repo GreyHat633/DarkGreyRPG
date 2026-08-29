@@ -18,13 +18,13 @@ public sealed class GraphScopePolicyTests
     [TestMethod]
     public void RegistryContainsDocumentedTypesAndRequiredMetadata()
     {
-        CollectionAssert.AreEquivalent(new[] { "start", "terminate", "session", "task", "condition", "and", "or", "not", "action", "interact_actor", "enter_region", "enter_story" },
+        CollectionAssert.AreEquivalent(new[] { "start", "terminate", "session", "task", "condition", "and", "or", "not", "action", "interact_actor", "enter_region", "enter_story", "logic_input", "logic_output" },
             GraphNodeDefinitionRegistry.ForScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray());
-        CollectionAssert.AreEquivalent(new[] { "start", "line", "choice", "condition", "and", "or", "not", "logic_output", "end", "legacy_jump" },
+        CollectionAssert.AreEquivalent(new[] { "start", "line", "choice", "narration", "condition", "and", "or", "not", "logic_input", "logic_output", "end", "legacy_jump" },
             GraphNodeDefinitionRegistry.ForScope(GraphScope.Session).Select(item => item.Type).ToArray());
         var task = GraphNodeDefinitionRegistry.ForScope(GraphScope.Task);
-        CollectionAssert.AreEquivalent(new[] { "activate", "objective", "and", "or", "not", "logic_output", "settle" }, task.Select(item => item.Type).ToArray());
-        Assert.IsTrue(task.Single(item => item.Type == "activate").NonDeletable);
+        CollectionAssert.AreEquivalent(new[] { "activate", "objective", "and", "or", "not", "logic_input", "logic_output", "settle" }, task.Select(item => item.Type).ToArray());
+        Assert.IsTrue(task.Single(item => item.Type == "activate").CompatibilityOnly);
         Assert.IsTrue(task.Single(item => item.Type == "settle").Unique);
     }
 

@@ -13,7 +13,8 @@ public final class CanonicalSessionFrame implements IMessage {
 
     public enum Kind {
         LINE,
-        CHOICE
+        CHOICE,
+        NARRATION
     }
 
     private long transportId;
@@ -52,7 +53,7 @@ public final class CanonicalSessionFrame implements IMessage {
             .readField(buffer, "current_node_id", CanonicalSessionNetworkCodec.MAX_ID_BYTES);
         Kind decodedKind = Kind.values()[CanonicalSessionNetworkCodec
             .readEnum(buffer, Kind.values().length, "frame kind")];
-        String decodedSpeaker = decodedKind == Kind.CHOICE
+        String decodedSpeaker = decodedKind == Kind.CHOICE || decodedKind == Kind.NARRATION
             ? CanonicalSessionNetworkCodec
                 .readOptionalField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES)
             : CanonicalSessionNetworkCodec.readField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
@@ -102,7 +103,7 @@ public final class CanonicalSessionFrame implements IMessage {
         CanonicalSessionNetworkCodec
             .writeField(buffer, currentNodeId, "current_node_id", CanonicalSessionNetworkCodec.MAX_ID_BYTES);
         buffer.writeByte(kind.ordinal());
-        if (kind == Kind.CHOICE) {
+        if (kind == Kind.CHOICE || kind == Kind.NARRATION) {
             CanonicalSessionNetworkCodec
                 .writeOptionalEmptyField(buffer, speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
         } else {
@@ -167,7 +168,7 @@ public final class CanonicalSessionFrame implements IMessage {
     }
 
     public boolean canContinue() {
-        return kind == Kind.LINE;
+        return kind == Kind.LINE || kind == Kind.NARRATION;
     }
 
     private static List<CanonicalSessionChoiceOption> detached(List<CanonicalSessionChoiceOption> values) {
@@ -186,7 +187,7 @@ public final class CanonicalSessionFrame implements IMessage {
             CanonicalSessionNetworkCodec
                 .requireField(speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
         } else if (speaker == null || !speaker.isEmpty()) {
-            throw CanonicalSessionNetworkCodec.invalid("CHOICE speaker must be explicitly empty");
+            throw CanonicalSessionNetworkCodec.invalid(kind.name() + " speaker must be explicitly empty");
         }
         CanonicalSessionNetworkCodec.requireField(text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
         if (choices == null || choices.size() > CanonicalSessionNetworkCodec.MAX_OPTIONS)
@@ -196,8 +197,8 @@ public final class CanonicalSessionFrame implements IMessage {
             if (choice == null) throw CanonicalSessionNetworkCodec.invalid("null choice");
             CanonicalSessionNetworkCodec.requireUnique(choice.getOptionId(), ids);
         }
-        if (kind == Kind.LINE && !choices.isEmpty())
-            throw CanonicalSessionNetworkCodec.invalid("LINE cannot carry choices");
+        if ((kind == Kind.LINE || kind == Kind.NARRATION) && !choices.isEmpty())
+            throw CanonicalSessionNetworkCodec.invalid(kind.name() + " cannot carry choices");
         if (kind == Kind.CHOICE && choices.isEmpty())
             throw CanonicalSessionNetworkCodec.invalid("CHOICE requires choices");
     }

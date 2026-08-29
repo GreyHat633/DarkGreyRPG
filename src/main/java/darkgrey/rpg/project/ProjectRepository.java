@@ -52,8 +52,15 @@ public final class ProjectRepository {
     private static final Pattern RESOURCE_ID = Pattern.compile("[a-z0-9][a-z0-9_.-]*");
     private static final Set<String> PROJECT_FIELDS = Collections
         .unmodifiableSet(new HashSet<String>(Arrays.asList("schema_version", "id", "display_name")));
-    private static final Set<String> ACTOR_FIELDS = Collections.unmodifiableSet(
+    private static final Set<String> LEGACY_ACTOR_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "notes", "tags", "home_story_id")));
+    private static final Set<String> ACTOR_V3_FIELDS = Collections.unmodifiableSet(
+        new HashSet<String>(
+            Arrays.asList("schema_version", "type", "npc_id", "group_id", "display_name", "tags", "home_story_id")));
+    private static final Set<String> ITEM_FIELDS = Collections.unmodifiableSet(
+        new HashSet<String>(Arrays.asList("schema_version", "type", "item_id", "display_name", "tags")));
+    private static final Set<String> ITEM_GROUP_FIELDS = Collections.unmodifiableSet(
+        new HashSet<String>(Arrays.asList("schema_version", "type", "group_id", "display_name", "tags")));
     private static final Set<String> DIALOGUE_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
             Arrays.asList(
@@ -135,6 +142,28 @@ public final class ProjectRepository {
         return snapshot;
     }
 
+    /**
+     * Installs an already parsed and validated immutable snapshot. Story Package
+     * integration uses this as the single atomic publication boundary; callers
+     * must build the complete candidate before invoking it.
+     */
+    public synchronized ReloadResult installSnapshot(ProjectSnapshot loaded) {
+        if (loaded == null) throw new IllegalArgumentException("Project snapshot is required.");
+        snapshot = loaded;
+        lastReload = ReloadResult.success(
+            loaded.getProject()
+                .getDisplayName(),
+            loaded.getActors()
+                .size(),
+            loaded.getDialogues()
+                .size(),
+            loaded.getQuests()
+                .size(),
+            loaded.getStories()
+                .size());
+        return lastReload;
+    }
+
     public ReloadResult getLastReload() {
         return lastReload;
     }
@@ -188,18 +217,72 @@ public final class ProjectRepository {
                 throw new ProjectLoadException("Duplicate actor id '" + actor.getId() + "'");
             }
         }
+        Map<String, ItemResourceDefinition> items = loadItems("items", ItemResourceDefinition.TYPE_INDIVIDUAL);
+        Map<String, ItemResourceDefinition> itemGroups = loadItems(
+            "item_groups",
+            ItemResourceDefinition.TYPE_COLLECTIVE);
         Map<String, DialogueDefinition> dialogues = loadDialogues(actors);
         Map<String, QuestDefinition> quests = loadQuests();
         Map<String, StoryDefinition> stories = StoryLoader.load(projectDirectory, actors, dialogues, quests);
         CanonicalProjectContent canonicalContent;
         try {
-            canonicalContent = new CanonicalProjectContentLoader().load(projectDirectory, actors.keySet());
+            canonicalContent = new CanonicalProjectContentLoader()
+                .load(projectDirectory, actors.keySet(), items.keySet(), itemGroups.keySet());
         } catch (CanonicalProjectContentException exception) {
             throw new ProjectLoadException(
                 "Could not load canonical project content: " + exception.getMessage(),
                 exception);
         }
-        return new ProjectSnapshot(project, actors, dialogues, quests, stories, canonicalContent);
+        return new ProjectSnapshot(project, actors, items, itemGroups, dialogues, quests, stories, canonicalContent);
+    }
+
+    private Map<String, ItemResourceDefinition> loadItems(String directoryName, String expectedType)
+        throws ProjectLoadException {
+        File directory = new File(projectDirectory, directoryName);
+        if (!directory.exists()) return Collections.emptyMap();
+        if (!directory.isDirectory())
+            throw new ProjectLoadException("Item resource path is not a directory: " + directory.getAbsolutePath());
+        File[] files = directory.listFiles();
+        if (files == null) throw new ProjectLoadException("Cannot list item resource directory: " + directory);
+        Arrays.sort(files, new Comparator<File>() {
+
+            @Override
+            public int compare(File left, File right) {
+                return left.getName()
+                    .compareToIgnoreCase(right.getName());
+            }
+        });
+        Map<String, ItemResourceDefinition> result = new LinkedHashMap<String, ItemResourceDefinition>();
+        for (File file : files) {
+            if (!file.isFile() || !file.getName()
+                .toLowerCase()
+                .endsWith(".json")) continue;
+            ItemResourceDefinition definition = loadItem(file, expectedType);
+            if (result.put(definition.getId(), definition) != null)
+                throw new ProjectLoadException("Duplicate item resource id '" + definition.getId() + "'");
+        }
+        return result;
+    }
+
+    private ItemResourceDefinition loadItem(File file, String expectedType) throws ProjectLoadException {
+        JsonObject json = readObject(file);
+        boolean individual = ItemResourceDefinition.TYPE_INDIVIDUAL.equals(expectedType);
+        rejectUnknownFields(file, json, individual ? ITEM_FIELDS : ITEM_GROUP_FIELDS);
+        int version = requiredInt(file, json, "schema_version");
+        validateSchema(file, version, 1);
+        String type = requiredString(file, json, "type").toLowerCase();
+        if (!expectedType.equals(type))
+            throw new ProjectLoadException("Item resource type must be '" + expectedType + "' in " + file);
+        String id = requiredResourceId(file, json, individual ? "item_id" : "group_id");
+        String expectedName = id + ".json";
+        if (!expectedName.equals(file.getName()))
+            throw new ProjectLoadException("Item resource filename must be '" + expectedName + "': " + file);
+        return new ItemResourceDefinition(
+            version,
+            type,
+            id,
+            requiredString(file, json, "display_name"),
+            optionalStringList(file, json, "tags"));
     }
 
     private Map<String, QuestDefinition> loadQuests() throws ProjectLoadException {
@@ -544,18 +627,43 @@ public final class ProjectRepository {
 
     private ActorDefinition loadActor(File actorFile) throws ProjectLoadException {
         JsonObject json = readObject(actorFile);
-        rejectUnknownFields(actorFile, json, ACTOR_FIELDS);
-
         int schemaVersion = requiredInt(actorFile, json, "schema_version");
-        validateSchema(actorFile, schemaVersion, 1, 2);
-        String id = requiredResourceId(actorFile, json, "id");
-        String expectedFileName = id + ".json";
-        if (!actorFile.getName()
-            .equals(expectedFileName)) {
-            throw new ProjectLoadException(
-                "Actor file name must match its id: expected " + expectedFileName + ", got " + actorFile.getName());
+        validateSchema(actorFile, schemaVersion, 1, 2, 3);
+        if (schemaVersion < 3) {
+            rejectUnknownFields(actorFile, json, LEGACY_ACTOR_FIELDS);
+            return loadLegacyActor(actorFile, json, schemaVersion);
         }
 
+        rejectUnknownFields(actorFile, json, ACTOR_V3_FIELDS);
+        String type = requiredString(actorFile, json, "type").toLowerCase();
+        String id;
+        if (ActorDefinition.TYPE_INDIVIDUAL.equals(type)) {
+            id = requiredResourceId(actorFile, json, "npc_id");
+            if (json.has("group_id")) {
+                throw new ProjectLoadException(
+                    "Individual Actor cannot contain group_id in " + actorFile.getAbsolutePath());
+            }
+        } else if (ActorDefinition.TYPE_COLLECTIVE.equals(type)) {
+            id = requiredResourceId(actorFile, json, "group_id");
+            if (json.has("npc_id")) {
+                throw new ProjectLoadException(
+                    "Collective Actor cannot contain npc_id in " + actorFile.getAbsolutePath());
+            }
+        } else {
+            throw new ProjectLoadException(
+                "Actor type must be individual or collective in " + actorFile.getAbsolutePath());
+        }
+        validateActorFileName(actorFile, id);
+        String displayName = requiredString(actorFile, json, "display_name");
+        List<String> tags = optionalStringList(actorFile, json, "tags");
+        String homeStoryId = requiredResourceId(actorFile, json, "home_story_id");
+        return new ActorDefinition(schemaVersion, type, id, displayName, "", tags, homeStoryId);
+    }
+
+    private ActorDefinition loadLegacyActor(File actorFile, JsonObject json, int schemaVersion)
+        throws ProjectLoadException {
+        String id = requiredResourceId(actorFile, json, "id");
+        validateActorFileName(actorFile, id);
         String displayName = requiredString(actorFile, json, "display_name");
         String notes = optionalString(actorFile, json, "notes", "");
         List<String> tags = optionalStringList(actorFile, json, "tags");
@@ -566,6 +674,15 @@ public final class ProjectRepository {
                 "Actor schema_version 2 requires a valid home_story_id in " + actorFile.getAbsolutePath());
         }
         return new ActorDefinition(schemaVersion, id, displayName, notes, tags, homeStoryId);
+    }
+
+    private static void validateActorFileName(File actorFile, String id) throws ProjectLoadException {
+        String expectedFileName = id + ".json";
+        if (!actorFile.getName()
+            .equals(expectedFileName)) {
+            throw new ProjectLoadException(
+                "Actor file name must match its id: expected " + expectedFileName + ", got " + actorFile.getName());
+        }
     }
 
     private static JsonObject readObject(File file) throws ProjectLoadException {

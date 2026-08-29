@@ -269,6 +269,10 @@ public final class CanonicalGraphResourceLoader {
         if (type.trim()
             .isEmpty())
             throw CanonicalGraphResourceException.failure("graph.node.type.required", "Graph node type is required.");
+        if (scope == CanonicalGraphResourceKind.TASK && "activate".equals(type))
+            throw CanonicalGraphResourceException.failure(
+                "graph.resource.task.legacy_activate",
+                "Legacy Task activate node is not part of schema 1. Remove activate and let the parent Story Flow start the Task.");
         if (!allowedType(scope, type)) throw CanonicalGraphResourceException.failure(
             "graph.node.type.scope",
             "Node type '" + type + "' is not allowed in " + scope.getJsonName() + " scope.");
@@ -322,14 +326,14 @@ public final class CanonicalGraphResourceLoader {
 
     private static void requiredNodes(List<CanonicalGraphNode> nodes, CanonicalGraphResourceKind kind)
         throws CanonicalGraphResourceException {
-        String required = kind == CanonicalGraphResourceKind.TASK ? "activate" : "start";
+        String required = kind == CanonicalGraphResourceKind.TASK ? null : "start";
         int count = 0;
         int settle = 0;
         for (CanonicalGraphNode node : nodes) {
-            if (required.equals(node.getType())) count++;
+            if (required != null && required.equals(node.getType())) count++;
             if ("settle".equals(node.getType())) settle++;
         }
-        if (count != 1) throw CanonicalGraphResourceException
+        if (required != null && count != 1) throw CanonicalGraphResourceException
             .failure("graph.node.required.unique", "Scope requires exactly one '" + required + "' node.");
         if (kind == CanonicalGraphResourceKind.TASK && settle != 1) throw CanonicalGraphResourceException
             .failure("graph.node.required.unique", "Task scope requires exactly one 'settle' node.");
@@ -359,7 +363,10 @@ public final class CanonicalGraphResourceLoader {
         if (scope == CanonicalGraphResourceKind.SESSION) return Arrays
             .asList("start", "line", "choice", "condition", "and", "or", "not", "logic_output", "end", "legacy_jump")
             .contains(type);
-        return Arrays.asList("activate", "objective", "and", "or", "not", "logic_output", "settle")
+        // Task activation is owned by the parent Story Flow. A legacy Task
+        // containing activate is rejected deterministically below by the
+        // scope policy rather than becoming part of the new schema.
+        return Arrays.asList("objective", "logic_input", "and", "or", "not", "logic_output", "settle")
             .contains(type);
     }
 

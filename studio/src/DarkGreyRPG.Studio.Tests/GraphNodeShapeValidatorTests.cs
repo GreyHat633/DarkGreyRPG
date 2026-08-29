@@ -72,14 +72,22 @@ public sealed class GraphNodeShapeValidatorTests
     {
         foreach (var role in GraphDynamicPortPolicy.Roles)
         {
-            var node = Node(role.Scope, role.NodeType);
+            var node = role.Scope == GraphScope.StoryFlow && role.NodeType == "start"
+                ? GraphNodeFactory.CreateStoryStart("start", triggerPortId: "trigger")
+                : role.Scope == GraphScope.Task && role.NodeType == "objective"
+                    ? GraphNodeFactory.Create(GraphScope.Task, "objective", "objective")
+                : Node(role.Scope, role.NodeType);
             if (role.Scope == GraphScope.Session && role.NodeType == "choice")
             {
                 SessionChoiceSchema.InitializeDefault(node, "option_1", "flow_1");
                 Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, role.Scope));
                 continue;
             }
-            for (var index = 0; index < role.MinimumCount; index++)
+            var existingCount = node.Ports.Count(port =>
+                port.IsInput == (role.Direction == GraphPortDirection.Input)
+                && port.InterfaceKind == role.InterfaceKind
+                && !GraphNodeDefinitionRegistry.Get(role.Scope, role.NodeType)!.FixedPorts.Any(fixedPort => fixedPort.Id == port.Id));
+            for (var index = existingCount; index < role.MinimumCount; index++)
             {
                 node.Ports.Add(new GraphPort($"dynamic_{index}", $"Dynamic {index}",
                     role.Direction == GraphPortDirection.Input, role.InterfaceKind, index));

@@ -194,7 +194,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var task = nodes.Single(node => node.Id == "task-placement");
         Assert.AreEqual("session", session.Type);
         Assert.AreEqual("session", session.Properties["resource_id"].GetString());
-        CollectionAssert.AreEqual(new[] { "flow_in", "logic_in", "session_done", "session_known" },
+        CollectionAssert.AreEqual(new[] { "flow_in", "session_done", "session_known" },
             session.Ports.Select(port => port.Id).ToArray());
         Assert.AreEqual("task", task.Type);
         Assert.AreEqual("task", task.Properties["resource_id"].GetString());

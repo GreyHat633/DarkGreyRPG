@@ -93,20 +93,13 @@ public final class CanonicalGraphResourceLoaderProbe {
         require(
             task.getGraph()
                 .getNodes()
-                .size() == 2,
+                .size() == 1,
             "Task node count changed");
-        require(
-            "activate".equals(
-                task.getGraph()
-                    .getNodes()
-                    .get(0)
-                    .getType()),
-            "Task activate identity changed");
         require(
             "settle".equals(
                 task.getGraph()
                     .getNodes()
-                    .get(1)
+                    .get(0)
                     .getType()),
             "Task settle identity changed");
         requireImmutable(story);
@@ -264,6 +257,11 @@ public final class CanonicalGraphResourceLoaderProbe {
         expect(
             loader,
             tasks.resolve("bad_task.json"),
+            legacyTaskJson("bad_task"),
+            "graph.resource.task.legacy_activate");
+        expect(
+            loader,
+            tasks.resolve("bad_task.json"),
             task.replace("\"settle\"", "\"objective\""),
             "graph.node.required.unique");
         expect(loader, tasks.resolve("bad_task.json"), duplicateTaskSettle("bad_task"), "graph.node.required.unique");
@@ -404,7 +402,13 @@ public final class CanonicalGraphResourceLoaderProbe {
         return "{\"schema_version\":1,\"resource_kind\":\"task\",\"id\":\"" + id
             + "\",\"display_name\":\"Task "
             + id
-            + "\",\"graph\":{\"nodes\":[{\"id\":\"activate\",\"type\":\"activate\",\"display_name\":\"Activate\",\"ports\":[],\"properties\":{}},{\"id\":\"settle\",\"type\":\"settle\",\"display_name\":\"Settle\",\"ports\":[],\"properties\":{}}],\"connections\":[]}}";
+            + "\",\"graph\":{\"nodes\":[{\"id\":\"settle\",\"type\":\"settle\",\"display_name\":\"Settle\",\"ports\":[],\"properties\":{}}],\"connections\":[]}}";
+    }
+
+    private static String legacyTaskJson(String id) {
+        return taskJson(id).replace(
+            "\"nodes\":[",
+            "\"nodes\":[{\"id\":\"activate\",\"type\":\"activate\",\"display_name\":\"Activate\",\"ports\":[{\"port_id\":\"logic_out\",\"display_name\":\"Out\",\"direction\":\"output\",\"kind\":\"logic\",\"order\":0}],\"properties\":{}},");
     }
 
     private static String duplicateStoryEdge(String json) {
@@ -436,13 +440,13 @@ public final class CanonicalGraphResourceLoaderProbe {
     }
 
     private static String logicMultipleSourcesTask(String id) {
-        String edges = edge("activate", "out", "settle", "in", "logic") + ","
+        String edges = edge("input", "out", "settle", "in", "logic") + ","
             + edge("other", "out", "settle", "in", "logic");
         return taskEnvelope(id, taskLogicNodes(), edges);
     }
 
     private static String logicCycleTask(String id) {
-        String edges = edge("activate", "out", "settle", "in", "logic") + ","
+        String edges = edge("input", "out", "settle", "in", "logic") + ","
             + edge("other", "out", "third", "in", "logic")
             + ","
             + edge("third", "out", "other", "in", "logic");
@@ -450,7 +454,7 @@ public final class CanonicalGraphResourceLoaderProbe {
     }
 
     private static String taskLogicNodes() {
-        return "{\"id\":\"activate\",\"type\":\"activate\",\"display_name\":\"Activate\",\"ports\":[{\"port_id\":\"out\",\"display_name\":\"Out\",\"direction\":\"output\",\"kind\":\"logic\",\"order\":0}],\"properties\":{}},"
+        return "{\"id\":\"input\",\"type\":\"logic_input\",\"display_name\":\"Input\",\"ports\":[{\"port_id\":\"out\",\"display_name\":\"Out\",\"direction\":\"output\",\"kind\":\"logic\",\"order\":0}],\"properties\":{\"port_id\":\"input\",\"display_name\":\"Input\"}},"
             + "{\"id\":\"other\",\"type\":\"not\",\"display_name\":\"Other\",\"ports\":[{\"port_id\":\"in\",\"display_name\":\"In\",\"direction\":\"input\",\"kind\":\"logic\",\"order\":0},{\"port_id\":\"out\",\"display_name\":\"Out\",\"direction\":\"output\",\"kind\":\"logic\",\"order\":1}],\"properties\":{}},"
             + "{\"id\":\"third\",\"type\":\"not\",\"display_name\":\"Third\",\"ports\":[{\"port_id\":\"in\",\"display_name\":\"In\",\"direction\":\"input\",\"kind\":\"logic\",\"order\":0},{\"port_id\":\"out\",\"display_name\":\"Out\",\"direction\":\"output\",\"kind\":\"logic\",\"order\":1}],\"properties\":{}},"
             + "{\"id\":\"settle\",\"type\":\"settle\",\"display_name\":\"Settle\",\"ports\":[{\"port_id\":\"in\",\"display_name\":\"In\",\"direction\":\"input\",\"kind\":\"logic\",\"order\":0}],\"properties\":{}}";

@@ -41,8 +41,8 @@ public sealed class ActorIdentityDialogViewModelTests
 
         Assert.AreEqual("Story", viewModel.TypeLabel);
         Assert.AreEqual("新建 Story", viewModel.Title);
-        Assert.AreEqual("新剧情", viewModel.DisplayName);
-        Assert.IsTrue(viewModel.Description.Contains("独立剧情", StringComparison.Ordinal));
+        Assert.AreEqual("新故事", viewModel.DisplayName);
+        Assert.IsTrue(viewModel.Description.Contains("独立故事", StringComparison.Ordinal));
         Assert.IsTrue(viewModel.CanConfirm);
 
         viewModel.Id = "Bad Story!";

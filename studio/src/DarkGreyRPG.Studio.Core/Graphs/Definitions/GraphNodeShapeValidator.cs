@@ -198,7 +198,7 @@ public static class GraphNodeShapeValidator
             && string.Equals(node.Type, "start", StringComparison.Ordinal)
             && ((node.Properties ?? []).ContainsKey(StoryStartSchema.TriggersProperty)
                 || (node.Properties ?? []).ContainsKey(StoryStartSchema.RepeatPolicyProperty)))
-            issues.AddRange(StoryStartSchema.Validate(node));
+            issues.AddRange(StoryStartSchema.Validate(node, compatibilityMode));
 
         return issues;
     }

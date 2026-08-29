@@ -10,7 +10,7 @@ import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
+import darkgrey.rpg.identity.EntityDgrIdentityResolver;
 import darkgrey.rpg.quest.ObjectiveType;
 
 public final class QuestEventAdapter {
@@ -53,11 +53,10 @@ public final class QuestEventAdapter {
 
     @SubscribeEvent
     public void onEntityInteract(EntityInteractEvent event) {
-        if (!(event.entityPlayer instanceof EntityPlayerMP) || !CustomNpcActorBinding.isCustomNpc(event.target)) {
+        if (!(event.entityPlayer instanceof EntityPlayerMP)) {
             return;
         }
-        String actorId = CustomNpcActorBinding.getActorId(event.target);
-        if (actorId != null) {
+        for (String actorId : EntityDgrIdentityResolver.resolveActorIds(event.target)) {
             runtime.accept(
                 (EntityPlayerMP) event.entityPlayer,
                 QuestEvent.target(ObjectiveType.INTERACT_ACTOR, actorId, -1, 1));

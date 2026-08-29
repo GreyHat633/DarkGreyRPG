@@ -62,7 +62,8 @@ public sealed class CanonicalLegacyMigrationPreviewTests
             Assert.IsTrue(first.CanApply, string.Join("; ", first.Issues.Select(issue => issue.Code)));
             Assert.AreEqual(first.Envelope!.ToJson(), second.Envelope!.ToJson());
             var graph = first.Envelope.Graph!;
-            Assert.HasCount(2, graph.Nodes.Where(node => node.Type is "activate" or "settle"));
+            Assert.HasCount(1, graph.Nodes.Where(node => node.Type == "settle"));
+            Assert.IsFalse(graph.Nodes.Any(node => node.Type == "activate"));
             Assert.AreEqual(2, graph.Nodes.Count(node => node.Type == "objective"));
             Assert.IsTrue(graph.Nodes.Single(node => node.Type == "objective" && node.Id == "one").Properties.ContainsKey("description"));
             Assert.IsTrue(graph.Nodes.Single(node => node.Type == "settle").Ports.Any(port => port.Id == "completion"));
@@ -138,7 +139,6 @@ public sealed class CanonicalLegacyMigrationPreviewTests
         var graph = result.Envelope!.Graph!;
         Assert.IsTrue(graph.Nodes.Any(node => node.Id == "activate" && node.Type == "objective"));
         Assert.IsTrue(graph.Nodes.Any(node => node.Id == "settle" && node.Type == "objective"));
-        Assert.IsTrue(graph.Nodes.Any(node => node.Id == "activate_migration" && node.Type == "activate"));
         Assert.IsTrue(graph.Nodes.Any(node => node.Id == "settle_migration" && node.Type == "settle"));
     }
 
@@ -152,11 +152,10 @@ public sealed class CanonicalLegacyMigrationPreviewTests
         var session = new GraphResourceEnvelope(GraphResourceKind.Session, "shared", "Dialogue",
             new GraphDocument([sessionStart, sessionEnd], [new GraphConnection("start", "flow_out", "done", "flow_in", GraphInterfaceKind.Flow)]));
 
-        var activate = GraphNodeFactory.Create(GraphScope.Task, "activate", "activate");
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
         settle.Ports.Add(new GraphPort("completion", "Complete", true, GraphInterfaceKind.Logic));
         var task = new GraphResourceEnvelope(GraphResourceKind.Task, "shared", "Quest",
-            new GraphDocument([activate, settle], [new GraphConnection("activate", "logic_out", "settle", "completion", GraphInterfaceKind.Logic)]));
+            new GraphDocument([settle]));
 
         var story = new StoryResource
         {

@@ -4,19 +4,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Immutable membership lists for actors, sessions, and tasks. */
+/** Immutable membership lists for actors, item identities, sessions, and tasks. */
 public final class CanonicalStoryMembershipSet {
 
     private final List<String> actors;
+    private final List<String> items;
+    private final List<String> itemGroups;
     private final List<String> sessions;
     private final List<String> tasks;
 
     public CanonicalStoryMembershipSet() {
-        this(Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList());
+        this(
+            Collections.<String>emptyList(),
+            Collections.<String>emptyList(),
+            Collections.<String>emptyList(),
+            Collections.<String>emptyList(),
+            Collections.<String>emptyList());
     }
 
     public CanonicalStoryMembershipSet(List<String> actors, List<String> sessions, List<String> tasks) {
+        this(actors, Collections.<String>emptyList(), Collections.<String>emptyList(), sessions, tasks);
+    }
+
+    public CanonicalStoryMembershipSet(List<String> actors, List<String> items, List<String> itemGroups,
+        List<String> sessions, List<String> tasks) {
         this.actors = copy(actors, "actors");
+        this.items = copy(items, "items");
+        this.itemGroups = copy(itemGroups, "itemGroups");
         this.sessions = copy(sessions, "sessions");
         this.tasks = copy(tasks, "tasks");
     }
@@ -27,6 +41,14 @@ public final class CanonicalStoryMembershipSet {
 
     public List<String> getSessions() {
         return sessions;
+    }
+
+    public List<String> getItems() {
+        return items;
+    }
+
+    public List<String> getItemGroups() {
+        return itemGroups;
     }
 
     public List<String> getTasks() {

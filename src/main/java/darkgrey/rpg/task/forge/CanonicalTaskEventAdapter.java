@@ -1,5 +1,7 @@
 package darkgrey.rpg.task.forge;
 
+import java.util.List;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -53,8 +55,8 @@ public final class CanonicalTaskEventAdapter {
     public void onEntityInteract(EntityInteractEvent event) {
         try {
             if (event == null || !(event.entityPlayer instanceof EntityPlayerMP)) return;
-            CanonicalTaskEvent taskEvent = CanonicalTaskForgeEventNormalizer.interact(event.target);
-            if (taskEvent != null) dispatch((EntityPlayerMP) event.entityPlayer, taskEvent);
+            List<CanonicalTaskEvent> taskEvents = CanonicalTaskForgeEventNormalizer.interactEvents(event.target);
+            for (CanonicalTaskEvent taskEvent : taskEvents) dispatch((EntityPlayerMP) event.entityPlayer, taskEvent);
         } catch (RuntimeException failure) {
             // Forge listeners must not let one malformed CustomNPC+ wrapper abort the event bus.
             LOG.warn("Canonical Task interaction event was ignored: {}", failure.getMessage());

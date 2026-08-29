@@ -425,14 +425,10 @@ public sealed class CanonicalStoryResourceLifecycleService
 
     private static GraphDocument BlankGraph(GraphScope scope)
     {
-        var nodes = scope switch
+        GraphNode[] nodes = scope switch
         {
             GraphScope.Session => [GraphNodeFactory.Create(scope, "start", "start")],
-            GraphScope.Task => new[]
-            {
-                GraphNodeFactory.Create(scope, "activate", "activate"),
-                CreateInitialTaskSettleNode(),
-            },
+            GraphScope.Task => [CreateInitialTaskSettleNode()],
             _ => throw Failure("story.resource.kind.unsupported", "Story resources cannot be created by this service."),
         };
         var graph = new GraphDocument(nodes);
@@ -444,7 +440,7 @@ public sealed class CanonicalStoryResourceLifecycleService
     private static GraphNode CreateInitialTaskSettleNode()
     {
         var result = new GraphNodeAuthoringService().Create(
-            new GraphDocument([GraphNodeFactory.Create(GraphScope.Task, "activate", "activate")]),
+            new GraphDocument(),
             GraphScope.Task,
             "settle",
             "settle");

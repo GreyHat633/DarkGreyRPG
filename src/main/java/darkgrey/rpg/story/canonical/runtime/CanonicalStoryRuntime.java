@@ -3,6 +3,7 @@ package darkgrey.rpg.story.canonical.runtime;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -44,6 +45,8 @@ public final class CanonicalStoryRuntime {
     private final String resourceFingerprint;
     private final Map<String, CanonicalGraphNode> nodes;
     private final Map<String, Boolean> aggregateLogic = new LinkedHashMap<String, Boolean>();
+    private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
+    private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
     private CanonicalStoryStatus status;
     private CanonicalStoryRepeatPolicy repeatPolicy;
     private String triggerPortId;
@@ -57,6 +60,7 @@ public final class CanonicalStoryRuntime {
     private Double waitZ;
     private Double waitRadius;
     private String targetStoryId;
+    private Boolean waitingConditionValue;
 
     private CanonicalStoryRuntime(CanonicalGraphResource resource) {
         validateEnvelope(resource);
@@ -68,17 +72,27 @@ public final class CanonicalStoryRuntime {
 
     public static CanonicalStoryRuntime start(CanonicalGraphResource resource, String triggerPortId,
         CanonicalStoryRepeatPolicy repeatPolicy) {
+        return start(resource, triggerPortId, repeatPolicy, Collections.<String, Boolean>emptyMap());
+    }
+
+    public static CanonicalStoryRuntime start(CanonicalGraphResource resource, String triggerPortId,
+        CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs) {
         CanonicalStoryRuntime runtime = new CanonicalStoryRuntime(resource);
         runtime.status = CanonicalStoryStatus.ACTIVE;
         runtime.repeatPolicy = requirePolicy(repeatPolicy);
         runtime.triggerPortId = requireId(triggerPortId, "Story trigger port ID");
         runtime.waitKind = CanonicalStoryWaitKind.NONE;
+        runtime.setInitialLogicInputs(logicInputs);
         CanonicalGraphNode start = runtime.uniqueNode("start");
         runtime.requirePort(
             start,
             runtime.triggerPortId,
             CanonicalGraphPortDirection.OUTPUT,
             CanonicalGraphInterfaceKind.FLOW);
+        CanonicalStoryStartConfiguration.Trigger trigger = runtime.startTriggerIfConfigured(runtime.triggerPortId);
+        if (trigger != null && trigger.getLogicPortId() != null
+            && !runtime.logicInputValue(start, trigger.getLogicPortId(), new HashMap<String, Boolean>()))
+            throw failure("story.start.trigger.condition", "Story Start trigger condition is false.");
         runtime.transitionFrom(start, runtime.triggerPortId);
         runtime.resolveAutomatic();
         return runtime;
@@ -105,6 +119,15 @@ public final class CanonicalStoryRuntime {
         runtime.waitRadius = snapshot.getWaitRadius();
         runtime.aggregateLogic.putAll(snapshot.getLogicValues());
         runtime.targetStoryId = snapshot.getTargetStoryId();
+        for (Map.Entry<String, Boolean> entry : snapshot.getExternalLogicInputs()
+            .entrySet()) {
+            String id = requireId(entry.getKey(), "Story Logic input port ID");
+            if (entry.getValue() == null) throw failure("story.restore.logic", "Restored Story Logic input is null.");
+            runtime.requireExternalInput(id);
+        }
+        runtime.externalLogicInputs.putAll(snapshot.getExternalLogicInputs());
+        runtime.waitingConditionValue = snapshot.getWaitingConditionValue();
+        runtime.recomputePublicLogic();
         runtime.validateRestoredCursor();
         return runtime;
     }
@@ -127,7 +150,9 @@ public final class CanonicalStoryRuntime {
             waitZ,
             waitRadius,
             aggregateLogic,
-            targetStoryId);
+            targetStoryId,
+            externalLogicInputs,
+            waitingConditionValue);
     }
 
     public CanonicalGraphResource getResource() {
@@ -255,6 +280,49 @@ public final class CanonicalStoryRuntime {
         return targetStoryId;
     }
 
+    public Map<String, Boolean> getLogicInputs() {
+        return detached(externalLogicInputs);
+    }
+
+    public Map<String, Boolean> getExternalLogicInputs() {
+        return detached(externalLogicInputs);
+    }
+
+    public Map<String, Boolean> getPublicLogicOutputs() {
+        return detached(publicLogicOutputs);
+    }
+
+    public Map<String, Boolean> getPublicLogic() {
+        return getPublicLogicOutputs();
+    }
+
+    /** Sets one externally-owned named Logic input and resumes a waiting Condition once. */
+    public boolean setLogicInput(String portId, boolean value) {
+        ensureInitialized();
+        String id = requireId(portId, "Story Logic input port ID");
+        requireExternalInput(id);
+        Boolean previous = externalLogicInputs.put(id, Boolean.valueOf(value));
+        recomputePublicLogic();
+        boolean changed = previous == null ? value : previous.booleanValue() != value;
+        if (waitKind == CanonicalStoryWaitKind.CONDITION && changed) {
+            CanonicalGraphNode condition = currentNode();
+            boolean now = logicInputValue(condition, "logic_in", new HashMap<String, Boolean>());
+            waitingConditionValue = Boolean.valueOf(now);
+            String output = now ? "flow_true" : "flow_false";
+            if (uniqueOutgoing(condition, output, CanonicalGraphInterfaceKind.FLOW) != null) {
+                clearWait();
+                transitionFrom(condition, output);
+                resolveAutomatic();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean setExternalLogicInput(String portId, boolean value) {
+        return setLogicInput(portId, value);
+    }
+
     /** Logic input supplied to the Session aggregate currently blocking the cursor. */
     public boolean getSessionActivationLogic() {
         requireWait(CanonicalStoryWaitKind.SESSION);
@@ -349,7 +417,13 @@ public final class CanonicalStoryRuntime {
             }
             if ("condition".equals(type)) {
                 boolean value = logicInputValue(node, "logic_in", new HashMap<String, Boolean>());
-                transitionFrom(node, value ? "flow_true" : "flow_false");
+                String output = value ? "flow_true" : "flow_false";
+                if (uniqueOutgoing(node, output, CanonicalGraphInterfaceKind.FLOW) == null) {
+                    waitKind = CanonicalStoryWaitKind.CONDITION;
+                    waitingConditionValue = Boolean.valueOf(value);
+                    return;
+                }
+                transitionFrom(node, output);
                 continue;
             }
             if ("session".equals(type)) {
@@ -405,7 +479,9 @@ public final class CanonicalStoryRuntime {
         visiting.put(endpoint, Boolean.TRUE);
         String type = node.getType();
         boolean value;
-        if ("and".equals(type) || "or".equals(type)) {
+        if ("logic_input".equals(type)) value = externalLogicInputsValue(node);
+        else if ("logic_output".equals(type)) value = logicInputValue(node, "logic_in", visiting);
+        else if ("and".equals(type) || "or".equals(type)) {
             boolean all = "and".equals(type);
             value = all;
             int inputs = 0;
@@ -435,6 +511,59 @@ public final class CanonicalStoryRuntime {
             if (entry.getValue() == null) throw failure("story.aggregate.logic", "Aggregate Logic value is null.");
             aggregateLogic.put(endpoint(placement.getId(), entry.getKey()), entry.getValue());
         }
+        recomputePublicLogic();
+    }
+
+    private void setInitialLogicInputs(Map<String, Boolean> values) {
+        if (values == null) throw new IllegalArgumentException("Story Logic inputs are required.");
+        for (Map.Entry<String, Boolean> entry : values.entrySet()) {
+            String id = requireId(entry.getKey(), "Story Logic input port ID");
+            if (entry.getValue() == null) throw new IllegalArgumentException("Story Logic input value is required.");
+            requireExternalInput(id);
+            externalLogicInputs.put(id, entry.getValue());
+        }
+        recomputePublicLogic();
+    }
+
+    private void requireExternalInput(String id) {
+        boolean found = false;
+        for (CanonicalGraphNode node : nodes.values())
+            if ("logic_input".equals(node.getType()) && id.equals(requiredString(node, "port_id", "story.logic_input")))
+                found = true;
+        if (!found) throw failure("story.logic_input.missing", "Unknown Story Logic input: " + id);
+    }
+
+    private boolean externalLogicInputsValue(CanonicalGraphNode node) {
+        String id = requiredString(node, "port_id", "story.logic_input");
+        Boolean value = externalLogicInputs.get(id);
+        return value != null && value.booleanValue();
+    }
+
+    private void recomputePublicLogic() {
+        publicLogicOutputs.clear();
+        for (CanonicalGraphNode node : nodes.values()) if ("logic_output".equals(node.getType())) {
+            String id = requiredString(node, "port_id", "story.logic_output");
+            publicLogicOutputs
+                .put(id, Boolean.valueOf(logicInputValue(node, "logic_in", new HashMap<String, Boolean>())));
+        }
+    }
+
+    private CanonicalStoryStartConfiguration.Trigger startTrigger(String portId) {
+        for (CanonicalStoryStartConfiguration.Trigger trigger : CanonicalStoryStartConfiguration.parse(resource)
+            .getTriggers()) if (portId.equals(trigger.getPortId())) return trigger;
+        throw failure("story.start.trigger.port", "Unknown Story Start trigger: " + portId);
+    }
+
+    /** Legacy resources had no Start metadata; retain their explicit trigger-port compatibility path. */
+    private CanonicalStoryStartConfiguration.Trigger startTriggerIfConfigured(String portId) {
+        CanonicalGraphNode start = uniqueNode("start");
+        if (start.getProperties()
+            .isEmpty()) return null;
+        return startTrigger(portId);
+    }
+
+    private Map<String, Boolean> detached(Map<String, Boolean> source) {
+        return Collections.unmodifiableMap(new LinkedHashMap<String, Boolean>(source));
     }
 
     private void transitionFrom(CanonicalGraphNode node, String portId) {
@@ -486,7 +615,25 @@ public final class CanonicalStoryRuntime {
                 if (count > 1) throw failure("story.logic.input.multiple_sources", "Logic input has multiple sources.");
             }
         }
+        Set<String> inputIds = new HashSet<String>();
+        Set<String> outputIds = new HashSet<String>();
+        for (CanonicalGraphNode node : nodes.values()) {
+            if ("logic_input".equals(node.getType()))
+                inputIds.add(requiredString(node, "port_id", "story.logic_input"));
+            if ("logic_output".equals(node.getType()))
+                outputIds.add(requiredString(node, "port_id", "story.logic_output"));
+        }
+        if (inputIds.size() != countType("logic_input"))
+            throw failure("story.logic_input.duplicate", "Story Logic input port_id is duplicated.");
+        if (outputIds.size() != countType("logic_output"))
+            throw failure("story.logic_output.duplicate", "Story Logic output port_id is duplicated.");
         validateLogicAcyclic();
+    }
+
+    private int countType(String type) {
+        int count = 0;
+        for (CanonicalGraphNode node : nodes.values()) if (type.equals(node.getType())) count++;
+        return count;
     }
 
     private void validateNodeShape(CanonicalGraphNode node) {
@@ -494,9 +641,9 @@ public final class CanonicalStoryRuntime {
         if ("start".equals(type)) {
             int outputs = 0;
             for (CanonicalGraphPort port : node.getPorts()) {
-                if (!port.isOutput() || port.getKind() != CanonicalGraphInterfaceKind.FLOW)
-                    throw failure("story.start.port", "Start may contain only Flow outputs.");
-                outputs++;
+                if (port.isOutput() && port.getKind() == CanonicalGraphInterfaceKind.FLOW) outputs++;
+                else if (!port.isInput() || port.getKind() != CanonicalGraphInterfaceKind.LOGIC)
+                    throw failure("story.start.port", "Start may contain Flow outputs and Logic inputs.");
             }
             if (outputs < 1)
                 throw failure("story.start.trigger.required", "Start requires at least one trigger output.");
@@ -510,11 +657,12 @@ public final class CanonicalStoryRuntime {
             requirePort(node, "flow_false", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
         } else if ("session".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
-            requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
             requiredString(node, "resource_id", "story.session.resource");
+            validateAggregatePorts(node);
         } else if ("task".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requiredString(node, "resource_id", "story.task.resource");
+            validateAggregatePorts(node);
         } else if ("action".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
@@ -539,7 +687,26 @@ public final class CanonicalStoryRuntime {
             for (CanonicalGraphPort port : node.getPorts())
                 if (port.isInput() && port.getKind() == CanonicalGraphInterfaceKind.LOGIC) inputs++;
             if (inputs < 2) throw failure("story.logic.input.cardinality", "And/Or requires at least two inputs.");
+        } else if ("logic_input".equals(type)) {
+            requirePort(node, "logic_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.LOGIC);
+            requiredString(node, "port_id", "story.logic_input");
+            requiredString(node, "display_name", "story.logic_input");
+        } else if ("logic_output".equals(type)) {
+            requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
+            requiredString(node, "port_id", "story.logic_output");
+            requiredString(node, "display_name", "story.logic_output");
         }
+    }
+
+    private void validateAggregatePorts(CanonicalGraphNode node) {
+        for (CanonicalGraphPort port : node.getPorts())
+            if (port != null && port.getId() != null && !"flow_in".equals(port.getId())) {
+                if (port.getKind() == CanonicalGraphInterfaceKind.FLOW && !port.isOutput())
+                    throw failure("story.aggregate.port", "Aggregate Flow ports besides flow_in must be outputs.");
+                if (port.getKind() != CanonicalGraphInterfaceKind.FLOW
+                    && port.getKind() != CanonicalGraphInterfaceKind.LOGIC)
+                    throw failure("story.aggregate.port", "Aggregate ports must be Flow or Logic.");
+            }
     }
 
     private void validatePorts(CanonicalGraphNode node) {
@@ -626,6 +793,17 @@ public final class CanonicalStoryRuntime {
                         waitRadius.doubleValue(),
                         requiredPositiveFinite(current, "radius", "story.region.radius")) != 0)
                     throw failure("story.restore.wait", "Restored Region wait is invalid.");
+            }
+            if (waitKind == CanonicalStoryWaitKind.CONDITION) {
+                if (!"condition".equals(current.getType()) || waitingConditionValue == null)
+                    throw failure("story.restore.wait", "Restored Condition wait is invalid.");
+                boolean currentValue = logicInputValue(current, "logic_in", new HashMap<String, Boolean>());
+                String output = currentValue ? "flow_true" : "flow_false";
+                if (currentValue != waitingConditionValue.booleanValue()
+                    || uniqueOutgoing(current, output, CanonicalGraphInterfaceKind.FLOW) != null)
+                    throw failure("story.restore.wait", "Restored Condition wait is stale.");
+            } else if (waitingConditionValue != null) {
+                throw failure("story.restore.wait", "Only a Condition may retain a wait value.");
             }
         }
         for (String endpoint : aggregateLogic.keySet()) {
@@ -757,6 +935,7 @@ public final class CanonicalStoryRuntime {
         waitY = null;
         waitZ = null;
         waitRadius = null;
+        waitingConditionValue = null;
     }
 
     private void ensureInitialized() {

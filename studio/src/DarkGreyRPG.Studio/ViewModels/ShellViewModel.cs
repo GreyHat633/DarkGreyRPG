@@ -10,6 +10,8 @@ using DarkGreyRPG.Studio.Core.Graphs.Migration;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Items;
+using DarkGreyRPG.Studio.Core.Packaging;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -23,6 +25,7 @@ public sealed class ShellViewModel : ObservableObject
     private readonly IActorWorkspaceDialogs _actorWorkspaceDialogs;
     private readonly IResourceWorkspaceDialogs _resourceWorkspaceDialogs;
     private readonly ICanonicalStoryResourceDialogs _canonicalStoryResourceDialogs;
+    private readonly IItemWorkspaceDialogs _itemWorkspaceDialogs;
     private readonly IProjectWorkspaceDialogs _projectWorkspaceDialogs;
     private readonly IFlowWorkspaceDialogs _flowWorkspaceDialogs;
     private readonly ICrashLogService _crashLogService;
@@ -65,7 +68,8 @@ public sealed class ShellViewModel : ObservableObject
         ICanonicalStoryResourceDialogs? canonicalStoryResourceDialogs = null,
         Func<string, CanonicalProjectGraphStore>? canonicalGraphStoreFactory = null,
         Func<string, CanonicalProjectMigrationPreviewResult>? migrationPreview = null,
-        Func<CanonicalProjectMigrationPreviewResult, CanonicalProjectMigrationTransactionResult>? migrationApply = null)
+        Func<CanonicalProjectMigrationPreviewResult, CanonicalProjectMigrationTransactionResult>? migrationApply = null,
+        IItemWorkspaceDialogs? itemWorkspaceDialogs = null)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         _projectFolderPicker = projectFolderPicker ?? throw new ArgumentNullException(nameof(projectFolderPicker));
@@ -73,6 +77,7 @@ public sealed class ShellViewModel : ObservableObject
         _projectWorkspaceDialogs = projectWorkspaceDialogs ?? new NullProjectWorkspaceDialogs();
         _resourceWorkspaceDialogs = resourceWorkspaceDialogs ?? new NullResourceWorkspaceDialogs();
         _canonicalStoryResourceDialogs = canonicalStoryResourceDialogs ?? new NullCanonicalStoryResourceDialogs();
+        _itemWorkspaceDialogs = itemWorkspaceDialogs ?? new NullItemWorkspaceDialogs();
         _flowWorkspaceDialogs = flowWorkspaceDialogs ?? new NullFlowWorkspaceDialogs();
         _crashLogService = crashLogService ?? new CrashLogService();
         _canonicalGraphStoreFactory = canonicalGraphStoreFactory
@@ -113,6 +118,9 @@ public sealed class ShellViewModel : ObservableObject
         ShowProjectHomeCommand = new RelayCommand(ShowProjectHome, () => HasProject);
         ShowProjectGraphCommand = new RelayCommand(ShowProjectGraph, () => HasProject);
         MigrateCanonicalProjectCommand = new RelayCommand(MigrateCanonicalProject, () => HasProject);
+        ExportSelectedStoryPackageCommand = new RelayCommand(
+            ExportSelectedStoryPackage,
+            () => HasProject && ProjectHome.SelectedStory is not null && !HasUnsavedDocuments());
         ToggleResourceBrowserCommand = new RelayCommand(
             () => IsResourceBrowserVisible = !IsResourceBrowserVisible);
         ToggleBottomPanelCommand = new RelayCommand(
@@ -228,6 +236,8 @@ public sealed class ShellViewModel : ObservableObject
     public RelayCommand ShowProjectGraphCommand { get; }
 
     public RelayCommand MigrateCanonicalProjectCommand { get; }
+
+    public RelayCommand ExportSelectedStoryPackageCommand { get; }
 
     // Short alias retained for callers that refer to the menu action as project migration.
     public RelayCommand MigrateProjectCommand => MigrateCanonicalProjectCommand;
@@ -777,7 +787,7 @@ public sealed class ShellViewModel : ObservableObject
             OnPropertyChanged(nameof(HasProject));
             RaiseWorkspaceCommandStates();
             RefreshProblems();
-            ReportSuccess("项目已创建，可开始新建剧情。", "Project");
+            ReportSuccess("项目已创建，可开始新建故事。", "Project");
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
         {
@@ -823,6 +833,7 @@ public sealed class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(ProjectHome));
         OpenSelectedStoryCommand.RaiseCanExecuteChanged();
         DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
+        ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
     }
 
     private static CanonicalStoryHomeEntry ToCanonicalStoryHomeEntry(
@@ -926,7 +937,10 @@ public sealed class ShellViewModel : ObservableObject
         catch (Exception exception) when (exception is GraphResourceRepositoryException
             or CanonicalStoryMembershipRepositoryException
             or ActorRepositoryException
-            or ActorValidationException)
+            or ActorValidationException
+            or ItemRepositoryException
+            or ItemValidationException
+            or ItemDataException)
         {
             ReportFailure(
                 "打开 Canonical Story",
@@ -949,6 +963,8 @@ public sealed class ShellViewModel : ObservableObject
         workspace.ReferenceResourceRequested = ReferenceCanonicalStoryResource;
         workspace.CreateActorRequested = CreateCanonicalStoryActor;
         workspace.ReferenceActorRequested = ReferenceCanonicalStoryActor;
+        workspace.CreateItemRequested = CreateCanonicalStoryItem;
+        workspace.ReferenceItemRequested = ReferenceCanonicalStoryItem;
         workspace.DeleteResourceRequested = DeleteCanonicalStoryResource;
         workspace.RefreshResourceCommandStates();
     }
@@ -1103,6 +1119,87 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
+    private void CreateCanonicalStoryItem()
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        var project = _projectService.CurrentProject;
+        if (workspace is null || store is null || project is null
+            || !CanMutateCanonicalStoryResources(workspace)) return;
+        try
+        {
+            var repository = new ItemRepository(project.ProjectDirectory);
+            var mode = _itemWorkspaceDialogs.RequestCreationMode(workspace.StoryEditor.DisplayName);
+            if (mode is null) return;
+            if (!Enum.IsDefined(mode.Value))
+                throw new InvalidOperationException("Item creation dialog returned an unsupported mode.");
+            var kind = mode == ItemCreationMode.Individual
+                ? CanonicalStoryItemKind.Individual
+                : CanonicalStoryItemKind.Collective;
+            var suggestedId = kind == CanonicalStoryItemKind.Individual
+                ? repository.GetAvailableItemId("new_item")
+                : repository.GetAvailableGroupId("new_group");
+            var request = _itemWorkspaceDialogs.RequestCreate(kind, suggestedId);
+            if (request is null) return;
+            if (request.Kind != kind)
+                throw new InvalidOperationException("Item creation dialog returned a different resource kind.");
+
+            var created = new CanonicalStoryItemLifecycleService(store, repository).CreateOwned(
+                workspace.StoryEditor.Id,
+                kind,
+                request.Id,
+                request.DisplayName,
+                request.Tags);
+            ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, created.Id);
+            ReportSuccess(
+                $"Canonical {(kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{created.Id}' 已创建。",
+                $"canonical/{(kind == CanonicalStoryItemKind.Individual ? "item" : "item_group")}/{created.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure("创建 Canonical 物品", exception, sourceOverride: "canonical/item");
+        }
+    }
+
+    private void ReferenceCanonicalStoryItem()
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        var project = _projectService.CurrentProject;
+        if (workspace is null || store is null || project is null
+            || !CanMutateCanonicalStoryResources(workspace)) return;
+        try
+        {
+            var repository = new ItemRepository(project.ProjectDirectory);
+            var present = workspace.Folders
+                .Single(folder => folder.Kind == CanonicalStoryFolderKind.Items)
+                .Items.OfType<CanonicalStoryItemItem>()
+                .Select(item => (item.Type, item.Id))
+                .ToHashSet();
+            var candidates = repository.ListItems().Concat(repository.ListGroups())
+                .Where(info => !present.Contains((info.Type, info.Id)))
+                .ToArray();
+            var choice = _itemWorkspaceDialogs.PickReference(candidates, workspace.StoryEditor.DisplayName);
+            if (choice is null) return;
+            if (!candidates.Any(candidate =>
+                    string.Equals(candidate.Id, choice.Id, StringComparison.Ordinal)
+                    && ((choice.Kind == CanonicalStoryItemKind.Individual && candidate.Type == IndividualItemResource.ResourceType)
+                        || (choice.Kind == CanonicalStoryItemKind.Collective && candidate.Type == CollectiveItemResource.ResourceType))))
+                throw new InvalidOperationException("Item picker returned an item outside the offered scope.");
+
+            new CanonicalStoryItemLifecycleService(store, repository).AddReference(
+                workspace.StoryEditor.Id, choice.Kind, choice.Id);
+            ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, choice.Id);
+            ReportSuccess(
+                $"已引用 Canonical {(choice.Kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{choice.Id}'。",
+                $"canonical/{(choice.Kind == CanonicalStoryItemKind.Individual ? "item" : "item_group")}/{choice.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure("引用 Canonical 物品", exception, sourceOverride: "canonical/item");
+        }
+    }
+
     private void DeleteCanonicalStoryResource(ICanonicalStoryTreeItem item)
     {
         var workspace = CanonicalStoryWorkspace;
@@ -1112,6 +1209,11 @@ public sealed class ShellViewModel : ObservableObject
             || item is CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors })
         {
             DeleteCanonicalStoryActor(item, workspace, store);
+            return;
+        }
+        if (TryDescribeCanonicalItem(item, store, out var itemChoice, out var itemIsReferenced, out var itemIsMissing))
+        {
+            DeleteCanonicalStoryItem(itemChoice, itemIsReferenced, itemIsMissing, workspace, store);
             return;
         }
         if (!TryDescribeCanonicalResource(item, store, out var choice, out var isReferenced, out var isMissing))
@@ -1164,6 +1266,53 @@ public sealed class ShellViewModel : ObservableObject
                 $"更新 Canonical {CanonicalKindLabel(choice.ResourceKind)}",
                 exception,
                 sourceOverride: $"canonical/{choice.ResourceKind}/{choice.Id}");
+        }
+    }
+
+    private void DeleteCanonicalStoryItem(
+        ItemWorkspaceChoice choice,
+        bool isReferenced,
+        bool isMissing,
+        CanonicalStoryWorkspaceViewModel workspace,
+        CanonicalProjectGraphStore store)
+    {
+        var project = _projectService.CurrentProject;
+        if (project is null) return;
+        var storyId = workspace.StoryEditor.Id;
+        var repository = new ItemRepository(project.ProjectDirectory);
+        var service = new CanonicalStoryItemLifecycleService(store, repository);
+        var label = choice.Kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组";
+        try
+        {
+            if (isReferenced)
+            {
+                if (!_itemWorkspaceDialogs.ConfirmRemoveReference(choice, workspace.StoryEditor.DisplayName)) return;
+                service.RemoveReference(storyId, choice.Kind, choice.Id);
+                ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Items);
+                ReportSuccess($"已解除 Canonical {label} '{choice.Id}' 的引用；文件未删除。", $"canonical/item/{choice.Id}");
+                return;
+            }
+            if (isMissing)
+            {
+                ReportWarning($"拥有的 Canonical {label} '{choice.Id}' 文件缺失，无法执行安全删除。", $"canonical/item/{choice.Id}");
+                return;
+            }
+
+            var plan = service.GetDeletionPlan(storyId, choice.Kind, choice.Id);
+            if (!plan.CanDelete)
+            {
+                _itemWorkspaceDialogs.ShowDeleteBlocked(choice, plan.ReferencingStoryIds);
+                ReportWarning($"Canonical {label} '{choice.Id}' 仍被其它 Story 使用，未删除。", $"canonical/item/{choice.Id}");
+                return;
+            }
+            if (!_itemWorkspaceDialogs.ConfirmDeleteOwned(choice)) return;
+            service.DeleteOwned(storyId, choice.Kind, choice.Id);
+            ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Items);
+            ReportSuccess($"Canonical {label} '{choice.Id}' 已删除。", $"canonical/item/{choice.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure($"更新 Canonical {label}", exception, sourceOverride: $"canonical/item/{choice.Id}");
         }
     }
 
@@ -1318,6 +1467,60 @@ public sealed class ShellViewModel : ObservableObject
         return true;
     }
 
+    private static bool TryDescribeCanonicalItem(
+        ICanonicalStoryTreeItem item,
+        CanonicalProjectGraphStore store,
+        out ItemWorkspaceChoice choice,
+        out bool isReferenced,
+        out bool isMissing)
+    {
+        CanonicalStoryItemKind kind;
+        string id;
+        string displayName;
+        string sourcePath;
+        IReadOnlyList<string> tags;
+        switch (item)
+        {
+            case CanonicalStoryItemItem resolved:
+                kind = resolved.Item is IndividualItemResource
+                    ? CanonicalStoryItemKind.Individual
+                    : CanonicalStoryItemKind.Collective;
+                id = resolved.Id;
+                displayName = resolved.DisplayName;
+                sourcePath = resolved.Item is IndividualItemResource
+                    ? new ItemRepository(store.ProjectDirectory).GetItemPath(id)
+                    : new ItemRepository(store.ProjectDirectory).GetGroupPath(id);
+                tags = resolved.Tags;
+                isReferenced = resolved.IsReferenced;
+                isMissing = false;
+                break;
+            case CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Items } missing:
+                // A missing entry still has enough identity to show a safe
+                // delete warning, but must never be handed to DeleteOwned.
+                kind = string.Equals(missing.Issue.Field, "item_groups", StringComparison.Ordinal)
+                    ? CanonicalStoryItemKind.Collective
+                    : CanonicalStoryItemKind.Individual;
+                id = missing.Id;
+                displayName = missing.DisplayName;
+                var missingRepository = new ItemRepository(store.ProjectDirectory);
+                sourcePath = kind == CanonicalStoryItemKind.Individual
+                    ? missingRepository.GetItemPath(id)
+                    : missingRepository.GetGroupPath(id);
+                tags = [];
+                isReferenced = missing.IsReferenced;
+                isMissing = true;
+                break;
+            default:
+                choice = null!;
+                isReferenced = false;
+                isMissing = false;
+                return false;
+        }
+
+        choice = new ItemWorkspaceChoice(kind, id, displayName, sourcePath, tags);
+        return true;
+    }
+
     private static bool TryDescribeCanonicalActor(
         ICanonicalStoryTreeItem item,
         ActorRepository repository,
@@ -1406,11 +1609,15 @@ public sealed class ShellViewModel : ObservableObject
         => exception is CanonicalStoryLifecycleException
             or CanonicalStoryResourceLifecycleException
             or CanonicalStoryActorLifecycleException
+            or CanonicalStoryItemLifecycleException
             or ProjectException
             or GraphResourceRepositoryException
             or CanonicalStoryMembershipRepositoryException
             or ActorRepositoryException
             or ActorValidationException
+            or ItemRepositoryException
+            or ItemValidationException
+            or ItemDataException
             or IOException
             or UnauthorizedAccessException
             or InvalidOperationException;
@@ -1460,7 +1667,7 @@ public sealed class ShellViewModel : ObservableObject
             LoadStoryList();
             ProjectHome.SelectedStory = ProjectHome.Stories.Single(item => item.Id == story.Id);
             ProjectHome.ShowHome();
-            StatusMessage = $"Canonical 剧情 '{story.Id}' 已创建。";
+            StatusMessage = $"Canonical 故事 '{story.Id}' 已创建。";
             Output.Append(StatusMessage, OutputKind.Success, $"canonical/story/{story.Id}");
             Toast.Show(StatusMessage, ToastKind.Success);
         }
@@ -1469,7 +1676,7 @@ public sealed class ShellViewModel : ObservableObject
             || IsCanonicalResourceLifecycleException(exception)
             || IsRecoverableUiException(exception))
         {
-            ReportFailure("新建剧情", exception);
+            ReportFailure("新建故事", exception);
         }
         finally
         {
@@ -1495,7 +1702,7 @@ public sealed class ShellViewModel : ObservableObject
             if (plan.Blockers.Count > 0)
             {
                 ReportWarning(
-                    $"无法删除剧情 '{selected.Id}'：{string.Join("；", plan.Blockers)}",
+                    $"无法删除故事 '{selected.Id}'：{string.Join("；", plan.Blockers)}",
                     $"story/{selected.Id}");
                 return;
             }
@@ -1509,13 +1716,13 @@ public sealed class ShellViewModel : ObservableObject
             _flowRecoveryStore?.Delete(selected.Id);
             LoadStoryList();
             ProjectHome.ShowHome();
-            StatusMessage = $"剧情 '{selected.Id}' 已从项目中删除。";
+            StatusMessage = $"故事 '{selected.Id}' 已从项目中删除。";
             Output.Append(StatusMessage, OutputKind.Success, $"story/{selected.Id}");
             Toast.Show(StatusMessage, ToastKind.Success);
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
         {
-            ReportFailure("删除剧情", exception, selected.Id);
+            ReportFailure("删除故事", exception, selected.Id);
         }
     }
 
@@ -1534,13 +1741,13 @@ public sealed class ShellViewModel : ObservableObject
         if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
         {
             CanonicalStoryWorkspace.ReturnToStory();
-            StatusMessage = $"已从剧情图谱打开 Canonical Story Flow：{storyId}";
+            StatusMessage = $"已从故事图谱打开 Canonical Story Flow：{storyId}";
             Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
             return;
         }
         if (!StoryWorkspace.HasStory || StoryWorkspace.StoryId != storyId) return;
         StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-        StatusMessage = $"已从剧情图谱打开 Story Flow：{storyId}";
+        StatusMessage = $"已从故事图谱打开 Story Flow：{storyId}";
         Output.Append(StatusMessage, source: $"story/{storyId}/flow");
     }
 
@@ -2022,7 +2229,7 @@ public sealed class ShellViewModel : ObservableObject
                 && string.Equals(workspace.StoryEditor.Id, selected.Id, StringComparison.Ordinal))
             {
                 ReportWarning(
-                    $"无法删除 Canonical 剧情 '{selected.Id}'：请先保存或放弃未保存的编辑。",
+                    $"无法删除 Canonical 故事 '{selected.Id}'：请先保存或放弃未保存的编辑。",
                     $"canonical/story/{selected.Id}");
                 return;
             }
@@ -2035,7 +2242,7 @@ public sealed class ShellViewModel : ObservableObject
             if (!plan.CanDelete)
             {
                 ReportWarning(
-                    $"无法删除 Canonical 剧情 '{selected.Id}'：{string.Join("；", plan.Blockers.Select(blocker => blocker.Message))}",
+                    $"无法删除 Canonical 故事 '{selected.Id}'：{string.Join("；", plan.Blockers.Select(blocker => blocker.Message))}",
                     $"canonical/story/{selected.Id}");
                 return;
             }
@@ -2061,7 +2268,7 @@ public sealed class ShellViewModel : ObservableObject
             ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == selected.Id);
             ProjectHome.ShowHome();
             ReportSuccess(
-                $"Canonical 剧情 '{selected.Id}' 已从项目中删除。",
+                $"Canonical 故事 '{selected.Id}' 已从项目中删除。",
                 $"canonical/story/{selected.Id}");
         }
         catch (Exception exception) when (
@@ -2069,7 +2276,7 @@ public sealed class ShellViewModel : ObservableObject
             || IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                "删除 Canonical 剧情",
+                "删除 Canonical 故事",
                 exception,
                 sourceOverride: $"canonical/story/{selected.Id}");
         }
@@ -2318,6 +2525,32 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
+    private void ExportSelectedStoryPackage()
+    {
+        var project = _projectService.CurrentProject;
+        var story = ProjectHome.SelectedStory;
+        if (project is null || story is null) return;
+        if (HasUnsavedDocuments())
+        {
+            ReportWarning("请先保存当前故事及其资源，再导出故事包。", $"story/{story.Id}");
+            return;
+        }
+
+        try
+        {
+            var output = Path.Combine(project.ProjectDirectory, "build", "story_packages", story.Id);
+            var result = new StoryPackageExporter(project.ProjectDirectory)
+                .Build(story.Id, output, "0.3.1.0");
+            _lastUiCommand = nameof(ExportSelectedStoryPackage);
+            OnPropertyChanged(nameof(LastUiCommand));
+            ReportSuccess($"故事包已导出：{result.PackageDirectory}", $"story/{story.Id}");
+        }
+        catch (Exception exception) when (IsWorkspaceException(exception) || exception is StoryPackageException)
+        {
+            ReportFailure("导出故事包", exception, story.Id);
+        }
+    }
+
     private void RememberProject(string projectDirectory)
     {
         RemoveRecentProject(projectDirectory);
@@ -2467,7 +2700,7 @@ public sealed class ShellViewModel : ObservableObject
             _projectService.AddActorReference(StoryWorkspace.StoryId, selected.Id);
             RefreshCurrentStory(selected.Id);
             ReportSuccess(
-                $"已引用 Actor '{selected.Id}'；多个剧情将共享同一份角色数据。",
+                $"已引用 Actor '{selected.Id}'；多个故事将共享同一份角色数据。",
                 $"actor/{selected.Id}");
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
@@ -2557,7 +2790,7 @@ public sealed class ShellViewModel : ObservableObject
             {
                 _actorWorkspaceDialogs.ShowReferences(SelectedActor, references);
                 ReportWarning(
-                    $"Actor '{deletedId}' 仍被 {references.Count} 个剧情引用；请先解除引用。",
+                    $"Actor '{deletedId}' 仍被 {references.Count} 个故事引用；请先解除引用。",
                     $"actor/{deletedId}");
                 return;
             }
@@ -2700,7 +2933,7 @@ public sealed class ShellViewModel : ObservableObject
             if (type == ProjectResourceType.Dialogue) _projectService.AddDialogueReference(StoryWorkspace.StoryId, selected.Id);
             else _projectService.AddQuestReference(StoryWorkspace.StoryId, selected.Id);
             RefreshCurrentStory(selectedResourceId: selected.Id);
-            ReportSuccess($"已引用 {type.Value} '{selected.Id}'；多个剧情共享同一份数据。", $"{type.Value.ToString().ToLowerInvariant()}/{selected.Id}");
+            ReportSuccess($"已引用 {type.Value} '{selected.Id}'；多个故事共享同一份数据。", $"{type.Value.ToString().ToLowerInvariant()}/{selected.Id}");
         }
         catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
@@ -2721,7 +2954,7 @@ public sealed class ShellViewModel : ObservableObject
             if (type == ProjectResourceType.Dialogue) _projectService.RemoveDialogueReference(StoryWorkspace.StoryId, membership.Id);
             else _projectService.RemoveQuestReference(StoryWorkspace.StoryId, membership.Id);
             RefreshCurrentStory();
-            ReportSuccess($"已解除 {type.Value} '{membership.Id}' 的剧情引用；资源文件未删除。", $"{type.Value.ToString().ToLowerInvariant()}/{membership.Id}");
+            ReportSuccess($"已解除 {type.Value} '{membership.Id}' 的故事引用；资源文件未删除。", $"{type.Value.ToString().ToLowerInvariant()}/{membership.Id}");
         }
         catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
         {
@@ -2779,7 +3012,7 @@ public sealed class ShellViewModel : ObservableObject
             if (references.Count > 0)
             {
                 _resourceWorkspaceDialogs.ShowReferences(descriptor, references);
-                ReportWarning($"{descriptor.Type} '{descriptor.Id}' 仍被 {references.Count} 个剧情引用；请先解除引用。", $"{descriptor.Type.ToString().ToLowerInvariant()}/{descriptor.Id}");
+                ReportWarning($"{descriptor.Type} '{descriptor.Id}' 仍被 {references.Count} 个故事引用；请先解除引用。", $"{descriptor.Type.ToString().ToLowerInvariant()}/{descriptor.Id}");
                 return;
             }
             if (!_resourceWorkspaceDialogs.ConfirmDelete(descriptor)) return;
@@ -2923,7 +3156,8 @@ public sealed class ShellViewModel : ObservableObject
     private static bool IsWorkspaceException(Exception exception) =>
         exception is ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
             or DialogueException or QuestException
-            or StoryRepositoryException or StoryNotFoundException or StoryDataException or StoryValidationException;
+            or StoryRepositoryException or StoryNotFoundException or StoryDataException or StoryValidationException
+            or ItemRepositoryException or ItemDataException or ItemValidationException;
 
     internal static bool IsRecoverableUiException(Exception exception) =>
         exception is InvalidOperationException or ArgumentException or InvalidCastException or XamlParseException;
@@ -2954,6 +3188,7 @@ public sealed class ShellViewModel : ObservableObject
         {
             OpenSelectedStoryCommand.RaiseCanExecuteChanged();
             DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
+            ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -3081,6 +3316,7 @@ public sealed class ShellViewModel : ObservableObject
         ShowProjectHomeCommand.RaiseCanExecuteChanged();
         ShowProjectGraphCommand.RaiseCanExecuteChanged();
         MigrateCanonicalProjectCommand.RaiseCanExecuteChanged();
+        ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
     }
 
     private void RefreshProblems()

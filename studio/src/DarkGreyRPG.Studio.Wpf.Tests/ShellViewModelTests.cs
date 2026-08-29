@@ -436,7 +436,7 @@ public sealed class ShellViewModelTests
         }
         Assert.IsEmpty(Directory.EnumerateFiles(Path.Combine(destination, "stories"), "*.json"));
         Assert.IsEmpty(shell.ProjectHome.Stories);
-        Assert.IsTrue(shell.StatusMessage.Contains("新建剧情", StringComparison.Ordinal));
+        Assert.IsTrue(shell.StatusMessage.Contains("新建故事", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -587,6 +587,27 @@ public sealed class ShellViewModelTests
         Assert.IsFalse(shell.StoryWorkspace.HasStory);
         Assert.AreEqual(OutputKind.Error, shell.Output.Entries.Last().Kind);
         Assert.IsTrue(shell.Output.Entries.Last().Message.Contains("membership", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void ExportSelectedStoryPackageCommandBuildsServerReadyPackage()
+    {
+        using var directory = new TestProjectDirectory();
+        Directory.CreateDirectory(Path.Combine(directory.Root, "dialogues"));
+        Directory.CreateDirectory(Path.Combine(directory.Root, "quests"));
+        new StoryRepository(directory.Root).CreateStory("opening", "Opening");
+        var shell = CreateShell(directory.Root);
+        shell.OpenProjectCommand.Execute(null);
+        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "opening");
+
+        Assert.IsTrue(shell.ExportSelectedStoryPackageCommand.CanExecute(null));
+        shell.ExportSelectedStoryPackageCommand.Execute(null);
+
+        var package = Path.Combine(directory.Root, "build", "story_packages", "opening");
+        Assert.IsTrue(File.Exists(Path.Combine(package, "manifest.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(package, "stories", "opening.json")));
+        StringAssert.Contains(File.ReadAllText(Path.Combine(package, "manifest.json")), "\"package_version\": \"0.3.1.0\"");
+        Assert.AreEqual(OutputKind.Success, shell.Output.Entries.Last().Kind);
     }
 
     private static GraphResourceEnvelope Envelope(

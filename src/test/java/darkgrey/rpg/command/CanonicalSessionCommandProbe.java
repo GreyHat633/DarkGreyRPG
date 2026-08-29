@@ -12,17 +12,17 @@ public final class CanonicalSessionCommandProbe {
     private CanonicalSessionCommandProbe() {}
 
     public static void main(String[] args) {
-        require("/dgrpg session <play|resume>".equals(CommandDarkGreyRpg.sessionUsage(null)), "base Session usage");
+        require("/dgr session <play|resume>".equals(CommandDarkGreyRpg.sessionUsage(null)), "base Session usage");
         require(
-            "/dgrpg session play <story_id> <aggregate_node_id>"
+            "/dgr session play <story_id> <aggregate_node_id>"
                 .equals(CommandDarkGreyRpg.sessionUsage(new String[] { "session", "play" })),
             "play usage");
         require(
-            "/dgrpg session resume <story_id>"
+            "/dgr session resume <story_id>"
                 .equals(CommandDarkGreyRpg.sessionUsage(new String[] { "session", "resume" })),
             "resume usage");
         require(
-            "/dgrpg session <play|resume>".equals(CommandDarkGreyRpg.sessionUsage(new String[] { "session", "other" })),
+            "/dgr session <play|resume>".equals(CommandDarkGreyRpg.sessionUsage(new String[] { "session", "other" })),
             "unknown action usage");
 
         ProjectSnapshot project = CanonicalSessionForgeProbeProject.create();

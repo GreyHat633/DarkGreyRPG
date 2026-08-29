@@ -40,13 +40,15 @@ public sealed class CanonicalStoryResourceShellTests
     public void ReferencedAggregatePortRemovalCanCancelWithoutGraphOrDiskMutation()
     {
         using var project = new CanonicalProjectFixture();
-        project.AddOwnedSessionWithAggregate(includeConnection: true);
+        project.AddOwnedSessionWithAggregate(includeConnection: true, connectLogicBoundary: true);
         var dialogs = new FakeCanonicalDialogs { AggregateRemovalConfirmed = false };
         var shell = project.OpenShell(dialogs);
         var workspace = shell.CanonicalStoryWorkspace!;
         var session = workspace.SessionItems.Single();
         Assert.IsTrue(workspace.OpenGraphResource(session));
-        Assert.IsTrue(session.Editor.Host.SetNodeProperty("end", "port_id", "different"));
+        // Public boundary IDs are stable and immutable. Removing a named
+        // Logic boundary is the real aggregate-port deletion workflow.
+        Assert.IsTrue(session.Editor.Host.RemoveNode("logic"));
         var storyBefore = workspace.StoryEditor.Host.Graph.ToJson();
 
         shell.SaveCurrentResourceCommand.Execute(null);
@@ -55,6 +57,8 @@ public sealed class CanonicalStoryResourceShellTests
         Assert.AreEqual(storyBefore, workspace.StoryEditor.Host.Graph.ToJson());
         Assert.AreEqual("accepted", project.Store.Sessions.Load("opening_session").Graph!.Nodes
             .Single(node => node.Id == "end").Properties["port_id"].GetString());
+        Assert.IsNotNull(project.Store.Sessions.Load("opening_session").Graph!.Nodes
+            .SingleOrDefault(node => node.Id == "logic"));
         Assert.AreEqual(1, dialogs.AggregateRemovalConfirmationCount);
         Assert.HasCount(1, dialogs.LastAggregateReferences);
     }
@@ -63,13 +67,13 @@ public sealed class CanonicalStoryResourceShellTests
     public void ConfirmedAggregatePortRemovalSavesChildAndLeavesStoryDirtyForExplicitSave()
     {
         using var project = new CanonicalProjectFixture();
-        project.AddOwnedSessionWithAggregate(includeConnection: true);
+        project.AddOwnedSessionWithAggregate(includeConnection: true, connectLogicBoundary: true);
         var dialogs = new FakeCanonicalDialogs { AggregateRemovalConfirmed = true };
         var shell = project.OpenShell(dialogs);
         var workspace = shell.CanonicalStoryWorkspace!;
         var session = workspace.SessionItems.Single();
         Assert.IsTrue(workspace.OpenGraphResource(session));
-        Assert.IsTrue(session.Editor.Host.SetNodeProperty("end", "port_id", "different"));
+        Assert.IsTrue(session.Editor.Host.RemoveNode("logic"));
 
         shell.SaveCurrentResourceCommand.Execute(null);
 
@@ -77,9 +81,13 @@ public sealed class CanonicalStoryResourceShellTests
         Assert.IsTrue(workspace.StoryEditor.IsDirty);
         Assert.IsEmpty(workspace.StoryEditor.Host.Graph.Connections);
         Assert.IsNotNull(workspace.StoryEditor.Host.Graph.Nodes.Single(node => node.Id == "session-placement")
-            .Ports.SingleOrDefault(port => port.Id == "different"));
-        Assert.AreEqual("different", project.Store.Sessions.Load("opening_session").Graph!.Nodes
+            .Ports.SingleOrDefault(port => port.Id == "accepted"));
+        Assert.IsNull(workspace.StoryEditor.Host.Graph.Nodes.Single(node => node.Id == "session-placement")
+            .Ports.SingleOrDefault(port => port.Id == "known"));
+        Assert.AreEqual("accepted", project.Store.Sessions.Load("opening_session").Graph!.Nodes
             .Single(node => node.Id == "end").Properties["port_id"].GetString());
+        Assert.IsNull(project.Store.Sessions.Load("opening_session").Graph!.Nodes
+            .SingleOrDefault(node => node.Id == "logic"));
         Assert.AreEqual(1, dialogs.AggregateRemovalConfirmationCount);
     }
 
@@ -87,7 +95,7 @@ public sealed class CanonicalStoryResourceShellTests
     public void FailedChildWriteRollsBackOnlyDerivedStorySyncAndRestoresHistory()
     {
         using var project = new CanonicalProjectFixture();
-        project.AddOwnedSessionWithAggregate(includeConnection: true);
+        project.AddOwnedSessionWithAggregate(includeConnection: true, connectLogicBoundary: true);
         var dialogs = new FakeCanonicalDialogs { AggregateRemovalConfirmed = true };
         var shell = project.OpenShell(
             dialogs,
@@ -100,7 +108,7 @@ public sealed class CanonicalStoryResourceShellTests
         Assert.IsTrue(workspace.StoryEditor.Host.AddNode(
             GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "redo-edit")));
         Assert.IsTrue(workspace.StoryEditor.Host.Undo());
-        Assert.IsTrue(session.Editor.Host.SetNodeProperty("end", "port_id", "different"));
+        Assert.IsTrue(session.Editor.Host.RemoveNode("logic"));
         var storyBefore = workspace.StoryEditor.Host.Graph.ToJson();
         var undoBefore = workspace.StoryEditor.Host.Session.UndoCount;
         var redoBefore = workspace.StoryEditor.Host.Session.RedoCount;
@@ -226,7 +234,7 @@ public sealed class CanonicalStoryResourceShellTests
         public string Root { get; }
         public CanonicalProjectGraphStore Store { get; }
 
-        public void AddOwnedSessionWithAggregate(bool includeConnection)
+        public void AddOwnedSessionWithAggregate(bool includeConnection, bool connectLogicBoundary = false)
         {
             var session = Session("opening_session", "Opening Session", "accepted", "Accepted");
             Store.Sessions.Create(session);
@@ -235,21 +243,20 @@ public sealed class CanonicalStoryResourceShellTests
                 new CanonicalStoryMembershipSet { Sessions = ["opening_session"] }));
             var story = Store.Stories.Load("opening");
             var aggregate = CanonicalAggregateNodeFactory.Create(session, "session-placement").Candidate!;
-            var target = new GraphNode(
-                "target",
-                "choice",
-                "Target",
-                [new("in", "In", true, GraphInterfaceKind.Flow)]);
+            var target = connectLogicBoundary
+                ? GraphNodeFactory.Create(GraphScope.StoryFlow, "logic_output", "target")
+                : new GraphNode(
+                    "target",
+                    "choice",
+                    "Target",
+                    [new("in", "In", true, GraphInterfaceKind.Flow)]);
             var graph = story.Graph!;
             graph.Nodes.Add(aggregate);
             graph.Nodes.Add(target);
             if (includeConnection)
-                graph.Connections.Add(new(
-                    aggregate.Id,
-                    "accepted",
-                    target.Id,
-                    "in",
-                    GraphInterfaceKind.Flow));
+                graph.Connections.Add(connectLogicBoundary
+                    ? new(aggregate.Id, "known", target.Id, "logic_in", GraphInterfaceKind.Logic)
+                    : new(aggregate.Id, "accepted", target.Id, "in", GraphInterfaceKind.Flow));
             story.Graph = graph;
             Store.Stories.Replace(story);
         }
@@ -352,6 +359,9 @@ public sealed class CanonicalStoryResourceShellTests
         var end = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
         end.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement(portId);
         end.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement(portDisplayName);
-        return new(GraphResourceKind.Session, id, displayName, new GraphDocument([end]));
+        var logic = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
+        logic.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("known");
+        logic.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Known");
+        return new(GraphResourceKind.Session, id, displayName, new GraphDocument([end, logic]));
     }
 }

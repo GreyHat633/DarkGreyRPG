@@ -70,10 +70,12 @@ public final class CanonicalStoryStartConfiguration {
             if (element == null || !element.isJsonObject())
                 throw failure("story.start.trigger", "Each Story Start trigger must be an object.");
             JsonObject object = element.getAsJsonObject();
-            requireExactKeys(
-                object.entrySet(),
-                set("port_id", "display_name", "trigger_type", "trigger_properties", "order"),
-                "Story Start trigger");
+            Set<String> triggerKeys = set("port_id", "display_name", "trigger_type", "trigger_properties", "order");
+            Set<String> actualTriggerKeys = new HashSet<String>();
+            for (Map.Entry<String, JsonElement> entry : object.entrySet()) actualTriggerKeys.add(entry.getKey());
+            if (!actualTriggerKeys.equals(triggerKeys) && !(actualTriggerKeys.equals(
+                set("port_id", "display_name", "trigger_type", "trigger_properties", "order", "logic_port_id"))))
+                throw failure("story.start.schema", "Story Start trigger contain unknown or missing fields.");
             String portId = string(object, "port_id");
             String displayName = string(object, "display_name");
             String type = string(object, "trigger_type");
@@ -85,7 +87,10 @@ public final class CanonicalStoryStartConfiguration {
             JsonElement triggerProperties = object.get("trigger_properties");
             if (triggerProperties == null || !triggerProperties.isJsonObject())
                 throw failure("story.start.trigger.properties", "trigger_properties must be an object.");
-            triggers.add(parseTrigger(portId, displayName, type, order, triggerProperties.getAsJsonObject()));
+            String logicPortId = null;
+            if (object.has("logic_port_id")) logicPortId = string(object, "logic_port_id");
+            triggers
+                .add(parseTrigger(portId, displayName, type, order, triggerProperties.getAsJsonObject(), logicPortId));
         }
         Collections.sort(triggers);
         for (int index = 0; index < triggers.size(); index++) {
@@ -173,7 +178,7 @@ public final class CanonicalStoryStartConfiguration {
     }
 
     private static Trigger parseTrigger(String portId, String displayName, String type, int order,
-        JsonObject properties) {
+        JsonObject properties, String logicPortId) {
         Map<String, JsonElement> values = new LinkedHashMap<String, JsonElement>();
         for (Map.Entry<String, JsonElement> entry : properties.entrySet()) values.put(entry.getKey(), entry.getValue());
         if (ENTER_STORY.equals(type)) {
@@ -190,7 +195,7 @@ public final class CanonicalStoryStartConfiguration {
             if (number(properties, "radius") <= 0D)
                 throw failure("story.start.trigger.properties", "Region radius must be positive.");
         } else throw failure("story.start.trigger.type", "Unsupported Story Start trigger type: " + type);
-        return new Trigger(portId, displayName, type, order, values);
+        return new Trigger(portId, displayName, type, order, values, logicPortId);
     }
 
     private static void validatePort(CanonicalGraphNode start, Trigger trigger) {
@@ -206,6 +211,18 @@ public final class CanonicalStoryStartConfiguration {
             || !trigger.getDisplayName()
                 .equals(found.getDisplayName()))
             throw failure("story.start.trigger.port", "Story Start trigger metadata does not match its Flow port.");
+        if (trigger.getLogicPortId() != null) {
+            CanonicalGraphPort logic = null;
+            for (CanonicalGraphPort port : start.getPorts()) if (port != null && trigger.getLogicPortId()
+                .equals(port.getId())) {
+                    if (logic != null)
+                        throw failure("story.start.trigger.port", "Story Start trigger Logic port is duplicated.");
+                    logic = port;
+                }
+            if (logic == null || logic.getDirection() != CanonicalGraphPortDirection.INPUT
+                || logic.getInterfaceKind() != CanonicalGraphInterfaceKind.LOGIC)
+                throw failure("story.start.trigger.port", "Story Start trigger Logic condition port is invalid.");
+        }
     }
 
     private static int flowOutputCount(CanonicalGraphNode start) {
@@ -288,13 +305,16 @@ public final class CanonicalStoryStartConfiguration {
         private final String type;
         private final int order;
         private final Map<String, JsonElement> properties;
+        private final String logicPortId;
 
-        Trigger(String portId, String displayName, String type, int order, Map<String, JsonElement> properties) {
+        Trigger(String portId, String displayName, String type, int order, Map<String, JsonElement> properties,
+            String logicPortId) {
             this.portId = portId;
             this.displayName = displayName;
             this.type = type;
             this.order = order;
             this.properties = Collections.unmodifiableMap(new LinkedHashMap<String, JsonElement>(properties));
+            this.logicPortId = logicPortId;
         }
 
         public String getPortId() {
@@ -326,6 +346,14 @@ public final class CanonicalStoryStartConfiguration {
         public double getDouble(String key) {
             return properties.get(key)
                 .getAsDouble();
+        }
+
+        public String getLogicPortId() {
+            return logicPortId;
+        }
+
+        public String getConditionPortId() {
+            return logicPortId;
         }
 
         @Override

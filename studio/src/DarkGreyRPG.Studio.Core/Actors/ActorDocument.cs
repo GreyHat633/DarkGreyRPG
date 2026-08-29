@@ -13,15 +13,21 @@ public sealed class ActorDocument : INotifyPropertyChanged
     private IReadOnlyList<string> _tags;
     private string? _sourcePath;
     private bool _isNew;
+    private int _schemaVersion;
+    private readonly string? _type;
     private ActorSnapshot? _savedSnapshot;
     private IReadOnlyList<ValidationIssue> _validationIssues = [];
 
     private ActorDocument(ActorResource resource, string? sourcePath, bool isNew)
     {
-        _id = resource.Id;
+        _id = resource.SchemaVersion == ActorResource.CurrentSchemaVersion
+            ? resource.NpcId ?? resource.GroupId ?? string.Empty
+            : resource.Id;
         _displayName = resource.DisplayName;
         _notes = resource.Notes;
         _homeStoryId = resource.HomeStoryId ?? "uncategorized";
+        _schemaVersion = resource.SchemaVersion;
+        _type = resource.Type;
         _tags = ActorValidator.NormalizeTags(resource.Tags);
         _sourcePath = sourcePath;
         _isNew = isNew;
@@ -52,7 +58,16 @@ public sealed class ActorDocument : INotifyPropertyChanged
     public string HomeStoryId
     {
         get => _homeStoryId;
-        set => SetField(ref _homeStoryId, value ?? string.Empty);
+        set
+        {
+            // New documents may opt into schema 2 when a story is assigned;
+            // a loaded schema 1 document remains schema 1 on ordinary saves.
+            if (_isNew && _schemaVersion == ActorResource.LegacySchemaVersion && !string.IsNullOrWhiteSpace(value))
+            {
+                _schemaVersion = ActorResource.StorySchemaVersion;
+            }
+            SetField(ref _homeStoryId, value ?? string.Empty);
+        }
     }
 
     public IReadOnlyList<string> Tags => _tags;
@@ -80,13 +95,21 @@ public sealed class ActorDocument : INotifyPropertyChanged
         new(
             new ActorResource
             {
+                SchemaVersion = ActorResource.StorySchemaVersion,
                 Id = id,
                 DisplayName = displayName,
                 Notes = string.Empty,
                 Tags = [],
+                HomeStoryId = "uncategorized",
             },
             sourcePath: null,
             isNew: true);
+
+    public static ActorDocument CreateIndividual(string npcId, string displayName = "新角色") =>
+        new(new IndividualActorResource { NpcId = npcId, DisplayName = displayName, HomeStoryId = "uncategorized" }, sourcePath: null, isNew: true);
+
+    public static ActorDocument CreateCollective(string groupId, string displayName = "新角色") =>
+        new(new CollectiveActorResource { GroupId = groupId, DisplayName = displayName, HomeStoryId = "uncategorized" }, sourcePath: null, isNew: true);
 
     public static ActorDocument FromResource(ActorResource resource, string sourcePath)
     {
@@ -108,15 +131,37 @@ public sealed class ActorDocument : INotifyPropertyChanged
         RefreshState();
     }
 
-    public ActorResource ToResource() => new()
+    public ActorResource ToResource()
     {
-        SchemaVersion = ActorResource.CurrentSchemaVersion,
-        Id = Id,
-        DisplayName = DisplayName,
-        Notes = Notes,
-        Tags = [.. Tags],
-        HomeStoryId = HomeStoryId,
-    };
+        if (_schemaVersion == ActorResource.CurrentSchemaVersion)
+        {
+            return string.Equals(_type, IndividualActorResource.ResourceType, StringComparison.Ordinal)
+                ? new IndividualActorResource
+                {
+                    NpcId = Id,
+                    DisplayName = DisplayName,
+                    Tags = [.. Tags],
+                    HomeStoryId = HomeStoryId,
+                }
+                : new CollectiveActorResource
+                {
+                    GroupId = Id,
+                    DisplayName = DisplayName,
+                    Tags = [.. Tags],
+                    HomeStoryId = HomeStoryId,
+                };
+        }
+
+        return new ActorResource
+        {
+            SchemaVersion = _schemaVersion,
+            Id = Id,
+            DisplayName = DisplayName,
+            Notes = Notes,
+            Tags = [.. Tags],
+            HomeStoryId = _schemaVersion == ActorResource.StorySchemaVersion ? HomeStoryId : null,
+        };
+    }
 
     public void Revalidate()
     {

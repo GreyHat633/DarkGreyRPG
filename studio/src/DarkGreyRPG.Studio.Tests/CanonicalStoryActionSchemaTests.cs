@@ -33,12 +33,10 @@ public sealed class CanonicalStoryActionSchemaTests
         CollectionAssert.AreEquivalent(new[]
         {
             CanonicalStoryActionSchema.TypeProperty,
-            CanonicalStoryActionSchema.ItemProperty,
-            CanonicalStoryActionSchema.MetadataProperty,
+            CanonicalStoryActionSchema.ItemIdProperty,
             CanonicalStoryActionSchema.AmountProperty,
         }, action.Properties.Keys.ToArray());
-        Assert.AreEqual("darkgrey_rpg:copper_coin", action.Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
-        Assert.AreEqual(0, action.Properties[CanonicalStoryActionSchema.MetadataProperty].GetInt32());
+        Assert.AreEqual("starter_reward", action.Properties[CanonicalStoryActionSchema.ItemIdProperty].GetString());
         Assert.AreEqual(10, action.Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
         Assert.AreEqual(1, session.UndoCount);
 

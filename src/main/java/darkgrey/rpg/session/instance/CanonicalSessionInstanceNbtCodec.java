@@ -145,6 +145,12 @@ public final class CanonicalSessionInstanceNbtCodec {
         tag.setBoolean("activation_logic", runtime.getActivationLogic());
         tag.setTag("latest_choice_selections", strings(runtime.getLatestChoiceSelections()));
         tag.setTag("selected_choice_node_ids", strings(runtime.getSelectedChoiceNodeIds()));
+        tag.setTag("external_logic_inputs", booleans(runtime.getExternalLogicInputs()));
+        tag.setBoolean("waiting_condition", runtime.isWaitingCondition());
+        if (runtime.isWaitingCondition()) tag.setBoolean(
+            "waiting_condition_value",
+            runtime.getWaitingConditionValue()
+                .booleanValue());
         return tag;
     }
 
@@ -166,7 +172,10 @@ public final class CanonicalSessionInstanceNbtCodec {
                 "latest_choice_selections",
                 "selected_choice_node_ids"),
             "instance",
-            "final_end_port_id");
+            "final_end_port_id",
+            "external_logic_inputs",
+            "waiting_condition",
+            "waiting_condition_value");
         String player = string(tag, "player_uuid");
         UUID uuid;
         if (player.length() != 36) throw malformed("invalid player_uuid");
@@ -202,6 +211,24 @@ public final class CanonicalSessionInstanceNbtCodec {
             throw malformed("activation_logic must be boolean");
         Map<String, String> latest = decodeStringMap(tag, "latest_choice_selections");
         List<String> choiceNodes = decodeStrings(tag, "selected_choice_node_ids");
+        Map<String, Boolean> externalInputs = tag.hasKey("external_logic_inputs")
+            ? decodeBooleans(tag, "external_logic_inputs")
+            : Collections.<String, Boolean>emptyMap();
+        boolean waiting = false;
+        if (tag.hasKey("waiting_condition")) {
+            requireType(tag, "waiting_condition", BYTE);
+            byte value = tag.getByte("waiting_condition");
+            if (value != 0 && value != 1) throw malformed("waiting_condition must be boolean");
+            waiting = value == 1;
+        }
+        Boolean waitingValue = null;
+        if (tag.hasKey("waiting_condition_value")) {
+            requireType(tag, "waiting_condition_value", BYTE);
+            byte value = tag.getByte("waiting_condition_value");
+            if (value != 0 && value != 1) throw malformed("waiting_condition_value must be boolean");
+            waitingValue = Boolean.valueOf(value == 1);
+        }
+        if (waiting != (waitingValue != null)) throw malformed("incomplete Condition wait state");
         if (status == CanonicalSessionStatus.COMPLETED && end == null) throw malformed("completed end is required");
         if (status != CanonicalSessionStatus.COMPLETED && end != null) throw malformed("only completed has end");
         CanonicalSessionSnapshot runtime = new CanonicalSessionSnapshot(
@@ -214,7 +241,10 @@ public final class CanonicalSessionInstanceNbtCodec {
             publicLogic,
             activation,
             latest,
-            choiceNodes);
+            choiceNodes,
+            externalInputs,
+            waiting,
+            waitingValue);
         return new CanonicalSessionInstanceSnapshot(uuid, story, placement, resource, transport, runtime);
     }
 

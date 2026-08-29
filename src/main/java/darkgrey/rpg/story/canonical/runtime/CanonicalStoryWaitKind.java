@@ -11,6 +11,8 @@ public enum CanonicalStoryWaitKind {
     ACTOR_INTERACT,
     /** Legacy EnterRegion event wait (the cursor stores the sphere descriptor). */
     ENTER_REGION,
+    /** Internal Condition node waiting for a connected branch to become true. */
+    CONDITION,
     /** Compatibility spelling used by older callers. */
     INTERACT_ACTOR
 

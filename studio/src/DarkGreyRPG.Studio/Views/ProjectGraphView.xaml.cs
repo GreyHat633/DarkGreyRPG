@@ -124,7 +124,7 @@ public partial class ProjectGraphView : UserControl
             BorderThickness = node.HasWarning ? new Thickness(2) : new Thickness(1), CornerRadius = new CornerRadius(6),
             ToolTip = node.WarningText.Length == 0 ? "双击打开 Story Flow" : node.WarningText,
         };
-        AutomationProperties.SetName(root, $"剧情图谱节点 {node.DisplayName} {node.Id}");
+        AutomationProperties.SetName(root, $"故事图谱节点 {node.DisplayName} {node.Id}");
         root.PreviewMouseLeftButtonDown += Node_OnPreviewMouseLeftButtonDown;
 
         var panel = new StackPanel();
@@ -162,7 +162,7 @@ public partial class ProjectGraphView : UserControl
                     OpenContextMenu(CreateEdgeContextMenu(edge));
                 },
             };
-            AutomationProperties.SetName(hitPath, $"剧情图谱边 {edge.SourceStoryId} 到 {edge.TargetStoryId} 转场 {edge.Count}");
+            AutomationProperties.SetName(hitPath, $"故事图谱边 {edge.SourceStoryId} 到 {edge.TargetStoryId} 转场 {edge.Count}");
             hitPath.MouseLeftButtonDown += Edge_OnMouseLeftButtonDown;
             Panel.SetZIndex(hitPath, -8);
             GraphCanvas.Children.Add(hitPath);

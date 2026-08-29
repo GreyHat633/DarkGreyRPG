@@ -19,7 +19,7 @@ namespace DarkGreyRPG.Studio.Views;
 
 public partial class StoryFlowEditorView : UserControl
 {
-    private static readonly string[] NodeCategoryOrder = ["触发", "条件", "对话", "任务", "动作 / 奖励", "流程控制", "剧情"];
+    private static readonly string[] NodeCategoryOrder = ["触发", "条件", "对话", "任务", "动作 / 奖励", "流程控制", "故事"];
     private readonly Dictionary<StoryFlowNodeEditorItem, StoryFlowNodeControl> _nodeVisuals = [];
     private readonly List<UIElement> _connectionVisuals = [];
     private readonly HashSet<string> _expandedNodes = new(StringComparer.Ordinal);

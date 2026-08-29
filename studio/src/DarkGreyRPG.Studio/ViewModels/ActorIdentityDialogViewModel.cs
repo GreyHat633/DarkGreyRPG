@@ -89,7 +89,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
     public bool CanConfirm => ValidationText.Length == 0;
 
     public static ActorIdentityDialogViewModel ForCreate(string suggestedId) =>
-        new("新建 Actor", "创建", "创建独立的新角色，并归入当前剧情。", suggestedId, "新角色", isDisplayNameVisible: true);
+        new("新建 Actor", "创建", "创建独立的新角色，并归入当前故事。", suggestedId, "新角色", isDisplayNameVisible: true);
 
     public static ActorIdentityDialogViewModel ForImport(
         string sourceDisplayName,

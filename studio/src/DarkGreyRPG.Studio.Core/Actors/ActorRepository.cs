@@ -28,7 +28,7 @@ public sealed class ActorRepository
             .Select(path =>
             {
                 var resource = ActorSerializer.Read(path);
-                return new ActorResourceInfo(resource.Id, resource.DisplayName, path, [.. resource.Tags]);
+                return new ActorResourceInfo(resource.Id, resource.DisplayName, path, [.. resource.Tags], resource.Type ?? ActorResource.LegacyResourceType);
             })
             .ToArray();
     }
@@ -57,6 +57,14 @@ public sealed class ActorRepository
 
         return ActorDocument.CreateNew(id, displayName);
     }
+
+    public ActorDocument CreateIndividual(string npcId, string displayName) => CreateTyped(npcId, displayName, individual: true);
+
+    public ActorDocument CreateCollective(string groupId, string displayName) => CreateTyped(groupId, displayName, individual: false);
+
+    public ActorDocument LoadIndividual(string npcId) => LoadTyped(npcId, individual: true);
+
+    public ActorDocument LoadCollective(string groupId) => LoadTyped(groupId, individual: false);
 
     public ActorDocument SaveActor(ActorDocument document)
     {
@@ -119,7 +127,13 @@ public sealed class ActorRepository
     {
         var source = LoadActor(sourceId);
         var duplicateId = GetAvailableId(source.Id + "_copy");
-        var duplicate = ActorDocument.CreateNew(duplicateId, source.DisplayName);
+        var sourceResource = source.ToResource();
+        var duplicate = sourceResource.Type switch
+        {
+            IndividualActorResource.ResourceType => ActorDocument.CreateIndividual(duplicateId, source.DisplayName),
+            CollectiveActorResource.ResourceType => ActorDocument.CreateCollective(duplicateId, source.DisplayName),
+            _ => ActorDocument.CreateNew(duplicateId, source.DisplayName),
+        };
         duplicate.Notes = source.Notes;
         duplicate.SetTags(source.Tags);
         duplicate.HomeStoryId = source.HomeStoryId;
@@ -245,6 +259,24 @@ public sealed class ActorRepository
     }
 
     private bool ActorExists(string id) => File.Exists(GetActorPath(id));
+
+    private ActorDocument CreateTyped(string id, string displayName, bool individual)
+    {
+        ThrowIfInvalidNewId(id);
+        if (ActorExists(id)) throw new ActorCollisionException(id);
+        return individual ? ActorDocument.CreateIndividual(id, displayName) : ActorDocument.CreateCollective(id, displayName);
+    }
+
+    private ActorDocument LoadTyped(string id, bool individual)
+    {
+        var document = LoadActor(id);
+        var expected = individual ? IndividualActorResource.ResourceType : CollectiveActorResource.ResourceType;
+        if (!string.Equals(document.ToResource().Type, expected, StringComparison.Ordinal))
+        {
+            throw new ActorValidationException([new("actor.type.mismatch", "Actor file contains the wrong resource type.", nameof(ActorResource.Type))]);
+        }
+        return document;
+    }
 
     private string GetActorPath(string id) => Path.GetFullPath(Path.Combine(ActorsDirectory, id + ".json"));
 

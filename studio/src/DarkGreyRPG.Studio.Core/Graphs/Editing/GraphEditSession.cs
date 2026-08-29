@@ -600,8 +600,10 @@ public sealed class GraphEditSession
             return true;
         }
 
+        var isPublicBoundary = node!.Type is "logic_input" or "logic_output"
+            || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         var isTaskLogicOutput = Scope == GraphScope.Task
-            && string.Equals(node!.Type, "logic_output", StringComparison.Ordinal);
+            && string.Equals(node.Type, "logic_output", StringComparison.Ordinal);
         if ((node!.Properties ?? []).TryGetValue(property, out var existing)
             && JsonElement.DeepEquals(existing, value))
         {
@@ -621,6 +623,13 @@ public sealed class GraphEditSession
             return Fail([TaskLogicOutputPortIdImmutableIssue(node.Id)]);
         }
 
+        if (isPublicBoundary && property == "port_id")
+        {
+            return Fail([new("graph.public_boundary.port_id.immutable",
+                "Public boundary port_id is a stable identity and cannot be changed.",
+                "properties.port_id", NodeId: node.Id)]);
+        }
+
         if (isTaskLogicOutput && property == "display_name"
             && (value.ValueKind != JsonValueKind.String
                 || string.IsNullOrWhiteSpace(value.GetString())))
@@ -632,6 +641,15 @@ public sealed class GraphEditSession
             && IsTaskPublicDisplayNameUsed(node.Id, value.GetString()!))
         {
             return Fail([TaskPublicDisplayNameDuplicateIssue(node.Id, value.GetString() ?? string.Empty)]);
+        }
+
+        if (isPublicBoundary && property == "display_name"
+            && (value.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(value.GetString())))
+        {
+            return Fail([new("graph.public_boundary.display_name.invalid",
+                "Public boundary display_name must be a nonblank JSON string.",
+                "properties.display_name", NodeId: node.Id)]);
         }
 
         var before = DeepClone(Document);
@@ -715,16 +733,24 @@ public sealed class GraphEditSession
         if (string.IsNullOrWhiteSpace(property))
             return Fail([new("graph.node.property.key.required", "Node property key is required.", "property", NodeId: NullIfBlank(nodeId))]);
         if (!TryResolvePropertyNode(nodeId, out var node, out var issues)) return Fail(issues);
+        var isPublicBoundary = node!.Type is "logic_input" or "logic_output"
+            || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         if (Scope == GraphScope.Task && string.Equals(node!.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
             return Fail([ObjectivePropertyIssue("graph.objective.property.immutable",
                 "Task Objective properties are a frozen typed contract and cannot be removed directly.", property, node.Id)]);
         if (Scope == GraphScope.Task
-            && string.Equals(node!.Type, "logic_output", StringComparison.Ordinal)
-            && property is "port_id" or "display_name")
+            && node!.Type is ("logic_input" or "logic_output")
+            && property is ("port_id" or "display_name"))
         {
             return Fail([property == "port_id"
                 ? TaskLogicOutputPortIdImmutableIssue(node.Id)
                 : TaskLogicOutputDisplayNameImmutableIssue(node.Id)]);
+        }
+        if (isPublicBoundary && property is ("port_id" or "display_name"))
+        {
+            return Fail([new("graph.public_boundary.property.immutable",
+                "Public boundary port_id and display_name are required stable boundary metadata.",
+                $"properties.{property}", NodeId: node.Id)]);
         }
         if (node!.Properties is null || !node.Properties.ContainsKey(property))
             return Fail([new("graph.node.property.missing", $"Node property '{property}' does not exist.", "property", NodeId: node.Id)]);
@@ -963,7 +989,7 @@ public sealed class GraphEditSession
         var properties = triggerProperties?.ToDictionary(item => item.Key, item => item.Value.Clone(), StringComparer.Ordinal)
             ?? StoryStartSchema.DefaultTriggerProperties(triggerType!);
         var next = slots!.Select(slot => new StoryStartTriggerSlot(slot.PortId, slot.DisplayName,
-            slot.TriggerType, slot.TriggerProperties.Clone(), slot.Order)).ToList();
+            slot.TriggerType, slot.TriggerProperties.Clone(), slot.Order, slot.LogicPortId)).ToList();
         next.Add(new StoryStartTriggerSlot(id, displayName.Trim(), triggerType!, JsonSerializer.SerializeToElement(properties), next.Count));
         var before = DeepClone(Document);
         ApplyStoryStartSlots(node!, next);
@@ -1118,22 +1144,33 @@ public sealed class GraphEditSession
 
     private static void ApplyStoryStartSlots(GraphNode node, IReadOnlyList<StoryStartTriggerSlot> slots)
     {
-        node.Properties[StoryStartSchema.TriggersProperty] = JsonSerializer.SerializeToElement(slots.Select(slot => new Dictionary<string, object>(StringComparer.Ordinal)
+        node.Properties[StoryStartSchema.TriggersProperty] = JsonSerializer.SerializeToElement(slots.Select(slot =>
         {
-            ["port_id"] = slot.PortId,
-            ["display_name"] = slot.DisplayName,
-            ["trigger_type"] = slot.TriggerType,
-            ["trigger_properties"] = slot.TriggerProperties.Clone(),
-            ["order"] = slot.Order,
+            var trigger = new Dictionary<string, object>(StringComparer.Ordinal)
+            {
+                ["port_id"] = slot.PortId,
+                ["display_name"] = slot.DisplayName,
+                ["trigger_type"] = slot.TriggerType,
+                ["trigger_properties"] = slot.TriggerProperties.Clone(),
+                ["order"] = slot.Order,
+            };
+            if (slot.LogicPortId is not null)
+                trigger[StoryStartSchema.LogicPortIdProperty] = slot.LogicPortId;
+            return trigger;
         }).ToArray());
         node.Ports.RemoveAll(port => port is not null && port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Flow);
+        node.Ports.RemoveAll(port => port is not null && port.IsInput && port.InterfaceKind == GraphInterfaceKind.Logic);
         foreach (var slot in slots.OrderBy(item => item.Order))
+        {
             node.Ports.Add(new GraphPort(slot.PortId, slot.DisplayName, false, GraphInterfaceKind.Flow, slot.Order));
+            if (slot.LogicPortId is not null)
+                node.Ports.Add(new GraphPort(slot.LogicPortId, $"条件：{slot.DisplayName}", true, GraphInterfaceKind.Logic, slot.Order));
+        }
     }
 
     private bool CommitValidatedStoryStart(GraphDocument before, GraphNode node)
     {
-        var validation = StoryStartSchema.Validate(node);
+        var validation = StoryStartSchema.Validate(node, compatibilityMode: false);
         if (validation.Count != 0)
         { ReplaceContents(before); return Fail(validation); }
         Commit(before); return true;

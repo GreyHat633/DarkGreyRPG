@@ -19,13 +19,20 @@ import darkgrey.rpg.command.CommandDarkGreyRpg;
 import darkgrey.rpg.config.RpgConfiguration;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
+import darkgrey.rpg.entitytools.forge.EntityToolsRuntime;
 import darkgrey.rpg.live.LiveBridgeController;
 import darkgrey.rpg.live.LiveBridgeServer;
 import darkgrey.rpg.live.LivePickService;
 import darkgrey.rpg.live.PlayTestManager;
 import darkgrey.rpg.network.DialogueNetwork;
+import darkgrey.rpg.network.EntityToolsNetwork;
 import darkgrey.rpg.network.MainThreadScheduler;
+import darkgrey.rpg.network.NominatorNetwork;
+import darkgrey.rpg.nominator.runtime.NominatorRuntime;
+import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectRepository;
+import darkgrey.rpg.project.packages.StoryPackageLoader;
+import darkgrey.rpg.project.packages.StoryPackageSnapshotMerger;
 import darkgrey.rpg.proxy.CommonProxy;
 import darkgrey.rpg.quest.runtime.QuestEventAdapter;
 import darkgrey.rpg.quest.runtime.QuestRuntimeService;
@@ -40,11 +47,7 @@ import darkgrey.rpg.story.runtime.StoryRuntimeService;
 import darkgrey.rpg.task.forge.CanonicalTaskEventAdapter;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 
-@Mod(
-    modid = DarkGreyRpg.MOD_ID,
-    name = DarkGreyRpg.MOD_NAME,
-    version = Tags.VERSION,
-    dependencies = "required-after:customnpcs")
+@Mod(modid = DarkGreyRpg.MOD_ID, name = DarkGreyRpg.MOD_NAME, version = Tags.VERSION, dependencies = "after:customnpcs")
 public final class DarkGreyRpg {
 
     public static final String MOD_ID = "darkgrey_rpg";
@@ -66,6 +69,7 @@ public final class DarkGreyRpg {
     private static CanonicalSessionForgeManager canonicalSessionManager;
     private static CanonicalTaskForgeManager canonicalTaskManager;
     private static CanonicalStoryForgeManager canonicalStoryManager;
+    private static StoryPackageLoader storyPackageLoader;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -73,6 +77,8 @@ public final class DarkGreyRpg {
         File projectDirectory = configuration.resolveProjectDirectory(event.getModConfigurationDirectory());
 
         projectRepository = new ProjectRepository(projectDirectory);
+        storyPackageLoader = new StoryPackageLoader(
+            configuration.resolveStoryPackageDirectory(event.getModConfigurationDirectory()));
         canonicalSessionManager = new CanonicalSessionForgeManager(projectRepository);
         canonicalTaskManager = new CanonicalTaskForgeManager(projectRepository);
         canonicalStoryManager = new CanonicalStoryForgeManager(
@@ -91,6 +97,15 @@ public final class DarkGreyRpg {
         questRuntime.addCompletionListener(storyBridge);
 
         ProjectRepository.ReloadResult result = projectRepository.reload();
+        StoryPackageLoader.ReloadResult packageResult = storyPackageLoader.reload();
+        if (!storyPackageLoader.getPackages()
+            .isEmpty()) try {
+                result = projectRepository
+                    .installSnapshot(StoryPackageSnapshotMerger.merge(storyPackageLoader.getPackages()));
+            } catch (ProjectLoadException exception) {
+                LOG.error("Story Package merge failed; using the validated base project.", exception);
+            }
+        if (!packageResult.isSuccessful()) LOG.error("Story Package startup load: {}", packageResult.getSummary());
         if (result.isSuccessful()) {
             LOG.info(
                 "Loaded DarkGrey RPG project '{}' with {} actor(s), {} dialogue(s), {} quest(s), and {} story/stories from {}",
@@ -106,6 +121,8 @@ public final class DarkGreyRpg {
 
         ModItems.register();
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
+        MinecraftForge.EVENT_BUS.register(new NominatorRuntime());
+        MinecraftForge.EVENT_BUS.register(new EntityToolsRuntime());
         QuestEventAdapter questEvents = new QuestEventAdapter(questRuntime);
         MinecraftForge.EVENT_BUS.register(questEvents);
         StoryEventAdapter storyEventAdapter = new StoryEventAdapter(storyEvents, canonicalStoryManager);
@@ -121,6 +138,8 @@ public final class DarkGreyRpg {
             .bus()
             .register(storyEventAdapter);
         DialogueNetwork.registerCommon();
+        NominatorNetwork.registerCommon();
+        EntityToolsNetwork.registerCommon();
         proxy.registerClientDialogueNetwork();
     }
 
@@ -140,7 +159,8 @@ public final class DarkGreyRpg {
                 storyRuntime,
                 canonicalSessionManager,
                 canonicalTaskManager,
-                canonicalStoryManager));
+                canonicalStoryManager,
+                storyPackageLoader));
         if (configuration.isLiveBridgeEnabled()) {
             playTests = new PlayTestManager(projectRepository, storyRuntime);
             liveBridge = new LiveBridgeServer(

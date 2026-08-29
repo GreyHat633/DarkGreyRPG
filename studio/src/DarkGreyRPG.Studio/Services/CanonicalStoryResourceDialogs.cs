@@ -79,7 +79,7 @@ public sealed class CanonicalStoryResourceDialogs(Func<Window?> ownerProvider) :
         ValidateChoice(resource);
         ArgumentNullException.ThrowIfNull(storyIds);
         var ids = storyIds.Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).ToArray();
-        var details = ids.Length == 0 ? "（未提供剧情 ID。）" : string.Join(Environment.NewLine, ids.Select(id => $"• {id}"));
+        var details = ids.Length == 0 ? "（未提供故事 ID。）" : string.Join(Environment.NewLine, ids.Select(id => $"• {id}"));
         MessageBox.Show(
             ownerProvider(),
             $"无法删除{ChineseLabel(resource.ResourceKind)}“{resource.DisplayName}”({resource.Id})。\n该资源仍被以下 Story 占用或引用：\n{details}\n请先解除这些占用或引用。",

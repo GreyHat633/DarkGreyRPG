@@ -106,8 +106,7 @@ public sealed class GraphNodeAuthoringServiceTests
     [TestMethod]
     public void TaskBoundaryIdsRejectReservedAndCrossBoundaryCollisionsWithoutMutation()
     {
-        var reservedGraph = new GraphDocument([
-            GraphNodeFactory.Create(GraphScope.Task, "activate", "activate")]);
+        var reservedGraph = new GraphDocument();
         var reservedBefore = reservedGraph.ToJson();
         AssertFailure(new GraphNodeAuthoringService(() => "flow_in")
             .Create(reservedGraph, GraphScope.Task, "settle", "settle"),
