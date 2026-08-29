@@ -4,18 +4,29 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using DarkGreyRPG.Studio.Core.Graphs;
 
 namespace DarkGreyRPG.Studio.Views;
 
 public sealed class FlowPortControl : Button
 {
-    private Ellipse? _anchor;
+    private FrameworkElement? _anchor;
 
     public static readonly DependencyProperty NodeIdProperty = DependencyProperty.Register(
         nameof(NodeId), typeof(string), typeof(FlowPortControl), new PropertyMetadata(string.Empty, OnVisualPropertyChanged));
 
     public static readonly DependencyProperty PortNameProperty = DependencyProperty.Register(
         nameof(PortName), typeof(string), typeof(FlowPortControl), new PropertyMetadata(string.Empty, OnVisualPropertyChanged));
+
+    public static readonly DependencyProperty PortIdProperty = DependencyProperty.Register(
+        nameof(PortId), typeof(string), typeof(FlowPortControl), new PropertyMetadata(string.Empty, OnVisualPropertyChanged));
+
+    public static readonly DependencyProperty DisplayNameProperty = DependencyProperty.Register(
+        nameof(DisplayName), typeof(string), typeof(FlowPortControl), new PropertyMetadata(string.Empty, OnVisualPropertyChanged));
+
+    public static readonly DependencyProperty InterfaceKindProperty = DependencyProperty.Register(
+        nameof(InterfaceKind), typeof(GraphInterfaceKind), typeof(FlowPortControl),
+        new PropertyMetadata(GraphInterfaceKind.Flow, OnVisualPropertyChanged));
 
     public static readonly DependencyProperty IsInputProperty = DependencyProperty.Register(
         nameof(IsInput), typeof(bool), typeof(FlowPortControl), new PropertyMetadata(false, OnVisualPropertyChanged));
@@ -46,9 +57,37 @@ public sealed class FlowPortControl : Button
 
     public string NodeId { get => (string)GetValue(NodeIdProperty); set => SetValue(NodeIdProperty, value); }
     public string PortName { get => (string)GetValue(PortNameProperty); set => SetValue(PortNameProperty, value); }
+    public string PortId { get => (string)GetValue(PortIdProperty); set => SetValue(PortIdProperty, value); }
+    public string DisplayName { get => (string)GetValue(DisplayNameProperty); set => SetValue(DisplayNameProperty, value); }
+    public GraphInterfaceKind InterfaceKind { get => (GraphInterfaceKind)GetValue(InterfaceKindProperty); set => SetValue(InterfaceKindProperty, value); }
     public bool IsInput { get => (bool)GetValue(IsInputProperty); set => SetValue(IsInputProperty, value); }
     public bool IsConnecting { get => (bool)GetValue(IsConnectingProperty); set => SetValue(IsConnectingProperty, value); }
     public bool IsValidTarget { get => (bool)GetValue(IsValidTargetProperty); set => SetValue(IsValidTargetProperty, value); }
+
+    /// <summary>Stable connection identity, falling back to the legacy PortName.</summary>
+    public string EffectivePortId => string.IsNullOrWhiteSpace(PortId) ? PortName : PortId;
+
+    /// <summary>Author-facing label, falling back to the legacy PortName.</summary>
+    public string EffectiveDisplayName => string.IsNullOrWhiteSpace(DisplayName) ? PortName : DisplayName;
+
+    /// <summary>
+    /// Checks the inexpensive endpoint invariants needed before a drag can ask
+    /// the Story view model to validate a connection. This method deliberately
+    /// has no side effects; cardinality, scope, and cycle rules remain owned by
+    /// the view model/Core validator.
+    /// </summary>
+    public bool IsCompatibleEndpoint(FlowPortControl? other) =>
+        other is not null
+        && !string.IsNullOrWhiteSpace(EffectivePortId)
+        && !string.IsNullOrWhiteSpace(other.EffectivePortId)
+        && !string.Equals(NodeId, other.NodeId, StringComparison.Ordinal)
+        && IsInput != other.IsInput
+        && InterfaceKind == other.InterfaceKind;
+
+    // Naming aliases keep the compatibility boundary discoverable to callers
+    // that use either capability- or predicate-style terminology.
+    public bool IsCompatibleWith(FlowPortControl? other) => IsCompatibleEndpoint(other);
+    public bool CanConnectTo(FlowPortControl? other) => IsCompatibleEndpoint(other);
 
     public Point GetAnchorPoint(UIElement relativeTo)
     {
@@ -63,31 +102,22 @@ public sealed class FlowPortControl : Button
     private void RebuildVisual()
     {
         var highlighted = IsValidTarget || IsConnecting;
-        _anchor = new Ellipse
-        {
-            Width = highlighted ? 11 : 9,
-            Height = highlighted ? 11 : 9,
-            Fill = highlighted ? Brushes.White : new SolidColorBrush(Color.FromRgb(108, 177, 255)),
-            Stroke = highlighted ? new SolidColorBrush(Color.FromRgb(45, 125, 230)) : new SolidColorBrush(Color.FromRgb(185, 215, 245)),
-            StrokeThickness = highlighted ? 2 : 1,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+        _anchor = CreateAnchor(highlighted);
 
         var panel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        if (!IsInput && !string.Equals(PortName, "next", StringComparison.Ordinal))
+        if (!IsInput && !string.Equals(EffectivePortId, "next", StringComparison.Ordinal))
         {
             panel.Children.Add(new TextBlock
             {
-                Text = PortName,
+                Text = EffectiveDisplayName,
                 Margin = new Thickness(0, 0, 5, 0),
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = Brushes.White,
                 FontSize = 11,
             });
         }
-        // Keep the layout slot fixed at the largest anchor size. The ellipse can
-        // grow for highlighting without changing the port's desired width.
+        // Keep the layout slot fixed at the largest anchor size. Either inner
+        // shape can grow for highlighting without changing the port's footprint.
         var anchorSlot = new Grid
         {
             Width = 11,
@@ -97,12 +127,59 @@ public sealed class FlowPortControl : Button
         anchorSlot.Children.Add(_anchor);
         panel.Children.Add(anchorSlot);
         Content = panel;
-        ToolTip = IsInput ? "输入端口" : $"输出端口：{PortName}";
-        AutomationProperties.SetName(this, IsInput
-            ? string.Equals(PortName, "input", StringComparison.Ordinal)
-                ? $"{NodeId} 输入端口"
-                : $"{NodeId} 入线端口 {PortName}"
-            : $"{NodeId} 输出端口 {PortName}");
+        if (InterfaceKind == GraphInterfaceKind.Logic)
+        {
+            ToolTip = IsInput ? $"逻辑输入端口：{EffectiveDisplayName}" : $"逻辑输出端口：{EffectiveDisplayName}";
+            AutomationProperties.SetName(this, IsInput
+                ? $"{NodeId} 逻辑输入端口"
+                : $"{NodeId} 逻辑输出端口");
+        }
+        else
+        {
+            ToolTip = IsInput ? "输入端口" : $"输出端口：{EffectiveDisplayName}";
+            AutomationProperties.SetName(this, IsInput
+                ? string.Equals(EffectivePortId, "input", StringComparison.Ordinal)
+                    ? $"{NodeId} 输入端口"
+                    : $"{NodeId} 入线端口 {EffectivePortId}"
+                : $"{NodeId} 输出端口 {EffectivePortId}");
+        }
+    }
+
+    private FrameworkElement CreateAnchor(bool highlighted)
+    {
+        var size = highlighted ? 11 : 9;
+        if (InterfaceKind == GraphInterfaceKind.Logic)
+        {
+            var half = size / 2d;
+            return new Polygon
+            {
+                Width = size,
+                Height = size,
+                Points = new PointCollection
+                {
+                    new(half, 0),
+                    new(size, half),
+                    new(half, size),
+                    new(0, half),
+                },
+                Fill = highlighted ? new SolidColorBrush(Color.FromRgb(255, 224, 138)) : new SolidColorBrush(Color.FromRgb(245, 181, 61)),
+                Stroke = highlighted ? new SolidColorBrush(Color.FromRgb(190, 125, 15)) : new SolidColorBrush(Color.FromRgb(255, 218, 125)),
+                StrokeThickness = highlighted ? 2 : 1,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+
+        return new Ellipse
+        {
+            Width = size,
+            Height = size,
+            Fill = highlighted ? Brushes.White : new SolidColorBrush(Color.FromRgb(108, 177, 255)),
+            Stroke = highlighted ? new SolidColorBrush(Color.FromRgb(45, 125, 230)) : new SolidColorBrush(Color.FromRgb(185, 215, 245)),
+            StrokeThickness = highlighted ? 2 : 1,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
     }
 
     private static ControlTemplate CreateChromeFreeTemplate()

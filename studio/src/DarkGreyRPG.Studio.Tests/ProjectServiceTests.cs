@@ -159,6 +159,25 @@ public sealed class ProjectServiceTests
     }
 
     [TestMethod]
+    public void ReleaseOpenActorDropsCleanCacheAndRejectsDirtyDocuments()
+    {
+        using var directory = new TestProjectDirectory();
+        var service = new ProjectService();
+        service.OpenProject(directory.Root);
+        var created = service.CreateActor("teacher", "Teacher");
+        service.SaveActor(created);
+
+        service.ReleaseOpenActor("teacher");
+
+        Assert.IsEmpty(service.OpenActorDocuments);
+        Assert.IsTrue(File.Exists(directory.ActorPath("teacher")));
+        var reopened = service.OpenActor("teacher");
+        reopened.Notes = "Unsaved";
+        Assert.ThrowsExactly<ProjectException>(() => service.ReleaseOpenActor("teacher"));
+        Assert.HasCount(1, service.OpenActorDocuments);
+    }
+
+    [TestMethod]
     public void RenameAndDeleteRefuseDirtyDocumentsAndCollisions()
     {
         using var directory = new TestProjectDirectory();

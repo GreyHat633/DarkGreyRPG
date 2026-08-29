@@ -81,6 +81,50 @@ public sealed class StoryNavigationViewModelTests
     }
 
     [TestMethod]
+    public void ProjectHomeMergesCanonicalDiscoveryByIdAndKeepsCanonicalOnlyStoriesVisible()
+    {
+        var legacy = new[]
+        {
+            new StoryResource { Id = "legacy", DisplayName = "Legacy" },
+            new StoryResource { Id = "shared", DisplayName = "Old Shared" },
+        };
+        var canonical = new[]
+        {
+            new CanonicalStoryHomeEntry(
+                "canonical_only", "Canonical Only", 1, 2, 3, 4, 5,
+                IsComplete: true, IsValid: true, Diagnostics: []),
+            new CanonicalStoryHomeEntry(
+                "shared", "Canonical Shared", 0, 0, 0, 0, 1,
+                IsComplete: true, IsValid: true, Diagnostics: []),
+            new CanonicalStoryHomeEntry(
+                "broken", "broken", 0, 0, 0, 0, 0,
+                IsComplete: false, IsValid: false, Diagnostics: ["缺少 membership"]),
+        };
+        var home = new ProjectHomeViewModel();
+
+        home.ReplaceDiscoveredStories(legacy, canonical);
+
+        CollectionAssert.AreEquivalent(
+            new[] { "legacy", "shared", "canonical_only", "broken" },
+            home.Stories.Select(item => item.Id).ToArray());
+        var shared = home.Stories.Single(item => item.Id == "shared");
+        Assert.AreEqual("Canonical Shared", shared.DisplayName);
+        Assert.IsTrue(shared.HasLegacyStory);
+        Assert.IsTrue(shared.HasCanonicalStory);
+        Assert.IsFalse(shared.CanDeleteLegacyStory);
+        var canonicalOnly = home.Stories.Single(item => item.Id == "canonical_only");
+        Assert.IsTrue(canonicalOnly.IsCanonicalOnly);
+        Assert.IsFalse(canonicalOnly.CanDeleteLegacyStory);
+        Assert.AreEqual("1 个本剧情角色 · 2 个引用角色 · 3 个会话 · 4 个任务",
+            canonicalOnly.MembershipSummary);
+        Assert.AreEqual(5, canonicalOnly.FlowNodeCount);
+        var broken = home.Stories.Single(item => item.Id == "broken");
+        Assert.AreEqual("Canonical · 数据不完整", broken.TagsText);
+        StringAssert.Contains(broken.Description, "缺少 membership");
+        Assert.HasCount(2, home.Graph.Nodes);
+    }
+
+    [TestMethod]
     public void ProjectHomeSearchesStoriesByIdDisplayNameAndTagsAndBuildsGraph()
     {
         var stories = new[]

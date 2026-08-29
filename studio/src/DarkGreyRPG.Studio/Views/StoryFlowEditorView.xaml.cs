@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Stories.Definitions;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels;
@@ -372,11 +373,15 @@ public partial class StoryFlowEditorView : UserControl
             var bend = deltaX >= 0 ? Math.Max(24, deltaX * .42) : Math.Max(70, Math.Abs(deltaX) * .45);
             var geometry = new PathGeometry([new PathFigure(start, [new BezierSegment(new(start.X + bend, start.Y), new(end.X - bend, end.Y), end, true)], false)]);
             var selected = Equals(connection, _selectedConnection);
+            // Persisted Story Flow connections are legacy flow edges; request
+            // the shared style explicitly so the generic wire language remains
+            // separate from the legacy resource schema.
+            var style = GraphConnectionVisualStyle.For(GraphInterfaceKind.Flow, selected);
             var visualPath = new Path
             {
                 Data = geometry,
-                Stroke = selected ? Brushes.White : new SolidColorBrush(Color.FromRgb(108, 177, 255)),
-                StrokeThickness = selected ? 4 : 3,
+                Stroke = new SolidColorBrush(style.StrokeColor),
+                StrokeThickness = style.StrokeThickness,
                 IsHitTestVisible = false,
             };
             var hitPath = new Path
@@ -388,7 +393,7 @@ public partial class StoryFlowEditorView : UserControl
                 Cursor = Cursors.Hand,
                 ToolTip = $"{connection.From}.{connection.Output} → {connection.To}（单击选择，Delete 删除）",
             };
-            AutomationProperties.SetName(hitPath, $"Flow 连接 {connection.From} {connection.Output} 到 {connection.To}");
+            AutomationProperties.SetName(hitPath, $"{style.AutomationLabel} {connection.From} {connection.Output} 到 {connection.To}");
             hitPath.MouseLeftButtonDown += Connection_OnMouseLeftButtonDown;
             Panel.SetZIndex(visualPath, -10);
             Panel.SetZIndex(hitPath, -9);
@@ -497,11 +502,12 @@ public partial class StoryFlowEditorView : UserControl
         var draftGeometry = session.OriginalConnection is not null && TryGetConnectionPorts(session.OriginalConnection, out var originalOutput, out var originalInput)
             ? CreateConnectionGeometry(originalOutput.GetAnchorPoint(GraphCanvas), originalInput.GetAnchorPoint(GraphCanvas))
             : CreateConnectionGeometry(fixedAnchor, fixedAnchor);
+        var draftStyle = GraphConnectionVisualStyle.For(session.FixedPort.InterfaceKind, selected: true);
         _connectionDraft = new Path
         {
             Data = draftGeometry,
-            Stroke = Brushes.White,
-            StrokeThickness = 2,
+            Stroke = new SolidColorBrush(draftStyle.StrokeColor),
+            StrokeThickness = draftStyle.StrokeThickness,
             IsHitTestVisible = false,
         };
         Panel.SetZIndex(_connectionDraft, -5);
@@ -655,7 +661,7 @@ public partial class StoryFlowEditorView : UserControl
                 if (target is not null)
                 {
                     var from = session.FixedIsInput ? target.NodeId : session.FixedNodeId;
-                    var output = session.FixedIsInput ? target.PortName : session.FixedPortName;
+                    var output = session.FixedIsInput ? target.EffectivePortId : session.FixedPort.EffectivePortId;
                     var to = session.FixedIsInput ? session.FixedNodeId : target.NodeId;
                     if (session.OriginalConnection is null) _viewModel.Connect(from, output, to);
                     else _viewModel.ReconnectConnection(session.OriginalConnection, from, output, to);
@@ -782,11 +788,13 @@ public partial class StoryFlowEditorView : UserControl
         var hit = GraphCanvas.InputHitTest(graphPoint) as DependencyObject;
         var port = FindAncestor<FlowPortControl>(hit);
         if (port is null) return null;
-        if (port.IsInput == session.FixedIsInput
-            || string.Equals(port.NodeId, session.FixedNodeId, StringComparison.Ordinal))
+        // Reject incompatible endpoints before invoking the legacy view-model
+        // validator. The validator still owns Story cardinality and all other
+        // document-level rules.
+        if (!session.FixedPort.IsCompatibleEndpoint(port))
             return null;
         var from = session.FixedIsInput ? port.NodeId : session.FixedNodeId;
-        var output = session.FixedIsInput ? port.PortName : session.FixedPortName;
+        var output = session.FixedIsInput ? port.EffectivePortId : session.FixedPort.EffectivePortId;
         var to = session.FixedIsInput ? session.FixedNodeId : port.NodeId;
         return _viewModel.ValidateConnection(from, output, to) ? port : null;
     }
@@ -998,6 +1006,11 @@ internal sealed class AccessibleBorder : Border
 internal sealed class StoryFlowElementAutomationPeer(FrameworkElement owner) : FrameworkElementAutomationPeer(owner)
 {
     protected override string GetClassNameCore() => Owner.GetType().Name;
+    protected override string GetAutomationIdCore()
+    {
+        var configuredId = AutomationProperties.GetAutomationId(Owner);
+        return string.IsNullOrWhiteSpace(configuredId) ? base.GetAutomationIdCore() : configuredId;
+    }
     protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Custom;
     protected override bool IsControlElementCore() => true;
     protected override bool IsContentElementCore() => true;

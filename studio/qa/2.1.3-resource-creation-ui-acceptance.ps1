@@ -598,7 +598,7 @@ try {
         $started = Start-Studio $settingsPath
         $process = $started.Process
         $window = $started.Window
-        if ($window.Current.Name -notlike 'DarkGrey RPG Studio 2.1.3*') { throw "Unexpected window title: $($window.Current.Name)" }
+        if ($window.Current.Name -notlike 'DarkGrey RPG Studio 0.3.0.0*') { throw "Unexpected window title: $($window.Current.Name)" }
         Record-Result 'RELEASE_WPF_PROCESS' PASS "PID $($process.Id), title '$($window.Current.Name)'."
         $windowBounds = $window.Current.BoundingRectangle
         if ($windowBounds.Width -lt 1100 -or $windowBounds.Height -lt 700) { throw "Window did not honor the 1100x700 minimum test surface: $($windowBounds.Width)x$($windowBounds.Height)." }

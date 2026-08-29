@@ -1,0 +1,91 @@
+using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Editing;
+
+namespace DarkGreyRPG.Studio.Tests;
+
+[TestClass]
+public sealed class CanonicalStoryActionSchemaTests
+{
+    [TestMethod]
+    public void FactoryCreatesStrictMessageDefault()
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+
+        CollectionAssert.AreEquivalent(
+            new[] { CanonicalStoryActionSchema.TypeProperty, CanonicalStoryActionSchema.MessageProperty },
+            action.Properties.Keys.ToArray());
+        Assert.AreEqual(CanonicalStoryActionSchema.SendMessage,
+            action.Properties[CanonicalStoryActionSchema.TypeProperty].GetString());
+        Assert.AreEqual("任务完成", action.Properties[CanonicalStoryActionSchema.MessageProperty].GetString());
+        Assert.IsEmpty(CanonicalStoryActionSchema.Validate(action));
+    }
+
+    [TestMethod]
+    public void TypeChangeReplacesPayloadAsOneUndoUnit()
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        var graph = new GraphDocument([action]);
+        var session = new GraphEditSession(graph, GraphScope.StoryFlow);
+
+        Assert.IsTrue(session.ChangeStoryActionType("action", CanonicalStoryActionSchema.GiveItem));
+        CollectionAssert.AreEquivalent(new[]
+        {
+            CanonicalStoryActionSchema.TypeProperty,
+            CanonicalStoryActionSchema.ItemProperty,
+            CanonicalStoryActionSchema.MetadataProperty,
+            CanonicalStoryActionSchema.AmountProperty,
+        }, action.Properties.Keys.ToArray());
+        Assert.AreEqual("darkgrey_rpg:copper_coin", action.Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
+        Assert.AreEqual(0, action.Properties[CanonicalStoryActionSchema.MetadataProperty].GetInt32());
+        Assert.AreEqual(10, action.Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
+        Assert.AreEqual(1, session.UndoCount);
+
+        Assert.IsTrue(session.Undo());
+        Assert.AreEqual(CanonicalStoryActionSchema.SendMessage,
+            graph.Nodes.Single().Properties[CanonicalStoryActionSchema.TypeProperty].GetString());
+        Assert.IsTrue(session.Redo());
+        Assert.AreEqual(CanonicalStoryActionSchema.GiveItem,
+            graph.Nodes.Single().Properties[CanonicalStoryActionSchema.TypeProperty].GetString());
+    }
+
+    [TestMethod]
+    public void DirectTypeMutationAndInvalidPayloadFailWithoutMutation()
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        var graph = new GraphDocument([action]);
+        var session = new GraphEditSession(graph, GraphScope.StoryFlow);
+        var before = graph.ToJson();
+
+        Assert.IsFalse(session.SetNodeProperty("action", CanonicalStoryActionSchema.TypeProperty,
+            JsonSerializer.SerializeToElement(CanonicalStoryActionSchema.GiveXp)));
+        CollectionAssert.Contains(session.LastValidationIssues.Select(issue => issue.Code).ToArray(),
+            "graph.story.action.type.atomic_required");
+        Assert.AreEqual(before, graph.ToJson());
+
+        Assert.IsFalse(session.SetNodeProperty("action", CanonicalStoryActionSchema.MessageProperty,
+            JsonSerializer.SerializeToElement("   ")));
+        CollectionAssert.Contains(session.LastValidationIssues.Select(issue => issue.Code).ToArray(),
+            "graph.story.action.string.invalid");
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.IsFalse(session.CanUndo);
+    }
+
+    [TestMethod]
+    public void UnknownMissingAndExtraPropertiesAreRejected()
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        action.Properties[CanonicalStoryActionSchema.TypeProperty] = JsonSerializer.SerializeToElement("teleport");
+        CollectionAssert.Contains(CanonicalStoryActionSchema.Validate(action).Select(issue => issue.Code).ToArray(),
+            "graph.story.action.type.invalid");
+
+        action.Properties.Clear();
+        action.Properties[CanonicalStoryActionSchema.TypeProperty] = JsonSerializer.SerializeToElement(CanonicalStoryActionSchema.GiveXp);
+        action.Properties["unknown"] = JsonSerializer.SerializeToElement(true);
+        var codes = CanonicalStoryActionSchema.Validate(action).Select(issue => issue.Code).ToArray();
+        CollectionAssert.Contains(codes, "graph.story.action.property.missing");
+        CollectionAssert.Contains(codes, "graph.story.action.property.unsupported");
+        CollectionAssert.Contains(codes, "graph.story.action.integer.invalid");
+    }
+}

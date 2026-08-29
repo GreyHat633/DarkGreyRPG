@@ -1,9 +1,22 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.ViewModels;
+
+public sealed record CanonicalStoryHomeEntry(
+    string Id,
+    string DisplayName,
+    int OwnedActorCount,
+    int ReferencedActorCount,
+    int SessionCount,
+    int TaskCount,
+    int FlowNodeCount,
+    bool IsComplete,
+    bool IsValid,
+    IReadOnlyList<string> Diagnostics);
 
 /// <summary>Route-independent summary data for the selected Story on Project Home.</summary>
 public sealed class StoryOverviewViewModel : ObservableObject
@@ -11,20 +24,48 @@ public sealed class StoryOverviewViewModel : ObservableObject
     public StoryOverviewViewModel(StoryResource story)
     {
         Story = story ?? throw new ArgumentNullException(nameof(story));
+        Id = story.Id;
+        DisplayName = string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName;
+        Description = story.Description;
+        Tags = story.Tags;
+        OwnedActorCount = story.OwnedResources.Actors.Count;
+        ReferencedActorCount = story.ReferencedResources.Actors.Count;
+        DialogueCount = story.OwnedResources.Dialogues.Count + story.ReferencedResources.Dialogues.Count;
+        QuestCount = story.OwnedResources.Quests.Count + story.ReferencedResources.Quests.Count;
+        FlowNodeCount = story.Nodes.Count;
+        MembershipSummary =
+            $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
     }
 
-    public StoryResource Story { get; }
-    public string Id => Story.Id;
-    public string DisplayName => string.IsNullOrWhiteSpace(Story.DisplayName) ? Story.Title : Story.DisplayName;
-    public string Description => Story.Description;
-    public IReadOnlyList<string> Tags => Story.Tags;
-    public int OwnedActorCount => Story.OwnedResources.Actors.Count;
-    public int ReferencedActorCount => Story.ReferencedResources.Actors.Count;
-    public int DialogueCount => Story.OwnedResources.Dialogues.Count + Story.ReferencedResources.Dialogues.Count;
-    public int QuestCount => Story.OwnedResources.Quests.Count + Story.ReferencedResources.Quests.Count;
-    public int FlowNodeCount => Story.Nodes.Count;
-    public string MembershipSummary =>
-        $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
+    public StoryOverviewViewModel(CanonicalStoryHomeEntry story)
+    {
+        ArgumentNullException.ThrowIfNull(story);
+        Id = story.Id;
+        DisplayName = string.IsNullOrWhiteSpace(story.DisplayName) ? story.Id : story.DisplayName;
+        Description = story.IsValid && story.IsComplete
+            ? "0.3.0.0 Canonical Story"
+            : string.Join(Environment.NewLine, story.Diagnostics);
+        Tags = [];
+        OwnedActorCount = story.OwnedActorCount;
+        ReferencedActorCount = story.ReferencedActorCount;
+        DialogueCount = story.SessionCount;
+        QuestCount = story.TaskCount;
+        FlowNodeCount = story.FlowNodeCount;
+        MembershipSummary =
+            $"{OwnedActorCount} 个本剧情角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个会话 · {QuestCount} 个任务";
+    }
+
+    public StoryResource? Story { get; }
+    public string Id { get; }
+    public string DisplayName { get; }
+    public string Description { get; }
+    public IReadOnlyList<string> Tags { get; }
+    public int OwnedActorCount { get; }
+    public int ReferencedActorCount { get; }
+    public int DialogueCount { get; }
+    public int QuestCount { get; }
+    public int FlowNodeCount { get; }
+    public string MembershipSummary { get; }
 }
 
 public sealed class StoryListItemViewModel
@@ -33,18 +74,37 @@ public sealed class StoryListItemViewModel
     {
         Story = story ?? throw new ArgumentNullException(nameof(story));
         Overview = new StoryOverviewViewModel(Story);
+        HasLegacyStory = true;
     }
 
-    public StoryResource Story { get; }
+    public StoryListItemViewModel(CanonicalStoryHomeEntry story, StoryResource? legacyStory = null)
+    {
+        CanonicalStory = story ?? throw new ArgumentNullException(nameof(story));
+        Story = legacyStory;
+        Overview = new StoryOverviewViewModel(story);
+        HasLegacyStory = legacyStory is not null;
+        HasCanonicalStory = true;
+    }
+
+    public StoryResource? Story { get; }
+    public CanonicalStoryHomeEntry? CanonicalStory { get; }
     public StoryOverviewViewModel Overview { get; }
-    public string Id => Story.Id;
-    public string DisplayName => string.IsNullOrWhiteSpace(Story.DisplayName) ? Story.Title : Story.DisplayName;
-    public string Description => Story.Description;
-    public IReadOnlyList<string> Tags => Story.Tags;
-    public string TagsText => string.Join(", ", Story.Tags);
-    public int ActorCount => Story.OwnedResources.Actors.Count + Story.ReferencedResources.Actors.Count;
-    public int DialogueCount => Story.OwnedResources.Dialogues.Count + Story.ReferencedResources.Dialogues.Count;
-    public int QuestCount => Story.OwnedResources.Quests.Count + Story.ReferencedResources.Quests.Count;
+    public bool HasLegacyStory { get; }
+    public bool HasCanonicalStory { get; }
+    public bool IsCanonicalOnly => HasCanonicalStory && !HasLegacyStory;
+    public bool CanDeleteLegacyStory => HasLegacyStory && !HasCanonicalStory;
+    public string Id => Overview.Id;
+    public string DisplayName => Overview.DisplayName;
+    public string Description => Overview.Description;
+    public IReadOnlyList<string> Tags => Overview.Tags;
+    public string TagsText => HasCanonicalStory
+        ? CanonicalStory!.IsValid && CanonicalStory.IsComplete
+            ? "Canonical"
+            : "Canonical · 数据不完整"
+        : string.Join(", ", Tags);
+    public int ActorCount => Overview.OwnedActorCount + Overview.ReferencedActorCount;
+    public int DialogueCount => Overview.DialogueCount;
+    public int QuestCount => Overview.QuestCount;
     public string MembershipSummary => Overview.MembershipSummary;
     public int FlowNodeCount => Overview.FlowNodeCount;
 }
@@ -143,6 +203,16 @@ public sealed record ProjectGraphDiagnosticViewModel(
 /// <summary>Read-only project Story graph snapshot for the M3 Project Graph route.</summary>
 public sealed class ProjectGraphViewModel : ObservableObject
 {
+    private sealed record BuildNode(string Id, string DisplayName, string BaseWarningText = "");
+    private sealed record BuildTransition(
+        string SourceStoryId,
+        string TargetStoryId,
+        ProjectGraphTransitionViewModel Transition);
+    private sealed record BuildInput(
+        IReadOnlyList<BuildNode> Nodes,
+        IReadOnlyList<BuildTransition> Transitions,
+        IReadOnlyList<ProjectGraphDiagnosticViewModel> Diagnostics);
+
     private readonly ProjectGraphLayoutStore? _layoutStore;
     private string _searchText = string.Empty;
     private string _selectedFilter = "全部";
@@ -153,38 +223,35 @@ public sealed class ProjectGraphViewModel : ObservableObject
     private long _problemFocusSequence;
     private ProjectGraphFocusRequest? _problemFocusRequest;
 
-    public ProjectGraphViewModel(IReadOnlyList<StoryResource> stories, string? homeStoryId = null, string? projectDirectory = null)
+    public ProjectGraphViewModel(
+        IReadOnlyList<StoryResource> stories,
+        string? homeStoryId = null,
+        string? projectDirectory = null)
+        : this(CreateLegacyInput(stories), homeStoryId, projectDirectory)
     {
-        ArgumentNullException.ThrowIfNull(stories);
-        _layoutStore = string.IsNullOrWhiteSpace(projectDirectory) ? null : new ProjectGraphLayoutStore(projectDirectory);
-        var storyIds = stories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal);
-        var transitions = new List<(string SourceStoryId, string TargetStoryId, ProjectGraphTransitionViewModel Transition)>();
-        var diagnostics = new List<ProjectGraphDiagnosticViewModel>();
-        var warnedStories = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var story in stories)
-        {
-            foreach (var node in story.Nodes.Where(IsEnterStoryNode))
-            {
-                var target = TryGetTarget(node);
-                if (string.IsNullOrWhiteSpace(target) || !storyIds.Contains(target))
-                {
-                    var label = string.IsNullOrWhiteSpace(target) ? "<empty>" : target;
-                    diagnostics.Add(new("project_graph.target.missing", $"{story.Id}.{node.Id} 指向不存在的 Story '{label}'。", story.Id, node.Id));
-                    warnedStories.Add(story.Id);
-                    continue;
-                }
-                var incomingOutputs = story.Connections
-                    .Where(connection => string.Equals(connection.To, node.Id, StringComparison.Ordinal))
-                    .Select(connection => connection.Output)
-                    .Where(output => !string.IsNullOrWhiteSpace(output))
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(output => output, StringComparer.Ordinal)
-                    .ToArray();
-                transitions.Add((story.Id, target, new ProjectGraphTransitionViewModel(node.Id, Array.AsReadOnly(incomingOutputs))));
-            }
-        }
+    }
 
-        var edges = transitions
+    public ProjectGraphViewModel(
+        IReadOnlyList<StoryResource> legacyStories,
+        CanonicalProjectStoryGraphSnapshot canonicalSnapshot,
+        string? homeStoryId = null,
+        string? projectDirectory = null)
+        : this(CreateMergedInput(legacyStories, canonicalSnapshot), homeStoryId, projectDirectory)
+    {
+    }
+
+    private ProjectGraphViewModel(BuildInput input, string? homeStoryId, string? projectDirectory)
+    {
+        _layoutStore = string.IsNullOrWhiteSpace(projectDirectory) ? null : new ProjectGraphLayoutStore(projectDirectory);
+        var storyIds = input.Nodes.Select(story => story.Id).ToHashSet(StringComparer.Ordinal);
+        var diagnostics = input.Diagnostics.ToList();
+        var warnedStories = input.Nodes
+            .Where(node => !string.IsNullOrWhiteSpace(node.BaseWarningText))
+            .Select(node => node.Id)
+            .Concat(diagnostics.Where(issue => issue.StoryId is not null).Select(issue => issue.StoryId!))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var edges = input.Transitions
             .GroupBy(item => (item.SourceStoryId, item.TargetStoryId))
             .OrderBy(group => group.Key.SourceStoryId, StringComparer.Ordinal)
             .ThenBy(group => group.Key.TargetStoryId, StringComparer.Ordinal)
@@ -198,7 +265,7 @@ public sealed class ProjectGraphViewModel : ObservableObject
             .ToList();
 
         var connected = edges.SelectMany(edge => new[] { edge.SourceStoryId, edge.TargetStoryId }).ToHashSet(StringComparer.Ordinal);
-        foreach (var story in stories.Where(story => !connected.Contains(story.Id)))
+        foreach (var story in input.Nodes.Where(story => !connected.Contains(story.Id)))
         {
             diagnostics.Add(new("project_graph.story.isolated", $"Story '{story.Id}' 未连接到任何 EnterStory 转场。", story.Id));
             warnedStories.Add(story.Id);
@@ -229,14 +296,18 @@ public sealed class ProjectGraphViewModel : ObservableObject
         }
         Edges = new ReadOnlyCollection<ProjectGraphEdgeViewModel>(edges);
         Diagnostics = new ReadOnlyCollection<ProjectGraphDiagnosticViewModel>(diagnostics);
-        Nodes = new ReadOnlyCollection<ProjectGraphNodeViewModel>(stories
+        Nodes = new ReadOnlyCollection<ProjectGraphNodeViewModel>(input.Nodes
             .Select(story => new ProjectGraphNodeViewModel(
                 story.Id,
-                string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName,
+                string.IsNullOrWhiteSpace(story.DisplayName) ? story.Id : story.DisplayName,
                 string.Equals(story.Id, homeStoryId, StringComparison.Ordinal),
                 !connected.Contains(story.Id),
                 warnedStories.Contains(story.Id),
-                string.Join(Environment.NewLine, diagnostics.Where(issue => issue.StoryId == story.Id).Select(issue => issue.Message))))
+                string.Join(Environment.NewLine,
+                    new[] { story.BaseWarningText }
+                        .Where(message => !string.IsNullOrWhiteSpace(message))
+                        .Concat(diagnostics.Where(issue => issue.StoryId == story.Id).Select(issue => issue.Message))
+                        .Distinct(StringComparer.Ordinal))))
             .ToList());
 
         ApplyPositions(CreateAutomaticPositions());
@@ -249,6 +320,89 @@ public sealed class ProjectGraphViewModel : ObservableObject
         AutoLayoutCommand = new RelayCommand(AutoLayout, () => Nodes.Count > 0);
     }
 
+    private static BuildInput CreateLegacyInput(IReadOnlyList<StoryResource> stories)
+    {
+        ArgumentNullException.ThrowIfNull(stories);
+        return CreateLegacyInput(stories, stories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal));
+    }
+
+    private static BuildInput CreateLegacyInput(
+        IReadOnlyList<StoryResource> stories,
+        IReadOnlySet<string> validTargetIds)
+    {
+        var transitions = new List<BuildTransition>();
+        var diagnostics = new List<ProjectGraphDiagnosticViewModel>();
+        foreach (var story in stories)
+        {
+            foreach (var node in story.Nodes.Where(IsEnterStoryNode))
+            {
+                var target = TryGetTarget(node);
+                if (string.IsNullOrWhiteSpace(target) || !validTargetIds.Contains(target))
+                {
+                    var label = string.IsNullOrWhiteSpace(target) ? "<empty>" : target;
+                    diagnostics.Add(new("project_graph.target.missing", $"{story.Id}.{node.Id} 指向不存在的 Story '{label}'。", story.Id, node.Id));
+                    continue;
+                }
+                var incomingOutputs = story.Connections
+                    .Where(connection => string.Equals(connection.To, node.Id, StringComparison.Ordinal))
+                    .Select(connection => connection.Output)
+                    .Where(output => !string.IsNullOrWhiteSpace(output))
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(output => output, StringComparer.Ordinal)
+                    .ToArray();
+                transitions.Add(new(story.Id, target,
+                    new ProjectGraphTransitionViewModel(node.Id, Array.AsReadOnly(incomingOutputs))));
+            }
+        }
+
+        return new(
+            stories.Select(story => new BuildNode(
+                story.Id,
+                string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName)).ToArray(),
+            transitions,
+            diagnostics);
+    }
+
+    private static BuildInput CreateMergedInput(
+        IReadOnlyList<StoryResource> legacyStories,
+        CanonicalProjectStoryGraphSnapshot canonicalSnapshot)
+    {
+        ArgumentNullException.ThrowIfNull(legacyStories);
+        ArgumentNullException.ThrowIfNull(canonicalSnapshot);
+        var canonicalIds = canonicalSnapshot.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
+        var legacyOnlyStories = legacyStories.Where(story => !canonicalIds.Contains(story.Id)).ToArray();
+        var legacy = CreateLegacyInput(
+            legacyOnlyStories,
+            legacyOnlyStories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal));
+        var canonicalNodes = canonicalSnapshot.Nodes.Select(node => new BuildNode(
+            node.Id,
+            node.DisplayName,
+            string.Join(Environment.NewLine, node.Issues
+                .Where(issue => issue.Code is not "project_graph.story.isolated" and not "project_graph.story.cycle")
+                .Select(issue => issue.Message)
+                .Distinct(StringComparer.Ordinal))));
+        var canonicalTransitions = canonicalSnapshot.Edges.SelectMany(edge => edge.Transitions.Select(transition =>
+            new BuildTransition(
+                edge.SourceStoryId,
+                edge.TargetStoryId,
+                new ProjectGraphTransitionViewModel(
+                    transition.NodeId,
+                    Array.AsReadOnly(transition.IncomingBranchOutputs.ToArray())))));
+        var canonicalDiagnostics = canonicalSnapshot.Diagnostics
+            .Where(issue => issue.Code.StartsWith("project_graph.", StringComparison.Ordinal)
+                && issue.Code is not "project_graph.story.isolated" and not "project_graph.story.cycle")
+            .Select(issue => new ProjectGraphDiagnosticViewModel(
+                issue.Code,
+                issue.Message,
+                issue.StoryId,
+                issue.NodeId));
+
+        return new(
+            canonicalNodes.Concat(legacy.Nodes).OrderBy(node => node.Id, StringComparer.Ordinal).ToArray(),
+            canonicalTransitions.Concat(legacy.Transitions).ToArray(),
+            canonicalDiagnostics.Concat(legacy.Diagnostics).ToArray());
+    }
+
     public IReadOnlyList<ProjectGraphNodeViewModel> Nodes { get; }
     public IReadOnlyList<ProjectGraphEdgeViewModel> Edges { get; }
     public IReadOnlyList<ProjectGraphDiagnosticViewModel> Diagnostics { get; }
@@ -258,7 +412,7 @@ public sealed class ProjectGraphViewModel : ObservableObject
     public event EventHandler<string>? OpenStoryOverviewRequested;
     public bool IsEmpty => Nodes.Count == 0;
     public string Summary => $"{Nodes.Count} 个剧情 · {Edges.Sum(edge => edge.Count)} 条转场 / {Edges.Count} 组关系 · {Diagnostics.Count} 个诊断";
-    public int ErrorCount => Diagnostics.Count(issue => issue.Code == "project_graph.target.missing");
+    public int ErrorCount => Diagnostics.Count(IsErrorDiagnostic);
     public int WarningCount => Diagnostics.Count - ErrorCount + (string.IsNullOrWhiteSpace(PersistenceWarning) ? 0 : 1);
     public string SearchText { get => _searchText; set { if (SetProperty(ref _searchText, value ?? string.Empty)) RefreshVisibility(); } }
     public string SelectedFilter { get => _selectedFilter; set { if (SetProperty(ref _selectedFilter, value ?? "全部")) RefreshVisibility(); } }
@@ -506,6 +660,12 @@ public sealed class ProjectGraphViewModel : ObservableObject
 
         return null;
     }
+
+    private static bool IsErrorDiagnostic(ProjectGraphDiagnosticViewModel issue) =>
+        issue.Code is "project_graph.target.missing"
+            or "project_graph.target.invalid"
+            or "project_graph.enter_story.malformed"
+            or "project_graph.enter_story.ambiguous";
 }
 
 public sealed record ProjectGraphFocusRequest(string StoryId, long Sequence);
@@ -523,7 +683,7 @@ public sealed class ProjectHomeViewModel : ObservableObject
     private StoryListItemViewModel? _selectedStory;
     private string? _selectionBeforeSearchId;
     private ProjectHomeRoute _route = ProjectHomeRoute.Home;
-    private ProjectGraphViewModel _graph = new([], null);
+    private ProjectGraphViewModel _graph = new([], homeStoryId: null);
 
     public ProjectHomeViewModel()
     {
@@ -603,21 +763,57 @@ public sealed class ProjectHomeViewModel : ObservableObject
     public void ReplaceStories(IReadOnlyList<StoryResource> stories, string? homeStoryId = null, string? projectDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(stories);
+        ReplaceStoryItems(
+            stories.Select(story => new StoryListItemViewModel(story)).ToArray(),
+            stories,
+            homeStoryId,
+            projectDirectory);
+    }
+
+    public void ReplaceDiscoveredStories(
+        IReadOnlyList<StoryResource> legacyStories,
+        IReadOnlyList<CanonicalStoryHomeEntry> canonicalStories,
+        string? homeStoryId = null,
+        string? projectDirectory = null,
+        CanonicalProjectStoryGraphSnapshot? canonicalGraph = null)
+    {
+        ArgumentNullException.ThrowIfNull(legacyStories);
+        ArgumentNullException.ThrowIfNull(canonicalStories);
+        var legacyById = legacyStories.ToDictionary(story => story.Id, StringComparer.Ordinal);
+        var canonicalById = canonicalStories.ToDictionary(story => story.Id, StringComparer.Ordinal);
+        var items = canonicalStories
+            .Select(story => new StoryListItemViewModel(
+                story,
+                legacyById.GetValueOrDefault(story.Id)))
+            .Concat(legacyStories
+                .Where(story => !canonicalById.ContainsKey(story.Id))
+                .Select(story => new StoryListItemViewModel(story)))
+            .ToArray();
+        ReplaceStoryItems(items, legacyStories, homeStoryId, projectDirectory, canonicalGraph);
+    }
+
+    private void ReplaceStoryItems(
+        IReadOnlyList<StoryListItemViewModel> items,
+        IReadOnlyList<StoryResource> legacyStories,
+        string? homeStoryId,
+        string? projectDirectory,
+        CanonicalProjectStoryGraphSnapshot? canonicalGraph = null)
+    {
         var previousSelectedId = SelectedStory?.Id ?? _selectionBeforeSearchId;
         var previousSelectedIndex = SelectedStory is null
             ? -1
             : Stories.IndexOf(SelectedStory);
 
         Stories.Clear();
-        foreach (var story in stories.OrderBy(
-                     story => string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName,
-                     StringComparer.CurrentCultureIgnoreCase))
-            Stories.Add(new StoryListItemViewModel(story));
+        foreach (var story in items.OrderBy(story => story.DisplayName, StringComparer.CurrentCultureIgnoreCase))
+            Stories.Add(story);
         OnPropertyChanged(nameof(HasStories));
         OnPropertyChanged(nameof(IsEmptyProject));
         RefreshFilter();
         ReconcileSelection(previousSelectedId, previousSelectedIndex);
-        Graph = new ProjectGraphViewModel(stories, homeStoryId, projectDirectory);
+        Graph = canonicalGraph is null
+            ? new ProjectGraphViewModel(legacyStories, homeStoryId, projectDirectory)
+            : new ProjectGraphViewModel(legacyStories, canonicalGraph, homeStoryId, projectDirectory);
         ShowHome();
     }
 

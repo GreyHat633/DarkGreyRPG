@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.ViewModels;
@@ -171,6 +172,58 @@ public sealed class M7ProjectGraphViewModelTests
         Assert.AreEqual("source", graph.ProblemFocusRequest?.StoryId);
         Assert.IsTrue(graph.Nodes.Single(node => node.Id == "source").IsVisible);
         Assert.IsFalse(graph.RequestProblemFocus("missing"));
+    }
+
+    [TestMethod]
+    public void CanonicalSnapshotWinsSameIdAndAddsCanonicalOnlyDerivedEdges()
+    {
+        var legacySource = Story("source", "Legacy Source", Enter("legacy_exit", "legacy_target"));
+        var legacyTarget = Story("legacy_target", "Legacy Target");
+        var canonical = new CanonicalProjectStoryGraphSnapshot(
+        [
+            new("source", "Canonical Source", true, true, true, true, false, []),
+            new("canonical_target", "Canonical Target", true, true, true, true, false, []),
+        ],
+        [
+            new("source", "canonical_target",
+            [
+                new("source", "canonical_target", "canonical_exit",
+                    incomingBranchOutputs: ["accepted"]),
+            ]),
+        ],
+        []);
+
+        var graph = new ProjectGraphViewModel([legacySource, legacyTarget], canonical);
+
+        CollectionAssert.AreEquivalent(
+            new[] { "source", "canonical_target", "legacy_target" },
+            graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.AreEqual("Canonical Source", graph.Nodes.Single(node => node.Id == "source").DisplayName);
+        var edge = graph.Edges.Single();
+        Assert.AreEqual("source", edge.SourceStoryId);
+        Assert.AreEqual("canonical_target", edge.TargetStoryId);
+        Assert.AreEqual("canonical_exit", edge.Transitions.Single().NodeId);
+        CollectionAssert.AreEqual(new[] { "accepted" }, edge.Transitions.Single().IncomingBranchOutputs.ToArray());
+    }
+
+    [TestMethod]
+    public void CanonicalStructuralDiagnosticsAreErrorsAndRemainPreciselyAddressable()
+    {
+        var issue = new CanonicalProjectStoryGraphDiagnostic(
+            "project_graph.enter_story.ambiguous",
+            "ambiguous enter_story node",
+            "source",
+            "shared");
+        var canonical = new CanonicalProjectStoryGraphSnapshot(
+            [new("source", "Source", true, true, true, false, true, [issue])],
+            [],
+            [issue]);
+
+        var graph = new ProjectGraphViewModel([], canonical);
+
+        Assert.AreEqual(1, graph.ErrorCount);
+        Assert.AreEqual("shared", graph.Diagnostics.Single(item => item.Code == issue.Code).NodeId);
+        Assert.IsTrue(graph.Nodes.Single().HasWarning);
     }
 
     private static StoryResource Story(string id, string displayName, params StoryNodeResource[] nodes) => new()

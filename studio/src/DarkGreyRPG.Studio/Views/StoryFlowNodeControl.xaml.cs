@@ -68,7 +68,7 @@ public partial class StoryFlowNodeControl : UserControl
     public event EventHandler? SequenceStepRemoveRequested;
 
     public FlowPortControl? FindOutput(string output) =>
-        FindVisualChildren<FlowPortControl>(OutputItems).FirstOrDefault(port => string.Equals(port.PortName, output, StringComparison.Ordinal));
+        FindVisualChildren<FlowPortControl>(OutputItems).FirstOrDefault(port => string.Equals(port.EffectivePortId, output, StringComparison.Ordinal));
 
     public IReadOnlyList<FlowPortControl> OutputPorts => [.. FindVisualChildren<FlowPortControl>(OutputItems)];
 
@@ -131,27 +131,27 @@ public partial class StoryFlowNodeControl : UserControl
 
     private void InputPort_OnClick(object sender, RoutedEventArgs e)
     {
-        InputInvoked?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, "input", InputPort));
+        InputInvoked?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, InputPort.EffectivePortId, InputPort));
         e.Handled = true;
     }
 
     private void InputPort_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        InputDragStarted?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, "input", InputPort));
+        InputDragStarted?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, InputPort.EffectivePortId, InputPort));
         e.Handled = true;
     }
 
     private void OutputPort_OnClick(object sender, RoutedEventArgs e)
     {
         if (sender is not FlowPortControl port) return;
-        OutputInvoked?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, port.PortName, port));
+        OutputInvoked?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, port.EffectivePortId, port));
         e.Handled = true;
     }
 
     private void OutputPort_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FlowPortControl port) return;
-        OutputDragStarted?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, port.PortName, port));
+        OutputDragStarted?.Invoke(this, new FlowPortInvokedEventArgs(Node.Id, port.EffectivePortId, port));
         e.Handled = true;
     }
 
