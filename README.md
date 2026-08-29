@@ -1,8 +1,29 @@
 # DarkGrey_RPG
 
-DarkGrey_RPG is an authoring framework for Minecraft 1.7.10 RPG actors,
-dialogues, quests, and stories. The current `0.5.x` line implements Phase 1
-through Phase 5 of the master plan plus the Windows WPF Studio 2.1 workflow:
+DarkGrey_RPG is a flow-first authoring framework for Minecraft 1.7.10 RPG
+stories. Version `0.3.0.0` establishes one canonical model from the Windows WPF
+Studio through JSON persistence to the Forge runtime:
+
+- Story Flow is the only editable runtime orchestration source;
+- Session graphs own dialogue lines, choices, conditions, and named results;
+- Task graphs own objectives, logic, progress, and single settlement;
+- Project Story Graph is derived and read-only;
+- flow (`●`) and logic (`◆`) ports share stable IDs and strict cardinality rules;
+- Story, Session, and Task instances persist across server save/restart;
+- Objective events, Actions, terminate, failure cleanup, and active-child cleanup
+  form a complete automated runtime vertical slice;
+- legacy Studio 2.1.3 Dialogue, Quest, and safe Story patterns migrate only
+  through an explicit preview/confirm transaction with full backup and rollback;
+- the WPF Studio provides the shared graph editor, resource tree, Inspector,
+  Story workspace, migration UI, and local authoring lifecycle;
+- Forge 1.7.10 dedicated-server and Minecraft client compatibility are retained.
+
+CustomNPC+ remains a compatibility adapter and runtime test host in `0.3.0.0`.
+CNPC-specific binding polish, final NPC gameplay experience, story-pack
+deployment, and final quest UI are intentionally deferred to `0.3.1.0`.
+
+The repository also retains the earlier Phase 1–5 capabilities and compatibility
+surfaces, including:
 
 - standalone Actor resources;
 - runtime project loading and `/dgrpg reload`;
@@ -26,7 +47,7 @@ through Phase 5 of the master plan plus the Windows WPF Studio 2.1 workflow:
   variables, conditions, and Why Not Triggered explanations;
 - Minecraft Pick/Locate, automatic save-triggered reload, reversible Play
   Test sessions, autosave/backups, and Content Pack builds.
-- a self-contained WPF Studio 2.1.3 with Story-first navigation, formal
+- a self-contained WPF Studio with Story-first navigation, formal
   Create/Import/Reference semantics, dedicated Dialogue and Quest editors,
   a freely draggable/connected Story Flow canvas, and a derived read-only
   Project Story Graph;
@@ -34,8 +55,9 @@ through Phase 5 of the master plan plus the Windows WPF Studio 2.1 workflow:
   including named Dialogue exits and `/dgrpg story start <id>`.
 
 Native NPC, boss, combat, cutscene, and custom animation systems remain
-intentionally outside this project. Dialogue still never starts or owns a
-Quest, and a Quest has no issuer, Dialogue, or Story ownership fields.
+intentionally outside this project. Session and Task internal sequencing remain
+separate from Story Flow; `0.3.0.0` does not add implicit concurrency, Task
+entry/return nodes, or Task-embedded Sessions.
 
 ## Requirements
 
@@ -43,7 +65,7 @@ Quest, and a Quest has no issuer, Dialogue, or Story ownership fields.
 - Forge 10.13.4.1614
 - CustomNPC+ 1.11.1 fixed-v1
 - UniMixins 1.7.10 0.3.1 (required by the supplied CustomNPC+ environment)
-- Java 8 to run Minecraft; JDK 21 or newer to run this Gradle build
+- Java 8 for Forge/Minecraft runtime and the validated Gradle build
 - .NET 10 SDK for WPF Studio source builds (the packaged EXE is self-contained)
 - Godot 4.x only for the legacy Phase 1–5 external Studio
 
@@ -52,24 +74,25 @@ Quest, and a Quest has no issuer, Dialogue, or Story ownership fields.
 PowerShell:
 
 ```powershell
-$env:GRADLE_USER_HOME='E:\Java\gradle-home-darkgrey'
+$env:JAVA_HOME='E:\Java\jdk1.8.0_471'
+$env:GRADLE_USER_HOME='E:\Java\gradle'
 .\gradlew.bat build --offline --no-daemon --no-configuration-cache
 ```
 
-The mod jar is written to `build/libs/darkgrey_rpg-0.5.0.jar`.
+The mod jar is written to `build/libs/darkgrey_rpg-0.3.0.0.jar`.
 
-## WPF Studio 2.1.3
+## WPF Studio 0.3.0.0
 
 Run `Studio/package-studio.ps1` to publish the self-contained Windows x64
 single-file application to `dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe`.
-Open or create a Project from the File menu, enter a Story, author its Actor,
-Dialogue, Quest, and Flow pages, then use the Project Story Graph for derived
-cross-Story navigation. Create and Duplicate use unsaved Drafts until the
-first explicit Save; Reference keeps the shared project resource and its Home
-Story. `docs/2.1.3_RESOURCE_CREATION_MODEL.md` and
-`docs/2.1.3_STORY_RESOURCE_LIBRARY.md` define these contracts;
-`docs/TESTING.md` contains the separate Core, WPF, Release UI, Runtime, and
-manual acceptance boundaries.
+Open or create a Project from the File menu, enter a Story, and author canonical
+Session, Task, and Story Flow graphs from the shared Story workspace. The
+Project Story Graph remains derived navigation. Existing 2.1.3 projects are
+migrated from Project → Migrate to Canonical; preview is read-only, Apply
+requires explicit confirmation, and legacy files are never silently replaced.
+See `PLAN/DarkGrey_RPG_0.3.0.0_Design_Plan.md` and
+`docs/0.3.0.0_ARCHITECTURE.md` for current contracts. The `docs/2.1.3_*`
+documents remain the legacy migration-source specification.
 
 ## First run
 
@@ -106,7 +129,10 @@ See `docs/PHASE1_TESTING.md` for the full acceptance procedure.
 
 See `docs/PHASE3_TESTING.md` for persistence and two-player acceptance tests.
 
-## Story test
+## Legacy Story compatibility test
+
+This older CustomNPC+ scenario is retained as compatibility evidence and a
+runtime test host. It is not the final `0.3.0.0` NPC or quest-UI product form.
 
 1. Use `examples/phase4_project` as `darkgrey_rpg_project`.
 2. Bind the `tavern_owner` Actor to an existing CustomNPC+ NPC.
@@ -118,7 +144,7 @@ See `docs/PHASE3_TESTING.md` for persistence and two-player acceptance tests.
 See `docs/PHASE4_TESTING.md` for the complete Studio, runtime, restart, and
 multiplayer procedure.
 
-## Live authoring
+## Legacy Phase 5 live authoring
 
 1. Start Minecraft or the dedicated server with Live Bridge enabled.
 2. Open `studio/project.godot`. Studio connects only to

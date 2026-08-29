@@ -5,11 +5,14 @@ using System.IO;
 using System.Windows.Markup;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Dialogues;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Graphs.Migration;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Services;
+using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
@@ -19,9 +22,13 @@ public sealed class ShellViewModel : ObservableObject
     private readonly IProjectFolderPicker _projectFolderPicker;
     private readonly IActorWorkspaceDialogs _actorWorkspaceDialogs;
     private readonly IResourceWorkspaceDialogs _resourceWorkspaceDialogs;
+    private readonly ICanonicalStoryResourceDialogs _canonicalStoryResourceDialogs;
     private readonly IProjectWorkspaceDialogs _projectWorkspaceDialogs;
     private readonly IFlowWorkspaceDialogs _flowWorkspaceDialogs;
     private readonly ICrashLogService _crashLogService;
+    private readonly Func<string, CanonicalProjectGraphStore> _canonicalGraphStoreFactory;
+    private readonly Func<string, CanonicalProjectMigrationPreviewResult> _migrationPreview;
+    private readonly Func<CanonicalProjectMigrationPreviewResult, CanonicalProjectMigrationTransactionResult> _migrationApply;
     private readonly HashSet<string> _ignoredFlowRecoveries = new(StringComparer.Ordinal);
     private StoryFlowRecoveryStore? _flowRecoveryStore;
     private ActorResourceInfo? _selectedActor;
@@ -33,6 +40,10 @@ public sealed class ShellViewModel : ObservableObject
     private DialogueEditorViewModel? _currentDialogue;
     private QuestEditorViewModel? _currentQuest;
     private StoryFlowEditorViewModel? _currentFlow;
+    private CanonicalStoryWorkspaceViewModel? _canonicalStoryWorkspace;
+    private CanonicalProjectGraphStore? _canonicalGraphStore;
+    private CanonicalGraphResourceSaveCoordinator? _canonicalSaveCoordinator;
+    private IReadOnlyList<CanonicalStoryDiscoveryIssue> _canonicalStoryDiscoveryIssues = [];
     private StoryResourceMembershipViewModel? _selectedStoryResource;
     private readonly Dictionary<string, DialogueDocument> _dialogueDrafts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, QuestDocument> _questDrafts = new(StringComparer.Ordinal);
@@ -50,15 +61,24 @@ public sealed class ShellViewModel : ObservableObject
         IProjectWorkspaceDialogs? projectWorkspaceDialogs = null,
         IResourceWorkspaceDialogs? resourceWorkspaceDialogs = null,
         IFlowWorkspaceDialogs? flowWorkspaceDialogs = null,
-        ICrashLogService? crashLogService = null)
+        ICrashLogService? crashLogService = null,
+        ICanonicalStoryResourceDialogs? canonicalStoryResourceDialogs = null,
+        Func<string, CanonicalProjectGraphStore>? canonicalGraphStoreFactory = null,
+        Func<string, CanonicalProjectMigrationPreviewResult>? migrationPreview = null,
+        Func<CanonicalProjectMigrationPreviewResult, CanonicalProjectMigrationTransactionResult>? migrationApply = null)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         _projectFolderPicker = projectFolderPicker ?? throw new ArgumentNullException(nameof(projectFolderPicker));
         _actorWorkspaceDialogs = actorWorkspaceDialogs ?? new NullActorWorkspaceDialogs();
         _projectWorkspaceDialogs = projectWorkspaceDialogs ?? new NullProjectWorkspaceDialogs();
         _resourceWorkspaceDialogs = resourceWorkspaceDialogs ?? new NullResourceWorkspaceDialogs();
+        _canonicalStoryResourceDialogs = canonicalStoryResourceDialogs ?? new NullCanonicalStoryResourceDialogs();
         _flowWorkspaceDialogs = flowWorkspaceDialogs ?? new NullFlowWorkspaceDialogs();
         _crashLogService = crashLogService ?? new CrashLogService();
+        _canonicalGraphStoreFactory = canonicalGraphStoreFactory
+            ?? (projectDirectory => new CanonicalProjectGraphStore(projectDirectory));
+        _migrationPreview = migrationPreview ?? CanonicalProjectMigrationPreview.PreviewProject;
+        _migrationApply = migrationApply ?? (preview => new CanonicalProjectMigrationTransaction().Apply(preview));
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
@@ -86,9 +106,13 @@ public sealed class ShellViewModel : ObservableObject
         ShowProjectSettingsCommand = new RelayCommand(ShowProjectSettings, () => HasProject);
         OpenSelectedStoryCommand = new RelayCommand(OpenSelectedStory, () => HasProject && ProjectHome.SelectedStory is not null);
         CreateStoryCommand = new RelayCommand(CreateStory, () => HasProject);
-        DeleteSelectedStoryCommand = new RelayCommand(DeleteSelectedStory, () => HasProject && ProjectHome.SelectedStory is not null);
+        DeleteSelectedStoryCommand = new RelayCommand(
+            DeleteSelectedStory,
+            () => HasProject && ProjectHome.SelectedStory is { } story
+                && (story.HasCanonicalStory || story.CanDeleteLegacyStory));
         ShowProjectHomeCommand = new RelayCommand(ShowProjectHome, () => HasProject);
         ShowProjectGraphCommand = new RelayCommand(ShowProjectGraph, () => HasProject);
+        MigrateCanonicalProjectCommand = new RelayCommand(MigrateCanonicalProject, () => HasProject);
         ToggleResourceBrowserCommand = new RelayCommand(
             () => IsResourceBrowserVisible = !IsResourceBrowserVisible);
         ToggleBottomPanelCommand = new RelayCommand(
@@ -203,6 +227,11 @@ public sealed class ShellViewModel : ObservableObject
 
     public RelayCommand ShowProjectGraphCommand { get; }
 
+    public RelayCommand MigrateCanonicalProjectCommand { get; }
+
+    // Short alias retained for callers that refer to the menu action as project migration.
+    public RelayCommand MigrateProjectCommand => MigrateCanonicalProjectCommand;
+
     public RelayCommand ToggleResourceBrowserCommand { get; }
 
     public RelayCommand ToggleBottomPanelCommand { get; }
@@ -245,8 +274,14 @@ public sealed class ShellViewModel : ObservableObject
     public bool IsResourceBrowserVisible
     {
         get => _isResourceBrowserVisible;
-        private set => SetProperty(ref _isResourceBrowserVisible, value);
+        private set
+        {
+            if (SetProperty(ref _isResourceBrowserVisible, value))
+                OnPropertyChanged(nameof(EffectiveResourceBrowserVisible));
+        }
     }
+
+    public bool EffectiveResourceBrowserVisible => IsResourceBrowserVisible && !HasCanonicalStoryWorkspace;
 
     public ActorResourceInfo? SelectedActor
     {
@@ -449,7 +484,11 @@ public sealed class ShellViewModel : ObservableObject
         var parts = problem.Source?.Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (parts is not { Length: >= 1 } || !string.Equals(parts[0], "project-graph", StringComparison.Ordinal))
             return false;
-        if (problem.Code == "project_graph.target.missing" && parts.Length >= 3)
+        if (problem.Code is "project_graph.target.missing"
+                or "project_graph.target.invalid"
+                or "project_graph.enter_story.malformed"
+                or "project_graph.enter_story.ambiguous"
+            && parts.Length >= 3)
         {
             OpenStoryFlowNode(parts[1], parts[2], "target_story_id");
             return true;
@@ -558,14 +597,18 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
-    public IWorkspaceEditorViewModel? ActiveEditor => StoryWorkspace.CurrentRoute switch
-    {
-        StoryWorkspaceRoutes.Actors => CurrentActor,
-        StoryWorkspaceRoutes.Dialogues => CurrentDialogue,
-        StoryWorkspaceRoutes.Quests => CurrentQuest,
-        StoryWorkspaceRoutes.Flow => CurrentFlow,
-        _ => null,
-    };
+    public CanonicalStoryWorkspaceViewModel? CanonicalStoryWorkspace => _canonicalStoryWorkspace;
+    public bool HasCanonicalStoryWorkspace => CanonicalStoryWorkspace is not null;
+
+    public IWorkspaceEditorViewModel? ActiveEditor => (IWorkspaceEditorViewModel?)CanonicalStoryWorkspace?.ActiveEditor
+        ?? (StoryWorkspace.CurrentRoute switch
+        {
+            StoryWorkspaceRoutes.Actors => CurrentActor,
+            StoryWorkspaceRoutes.Dialogues => CurrentDialogue,
+            StoryWorkspaceRoutes.Quests => CurrentQuest,
+            StoryWorkspaceRoutes.Flow => CurrentFlow,
+            _ => null,
+        });
 
     private void OpenProject()
     {
@@ -584,6 +627,57 @@ public sealed class ShellViewModel : ObservableObject
         OpenProjectFromDirectory(selectedDirectory, isRestore: false);
     }
 
+    private void MigrateCanonicalProject()
+    {
+        var project = _projectService.CurrentProject;
+        if (project is null) return;
+
+        if (HasUnsavedDocuments())
+        {
+            ReportWarning("当前项目有未保存的资源；请先保存后再迁移。", "migration");
+            return;
+        }
+
+        CanonicalProjectMigrationPreviewResult preview;
+        try
+        {
+            preview = _migrationPreview(project.ProjectDirectory);
+        }
+        catch (Exception exception)
+        {
+            ReportFailure("预览 Canonical 迁移", exception, sourceOverride: "migration");
+            return;
+        }
+
+        // The dialog is the only confirmation boundary.  In particular, an
+        // invalid preview is never handed to the apply delegate, even if an
+        // injected dialog incorrectly reports confirmation.
+        if (!_projectWorkspaceDialogs.ConfirmCanonicalProjectMigration(preview))
+            return;
+        if (!preview.CanApply)
+        {
+            ReportWarning("Canonical 迁移预览包含错误，无法应用。", "migration");
+            return;
+        }
+
+        try
+        {
+            var result = _migrationApply(preview);
+            _canonicalGraphStore = _canonicalGraphStoreFactory(project.ProjectDirectory);
+            _canonicalSaveCoordinator = new CanonicalGraphResourceSaveCoordinator(_canonicalGraphStore);
+            LoadActorList();
+            LoadStoryList();
+            RefreshProblems();
+            ReportSuccess(
+                $"Canonical 迁移成功：已写入 {result.WrittenPaths.Count} 个文件；备份：{result.BackupPath}",
+                "migration");
+        }
+        catch (Exception exception)
+        {
+            ReportFailure("应用 Canonical 迁移", exception, sourceOverride: "migration");
+        }
+    }
+
     private bool OpenProjectFromDirectory(string projectDirectory, bool isRestore)
     {
         try
@@ -592,6 +686,9 @@ public sealed class ShellViewModel : ObservableObject
             _dialogueDrafts.Clear();
             _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
+            SetCanonicalStoryWorkspace(null);
+            _canonicalGraphStore = _canonicalGraphStoreFactory(project.ProjectDirectory);
+            _canonicalSaveCoordinator = new CanonicalGraphResourceSaveCoordinator(_canonicalGraphStore);
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
@@ -660,6 +757,9 @@ public sealed class ShellViewModel : ObservableObject
             _dialogueDrafts.Clear();
             _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
+            SetCanonicalStoryWorkspace(null);
+            _canonicalGraphStore = _canonicalGraphStoreFactory(project.ProjectDirectory);
+            _canonicalSaveCoordinator = new CanonicalGraphResourceSaveCoordinator(_canonicalGraphStore);
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
@@ -706,10 +806,43 @@ public sealed class ShellViewModel : ObservableObject
         var project = _projectService.CurrentProject
             ?? throw new ProjectException("No project is open.");
         var stories = project.Stories.ListStories();
-        ProjectHome.ReplaceStories(stories, projectDirectory: project.ProjectDirectory);
+        var discovery = _canonicalGraphStore is null
+            ? new CanonicalStoryDiscoverySnapshot([])
+            : new CanonicalStoryDiscoveryService(_canonicalGraphStore).Discover();
+        var canonicalProjectGraph = _canonicalGraphStore is null
+            ? new CanonicalProjectStoryGraphSnapshot([], [], [])
+            : new CanonicalProjectStoryGraphService(_canonicalGraphStore).Derive();
+        _canonicalStoryDiscoveryIssues = discovery.Issues;
+        ProjectHome.ReplaceDiscoveredStories(
+            stories,
+            discovery.Items.Select(ToCanonicalStoryHomeEntry).ToArray(),
+            projectDirectory: project.ProjectDirectory,
+            canonicalGraph: canonicalProjectGraph);
         UpdateProjectGraphProblems();
+        UpdateCanonicalStoryDiscoveryProblems();
         OnPropertyChanged(nameof(ProjectHome));
         OpenSelectedStoryCommand.RaiseCanExecuteChanged();
+        DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
+    }
+
+    private static CanonicalStoryHomeEntry ToCanonicalStoryHomeEntry(
+        CanonicalStoryDiscoveryItem item)
+    {
+        var membership = item.Membership;
+        var graph = item.Story?.Graph;
+        return new CanonicalStoryHomeEntry(
+            item.Id,
+            item.DisplayName,
+            membership?.OwnedResources.Actors.Count ?? 0,
+            membership?.ReferencedResources.Actors.Count ?? 0,
+            (membership?.OwnedResources.Sessions.Count ?? 0)
+                + (membership?.ReferencedResources.Sessions.Count ?? 0),
+            (membership?.OwnedResources.Tasks.Count ?? 0)
+                + (membership?.ReferencedResources.Tasks.Count ?? 0),
+            graph?.Nodes.Count ?? 0,
+            item.IsComplete,
+            item.IsValid,
+            item.Issues.Select(issue => issue.Message).ToArray());
     }
 
     private void OpenSelectedStory()
@@ -721,6 +854,15 @@ public sealed class ShellViewModel : ObservableObject
 
         try
         {
+            var canonicalResult = TryOpenCanonicalStory(selected.Id);
+            if (canonicalResult == CanonicalOpenResult.Opened) return;
+            if (canonicalResult == CanonicalOpenResult.Failed)
+            {
+                SetCanonicalStoryWorkspace(null);
+                StoryWorkspace.CloseStory();
+                return;
+            }
+            SetCanonicalStoryWorkspace(null);
             var story = project.Stories.LoadStory(selected.Id);
             var actors = project.Actors.ListActors();
             var descriptors = GetResourceDescriptors(project, story, _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id));
@@ -754,27 +896,578 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
+    private CanonicalOpenResult TryOpenCanonicalStory(string storyId)
+    {
+        var store = _canonicalGraphStore;
+        if (store is null) return CanonicalOpenResult.NotPresent;
+        try
+        {
+            var storyExists = File.Exists(store.Stories.GetPath(storyId));
+            var membershipExists = File.Exists(store.Memberships.GetPath(storyId));
+            if (!storyExists && !membershipExists) return CanonicalOpenResult.NotPresent;
+
+            var snapshot = new CanonicalStoryWorkspaceLoader(store).Load(storyId);
+            var workspace = new CanonicalStoryWorkspaceViewModel(snapshot)
+            {
+                CanLeaveGraph = CanLeaveCanonicalGraph,
+            };
+            ConfigureCanonicalResourceActions(workspace);
+            ClearAllEditorSelections();
+            StoryWorkspace.CloseStory();
+            SetCanonicalStoryWorkspace(workspace);
+            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
+            ReplaceValidationSource(
+                $"canonical/story/{storyId}",
+                workspace.ValidationIssues.Concat(workspace.ActiveEditor.ValidationIssues));
+            StatusMessage = $"已打开 Canonical Story：{storyId}";
+            Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
+            return CanonicalOpenResult.Opened;
+        }
+        catch (Exception exception) when (exception is GraphResourceRepositoryException
+            or CanonicalStoryMembershipRepositoryException
+            or ActorRepositoryException
+            or ActorValidationException)
+        {
+            ReportFailure(
+                "打开 Canonical Story",
+                exception,
+                sourceOverride: $"canonical/story/{storyId}");
+            return CanonicalOpenResult.Failed;
+        }
+    }
+
+    private bool CanLeaveCanonicalGraph(CanonicalGraphResourceEditorViewModel editor)
+    {
+        if (!editor.IsDirty) return true;
+        ReportWarning($"Canonical 图 '{editor.Id}' 尚未保存。", $"canonical/{editor.ResourceKind}/{editor.Id}");
+        return false;
+    }
+
+    private void ConfigureCanonicalResourceActions(CanonicalStoryWorkspaceViewModel workspace)
+    {
+        workspace.CreateResourceRequested = CreateCanonicalStoryResource;
+        workspace.ReferenceResourceRequested = ReferenceCanonicalStoryResource;
+        workspace.CreateActorRequested = CreateCanonicalStoryActor;
+        workspace.ReferenceActorRequested = ReferenceCanonicalStoryActor;
+        workspace.DeleteResourceRequested = DeleteCanonicalStoryResource;
+        workspace.RefreshResourceCommandStates();
+    }
+
+    private void CreateCanonicalStoryActor()
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        var project = _projectService.CurrentProject;
+        if (workspace is null || store is null || project is null
+            || !CanMutateCanonicalStoryResources(workspace)) return;
+        try
+        {
+            var request = _actorWorkspaceDialogs.RequestCreate(project.Actors.GetAvailableId("new_actor"));
+            if (request is null) return;
+
+            var created = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
+                .CreateOwned(workspace.StoryEditor.Id, request.Id, request.DisplayName);
+            LoadActorList();
+            ReloadCanonicalStoryWorkspace(
+                workspace.StoryEditor.Id,
+                CanonicalStoryFolderKind.Actors,
+                created.Id);
+            ReportSuccess(
+                $"Canonical 角色 '{created.Id}' 已创建。",
+                $"canonical/actor/{created.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                "创建 Canonical 角色",
+                exception,
+                sourceOverride: "canonical/actor");
+        }
+    }
+
+    private void ReferenceCanonicalStoryActor()
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        var project = _projectService.CurrentProject;
+        if (workspace is null || store is null || project is null
+            || !CanMutateCanonicalStoryResources(workspace)) return;
+        try
+        {
+            var presentIds = workspace.Folders
+                .Single(folder => folder.Kind == CanonicalStoryFolderKind.Actors)
+                .Items.Select(item => item.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            var candidates = project.Actors.ListActors()
+                .Where(actor => !presentIds.Contains(actor.Id))
+                .ToArray();
+            var choice = _actorWorkspaceDialogs.PickActor(
+                candidates,
+                ActorPickerMode.Reference,
+                workspace.StoryEditor.DisplayName);
+            if (choice is null) return;
+            if (!candidates.Any(candidate => string.Equals(candidate.Id, choice.Id, StringComparison.Ordinal)))
+                throw new InvalidOperationException("Actor picker returned an item outside the offered scope.");
+
+            new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
+                .AddReference(workspace.StoryEditor.Id, choice.Id);
+            ReloadCanonicalStoryWorkspace(
+                workspace.StoryEditor.Id,
+                CanonicalStoryFolderKind.Actors,
+                choice.Id);
+            ReportSuccess(
+                $"已引用 Canonical 角色 '{choice.Id}'。",
+                $"canonical/actor/{choice.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                "引用 Canonical 角色",
+                exception,
+                sourceOverride: "canonical/actor");
+        }
+    }
+
+    private void CreateCanonicalStoryResource(GraphResourceKind resourceKind)
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        if (workspace is null || store is null || !CanMutateCanonicalStoryResources(workspace)) return;
+        try
+        {
+            var repository = CanonicalRepository(store, resourceKind);
+            var suggestedId = repository.GetAvailableId(
+                resourceKind == GraphResourceKind.Session ? "new_session" : "new_task");
+            var request = _canonicalStoryResourceDialogs.RequestCreate(resourceKind, suggestedId);
+            if (request is null) return;
+
+            var created = new CanonicalStoryResourceLifecycleService(store).CreateOwned(
+                workspace.StoryEditor.Id,
+                resourceKind,
+                request.Id,
+                request.DisplayName);
+            ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, resourceKind, created.Id);
+            ReportSuccess(
+                $"Canonical {CanonicalKindLabel(resourceKind)} '{created.Id}' 已创建。",
+                $"canonical/{resourceKind}/{created.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                $"创建 Canonical {CanonicalKindLabel(resourceKind)}",
+                exception,
+                sourceOverride: $"canonical/{resourceKind}");
+        }
+    }
+
+    private void ReferenceCanonicalStoryResource(GraphResourceKind resourceKind)
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        if (workspace is null || store is null || !CanMutateCanonicalStoryResources(workspace)) return;
+        try
+        {
+            var repository = CanonicalRepository(store, resourceKind);
+            var presentIds = workspace.Folders
+                .Single(folder => folder.Kind == FolderFor(resourceKind))
+                .Items.Select(item => item.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            var candidates = repository.List()
+                .Where(resource => !presentIds.Contains(resource.Id))
+                .ToArray();
+            var choice = _canonicalStoryResourceDialogs.PickReference(
+                resourceKind,
+                candidates,
+                workspace.StoryEditor.DisplayName);
+            if (choice is null) return;
+            if (choice.ResourceKind != resourceKind
+                || !candidates.Any(candidate => candidate.ResourceKind == choice.ResourceKind
+                    && string.Equals(candidate.Id, choice.Id, StringComparison.Ordinal)))
+                throw new InvalidOperationException("Canonical resource picker returned an item outside the offered scope.");
+
+            new CanonicalStoryResourceLifecycleService(store).AddReference(
+                workspace.StoryEditor.Id,
+                resourceKind,
+                choice.Id);
+            ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, resourceKind, choice.Id);
+            ReportSuccess(
+                $"已引用 Canonical {CanonicalKindLabel(resourceKind)} '{choice.Id}'。",
+                $"canonical/{resourceKind}/{choice.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                $"引用 Canonical {CanonicalKindLabel(resourceKind)}",
+                exception,
+                sourceOverride: $"canonical/{resourceKind}");
+        }
+    }
+
+    private void DeleteCanonicalStoryResource(ICanonicalStoryTreeItem item)
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var store = _canonicalGraphStore;
+        if (workspace is null || store is null || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (item is CanonicalStoryActorItem
+            || item is CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors })
+        {
+            DeleteCanonicalStoryActor(item, workspace, store);
+            return;
+        }
+        if (!TryDescribeCanonicalResource(item, store, out var choice, out var isReferenced, out var isMissing))
+            return;
+
+        var storyId = workspace.StoryEditor.Id;
+        var storyDisplayName = workspace.StoryEditor.DisplayName;
+        var service = new CanonicalStoryResourceLifecycleService(store);
+        try
+        {
+            if (isReferenced)
+            {
+                if (!_canonicalStoryResourceDialogs.ConfirmRemoveReference(choice, storyDisplayName)) return;
+                service.RemoveReference(storyId, choice.ResourceKind, choice.Id);
+                ReloadCanonicalStoryWorkspace(storyId, choice.ResourceKind);
+                ReportSuccess(
+                    $"已解除 Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 的引用。",
+                    $"canonical/{choice.ResourceKind}/{choice.Id}");
+                return;
+            }
+
+            if (isMissing)
+            {
+                ReportWarning(
+                    $"拥有的 Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 文件缺失，无法执行安全删除。",
+                    $"canonical/{choice.ResourceKind}/{choice.Id}");
+                return;
+            }
+
+            var plan = service.GetDeletionPlan(storyId, choice.ResourceKind, choice.Id);
+            if (!plan.CanDelete)
+            {
+                _canonicalStoryResourceDialogs.ShowDeleteBlocked(choice, plan.ReferencingStoryIds);
+                ReportWarning(
+                    $"Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 仍被其它 Story 引用，未删除。",
+                    $"canonical/{choice.ResourceKind}/{choice.Id}");
+                return;
+            }
+            if (!_canonicalStoryResourceDialogs.ConfirmDeleteOwned(choice)) return;
+
+            service.DeleteOwned(storyId, choice.ResourceKind, choice.Id);
+            ReloadCanonicalStoryWorkspace(storyId, choice.ResourceKind);
+            ReportSuccess(
+                $"Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 已删除。",
+                $"canonical/{choice.ResourceKind}/{choice.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                $"更新 Canonical {CanonicalKindLabel(choice.ResourceKind)}",
+                exception,
+                sourceOverride: $"canonical/{choice.ResourceKind}/{choice.Id}");
+        }
+    }
+
+    private void DeleteCanonicalStoryActor(
+        ICanonicalStoryTreeItem item,
+        CanonicalStoryWorkspaceViewModel workspace,
+        CanonicalProjectGraphStore store)
+    {
+        var project = _projectService.CurrentProject;
+        if (project is null
+            || !TryDescribeCanonicalActor(item, project.Actors, out var actor, out var isReferenced, out var isMissing))
+            return;
+
+        var storyId = workspace.StoryEditor.Id;
+        var service = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories);
+        try
+        {
+            if (isReferenced)
+            {
+                if (!_actorWorkspaceDialogs.ConfirmRemoveReference(actor, workspace.StoryEditor.DisplayName)) return;
+                service.RemoveReference(storyId, actor.Id);
+                ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Actors);
+                ReportSuccess(
+                    $"已解除 Canonical 角色 '{actor.Id}' 的引用；Actor 文件未删除。",
+                    $"canonical/actor/{actor.Id}");
+                return;
+            }
+
+            if (isMissing)
+            {
+                ReportWarning(
+                    $"拥有的 Canonical 角色 '{actor.Id}' 文件缺失，无法执行安全删除。",
+                    $"canonical/actor/{actor.Id}");
+                return;
+            }
+
+            var plan = service.GetDeletionPlan(storyId, actor.Id);
+            if (!plan.CanDelete)
+            {
+                _actorWorkspaceDialogs.ShowReferences(
+                    actor,
+                    DescribeCanonicalActorBlockers(plan, store, project.Stories));
+                ReportWarning(
+                    $"Canonical 角色 '{actor.Id}' 仍被其它 canonical 或旧版 Story 占用/引用，未删除。",
+                    $"canonical/actor/{actor.Id}");
+                return;
+            }
+            if (!_actorWorkspaceDialogs.ConfirmDelete(actor)) return;
+
+            _projectService.ReleaseOpenActor(actor.Id);
+            service.DeleteOwned(storyId, actor.Id);
+            LoadActorList();
+            ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Actors);
+            ReportSuccess(
+                $"Canonical 角色 '{actor.Id}' 已从 actors/ 删除。",
+                $"canonical/actor/{actor.Id}");
+        }
+        catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                "更新 Canonical 角色",
+                exception,
+                sourceOverride: $"canonical/actor/{actor.Id}");
+        }
+    }
+
+    private bool CanMutateCanonicalStoryResources(CanonicalStoryWorkspaceViewModel workspace)
+    {
+        if (!workspace.HasDirtyEditors) return true;
+        ReportWarning(
+            "Canonical Story 中存在未保存的图；请先保存，再创建、引用或删除资源。",
+            $"canonical/story/{workspace.StoryEditor.Id}");
+        return false;
+    }
+
+    private void ReloadCanonicalStoryWorkspace(
+        string storyId,
+        GraphResourceKind selectedKind,
+        string? selectedResourceId = null)
+        => ReloadCanonicalStoryWorkspace(storyId, FolderFor(selectedKind), selectedResourceId);
+
+    private void ReloadCanonicalStoryWorkspace(
+        string storyId,
+        CanonicalStoryFolderKind selectedFolderKind,
+        string? selectedResourceId = null)
+    {
+        var store = _canonicalGraphStore ?? throw new InvalidOperationException("Canonical graph store is unavailable.");
+        var snapshot = new CanonicalStoryWorkspaceLoader(store).Load(storyId);
+        var replacement = new CanonicalStoryWorkspaceViewModel(snapshot)
+        {
+            CanLeaveGraph = CanLeaveCanonicalGraph,
+        };
+        ConfigureCanonicalResourceActions(replacement);
+        SetCanonicalStoryWorkspace(replacement);
+        if (selectedResourceId is null)
+        {
+            replacement.SelectFolder(selectedFolderKind);
+        }
+        else
+        {
+            var selected = replacement.Folders
+                .Single(folder => folder.Kind == selectedFolderKind)
+                .Items.FirstOrDefault(item => string.Equals(item.Id, selectedResourceId, StringComparison.Ordinal));
+            if (selected is not null) replacement.SelectTreeItem(selected);
+            else replacement.SelectFolder(selectedFolderKind);
+        }
+        ReplaceValidationSource(
+            $"canonical/story/{storyId}",
+            replacement.ValidationIssues.Concat(replacement.ActiveEditor.ValidationIssues));
+    }
+
+    private static bool TryDescribeCanonicalResource(
+        ICanonicalStoryTreeItem item,
+        CanonicalProjectGraphStore store,
+        out CanonicalGraphResourceChoice choice,
+        out bool isReferenced,
+        out bool isMissing)
+    {
+        GraphResourceKind kind;
+        string id;
+        string displayName;
+        switch (item)
+        {
+            case CanonicalStoryGraphItem graph:
+                kind = graph.ResourceKind;
+                id = graph.Id;
+                displayName = graph.DisplayName;
+                isReferenced = graph.IsReferenced;
+                isMissing = false;
+                break;
+            case CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Sessions or CanonicalStoryFolderKind.Tasks } missing:
+                kind = missing.FolderKind == CanonicalStoryFolderKind.Sessions
+                    ? GraphResourceKind.Session
+                    : GraphResourceKind.Task;
+                id = missing.Id;
+                displayName = missing.DisplayName;
+                isReferenced = missing.IsReferenced;
+                isMissing = true;
+                break;
+            default:
+                choice = null!;
+                isReferenced = false;
+                isMissing = false;
+                return false;
+        }
+
+        choice = new CanonicalGraphResourceChoice(
+            kind,
+            id,
+            displayName,
+            CanonicalRepository(store, kind).GetPath(id));
+        return true;
+    }
+
+    private static bool TryDescribeCanonicalActor(
+        ICanonicalStoryTreeItem item,
+        ActorRepository repository,
+        out ActorResourceInfo actor,
+        out bool isReferenced,
+        out bool isMissing)
+    {
+        switch (item)
+        {
+            case CanonicalStoryActorItem resolved:
+                actor = resolved.Actor;
+                isReferenced = resolved.IsReferenced;
+                isMissing = false;
+                return true;
+            case CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors } missing:
+                actor = new ActorResourceInfo(
+                    missing.Id,
+                    missing.DisplayName,
+                    Path.Combine(repository.ActorsDirectory, missing.Id + ".json"),
+                    []);
+                isReferenced = missing.IsReferenced;
+                isMissing = true;
+                return true;
+            default:
+                actor = null!;
+                isReferenced = false;
+                isMissing = false;
+                return false;
+        }
+    }
+
+    private static IReadOnlyList<ResourceDescriptor> DescribeCanonicalActorBlockers(
+        CanonicalStoryActorDeletionPlan plan,
+        CanonicalProjectGraphStore store,
+        StoryRepository legacyStories)
+        => plan.Blockers.Select(blocker =>
+        {
+            var sourceLabel = blocker.IsCanonical ? "Canonical" : "旧版";
+            var membershipLabel = blocker.IsOwned ? "占用" : "引用";
+            string displayName;
+            string path;
+            if (blocker.IsCanonical)
+            {
+                try { displayName = store.Stories.Load(blocker.StoryId).DisplayName; }
+                catch (GraphResourceRepositoryException) { displayName = blocker.StoryId; }
+                path = store.Memberships.GetPath(blocker.StoryId);
+            }
+            else
+            {
+                try { displayName = legacyStories.LoadStory(blocker.StoryId).DisplayName; }
+                catch (StoryNotFoundException) { displayName = blocker.StoryId; }
+                path = Path.Combine(legacyStories.StoriesDirectory, blocker.StoryId + ".json");
+            }
+
+            return new ResourceDescriptor(
+                ProjectResourceType.Story,
+                blocker.StoryId,
+                $"[{sourceLabel} {membershipLabel}] {displayName}",
+                path);
+        }).ToArray();
+
+    private static GraphResourceRepository CanonicalRepository(
+        CanonicalProjectGraphStore store,
+        GraphResourceKind resourceKind) => resourceKind switch
+    {
+        GraphResourceKind.Session => store.Sessions,
+        GraphResourceKind.Task => store.Tasks,
+        _ => throw new ArgumentOutOfRangeException(nameof(resourceKind)),
+    };
+
+    private static CanonicalStoryFolderKind FolderFor(GraphResourceKind resourceKind) => resourceKind switch
+    {
+        GraphResourceKind.Session => CanonicalStoryFolderKind.Sessions,
+        GraphResourceKind.Task => CanonicalStoryFolderKind.Tasks,
+        _ => throw new ArgumentOutOfRangeException(nameof(resourceKind)),
+    };
+
+    private static string CanonicalKindLabel(GraphResourceKind resourceKind) => resourceKind switch
+    {
+        GraphResourceKind.Session => "会话",
+        GraphResourceKind.Task => "任务",
+        _ => throw new ArgumentOutOfRangeException(nameof(resourceKind)),
+    };
+
+    private static bool IsCanonicalResourceLifecycleException(Exception exception)
+        => exception is CanonicalStoryLifecycleException
+            or CanonicalStoryResourceLifecycleException
+            or CanonicalStoryActorLifecycleException
+            or ProjectException
+            or GraphResourceRepositoryException
+            or CanonicalStoryMembershipRepositoryException
+            or ActorRepositoryException
+            or ActorValidationException
+            or IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException;
+
+    private void SetCanonicalStoryWorkspace(CanonicalStoryWorkspaceViewModel? workspace)
+    {
+        if (ReferenceEquals(_canonicalStoryWorkspace, workspace)) return;
+        if (_canonicalStoryWorkspace is not null)
+        {
+            _canonicalStoryWorkspace.PropertyChanged -= OnCanonicalStoryWorkspacePropertyChanged;
+            Problems.RemoveSourceTree($"canonical/story/{_canonicalStoryWorkspace.StoryEditor.Id}");
+            _canonicalStoryWorkspace.Dispose();
+        }
+        _canonicalStoryWorkspace = workspace;
+        if (_canonicalStoryWorkspace is not null)
+            _canonicalStoryWorkspace.PropertyChanged += OnCanonicalStoryWorkspacePropertyChanged;
+        OnPropertyChanged(nameof(CanonicalStoryWorkspace));
+        OnPropertyChanged(nameof(HasCanonicalStoryWorkspace));
+        OnPropertyChanged(nameof(EffectiveResourceBrowserVisible));
+        RaiseCurrentEditorStates();
+    }
+
+    private void OnCanonicalStoryWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActiveEditor)
+            or nameof(CanonicalStoryWorkspaceViewModel.HasDirtyEditors))
+            RaiseCurrentEditorStates();
+    }
+
     private void CreateStory()
     {
         var project = _projectService.CurrentProject;
-        if (project is null) return;
+        if (project is null || _canonicalGraphStore is null) return;
 
         try
         {
             var request = _resourceWorkspaceDialogs.RequestCreate(
                 ProjectResourceType.Story,
-                project.Stories.GetAvailableId("new_story"));
+                GetAvailableStoryId("new_story"));
             if (request is null) return;
 
-            var story = _projectService.CreateStory(request.Id, request.DisplayName);
+            var story = new CanonicalStoryLifecycleService(
+                    _canonicalGraphStore,
+                    project.Actors,
+                    project.Stories)
+                .Create(request.Id, request.DisplayName);
             LoadStoryList();
             ProjectHome.SelectedStory = ProjectHome.Stories.Single(item => item.Id == story.Id);
             ProjectHome.ShowHome();
-            StatusMessage = $"剧情 '{story.Id}' 已创建。";
-            Output.Append(StatusMessage, OutputKind.Success, $"story/{story.Id}");
+            StatusMessage = $"Canonical 剧情 '{story.Id}' 已创建。";
+            Output.Append(StatusMessage, OutputKind.Success, $"canonical/story/{story.Id}");
             Toast.Show(StatusMessage, ToastKind.Success);
         }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
+        catch (Exception exception) when (
+            IsWorkspaceException(exception)
+            || IsCanonicalResourceLifecycleException(exception)
+            || IsRecoverableUiException(exception))
         {
             ReportFailure("新建剧情", exception);
         }
@@ -788,6 +1481,13 @@ public sealed class ShellViewModel : ObservableObject
     {
         var selected = ProjectHome.SelectedStory;
         if (selected is null || _projectService.CurrentProject is null) return;
+
+        if (selected.HasCanonicalStory)
+        {
+            DeleteSelectedCanonicalStory(selected);
+            return;
+        }
+        if (!selected.CanDeleteLegacyStory) return;
 
         try
         {
@@ -831,6 +1531,13 @@ public sealed class ShellViewModel : ObservableObject
         var story = ProjectHome.Stories.FirstOrDefault(item => item.Id == storyId);
         if (story is null) return;
         OpenStory(story);
+        if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
+        {
+            CanonicalStoryWorkspace.ReturnToStory();
+            StatusMessage = $"已从剧情图谱打开 Canonical Story Flow：{storyId}";
+            Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
+            return;
+        }
         if (!StoryWorkspace.HasStory || StoryWorkspace.StoryId != storyId) return;
         StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
         StatusMessage = $"已从剧情图谱打开 Story Flow：{storyId}";
@@ -847,6 +1554,12 @@ public sealed class ShellViewModel : ObservableObject
         else
         {
             OpenStoryFlow(storyId);
+        }
+        if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
+        {
+            if (!CanonicalStoryWorkspace.RequestStoryNodeFocus(nodeId, field))
+                ReportWarning($"Canonical Story Flow '{storyId}' 中不存在唯一节点 '{nodeId}'。", $"canonical/story/{storyId}/flow/{nodeId}");
+            return;
         }
         if (CurrentFlow?.Id != storyId) return;
         if (!CurrentFlow.RequestProblemFocus(nodeId, field))
@@ -872,10 +1585,13 @@ public sealed class ShellViewModel : ObservableObject
     {
         if (!TryLeaveCurrentEditor()) return;
         var storyId = StoryWorkspace.StoryId;
+        var canonicalStoryId = CanonicalStoryWorkspace?.StoryEditor.Id;
         ClearAllEditorSelections();
+        SetCanonicalStoryWorkspace(null);
         StoryWorkspace.CloseStory();
         LoadStoryList();
-        ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == storyId);
+        ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story =>
+            story.Id == (canonicalStoryId ?? storyId));
         ProjectHome.ShowHome();
         Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
     }
@@ -884,6 +1600,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         if (!TryLeaveCurrentEditor()) return;
         ClearAllEditorSelections();
+        SetCanonicalStoryWorkspace(null);
         StoryWorkspace.CloseStory();
         LoadStoryList();
         ProjectHome.ShowGraph();
@@ -921,6 +1638,11 @@ public sealed class ShellViewModel : ObservableObject
 
     private bool TryLeaveCurrentEditor()
     {
+        if (CanonicalStoryWorkspace?.HasDirtyEditors == true)
+        {
+            ReportWarning("Canonical Story 仍有未保存的图；请逐个保存后再离开。", "canonical/story");
+            return false;
+        }
         if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
         return TryLeaveRoute(StoryWorkspace.CurrentRoute);
     }
@@ -1180,6 +1902,11 @@ public sealed class ShellViewModel : ObservableObject
 
     private void SaveCurrentResource()
     {
+        if (CanonicalStoryWorkspace is not null)
+        {
+            TrySaveCanonicalResource();
+            return;
+        }
         if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Actors)
         {
             SaveActor();
@@ -1197,6 +1924,172 @@ public sealed class ShellViewModel : ObservableObject
         if (selectedId is null) return;
         if (!TrySaveCurrentStoryResource()) return;
         RefreshCurrentStory(selectedResourceId: selectedId);
+    }
+
+    private bool TrySaveCanonicalResource()
+    {
+        var workspace = CanonicalStoryWorkspace;
+        var coordinator = _canonicalSaveCoordinator;
+        if (workspace is null || coordinator is null) return false;
+        var editor = workspace.ActiveEditor;
+        if (!editor.IsDirty) return true;
+        CanonicalAggregateSynchronizationPlan? synchronization = null;
+        var synchronizationCommitted = false;
+        if (editor.ResourceKind is GraphResourceKind.Session or GraphResourceKind.Task)
+        {
+            synchronization = workspace.AnalyzeAggregateSynchronization(editor);
+            if (!synchronization.IsSuccess)
+            {
+                ReportCanonicalAggregateSynchronizationFailure(editor, synchronization.Issues);
+                return false;
+            }
+
+            var choice = new CanonicalGraphResourceChoice(
+                editor.ResourceKind,
+                editor.Id,
+                editor.DisplayName);
+            if (synchronization.RequiresConfirmation
+                && !_canonicalStoryResourceDialogs.ConfirmAggregateInterfaceRemoval(
+                    choice,
+                    synchronization.ObsoleteReferences))
+            {
+                ReportWarning(
+                    $"已取消保存 Canonical {editor.ResourceKind} '{editor.Id}'；Story Flow 外部连线未更改。",
+                    $"canonical/{editor.ResourceKind}/{editor.Id}");
+                return false;
+            }
+
+            var undoCount = workspace.StoryEditor.Host.Session.UndoCount;
+            if (!workspace.ApplyAggregateSynchronization(
+                    synchronization,
+                    confirmReferencedRemoval: synchronization.RequiresConfirmation))
+            {
+                ReportCanonicalAggregateSynchronizationFailure(
+                    editor,
+                    workspace.StoryEditor.Host.LastValidationIssues);
+                return false;
+            }
+            synchronizationCommitted = workspace.StoryEditor.Host.Session.UndoCount == undoCount + 1;
+        }
+        try
+        {
+            coordinator.Replace(editor);
+            var synchronizationSummary = synchronizationCommitted
+                ? $"；Story Flow 中 {synchronization!.Placements.Count} 个聚合节点已同步"
+                : string.Empty;
+            ReportSuccess(
+                $"Canonical {editor.ResourceKind} '{editor.Id}' 已保存到磁盘{synchronizationSummary}。",
+                $"canonical/{editor.ResourceKind}/{editor.Id}");
+            RaiseCurrentEditorStates();
+            return true;
+        }
+        catch (GraphResourceRepositoryException exception)
+        {
+            if (synchronizationCommitted && !workspace.RollbackLastStoryEdit())
+            {
+                ReportWarning(
+                    $"Canonical {editor.ResourceKind} '{editor.Id}' 写入失败，且 Story Flow 同步回滚失败；请勿继续保存并检查 Problems。",
+                    $"canonical/{editor.ResourceKind}/{editor.Id}");
+            }
+            ReportFailure(
+                "保存 Canonical 图资源",
+                exception,
+                sourceOverride: $"canonical/{editor.ResourceKind}/{editor.Id}");
+            RaiseCurrentEditorStates();
+            return false;
+        }
+    }
+
+    private string GetAvailableStoryId(string baseId)
+    {
+        var usedIds = ProjectHome.Stories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal);
+        if (!usedIds.Contains(baseId)) return baseId;
+        for (var suffix = 2; ; suffix++)
+        {
+            var candidate = $"{baseId}_{suffix}";
+            if (!usedIds.Contains(candidate)) return candidate;
+        }
+    }
+
+    private void DeleteSelectedCanonicalStory(StoryListItemViewModel selected)
+    {
+        var project = _projectService.CurrentProject;
+        if (project is null || _canonicalGraphStore is null) return;
+
+        try
+        {
+            if (CanonicalStoryWorkspace is { HasDirtyEditors: true } workspace
+                && string.Equals(workspace.StoryEditor.Id, selected.Id, StringComparison.Ordinal))
+            {
+                ReportWarning(
+                    $"无法删除 Canonical 剧情 '{selected.Id}'：请先保存或放弃未保存的编辑。",
+                    $"canonical/story/{selected.Id}");
+                return;
+            }
+
+            var service = new CanonicalStoryLifecycleService(
+                _canonicalGraphStore,
+                project.Actors,
+                project.Stories);
+            var plan = service.GetDeletionPlan(selected.Id);
+            if (!plan.CanDelete)
+            {
+                ReportWarning(
+                    $"无法删除 Canonical 剧情 '{selected.Id}'：{string.Join("；", plan.Blockers.Select(blocker => blocker.Message))}",
+                    $"canonical/story/{selected.Id}");
+                return;
+            }
+
+            var resourcesToDelete = plan.ActorIds.Select(id => $"角色：{id}")
+                .Concat(plan.SessionIds.Select(id => $"会话：{id}"))
+                .Concat(plan.TaskIds.Select(id => $"任务：{id}"))
+                .ToArray();
+            if (!_projectWorkspaceDialogs.ConfirmDeleteCanonicalStory(
+                    selected.Id,
+                    selected.DisplayName,
+                    resourcesToDelete))
+                return;
+
+            foreach (var actorId in plan.ActorIds)
+                _projectService.ReleaseOpenActor(actorId);
+
+            service.Delete(selected.Id);
+            if (string.Equals(CanonicalStoryWorkspace?.StoryEditor.Id, selected.Id, StringComparison.Ordinal))
+                SetCanonicalStoryWorkspace(null);
+            LoadActorList();
+            LoadStoryList();
+            ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == selected.Id);
+            ProjectHome.ShowHome();
+            ReportSuccess(
+                $"Canonical 剧情 '{selected.Id}' 已从项目中删除。",
+                $"canonical/story/{selected.Id}");
+        }
+        catch (Exception exception) when (
+            IsWorkspaceException(exception)
+            || IsCanonicalResourceLifecycleException(exception))
+        {
+            ReportFailure(
+                "删除 Canonical 剧情",
+                exception,
+                sourceOverride: $"canonical/story/{selected.Id}");
+        }
+        finally
+        {
+            RaiseWorkspaceCommandStates();
+        }
+    }
+
+    private void ReportCanonicalAggregateSynchronizationFailure(
+        CanonicalGraphResourceEditorViewModel editor,
+        IReadOnlyList<ValidationIssue> issues)
+    {
+        var source = $"canonical/{editor.ResourceKind}/{editor.Id}";
+        ReplaceValidationSource(source, issues);
+        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
+        var details = issues.Count == 0
+            ? "未知同步错误。"
+            : string.Join("；", issues.Select(issue => issue.Message));
+        ReportWarning($"保存前无法同步 Story Flow 聚合接口：{details}", source);
     }
 
     private bool TrySaveCurrentStoryResource()
@@ -1318,16 +2211,35 @@ public sealed class ShellViewModel : ObservableObject
 
         try
         {
-            var document = _projectService.SaveActor(CurrentActor.Document);
+            var document = SaveOpenActor(CurrentActor.Document);
             var selectedId = document.Id;
             RefreshCurrentStory(selectedId);
             ReportSuccess($"Actor '{selectedId}' 已保存到磁盘。", $"actor/{selectedId}");
         }
         catch (Exception exception) when (
-            exception is ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException)
+            IsWorkspaceException(exception) || IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure("保存 Actor", exception, CurrentActor?.Id);
         }
+    }
+
+    private ActorDocument SaveOpenActor(ActorDocument document)
+    {
+        var project = _projectService.CurrentProject
+            ?? throw new ProjectException("No project is open.");
+        if (_canonicalGraphStore is not null && !string.IsNullOrWhiteSpace(document.HomeStoryId))
+        {
+            var storyPath = _canonicalGraphStore.Stories.GetPath(document.HomeStoryId);
+            var membershipPath = _canonicalGraphStore.Memberships.GetPath(document.HomeStoryId);
+            if (File.Exists(storyPath) && File.Exists(membershipPath))
+            {
+                _ = _canonicalGraphStore.Stories.Load(document.HomeStoryId);
+                var membership = _canonicalGraphStore.Memberships.Load(document.HomeStoryId);
+                if (membership.OwnedResources.Actors.Contains(document.Id, StringComparer.Ordinal))
+                    return project.Actors.SaveActor(document);
+            }
+        }
+        return _projectService.SaveActor(document);
     }
 
     private bool TrySaveCurrentActor()
@@ -1339,11 +2251,12 @@ public sealed class ShellViewModel : ObservableObject
 
         try
         {
-            _projectService.SaveActor(CurrentActor.Document);
+            SaveOpenActor(CurrentActor.Document);
             ReportSuccess($"Actor '{CurrentActor.Id}' 已保存到磁盘。", $"actor/{CurrentActor.Id}");
             return true;
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (
+            IsWorkspaceException(exception) || IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure("保存 Actor", exception, CurrentActor?.Id);
             return false;
@@ -1352,6 +2265,11 @@ public sealed class ShellViewModel : ObservableObject
 
     private void SaveAll()
     {
+        if (CanonicalStoryWorkspace is not null)
+        {
+            ReportWarning("Canonical Story 暂不提供跨文件 Save All；请逐个保存当前图。", "canonical/story");
+            return;
+        }
         try
         {
             if (CurrentFlow?.IsDirty == true && !TrySaveCurrentFlow()) return;
@@ -1368,13 +2286,14 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     private bool CanSaveAll() =>
-        HasProject && HasUnsavedDocuments();
+        HasProject && CanonicalStoryWorkspace is null && HasUnsavedDocuments();
 
     private bool HasUnsavedDocuments() =>
         _projectService.OpenActorDocuments.Any(document => document.IsDirty) ||
         _projectService.OpenDialogueDocuments.Any(document => document.IsDirty) ||
         _projectService.OpenQuestDocuments.Any(document => document.IsDirty) ||
-        CurrentFlow?.IsDirty == true;
+        CurrentFlow?.IsDirty == true ||
+        CanonicalStoryWorkspace?.HasDirtyEditors == true;
 
     private void OpenProjectDirectory()
     {
@@ -2161,10 +3080,18 @@ public sealed class ShellViewModel : ObservableObject
         DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
         ShowProjectHomeCommand.RaiseCanExecuteChanged();
         ShowProjectGraphCommand.RaiseCanExecuteChanged();
+        MigrateCanonicalProjectCommand.RaiseCanExecuteChanged();
     }
 
     private void RefreshProblems()
     {
+        if (CanonicalStoryWorkspace is { } canonical)
+        {
+            ReplaceValidationSource(
+                $"canonical/story/{canonical.StoryEditor.Id}",
+                canonical.ValidationIssues.Concat(canonical.ActiveEditor.ValidationIssues));
+            return;
+        }
         if (CurrentFlow is not null)
             ReplaceFlowValidationSource(CurrentFlow);
 
@@ -2190,6 +3117,7 @@ public sealed class ShellViewModel : ObservableObject
         {
             ReplaceValidationSource("project", _projectService.ValidateProject());
             UpdateProjectGraphProblems();
+            UpdateCanonicalStoryDiscoveryProblems();
             return;
         }
 
@@ -2217,7 +3145,12 @@ public sealed class ShellViewModel : ObservableObject
     private void UpdateProjectGraphProblems()
     {
         var problems = ProjectHome.Graph.Diagnostics.Select(issue => new ProblemItem(
-                issue.Code == "project_graph.target.missing" ? ValidationSeverity.Error : ValidationSeverity.Warning,
+                issue.Code is "project_graph.target.missing"
+                    or "project_graph.target.invalid"
+                    or "project_graph.enter_story.malformed"
+                    or "project_graph.enter_story.ambiguous"
+                    ? ValidationSeverity.Error
+                    : ValidationSeverity.Warning,
                 issue.Code,
                 issue.Message,
                 issue.NodeId is null ? null : "target_story_id",
@@ -2234,6 +3167,17 @@ public sealed class ShellViewModel : ObservableObject
                 ProjectHome.Graph.PersistenceWarning,
                 Source: "project-graph"));
         Problems.ReplaceForSourceTree("project-graph", problems);
+    }
+
+    private void UpdateCanonicalStoryDiscoveryProblems()
+    {
+        Problems.ReplaceForSourceTree(
+            "canonical-discovery",
+            _canonicalStoryDiscoveryIssues.Select(issue => new ProblemItem(
+                ValidationSeverity.Error,
+                issue.Code,
+                issue.Message,
+                Source: $"canonical-discovery/{issue.StoryId}")));
     }
 
     private void ReportSuccess(string message, string? source = null)
@@ -2254,7 +3198,8 @@ public sealed class ShellViewModel : ObservableObject
         string action,
         Exception exception,
         string? actorId = null,
-        bool writeCrashLog = true)
+        bool writeCrashLog = true,
+        string? sourceOverride = null)
     {
         if (writeCrashLog)
         {
@@ -2262,7 +3207,8 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         var message = $"{action}失败：{exception.Message}";
-        var source = actorId is null ? exception.GetType().Name : $"actor/{actorId}";
+        var source = sourceOverride
+            ?? (actorId is null ? exception.GetType().Name : $"actor/{actorId}");
         StatusMessage = message;
         Output.Append(message, OutputKind.Error, source);
         Toast.Show(message, ToastKind.Error);
@@ -2385,6 +3331,13 @@ public sealed class ShellViewModel : ObservableObject
         RedoCurrentCommand.RaiseCanExecuteChanged();
         RaiseWorkspaceCommandStates();
         RefreshProblems();
+    }
+
+    private enum CanonicalOpenResult
+    {
+        NotPresent,
+        Opened,
+        Failed,
     }
 
     private sealed class NullActorWorkspaceDialogs : IActorWorkspaceDialogs

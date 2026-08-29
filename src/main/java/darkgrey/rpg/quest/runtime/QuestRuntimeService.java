@@ -17,14 +17,25 @@ import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.quest.QuestObjective;
 import darkgrey.rpg.quest.ReachLocationObjective;
 import darkgrey.rpg.runtime.ChatMessages;
+import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 
 public final class QuestRuntimeService {
 
     private final ProjectRepository repository;
+    private final CanonicalTaskForgeManager canonicalTaskManager;
     private final List<QuestCompletionListener> completionListeners = new ArrayList<QuestCompletionListener>();
 
     public QuestRuntimeService(ProjectRepository repository) {
+        this(repository, null);
+    }
+
+    /**
+     * Compatibility constructor: canonical Tasks are optional and are only
+     * read for the combined player-facing Journal.
+     */
+    public QuestRuntimeService(ProjectRepository repository, CanonicalTaskForgeManager canonicalTaskManager) {
         this.repository = repository;
+        this.canonicalTaskManager = canonicalTaskManager;
     }
 
     public boolean start(EntityPlayerMP player, String questId) {
@@ -149,18 +160,53 @@ public final class QuestRuntimeService {
                     record.getStatus(),
                     lines));
         }
+        if (canonicalTaskManager != null) {
+            entries.addAll(CanonicalTaskLegacyJournalAdapter.adapt(canonicalTaskManager.journal(player)));
+        }
+        return sortJournal(entries);
+    }
+
+    /** Pure merge/sort seam used by offline Stage 4 probes. */
+    public static List<QuestJournalEntry> mergeJournals(List<QuestJournalEntry> legacyEntries,
+        List<QuestJournalEntry> canonicalEntries) {
+        if (legacyEntries == null || canonicalEntries == null)
+            throw new IllegalArgumentException("Journal entry lists are required.");
+        List<QuestJournalEntry> entries = new ArrayList<QuestJournalEntry>(legacyEntries);
+        entries.addAll(canonicalEntries);
+        for (QuestJournalEntry entry : entries)
+            if (entry == null) throw new IllegalArgumentException("Journal entries cannot be null.");
+        return sortJournal(entries);
+    }
+
+    /** Alias retaining the terminology used by the canonical Task harness. */
+    public static List<QuestJournalEntry> combineJournalEntries(List<QuestJournalEntry> legacyEntries,
+        List<QuestJournalEntry> canonicalEntries) {
+        return mergeJournals(legacyEntries, canonicalEntries);
+    }
+
+    /** Converts and merges canonical projections without mutating either source list. */
+    public static List<QuestJournalEntry> mergeLegacyAndCanonical(List<QuestJournalEntry> legacyEntries,
+        List<darkgrey.rpg.task.journal.CanonicalTaskJournalEntry> canonicalEntries) {
+        return mergeJournals(legacyEntries, CanonicalTaskLegacyJournalAdapter.adapt(canonicalEntries));
+    }
+
+    private static List<QuestJournalEntry> sortJournal(List<QuestJournalEntry> source) {
+        List<QuestJournalEntry> entries = new ArrayList<QuestJournalEntry>(source);
         Collections.sort(entries, new Comparator<QuestJournalEntry>() {
 
             @Override
             public int compare(QuestJournalEntry left, QuestJournalEntry right) {
                 int status = left.getStatus()
                     .compareTo(right.getStatus());
-                return status != 0 ? status
-                    : left.getTitle()
-                        .compareToIgnoreCase(right.getTitle());
+                if (status != 0) return status;
+                int title = left.getTitle()
+                    .compareToIgnoreCase(right.getTitle());
+                if (title != 0) return title;
+                return left.getQuestId()
+                    .compareTo(right.getQuestId());
             }
         });
-        return entries;
+        return Collections.unmodifiableList(entries);
     }
 
     public void openJournal(EntityPlayerMP player) {

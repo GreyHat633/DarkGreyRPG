@@ -13,10 +13,11 @@
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
     <ApplicationIcon>Assets\DarkGreyRPGStudio.ico</ApplicationIcon>
     <AssemblyName>DarkGreyRPGStudio</AssemblyName>
-    <Version>2.1.3</Version>
-    <AssemblyVersion>2.1.3.0</AssemblyVersion>
-    <FileVersion>2.1.3.0</FileVersion>
-    <InformationalVersion>2.1.3</InformationalVersion>
+    <Version>0.3.0.0</Version>
+    <AssemblyVersion>0.3.0.0</AssemblyVersion>
+    <FileVersion>0.3.0.0</FileVersion>
+    <InformationalVersion>0.3.0.0</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>DarkGrey RPG Studio</Product>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>

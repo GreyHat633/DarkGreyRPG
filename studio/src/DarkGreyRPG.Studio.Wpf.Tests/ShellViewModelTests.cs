@@ -1,8 +1,13 @@
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
+using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels;
+using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
 
@@ -32,8 +37,9 @@ public sealed class ShellViewModelTests
         shell.NewProjectCommand.Execute(null);
         Assert.IsEmpty(shell.ProjectHome.Stories);
         shell.CreateStoryCommand.Execute(null);
-        OpenStoryActors(shell, "school_story");
-        shell.NewActorCommand.Execute(null);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "school_story"));
+        Assert.IsTrue(shell.CanonicalStoryWorkspace!.RequestCreate(CanonicalStoryFolderKind.Actors));
+        shell.SelectedActor = shell.Actors.Single(actor => actor.Id == "teacher");
         shell.CurrentActor!.Notes = "学校中的任务 NPC";
         shell.CurrentActor.TagsText = "school, quest";
         shell.SaveActorCommand.Execute(null);
@@ -452,9 +458,12 @@ public sealed class ShellViewModelTests
         shell.NewProjectCommand.Execute(null);
         shell.CreateStoryCommand.Execute(null);
 
-        Assert.IsTrue(File.Exists(Path.Combine(destination, "stories", "opening.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(destination, "resources", "canonical", "stories", "opening.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(destination, "resources", "canonical", "memberships", "opening.json")));
+        Assert.IsFalse(File.Exists(Path.Combine(destination, "stories", "opening.json")));
         Assert.AreEqual("opening", shell.ProjectHome.SelectedStory?.Id);
         Assert.AreEqual("开场剧情", shell.ProjectHome.SelectedStory?.DisplayName);
+        Assert.IsTrue(shell.ProjectHome.SelectedStory?.IsCanonicalOnly);
         Assert.AreEqual(1, shell.ProjectHome.SelectedStory?.Overview.FlowNodeCount);
         Assert.IsTrue(shell.StatusMessage.Contains("opening", StringComparison.Ordinal));
     }
@@ -511,6 +520,81 @@ public sealed class ShellViewModelTests
         Assert.AreEqual("Minecraft", shell.BottomPanel.SelectedTab.Page);
         Assert.IsTrue(shell.Output.Entries.Last().Message.Contains("/dgrpg reload", StringComparison.Ordinal));
     }
+
+    [TestMethod]
+    public void ExistingCanonicalRootsMountLiveWorkspaceAndSaveOneDirtyGraphBeforeLeaving()
+    {
+        using var directory = new TestProjectDirectory();
+        new StoryRepository(directory.Root).CreateStory("opening", "Legacy Opening");
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(Envelope(
+            GraphResourceKind.Story,
+            "opening",
+            "Canonical Opening",
+            GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start")));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "opening",
+            new CanonicalStoryMembershipSet { Actors = ["missing_actor"] }));
+        var shell = CreateShell(directory.Root);
+        shell.OpenProjectCommand.Execute(null);
+
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+
+        Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
+        Assert.IsFalse(shell.StoryWorkspace.HasStory);
+        Assert.IsFalse(shell.EffectiveResourceBrowserVisible);
+        Assert.AreEqual("Canonical Opening", shell.CanonicalStoryWorkspace!.StoryEditor.DisplayName);
+        Assert.HasCount(1, shell.CanonicalStoryWorkspace.MissingItems);
+        Assert.IsTrue(shell.Problems.Problems.Any(problem =>
+            problem.Code == "story.workspace.member.missing"
+            && problem.Source == "canonical/story/opening"));
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.StoryEditor.Host.AddNode(
+            GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action")));
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+        Assert.IsTrue(shell.SaveCurrentResourceCommand.CanExecute(null));
+
+        shell.ShowProjectHomeCommand.Execute(null);
+
+        Assert.IsTrue(shell.HasCanonicalStoryWorkspace, "Dirty canonical graphs must block navigation.");
+        shell.SaveCurrentResourceCommand.Execute(null);
+        Assert.IsFalse(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+        Assert.HasCount(2, store.Stories.Load("opening").Graph!.Nodes);
+
+        shell.ShowProjectHomeCommand.Execute(null);
+
+        Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
+        Assert.IsTrue(shell.EffectiveResourceBrowserVisible);
+        Assert.AreEqual("opening", shell.ProjectHome.SelectedStory?.Id);
+    }
+
+    [TestMethod]
+    public void PartialCanonicalRootsFailClosedWithoutOpeningLegacyStory()
+    {
+        using var directory = new TestProjectDirectory();
+        new StoryRepository(directory.Root).CreateStory("opening", "Legacy Opening");
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(Envelope(
+            GraphResourceKind.Story,
+            "opening",
+            "Canonical Opening",
+            GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start")));
+        var shell = CreateShell(directory.Root);
+        shell.OpenProjectCommand.Execute(null);
+
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+
+        Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
+        Assert.IsFalse(shell.StoryWorkspace.HasStory);
+        Assert.AreEqual(OutputKind.Error, shell.Output.Entries.Last().Kind);
+        Assert.IsTrue(shell.Output.Entries.Last().Message.Contains("membership", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static GraphResourceEnvelope Envelope(
+        GraphResourceKind kind,
+        string id,
+        string displayName,
+        params GraphNode[] nodes)
+        => new(kind, id, displayName, new GraphDocument(nodes));
 
     private static ShellViewModel CreateShell(string projectDirectory) =>
         new(new ProjectService(), new FixedProjectFolderPicker(projectDirectory));

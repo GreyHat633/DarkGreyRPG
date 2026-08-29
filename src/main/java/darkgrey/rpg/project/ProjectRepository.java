@@ -32,6 +32,9 @@ import darkgrey.rpg.dialogue.DialogueNode;
 import darkgrey.rpg.dialogue.EndNode;
 import darkgrey.rpg.dialogue.JumpNode;
 import darkgrey.rpg.dialogue.LineNode;
+import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
+import darkgrey.rpg.graph.canonical.CanonicalProjectContentException;
+import darkgrey.rpg.graph.canonical.CanonicalProjectContentLoader;
 import darkgrey.rpg.quest.CollectItemObjective;
 import darkgrey.rpg.quest.InteractActorObjective;
 import darkgrey.rpg.quest.KillEntityObjective;
@@ -188,7 +191,15 @@ public final class ProjectRepository {
         Map<String, DialogueDefinition> dialogues = loadDialogues(actors);
         Map<String, QuestDefinition> quests = loadQuests();
         Map<String, StoryDefinition> stories = StoryLoader.load(projectDirectory, actors, dialogues, quests);
-        return new ProjectSnapshot(project, actors, dialogues, quests, stories);
+        CanonicalProjectContent canonicalContent;
+        try {
+            canonicalContent = new CanonicalProjectContentLoader().load(projectDirectory, actors.keySet());
+        } catch (CanonicalProjectContentException exception) {
+            throw new ProjectLoadException(
+                "Could not load canonical project content: " + exception.getMessage(),
+                exception);
+        }
+        return new ProjectSnapshot(project, actors, dialogues, quests, stories, canonicalContent);
     }
 
     private Map<String, QuestDefinition> loadQuests() throws ProjectLoadException {

@@ -101,3 +101,357 @@ tasks.register<JavaExec>("studio21ActorBindingProbe") {
     ) + configurations.getByName("testRuntimeClasspath")
     mainClass.set("darkgrey.rpg.compat.customnpcs.CustomNpcActorBindingProbe")
 }
+
+tasks.register<JavaExec>("canonicalGraphResourceProbe") {
+    group = "verification"
+    description = "Runs the strict canonical Story/Session/Task graph resource loader probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.graph.canonical.CanonicalGraphResourceLoaderProbe")
+    args(layout.buildDirectory.dir("canonical-graph-resource-probe").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("canonicalStoryMembershipProbe") {
+    group = "verification"
+    description = "Runs the strict canonical Story membership manifest loader probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.graph.canonical.CanonicalStoryMembershipLoaderProbe")
+    args(layout.buildDirectory.dir("canonical-story-membership-probe").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("canonicalProjectContentProbe") {
+    group = "verification"
+    description = "Runs the strict canonical project-content snapshot loader probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.graph.canonical.CanonicalProjectContentLoaderProbe")
+    args(layout.buildDirectory.dir("canonical-project-content-probe").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("canonicalProjectRepositoryProbe") {
+    group = "verification"
+    description = "Verifies canonical project content participates in atomic ProjectRepository reloads."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.project.CanonicalProjectRepositoryProbe")
+    args(layout.buildDirectory.dir("canonical-project-repository-probe").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("canonicalSessionRuntimeProbe") {
+    group = "verification"
+    description = "Runs the canonical Session flow runtime and snapshot probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.session.runtime.CanonicalSessionRuntimeProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskRuntimeProbe") {
+    group = "verification"
+    description = "Runs the canonical Task logic runtime and immutable snapshot probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.task.runtime.CanonicalTaskRuntimeProbe")
+}
+
+tasks.register<JavaExec>("canonicalStoryRuntimeProbe") {
+    group = "verification"
+    description = "Runs the canonical Stage 5 single-cursor Story runtime probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.story.canonical.runtime.CanonicalStoryRuntimeProbe")
+}
+
+tasks.register<JavaExec>("canonicalStoryActionConfigurationProbe") {
+    group = "verification"
+    description = "Runs the strict Stage 5 Story action configuration parser probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.story.canonical.runtime.CanonicalStoryActionConfigurationProbe")
+}
+
+tasks.register<JavaExec>("canonicalStoryInstanceProbe") {
+    group = "verification"
+    description = "Runs the canonical Stage 5 Story instance identity and NBT persistence probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceProbe")
+}
+
+tasks.register<JavaExec>("canonicalStoryServerServiceProbe") {
+    group = "verification"
+    description = "Runs the canonical Stage 5 trigger and aggregate Story service probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.story.canonical.server.CanonicalStoryServerServiceProbe")
+}
+
+tasks.register<JavaExec>("canonicalStoryForgeCoordinatorProbe") {
+    group = "verification"
+    description = "Runs the Stage 5 Forge Story coordinator route and failure cleanup probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeCoordinatorProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskForgeProbe") {
+    group = "verification"
+    description = "Runs the bounded Forge canonical Task adapter/manager probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.task.forge.CanonicalTaskForgeProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskInstanceProbe") {
+    group = "verification"
+    description = "Runs the server-neutral TaskInstance lifecycle and strict NBT restart probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.task.instance.CanonicalTaskInstanceProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskJournalProjectionProbe") {
+    group = "verification"
+    description = "Runs the pure canonical Task Journal projection probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.task.journal.CanonicalTaskJournalProjectionProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskJournalIntegrationProbe") {
+    group = "verification"
+    description = "Runs the Stage 4 canonical-to-legacy Quest Journal integration probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.quest.runtime.CanonicalTaskJournalIntegrationProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskStage4SurfaceProbe") {
+    group = "verification"
+    description = "Runs the Stage 4 Task command and Journal-tab structural probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.command.CanonicalTaskStage4SurfaceProbe")
+}
+
+tasks.register<JavaExec>("canonicalTaskEventPersistenceProbe") {
+    group = "verification"
+    description = "Runs the canonical Task SavedData persistence and indexed event probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.task.persistence.CanonicalTaskEventPersistenceProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionInstanceProbe") {
+    group = "verification"
+    description = "Runs the server-neutral Session instance/store and strict NBT restart probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.session.instance.CanonicalSessionInstanceProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionNetworkCodecProbe") {
+    group = "verification"
+    description = "Runs the strict canonical Session network DTO and codec probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.network.message.canonical.CanonicalSessionNetworkCodecProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionSavedDataProbe") {
+    group = "verification"
+    description = "Runs the Forge WorldSavedData canonical Session persistence probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.session.persistence.CanonicalSessionSavedDataProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionServerServiceProbe") {
+    group = "verification"
+    description = "Runs the canonical Session server-neutral orchestration and projection probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.session.server.CanonicalSessionServerServiceProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionClientModelProbe") {
+    group = "verification"
+    description = "Runs the canonical Session client identity and stable-option probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.client.session.CanonicalSessionClientModelProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionForgeRoutingProbe") {
+    group = "verification"
+    description = "Runs the canonical Forge Frame/Close routing seam probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.session.forge.CanonicalSessionForgeRoutingProbe")
+}
+
+tasks.register<JavaExec>("canonicalSessionCommandProbe") {
+    group = "verification"
+    description = "Runs the canonical Session command usage and completion seam probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.command.CanonicalSessionCommandProbe")
+}
+
+tasks.register<JavaExec>("canonicalStorySessionCompletionRouterProbe") {
+    group = "verification"
+    description = "Runs the pure canonical Story Flow Session-completion router probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRouterProbe")
+}

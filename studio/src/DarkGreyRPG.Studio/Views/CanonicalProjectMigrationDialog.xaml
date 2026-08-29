@@ -1,0 +1,63 @@
+<Window x:Class="DarkGreyRPG.Studio.Views.CanonicalProjectMigrationDialog"
+        x:Name="MigrationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="迁移到 Canonical"
+        Width="900" Height="700" MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        AutomationProperties.AutomationId="CanonicalProjectMigrationDialog"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock FontSize="21" FontWeight="SemiBold" Text="迁移项目到 Canonical" />
+        <TextBlock Grid.Row="1" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   TextWrapping="Wrap" Text="这是只读预览。只有明确点击确认后才会创建备份并写入 Canonical 文件。" />
+        <StackPanel Grid.Row="2" Margin="0,14,0,14">
+            <TextBlock Text="项目路径" FontWeight="SemiBold" />
+            <TextBlock Margin="0,3,0,0" TextWrapping="Wrap" Text="{Binding ProjectDirectory}" />
+            <WrapPanel Margin="0,12,0,0">
+                <TextBlock Margin="0,0,22,0" Text="{Binding SourceCount, StringFormat=源文件：{0}}" />
+                <TextBlock Margin="0,0,22,0" Text="{Binding ResourceCount, StringFormat=资源：{0}}" />
+                <TextBlock Margin="0,0,22,0" Text="{Binding WriteCount, StringFormat=拟写入：{0}}" />
+                <TextBlock Text="{Binding IssuesText, StringFormat=问题：{0}}" />
+            </WrapPanel>
+            <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="{Binding ApplyStateText}" />
+        </StackPanel>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="14" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <GroupBox Header="问题（代码与消息）">
+                <ListBox x:Name="IssuesList" AutomationProperties.Name="迁移问题列表"
+                         AutomationProperties.AutomationId="CanonicalProjectMigrationIssues"
+                         ItemsSource="{Binding Issues}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Margin="4" TextWrapping="Wrap" Text="{Binding DisplayText}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+            <GroupBox Grid.Column="2" Header="拟写入的相对路径">
+                <ListBox x:Name="WritesList" AutomationProperties.Name="拟写入路径列表"
+                         AutomationProperties.AutomationId="CanonicalProjectMigrationWrites"
+                         ItemsSource="{Binding ProposedDestinations}" />
+            </GroupBox>
+        </Grid>
+        <StackPanel Grid.Row="4" Margin="0,16,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="CancelButton" Width="96" Height="32" Margin="0,0,8,0"
+                    IsCancel="True" AutomationProperties.Name="取消迁移"
+                    AutomationProperties.AutomationId="CanonicalProjectMigrationCancel" Content="取消" />
+            <Button x:Name="ConfirmButton" Width="112" Height="32" IsDefault="True"
+                    AutomationProperties.Name="确认迁移"
+                    AutomationProperties.AutomationId="CanonicalProjectMigrationConfirm"
+                    IsEnabled="{Binding CanApply}"
+                    Style="{DynamicResource AccentButtonStyle}" Click="ConfirmButton_OnClick" Content="确认迁移" />
+        </StackPanel>
+    </Grid>
+</Window>

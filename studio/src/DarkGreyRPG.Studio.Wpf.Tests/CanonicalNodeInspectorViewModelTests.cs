@@ -1,0 +1,447 @@
+using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.ViewModels.Graph;
+
+namespace DarkGreyRPG.Studio.Wpf.Tests;
+
+[TestClass]
+public sealed class CanonicalNodeInspectorViewModelTests
+{
+    [TestMethod]
+    public void WorkspaceGraphSelectionUsesOneInspectorPathAndClearRestoresResource()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+                DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Story,
+                "story", "Story", new GraphDocument()),
+            sessions: [new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+                DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+                "session", "Session", new GraphDocument([line]))]);
+        var session = workspace.SessionItems.Single();
+        Assert.IsTrue(workspace.OpenGraphResource(session));
+        Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
+        Assert.AreSame(workspace.NodeInspector, workspace.InspectorSelection);
+        Assert.AreEqual("line-1", workspace.InspectorId);
+        workspace.ClearGraphSelection();
+        Assert.IsNull(workspace.NodeInspector);
+        Assert.AreSame(session.Editor, workspace.InspectorSelection);
+    }
+
+    [TestMethod]
+    public void SessionLineFieldUsesHostTransactionAndUpdatesRevision()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        using var host = new CanonicalGraphResourceEditorViewModel(
+            new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+                DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+                "session", "Session", new GraphDocument([line])));
+        var node = host.Host.Nodes.Single();
+        var inspector = new CanonicalNodeInspectorViewModel(host.Host, node);
+        using (inspector)
+        {
+            inspector.LineText = "Hello";
+            Assert.AreEqual("Hello", host.Host.Graph.Nodes.Single().Properties["text"].GetString());
+            Assert.IsTrue(host.IsDirty);
+            Assert.AreEqual("Hello", inspector.LineText);
+        }
+    }
+
+    [TestMethod]
+    public void StoryActionInspectorAtomicallySwitchesPayloadAndRejectsInvalidFields()
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action-1");
+        using var editor = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([action])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        Assert.IsTrue(inspector.IsStoryAction);
+        Assert.IsTrue(inspector.IsSendMessageAction);
+        Assert.AreEqual("任务完成", inspector.StoryActionMessage);
+        CollectionAssert.AreEqual(
+            new[] { CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.SendMessage },
+            inspector.StoryActionTypeOptions.Select(option => option.Value).ToArray());
+
+        inspector.SelectedStoryActionType = inspector.StoryActionTypeOptions
+            .Single(option => option.Value == CanonicalStoryActionSchema.GiveItem);
+
+        Assert.IsTrue(inspector.IsGiveItemAction);
+        Assert.AreEqual("darkgrey_rpg:copper_coin", inspector.StoryActionItem);
+        Assert.AreEqual("0", inspector.StoryActionMetadataText);
+        Assert.AreEqual("10", inspector.StoryActionAmountText);
+        CollectionAssert.AreEquivalent(new[]
+        {
+            CanonicalStoryActionSchema.TypeProperty,
+            CanonicalStoryActionSchema.ItemProperty,
+            CanonicalStoryActionSchema.MetadataProperty,
+            CanonicalStoryActionSchema.AmountProperty,
+        }, editor.Host.Graph.Nodes.Single().Properties.Keys.ToArray());
+
+        inspector.StoryActionAmountText = "25";
+        Assert.AreEqual(25, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
+        inspector.StoryActionAmountText = "0";
+        Assert.AreEqual("25", inspector.StoryActionAmountText);
+        Assert.AreEqual(25, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
+        Assert.IsTrue(editor.IsDirty);
+    }
+
+    [TestMethod]
+    public void SessionLineSpeakerUsesSortedActorOptionsAndPersistsStableId()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        using var editor = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        var actors = new[]
+        {
+            new CanonicalStoryActorItem(new ActorResourceInfo("z-id", "同名", "z.json", []),
+                CanonicalStoryWorkspaceMembershipKind.Referenced),
+            new CanonicalStoryActorItem(new ActorResourceInfo("a-id", "同名", "a.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("hero", "英雄", "hero.json", [])),
+        };
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), actors);
+
+        CollectionAssert.AreEqual(new[] { "", "a-id", "z-id", "hero" },
+            inspector.SpeakerOptions.Select(option => option.Id).ToArray());
+        Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "z-id").IsReferenced);
+        Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "a-id").IsOwned);
+        Assert.AreEqual("", inspector.SelectedSpeaker!.Id);
+        Assert.IsFalse(inspector.IsSpeakerResolved);
+        Assert.IsTrue(inspector.SpeakerStatusText.Contains("请选择角色", StringComparison.Ordinal));
+
+        inspector.SelectedSpeaker = inspector.SpeakerOptions.Single(option => option.Id == "z-id");
+
+        Assert.AreEqual("z-id", inspector.SpeakerActorId);
+        Assert.AreEqual("z-id", editor.Host.Graph.Nodes.Single().Properties["speaker_actor_id"].GetString());
+        Assert.IsTrue(editor.IsDirty);
+        Assert.IsTrue(inspector.IsSpeakerResolved);
+    }
+
+    [TestMethod]
+    public void ExistingUnknownSpeakerRemainsVisibleAsUnresolvedOption()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("deleted-actor");
+        using var editor = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        var actor = new CanonicalStoryActorItem(new ActorResourceInfo("known", "已知角色", "known.json", []));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), [actor]);
+
+        var unresolved = inspector.SpeakerOptions.Single(option => option.Id == "deleted-actor");
+        Assert.IsTrue(unresolved.IsUnresolved);
+        Assert.IsTrue(unresolved.DisplayName.Contains("deleted-actor", StringComparison.Ordinal));
+        Assert.AreSame(unresolved, inspector.SelectedSpeaker);
+        Assert.IsTrue(inspector.IsSpeakerUnresolved);
+        Assert.AreEqual("deleted-actor",
+            editor.Host.Graph.Nodes.Single().Properties["speaker_actor_id"].GetString());
+    }
+
+    [TestMethod]
+    public void ChoiceOptionsUsePairedSemanticCommandsAndHideStableIdsFromDisplay()
+    {
+        var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
+        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        using var editor = new CanonicalGraphResourceEditorViewModel(
+            new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+                DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+                "session", "Session", new GraphDocument([choice])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        Assert.HasCount(1, inspector.ChoiceOptions);
+        Assert.AreEqual("选项 1", inspector.ChoiceOptions[0].DisplayText);
+        Assert.IsFalse(inspector.ChoiceOptions[0].MoveUpCommand.CanExecute(null));
+        Assert.IsFalse(inspector.ChoiceOptions[0].MoveDownCommand.CanExecute(null));
+        Assert.IsTrue(inspector.AddChoiceOption("Second"));
+        var first = inspector.ChoiceOptions[0];
+        var second = inspector.ChoiceOptions[1];
+        Assert.IsFalse(first.MoveUpCommand.CanExecute(null));
+        Assert.IsTrue(first.MoveDownCommand.CanExecute(null));
+        Assert.IsTrue(second.MoveUpCommand.CanExecute(null));
+        Assert.IsFalse(second.MoveDownCommand.CanExecute(null));
+        first.MoveDownCommand.Execute(null);
+        Assert.IsTrue(inspector.ChoiceOptions[1].MoveUpCommand.CanExecute(null));
+        inspector.ChoiceOptions[1].MoveUpCommand.Execute(null);
+        Assert.IsTrue(inspector.RenameChoiceOption(second.OptionId, "Renamed"));
+        Assert.IsTrue(inspector.ReorderChoiceOption(second.OptionId, 0));
+
+        var options = editor.Host.Graph.Nodes.Single().Properties["options"].EnumerateArray().ToArray();
+        Assert.AreEqual("Renamed", options[0].GetProperty("display_text").GetString());
+        Assert.AreEqual(inspector.ChoiceOptions[0].OptionId, options[0].GetProperty("option_id").GetString());
+        StringAssert.StartsWith(options[0].GetProperty("flow_port_id").GetString()!, "dynamic_port_");
+    }
+
+    [TestMethod]
+    public void ReferencedChoiceRemoveFailsClosedAndRetainsOption()
+    {
+        var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
+        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
+        {
+            new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
+            new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
+        });
+        choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
+        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：One";
+        choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
+        choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
+        var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
+        target.Properties["port_id"] = JsonSerializer.SerializeToElement("known");
+        target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
+        var graph = new GraphDocument([choice, target], [
+            new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic)]);
+        using var editor = new CanonicalGraphResourceEditorViewModel(
+            new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+                DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+                "session", "Session", graph));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "choice"));
+
+        Assert.IsFalse(inspector.RemoveChoiceOption("option_2"));
+        Assert.HasCount(2, inspector.ChoiceOptions);
+        CollectionAssert.Contains(editor.Host.LastValidationIssues.Select(issue => issue.Code).ToArray(),
+            "graph.session.choice.references.confirmation_required");
+    }
+
+    [TestMethod]
+    public void UnreferencedChoiceRemoveDoesNotRequestConfirmation()
+    {
+        var choice = ReferencedChoice("choice", includeReference: false);
+        using var editor = ChoiceEditor(choice);
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "choice"));
+        var confirmationCount = 0;
+        inspector.ChoiceOptionRemovalConfirmationRequested = _ =>
+        {
+            confirmationCount++;
+            return true;
+        };
+
+        Assert.IsTrue(inspector.RemoveChoiceOption("option_2"));
+        Assert.AreEqual(0, confirmationCount);
+        Assert.HasCount(1, inspector.ChoiceOptions);
+        Assert.IsFalse(editor.Host.Graph.Nodes.Single(node => node.Id == "choice").Ports.Any(port => port.Id == "option_2"));
+    }
+
+    [TestMethod]
+    public void ReferencedChoiceRemoveCancellationRetainsPortsAndConnections()
+    {
+        var choice = ReferencedChoice("choice", includeReference: true);
+        using var editor = ChoiceEditor(choice, includeReference: true);
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "choice"));
+        var confirmationCount = 0;
+        inspector.ChoiceOptionRemovalConfirmationRequested = confirmation =>
+        {
+            confirmationCount++;
+            Assert.AreEqual("Two", confirmation.DisplayText);
+            return false;
+        };
+        var beforeConnections = editor.Host.Graph.Connections.ToArray();
+        var beforePorts = editor.Host.Graph.Nodes.Single(node => node.Id == "choice").Ports.Select(port => port.Id).ToArray();
+
+        Assert.IsFalse(inspector.RemoveChoiceOption("option_2"));
+        Assert.AreEqual(1, confirmationCount);
+        CollectionAssert.AreEqual(beforeConnections, editor.Host.Graph.Connections);
+        CollectionAssert.AreEqual(beforePorts, editor.Host.Graph.Nodes.Single(node => node.Id == "choice").Ports.Select(port => port.Id).ToArray());
+        Assert.HasCount(2, inspector.ChoiceOptions);
+    }
+
+    [TestMethod]
+    public void ReferencedChoiceRemoveConfirmationCleansBothOutputsAndConnectionsAsOneUndoUnit()
+    {
+        var choice = ReferencedChoice("choice", includeReference: true);
+        using var editor = ChoiceEditor(choice, includeReference: true);
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "choice"));
+        inspector.ChoiceOptionRemovalConfirmationRequested = confirmation => confirmation.DisplayText == "Two";
+        var undoCount = editor.Host.Session.UndoCount;
+
+        Assert.IsTrue(inspector.RemoveChoiceOption("option_2"));
+        Assert.AreEqual(undoCount + 1, editor.Host.Session.UndoCount);
+        Assert.HasCount(1, inspector.ChoiceOptions);
+        var remainingChoice = editor.Host.Graph.Nodes.Single(node => node.Id == "choice");
+        CollectionAssert.DoesNotContain(remainingChoice.Ports.Select(port => port.Id).ToArray(), "flow_2");
+        CollectionAssert.DoesNotContain(remainingChoice.Ports.Select(port => port.Id).ToArray(), "option_2");
+        Assert.IsEmpty(editor.Host.Graph.Connections);
+    }
+
+    [TestMethod]
+    public void MinimumChoiceOptionValidationDoesNotRequestConfirmation()
+    {
+        var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
+        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        using var editor = ChoiceEditor(choice);
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "choice"));
+        var confirmationCount = 0;
+        inspector.ChoiceOptionRemovalConfirmationRequested = _ =>
+        {
+            confirmationCount++;
+            return true;
+        };
+
+        Assert.IsFalse(inspector.RemoveChoiceOption("option_1"));
+        Assert.AreEqual(0, confirmationCount);
+        CollectionAssert.Contains(editor.Host.LastValidationIssues.Select(issue => issue.Code).ToArray(),
+            "graph.session.choice.options.minimum");
+    }
+
+    [TestMethod]
+    public void EndAndLogicOutputDisplayNamesUseHostTransactions()
+    {
+        var end = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
+        end.Properties["display_name"] = JsonSerializer.SerializeToElement("Done");
+        var logic = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
+        logic.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
+        using var editor = new CanonicalGraphResourceEditorViewModel(
+            new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+                DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+                "session", "Session", new GraphDocument([end, logic])));
+        var endInspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(node => node.NodeId == "end"));
+        using (endInspector)
+        {
+            endInspector.EndDisplayName = "Finished";
+            Assert.AreEqual("Finished", editor.Host.Graph.Nodes.Single(node => node.Id == "end").Properties["display_name"].GetString());
+        }
+        using var logicInspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(node => node.NodeId == "logic"));
+        logicInspector.LogicOutputDisplayName = "Known now";
+        Assert.AreEqual("Known now", editor.Host.Graph.Nodes.Single(node => node.Id == "logic").Properties["display_name"].GetString());
+    }
+
+    [TestMethod]
+    public void TaskSettleInspectorEditsVisiblePriorityWithoutChangingStableIds()
+    {
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
+        settle.Ports.Add(new GraphPort("result_a", "A", true, GraphInterfaceKind.Logic, 0));
+        settle.Ports.Add(new GraphPort("result_b", "B", true, GraphInterfaceKind.Logic, 1));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([
+                GraphNodeFactory.Create(GraphScope.Task, "activate", "activate"), settle])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "settle"));
+
+        Assert.HasCount(2, inspector.TaskResultSlots);
+        var second = inspector.TaskResultSlots[1];
+        Assert.IsTrue(inspector.AddTaskResultSlot("C"));
+        Assert.IsTrue(inspector.RenameTaskResultSlot(second.PortId, "Renamed"));
+        Assert.IsTrue(inspector.ReorderTaskResultSlot(second.PortId, 0));
+
+        var slots = editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
+            .OrderBy(port => port.Order).ToArray();
+        CollectionAssert.AreEqual(new[] { "result_b", "result_a", slots[2].Id }, slots.Select(port => port.Id).ToArray());
+        Assert.AreEqual("Renamed", slots[0].DisplayName);
+        Assert.AreEqual(1, editor.Host.Session.UndoCount - 2); // add and rename plus one move
+        Assert.IsTrue(inspector.RemoveTaskResultSlot(slots[2].Id));
+    }
+
+    [TestMethod]
+    public void TaskSettleReferencedRemoveConfirmsAndCleansEdgeAsOneUndoUnit()
+    {
+        var activate = GraphNodeFactory.Create(GraphScope.Task, "activate", "activate");
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
+        settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
+        settle.Ports.Add(new GraphPort("other", "Other", true, GraphInterfaceKind.Logic, 1));
+        settle.Ports.Add(new GraphPort("third", "Third", true, GraphInterfaceKind.Logic, 2));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([activate, settle], [
+                new GraphConnection("activate", "logic_out", "settle", "result", GraphInterfaceKind.Logic)])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "settle"));
+        var confirmationCount = 0;
+        inspector.TaskResultSlotRemovalConfirmationRequested = confirmation =>
+        {
+            confirmationCount++;
+            return confirmationCount > 1 && confirmation.DisplayName == "Result";
+        };
+
+        Assert.IsFalse(inspector.RemoveTaskResultSlot("result"));
+        Assert.AreEqual(1, confirmationCount);
+        Assert.IsTrue(inspector.RemoveTaskResultSlot("result"));
+        Assert.IsEmpty(editor.Host.Graph.Connections);
+        Assert.HasCount(2, editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports);
+        CollectionAssert.AreEqual(new[] { 0, 1 }, editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
+            .OrderBy(port => port.Order).Select(port => port.Order).ToArray());
+        Assert.IsTrue(inspector.ReorderTaskResultSlot("third", 0));
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.HasCount(1, editor.Host.Graph.Connections);
+    }
+
+    [TestMethod]
+    public void TaskLogicOutputDisplayNameUsesHostTransaction()
+    {
+        var output = new GraphNodeAuthoringService(() => "public_task").Create(
+            new GraphDocument(), GraphScope.Task, "logic_output", "logic").Candidate!;
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([
+                GraphNodeFactory.Create(GraphScope.Task, "activate", "activate"),
+                GraphNodeFactory.Create(GraphScope.Task, "settle", "settle"), output])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "logic"));
+
+        Assert.IsTrue(inspector.IsLogicOutput);
+        inspector.LogicOutputDisplayName = "Ready";
+        Assert.AreEqual("Ready", editor.Host.Graph.Nodes.Single(node => node.Id == "logic").Properties["display_name"].GetString());
+        Assert.AreEqual("public_task", editor.Host.Graph.Nodes.Single(node => node.Id == "logic").Properties["port_id"].GetString());
+    }
+
+    [TestMethod]
+    public void StoryStartInspectorEditsTypedPayloadsWithoutChangingOpaquePort()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        Assert.IsTrue(inspector.AddStoryStartTrigger());
+        var trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId != "opaque-start");
+        Assert.AreEqual(StoryStartSchema.EnterStory, trigger.TriggerType);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(trigger.StablePortId));
+        Assert.IsTrue(inspector.SetStoryStartTriggerType(trigger.StablePortId, StoryStartSchema.RegionEntry));
+        trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId == trigger.StablePortId);
+        trigger.RadiusText = "8";
+        Assert.AreEqual("8", trigger.RadiusText);
+        Assert.AreEqual(trigger.StablePortId, editor.Host.Graph.Nodes.Single().Ports.OrderBy(port => port.Order).Last().Id);
+        Assert.IsTrue(StoryStartSchema.IsValid(editor.Host.Graph.Nodes.Single()));
+    }
+
+    private static CanonicalGraphResourceEditorViewModel ChoiceEditor(GraphNode choice, bool includeReference = false)
+    {
+        var nodes = new List<GraphNode> { choice };
+        var connections = new List<GraphConnection>();
+        if (includeReference)
+        {
+            var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
+            target.Properties["port_id"] = JsonSerializer.SerializeToElement("known");
+            target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
+            nodes.Add(target);
+            connections.Add(new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic));
+        }
+
+        return new(new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+            DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+            "session", "Session", new GraphDocument(nodes, connections)));
+    }
+
+    private static GraphNode ReferencedChoice(string nodeId, bool includeReference)
+    {
+        var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", nodeId);
+        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
+        {
+            new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
+            new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
+        });
+        choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
+        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：One";
+        choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
+        choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
+        if (!includeReference) return choice;
+
+        return choice;
+    }
+}

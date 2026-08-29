@@ -36,7 +36,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             new ProjectWorkspaceDialogs(() => this),
             new ResourceWorkspaceDialogs(() => this),
             new FlowWorkspaceDialogs(() => this),
-            crashLogService ?? new CrashLogService(settingsService.SettingsPath));
+            crashLogService ?? new CrashLogService(settingsService.SettingsPath),
+            new CanonicalStoryResourceDialogs(() => this));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
@@ -91,7 +92,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 2.1.3\nStory-first resource creation with unified libraries, Draft save, and read-only Story Graph interactions",
+            "DarkGrey RPG Studio 0.3.0.0\nStory-first resource creation with unified libraries, Draft save, and read-only Story Graph interactions",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -109,6 +110,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void FindCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (DataContext is not ShellViewModel shell)
+        {
+            return;
+        }
+
+        if (shell.HasCanonicalStoryWorkspace)
         {
             return;
         }
@@ -215,9 +221,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void Shell_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ShellViewModel.IsResourceBrowserVisible) && sender is ShellViewModel shell)
+        if (e.PropertyName == nameof(ShellViewModel.EffectiveResourceBrowserVisible) && sender is ShellViewModel shell)
         {
-            ApplyResourceBrowserVisibility(shell.IsResourceBrowserVisible);
+            ApplyResourceBrowserVisibility(shell.EffectiveResourceBrowserVisible);
         }
     }
 
@@ -296,6 +302,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _shell.SetRecentProjects(settings.RecentProjects);
         _shell.RestoreLastProject(settings.LastProject);
+        ApplyResourceBrowserVisibility(_shell.EffectiveResourceBrowserVisible);
     }
 
     private void BottomPanelSplitter_OnDragCompleted(object sender, DragCompletedEventArgs e)

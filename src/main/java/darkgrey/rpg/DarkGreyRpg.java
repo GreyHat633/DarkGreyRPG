@@ -31,10 +31,14 @@ import darkgrey.rpg.quest.runtime.QuestEventAdapter;
 import darkgrey.rpg.quest.runtime.QuestRuntimeService;
 import darkgrey.rpg.runtime.EditorSessionManager;
 import darkgrey.rpg.runtime.EditorToolEventHandler;
+import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
+import darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeManager;
 import darkgrey.rpg.story.runtime.StoryEventAdapter;
 import darkgrey.rpg.story.runtime.StoryEventBridge;
 import darkgrey.rpg.story.runtime.StoryEventBus;
 import darkgrey.rpg.story.runtime.StoryRuntimeService;
+import darkgrey.rpg.task.forge.CanonicalTaskEventAdapter;
+import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 
 @Mod(
     modid = DarkGreyRpg.MOD_ID,
@@ -59,6 +63,9 @@ public final class DarkGreyRpg {
     private static LiveBridgeServer liveBridge;
     private static LivePickService livePicks;
     private static PlayTestManager playTests;
+    private static CanonicalSessionForgeManager canonicalSessionManager;
+    private static CanonicalTaskForgeManager canonicalTaskManager;
+    private static CanonicalStoryForgeManager canonicalStoryManager;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -66,9 +73,16 @@ public final class DarkGreyRpg {
         File projectDirectory = configuration.resolveProjectDirectory(event.getModConfigurationDirectory());
 
         projectRepository = new ProjectRepository(projectDirectory);
+        canonicalSessionManager = new CanonicalSessionForgeManager(projectRepository);
+        canonicalTaskManager = new CanonicalTaskForgeManager(projectRepository);
+        canonicalStoryManager = new CanonicalStoryForgeManager(
+            projectRepository,
+            canonicalSessionManager,
+            canonicalTaskManager);
+        canonicalStoryManager.bindAggregateListeners();
         editorSessions = new EditorSessionManager();
         dialogueSessions = new DialogueSessionManager(projectRepository);
-        questRuntime = new QuestRuntimeService(projectRepository);
+        questRuntime = new QuestRuntimeService(projectRepository, canonicalTaskManager);
         storyRuntime = new StoryRuntimeService(projectRepository, dialogueSessions, questRuntime);
         livePicks = new LivePickService();
         StoryEventBus storyEvents = new StoryEventBus(storyRuntime);
@@ -94,8 +108,9 @@ public final class DarkGreyRpg {
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
         QuestEventAdapter questEvents = new QuestEventAdapter(questRuntime);
         MinecraftForge.EVENT_BUS.register(questEvents);
-        StoryEventAdapter storyEventAdapter = new StoryEventAdapter(storyEvents);
+        StoryEventAdapter storyEventAdapter = new StoryEventAdapter(storyEvents, canonicalStoryManager);
         MinecraftForge.EVENT_BUS.register(storyEventAdapter);
+        MinecraftForge.EVENT_BUS.register(new CanonicalTaskEventAdapter(canonicalTaskManager));
         FMLCommonHandler.instance()
             .bus()
             .register(new MainThreadScheduler());
@@ -117,7 +132,15 @@ public final class DarkGreyRpg {
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         event.registerServerCommand(
-            new CommandDarkGreyRpg(projectRepository, editorSessions, dialogueSessions, questRuntime, storyRuntime));
+            new CommandDarkGreyRpg(
+                projectRepository,
+                editorSessions,
+                dialogueSessions,
+                questRuntime,
+                storyRuntime,
+                canonicalSessionManager,
+                canonicalTaskManager,
+                canonicalStoryManager));
         if (configuration.isLiveBridgeEnabled()) {
             playTests = new PlayTestManager(projectRepository, storyRuntime);
             liveBridge = new LiveBridgeServer(
@@ -158,5 +181,21 @@ public final class DarkGreyRpg {
 
     public static StoryRuntimeService getStoryRuntime() {
         return storyRuntime;
+    }
+
+    public static CanonicalSessionForgeManager getCanonicalSessionManager() {
+        return canonicalSessionManager;
+    }
+
+    public static CanonicalTaskForgeManager getCanonicalTaskManager() {
+        return canonicalTaskManager;
+    }
+
+    public static CanonicalTaskForgeManager getCanonicalTaskForgeManager() {
+        return canonicalTaskManager;
+    }
+
+    public static CanonicalStoryForgeManager getCanonicalStoryManager() {
+        return canonicalStoryManager;
     }
 }
