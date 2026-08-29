@@ -4,7 +4,7 @@
 > **核心意义**：彻底明确 DarkGrey_RPG Studio 的主工作流、Story / 会话 / 任务三层节点架构、流程与逻辑两类接口，以及资源树驱动的创作方式。
 > **当前基线**：DarkGrey RPG Studio 2.1.3，Java Runtime 0.5.0。
 > **目标版本**：DarkGrey_RPG 0.3.0.0。
-> **计划状态**：架构结论已锁定；Stage 0–6 已实施并通过阶段 Gate；Stage 7 本地发布验收已完成。2026-08-29 17:01 +08:00 用户已授权 GitHub 提交与推送，tag、merge 和 GitHub Release 仍未授权。
+> **计划状态**：架构结论已锁定；Stage 0–7 已完成当前 0.3.0.0 验收。源码已推送到 `codex/0.3.0.0-flow-first-authoring`，PR #1 已提交；tag、merge 和 GitHub Release 仍未授权。
 > **重要说明**：本计划优先级高于仓库中旧的 2.1.x UI 规划和旧 Story / Dialogue / Quest 编辑器设计。实施过程中不得重新引入已明确否决的“入口 / 返回 / 并发节点 / Task 内嵌会话”等方案。
 
 ---
@@ -1748,7 +1748,7 @@ Gate：
 - Minecraft 客户端证据只验证兼容与可运行性，不要求在 0.3.0.0 形成最终 CNPC/NPC/任务 UI 产品体验；
 - GitHub 上可读取最终源码和文档。
 
-2026-08-29 阶段状态：Stage 7 本地发布验收已完成。Studio Core `313/313`、WPF `325/325`、Runtime build/probes 与四套现有真实窗口脚本均已通过；Studio/Runtime 版本与本地 EXE/JAR 候选件已统一为 `0.3.0.0`。Forge Dedicated Server 已完成启动到 ready、保存世界、正常停服并确认端口/进程清理。新鲜 Minecraft 客户端冒烟确认 `darkgrey_rpg 0.3.0.0`、CustomNPC+ 与其余共 13 个模组成功加载并出现 `Minecraft 1.7.10` 窗口。标准窗口关闭后的 JVM 残留已用两次 jstack 归因于 Minecraft/LWJGL 客户端循环及 CustomNPC+/Paulscode 次级非守护线程；没有 DarkGrey RPG 线程，Live Bridge 线程均为 daemon，因此记录为 ForgeGradle/依赖环境限制而非 0.3.0.0 产品 P0/P1。最终 `git diff --check` 无错误，未发现 TODO/FIXME/NotImplemented 残留，运行进程和端口已清理。用户现已授权 commit、push 和 GitHub 源码提交，正在分拣 135 条脏树状态并排除 6 个已有删除及用户/工具配置；tag、merge 与 GitHub Release 不在本次授权内。
+2026-08-29 阶段状态：Stage 7 当前验收与 GitHub 源码提交已完成。Studio Core `313/313`、WPF `325/325`、Runtime build/probes 与四套现有真实窗口脚本均已通过；Studio/Runtime 版本与本地 EXE/JAR 候选件已统一为 `0.3.0.0`。Forge Dedicated Server 已完成启动到 ready、保存世界、正常停服并确认端口/进程清理。新鲜 Minecraft 客户端冒烟确认 `darkgrey_rpg 0.3.0.0`、CustomNPC+ 与其余共 13 个模组成功加载并出现 `Minecraft 1.7.10` 窗口。标准窗口关闭后的 JVM 残留已用两次 jstack 归因于 Minecraft/LWJGL 客户端循环及 CustomNPC+/Paulscode 次级非守护线程；没有 DarkGrey RPG 线程，Live Bridge 线程均为 daemon，因此记录为 ForgeGradle/依赖环境限制而非 0.3.0.0 产品 P0/P1。Runtime、Studio、文档分别提交为 `888f7e5`、`737d5e1`、`c3d85ca`，远端开发分支 SHA 已与本地核对一致，PR #1 为 `https://github.com/GreyHat633/DarkGrey_RPG/pull/1`。6 个既有示例删除及用户/工具配置继续留在本地且未纳入提交；tag、merge 与 GitHub Release 不在本次授权内。
 
 ---
 

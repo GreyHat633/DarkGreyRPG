@@ -3,7 +3,7 @@
 > 目的：让新的 Codex 对话在不依赖旧上下文的情况下，安全接续 0.3.0.0 开发。
 > 仓库：`E:\Java\MinecraftMod\DarkGrey_RPG`
 > 当前分支：`codex/0.3.0.0-flow-first-authoring`
-> 当前阶段：Stage 5、Stage 6 与 Stage 7 本地 Gate 已完成；2026-08-29 17:01 +08:00 用户已授权 commit、开发分支 push 与 PR 提交，tag、merge 和 GitHub Release 未授权
+> 当前阶段：Stage 5、Stage 6 与 Stage 7 当前 Gate 已完成；源码已推送到开发分支，PR #1 已提交，tag、merge 和 GitHub Release 未授权
 > 详细进度报告：`E:\Java\MinecraftMod\DarkGrey_RPG\PLAN\DarkGrey_RPG_0.3.0.0_Development_Report_2026-08-29.md`
 
 > **2026-08-29 验收范围更新（优先于本文其余旧现场说明）：** Stage 5 不再以现有 CustomNPC+ 酒馆老板链路作为最终游戏内产品形态验收，而只把它视为 Runtime Vertical Slice 测试宿主。0.3.0.0 的核心 Gate 是 Story Flow、Session、Task、Objective、Action、终止、持久化与清理形成完整稳定闭环。CNPC 专属绑定、最终 NPC 体验、剧情包部署和最终任务 UI 延期至 0.3.1.0；已有 CNPC 实机结果仅保留为兼容/测试证据。
@@ -253,9 +253,9 @@ CANONICAL_STORY_RUNTIME_EXECUTION_LOOP=PASS
 - Stage 6 当前全量结果：Core `313/313`、WPF `325/325`、Release Studio build `0 warnings / 0 errors`；阶段 Gate 已满足。
 - Stage 7：完整测试矩阵、真窗口 UI Automation、Dedicated Server、Minecraft 客户端兼容冒烟、0.3.0.0 版本统一、打包和发布验收。最终 CNPC/NPC/任务 UI 产品体验留到 0.3.1.0。
 - Stage 7 本地 Gate：Core `313/313`、WPF `325/325`、Runtime build/probes、2.1.1/2.1.2/2.1.3/迁移四套真实窗口脚本、版本统一、本地 EXE/JAR、Dedicated Server 正常启停、客户端启动兼容和退出残留归因均已完成；当前产品范围无已知 P0/P1。
-- 最终本地审计：`git diff --check` 无错误，未发现 TODO/FIXME/HACK/NotImplemented 残留，无 Minecraft/Studio 进程或 25565/32145 监听；工作树仍有 135 条状态（35 modified、6 个既有 deleted、94 untracked），发布前必须逐项分拣归属。
+- 最终本地审计：`git diff --check` 无错误，未发现 TODO/FIXME/HACK/NotImplemented 残留，无 Minecraft/Studio 进程或 25565/32145 监听；产品内容已逐项分拣并提交，6 个既有删除及用户/工具侧文件继续保留为未提交状态。
 - 本地候选件：`dist\DarkGreyRPGStudio\DarkGreyRPGStudio.exe`，SHA-256 `1840CBED0C56E30C040F03265801B1C8223A46AA8E0F8386A583E09DCD2A1BFE`；`build\libs\darkgrey_rpg-0.3.0.0.jar`，SHA-256 `3ED13E84E78C8D32AE1F97BDCCDC2579BF693EC3E01D2F0CEF4FCCCDEC834C52`。
-- commit、push、tag、release 需要用户明确授权，不能从“继续开发”自动推导。
+- GitHub 证据：Runtime `888f7e5`、Studio `737d5e1`、文档 `c3d85ca` 已推送到 `codex/0.3.0.0-flow-first-authoring`；PR #1：`https://github.com/GreyHat633/DarkGrey_RPG/pull/1`。tag、merge、GitHub Release 仍需另行明确授权。
 
 ## 10. 向用户汇报时的证据措辞
 
@@ -269,5 +269,6 @@ CANONICAL_STORY_RUNTIME_EXECUTION_LOOP=PASS
 - 不能说：0.3.0.0 已完成最终 CNPC/NPC/任务 UI 产品体验。
 - 不能说：本轮新增的 Actor/Region 事件等待已经取得新的 Minecraft 客户端投递证据。
 - 不能说：0.3.0.0 已发布或可发布。
+- 可以说：0.3.0.0 源码开发分支已推送且 PR #1 已打开，但尚未合并、打 tag 或创建 GitHub Release。
 - 可以说：客户端启动并加载 0.3.0.0 与 13 个模组通过；关闭残留已由双 jstack 证明不来自 DarkGrey RPG 产品线程。
 - 不能说：ForgeGradle 开发客户端是正常自行退出的；它仍依赖精确终止残留 JVM。

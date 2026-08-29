@@ -17,8 +17,8 @@
 - Stage 0–4：实现与阶段性验证已经完成；
 - Stage 5（Story Flow 重构）：已按最新 Runtime Gate 完成；完整执行闭环 probe、临时内容清理、Java build、Core 与 WPF 回归均已通过；
 - Stage 6（迁移与兼容）：已完成并通过阶段 Gate；跟踪的 2.1.3 项目已在隔离副本中完成真实窗口预览、明确确认、备份、10 文件写入、日志和刷新验证；
-- Stage 7（发布验收）：本地 Gate 已完成；版本统一、全量测试、四套真窗口脚本、本地候选件、Dedicated Server 正常启停、客户端启动兼容冒烟和退出残留归因均有新鲜证据；GitHub/Release 尚未执行；
-- 当前没有 commit、push、tag、merge 或 release。
+- Stage 7（发布验收）：当前 0.3.0.0 Gate 已完成；版本统一、全量测试、四套真窗口脚本、本地候选件、Dedicated Server 正常启停、客户端启动兼容冒烟和退出残留归因均有新鲜证据；
+- Runtime、Studio 与文档已分三次提交并推送到 `codex/0.3.0.0-flow-first-authoring`，PR #1 已打开；没有执行 tag、merge 或 GitHub Release。
 
 旧范围下 Stage 5 卡在真实客户端验收的最后一段：任务已在客户端显示为 `ACTIVE 0/10`。最新范围取消了这条产品形态 Gate；现已用 CNPC 无关的自动化证据证明 Runtime 完整执行闭环，并清理旧实机验收留下的临时命令和配置。
 
@@ -186,11 +186,11 @@ key_key.use:33
 
 ## 7. 工作树状态与保全要求
 
-当前工作树非常脏，所有内容均未提交：
+原快照中的工作树非常脏；现已完成产品内容分拣和提交：
 
-- `git status --porcelain` 当前共 130 条顶层状态记录；
+- Runtime、Studio、文档提交分别为 `888f7e5`、`737d5e1`、`c3d85ca`；
 - 6 个 `examples/phase4_project` 已跟踪删除仍按原样保留；
-- 大量 modified 与 untracked 内容同时存在，未进行 reset、clean、批量恢复或提交。
+- `.codex/config.toml`、`AGENTS.md`、旧 2.1.3 PLAN、`构思.docx` 与上述 6 个删除仍留在本地且未纳入提交；未执行 reset、clean 或整树恢复。
 
 特别注意：
 
@@ -256,9 +256,9 @@ key_key.use:33
 - 不把 CNPC 专属绑定、最终 NPC 体验、剧情包部署或最终任务 UI 拉回 0.3.0.0 Gate；
 - 已完成：Studio 与 Runtime 对外版本统一为 0.3.0.0，本地 EXE/JAR 候选件及 SHA-256 已生成；
 - 已完成：客户端退出问题分级、最终本地源码审计与发布证据文档收口；
-- 进行中：135 条脏树状态的提交归属分拣、分阶段 commit、开发分支 push、PR 提交与远端可读性验证；
+- 已完成：提交归属分拣、三阶段 commit、开发分支 push、远端 SHA 核验与 PR #1 提交；
 - 未授权：tag、merge 与 GitHub Release。
 
 ## 10. 当前结论
 
-0.3.0.0 没有偏离 PLAN 的主架构：Story Flow 负责编排、Session/Task 负责内部图、Project Story Graph 保持派生只读。Stage 5 已按 CNPC 无关的 Runtime 完整执行闭环完成，Stage 6 已通过迁移与兼容 Gate，Stage 7 本地发布验收也已完成，当前产品范围无已知 P0/P1。真实 CNPC 链路仍只完成到 Task `ACTIVE 0/10`，该结果仅保留为兼容证据；本轮没有继续该产品化链路，也没有声称 10/10、客户端铜币或最终 NPC/任务 UI 体验。GitHub 源码提交现已获授权并进入分拣/推送阶段；tag、merge 与 GitHub Release 仍未授权。
+0.3.0.0 没有偏离 PLAN 的主架构：Story Flow 负责编排、Session/Task 负责内部图、Project Story Graph 保持派生只读。Stage 5 已按 CNPC 无关的 Runtime 完整执行闭环完成，Stage 6 已通过迁移与兼容 Gate，Stage 7 当前发布验收也已完成，当前产品范围无已知 P0/P1。真实 CNPC 链路仍只完成到 Task `ACTIVE 0/10`，该结果仅保留为兼容证据；本轮没有继续该产品化链路，也没有声称 10/10、客户端铜币或最终 NPC/任务 UI 体验。源码已推送，远端开发分支 SHA 已核对，PR #1 已打开：`https://github.com/GreyHat633/DarkGrey_RPG/pull/1`；tag、merge 与 GitHub Release 仍未授权。
