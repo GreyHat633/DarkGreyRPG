@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.ViewModels;
 
@@ -17,6 +18,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
 {
     private readonly GraphEditorHostViewModel _host;
     private readonly IReadOnlyList<CanonicalStoryActorItem> _actorItems;
+    private readonly IReadOnlyList<CanonicalStoryItemItem> _itemItems;
     private string _lineText = string.Empty;
     private string _speakerActorId = string.Empty;
     private string _choicePrompt = string.Empty;
@@ -31,6 +33,10 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private IReadOnlyList<CanonicalSessionSpeakerOption> _objectiveActorOptions = [];
     private CanonicalSessionSpeakerOption? _selectedSpeaker;
     private CanonicalSessionSpeakerOption? _selectedObjectiveActor;
+    private IReadOnlyList<CanonicalResourceSelectionOption> _objectiveItemOptions = [];
+    private CanonicalResourceSelectionOption? _selectedObjectiveItem;
+    private IReadOnlyList<CanonicalResourceSelectionOption> _storyActionItemOptions = [];
+    private CanonicalResourceSelectionOption? _selectedStoryActionItem;
     private bool _disposed;
     private string _repeatPolicy = StoryStartSchema.Once;
     private string _actionType = CanonicalStoryActionSchema.SendMessage;
@@ -41,11 +47,13 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public CanonicalNodeInspectorViewModel(
         GraphEditorHostViewModel host,
         GraphEditorNodeViewModel node,
-        IEnumerable<CanonicalStoryActorItem>? actorItems = null)
+        IEnumerable<CanonicalStoryActorItem>? actorItems = null,
+        IEnumerable<CanonicalStoryItemItem>? itemItems = null)
     {
         _host = host ?? throw new ArgumentNullException(nameof(host));
         Node = node ?? throw new ArgumentNullException(nameof(node));
         _actorItems = (actorItems ?? []).Where(item => item is not null).ToArray();
+        _itemItems = (itemItems ?? []).Where(item => item is not null).ToArray();
         AddChoiceOptionCommand = new RelayCommand(() => AddChoiceOption(), () => IsChoice);
         AddTaskResultSlotCommand = new RelayCommand(() => AddTaskResultSlot(), () => IsTaskSettle);
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
@@ -95,7 +103,13 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         set
         {
             if (value is null || !IsStoryAction || value.Value == _actionType) return;
-            _host.ChangeStoryActionType(NodeId, value.Value);
+            if (!_host.ChangeStoryActionType(NodeId, value.Value)) { RefreshFromHost(); return; }
+            if (value.Value == CanonicalStoryActionSchema.GiveItem
+                && _itemItems.FirstOrDefault(item => item.Type == IndividualItemResource.ResourceType) is { } item)
+            {
+                _host.SetNodeProperty(NodeId, CanonicalStoryActionSchema.ItemProperty,
+                    JsonSerializer.SerializeToElement(item.Id));
+            }
             RefreshFromHost();
         }
     }
@@ -106,6 +120,21 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         get => _actionItem;
         set => SetActionString(CanonicalStoryActionSchema.ItemProperty, value, ref _actionItem, nameof(StoryActionItem));
     }
+    public IReadOnlyList<CanonicalResourceSelectionOption> StoryActionItemOptions => _storyActionItemOptions;
+    public CanonicalResourceSelectionOption? SelectedStoryActionItem
+    {
+        get => _selectedStoryActionItem;
+        set
+        {
+            if (!IsGiveItemAction || value is null || value.IsPlaceholder) return;
+            if (_host.SetNodeProperty(NodeId, CanonicalStoryActionSchema.ItemProperty,
+                    JsonSerializer.SerializeToElement(value.Id))) RefreshFromHost();
+            else RefreshFromHost();
+        }
+    }
+    public string StoryActionItemStatusText => _selectedStoryActionItem is { IsUnresolved: true }
+        ? $"物品未解析：{_actionItem}"
+        : _selectedStoryActionItem is { IsResolved: true } ? string.Empty : "请选择个体物品";
     public string StoryActionAmountText
     {
         get => _actionAmountText;
@@ -161,7 +190,13 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             var actorId = value.Value == CanonicalTaskObjectiveSchema.InteractActor
                 ? _actorItems.FirstOrDefault()?.Id
                 : null;
-            _host.ChangeObjectiveType(NodeId, value.Value, actorId);
+            if (!_host.ChangeObjectiveType(NodeId, value.Value, actorId)) { RefreshFromHost(); return; }
+            if (value.Value == CanonicalTaskObjectiveSchema.KillEntity && _actorItems.FirstOrDefault() is { } actor)
+                _host.SetNodeProperty(NodeId, CanonicalTaskObjectiveSchema.EntityProperty,
+                    JsonSerializer.SerializeToElement(actor.Id));
+            if (value.Value == CanonicalTaskObjectiveSchema.CollectItem && _itemItems.FirstOrDefault() is { } item)
+                _host.SetNodeProperty(NodeId, CanonicalTaskObjectiveSchema.ItemProperty,
+                    JsonSerializer.SerializeToElement(item.Id));
             RefreshFromHost();
         }
     }
@@ -216,8 +251,11 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         get => _selectedObjectiveActor;
         set
         {
-            if (!IsInteractActorObjective || value is null || value.IsPlaceholder) return;
-            if (_host.SetNodeProperty(NodeId, CanonicalTaskObjectiveSchema.ActorIdProperty,
+            if ((!IsInteractActorObjective && !IsKillEntityObjective) || value is null || value.IsPlaceholder) return;
+            var property = IsKillEntityObjective
+                ? CanonicalTaskObjectiveSchema.EntityProperty
+                : CanonicalTaskObjectiveSchema.ActorIdProperty;
+            if (_host.SetNodeProperty(NodeId, property,
                     JsonSerializer.SerializeToElement(value.Id))) RefreshFromHost();
             else RefreshFromHost();
         }
@@ -228,6 +266,21 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public bool IsObjectiveActorUnresolved => !string.IsNullOrWhiteSpace(_objectiveActorId) && !IsObjectiveActorResolved;
     public string ObjectiveActorStatusText => IsObjectiveActorUnresolved
         ? $"角色未解析：{_objectiveActorId}" : IsObjectiveActorResolved ? string.Empty : "请选择角色";
+    public IReadOnlyList<CanonicalResourceSelectionOption> ObjectiveItemOptions => _objectiveItemOptions;
+    public CanonicalResourceSelectionOption? SelectedObjectiveItem
+    {
+        get => _selectedObjectiveItem;
+        set
+        {
+            if (!IsCollectItemObjective || value is null || value.IsPlaceholder) return;
+            if (_host.SetNodeProperty(NodeId, CanonicalTaskObjectiveSchema.ItemProperty,
+                    JsonSerializer.SerializeToElement(value.Id))) RefreshFromHost();
+            else RefreshFromHost();
+        }
+    }
+    public string ObjectiveItemStatusText => _selectedObjectiveItem is { IsUnresolved: true }
+        ? $"物品未解析：{_objectiveTarget}"
+        : _selectedObjectiveItem is { IsResolved: true } ? string.Empty : "请选择物品或物品组";
 
     /// <summary>
     /// Author-facing Session Line speaker choices. The first item is an
@@ -440,11 +493,22 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public bool AddChoiceOption(string displayText = "新选项")
         => IsChoice && Execute(() => _host.AddSessionChoiceOption(NodeId, displayText));
 
-    public bool AddTaskResultSlot(string displayName = "新结果")
+    public bool AddTaskResultSlot(string? displayName = null)
         => IsTaskSettle && Execute(() => _host.AddDynamicPort(
-            NodeId, displayName, GraphPortDirection.Input, GraphInterfaceKind.Logic));
+            NodeId, string.IsNullOrWhiteSpace(displayName) ? NextAvailableResultName() : displayName,
+            GraphPortDirection.Input, GraphInterfaceKind.Logic));
 
-    public bool AddResultSlot(string displayName = "新结果") => AddTaskResultSlot(displayName);
+    public bool AddResultSlot(string? displayName = null) => AddTaskResultSlot(displayName);
+
+    private string NextAvailableResultName()
+    {
+        var used = TaskResultSlots.Select(slot => slot.DisplayName).ToHashSet(StringComparer.Ordinal);
+        for (var index = 1; ; index++)
+        {
+            var candidate = $"结果 {index}";
+            if (!used.Contains(candidate)) return candidate;
+        }
+    }
 
     public bool RenameTaskResultSlot(string portId, string displayName)
         => IsTaskSettle && Execute(() => _host.RenamePortDisplayName(NodeId, portId, displayName));
@@ -645,10 +709,13 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         _objectiveTarget = IsKillEntityObjective
             ? ReadString(current, CanonicalTaskObjectiveSchema.EntityProperty)
             : IsCollectItemObjective ? ReadString(current, CanonicalTaskObjectiveSchema.ItemProperty) : string.Empty;
-        _objectiveActorId = ReadString(current, CanonicalTaskObjectiveSchema.ActorIdProperty);
+        _objectiveActorId = IsKillEntityObjective
+            ? ReadString(current, CanonicalTaskObjectiveSchema.EntityProperty)
+            : ReadString(current, CanonicalTaskObjectiveSchema.ActorIdProperty);
 
         RebuildSpeakerOptions();
         RebuildObjectiveActorOptions();
+        RebuildItemOptions();
 
         ChoiceOptions.Clear();
         if (IsChoice && current.Properties.TryGetValue(SessionChoiceSchema.OptionsProperty, out var options)
@@ -709,9 +776,15 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(IsObjectiveActorResolved));
         OnPropertyChanged(nameof(IsObjectiveActorUnresolved));
         OnPropertyChanged(nameof(ObjectiveActorStatusText));
+        OnPropertyChanged(nameof(ObjectiveItemOptions));
+        OnPropertyChanged(nameof(SelectedObjectiveItem));
+        OnPropertyChanged(nameof(ObjectiveItemStatusText));
         OnPropertyChanged(nameof(StoryActionType));
         OnPropertyChanged(nameof(SelectedStoryActionType));
         OnPropertyChanged(nameof(StoryActionItem));
+        OnPropertyChanged(nameof(StoryActionItemOptions));
+        OnPropertyChanged(nameof(SelectedStoryActionItem));
+        OnPropertyChanged(nameof(StoryActionItemStatusText));
         OnPropertyChanged(nameof(StoryActionAmountText));
         OnPropertyChanged(nameof(StoryActionMessage));
         OnPropertyChanged(nameof(IsGiveItemAction));
@@ -763,6 +836,38 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         _selectedObjectiveActor = options.FirstOrDefault(option => option.Id == _objectiveActorId) ?? options[0];
     }
 
+    private void RebuildItemOptions()
+    {
+        _objectiveItemOptions = BuildItemOptions(_itemItems, _objectiveTarget, individualOnly: false,
+            "请选择物品或物品组");
+        _selectedObjectiveItem = _objectiveItemOptions.FirstOrDefault(option => option.Id == _objectiveTarget)
+            ?? _objectiveItemOptions[0];
+        _storyActionItemOptions = BuildItemOptions(_itemItems, _actionItem, individualOnly: true,
+            "请选择个体物品");
+        _selectedStoryActionItem = _storyActionItemOptions.FirstOrDefault(option => option.Id == _actionItem)
+            ?? _storyActionItemOptions[0];
+    }
+
+    private static IReadOnlyList<CanonicalResourceSelectionOption> BuildItemOptions(
+        IEnumerable<CanonicalStoryItemItem> items,
+        string currentId,
+        bool individualOnly,
+        string placeholder)
+    {
+        var options = new List<CanonicalResourceSelectionOption>
+        {
+            new(string.Empty, placeholder, false),
+        };
+        options.AddRange(items
+            .Where(item => !individualOnly || item.Type == IndividualItemResource.ResourceType)
+            .OrderBy(item => item.DisplayName, StringComparer.Ordinal)
+            .ThenBy(item => item.Id, StringComparer.Ordinal)
+            .Select(item => new CanonicalResourceSelectionOption(item.Id, item.DisplayName, true, item)));
+        if (!string.IsNullOrWhiteSpace(currentId) && !options.Any(option => option.IsResolved && option.Id == currentId))
+            options.Add(new CanonicalResourceSelectionOption(currentId, $"未解析物品：{currentId}", false));
+        return options;
+    }
+
     private static string ReadString(GraphEditorNodeViewModel node, string property)
         => node.Properties.TryGetValue(property, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty : string.Empty;
@@ -811,6 +916,16 @@ public sealed record CanonicalSessionSpeakerOption(
     public bool IsReferenced => ActorItem?.IsReferenced == true;
 }
 
+public sealed record CanonicalResourceSelectionOption(
+    string Id,
+    string DisplayName,
+    bool IsResolved,
+    CanonicalStoryItemItem? Item = null)
+{
+    public bool IsPlaceholder => string.IsNullOrWhiteSpace(Id);
+    public bool IsUnresolved => !IsResolved && !IsPlaceholder;
+}
+
 /// <summary>Author-facing destructive confirmation details for a Story Start trigger.</summary>
 public sealed record CanonicalStoryStartTriggerRemovalConfirmation(string DisplayName);
 
@@ -835,7 +950,9 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         _triggerType = slot.TriggerType;
         _triggerProperties = slot.TriggerProperties.Clone();
         _order = slot.Order;
-        RemoveCommand = new RelayCommand(() => _owner.RemoveStoryStartTrigger(Identity));
+        RemoveCommand = new RelayCommand(
+            () => _owner.RemoveStoryStartTrigger(Identity),
+            () => _owner.StoryStartTriggers.Count > 1);
         MoveUpCommand = new RelayCommand(() => _owner.ReorderStoryStartTrigger(Identity, Order - 1), () => Order > 0);
         MoveDownCommand = new RelayCommand(() => _owner.ReorderStoryStartTrigger(Identity, Order + 1),
             () => Order < _owner.StoryStartTriggers.Count - 1);
@@ -858,13 +975,21 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         }
     }
 
-    public IReadOnlyList<CanonicalStoryStartTriggerTypeOption> TriggerTypeOptions { get; } =
-    [
-        new(StoryStartSchema.EnterStory, "进入故事"),
-        new(StoryStartSchema.ActorInteraction, "角色交互"),
-        new(StoryStartSchema.RegionEntry, "进入区域"),
-        new(StoryStartSchema.Logic, "逻辑条件"),
-    ];
+    public IReadOnlyList<CanonicalStoryStartTriggerTypeOption> TriggerTypeOptions
+        => _triggerType == StoryStartSchema.EnterStory
+            ?
+            [
+                new(StoryStartSchema.EnterStory, "进入故事（旧版兼容）"),
+                new(StoryStartSchema.ActorInteraction, "角色交互"),
+                new(StoryStartSchema.RegionEntry, "进入区域"),
+                new(StoryStartSchema.Logic, "逻辑条件"),
+            ]
+            :
+            [
+                new(StoryStartSchema.ActorInteraction, "角色交互"),
+                new(StoryStartSchema.RegionEntry, "进入区域"),
+                new(StoryStartSchema.Logic, "逻辑条件"),
+            ];
 
     public string TriggerType => _triggerType;
     public CanonicalStoryStartTriggerTypeOption? SelectedTriggerType
@@ -897,7 +1022,33 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     public string ActorId
     {
         get => ReadString(StoryStartSchema.ActorIdProperty);
-        set => SetString(StoryStartSchema.ActorIdProperty, value);
+        set
+        {
+            SetString(StoryStartSchema.ActorIdProperty, value);
+            OnPropertyChanged(nameof(ActorOptions));
+            OnPropertyChanged(nameof(SelectedActor));
+        }
+    }
+
+    public IReadOnlyList<CanonicalSessionSpeakerOption> ActorOptions
+    {
+        get
+        {
+            var options = _owner.ActorOptions.ToList();
+            if (!string.IsNullOrWhiteSpace(ActorId)
+                && !options.Any(option => string.Equals(option.Id, ActorId, StringComparison.Ordinal)))
+                options.Add(new CanonicalSessionSpeakerOption(ActorId, $"未解析角色：{ActorId}", false));
+            return options;
+        }
+    }
+
+    public CanonicalSessionSpeakerOption? SelectedActor
+    {
+        get => ActorOptions.FirstOrDefault(option => string.Equals(option.Id, ActorId, StringComparison.Ordinal));
+        set
+        {
+            if (value is not null) ActorId = value.Id;
+        }
     }
     public string DimensionText
     {
@@ -1003,6 +1154,8 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(TriggerProperties));
         OnPropertyChanged(nameof(ActorId));
+        OnPropertyChanged(nameof(ActorOptions));
+        OnPropertyChanged(nameof(SelectedActor));
         OnPropertyChanged(nameof(DimensionText));
         OnPropertyChanged(nameof(XText));
         OnPropertyChanged(nameof(YText));

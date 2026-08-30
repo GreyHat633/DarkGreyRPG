@@ -1,7 +1,9 @@
 using DarkGreyRPG.Studio.Core.Actors;
+using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
@@ -9,6 +11,67 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class CanonicalStoryWorkspaceViewModelTests
 {
+    [TestMethod]
+    public void ResourceSnapshotAddsOnlyChangedEntriesAndKeepsUnrelatedIdentitySelectionAndEditor()
+    {
+        using var directory = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Path);
+        var actors = new ActorRepository(directory.Path);
+        var items = new ItemRepository(directory.Path);
+        actors.SaveActor(actors.CreateActor("actor_a", "Actor A"));
+        actors.SaveActor(actors.CreateActor("actor_b", "Actor B"));
+        items.SaveItem(new IndividualItemResource { ItemId = "item_a", DisplayName = "Item A" });
+        items.SaveItem(new IndividualItemResource { ItemId = "item_b", DisplayName = "Item B" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session_a", "Session A"));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session_b", "Session B"));
+        store.Tasks.Create(Envelope(GraphResourceKind.Task, "task_a", "Task A"));
+        store.Tasks.Create(Envelope(GraphResourceKind.Task, "task_b", "Task B"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "story",
+            new CanonicalStoryMembershipSet
+            {
+                Actors = ["actor_a"],
+                Items = ["item_a"],
+                Sessions = ["session_a"],
+                Tasks = ["task_a"],
+            },
+            new CanonicalStoryMembershipSet()));
+        var loader = new CanonicalStoryWorkspaceLoader(store, actors, items);
+        using var workspace = new CanonicalStoryWorkspaceViewModel(loader.Load("story"));
+        var folders = workspace.Folders.ToDictionary(folder => folder.Kind);
+        var actorA = workspace.ActorItems.Single();
+        var itemA = workspace.ItemItems.Single();
+        var sessionA = workspace.SessionItems.Single();
+        var taskA = workspace.TaskItems.Single();
+        Assert.IsTrue(workspace.OpenGraphResource(sessionA));
+
+        store.Memberships.Replace(new CanonicalStoryMembershipManifest(
+            "story",
+            new CanonicalStoryMembershipSet
+            {
+                Actors = ["actor_a", "actor_b"],
+                Items = ["item_a", "item_b"],
+                Sessions = ["session_a", "session_b"],
+                Tasks = ["task_a", "task_b"],
+            },
+            new CanonicalStoryMembershipSet()));
+        workspace.ApplyResourceSnapshot(loader.Load("story"), CanonicalStoryFolderKind.Sessions, "session_a");
+
+        foreach (var folder in workspace.Folders)
+            Assert.AreSame(folders[folder.Kind], folder);
+        Assert.AreSame(actorA, workspace.ActorItems.Single(item => item.Id == "actor_a"));
+        Assert.AreSame(itemA, workspace.ItemItems.Single(item => item.Id == "item_a"));
+        Assert.AreSame(sessionA, workspace.SessionItems.Single(item => item.Id == "session_a"));
+        Assert.AreSame(taskA, workspace.TaskItems.Single(item => item.Id == "task_a"));
+        Assert.AreSame(sessionA.Editor, workspace.ActiveEditor);
+        Assert.AreSame(sessionA, workspace.SelectedTreeItem);
+        Assert.HasCount(2, workspace.ActorItems);
+        Assert.HasCount(2, workspace.ItemItems);
+        Assert.HasCount(2, workspace.SessionItems);
+        Assert.HasCount(2, workspace.TaskItems);
+    }
+
     [TestMethod]
     public void StoryFlowIsDefaultWithActorSessionTaskFolders()
     {
@@ -253,6 +316,131 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.AreEqual("缺失任务", workspace.InspectorKindText);
         Assert.AreEqual("资源缺失", workspace.InspectorSaveStateText);
         StringAssert.Contains(workspace.InspectorValidationText, "missing_task");
+    }
+
+    [TestMethod]
+    public void ActorDropUpdatesSessionSpeakerWithoutChangingInspectorContext()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("old_actor");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            Envelope(GraphResourceKind.Story, "story", "Story"),
+            [new ActorResourceInfo("actor", "Actor", "actor.json", [])],
+            [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line]))]);
+        Assert.IsTrue(workspace.OpenGraphResource(workspace.SessionItems.Single()));
+        var node = workspace.ActiveGraphHost.Nodes.Single();
+        Assert.IsTrue(workspace.SelectGraphNode(node));
+        var inspector = workspace.NodeInspector;
+
+        Assert.IsTrue(workspace.ApplyResourceToNodeParameter(node, workspace.ActorItems.Single()));
+
+        Assert.AreSame(inspector, workspace.NodeInspector);
+        Assert.AreEqual("actor", workspace.ActiveGraphHost.Graph.Nodes.Single()
+            .Properties["speaker_actor_id"].GetString());
+        StringAssert.Contains(workspace.ParameterDropMessage, "Actor");
+    }
+
+    [TestMethod]
+    public void ActorDropUpdatesExistingStoryStartActorInteraction()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "actor-trigger");
+        start.Ports.Single(port => port.Id == "actor-trigger").DisplayName = "角色交互";
+        start.Properties[StoryStartSchema.TriggersProperty] = JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                port_id = "actor-trigger",
+                display_name = "角色交互",
+                trigger_type = StoryStartSchema.ActorInteraction,
+                trigger_properties = new { actor_id = "old_actor" },
+                order = 0,
+            },
+        });
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])),
+            [new ActorResourceInfo("actor", "Actor", "actor.json", [])]);
+        var node = workspace.ActiveGraphHost.Nodes.Single();
+
+        Assert.IsTrue(workspace.ApplyResourceToNodeParameter(node, workspace.ActorItems.Single()));
+
+        var slot = StoryStartSchema.ReadTriggers(workspace.ActiveGraphHost.Graph.Nodes.Single()).Single();
+        Assert.AreEqual("actor", slot.TriggerProperties.GetProperty(StoryStartSchema.ActorIdProperty).GetString());
+    }
+
+    [TestMethod]
+    public void ItemDropUpdatesGiveItemButCollectiveItemFailsWithoutMutation()
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(
+            action, CanonicalStoryActionSchema.GiveItem, out var issues), string.Join("; ", issues));
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([action])),
+            items:
+            [
+                new IndividualItemResource { ItemId = "coin", DisplayName = "铜币" },
+                new CollectiveItemResource { GroupId = "ore", DisplayName = "矿石组" },
+            ]);
+        var node = workspace.ActiveGraphHost.Nodes.Single();
+        Assert.IsTrue(workspace.SelectGraphNode(node));
+        var inspector = workspace.NodeInspector;
+
+        Assert.IsTrue(workspace.ApplyResourceToNodeParameter(
+            node, workspace.ItemItems.Single(item => item.Id == "coin")));
+        Assert.AreEqual("coin", workspace.ActiveGraphHost.Graph.Nodes.Single()
+            .Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
+        var beforeInvalidDrop = workspace.ActiveGraphHost.Graph.ToJson();
+
+        Assert.IsFalse(workspace.ApplyResourceToNodeParameter(
+            node, workspace.ItemItems.Single(item => item.Id == "ore")));
+
+        Assert.AreEqual(beforeInvalidDrop, workspace.ActiveGraphHost.Graph.ToJson());
+        Assert.AreSame(inspector, workspace.NodeInspector);
+        StringAssert.Contains(workspace.ParameterDropMessage, "不能使用物品组");
+    }
+
+    [TestMethod]
+    public void ActorDropUpdatesTaskActorTargetsOnlyForCompatibleObjectiveTypes()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, CanonicalTaskObjectiveSchema.NodeType, "objective");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            Envelope(GraphResourceKind.Story, "story", "Story"),
+            [new ActorResourceInfo("slime_group", "史莱姆组", "slime_group.json", [])],
+            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([objective]))]);
+        Assert.IsTrue(workspace.OpenGraphResource(workspace.TaskItems.Single()));
+        var node = workspace.ActiveGraphHost.Nodes.Single();
+
+        Assert.IsTrue(workspace.ApplyResourceToNodeParameter(node, workspace.ActorItems.Single()));
+
+        Assert.AreEqual("slime_group", workspace.ActiveGraphHost.Graph.Nodes.Single()
+            .Properties[CanonicalTaskObjectiveSchema.EntityProperty].GetString());
+    }
+
+    [TestMethod]
+    public void HighFrequencyNodesExposeChineseParameterSummariesInTheirGraphProjection()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", "trigger");
+        var objective = GraphNodeFactory.Create(GraphScope.Task, CanonicalTaskObjectiveSchema.NodeType, "objective");
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(
+            action, CanonicalStoryActionSchema.GiveItem, out var issues), string.Join("; ", issues));
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("bartender");
+        line.Properties["text"] = JsonSerializer.SerializeToElement("欢迎来到酒馆");
+
+        using var storyStart = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "start-story", "Story", new GraphDocument([start])));
+        using var task = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+        using var storyAction = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "action-story", "Story", new GraphDocument([action])));
+        using var session = new CanonicalGraphResourceEditorViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+
+        StringAssert.Contains(storyStart.Host.Nodes.Single().ParameterSummary, "进入区域");
+        StringAssert.Contains(task.Host.Nodes.Single().ParameterSummary, "击杀实体");
+        StringAssert.Contains(storyAction.Host.Nodes.Single().ParameterSummary, "给予物品");
+        StringAssert.Contains(session.Host.Nodes.Single().ParameterSummary, "欢迎来到酒馆");
+        Assert.IsTrue(session.Host.Nodes.Single().HasParameterSummary);
     }
 
     private static CanonicalStoryWorkspaceViewModel Workspace()

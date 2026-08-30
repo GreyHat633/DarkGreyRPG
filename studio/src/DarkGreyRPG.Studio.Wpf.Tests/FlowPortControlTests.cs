@@ -188,14 +188,14 @@ public sealed class FlowPortControlTests
     private static (Grid Slot, Ellipse Ellipse) GetAnchor(FlowPortControl control)
     {
         var panel = (StackPanel)control.Content!;
-        var slot = (Grid)panel.Children[^1];
+        var slot = panel.Children.OfType<Grid>().Single();
         return (slot, (Ellipse)slot.Children[0]);
     }
 
     private static (Grid Slot, FrameworkElement Shape) GetShape(FlowPortControl control)
     {
         var panel = (StackPanel)control.Content!;
-        var slot = (Grid)panel.Children[^1];
+        var slot = panel.Children.OfType<Grid>().Single();
         return (slot, (FrameworkElement)slot.Children[0]);
     }
 }

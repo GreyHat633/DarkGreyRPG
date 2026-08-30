@@ -105,6 +105,8 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
     public IReadOnlyList<GraphEditorPortViewModel> OutputPorts => Outputs;
     /// <summary>Read-only snapshot of the node's untyped JSON properties.</summary>
     public IReadOnlyDictionary<string, JsonElement> Properties => _properties;
+    public string ParameterSummary => CanonicalNodeParameterSummary.Format(Type, Properties);
+    public bool HasParameterSummary => !string.IsNullOrWhiteSpace(ParameterSummary);
     public double X { get => _x; set => SetPosition(value, _y); }
     public double Y { get => _y; set => SetPosition(_x, value); }
     public GraphEditorNodePosition Position => new(X, Y);
@@ -139,6 +141,8 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
         foreach (var pair in node.Properties ?? []) properties[pair.Key] = pair.Value.Clone();
         _properties = new ReadOnlyDictionary<string, JsonElement>(properties);
         OnPropertyChanged(nameof(Properties));
+        OnPropertyChanged(nameof(ParameterSummary));
+        OnPropertyChanged(nameof(HasParameterSummary));
 
         var ports = (node.Ports ?? []).Where(port => port is not null).ToArray();
         var counts = ports.GroupBy(port => port.Id ?? string.Empty, StringComparer.Ordinal)
@@ -303,14 +307,51 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             next.Add(item);
         }
 
-        Nodes.Clear();
-        foreach (var item in next) Nodes.Add(item);
+        SynchronizeCollection(Nodes, next);
 
-        Connections.Clear();
+        var availableConnections = Connections.ToList();
+        var nextConnections = new List<GraphEditorConnectionViewModel>();
         foreach (var connection in (Graph.Connections ?? []).Where(connection => connection is not null))
-            Connections.Add(new GraphEditorConnectionViewModel(connection));
+        {
+            var existing = availableConnections.FirstOrDefault(candidate => candidate.Connection.Equals(connection));
+            if (existing is not null)
+            {
+                availableConnections.Remove(existing);
+                nextConnections.Add(existing);
+            }
+            else nextConnections.Add(new GraphEditorConnectionViewModel(connection));
+        }
+        SynchronizeCollection(Connections, nextConnections);
 
         PublishState(issues);
+    }
+
+    /// <summary>
+    /// Reconciles a bindable projection without Clear/Reset. Existing instances
+    /// remain alive, so WPF keeps node visuals, selection, focus, and viewport
+    /// state while a single graph mutation is projected.
+    /// </summary>
+    private static void SynchronizeCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> next)
+        where T : class
+    {
+        for (var index = 0; index < next.Count; index++)
+        {
+            var item = next[index];
+            if (index < target.Count && ReferenceEquals(target[index], item)) continue;
+
+            var existingIndex = -1;
+            for (var candidate = index + 1; candidate < target.Count; candidate++)
+            {
+                if (!ReferenceEquals(target[candidate], item)) continue;
+                existingIndex = candidate;
+                break;
+            }
+
+            if (existingIndex >= 0) target.Move(existingIndex, index);
+            else target.Insert(index, item);
+        }
+
+        while (target.Count > next.Count) target.RemoveAt(target.Count - 1);
     }
 
     public void SetNodePosition(string nodeId, double x, double y)
@@ -367,6 +408,126 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         GraphConnection? original = null)
         => ExecuteBridge(() => _commandBridge.CompleteWireDrag(first, second, original));
 
+    /// <summary>
+    /// Reconnects every edge incident to a multi-wire endpoint as one validated
+    /// gesture.  Validation runs against a detached document with all of the
+    /// originals removed, so a failed target cannot partially move the bundle.
+    /// </summary>
+    public bool CompleteIncidentWireDrag(IReadOnlyList<GraphConnection> originals,
+        GraphEditorEndpoint movingEndpoint, GraphEditorEndpoint? target)
+    {
+        if (originals is null || originals.Count == 0) return false;
+        var oldUndo = CanUndo;
+        var oldRedo = CanRedo;
+        var current = originals.Where(connection => connection is not null).ToArray();
+        if (current.Length != originals.Count || current.Select(connection => connection).Distinct().Count() != current.Length)
+            return false;
+
+        var documentConnections = (Graph.Connections ?? []).Where(connection => connection is not null).ToArray();
+        if (current.Any(original => documentConnections.Count(connection => connection.Equals(original)) != 1))
+            return false;
+
+        if (!target.HasValue)
+        {
+            var disconnected = _session.ReplaceConnections(current, []);
+            Refresh(_session.LastValidationIssues);
+            if (disconnected) PublishGraphChanged();
+            NotifyHistoryStateChanged(oldUndo, oldRedo);
+            return disconnected;
+        }
+
+        var replacement = target.Value;
+        if (movingEndpoint.Direction != replacement.Direction
+            || movingEndpoint.InterfaceKind != replacement.InterfaceKind
+            || movingEndpoint.Direction is not (GraphPortDirection.Input or GraphPortDirection.Output))
+            return false;
+
+        var detached = GraphDocument.FromJson(Graph.ToJson());
+        detached.Connections = (detached.Connections ?? [])
+            .Where(connection => connection is not null && !current.Any(original => connection.Equals(original)))
+            .ToList();
+        var candidates = new List<GraphConnection>(current.Length);
+        foreach (var original in current)
+        {
+            var candidate = movingEndpoint.IsInput
+                ? new GraphConnection(original.FromNodeId, original.FromPortId,
+                    replacement.NodeId, replacement.PortId, movingEndpoint.InterfaceKind)
+                : new GraphConnection(replacement.NodeId, replacement.PortId,
+                    original.ToNodeId, original.ToPortId, movingEndpoint.InterfaceKind);
+            var issues = CandidateEdgeValidator.Validate(detached, candidate, Scope,
+                excludedConnection: null, compatibilityMode: _session.CompatibilityMode);
+            if (issues.Count != 0)
+            {
+                PublishState(issues);
+                return false;
+            }
+            detached.Connections.Add(GraphConnection.FromJson(candidate.ToJson()));
+            candidates.Add(candidate);
+        }
+
+        var reconnected = _session.ReplaceConnections(current, candidates);
+        Refresh(_session.LastValidationIssues);
+        if (reconnected) PublishGraphChanged();
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+        return reconnected;
+    }
+
+    public bool CanReconnectIncidentConnections(IReadOnlyList<GraphConnection> originals,
+        GraphEditorEndpoint movingEndpoint, GraphEditorEndpoint target)
+    {
+        if (!TryBuildIncidentCandidates(originals, movingEndpoint, target, out _, out var issues))
+        {
+            PublishState(issues);
+            return false;
+        }
+        PublishState([]);
+        return true;
+    }
+
+    public bool ReconnectIncidentConnections(IReadOnlyList<GraphConnection> originals,
+        GraphEditorEndpoint movingEndpoint, GraphEditorEndpoint? target)
+        => CompleteIncidentWireDrag(originals, movingEndpoint, target);
+
+    private bool TryBuildIncidentCandidates(IReadOnlyList<GraphConnection> originals,
+        GraphEditorEndpoint movingEndpoint, GraphEditorEndpoint target,
+        out IReadOnlyList<GraphConnection> candidates, out IReadOnlyList<ValidationIssue> issues)
+    {
+        candidates = [];
+        issues = [];
+        if (originals is null || originals.Count == 0
+            || movingEndpoint.Direction is not (GraphPortDirection.Input or GraphPortDirection.Output)
+            || movingEndpoint.InterfaceKind != target.InterfaceKind
+            || movingEndpoint.Direction != target.Direction)
+            return false;
+        var current = originals.Where(connection => connection is not null).ToArray();
+        var documentConnections = (Graph.Connections ?? []).Where(connection => connection is not null).ToArray();
+        if (current.Length != originals.Count || current.Distinct().Count() != current.Length
+            || current.Any(original => documentConnections.Count(connection => connection.Equals(original)) != 1))
+            return false;
+        var detached = GraphDocument.FromJson(Graph.ToJson());
+        detached.Connections = (detached.Connections ?? [])
+            .Where(connection => connection is not null && !current.Any(original => connection.Equals(original)))
+            .ToList();
+        var built = new List<GraphConnection>(current.Length);
+        foreach (var original in current)
+        {
+            var candidate = movingEndpoint.IsInput
+                ? new GraphConnection(original.FromNodeId, original.FromPortId, target.NodeId, target.PortId, movingEndpoint.InterfaceKind)
+                : new GraphConnection(target.NodeId, target.PortId, original.ToNodeId, original.ToPortId, movingEndpoint.InterfaceKind);
+            var validation = CandidateEdgeValidator.Validate(detached, candidate, Scope,
+                compatibilityMode: _session.CompatibilityMode);
+            if (validation.Count != 0)
+            {
+                issues = validation;
+                return false;
+            }
+            detached.Connections.Add(GraphConnection.FromJson(candidate.ToJson()));
+            built.Add(candidate);
+        }
+        candidates = built;
+        return true;
+    }
+
     public bool CanReconnect(GraphEditorEndpoint first, GraphEditorEndpoint second, GraphConnection original)
         => CanReconnect(original, first, second);
 
@@ -419,6 +580,10 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
     public bool SetNodeProperty<T>(string nodeId, string property, T value)
         => ExecuteSession(() => _session.SetNodeProperty(nodeId, property, value));
+
+    public bool SetStoryStartTriggerProperties(string nodeId, string portId,
+        IReadOnlyDictionary<string, JsonElement> properties)
+        => ExecuteSession(() => _session.SetStoryStartTriggerProperties(nodeId, portId, properties));
 
     public bool ChangeObjectiveType(string nodeId, string? type, string? actorId = null)
         => ExecuteSession(() => _session.ChangeObjectiveType(nodeId, type, actorId));

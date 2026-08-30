@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 using DarkGreyRPG.Studio.Views;
@@ -14,7 +15,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;
     private Point _resourceDragStart;
-    private CanonicalStoryGraphItem? _resourceDragItem;
+    private ICanonicalStoryTreeItem? _resourceDragItem;
     private long _appliedStoryNodeFocusSequence;
     private bool _storyNodeFocusQueued;
     private Func<CanonicalChoiceOptionRemovalConfirmation, bool>? _choiceOptionRemovalConfirmation;
@@ -29,6 +30,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         InitializeComponent();
         WorkspaceGraph.SelectionChanged += WorkspaceGraph_OnSelectionChanged;
+        WorkspaceGraph.NodeEditRequested += WorkspaceGraph_OnNodeEditRequested;
     }
 
     public CanonicalStoryWorkspaceView(CanonicalStoryWorkspaceViewModel workspace)
@@ -50,6 +52,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     }
 
     public CanonicalGraphEditorView GraphView => WorkspaceGraph;
+    public bool IsResourceDragGhostVisible => ResourceDragGhost.Visibility == Visibility.Visible;
+    public string ResourceDragGhostDisplayName => ResourceDragGhostTitle.Text;
+    public Point ResourceDragGhostViewportPosition =>
+        new(Canvas.GetLeft(ResourceDragGhost), Canvas.GetTop(ResourceDragGhost));
 
     /// <summary>
     /// Optional test/host injection for Choice-option removal confirmation.
@@ -129,6 +135,29 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         return true;
     }
 
+    public bool PreviewResourceDrag(ICanonicalStoryTreeItem? item, Point viewportPoint)
+    {
+        if (item is not CanonicalStoryGraphItem graph
+            || !CanPlaceResource(graph)
+            || !WorkspaceGraph.ContainsViewportPoint(viewportPoint))
+        {
+            CancelResourceDragPreview();
+            return false;
+        }
+
+        ResourceDragGhostTitle.Text = graph.DisplayName;
+        Canvas.SetLeft(ResourceDragGhost, viewportPoint.X - ResourceDragGhost.Width / 2d);
+        Canvas.SetTop(ResourceDragGhost, viewportPoint.Y - 38d);
+        ResourceDragGhost.Visibility = Visibility.Visible;
+        return true;
+    }
+
+    public void CancelResourceDragPreview()
+    {
+        ResourceDragGhost.Visibility = Visibility.Collapsed;
+        ResourceDragGhostTitle.Text = string.Empty;
+    }
+
     private void ResourceItem_OnClick(object sender, RoutedEventArgs args)
     {
         if (sender is Button { Tag: ICanonicalStoryTreeItem item })
@@ -144,9 +173,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     private void ResourceItem_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs args)
     {
         _resourceDragStart = args.GetPosition(this);
-        _resourceDragItem = sender is Button { Tag: CanonicalStoryGraphItem item } && CanPlaceResource(item)
-            ? item
-            : null;
+        _resourceDragItem = sender is Button { Tag: ICanonicalStoryTreeItem item }
+            && (CanPlaceResource(item) || item is CanonicalStoryActorItem or CanonicalStoryItemItem)
+                ? item
+                : null;
     }
 
     private void ResourceItem_OnPreviewMouseMove(object sender, MouseEventArgs args)
@@ -160,24 +190,46 @@ public partial class CanonicalStoryWorkspaceView : UserControl
 
         _resourceDragItem = null;
         var data = new DataObject(ResourceDragFormat, item);
-        _ = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link);
+        try
+        {
+            _ = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link);
+        }
+        finally
+        {
+            CancelResourceDragPreview();
+        }
         args.Handled = true;
     }
 
     private void WorkspaceGraph_OnDragOver(object sender, DragEventArgs args)
     {
         var point = args.GetPosition(WorkspaceGraph.ViewportElement);
-        args.Effects = TryGetDraggedResource(args.Data, out var item)
-            && CanPlaceResource(item)
-            && WorkspaceGraph.ContainsViewportPoint(point)
-                ? DragDropEffects.Link
-                : DragDropEffects.None;
+        args.Effects = DragDropEffects.None;
+        if (TryGetDraggedResource(args.Data, out var item) && item is not null)
+        {
+            if (item is CanonicalStoryGraphItem)
+                args.Effects = PreviewResourceDrag(item, point) ? DragDropEffects.Link : DragDropEffects.None;
+            else
+            {
+                CancelResourceDragPreview();
+                args.Effects = WorkspaceGraph.NodeAtViewportPoint(point) is not null
+                    ? DragDropEffects.Link
+                    : DragDropEffects.None;
+            }
+        }
+        args.Handled = true;
+    }
+
+    private void WorkspaceGraph_OnDragLeave(object sender, DragEventArgs args)
+    {
+        CancelResourceDragPreview();
         args.Handled = true;
     }
 
     private void WorkspaceGraph_OnDrop(object sender, DragEventArgs args)
     {
         var point = args.GetPosition(WorkspaceGraph.ViewportElement);
+        CancelResourceDragPreview();
         if (!TryGetDraggedResource(args.Data, out var item)
             || !WorkspaceGraph.ContainsViewportPoint(point))
         {
@@ -186,10 +238,20 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             return;
         }
 
-        var graphPoint = WorkspaceGraph.ScreenToGraph(point);
-        args.Effects = PlaceResourceAt(item, graphPoint.X, graphPoint.Y)
-            ? DragDropEffects.Link
-            : DragDropEffects.None;
+        if (item is CanonicalStoryGraphItem)
+        {
+            var graphPoint = WorkspaceGraph.ScreenToGraph(point);
+            args.Effects = PlaceResourceAt(item, graphPoint.X, graphPoint.Y)
+                ? DragDropEffects.Link
+                : DragDropEffects.None;
+        }
+        else
+        {
+            var node = WorkspaceGraph.NodeAtViewportPoint(point);
+            args.Effects = Workspace?.ApplyResourceToNodeParameter(node, item) == true
+                ? DragDropEffects.Link
+                : DragDropEffects.None;
+        }
         args.Handled = true;
     }
 
@@ -235,12 +297,14 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var referenced = item switch
         {
             CanonicalStoryActorItem actor => actor.IsReferenced,
+            CanonicalStoryItemItem itemResource => itemResource.IsReferenced,
             CanonicalStoryGraphItem graph => graph.IsReferenced,
             CanonicalStoryMissingItem missing => missing.IsReferenced,
             _ => false,
         };
         var folderKind = item switch
         {
+            CanonicalStoryItemItem => CanonicalStoryFolderKind.Items,
             CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Session } => CanonicalStoryFolderKind.Sessions,
             CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Task } => CanonicalStoryFolderKind.Tasks,
             CanonicalStoryMissingItem missing => missing.FolderKind,
@@ -249,10 +313,18 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var label = folderKind switch
         {
             CanonicalStoryFolderKind.Actors => "角色",
+            CanonicalStoryFolderKind.Items => "物品",
             CanonicalStoryFolderKind.Sessions => "会话",
-            _ => "任务",
+            CanonicalStoryFolderKind.Tasks => "任务",
+            _ => throw new ArgumentOutOfRangeException(nameof(folderKind), folderKind, null),
         };
         var menu = FluentContextMenuFactory.Create(target);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "编辑",
+            () => _ = item is CanonicalStoryGraphItem
+                ? ActivateResourceItem(item)
+                : SelectResourceItem(item)));
+        menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
             $"新建{label}",
             () => RequestCreateResource(folderKind),
@@ -277,10 +349,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             _ = ReturnToStory();
     }
 
-    private static bool TryGetDraggedResource(IDataObject data, out CanonicalStoryGraphItem? item)
+    private static bool TryGetDraggedResource(IDataObject data, out ICanonicalStoryTreeItem? item)
     {
         item = data.GetDataPresent(ResourceDragFormat)
-            ? data.GetData(ResourceDragFormat) as CanonicalStoryGraphItem
+            ? data.GetData(ResourceDragFormat) as ICanonicalStoryTreeItem
             : null;
         return item is not null;
     }
@@ -332,6 +404,26 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             _ = Workspace.SelectGraphNode(args.Node);
         else
             Workspace.ClearGraphSelection();
+    }
+
+    private void WorkspaceGraph_OnNodeEditRequested(GraphEditorNodeViewModel node)
+    {
+        if (Workspace is null || !Workspace.IsStoryFlowActive
+            || !node.Properties.TryGetValue("resource_id", out var resourceId)
+            || resourceId.ValueKind != JsonValueKind.String
+            || string.IsNullOrWhiteSpace(resourceId.GetString()))
+            return;
+
+        var id = resourceId.GetString()!;
+        var item = node.Type switch
+        {
+            "session" => Workspace.SessionItems.SingleOrDefault(candidate =>
+                string.Equals(candidate.Id, id, StringComparison.Ordinal)),
+            "task" => Workspace.TaskItems.SingleOrDefault(candidate =>
+                string.Equals(candidate.Id, id, StringComparison.Ordinal)),
+            _ => null,
+        };
+        if (item is not null) _ = Workspace.OpenGraphResource(item);
     }
 
     private void QueueStoryNodeFocus()

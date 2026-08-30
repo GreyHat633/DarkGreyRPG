@@ -36,9 +36,9 @@ public static class GraphAggregatePortProjection
         var issues = ValidateBoundaries(flow, logic, GraphScope.Session);
         ThrowIfInvalid(issues);
 
-        var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        var ports = new List<GraphPort> { new(FlowInputId, "流程输入", true, GraphInterfaceKind.Flow, 0) };
         if (includeLogicInput)
-            ports.Add(new GraphPort(LogicInputId, "Logic In", true, GraphInterfaceKind.Logic, 1));
+            ports.Add(new GraphPort(LogicInputId, "逻辑输入", true, GraphInterfaceKind.Logic, 1));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
         return ports;
@@ -55,7 +55,7 @@ public static class GraphAggregatePortProjection
         var inputs = Materialize(logicInputBoundaries);
         var issues = ValidateBoundaries(flow, logic, inputs, GraphScope.Session);
         ThrowIfInvalid(issues);
-        var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        var ports = new List<GraphPort> { new(FlowInputId, "流程输入", true, GraphInterfaceKind.Flow, 0) };
         ports.AddRange(ToInputPorts(inputs));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
@@ -71,7 +71,7 @@ public static class GraphAggregatePortProjection
         var issues = ValidateBoundaries(flow, logic, GraphScope.Task);
         ThrowIfInvalid(issues);
 
-        var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        var ports = new List<GraphPort> { new(FlowInputId, "流程输入", true, GraphInterfaceKind.Flow, 0) };
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
         return ports;
@@ -88,7 +88,7 @@ public static class GraphAggregatePortProjection
         var inputs = Materialize(logicInputBoundaries);
         var issues = ValidateBoundaries(flow, logic, inputs, GraphScope.Task);
         ThrowIfInvalid(issues);
-        var ports = new List<GraphPort> { new(FlowInputId, "Flow In", true, GraphInterfaceKind.Flow, 0) };
+        var ports = new List<GraphPort> { new(FlowInputId, "流程输入", true, GraphInterfaceKind.Flow, 0) };
         ports.AddRange(ToInputPorts(inputs));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));

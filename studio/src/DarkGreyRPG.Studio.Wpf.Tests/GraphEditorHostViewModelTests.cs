@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Collections.Specialized;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -9,6 +10,56 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class GraphEditorHostViewModelTests
 {
+    [TestMethod]
+    public void SuccessfulMutationsReconcileCollectionsWithoutReset()
+    {
+        var host = new GraphEditorHostViewModel(ScopedGraph(GraphScope.StoryFlow), GraphScope.StoryFlow);
+        var nodeActions = new List<NotifyCollectionChangedAction>();
+        var connectionActions = new List<NotifyCollectionChangedAction>();
+        host.Nodes.CollectionChanged += (_, args) => nodeActions.Add(args.Action);
+        host.Connections.CollectionChanged += (_, args) => connectionActions.Add(args.Action);
+
+        Assert.IsTrue(host.AddNode(GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action", "Action")));
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("action", "flow_in", GraphInterfaceKind.Flow)));
+        Assert.IsTrue(host.Disconnect(host.Connections.Single()));
+
+        CollectionAssert.DoesNotContain(nodeActions, NotifyCollectionChangedAction.Reset);
+        CollectionAssert.DoesNotContain(connectionActions, NotifyCollectionChangedAction.Reset);
+        CollectionAssert.Contains(nodeActions, NotifyCollectionChangedAction.Add);
+        CollectionAssert.Contains(connectionActions, NotifyCollectionChangedAction.Add);
+        CollectionAssert.Contains(connectionActions, NotifyCollectionChangedAction.Remove);
+    }
+
+    [TestMethod]
+    public void MultiWireReconnectAndDisconnectEachUseOneUndoUnit()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("left_a", "action", "Left A", [new("out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("left_b", "action", "Left B", [new("out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("right_a", "action", "Right A", [new("in", "In", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("right_b", "action", "Right B", [new("in", "In", true, GraphInterfaceKind.Flow)])], [
+            new GraphConnection("left_a", "out", "right_a", "in", GraphInterfaceKind.Flow),
+            new GraphConnection("left_b", "out", "right_a", "in", GraphInterfaceKind.Flow)]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var originals = graph.Connections.ToArray();
+        var moving = GraphEditorEndpoint.Input("right_a", "in", GraphInterfaceKind.Flow);
+        var target = GraphEditorEndpoint.Input("right_b", "in", GraphInterfaceKind.Flow);
+
+        Assert.IsTrue(host.CompleteIncidentWireDrag(originals, moving, target));
+        Assert.AreEqual(1, host.Session.UndoCount);
+        Assert.IsTrue(graph.Connections.All(connection => connection.ToNodeId == "right_b"));
+        Assert.IsTrue(host.Undo());
+        Assert.IsTrue(graph.Connections.All(connection => connection.ToNodeId == "right_a"));
+
+        var restored = graph.Connections.ToArray();
+        Assert.IsTrue(host.CompleteIncidentWireDrag(restored, moving, null));
+        Assert.AreEqual(1, host.Session.UndoCount);
+        Assert.IsEmpty(graph.Connections);
+        Assert.IsTrue(host.Undo());
+        Assert.HasCount(2, graph.Connections);
+    }
+
     [TestMethod]
     public void NodeCrudRefreshesProjectionPreservesIdentityPublishesValidationAndUndoRedo()
     {

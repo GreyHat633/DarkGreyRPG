@@ -40,7 +40,8 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public bool CanSave => IsDirty && ValidationIssues.Count == 0;
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
     public IReadOnlyList<ValidationIssue> ValidationIssues => Host.LastValidationIssues;
-    public string ValidationText => string.Join(Environment.NewLine, ValidationIssues.Select(issue => issue.Message));
+    public string ValidationText => string.Join(Environment.NewLine,
+        ValidationIssues.Select(ValidationIssuePresentation.Format));
     public RelayCommand UndoCommand { get; }
     public RelayCommand RedoCommand { get; }
 

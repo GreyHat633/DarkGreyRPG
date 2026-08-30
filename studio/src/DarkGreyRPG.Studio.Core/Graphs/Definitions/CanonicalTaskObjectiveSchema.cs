@@ -17,7 +17,7 @@ public static class CanonicalTaskObjectiveSchema
     public const string ActorIdProperty = "actor_id";
     /// <summary>Stable fixed output carrying the objective completion state.</summary>
     public const string CompletionPortId = "logic_status";
-    public const string CompletionDisplayName = "Logic Complete";
+    public const string CompletionDisplayName = "完成";
     public const string ActivationPortPrefix = "logic_enable";
 
     public const string KillEntity = "kill_entity";

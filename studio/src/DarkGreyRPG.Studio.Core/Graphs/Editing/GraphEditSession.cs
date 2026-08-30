@@ -431,6 +431,69 @@ public sealed class GraphEditSession
         return true;
     }
 
+    /// <summary>
+    /// Replaces or removes a validated bundle of existing connections as one
+    /// document mutation and one Undo unit. Passing an empty replacement list
+    /// disconnects the whole bundle.
+    /// </summary>
+    public bool ReplaceConnections(
+        IReadOnlyList<GraphConnection> originals,
+        IReadOnlyList<GraphConnection> replacements)
+    {
+        ArgumentNullException.ThrowIfNull(originals);
+        ArgumentNullException.ThrowIfNull(replacements);
+        if (originals.Count == 0 || replacements.Count != 0 && replacements.Count != originals.Count)
+            return Fail([]);
+
+        var uniqueOriginals = originals.Where(connection => connection is not null).Distinct().ToArray();
+        if (uniqueOriginals.Length != originals.Count)
+            return Fail([new("graph.connection.bundle.originals.invalid",
+                "The connection bundle contains a null or duplicate original.", "connections")]);
+
+        var liveConnections = (Document.Connections ?? []).Where(connection => connection is not null).ToArray();
+        if (uniqueOriginals.Any(original => liveConnections.Count(connection => connection.Equals(original)) != 1))
+            return Fail([new("graph.connection.bundle.original.missing",
+                "One or more original connections do not exist exactly once.", "connections")]);
+
+        if (replacements.Count != 0 && originals.Zip(replacements).All(pair => pair.First.Equals(pair.Second)))
+            return Fail([]);
+
+        var detached = DeepClone(Document);
+        detached.Connections = (detached.Connections ?? [])
+            .Where(connection => connection is not null
+                && !uniqueOriginals.Any(original => connection.Equals(original)))
+            .ToList();
+        foreach (var replacement in replacements)
+        {
+            if (replacement is null)
+                return Fail([new("graph.connection.bundle.replacement.invalid",
+                    "The connection bundle contains a null replacement.", "connections")]);
+            var issues = CandidateEdgeValidator.Validate(
+                detached,
+                replacement,
+                Scope,
+                excludedConnection: null,
+                compatibilityMode: CompatibilityMode);
+            if (issues.Count != 0) return Fail(issues);
+            detached.Connections.Add(Clone(replacement));
+        }
+
+        var before = DeepClone(Document);
+        var replacementByOriginal = originals.Zip(replacements, (original, replacement) => (original, replacement))
+            .ToArray();
+        Document.Connections = (Document.Connections ?? [])
+            .Where(connection => connection is not null)
+            .Select(connection => replacementByOriginal.FirstOrDefault(pair => pair.original.Equals(connection)) is var match
+                && match.original is not null
+                    ? Clone(match.replacement)
+                    : connection)
+            .Where(connection => replacements.Count != 0
+                || !uniqueOriginals.Any(original => original.Equals(connection)))
+            .ToList();
+        Commit(before);
+        return true;
+    }
+
     public bool Reconnect(GraphConnection original, string fromNodeId, string fromPortId, string toNodeId,
         string toPortId, GraphInterfaceKind interfaceKind)
         => Reconnect(original, new GraphConnection(fromNodeId, fromPortId, toNodeId, toPortId, interfaceKind));

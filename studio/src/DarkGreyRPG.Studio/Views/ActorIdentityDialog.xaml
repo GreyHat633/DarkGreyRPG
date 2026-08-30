@@ -19,7 +19,7 @@
         <TextBlock Grid.Row="1" Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Description}" />
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-            <TextBlock VerticalAlignment="Center" Text="Actor ID" />
+            <TextBlock VerticalAlignment="Center" Text="角色 ID" />
             <TextBox Grid.Column="1" Padding="8,5" Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" />
         </Grid>
         <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="90,0,0,0">

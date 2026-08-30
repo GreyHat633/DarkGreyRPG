@@ -3,6 +3,7 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
@@ -337,6 +338,25 @@ public sealed class CanonicalNodeInspectorViewModelTests
     }
 
     [TestMethod]
+    public void TaskSettleDefaultResultNameFillsFirstStandardGap()
+    {
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
+        settle.Ports.Add(new GraphPort("one", "结果 1", true, GraphInterfaceKind.Logic, 0));
+        settle.Ports.Add(new GraphPort("custom", "完美完成", true, GraphInterfaceKind.Logic, 1));
+        settle.Ports.Add(new GraphPort("three", "结果 3", true, GraphInterfaceKind.Logic, 2));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([
+                GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"), settle])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(node => node.NodeId == "settle"));
+
+        Assert.IsTrue(inspector.AddTaskResultSlot());
+
+        Assert.IsTrue(editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
+            .Any(port => port.DisplayName == "结果 2"));
+    }
+
+    [TestMethod]
     public void TaskSettleReferencedRemoveConfirmsAndCleansEdgeAsOneUndoUnit()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
@@ -396,6 +416,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(),
             [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "actor.json", []))]);
 
+        var initialTrigger = inspector.StoryStartTriggers.Single();
+        Assert.IsFalse(initialTrigger.RemoveCommand.CanExecute(null));
+        Assert.IsFalse(initialTrigger.TriggerTypeOptions.Any(option => option.Value == StoryStartSchema.EnterStory));
+
         // Story Start authoring accepts only supported trigger types;
         // EnterStory remains a compatibility-only persisted trigger.
         Assert.IsTrue(inspector.AddStoryStartTrigger(
@@ -403,6 +427,8 @@ public sealed class CanonicalNodeInspectorViewModelTests
             triggerProperties: StoryStartSchema.DefaultTriggerProperties(
                 StoryStartSchema.ActorInteraction, "actor")));
         var trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId != "opaque-start");
+        Assert.IsTrue(initialTrigger.RemoveCommand.CanExecute(null));
+        Assert.IsTrue(trigger.RemoveCommand.CanExecute(null));
         Assert.AreEqual(StoryStartSchema.ActorInteraction, trigger.TriggerType);
         Assert.IsFalse(string.IsNullOrWhiteSpace(trigger.StablePortId));
         Assert.IsTrue(inspector.SetStoryStartTriggerType(trigger.StablePortId, StoryStartSchema.RegionEntry));
@@ -411,6 +437,69 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual("8", trigger.RadiusText);
         Assert.AreEqual(trigger.StablePortId, editor.Host.Graph.Nodes.Single().Ports.OrderBy(port => port.Order).Last().Id);
         Assert.IsTrue(StoryStartSchema.IsValid(editor.Host.Graph.Nodes.Single()));
+    }
+
+    [TestMethod]
+    public void LegacyEnterStoryTriggerIsVisibleButNotOfferedForNewTriggers()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "legacy-port");
+        start.Properties[StoryStartSchema.TriggersProperty] = JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                port_id = "legacy-port",
+                display_name = "进入故事",
+                trigger_type = StoryStartSchema.EnterStory,
+                trigger_properties = new Dictionary<string, object>(),
+                order = 0,
+            },
+        });
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        var trigger = inspector.StoryStartTriggers.Single();
+        Assert.AreEqual(StoryStartSchema.EnterStory, trigger.TriggerType);
+        Assert.AreEqual("进入故事（旧版兼容）",
+            trigger.TriggerTypeOptions.Single(option => option.Value == StoryStartSchema.EnterStory).DisplayName);
+        Assert.IsFalse(inspector.AddStoryStartTrigger(
+            "旧触发", StoryStartSchema.EnterStory, StoryStartSchema.DefaultTriggerProperties(StoryStartSchema.EnterStory)));
+    }
+
+    [TestMethod]
+    public void ObjectiveAndGiveItemUseStoryResourceSelectors()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        using var task = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([
+                objective, GraphNodeFactory.Create(GraphScope.Task, "settle", "settle")])));
+        var actor = new CanonicalStoryActorItem(new ActorResourceInfo(
+            "slimes", "史莱姆", "slimes.json", [], CollectiveActorResource.ResourceType));
+        var individual = new CanonicalStoryItemItem(new IndividualItemResource
+            { ItemId = "coin", DisplayName = "铜币" });
+        var collective = new CanonicalStoryItemItem(new CollectiveItemResource
+            { GroupId = "ore", DisplayName = "矿石" });
+        using var objectiveInspector = new CanonicalNodeInspectorViewModel(
+            task.Host, task.Host.Nodes.Single(node => node.NodeId == "objective"), [actor], [individual, collective]);
+
+        objectiveInspector.SelectedObjectiveActor = objectiveInspector.ObjectiveActorOptions.Single(option => option.Id == "slimes");
+        Assert.AreEqual("slimes", task.Host.Graph.Nodes.Single(node => node.Id == "objective")
+            .Properties[CanonicalTaskObjectiveSchema.EntityProperty].GetString());
+        objectiveInspector.SelectedObjectiveType = objectiveInspector.ObjectiveTypeOptions.Single(option => option.Value == CanonicalTaskObjectiveSchema.CollectItem);
+        objectiveInspector.SelectedObjectiveItem = objectiveInspector.ObjectiveItemOptions.Single(option => option.Id == "ore");
+        Assert.AreEqual("ore", task.Host.Graph.Nodes.Single(node => node.Id == "objective")
+            .Properties[CanonicalTaskObjectiveSchema.ItemProperty].GetString());
+
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action");
+        using var story = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Story, "story", "Story", new GraphDocument([action])));
+        using var actionInspector = new CanonicalNodeInspectorViewModel(
+            story.Host, story.Host.Nodes.Single(), [actor], [individual, collective]);
+        actionInspector.SelectedStoryActionType = actionInspector.StoryActionTypeOptions.Single(option => option.Value == CanonicalStoryActionSchema.GiveItem);
+
+        CollectionAssert.AreEqual(new[] { "", "coin" }, actionInspector.StoryActionItemOptions.Select(option => option.Id).ToArray());
+        actionInspector.SelectedStoryActionItem = actionInspector.StoryActionItemOptions.Single(option => option.Id == "coin");
+        Assert.AreEqual("coin", story.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
     }
 
     private static CanonicalGraphResourceEditorViewModel ChoiceEditor(GraphNode choice, bool includeReference = false)

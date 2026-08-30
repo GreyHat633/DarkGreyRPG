@@ -25,7 +25,7 @@ public sealed class GraphNodeDefinitionSchemaTests
         AssertPorts(GraphScope.StoryFlow, "logic_input", ["logic_out"]);
         AssertPorts(GraphScope.StoryFlow, "logic_output", ["logic_in"]);
 
-        AssertPorts(GraphScope.Session, "start", ["flow_out", "logic_out"]);
+        AssertPorts(GraphScope.Session, "start", ["flow_out"]);
         AssertPorts(GraphScope.Session, "line", ["flow_in", "flow_out"]);
         AssertPorts(GraphScope.Session, "choice", ["flow_in"]);
         AssertPorts(GraphScope.Session, "narration", ["flow_in", "flow_out"]);
@@ -184,9 +184,9 @@ public sealed class GraphNodeDefinitionSchemaTests
 
         first.Ports[0].DisplayName = "changed";
         first.Properties["text"] = JsonSerializer.SerializeToElement("changed");
-        Assert.AreEqual("Flow In", second.Ports[0].DisplayName);
+        Assert.AreEqual("流程输入", second.Ports[0].DisplayName);
         Assert.AreEqual(string.Empty, second.Properties["text"].GetString());
-        Assert.AreEqual("Flow In", GraphNodeDefinitionRegistry.Get(GraphScope.Session, "line")!.FixedPorts[0].DisplayName);
+        Assert.AreEqual("流程输入", GraphNodeDefinitionRegistry.Get(GraphScope.Session, "line")!.FixedPorts[0].DisplayName);
     }
 
     [TestMethod]

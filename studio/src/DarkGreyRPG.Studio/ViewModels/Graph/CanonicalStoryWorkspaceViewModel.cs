@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -21,6 +22,7 @@ public interface ICanonicalStoryTreeItem
 {
     string Id { get; }
     string DisplayName { get; }
+    string IdentityText => Id;
 }
 
 public sealed record CanonicalStoryActorItem(
@@ -30,6 +32,12 @@ public sealed record CanonicalStoryActorItem(
 {
     public string Id => Actor.Id;
     public string DisplayName => Actor.DisplayName;
+    public string IdentityText => Actor.Type switch
+    {
+        IndividualActorResource.ResourceType => $"NPC ID: {Id}",
+        CollectiveActorResource.ResourceType => $"Group ID: {Id}",
+        _ => $"角色 ID: {Id}",
+    };
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
 }
@@ -41,6 +49,9 @@ public sealed record CanonicalStoryItemItem(
 {
     public string Id => Item.Id;
     public string DisplayName => Item.DisplayName;
+    public string IdentityText => Type == IndividualItemResource.ResourceType
+        ? $"Item ID: {Id}"
+        : $"Group ID: {Id}";
     public string Type => Item.Type;
     public IReadOnlyList<string> Tags => Item.Tags;
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
@@ -84,6 +95,7 @@ public sealed record CanonicalStoryNodeFocusRequest(
 public sealed class CanonicalStoryFolderViewModel : ObservableObject
 {
     private bool _isExpanded = true;
+    private readonly ObservableCollection<ICanonicalStoryTreeItem> _items;
 
     public CanonicalStoryFolderViewModel(
         CanonicalStoryFolderKind kind,
@@ -92,7 +104,8 @@ public sealed class CanonicalStoryFolderViewModel : ObservableObject
     {
         Kind = kind;
         DisplayName = displayName;
-        Items = new ReadOnlyCollection<ICanonicalStoryTreeItem>((items ?? []).ToList());
+        _items = new ObservableCollection<ICanonicalStoryTreeItem>((items ?? []).ToList());
+        Items = new ReadOnlyObservableCollection<ICanonicalStoryTreeItem>(_items);
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
     }
 
@@ -105,6 +118,25 @@ public sealed class CanonicalStoryFolderViewModel : ObservableObject
     {
         get => _isExpanded;
         set => SetProperty(ref _isExpanded, value);
+    }
+
+    internal void SynchronizeItems(IReadOnlyList<ICanonicalStoryTreeItem> next)
+    {
+        for (var index = 0; index < next.Count; index++)
+        {
+            var item = next[index];
+            if (index < _items.Count && ReferenceEquals(_items[index], item)) continue;
+            var existingIndex = -1;
+            for (var candidate = index + 1; candidate < _items.Count; candidate++)
+            {
+                if (!ReferenceEquals(_items[candidate], item)) continue;
+                existingIndex = candidate;
+                break;
+            }
+            if (existingIndex >= 0) _items.Move(existingIndex, index);
+            else _items.Insert(index, item);
+        }
+        while (_items.Count > next.Count) _items.RemoveAt(_items.Count - 1);
     }
 }
 
@@ -122,6 +154,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     private CanonicalNodeInspectorViewModel? _nodeInspector;
     private CanonicalStoryNodeFocusRequest? _storyNodeFocusRequest;
     private long _storyNodeFocusSequence;
+    private string _parameterDropMessage = string.Empty;
     private bool _disposed;
 
     public CanonicalStoryWorkspaceViewModel(
@@ -275,16 +308,26 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     }
 
     public CanonicalGraphResourceEditorViewModel StoryEditor { get; }
-    public IReadOnlyList<CanonicalGraphResourceEditorViewModel> SessionEditors { get; }
-    public IReadOnlyList<CanonicalGraphResourceEditorViewModel> TaskEditors { get; }
-    public IReadOnlyList<CanonicalStoryActorItem> ActorItems { get; }
-    public IReadOnlyList<CanonicalStoryItemItem> ItemItems { get; }
-    public IReadOnlyList<CanonicalStoryGraphItem> SessionItems { get; }
-    public IReadOnlyList<CanonicalStoryGraphItem> TaskItems { get; }
+    public IReadOnlyList<CanonicalGraphResourceEditorViewModel> SessionEditors { get; private set; }
+    public IReadOnlyList<CanonicalGraphResourceEditorViewModel> TaskEditors { get; private set; }
+    public IReadOnlyList<CanonicalStoryActorItem> ActorItems { get; private set; }
+    public IReadOnlyList<CanonicalStoryItemItem> ItemItems { get; private set; }
+    public IReadOnlyList<CanonicalStoryGraphItem> SessionItems { get; private set; }
+    public IReadOnlyList<CanonicalStoryGraphItem> TaskItems { get; private set; }
     public IReadOnlyList<CanonicalStoryMissingItem> MissingItems { get; private set; } = [];
     public IReadOnlyList<CanonicalStoryFolderViewModel> Folders { get; }
     public IReadOnlyList<ValidationIssue> ValidationIssues { get; private set; } = [];
     public IReadOnlyList<ValidationIssue> LastAggregateAuthoringIssues { get; private set; } = [];
+    public string ParameterDropMessage
+    {
+        get => _parameterDropMessage;
+        private set
+        {
+            if (!SetProperty(ref _parameterDropMessage, value)) return;
+            OnPropertyChanged(nameof(HasParameterDropMessage));
+        }
+    }
+    public bool HasParameterDropMessage => !string.IsNullOrWhiteSpace(ParameterDropMessage);
     public IReadOnlyList<CanonicalGraphResourceEditorViewModel> Editors => AllEditors().ToArray();
     public bool HasDirtyEditors => AllEditors().Any(editor => editor.IsDirty);
     public RelayCommand ReturnToStoryCommand { get; }
@@ -384,9 +427,10 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
     public string InspectorValidationText => InspectorSelection switch
     {
-        CanonicalNodeInspectorViewModel node => string.Join(Environment.NewLine, node.ValidationIssues.Select(issue => issue.Message)),
+        CanonicalNodeInspectorViewModel node => string.Join(Environment.NewLine,
+            node.ValidationIssues.Select(ValidationIssuePresentation.Format)),
         CanonicalGraphResourceEditorViewModel editor => editor.ValidationText,
-        CanonicalStoryMissingItem missing => missing.Issue.Message,
+        CanonicalStoryMissingItem missing => ValidationIssuePresentation.Format(missing.Issue),
         _ => string.Empty,
     };
 
@@ -461,7 +505,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         }
 
         DisposeNodeInspector();
-        _nodeInspector = new CanonicalNodeInspectorViewModel(ActiveGraphHost, node, ActorItems);
+        _nodeInspector = new CanonicalNodeInspectorViewModel(ActiveGraphHost, node, ActorItems, ItemItems);
         _nodeInspector.PropertyChanged += OnNodeInspectorPropertyChanged;
         OnPropertyChanged(nameof(NodeInspector));
         OnPropertyChanged(nameof(Inspector));
@@ -613,6 +657,114 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         return true;
     }
 
+    /// <summary>
+    /// Applies a resource identity to one compatible author-facing node parameter.
+    /// It never changes tree selection or the current Inspector context.
+    /// </summary>
+    public bool ApplyResourceToNodeParameter(GraphEditorNodeViewModel? node, ICanonicalStoryTreeItem? item)
+    {
+        ThrowIfDisposed();
+        if (node is null || item is null || !ActiveGraphHost.Nodes.Contains(node) || !Contains(item))
+            return FailParameterDrop("无法将该资源拖放到当前节点。");
+
+        bool changed;
+        switch (item)
+        {
+            case CanonicalStoryActorItem actor:
+                changed = ApplyActorToNode(node, actor);
+                break;
+            case CanonicalStoryItemItem itemResource:
+                changed = ApplyItemToNode(node, itemResource);
+                break;
+            default:
+                return FailParameterDrop("该资源只能放置为 Story Flow 聚合节点。");
+        }
+
+        if (!changed) return false;
+        ParameterDropMessage = $"已将“{item.DisplayName}”应用到“{node.DisplayName}”。";
+        return true;
+    }
+
+    public void ClearParameterDropMessage() => ParameterDropMessage = string.Empty;
+
+    private bool ApplyActorToNode(GraphEditorNodeViewModel node, CanonicalStoryActorItem actor)
+    {
+        if (ActiveGraphHost.Scope == GraphScope.Session && node.Type == "line")
+            return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
+                node.NodeId, "speaker_actor_id", JsonSerializer.SerializeToElement(actor.Id)));
+
+        if (ActiveGraphHost.Scope == GraphScope.Task && node.Type == CanonicalTaskObjectiveSchema.NodeType)
+        {
+            var type = ReadNodeString(node, CanonicalTaskObjectiveSchema.TypeProperty);
+            var property = type switch
+            {
+                CanonicalTaskObjectiveSchema.KillEntity => CanonicalTaskObjectiveSchema.EntityProperty,
+                CanonicalTaskObjectiveSchema.InteractActor => CanonicalTaskObjectiveSchema.ActorIdProperty,
+                _ => null,
+            };
+            if (property is not null)
+                return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
+                    node.NodeId, property, JsonSerializer.SerializeToElement(actor.Id)));
+        }
+
+        if (ActiveGraphHost.Scope == GraphScope.StoryFlow && node.Type == "start")
+        {
+            var graphNode = ActiveGraphHost.Graph.Nodes.Single(candidate =>
+                string.Equals(candidate.Id, node.NodeId, StringComparison.Ordinal));
+            var trigger = StoryStartSchema.ReadTriggers(graphNode)
+                .FirstOrDefault(candidate => candidate.TriggerType == StoryStartSchema.ActorInteraction);
+            if (trigger is not null)
+            {
+                var properties = trigger.TriggerProperties.ValueKind == JsonValueKind.Object
+                    ? trigger.TriggerProperties.EnumerateObject().ToDictionary(
+                        property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal)
+                    : new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+                properties[StoryStartSchema.ActorIdProperty] = JsonSerializer.SerializeToElement(actor.Id);
+                return CommitParameterDrop(() => ActiveGraphHost.SetStoryStartTriggerProperties(
+                    node.NodeId, trigger.PortId, properties));
+            }
+            return FailParameterDrop("Start 节点中没有“角色交互”启动方式，请先在 Inspector 中添加或切换启动方式。");
+        }
+
+        return FailParameterDrop("角色资源只能拖到 Start 的角色交互、会话台词说话者或任务角色目标。");
+    }
+
+    private bool ApplyItemToNode(GraphEditorNodeViewModel node, CanonicalStoryItemItem item)
+    {
+        if (ActiveGraphHost.Scope == GraphScope.Task && node.Type == CanonicalTaskObjectiveSchema.NodeType
+            && ReadNodeString(node, CanonicalTaskObjectiveSchema.TypeProperty) == CanonicalTaskObjectiveSchema.CollectItem)
+            return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
+                node.NodeId, CanonicalTaskObjectiveSchema.ItemProperty, JsonSerializer.SerializeToElement(item.Id)));
+
+        if (ActiveGraphHost.Scope == GraphScope.StoryFlow && node.Type == CanonicalStoryActionSchema.NodeType
+            && ReadNodeString(node, CanonicalStoryActionSchema.TypeProperty) == CanonicalStoryActionSchema.GiveItem)
+        {
+            if (item.Item is not IndividualItemResource)
+                return FailParameterDrop("“给予物品”只能使用个体物品，不能使用物品组。");
+            return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
+                node.NodeId, CanonicalStoryActionSchema.ItemProperty, JsonSerializer.SerializeToElement(item.Id)));
+        }
+
+        return FailParameterDrop("物品资源只能拖到“收集物品”目标或“给予物品”动作。");
+    }
+
+    private bool CommitParameterDrop(Func<bool> mutation)
+    {
+        if (mutation()) return true;
+        var detail = ActiveGraphHost.LastValidationIssues.FirstOrDefault()?.Message;
+        return FailParameterDrop(string.IsNullOrWhiteSpace(detail) ? "资源参数没有发生变化。" : $"资源参数未修改：{detail}");
+    }
+
+    private bool FailParameterDrop(string message)
+    {
+        ParameterDropMessage = message;
+        return false;
+    }
+
+    private static string ReadNodeString(GraphEditorNodeViewModel node, string property)
+        => node.Properties.TryGetValue(property, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty : string.Empty;
+
     /// <summary>Builds a detached synchronization plan for one member editor.</summary>
     public CanonicalAggregateSynchronizationPlan AnalyzeAggregateSynchronization(
         CanonicalGraphResourceEditorViewModel editor)
@@ -651,6 +803,123 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         CreateSelectedResourceCommand.RaiseCanExecuteChanged();
         ReferenceSelectedResourceCommand.RaiseCanExecuteChanged();
         DeleteSelectedResourceCommand.RaiseCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// Applies a loader snapshot to the existing workspace. Unchanged folders,
+    /// items, graph editors, active graph, selection, and expansion state keep
+    /// their object identity; only the changed membership entries are inserted,
+    /// removed, or replaced.
+    /// </summary>
+    public void ApplyResourceSnapshot(
+        CanonicalStoryWorkspaceSnapshot snapshot,
+        CanonicalStoryFolderKind selectedFolderKind,
+        string? selectedResourceId = null)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(snapshot);
+        if (!string.Equals(snapshot.Story.Id, StoryEditor.Id, StringComparison.Ordinal))
+            throw new ArgumentException("A resource refresh must target the active canonical Story.", nameof(snapshot));
+
+        var incoming = new CanonicalStoryWorkspaceViewModel(snapshot);
+        var currentGraphItems = SessionItems.Concat(TaskItems)
+            .ToDictionary(item => (item.ResourceKind, item.Id));
+        var currentActors = ActorItems.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        var currentItems = ItemItems.ToDictionary(item => (item.Type, item.Id));
+        var currentMissing = MissingItems.ToDictionary(item => (item.FolderKind, item.Id, item.MembershipKind));
+        var transferredEditors = new HashSet<CanonicalGraphResourceEditorViewModel>();
+
+        ICanonicalStoryTreeItem MergeItem(ICanonicalStoryTreeItem item)
+        {
+            switch (item)
+            {
+                case CanonicalStoryGraphItem graph:
+                    if (currentGraphItems.TryGetValue((graph.ResourceKind, graph.Id), out var existingGraph))
+                    {
+                        return existingGraph.MembershipKind == graph.MembershipKind
+                            ? existingGraph
+                            : new CanonicalStoryGraphItem(existingGraph.Editor, graph.MembershipKind);
+                    }
+                    transferredEditors.Add(graph.Editor);
+                    return graph;
+                case CanonicalStoryActorItem actor
+                    when currentActors.TryGetValue(actor.Id, out var existingActor)
+                         && existingActor.MembershipKind == actor.MembershipKind:
+                    return existingActor;
+                case CanonicalStoryItemItem itemResource
+                    when currentItems.TryGetValue((itemResource.Type, itemResource.Id), out var existingItem)
+                         && existingItem.MembershipKind == itemResource.MembershipKind:
+                    return existingItem;
+                case CanonicalStoryMissingItem missing
+                    when currentMissing.TryGetValue((missing.FolderKind, missing.Id, missing.MembershipKind), out var existingMissing):
+                    return existingMissing;
+                default:
+                    return item;
+            }
+        }
+
+        var nextFolders = incoming.Folders.ToDictionary(
+            folder => folder.Kind,
+            folder => (IReadOnlyList<ICanonicalStoryTreeItem>)folder.Items.Select(MergeItem).ToArray());
+        var nextGraphItems = nextFolders.Values.SelectMany(items => items).OfType<CanonicalStoryGraphItem>().ToArray();
+        var nextEditors = nextGraphItems.Select(item => item.Editor).ToHashSet();
+
+        if (!ReferenceEquals(ActiveEditor, StoryEditor) && !nextEditors.Contains(ActiveEditor))
+        {
+            ActiveEditor = StoryEditor;
+            ClearGraphSelection();
+        }
+        if (_nodeInspector is not null) ClearGraphSelection();
+
+        foreach (var editor in SessionEditors.Concat(TaskEditors).Where(editor => !nextEditors.Contains(editor)).ToArray())
+        {
+            editor.PropertyChanged -= OnEditorPropertyChanged;
+            editor.Dispose();
+        }
+        foreach (var editor in transferredEditors)
+        {
+            editor.PropertyChanged -= incoming.OnEditorPropertyChanged;
+            editor.PropertyChanged += OnEditorPropertyChanged;
+        }
+
+        foreach (var folder in Folders)
+            folder.SynchronizeItems(nextFolders[folder.Kind]);
+
+        ActorItems = nextFolders[CanonicalStoryFolderKind.Actors].OfType<CanonicalStoryActorItem>().ToArray();
+        ItemItems = nextFolders[CanonicalStoryFolderKind.Items].OfType<CanonicalStoryItemItem>().ToArray();
+        SessionItems = nextFolders[CanonicalStoryFolderKind.Sessions].OfType<CanonicalStoryGraphItem>().ToArray();
+        TaskItems = nextFolders[CanonicalStoryFolderKind.Tasks].OfType<CanonicalStoryGraphItem>().ToArray();
+        SessionEditors = SessionItems.Select(item => item.Editor).ToArray();
+        TaskEditors = TaskItems.Select(item => item.Editor).ToArray();
+        MissingItems = nextFolders.Values.SelectMany(items => items).OfType<CanonicalStoryMissingItem>().ToArray();
+        ValidationIssues = snapshot.ValidationIssues.ToArray();
+
+        OnPropertyChanged(nameof(ActorItems));
+        OnPropertyChanged(nameof(ItemItems));
+        OnPropertyChanged(nameof(SessionItems));
+        OnPropertyChanged(nameof(TaskItems));
+        OnPropertyChanged(nameof(SessionEditors));
+        OnPropertyChanged(nameof(TaskEditors));
+        OnPropertyChanged(nameof(MissingItems));
+        OnPropertyChanged(nameof(ValidationIssues));
+        OnPropertyChanged(nameof(Editors));
+        OnPropertyChanged(nameof(HasDirtyEditors));
+
+        var selected = nextFolders[selectedFolderKind]
+            .FirstOrDefault(item => selectedResourceId is not null
+                && string.Equals(item.Id, selectedResourceId, StringComparison.Ordinal));
+        if (selected is not null) SelectTreeItem(selected);
+        else SelectFolder(selectedFolderKind);
+
+        incoming.StoryEditor.PropertyChanged -= incoming.OnEditorPropertyChanged;
+        incoming.StoryEditor.Dispose();
+        foreach (var editor in incoming.SessionEditors.Concat(incoming.TaskEditors)
+                     .Where(editor => !transferredEditors.Contains(editor)).ToArray())
+        {
+            editor.PropertyChanged -= incoming.OnEditorPropertyChanged;
+            editor.Dispose();
+        }
+        RefreshResourceCommandStates();
     }
 
     public void Dispose()

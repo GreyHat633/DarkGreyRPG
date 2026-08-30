@@ -15,6 +15,36 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalGraphEditorViewTests
 {
     [STATestMethod]
+    public void IncrementalNodeAndConnectionChangesKeepExistingVisualViewportAndSelection()
+    {
+        var host = new GraphEditorHostViewModel(Graph(GraphScope.StoryFlow), GraphScope.StoryFlow);
+        var view = Arrange(host);
+        var sourceVisual = view.NodeVisuals.Single(node => node.Node?.NodeId == "source");
+        var targetVisual = view.NodeVisuals.Single(node => node.Node?.NodeId == "target");
+        view.ViewportController.PanBy(37, -19);
+        view.ViewportController.SetZoomAt(1.25, new Point(200, 150));
+        var viewport = (view.ViewportController.Zoom, view.ViewportController.PanX, view.ViewportController.PanY);
+        Assert.IsTrue(view.SelectNode("target"));
+
+        Assert.IsTrue(host.AddNode(GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action", "Action")));
+        Assert.AreSame(sourceVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "source"));
+        Assert.AreSame(targetVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "target"));
+        Assert.AreEqual("target", view.SelectedNode?.NodeId);
+        Assert.AreEqual(viewport, (view.ViewportController.Zoom, view.ViewportController.PanX, view.ViewportController.PanY));
+
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("action", "flow_in", GraphInterfaceKind.Flow)));
+        Assert.AreSame(sourceVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "source"));
+        Assert.AreSame(targetVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "target"));
+        Assert.HasCount(1, view.ConnectionVisuals);
+
+        Assert.IsTrue(host.Disconnect(host.Connections.Single()));
+        Assert.AreSame(sourceVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "source"));
+        Assert.AreSame(targetVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "target"));
+        Assert.IsEmpty(view.ConnectionVisuals);
+    }
+
+    [STATestMethod]
     public void OneTypedViewAcceptsStorySessionAndTaskHosts()
     {
         foreach (var scope in new[] { GraphScope.StoryFlow, GraphScope.Session, GraphScope.Task })
@@ -383,7 +413,7 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
         CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },
             view.AuthoringCategories.Select(category => category.Name).ToArray());
-        Assert.IsFalse(view.CanAuthorNodeType("choice"));
+        Assert.IsTrue(view.CanAuthorNodeType("choice"));
         Assert.IsFalse(view.CanAuthorNodeType("start"));
         Assert.IsFalse(view.CanAuthorNodeType("legacy_jump"));
         Assert.IsTrue(view.CanAuthorNodeType("line"));
@@ -425,7 +455,7 @@ public sealed class CanonicalGraphEditorViewTests
         var line = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "台词"));
         var choice = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "选择"));
         Assert.IsFalse(start.IsEnabled);
-        Assert.IsFalse(choice.IsEnabled);
+        Assert.IsTrue(choice.IsEnabled);
         Assert.IsTrue(line.IsEnabled);
 
         line.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));

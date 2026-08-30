@@ -7,7 +7,7 @@
         xmlns:views="clr-namespace:DarkGreyRPG.Studio.Views"
         xmlns:graphViews="clr-namespace:DarkGreyRPG.Studio.Views.Graph"
         mc:Ignorable="d"
-        Title="DarkGrey RPG Studio 0.3.1.0"
+        Title="{Binding WindowTitle}"
         Icon="Assets/DarkGreyRPGStudio.ico"
         Width="1180" Height="760" MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterScreen"
@@ -25,11 +25,11 @@
                     <TextBlock DockPanel.Dock="Right" Margin="12,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SaveStateText}" />
                     <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}" />
                 </DockPanel>
-                <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="Actor ID" /><TextBox Grid.Column="1" Padding="8,5" IsReadOnly="True" Text="{Binding Id, Mode=OneWay}" /></Grid>
-                <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="显示名称" /><TextBox Grid.Column="1" Padding="8,5" AutomationProperties.Name="Actor 显示名称" Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" /></Grid>
+                <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="角色 ID" /><TextBox Grid.Column="1" Padding="8,5" IsReadOnly="True" Text="{Binding Id, Mode=OneWay}" /></Grid>
+                <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="显示名称" /><TextBox Grid.Column="1" Padding="8,5" AutomationProperties.Name="角色显示名称" Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" /></Grid>
                 <Grid Grid.Row="6"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Margin="0,7,0,0" VerticalAlignment="Top" Text="备注" /><TextBox Grid.Column="1" MinHeight="100" Padding="8" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" /></Grid>
                 <Grid Grid.Row="8"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="标签" /><TextBox Grid.Column="1" Padding="8,5" ToolTip="使用逗号分隔多个标签" Text="{Binding TagsText, UpdateSourceTrigger=PropertyChanged}" /></Grid>
-                <DockPanel Grid.Row="10"><Button DockPanel.Dock="Right" Width="96" Height="32" Command="{Binding DataContext.SaveActorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="保存 Actor" Content="保存" /><TextBlock Margin="0,7,12,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Text="{Binding ValidationText}" /></DockPanel>
+                <DockPanel Grid.Row="10"><Button DockPanel.Dock="Right" Width="96" Height="32" Command="{Binding DataContext.SaveActorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="保存角色" Content="保存" /><TextBlock Margin="0,7,12,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Text="{Binding ValidationText}" /></DockPanel>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="DialogueEditorTemplate"><views:DialogueEditorView /></DataTemplate>
@@ -117,7 +117,6 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition x:Name="WorkspaceRow" Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition x:Name="BottomPanelRow" Height="Auto" />
@@ -171,22 +170,11 @@
                 <Separator />
                 <MenuItem Header="准备 Runtime 重载" Command="{Binding PrepareRuntimeReloadCommand}" />
                 <MenuItem Header="验证项目" Command="{Binding ValidateProjectCommand}" />
-                <MenuItem Header="项目设置" Command="{Binding ShowProjectSettingsCommand}" />
             </MenuItem>
             <MenuItem Header="帮助(_H)"><MenuItem Header="关于 DarkGrey RPG Studio" Command="{x:Static ApplicationCommands.Help}" /></MenuItem>
         </Menu>
 
-        <Border Grid.Row="1" Padding="16,10"
-                Background="{DynamicResource LayerFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1"
-                ToolTip="{Binding ProjectDirectory}">
-            <StackPanel>
-                <TextBlock FontSize="17" FontWeight="SemiBold" Text="DarkGrey RPG Studio" />
-                <TextBlock Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectDisplayName}" />
-            </StackPanel>
-        </Border>
-
-        <Border Grid.Row="5" Padding="12,7"
+        <Border Grid.Row="4" Padding="12,7"
                 Background="{DynamicResource LayerFillColorAltBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
             <DockPanel>
@@ -207,7 +195,7 @@
             </DockPanel>
         </Border>
 
-        <GridSplitter x:Name="BottomPanelSplitter" Grid.Row="3" Height="5"
+        <GridSplitter x:Name="BottomPanelSplitter" Grid.Row="2" Height="5"
                Cursor="SizeNS" DragCompleted="BottomPanelSplitter_OnDragCompleted"
                Background="{DynamicResource CardStrokeColorDefaultBrush}"
                HorizontalAlignment="Stretch" ResizeDirection="Rows">
@@ -223,7 +211,7 @@
             </GridSplitter.Style>
         </GridSplitter>
 
-        <Border Grid.Row="4" Height="{Binding BottomPanel.DockHeight}"
+        <Border Grid.Row="3" Height="{Binding BottomPanel.DockHeight}"
                 Background="{DynamicResource LayerFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
             <Grid>
@@ -307,7 +295,7 @@
                                 <GridView>
                                     <GridViewColumn Width="90" Header="严重性" DisplayMemberBinding="{Binding Severity}" />
                                     <GridViewColumn Width="180" Header="资源" DisplayMemberBinding="{Binding Source}" />
-                                    <GridViewColumn Width="520" Header="问题" DisplayMemberBinding="{Binding Message}" />
+                                    <GridViewColumn Width="520" Header="问题" DisplayMemberBinding="{Binding DisplayMessage}" />
                                     <GridViewColumn Width="130" Header="字段" DisplayMemberBinding="{Binding Field}" />
                                 </GridView>
                             </ListView.View>
@@ -332,54 +320,13 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="68" />
                 <ColumnDefinition x:Name="ResourceBrowserColumn" Width="260" MinWidth="0" MaxWidth="400" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="{DynamicResource LayerFillColorAltBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
-                <ListBox Margin="5,8" ItemsSource="{Binding Navigation.Items}" SelectedItem="{Binding Navigation.SelectedItem}"
-                         BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch"
-                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="MinHeight" Value="0" />
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Background" Value="Transparent" />
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" /></Trigger>
-                                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" /></Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="2,5" HorizontalAlignment="Center">
-                                <Border Width="34" Height="34" CornerRadius="6" Background="Transparent">
-                                    <Path Width="20" Height="20" Stretch="Uniform" Data="{Binding IconGeometry}">
-                                        <Path.Style>
-                                            <Style TargetType="Path">
-                                                <Setter Property="Fill" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"><Setter Property="Fill" Value="{DynamicResource TextFillColorPrimaryBrush}" /></DataTrigger>
-                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True"><Setter Property="Fill" Value="{DynamicResource AccentFillColorDefaultBrush}" /></DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Path.Style>
-                                    </Path>
-                                </Border>
-                                <TextBlock Margin="0,4,0,0" HorizontalAlignment="Center" FontSize="11" Text="{Binding Title}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Border>
-
-            <Border x:Name="ResourceBrowser" Grid.Column="1" Padding="12" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            <Border x:Name="ResourceBrowser" Grid.Column="0" Padding="12" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
                 <Grid>
                     <DockPanel>
@@ -389,7 +336,6 @@
                                 <Style.Triggers>
                                     <MultiDataTrigger>
                                         <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding Navigation.SelectedItem.Page}" Value="Story" />
                                             <Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" />
                                             <Condition Binding="{Binding HasCanonicalStoryWorkspace}" Value="False" />
                                         </MultiDataTrigger.Conditions>
@@ -473,24 +419,16 @@
                         </ListBox>
                     </DockPanel>
 
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Navigation.SelectedItem.Page}" Value="Settings"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                        <TextBlock HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold" Text="设置" />
-                        <TextBlock Margin="0,8,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="应用与项目设置" />
-                    </StackPanel>
                 </Grid>
             </Border>
 
-            <GridSplitter x:Name="ResourceBrowserSplitter" Grid.Column="2" Width="5" HorizontalAlignment="Stretch"
+            <GridSplitter x:Name="ResourceBrowserSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
                           Background="{DynamicResource CardStrokeColorDefaultBrush}"
                           ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
 
-            <Border Grid.Column="3" Margin="12" Padding="18"
+            <Border Grid.Column="2" Margin="12" Padding="18"
                     Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
-                <Border.Style>
-                    <Style TargetType="Border"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><DataTrigger Binding="{Binding Navigation.SelectedItem.Page}" Value="Settings"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style>
-                </Border.Style>
                 <Grid>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding HasProject}" Value="False"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
@@ -587,7 +525,7 @@
                                         <ListBox ItemsSource="{Binding StoryWorkspace.Actors.FilteredMemberships}"
                                                  SelectedItem="{Binding SelectedStoryActor, Mode=TwoWay}"
                                                  ItemTemplate="{StaticResource StoryActorMembershipTemplate}"
-                                                 BorderThickness="0" HorizontalContentAlignment="Stretch" AutomationProperties.Name="故事 Actor 列表"
+                                                 BorderThickness="0" HorizontalContentAlignment="Stretch" AutomationProperties.Name="故事角色列表"
                                                  ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                                  VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
                                             <ListBox.ItemContainerStyle>
@@ -664,27 +602,9 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Column="3" Margin="12" Padding="28"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
-                <Border.Style>
-                    <Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Navigation.SelectedItem.Page}" Value="Settings"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style>
-                </Border.Style>
-                <StackPanel MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="设置" />
-                    <TextBlock Margin="0,10,0,24" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="外观更改立即生效并在重启后恢复。" />
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="120" /><ColumnDefinition Width="180" /></Grid.ColumnDefinitions>
-                        <TextBlock VerticalAlignment="Center" Text="应用主题" />
-                        <ComboBox Grid.Column="1" Height="34" AutomationProperties.Name="应用主题"
-                                  ItemsSource="{Binding ThemeSettings.ThemeOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  SelectedItem="{Binding ThemeSettings.SelectedTheme, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}" />
-                    </Grid>
-                </StackPanel>
-            </Border>
         </Grid>
     </Grid>
-        <Border Margin="0,108,24,0" Padding="14,10" MaxWidth="480"
+        <Border Margin="0,24,24,0" Padding="14,10" MaxWidth="480"
                 HorizontalAlignment="Right" VerticalAlignment="Top"
                 BorderBrush="{DynamicResource AccentFillColorDefaultBrush}" BorderThickness="1" CornerRadius="6">
             <Border.Style>

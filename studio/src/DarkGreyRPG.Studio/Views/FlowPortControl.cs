@@ -105,7 +105,25 @@ public sealed class FlowPortControl : Button
         _anchor = CreateAnchor(highlighted);
 
         var panel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        if (!IsInput && !string.Equals(EffectivePortId, "next", StringComparison.Ordinal))
+        if (IsInput)
+        {
+            panel.Children.Add(new Grid
+            {
+                Width = 11,
+                Height = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { _anchor },
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = EffectiveDisplayName,
+                Margin = new Thickness(5, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = Brushes.White,
+                FontSize = 11,
+            });
+        }
+        else if (!string.Equals(EffectivePortId, "next", StringComparison.Ordinal))
         {
             panel.Children.Add(new TextBlock
             {
@@ -118,14 +136,17 @@ public sealed class FlowPortControl : Button
         }
         // Keep the layout slot fixed at the largest anchor size. Either inner
         // shape can grow for highlighting without changing the port's footprint.
-        var anchorSlot = new Grid
+        if (!IsInput)
         {
-            Width = 11,
-            Height = 11,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        anchorSlot.Children.Add(_anchor);
-        panel.Children.Add(anchorSlot);
+            var anchorSlot = new Grid
+            {
+                Width = 11,
+                Height = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            anchorSlot.Children.Add(_anchor);
+            panel.Children.Add(anchorSlot);
+        }
         Content = panel;
         if (InterfaceKind == GraphInterfaceKind.Logic)
         {

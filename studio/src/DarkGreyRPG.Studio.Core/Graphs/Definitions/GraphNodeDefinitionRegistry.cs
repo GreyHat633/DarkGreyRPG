@@ -56,10 +56,20 @@ public static class GraphNodeDefinitionRegistry
 
     private static List<GraphNodeDefinition> BuildDefinitions()
     {
+        static string LocalizePortDisplayName(string displayName) => displayName switch
+        {
+            "Flow In" => "流程输入",
+            "Flow Out" => "流程输出",
+            "Logic In" => "逻辑输入",
+            "Logic Out" => "逻辑输出",
+            "True" => "是",
+            "False" => "否",
+            _ => displayName,
+        };
         static GraphPortDefinition In(string id, string displayName, GraphInterfaceKind kind, int order)
-            => new(id, displayName, GraphPortDirection.Input, kind, order);
+            => new(id, LocalizePortDisplayName(displayName), GraphPortDirection.Input, kind, order);
         static GraphPortDefinition Out(string id, string displayName, GraphInterfaceKind kind, int order)
-            => new(id, displayName, GraphPortDirection.Output, kind, order);
+            => new(id, LocalizePortDisplayName(displayName), GraphPortDirection.Output, kind, order);
         static JsonElement Json(string text)
         {
             using var document = JsonDocument.Parse(text);
@@ -150,8 +160,8 @@ public static class GraphNodeDefinitionRegistry
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0)],
                 properties: [StringProperty("port_id"), StringProperty("display_name")]),
 
-            Node("start", GraphScope.Session, "起始", "会话", required: true, unique: true, kinds: all,
-                ports: [Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 0), Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 1)]),
+            Node("start", GraphScope.Session, "起始", "会话", required: true, unique: true, kinds: flowOnly,
+                ports: [Out("flow_out", "流程输出", GraphInterfaceKind.Flow, 0)]),
             Node("line", GraphScope.Session, "台词", "会话", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
                 properties: [StringProperty("speaker_actor_id"), StringProperty("text")]),

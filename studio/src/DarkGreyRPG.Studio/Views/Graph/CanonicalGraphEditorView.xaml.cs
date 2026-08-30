@@ -59,6 +59,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private readonly Dictionary<GraphEditorNodeViewModel, CanonicalGraphNodeControl> _nodeVisuals = [];
     private readonly Dictionary<string, FlowPortControl> _ports = new(StringComparer.Ordinal);
     private readonly Dictionary<Path, GraphEditorConnectionViewModel> _connectionHits = [];
+    private readonly Dictionary<GraphEditorConnectionViewModel, (Path Line, Path Hit)> _connectionVisuals = [];
     private readonly ScaleTransform _scale = new(1, 1);
     private readonly TranslateTransform _translate = new();
     private GraphEditorHostViewModel? _host;
@@ -68,6 +69,12 @@ public partial class CanonicalGraphEditorView : UserControl
     private GraphEditorEndpoint? _wireStart;
     private GraphConnection? _wireOriginal;
     private Path? _draftWire;
+    private readonly List<Path> _draftWires = [];
+    private IReadOnlyList<GraphConnection> _wireOriginals = [];
+    private bool _incidentWireReconnect;
+    private bool _scissorsMode;
+    private bool _altScissorsMode;
+    private bool _scissorsModeBeforeAlt;
     private GraphEditorConnectionViewModel? _selectedConnection;
     private GraphEditorNodeViewModel? _selectedNode;
     private string? _pendingSelectedNodeId;
@@ -141,6 +148,9 @@ public partial class CanonicalGraphEditorView : UserControl
     public IReadOnlyCollection<FlowPortControl> PortVisuals => _ports.Values;
     public IReadOnlyCollection<Path> ConnectionHitTargets => _connectionHits.Keys;
     public IReadOnlyCollection<Path> ConnectionVisuals => GraphCanvas.Children.OfType<Path>().Where(path => !path.IsHitTestVisible).ToArray();
+    public bool IsScissorsMode => _scissorsMode;
+    public bool IsTemporaryScissorsMode => _altScissorsMode;
+    public event Action<GraphEditorNodeViewModel>? NodeEditRequested;
 
     public Point ScreenToGraph(Point viewportPoint) => _viewportController.ScreenToGraph(viewportPoint);
 
@@ -149,6 +159,12 @@ public partial class CanonicalGraphEditorView : UserControl
             && viewportPoint.X >= 0 && viewportPoint.Y >= 0
             && viewportPoint.X <= CanvasViewport.ActualWidth
             && viewportPoint.Y <= CanvasViewport.ActualHeight;
+
+    /// <summary>Returns the node visual under a viewport point without changing selection.</summary>
+    public GraphEditorNodeViewModel? NodeAtViewportPoint(Point viewportPoint)
+        => ContainsViewportPoint(viewportPoint)
+            ? FindAncestor<CanonicalGraphNodeControl>(CanvasViewport.InputHitTest(viewportPoint) as DependencyObject)?.Node
+            : null;
 
     /// <summary>Canonical scoped definitions in registry order, excluding compatibility nodes.</summary>
     public IReadOnlyList<GraphNodeDefinition> AuthoringDefinitions
@@ -185,7 +201,7 @@ public partial class CanonicalGraphEditorView : UserControl
             (GraphScope.StoryFlow, "start") and not
             (GraphScope.StoryFlow, "session") and not
             (GraphScope.StoryFlow, "task") and not
-            (GraphScope.Session, "choice") and not
+            (GraphScope.Session, "start") and not
             (GraphScope.Task, "settle");
     }
 
@@ -326,8 +342,9 @@ public partial class CanonicalGraphEditorView : UserControl
         _host = host;
         if (host is null || _hostEventsAttached) return;
         _hostEventsAttached = true;
-        host.Nodes.CollectionChanged += HostCollectionChanged;
-        host.Connections.CollectionChanged += HostCollectionChanged;
+        host.Nodes.CollectionChanged += HostNodesCollectionChanged;
+        host.Connections.CollectionChanged += HostConnectionsCollectionChanged;
+        host.GraphChanged += HostGraphChanged;
         foreach (var node in host.Nodes) node.PropertyChanged += NodePropertyChanged;
     }
 
@@ -335,12 +352,72 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         if (host is null || !_hostEventsAttached) return;
         _hostEventsAttached = false;
-        host.Nodes.CollectionChanged -= HostCollectionChanged;
-        host.Connections.CollectionChanged -= HostCollectionChanged;
+        host.Nodes.CollectionChanged -= HostNodesCollectionChanged;
+        host.Connections.CollectionChanged -= HostConnectionsCollectionChanged;
+        host.GraphChanged -= HostGraphChanged;
         foreach (var node in host.Nodes) node.PropertyChanged -= NodePropertyChanged;
     }
 
-    private void HostCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args) => RebuildGraph();
+    private void HostNodesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        if (args.Action == NotifyCollectionChangedAction.Reset)
+        {
+            RebuildGraph();
+            return;
+        }
+
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        if (args.OldItems is not null)
+        {
+            foreach (var item in args.OldItems.OfType<GraphEditorNodeViewModel>()) RemoveNodeVisual(item);
+        }
+        if (args.NewItems is not null)
+        {
+            foreach (var item in args.NewItems.OfType<GraphEditorNodeViewModel>()) AddNodeVisual(item);
+        }
+
+        GraphCanvas.UpdateLayout();
+        IndexPorts();
+        RedrawConnections();
+        ApplyNodeSelectionVisuals();
+        NotifySelectionChanged(oldNode, oldConnection);
+    }
+
+    private void HostConnectionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        if (args.Action == NotifyCollectionChangedAction.Reset)
+        {
+            RedrawConnections();
+            return;
+        }
+
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        if (args.OldItems is not null)
+        {
+            foreach (var item in args.OldItems.OfType<GraphEditorConnectionViewModel>()) RemoveConnectionVisual(item);
+        }
+        if (args.NewItems is not null)
+        {
+            GraphCanvas.UpdateLayout();
+            IndexPorts();
+            foreach (var item in args.NewItems.OfType<GraphEditorConnectionViewModel>()) AddConnectionVisual(item);
+        }
+        if (_selectedConnection is not null && _host is not null && !_host.Connections.Contains(_selectedConnection))
+            _selectedConnection = null;
+        NotifySelectionChanged(oldNode, oldConnection);
+    }
+
+    private void HostGraphChanged(object? sender, EventArgs args)
+    {
+        // Existing node projections can change their ports/properties without a
+        // node collection replacement. Re-index after WPF materializes those
+        // local ItemsControl changes, while retaining every node control.
+        GraphCanvas.UpdateLayout();
+        IndexPorts();
+        RedrawConnections();
+    }
 
     private void NodePropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
@@ -349,7 +426,7 @@ public partial class CanonicalGraphEditorView : UserControl
         {
             Canvas.SetLeft(visual, Safe(node.X));
             Canvas.SetTop(visual, Safe(node.Y));
-            RedrawConnections();
+            RedrawIncidentConnections(node.NodeId);
         }
     }
 
@@ -379,12 +456,7 @@ public partial class CanonicalGraphEditorView : UserControl
             if (node is null) continue;
             node.PropertyChanged -= NodePropertyChanged;
             node.PropertyChanged += NodePropertyChanged;
-            var visual = new CanonicalGraphNodeControl(node);
-            _nodeVisuals[node] = visual;
-            GraphCanvas.Children.Add(visual);
-            Canvas.SetLeft(visual, Safe(node.X));
-            Canvas.SetTop(visual, Safe(node.Y));
-            AutomationProperties.SetAutomationId(visual, $"CanonicalGraphNode_{node.NodeId}");
+            AddNodeVisual(node);
         }
         GraphEditorNodeViewModel[] matchingSelectedNodes = selectedNodeId is null
             ? []
@@ -399,6 +471,26 @@ public partial class CanonicalGraphEditorView : UserControl
         RedrawConnections();
         ApplyViewport();
         NotifySelectionChanged(oldNode, oldConnection);
+    }
+
+    private void AddNodeVisual(GraphEditorNodeViewModel node)
+    {
+        if (_nodeVisuals.ContainsKey(node)) return;
+        node.PropertyChanged -= NodePropertyChanged;
+        node.PropertyChanged += NodePropertyChanged;
+        var visual = new CanonicalGraphNodeControl(node);
+        _nodeVisuals[node] = visual;
+        GraphCanvas.Children.Add(visual);
+        Canvas.SetLeft(visual, Safe(node.X));
+        Canvas.SetTop(visual, Safe(node.Y));
+        AutomationProperties.SetAutomationId(visual, $"CanonicalGraphNode_{node.NodeId}");
+    }
+
+    private void RemoveNodeVisual(GraphEditorNodeViewModel node)
+    {
+        node.PropertyChanged -= NodePropertyChanged;
+        if (_nodeVisuals.Remove(node, out var visual)) GraphCanvas.Children.Remove(visual);
+        if (ReferenceEquals(_selectedNode, node)) _selectedNode = null;
     }
 
     private void IndexPorts()
@@ -425,34 +517,72 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void RedrawConnections()
     {
-        foreach (var child in GraphCanvas.Children.OfType<Path>().ToArray()) GraphCanvas.Children.Remove(child);
+        foreach (var connection in _connectionVisuals.Keys.ToArray()) RemoveConnectionVisual(connection);
         _connectionHits.Clear();
         if (_host is null) return;
         GraphCanvas.UpdateLayout();
-        foreach (var connection in _host.Connections)
+        foreach (var connection in _host.Connections) AddConnectionVisual(connection);
+    }
+
+    private void AddConnectionVisual(GraphEditorConnectionViewModel connection)
+    {
+        if (_connectionVisuals.ContainsKey(connection)
+            || !TryGetPort(connection.FromNodeId, connection.FromPortId, out var from)
+            || !TryGetPort(connection.ToNodeId, connection.ToPortId, out var to)) return;
+        var start = from.GetAnchorPoint(GraphCanvas);
+        var end = to.GetAnchorPoint(GraphCanvas);
+        if (!IsFinite(start) || !IsFinite(end)) return;
+        var selected = ReferenceEquals(connection, _selectedConnection);
+        var style = GraphConnectionVisualStyle.For(connection.InterfaceKind, selected);
+        var geometry = WireGeometry(start, end);
+        var hit = new Path { Data = geometry, Stroke = Brushes.Transparent, StrokeThickness = 14, Fill = null, Tag = connection, IsHitTestVisible = true };
+        AutomationProperties.SetName(hit, $"{style.AutomationLabel} {connection.FromNodeId}:{connection.FromPortId} 到 {connection.ToNodeId}:{connection.ToPortId}");
+        AutomationProperties.SetAutomationId(hit, $"CanonicalGraphConnection_{connection.FromNodeId}_{connection.FromPortId}_{connection.ToNodeId}_{connection.ToPortId}");
+        hit.PreviewMouseLeftButtonDown += ConnectionHit_OnPreviewMouseLeftButtonDown;
+        var line = new Path { Data = geometry, Stroke = new SolidColorBrush(style.StrokeColor), StrokeThickness = style.StrokeThickness, Fill = null, IsHitTestVisible = false, Tag = connection };
+        GraphCanvas.Children.Insert(0, line);
+        GraphCanvas.Children.Insert(1, hit);
+        _connectionHits[hit] = connection;
+        _connectionVisuals[connection] = (line, hit);
+    }
+
+    private void RemoveConnectionVisual(GraphEditorConnectionViewModel connection)
+    {
+        if (!_connectionVisuals.Remove(connection, out var visual)) return;
+        visual.Hit.PreviewMouseLeftButtonDown -= ConnectionHit_OnPreviewMouseLeftButtonDown;
+        _connectionHits.Remove(visual.Hit);
+        GraphCanvas.Children.Remove(visual.Hit);
+        GraphCanvas.Children.Remove(visual.Line);
+    }
+
+    private void RedrawIncidentConnections(string nodeId)
+    {
+        foreach (var pair in _connectionVisuals.Where(pair =>
+                     string.Equals(pair.Key.FromNodeId, nodeId, StringComparison.Ordinal)
+                     || string.Equals(pair.Key.ToNodeId, nodeId, StringComparison.Ordinal)).ToArray())
         {
-            if (!TryGetPort(connection.FromNodeId, connection.FromPortId, out var from) ||
-                !TryGetPort(connection.ToNodeId, connection.ToPortId, out var to)) continue;
-            var start = from.GetAnchorPoint(GraphCanvas);
-            var end = to.GetAnchorPoint(GraphCanvas);
-            if (!IsFinite(start) || !IsFinite(end)) continue;
-            var selected = ReferenceEquals(connection, _selectedConnection);
-            var style = GraphConnectionVisualStyle.For(connection.InterfaceKind, selected);
-            var geometry = WireGeometry(start, end);
-            var hit = new Path { Data = geometry, Stroke = Brushes.Transparent, StrokeThickness = 14, Fill = null, Tag = connection, IsHitTestVisible = true };
-            AutomationProperties.SetName(hit, $"{style.AutomationLabel} {connection.FromNodeId}:{connection.FromPortId} 到 {connection.ToNodeId}:{connection.ToPortId}");
-            AutomationProperties.SetAutomationId(hit, $"CanonicalGraphConnection_{connection.FromNodeId}_{connection.FromPortId}_{connection.ToNodeId}_{connection.ToPortId}");
-            hit.PreviewMouseLeftButtonDown += ConnectionHit_OnPreviewMouseLeftButtonDown;
-            var line = new Path { Data = geometry, Stroke = new SolidColorBrush(style.StrokeColor), StrokeThickness = style.StrokeThickness, Fill = null, IsHitTestVisible = false, Tag = connection };
-            GraphCanvas.Children.Insert(0, line);
-            GraphCanvas.Children.Insert(1, hit);
-            _connectionHits[hit] = connection;
+            if (!TryGetPort(pair.Key.FromNodeId, pair.Key.FromPortId, out var from)
+                || !TryGetPort(pair.Key.ToNodeId, pair.Key.ToPortId, out var to)) continue;
+            var geometry = WireGeometry(from.GetAnchorPoint(GraphCanvas), to.GetAnchorPoint(GraphCanvas));
+            pair.Value.Line.Data = geometry;
+            pair.Value.Hit.Data = geometry;
         }
     }
 
     private bool TryGetPort(string nodeId, string portId, out FlowPortControl port) => _ports.TryGetValue(EndpointKey(nodeId, portId), out port!);
 
     private static string EndpointKey(string nodeId, string portId) => nodeId + "\u001f" + portId;
+
+    private static bool IsMultiIncidentPort(GraphEditorEndpoint endpoint)
+        => endpoint.Direction == GraphPortDirection.Input && endpoint.InterfaceKind == GraphInterfaceKind.Flow
+            || endpoint.Direction == GraphPortDirection.Output && endpoint.InterfaceKind == GraphInterfaceKind.Logic;
+
+    private static bool IsIncident(GraphConnection connection, GraphEditorEndpoint endpoint)
+        => endpoint.IsInput
+            ? string.Equals(connection.ToNodeId, endpoint.NodeId, StringComparison.Ordinal)
+                && string.Equals(connection.ToPortId, endpoint.PortId, StringComparison.Ordinal)
+            : string.Equals(connection.FromNodeId, endpoint.NodeId, StringComparison.Ordinal)
+                && string.Equals(connection.FromPortId, endpoint.PortId, StringComparison.Ordinal);
 
     private void CanvasViewport_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -477,6 +607,12 @@ public partial class CanonicalGraphEditorView : UserControl
         if (FindAncestor<CanonicalGraphNodeControl>(source) is { Node: { } node })
         {
             SelectNode(node);
+            if (e.ClickCount >= 2)
+            {
+                _ = RequestNodeEdit(node);
+                e.Handled = true;
+                return;
+            }
             if (!_pointerState.Begin(GraphPointerMode.NodeDrag)) return;
             _dragNode = node;
             _pointerStart = e.GetPosition(GraphCanvas);
@@ -495,9 +631,21 @@ public partial class CanonicalGraphEditorView : UserControl
         // hit target. Clear the previous transient menu before this boundary
         // check so a second right-click cannot reopen stale authoring actions.
         GraphCanvas.ClearValue(ContextMenuProperty);
-        if (FindAncestor<FlowPortControl>(source) is not null ||
-            FindAncestor<CanonicalGraphNodeControl>(source) is not null ||
-            FindAncestor<Path>(source) is { Tag: GraphEditorConnectionViewModel })
+        if (FindAncestor<FlowPortControl>(source) is not null)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (FindAncestor<CanonicalGraphNodeControl>(source) is { Node: { } node })
+        {
+            _ = SelectNode(node);
+            OpenContextMenu(CreateNodeContextMenu(node));
+            e.Handled = true;
+            return;
+        }
+
+        if (FindAncestor<Path>(source) is { Tag: GraphEditorConnectionViewModel })
         {
             e.Handled = true;
             return;
@@ -505,6 +653,85 @@ public partial class CanonicalGraphEditorView : UserControl
 
         _contextGraphPoint = e.GetPosition(GraphCanvas);
         OpenContextMenu(CreateCanvasContextMenu(_contextGraphPoint));
+        e.Handled = true;
+    }
+
+    /// <summary>Builds the canonical node menu without opening it.</summary>
+    public ContextMenu CreateNodeContextMenu(GraphEditorNodeViewModel node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        var menu = FluentContextMenuFactory.Create(_nodeVisuals.TryGetValue(node, out var visual) ? visual : GraphCanvas);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "编辑",
+            () =>
+            {
+                _ = RequestNodeEdit(node);
+            }));
+
+        var canDelete = Host is { } host &&
+            (!GraphNodeDefinitionRegistry.TryGet(host.Scope, node.Type, out var definition)
+                || (!definition.NonDeletable && !definition.Required));
+        if (canDelete)
+        {
+            menu.Items.Add(FluentContextMenuFactory.CreateItem("删除", () => ConfirmAndDeleteNode(node), critical: true));
+        }
+        return menu;
+    }
+
+    public bool RequestNodeEdit(GraphEditorNodeViewModel node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        if (!SelectNode(node)) return false;
+        NodeEditRequested?.Invoke(node);
+        return true;
+    }
+
+    /// <summary>Optional host/test seam for the live node deletion confirmation.</summary>
+    public Func<string, int, bool>? NodeDeleteConfirmation { get; set; }
+
+    private bool ConfirmAndDeleteNode(GraphEditorNodeViewModel node)
+    {
+        if (Host is not { } host || !ReferenceEquals(_selectedNode, node)) return false;
+        var references = host.GetNodeReferences(node.NodeId);
+        var confirmed = NodeDeleteConfirmation?.Invoke(node.DisplayName, references.Count)
+            ?? MessageBox.Show(
+                Window.GetWindow(this),
+                references.Count == 0
+                    ? $"确定删除节点“{node.DisplayName}”吗？"
+                    : $"节点“{node.DisplayName}”当前连接了 {references.Count} 条连线。\n删除节点会同时删除这些连线。\n确定继续吗？",
+                "确认删除节点",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No) == MessageBoxResult.Yes;
+        return confirmed && RemoveSelectedNode(confirmReferencedRemoval: true);
+    }
+
+    private void Scissors_OnClick(object sender, RoutedEventArgs e)
+    {
+        _scissorsMode = !_scissorsMode;
+        CanvasViewport.Cursor = _scissorsMode ? Cursors.Cross : Cursors.Arrow;
+        e.Handled = true;
+    }
+
+    private static bool IsLeftAlt(KeyEventArgs e)
+        => e.Key == Key.LeftAlt || e.Key == Key.System && e.SystemKey == Key.LeftAlt;
+
+    private void Root_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!IsLeftAlt(e) || _altScissorsMode) return;
+        _scissorsModeBeforeAlt = _scissorsMode;
+        _altScissorsMode = true;
+        _scissorsMode = true;
+        CanvasViewport.Cursor = Cursors.Cross;
+        e.Handled = true;
+    }
+
+    private void Root_OnPreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (!IsLeftAlt(e) || !_altScissorsMode) return;
+        _altScissorsMode = false;
+        _scissorsMode = _scissorsModeBeforeAlt;
+        CanvasViewport.Cursor = _scissorsMode ? Cursors.Cross : Cursors.Arrow;
         e.Handled = true;
     }
 
@@ -530,9 +757,32 @@ public partial class CanonicalGraphEditorView : UserControl
         NotifySelectionChanged(oldNode, oldConnection);
         _wireStart = endpoint;
         _wireOriginal = original;
+        _incidentWireReconnect = false;
+        _wireOriginals = original is null ? [] : [original];
+        if (original is null && IsMultiIncidentPort(endpoint))
+        {
+            var incident = (_host.Graph.Connections ?? [])
+                .Where(connection => connection is not null && IsIncident(connection, endpoint))
+                .ToArray();
+            // A single existing edge remains the normal "add a wire" gesture;
+            // bundle dragging is reserved for an endpoint that actually has
+            // multiple incident wires.
+            if (incident.Length > 1)
+            {
+                _incidentWireReconnect = true;
+                _wireOriginals = incident;
+            }
+        }
         _pointerStart = point;
-        _draftWire = new Path { Stroke = Brushes.White, StrokeThickness = 3, StrokeDashArray = new DoubleCollection { 3, 3 }, IsHitTestVisible = false };
-        GraphCanvas.Children.Add(_draftWire);
+        _draftWires.Clear();
+        var wireCount = _incidentWireReconnect ? _wireOriginals.Count : 1;
+        for (var index = 0; index < wireCount; index++)
+        {
+            var draft = new Path { Stroke = Brushes.White, StrokeThickness = 3, IsHitTestVisible = false };
+            _draftWires.Add(draft);
+            GraphCanvas.Children.Add(draft);
+        }
+        _draftWire = _draftWires.FirstOrDefault();
         CanvasViewport.CaptureMouse();
         UpdateWire(point);
         return true;
@@ -570,21 +820,41 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void UpdateWire(Point point)
     {
-        if (_draftWire is null || _wireStart is null) return;
+        if (_draftWires.Count == 0 || _wireStart is null) return;
         var viewportPoint = GraphCanvas.TransformToAncestor(CanvasViewport).Transform(point);
         var target = FindAncestor<FlowPortControl>(CanvasViewport.InputHitTest(viewportPoint) as DependencyObject);
         foreach (var port in _ports.Values) port.IsConnecting = ReferenceEquals(port, target) || (TryEndpoint(port, out var ep) && ep == _wireStart.Value);
         if (target is not null && TryEndpoint(target, out var targetEndpoint) && _host is not null)
         {
             var source = _ports.TryGetValue(EndpointKey(_wireStart.Value.NodeId, _wireStart.Value.PortId), out var wirePort) ? wirePort : null;
-            var valid = target.IsCompatibleEndpoint(source) && (_wireOriginal is null
-                ? _host.CanConnect(_wireStart.Value, targetEndpoint)
-                : _host.CanReconnect(_wireOriginal, _wireStart.Value, targetEndpoint));
+            var valid = _incidentWireReconnect
+                ? source is not null && source.IsInput == target.IsInput && source.InterfaceKind == target.InterfaceKind
+                    && _host.CanReconnectIncidentConnections(_wireOriginals, _wireStart.Value, targetEndpoint)
+                : target.IsCompatibleEndpoint(source) && (_wireOriginal is null
+                    ? _host.CanConnect(_wireStart.Value, targetEndpoint)
+                    : _host.CanReconnect(_wireOriginal, _wireStart.Value, targetEndpoint));
             target.IsValidTarget = valid;
         }
-        var startPort = _ports.TryGetValue(EndpointKey(_wireStart.Value.NodeId, _wireStart.Value.PortId), out var startWirePort) ? startWirePort : null;
-        var start = startPort?.GetAnchorPoint(GraphCanvas) ?? _pointerStart;
-        _draftWire.Data = WireGeometry(start, point);
+        if (_incidentWireReconnect)
+        {
+            for (var index = 0; index < _wireOriginals.Count && index < _draftWires.Count; index++)
+            {
+                var original = _wireOriginals[index];
+                var fixedEndpoint = _wireStart.Value.IsInput
+                    ? new GraphEditorEndpoint(original.FromNodeId, original.FromPortId, GraphPortDirection.Output, original.InterfaceKind)
+                    : new GraphEditorEndpoint(original.ToNodeId, original.ToPortId, GraphPortDirection.Input, original.InterfaceKind);
+                var fixedPoint = _ports.TryGetValue(EndpointKey(fixedEndpoint.NodeId, fixedEndpoint.PortId), out var fixedPort)
+                    ? fixedPort.GetAnchorPoint(GraphCanvas)
+                    : _pointerStart;
+                _draftWires[index].Data = WireGeometry(fixedPoint, point);
+            }
+        }
+        else
+        {
+            var startPort = _ports.TryGetValue(EndpointKey(_wireStart.Value.NodeId, _wireStart.Value.PortId), out var startWirePort) ? startWirePort : null;
+            var start = startPort?.GetAnchorPoint(GraphCanvas) ?? _pointerStart;
+            _draftWires[0].Data = WireGeometry(start, point);
+        }
     }
 
     private bool CompleteWire(FlowPortControl? target)
@@ -596,12 +866,18 @@ public partial class CanonicalGraphEditorView : UserControl
             {
                 var fixedPort = _ports.TryGetValue(EndpointKey(start.NodeId, start.PortId), out var port) ? port : null;
                 if (TryEndpoint(target, out var endpoint) &&
-                    (_wireOriginal is null || fixedPort is not null && fixedPort.IsCompatibleEndpoint(target)))
-                    result = _host.CompleteWireDrag(start, endpoint, _wireOriginal);
+                    (_incidentWireReconnect
+                        ? fixedPort is not null && fixedPort.IsInput == target.IsInput && fixedPort.InterfaceKind == target.InterfaceKind
+                        : _wireOriginal is null || fixedPort is not null && fixedPort.IsCompatibleEndpoint(target)))
+                    result = _incidentWireReconnect
+                        ? _host.CompleteIncidentWireDrag(_wireOriginals, start, endpoint)
+                        : _host.CompleteWireDrag(start, endpoint, _wireOriginal);
             }
             else
             {
-                result = _host.CompleteWireDrag(start, null, _wireOriginal);
+                result = _incidentWireReconnect
+                    ? _host.CompleteIncidentWireDrag(_wireOriginals, start, null)
+                    : _host.CompleteWireDrag(start, null, _wireOriginal);
             }
         }
         CancelPointerGesture();
@@ -612,6 +888,12 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         if (sender is not Path { Tag: GraphEditorConnectionViewModel connection }) return;
         SetSelectedConnection(connection);
+        if (_scissorsMode)
+        {
+            _ = _host?.Disconnect(connection);
+            e.Handled = true;
+            return;
+        }
         var point = e.GetPosition(GraphCanvas);
         if (TryGetConnectionFixedPort(connection, point, out var fixedPort))
             BeginWire(fixedPort, point, connection.Connection);
@@ -644,12 +926,11 @@ public partial class CanonicalGraphEditorView : UserControl
             var selected = _selectedConnection;
             var result = _host is not null && _host.Disconnect(selected);
             if (result) _selectedConnection = null;
-            RebuildGraph();
             return true;
         }
         if (key == Key.Delete && _selectedNode is not null)
         {
-            _ = RemoveSelectedNode();
+            _ = ConfirmAndDeleteNode(_selectedNode);
             return true;
         }
         return false;
@@ -665,7 +946,6 @@ public partial class CanonicalGraphEditorView : UserControl
         if (_host is null || _selectedConnection is null) return false;
         var result = _host.Disconnect(_selectedConnection);
         if (result) _selectedConnection = null;
-        RebuildGraph();
         return result;
     }
 
@@ -678,7 +958,6 @@ public partial class CanonicalGraphEditorView : UserControl
         if (result)
         {
             ClearNodeSelection();
-            RebuildGraph();
         }
         else
         {
@@ -848,8 +1127,11 @@ public partial class CanonicalGraphEditorView : UserControl
             _dragNode = null;
             _wireStart = null;
             _wireOriginal = null;
-            if (_draftWire is not null) GraphCanvas.Children.Remove(_draftWire);
+            foreach (var draft in _draftWires) GraphCanvas.Children.Remove(draft);
+            _draftWires.Clear();
             _draftWire = null;
+            _wireOriginals = [];
+            _incidentWireReconnect = false;
             foreach (var port in _ports.Values) { port.IsConnecting = false; port.IsValidTarget = false; }
             if (releaseCapture && Mouse.Captured == CanvasViewport) Mouse.Capture(null);
         }
@@ -866,6 +1148,7 @@ public partial class CanonicalGraphEditorView : UserControl
         _nodeVisuals.Clear();
         _ports.Clear();
         _connectionHits.Clear();
+        _connectionVisuals.Clear();
         _selectedConnection = null;
         _selectedNode = null;
         _pendingSelectedNodeId = null;

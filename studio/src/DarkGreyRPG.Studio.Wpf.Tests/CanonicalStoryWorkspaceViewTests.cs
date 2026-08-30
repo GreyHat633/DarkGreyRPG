@@ -1,10 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 using DarkGreyRPG.Studio.Views.Graph;
 
@@ -131,6 +133,33 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void ResourceSelectionKeepsVisibleHighlightAndInspectorInSync()
+    {
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument())],
+            items: [new IndividualItemResource { ItemId = "item", DisplayName = "Item" }]);
+        var view = Arrange(workspace);
+        view.Resources["AccentFillColorSecondaryBrush"] = Brushes.LightBlue;
+        view.Resources["AccentFillColorDefaultBrush"] = Brushes.Blue;
+        var item = workspace.ItemItems.Single();
+        var itemButton = Descendants<Button>(view).Single(button => ReferenceEquals(button.Tag, item));
+
+        Assert.IsTrue(view.SelectResourceItem(item));
+        view.UpdateLayout();
+
+        Assert.AreSame(item, workspace.SelectedTreeItem);
+        Assert.AreSame(item, workspace.InspectorSelection);
+        Assert.AreNotEqual(Brushes.Transparent, itemButton.Background);
+        Assert.AreNotEqual(Brushes.Transparent, itemButton.BorderBrush);
+
+        Assert.IsTrue(view.SelectResourceItem(workspace.SessionItems.Single()));
+        view.UpdateLayout();
+        Assert.AreEqual(Brushes.Transparent, itemButton.Background);
+        Assert.AreEqual(Brushes.Transparent, itemButton.BorderBrush);
+    }
+
+    [STATestMethod]
     public void PendingProjectGraphFocusSelectsCanonicalStoryNode()
     {
         using var workspace = Workspace("story-a");
@@ -209,6 +238,39 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void ResourceDragPreviewShowsGhostWithoutMutatingStoryAndCancelsCleanly()
+    {
+        using var workspace = AggregateWorkspace();
+        var view = Arrange(workspace);
+        var before = workspace.StoryEditor.Host.Graph.ToJson();
+        var item = workspace.SessionItems.Single();
+
+        Assert.IsTrue(view.PreviewResourceDrag(item, new Point(300, 240)));
+        Assert.IsTrue(view.IsResourceDragGhostVisible);
+        Assert.AreEqual(item.DisplayName, view.ResourceDragGhostDisplayName);
+        Assert.AreEqual(new Point(184, 202), view.ResourceDragGhostViewportPosition);
+        Assert.AreEqual(before, workspace.StoryEditor.Host.Graph.ToJson());
+
+        view.CancelResourceDragPreview();
+        Assert.IsFalse(view.IsResourceDragGhostVisible);
+        Assert.AreEqual(before, workspace.StoryEditor.Host.Graph.ToJson());
+    }
+
+    [STATestMethod]
+    public void AggregateNodeEditRequestOpensItsSessionGraph()
+    {
+        using var workspace = AggregateWorkspace();
+        var view = Arrange(workspace, () => "session-placement");
+        Assert.IsTrue(view.PlaceResourceAt(workspace.SessionItems.Single(), 120, 180));
+        var aggregate = workspace.StoryEditor.Host.Nodes.Single(node => node.NodeId == "session-placement");
+
+        Assert.IsTrue(view.GraphView.RequestNodeEdit(aggregate));
+
+        Assert.AreSame(workspace.SessionItems.Single().Editor.Host, view.GraphView.Host);
+        Assert.AreSame(workspace.SessionItems.Single(), workspace.SelectedTreeItem);
+    }
+
+    [STATestMethod]
     public void ActorForeignLocalGraphAndInvalidPositionDropsFailWithoutStoryMutation()
     {
         using var workspace = AggregateWorkspace();
@@ -249,6 +311,16 @@ public sealed class CanonicalStoryWorkspaceViewTests
         root.Arrange(new Rect(0, 0, 1280, 720));
         root.UpdateLayout();
         return view;
+    }
+
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is T result) yield return result;
+            foreach (var descendant in Descendants<T>(child)) yield return descendant;
+        }
     }
 
     private static CanonicalStoryWorkspaceViewModel Workspace(string storyId)

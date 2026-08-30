@@ -1,7 +1,8 @@
 <UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.CanonicalGraphEditorView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Focusable="True" AutomationProperties.Name="Canonical Graph 编辑器">
+             Focusable="True" AutomationProperties.Name="Canonical Graph 编辑器"
+             PreviewKeyDown="Root_OnPreviewKeyDown" PreviewKeyUp="Root_OnPreviewKeyUp">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -12,6 +13,8 @@
             <Button Margin="0,0,4,0" Padding="8,4" Click="Zoom100_OnClick" Content="100%" AutomationProperties.Name="图编辑器缩放到百分之百" />
             <Button Margin="0,0,4,0" Padding="8,4" Click="FitAll_OnClick" Content="适应" AutomationProperties.Name="适应全部图节点" />
             <Button Margin="0,0,4,0" Padding="8,4" Click="ResetView_OnClick" Content="重置" AutomationProperties.Name="重置图视图" />
+            <Button x:Name="ScissorsButton" Margin="0,0,4,0" Padding="8,4" Click="Scissors_OnClick"
+                    Content="剪刀" ToolTip="剪断连线&#10;Alt 键" AutomationProperties.Name="剪断连线" />
             <TextBlock Margin="8,6,0,0" Foreground="Gray" Text="拖动节点移动 · 中键平移 · 滚轮缩放" />
         </StackPanel>
         <Border x:Name="CanvasViewport" Grid.Row="2" ClipToBounds="True" Background="#14171B"

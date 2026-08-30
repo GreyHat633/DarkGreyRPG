@@ -37,6 +37,32 @@ public sealed class ProblemsViewModelTests
     }
 
     [TestMethod]
+    public void ValidationPresentationShowsChineseAndStableCodeWithUnknownFallback()
+    {
+        var connection = new ProblemItem(
+            ValidationSeverity.Error,
+            "graph.connection.logic.input.multiple_sources",
+            "Logic input has multiple sources.");
+        StringAssert.Contains(connection.DisplayMessage, "一个逻辑输入只能有一个来源");
+        StringAssert.Contains(connection.DisplayMessage, "[graph.connection.logic.input.multiple_sources]");
+
+        var unknown = new ProblemItem(ValidationSeverity.Error, "plugin.future.error", "Future detail.");
+        StringAssert.Contains(unknown.DisplayMessage, "操作失败");
+        StringAssert.Contains(unknown.DisplayMessage, "plugin.future.error");
+        StringAssert.Contains(unknown.DisplayMessage, "技术详情：Future detail.");
+    }
+
+    [TestMethod]
+    [DataRow("graph.dynamic_port.id.duplicate", "动态端口")]
+    [DataRow("graph.story.start.triggers.required", "启动方式")]
+    [DataRow("graph.objective.target.invalid", "任务目标")]
+    [DataRow("story.resource.missing", "Story 资源")]
+    [DataRow("save.persistence.failed", "保存失败")]
+    [DataRow("project.migration.required", "项目迁移")]
+    public void RequiredValidationFamiliesHaveChineseAuthorMessages(string code, string expected)
+        => StringAssert.Contains(ValidationIssuePresentation.Format(code, "Technical detail."), expected);
+
+    [TestMethod]
     public void ReplaceAndClearUpdateObservableCounts()
     {
         var viewModel = new ProblemsViewModel();

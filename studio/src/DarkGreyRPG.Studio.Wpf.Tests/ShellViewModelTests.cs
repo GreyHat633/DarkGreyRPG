@@ -38,7 +38,11 @@ public sealed class ShellViewModelTests
         Assert.IsEmpty(shell.ProjectHome.Stories);
         shell.CreateStoryCommand.Execute(null);
         shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "school_story"));
-        Assert.IsTrue(shell.CanonicalStoryWorkspace!.RequestCreate(CanonicalStoryFolderKind.Actors));
+        var canonicalWorkspace = shell.CanonicalStoryWorkspace!;
+        var canonicalFolders = canonicalWorkspace.Folders.ToArray();
+        Assert.IsTrue(canonicalWorkspace.RequestCreate(CanonicalStoryFolderKind.Actors));
+        Assert.AreSame(canonicalWorkspace, shell.CanonicalStoryWorkspace);
+        CollectionAssert.AreEqual(canonicalFolders, shell.CanonicalStoryWorkspace!.Folders.ToArray());
         shell.SelectedActor = shell.Actors.Single(actor => actor.Id == "teacher");
         shell.CurrentActor!.Notes = "学校中的任务 NPC";
         shell.CurrentActor.TagsText = "school, quest";
@@ -532,9 +536,16 @@ public sealed class ShellViewModelTests
             "opening",
             "Canonical Opening",
             GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start")));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session", "Session"));
+        store.Tasks.Create(Envelope(GraphResourceKind.Task, "task", "Task"));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
             "opening",
-            new CanonicalStoryMembershipSet { Actors = ["missing_actor"] }));
+            new CanonicalStoryMembershipSet
+            {
+                Actors = ["missing_actor"],
+                Sessions = ["session"],
+                Tasks = ["task"],
+            }));
         var shell = CreateShell(directory.Root);
         shell.OpenProjectCommand.Execute(null);
 
@@ -551,6 +562,11 @@ public sealed class ShellViewModelTests
         Assert.IsTrue(shell.CanonicalStoryWorkspace.StoryEditor.Host.AddNode(
             GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action")));
         Assert.IsTrue(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+        var canonical = shell.CanonicalStoryWorkspace;
+        Assert.IsTrue(canonical.OpenGraphResource(canonical.SessionItems.Single()));
+        Assert.IsTrue(canonical.OpenGraphResource(canonical.TaskItems.Single()));
+        Assert.IsTrue(canonical.ReturnToStory());
+        Assert.IsTrue(canonical.StoryEditor.IsDirty, "Graph navigation must retain the unsaved in-memory editor.");
         Assert.IsTrue(shell.SaveCurrentResourceCommand.CanExecute(null));
 
         shell.ShowProjectHomeCommand.Execute(null);

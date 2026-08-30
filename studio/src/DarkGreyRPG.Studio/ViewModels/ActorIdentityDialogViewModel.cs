@@ -89,13 +89,13 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
     public bool CanConfirm => ValidationText.Length == 0;
 
     public static ActorIdentityDialogViewModel ForCreate(string suggestedId) =>
-        new("新建 Actor", "创建", "创建独立的新角色，并归入当前故事。", suggestedId, "新角色", isDisplayNameVisible: true);
+        new("新建角色", "创建", "创建独立的新角色，并归入当前故事。", suggestedId, "新角色", isDisplayNameVisible: true);
 
     public static ActorIdentityDialogViewModel ForImport(
         string sourceDisplayName,
         string suggestedId) =>
         new(
-            "导入 Actor 副本",
+            "导入角色副本",
             "创建副本",
             $"将以“{sourceDisplayName}”为模板创建新的独立资源。后续修改不会影响原角色。",
             suggestedId,
@@ -103,7 +103,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
             isDisplayNameVisible: true);
 
     public static ActorIdentityDialogViewModel ForRename(string currentId, string suggestedId) =>
-        new("重命名 Actor", "重命名", $"为 Actor '{currentId}' 指定新的资源 ID。", suggestedId, currentId, isDisplayNameVisible: false);
+        new("重命名角色", "重命名", $"为角色“{currentId}”指定新的资源 ID。", suggestedId, currentId, isDisplayNameVisible: false);
 
     private void ApplySuggestion() => Id = NormalizedSuggestion;
 

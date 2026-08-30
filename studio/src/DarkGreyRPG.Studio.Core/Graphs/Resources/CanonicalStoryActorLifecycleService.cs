@@ -28,6 +28,12 @@ public enum CanonicalStoryActorMembershipKind
     Referenced,
 }
 
+public enum CanonicalStoryActorKind
+{
+    Individual,
+    Collective,
+}
+
 /// <summary>One canonical or legacy Story membership that blocks Actor deletion.</summary>
 public sealed record CanonicalStoryActorReference(
     string StoryId,
@@ -100,6 +106,27 @@ public sealed class CanonicalStoryActorLifecycleService
 
     /// <summary>Creates and persists an Actor owned by the canonical Story.</summary>
     public ActorDocument CreateOwned(string storyId, string actorId, string displayName)
+        => CreateOwnedCore(storyId, actorId, displayName, kind: null, tags: null);
+
+    /// <summary>Creates a schema-3 individual NPC or collective Group owned by the Story.</summary>
+    public ActorDocument CreateOwned(
+        string storyId,
+        CanonicalStoryActorKind kind,
+        string actorId,
+        string displayName,
+        IEnumerable<string>? tags = null)
+    {
+        if (!Enum.IsDefined(kind))
+            throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported canonical Story actor kind.");
+        return CreateOwnedCore(storyId, actorId, displayName, kind, tags);
+    }
+
+    private ActorDocument CreateOwnedCore(
+        string storyId,
+        string actorId,
+        string displayName,
+        CanonicalStoryActorKind? kind,
+        IEnumerable<string>? tags)
     {
         lock (_lifecycleGate)
         {
@@ -129,7 +156,13 @@ public sealed class CanonicalStoryActorLifecycleService
             ActorDocument document;
             try
             {
-                document = _actors.CreateActor(actorId, displayName);
+                document = kind switch
+                {
+                    CanonicalStoryActorKind.Individual => _actors.CreateIndividual(actorId, displayName),
+                    CanonicalStoryActorKind.Collective => _actors.CreateCollective(actorId, displayName),
+                    _ => _actors.CreateActor(actorId, displayName),
+                };
+                if (tags is not null) document.SetTags(tags);
                 document.HomeStoryId = storyId;
                 document = _actors.SaveActor(document);
             }

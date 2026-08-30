@@ -2,6 +2,7 @@ using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Editing;
+using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -157,6 +158,19 @@ public sealed class GraphNodeShapeValidatorTests
         var blocked = GraphNodeShapeValidator.Validate(node, GraphScope.Session);
         CollectionAssert.AreEqual(new[] { "graph.node.shape.compatibility.required" }, blocked.Select(issue => issue.Code).ToArray());
         Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, GraphScope.Session, compatibilityMode: true));
+    }
+
+    [TestMethod]
+    public void LegacySessionStartLogicOutputLoadsWithExplicitMigrationWarning()
+    {
+        var start = Node(GraphScope.Session, "start");
+        start.Ports.Add(new GraphPort("logic_out", "旧版逻辑输出", false, GraphInterfaceKind.Logic));
+
+        var issue = GraphNodeShapeValidator.Validate(start, GraphScope.Session)
+            .Single(candidate => candidate.Code == "graph.session.start.logic_output.legacy");
+
+        Assert.AreEqual(ValidationSeverity.Warning, issue.Severity);
+        StringAssert.Contains(issue.Message, "旧版");
     }
 
     [TestMethod]

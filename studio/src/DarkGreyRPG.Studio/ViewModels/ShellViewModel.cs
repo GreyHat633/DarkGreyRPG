@@ -254,8 +254,16 @@ public sealed class ShellViewModel : ObservableObject
     public string ProjectDisplayName
     {
         get => _projectDisplayName;
-        private set => SetProperty(ref _projectDisplayName, value);
+        private set
+        {
+            if (SetProperty(ref _projectDisplayName, value))
+                OnPropertyChanged(nameof(WindowTitle));
+        }
     }
+
+    public string WindowTitle => _projectService.CurrentProject is { } project
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.1"
+        : "DarkGrey RPG Studio 0.3.1.1";
 
     public string ProjectDirectory
     {
@@ -918,10 +926,7 @@ public sealed class ShellViewModel : ObservableObject
             if (!storyExists && !membershipExists) return CanonicalOpenResult.NotPresent;
 
             var snapshot = new CanonicalStoryWorkspaceLoader(store).Load(storyId);
-            var workspace = new CanonicalStoryWorkspaceViewModel(snapshot)
-            {
-                CanLeaveGraph = CanLeaveCanonicalGraph,
-            };
+            var workspace = new CanonicalStoryWorkspaceViewModel(snapshot);
             ConfigureCanonicalResourceActions(workspace);
             ClearAllEditorSelections();
             StoryWorkspace.CloseStory();
@@ -978,11 +983,35 @@ public sealed class ShellViewModel : ObservableObject
             || !CanMutateCanonicalStoryResources(workspace)) return;
         try
         {
-            var request = _actorWorkspaceDialogs.RequestCreate(project.Actors.GetAvailableId("new_actor"));
+            if (!_actorWorkspaceDialogs.SupportsCanonicalActorKinds)
+            {
+                var suggestedLegacyId = project.Actors.GetAvailableId("new_actor");
+                var legacyRequest = _actorWorkspaceDialogs.RequestCreate(suggestedLegacyId);
+                if (legacyRequest is null) return;
+                var legacyCreated = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
+                    .CreateOwned(workspace.StoryEditor.Id, legacyRequest.Id, legacyRequest.DisplayName);
+                LoadActorList();
+                ReloadCanonicalStoryWorkspace(
+                    workspace.StoryEditor.Id,
+                    CanonicalStoryFolderKind.Actors,
+                    legacyCreated.Id);
+                ReportSuccess(
+                    $"Canonical 角色 '{legacyCreated.Id}' 已创建。",
+                    $"canonical/actor/{legacyCreated.Id}");
+                return;
+            }
+
+            var kind = _actorWorkspaceDialogs.RequestCanonicalCreationKind(workspace.StoryEditor.DisplayName);
+            if (kind is null) return;
+            var suggestedId = project.Actors.GetAvailableId(
+                kind == CanonicalStoryActorKind.Individual ? "new_npc" : "new_group");
+            var request = _actorWorkspaceDialogs.RequestCreateCanonical(kind.Value, suggestedId);
             if (request is null) return;
+            if (request.Kind != kind.Value)
+                throw new InvalidOperationException("Actor creation dialog returned a different identity kind.");
 
             var created = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
-                .CreateOwned(workspace.StoryEditor.Id, request.Id, request.DisplayName);
+                .CreateOwned(workspace.StoryEditor.Id, request.Kind, request.Id, request.DisplayName, request.Tags);
             LoadActorList();
             ReloadCanonicalStoryWorkspace(
                 workspace.StoryEditor.Id,
@@ -1401,27 +1430,12 @@ public sealed class ShellViewModel : ObservableObject
     {
         var store = _canonicalGraphStore ?? throw new InvalidOperationException("Canonical graph store is unavailable.");
         var snapshot = new CanonicalStoryWorkspaceLoader(store).Load(storyId);
-        var replacement = new CanonicalStoryWorkspaceViewModel(snapshot)
-        {
-            CanLeaveGraph = CanLeaveCanonicalGraph,
-        };
-        ConfigureCanonicalResourceActions(replacement);
-        SetCanonicalStoryWorkspace(replacement);
-        if (selectedResourceId is null)
-        {
-            replacement.SelectFolder(selectedFolderKind);
-        }
-        else
-        {
-            var selected = replacement.Folders
-                .Single(folder => folder.Kind == selectedFolderKind)
-                .Items.FirstOrDefault(item => string.Equals(item.Id, selectedResourceId, StringComparison.Ordinal));
-            if (selected is not null) replacement.SelectTreeItem(selected);
-            else replacement.SelectFolder(selectedFolderKind);
-        }
+        var workspace = CanonicalStoryWorkspace
+            ?? throw new InvalidOperationException("Canonical Story workspace is unavailable.");
+        workspace.ApplyResourceSnapshot(snapshot, selectedFolderKind, selectedResourceId);
         ReplaceValidationSource(
             $"canonical/story/{storyId}",
-            replacement.ValidationIssues.Concat(replacement.ActiveEditor.ValidationIssues));
+            workspace.ValidationIssues.Concat(workspace.ActiveEditor.ValidationIssues));
     }
 
     private static bool TryDescribeCanonicalResource(

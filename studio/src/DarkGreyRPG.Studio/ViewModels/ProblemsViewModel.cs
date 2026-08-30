@@ -11,6 +11,8 @@ public sealed record ProblemItem(
     string? Field = null,
     string? Source = null)
 {
+    public string DisplayMessage => ValidationIssuePresentation.Format(Code, Message);
+
     public bool IsError => Severity == ValidationSeverity.Error;
 
     public bool IsWarning => Severity == ValidationSeverity.Warning;

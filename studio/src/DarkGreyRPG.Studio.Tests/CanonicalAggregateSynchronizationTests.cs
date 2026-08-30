@@ -141,7 +141,7 @@ public sealed class CanonicalAggregateSynchronizationTests
     private static GraphNode Aggregate(string id, string displayName)
     {
         var node = new GraphNode(id, "session", displayName, [
-            new("flow_in", "Flow In", true, GraphInterfaceKind.Flow, 0),
+            new("flow_in", "流程输入", true, GraphInterfaceKind.Flow, 0),
             new("accepted", displayName, false, GraphInterfaceKind.Flow, 0)]);
         node.Properties["resource_id"] = JsonSerializer.SerializeToElement("session-1");
         return node;

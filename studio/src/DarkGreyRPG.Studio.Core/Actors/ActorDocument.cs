@@ -140,6 +140,7 @@ public sealed class ActorDocument : INotifyPropertyChanged
                 {
                     NpcId = Id,
                     DisplayName = DisplayName,
+                    Notes = Notes,
                     Tags = [.. Tags],
                     HomeStoryId = HomeStoryId,
                 }
@@ -147,6 +148,7 @@ public sealed class ActorDocument : INotifyPropertyChanged
                 {
                     GroupId = Id,
                     DisplayName = DisplayName,
+                    Notes = Notes,
                     Tags = [.. Tags],
                     HomeStoryId = HomeStoryId,
                 };

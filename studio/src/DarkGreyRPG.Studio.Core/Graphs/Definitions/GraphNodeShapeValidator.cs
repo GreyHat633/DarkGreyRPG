@@ -125,6 +125,24 @@ public static class GraphNodeShapeValidator
             if (fixedIds.Contains(port.Id))
                 continue;
 
+            // 0.3.1.0 Session start nodes exposed a legacy Logic output. New
+            // authoring no longer creates it, but old projects stay readable
+            // until an explicit migration can resolve their connected intent.
+            if (scope == GraphScope.Session
+                && string.Equals(node.Type, "start", StringComparison.Ordinal)
+                && string.Equals(port.Id, "logic_out", StringComparison.Ordinal)
+                && !port.IsInput
+                && port.InterfaceKind == GraphInterfaceKind.Logic)
+            {
+                issues.Add(new(
+                    "graph.session.start.logic_output.legacy",
+                    "旧版【起始】逻辑输出仍被保留；请改用明确的【逻辑输入】节点完成迁移。",
+                    PortField(port.Id),
+                    ValidationSeverity.Warning,
+                    NullIfBlank(node.Id)));
+                continue;
+            }
+
             if (!GraphDynamicPortPolicy.TryGetRole(scope, node.Type,
                     port.Direction, port.InterfaceKind, out var role))
             {

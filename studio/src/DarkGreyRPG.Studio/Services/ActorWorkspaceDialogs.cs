@@ -1,5 +1,6 @@
 using System.Windows;
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.ViewModels;
 using DarkGreyRPG.Studio.Views;
@@ -8,6 +9,24 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorWorkspaceDialogs
 {
+    public bool SupportsCanonicalActorKinds => true;
+
+    public CanonicalStoryActorKind? RequestCanonicalCreationKind(string storyDisplayName)
+    {
+        var viewModel = new CanonicalActorCreationChoiceViewModel(storyDisplayName);
+        var dialog = new CanonicalActorCreationChoiceDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true ? viewModel.SelectedKind : null;
+    }
+
+    public CanonicalActorIdentityRequest? RequestCreateCanonical(CanonicalStoryActorKind kind, string suggestedId)
+    {
+        var viewModel = new CanonicalActorIdentityDialogViewModel(kind, suggestedId);
+        var dialog = new CanonicalActorIdentityDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true
+            ? new CanonicalActorIdentityRequest(kind, viewModel.Id, viewModel.DisplayName.Trim(), viewModel.Tags)
+            : null;
+    }
+
     public ActorCreationMode? RequestCreationMode(string storyDisplayName)
     {
         var viewModel = new ActorCreationChoiceViewModel(storyDisplayName);
@@ -57,8 +76,8 @@ public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorW
         ArgumentNullException.ThrowIfNull(actor);
         return MessageBox.Show(
             ownerProvider(),
-            $"确定要删除 Actor '{actor.DisplayName}' ({actor.Id}) 吗？\n该操作会删除 actors/{actor.Id}.json。",
-            "删除 Actor",
+            $"确定要删除角色“{actor.DisplayName}”（{actor.Id}）吗？\n该操作会删除 actors/{actor.Id}.json。",
+            "删除角色",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;
@@ -69,7 +88,7 @@ public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorW
         ArgumentNullException.ThrowIfNull(actor);
         return MessageBox.Show(
             ownerProvider(),
-            $"从“{storyDisplayName}”解除对 Actor '{actor.DisplayName}' ({actor.Id}) 的引用吗？\n角色文件及其 Home Story 不会被删除。",
+            $"从“{storyDisplayName}”解除对角色“{actor.DisplayName}”（{actor.Id}）的引用吗？\n角色文件及其归属故事不会被删除。",
             "解除角色引用",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question,
@@ -88,7 +107,7 @@ public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorW
     public bool ConfirmSaveBeforeSwitch(ActorResourceInfo actor) =>
         MessageBox.Show(
             ownerProvider(),
-            $"Actor '{actor.DisplayName}' ({actor.Id}) 有未保存的更改。\n保存后再切换资源吗？",
+            $"角色“{actor.DisplayName}”（{actor.Id}）有未保存的更改。\n保存后再切换资源吗？",
             "未保存的更改",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
@@ -97,7 +116,7 @@ public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorW
     public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ActorResourceInfo actor) =>
         MessageBox.Show(
             ownerProvider(),
-            $"Actor '{actor.DisplayName}' ({actor.Id}) 有未保存的更改。\n选择“是”保存并退出，“否”放弃更改，“取消”返回编辑。",
+            $"角色“{actor.DisplayName}”（{actor.Id}）有未保存的更改。\n选择“是”保存并退出，“否”放弃更改，“取消”返回编辑。",
             "未保存的更改",
             MessageBoxButton.YesNoCancel,
             MessageBoxImage.Warning,
