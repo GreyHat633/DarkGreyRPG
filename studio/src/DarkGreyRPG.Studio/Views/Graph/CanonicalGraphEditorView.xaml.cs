@@ -808,7 +808,11 @@ public partial class CanonicalGraphEditorView : UserControl
         }
         else
         {
-            var style = GraphConnectionVisualStyle.For(endpoint.InterfaceKind, selected: true);
+            // A new uncommitted connection must use the same normal renderer
+            // language as a persisted wire. In particular, FlowSelectedColor
+            // is white and recreates the generic preview-line defect from
+            // 0.3.1.1 when used for a brand-new drag.
+            var style = GraphConnectionVisualStyle.For(endpoint.InterfaceKind);
             var wire = new Path
             {
                 Stroke = new SolidColorBrush(style.StrokeColor),

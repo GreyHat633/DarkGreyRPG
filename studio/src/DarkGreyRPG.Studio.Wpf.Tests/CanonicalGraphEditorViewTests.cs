@@ -330,6 +330,9 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.KeyboardCommandTarget.Focusable);
         _ = view.KeyboardCommandTarget.Focus();
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreEqual(GraphConnectionVisualStyle.FlowNormalColor,
+            ((SolidColorBrush)view.ActiveWireVisuals.Single().Stroke).Color);
+        Assert.AreEqual(3d, view.ActiveWireVisuals.Single().StrokeThickness);
         Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
         Assert.AreEqual(before, graph.ToJson());
     }
