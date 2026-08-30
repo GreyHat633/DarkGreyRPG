@@ -28,6 +28,7 @@ public sealed class CanonicalProjectGraphStore
         Sessions = new GraphResourceRepository(SessionsDirectory, GraphResourceKind.Session, writer);
         Tasks = new GraphResourceRepository(TasksDirectory, GraphResourceKind.Task, writer);
         Memberships = new CanonicalStoryMembershipRepository(MembershipsDirectory, writer);
+        StoryLogicGraph = new CanonicalStoryLogicGraphRepository(CanonicalDirectory, Stories, writer);
     }
 
     public string ProjectDirectory { get; }
@@ -40,6 +41,7 @@ public sealed class CanonicalProjectGraphStore
     public GraphResourceRepository Sessions { get; }
     public GraphResourceRepository Tasks { get; }
     public CanonicalStoryMembershipRepository Memberships { get; }
+    public CanonicalStoryLogicGraphRepository StoryLogicGraph { get; }
 
     public bool IsInitialized => Directories.All(Directory.Exists);
 

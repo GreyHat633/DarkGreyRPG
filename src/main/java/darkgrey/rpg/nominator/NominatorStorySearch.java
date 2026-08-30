@@ -63,6 +63,7 @@ public final class NominatorStorySearch {
                         actor.getId(),
                         actor.getDisplayName(),
                         actor.getType(),
+                        actor.getHomeStoryId(),
                         actor.getNotes(),
                         actor.getTags()));
             }
@@ -86,11 +87,36 @@ public final class NominatorStorySearch {
                         actor.getId(),
                         actor.getDisplayName(),
                         actor.getType(),
+                        actor.getStoryId(),
                         actor.getNotes(),
                         actor.getTags()));
         }
         Collections.sort(result, ActorChoice.ORDER);
         return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Resolves one actor from the server-provided catalog. This intentionally
+     * does not perform partial, case-insensitive, or display-name matching:
+     * entity binding must be based on the exact Actor ID authored in Studio.
+     */
+    public static ActorChoice exactActor(NominatorCatalog catalog, String actorId) {
+        if (catalog == null) throw new IllegalArgumentException("Nominator catalog is required.");
+        if (actorId == null) return null;
+        String id = actorId.trim();
+        if (id.isEmpty()) return null;
+        for (NominatorCatalog.Actor actor : catalog.getActors()) {
+            if (id.equals(actor.getId())) {
+                return new ActorChoice(
+                    actor.getId(),
+                    actor.getDisplayName(),
+                    actor.getType(),
+                    actor.getStoryId(),
+                    actor.getNotes(),
+                    actor.getTags());
+            }
+        }
+        return null;
     }
 
     public static List<ItemChoice> items(ProjectSnapshot snapshot, String query, boolean groups) {
@@ -193,17 +219,24 @@ public final class NominatorStorySearch {
         private final String id;
         private final String displayName;
         private final String type;
+        private final String storyId;
         private final String notes;
         private final List<String> tags;
 
         public ActorChoice(String id, String displayName, String type) {
-            this(id, displayName, type, "", Collections.<String>emptyList());
+            this(id, displayName, type, null, "", Collections.<String>emptyList());
         }
 
         public ActorChoice(String id, String displayName, String type, String notes, List<String> tags) {
+            this(id, displayName, type, null, notes, tags);
+        }
+
+        public ActorChoice(String id, String displayName, String type, String storyId, String notes,
+            List<String> tags) {
             this.id = id;
             this.displayName = displayName;
             this.type = type;
+            this.storyId = storyId;
             this.notes = notes;
             this.tags = Collections.unmodifiableList(new ArrayList<String>(tags));
         }
@@ -218,6 +251,10 @@ public final class NominatorStorySearch {
 
         public String getType() {
             return type;
+        }
+
+        public String getStoryId() {
+            return storyId;
         }
 
         public String getNotes() {

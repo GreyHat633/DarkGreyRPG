@@ -1,7 +1,9 @@
 package darkgrey.rpg.story.canonical.forge;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -9,10 +11,16 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
+import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRuntime;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryTriggerIndex;
 import darkgrey.rpg.story.canonical.server.CanonicalStoryDispatch;
 import darkgrey.rpg.story.canonical.server.CanonicalStoryDispatchKind;
@@ -223,7 +231,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
     private boolean route(EntityPlayerMP player, Context context, CanonicalStoryDispatch first) {
         final EntityPlayerMP routePlayer = player;
-        return routeTrusted(requirePlayerUuid(player), context.service, context.data, first, new AggregateGateway() {
+        AggregateGateway gateway = new AggregateGateway() {
 
             @Override
             public boolean startSession(String storyId, String placementId, boolean activationLogic) {
@@ -244,7 +252,102 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             public void cleanup(String storyId) {
                 CanonicalStoryForgeManager.this.cleanup(routePlayer, storyId);
             }
-        });
+        };
+        UUID playerUuid = requirePlayerUuid(player);
+        boolean routed = first != null && routeTrusted(playerUuid, context.service, context.data, first, gateway);
+        return propagateStoryLogicTrusted(playerUuid, context.project, context.service, context.data, gateway)
+            || routed;
+    }
+
+    /** Applies one externally-owned public Logic input and routes all authored continuations. */
+    public boolean setLogicInput(EntityPlayerMP player, String storyId, String portId, boolean value) {
+        try {
+            Context context = context(player);
+            return route(
+                player,
+                context,
+                context.service.setLogicInput(requirePlayerUuid(player), storyId, portId, value, now()));
+        } catch (RuntimeException exception) {
+            return failAndCleanup(player, storyId, "Logic input", exception);
+        }
+    }
+
+    /** Detached canonical Story state for command/status surfaces. */
+    public CanonicalStoryInstanceSnapshot snapshot(EntityPlayerMP player, String storyId) {
+        Context context = context(player);
+        return context.data.getStorySnapshot(requirePlayerUuid(player), storyId);
+    }
+
+    /**
+     * Reaches a fixed point across the authored project-level public Logic graph for one player only.
+     * This is a production coordinator seam; persistence remains owned by CanonicalSessionSavedData.
+     */
+    static boolean propagateStoryLogicTrusted(UUID playerUuid, ProjectSnapshot project,
+        CanonicalStoryServerService service, CanonicalSessionSavedData data, AggregateGateway gateway) {
+        if (playerUuid == null || project == null || service == null || data == null || gateway == null)
+            throw new IllegalArgumentException("Trusted Story Logic propagation inputs are required.");
+        Map<String, List<CanonicalStoryLogicConnection>> targets = new LinkedHashMap<String, List<CanonicalStoryLogicConnection>>();
+        for (CanonicalStoryLogicConnection connection : project.getCanonicalStoryLogicConnections()) {
+            List<CanonicalStoryLogicConnection> incoming = targets.get(connection.getTargetStoryId());
+            if (incoming == null) {
+                incoming = new java.util.ArrayList<CanonicalStoryLogicConnection>();
+                targets.put(connection.getTargetStoryId(), incoming);
+            }
+            incoming.add(connection);
+        }
+        boolean routed = false;
+        for (int step = 0; step < MAX_EXTERNAL_CHAIN; step++) {
+            boolean changed = false;
+            for (Map.Entry<String, List<CanonicalStoryLogicConnection>> target : targets.entrySet()) {
+                Map<String, Boolean> values = new LinkedHashMap<String, Boolean>();
+                for (CanonicalStoryLogicConnection connection : target.getValue()) {
+                    CanonicalStoryInstanceSnapshot source = data
+                        .getStorySnapshot(playerUuid, connection.getSourceStoryId());
+                    Boolean output = source == null ? null
+                        : CanonicalStoryRuntime
+                            .restore(
+                                project.getCanonicalStory(connection.getSourceStoryId()),
+                                source.getRuntimeSnapshot())
+                            .getPublicLogicOutputs()
+                            .get(connection.getSourcePortId());
+                    values.put(connection.getTargetPortId(), Boolean.valueOf(output != null && output.booleanValue()));
+                }
+
+                CanonicalStoryInstanceSnapshot before = data.getStorySnapshot(playerUuid, target.getKey());
+                if (before == null) {
+                    CanonicalStoryDispatch started = service.startByLogic(playerUuid, target.getKey(), values, now());
+                    if (started != null) {
+                        routeTrusted(playerUuid, service, data, started, gateway);
+                        changed = true;
+                        routed = true;
+                    }
+                    continue;
+                }
+                CanonicalStorySnapshot runtime = before.getRuntimeSnapshot();
+                if (!logicChanged(runtime.getExternalLogicInputs(), values)) continue;
+
+                CanonicalStoryDispatch updated = service.setLogicInputs(playerUuid, target.getKey(), values, now());
+                routeTrusted(playerUuid, service, data, updated, gateway);
+                changed = true;
+                routed = true;
+                if (runtime.getStatus() != CanonicalStoryStatus.ACTIVE
+                    && runtime.getRepeatPolicy() == CanonicalStoryRepeatPolicy.REPEATABLE) {
+                    CanonicalStoryDispatch restarted = service.startByLogic(playerUuid, target.getKey(), values, now());
+                    if (restarted != null) routeTrusted(playerUuid, service, data, restarted, gateway);
+                }
+            }
+            if (!changed) return routed;
+        }
+        throw new IllegalStateException("Cross-Story public Logic propagation exceeded its safety bound.");
+    }
+
+    private static boolean logicChanged(Map<String, Boolean> current, Map<String, Boolean> next) {
+        for (Map.Entry<String, Boolean> entry : next.entrySet()) {
+            Boolean value = current.get(entry.getKey());
+            if ((value == null ? false : value.booleanValue()) != entry.getValue()
+                .booleanValue()) return true;
+        }
+        return false;
     }
 
     static boolean routeTrusted(UUID playerUuid, CanonicalStoryServerService service, CanonicalSessionSavedData data,
@@ -288,7 +391,8 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                 }
                 if (kind == CanonicalStoryDispatchKind.ACTOR_INTERACT
                     || kind == CanonicalStoryDispatchKind.INTERACT_ACTOR
-                    || kind == CanonicalStoryDispatchKind.ENTER_REGION) {
+                    || kind == CanonicalStoryDispatchKind.ENTER_REGION
+                    || kind == CanonicalStoryDispatchKind.CONDITION) {
                     // A Start trigger may encounter an already-active cursor waiting for a later event.
                     // It is an idempotent no-op; only the event-first branch above advances it.
                     return true;
@@ -420,10 +524,12 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
     private static final class Context {
 
+        private final ProjectSnapshot project;
         private final CanonicalSessionSavedData data;
         private final CanonicalStoryServerService service;
 
         Context(ProjectSnapshot project, CanonicalSessionSavedData data, CanonicalStoryServerService service) {
+            this.project = project;
             this.data = data;
             this.service = service;
         }

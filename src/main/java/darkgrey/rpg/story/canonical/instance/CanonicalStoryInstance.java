@@ -1,5 +1,6 @@
 package darkgrey.rpg.story.canonical.instance;
 
+import java.util.Map;
 import java.util.UUID;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
@@ -33,8 +34,19 @@ public final class CanonicalStoryInstance {
 
     public static CanonicalStoryInstance start(UUID playerUuid, CanonicalGraphResource resource, String triggerPortId,
         CanonicalStoryRepeatPolicy repeatPolicy, long activationTime) {
+        return start(
+            playerUuid,
+            resource,
+            triggerPortId,
+            repeatPolicy,
+            java.util.Collections.<String, Boolean>emptyMap(),
+            activationTime);
+    }
+
+    public static CanonicalStoryInstance start(UUID playerUuid, CanonicalGraphResource resource, String triggerPortId,
+        CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs, long activationTime) {
         if (resource == null) throw new IllegalArgumentException("Canonical Story resource is required.");
-        CanonicalStoryRuntime runtime = CanonicalStoryRuntime.start(resource, triggerPortId, repeatPolicy);
+        CanonicalStoryRuntime runtime = CanonicalStoryRuntime.start(resource, triggerPortId, repeatPolicy, logicInputs);
         return new CanonicalStoryInstance(
             playerUuid,
             resource.getId(),
@@ -82,6 +94,20 @@ public final class CanonicalStoryInstance {
         runtime.resumeRegion(dimension, x, y, z);
         captureTerminalTime(eventTime);
         return true;
+    }
+
+    /** Applies one durable public Logic input and advances a waiting Condition when its selected outlet changes. */
+    public boolean setLogicInput(String portId, boolean value, long eventTime) {
+        boolean resumed = runtime.setLogicInput(portId, value);
+        captureTerminalTime(eventTime);
+        return resumed;
+    }
+
+    /** Applies one durable, coherent public Logic input snapshot. */
+    public boolean setLogicInputs(Map<String, Boolean> values, long eventTime) {
+        boolean resumed = runtime.setLogicInputs(values);
+        captureTerminalTime(eventTime);
+        return resumed;
     }
 
     public boolean markError(long eventTime) {

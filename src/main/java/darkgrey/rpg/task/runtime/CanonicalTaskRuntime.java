@@ -413,7 +413,9 @@ public final class CanonicalTaskRuntime {
             requiredString(node, "port_id", "task.logic_output");
             requiredString(node, "display_name", "task.logic_output");
         } else if (LOGIC_INPUT.equals(type)) {
-            requireProperties(node, "port_id", "display_name");
+            if (node.getProperties()
+                .containsKey("source")) requireProperties(node, "port_id", "display_name", "source");
+            else requireProperties(node, "port_id", "display_name");
             requirePorts(node, 0, 1, "logic_out");
             requireDirection(node, "logic_out", false);
             requiredString(node, "port_id", "task.logic_input");

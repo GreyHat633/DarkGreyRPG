@@ -1,4 +1,6 @@
 using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Stories;
@@ -226,6 +228,29 @@ public sealed class M7ProjectGraphViewModelTests
         Assert.IsTrue(graph.Nodes.Single().HasWarning);
     }
 
+    [TestMethod]
+    public void PublicLogicEditorAddsReloadsAndRemovesStableCrossStoryConnection()
+    {
+        using var directory = new GraphDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(CanonicalStory("source", "logic_output", "out", "rescued"));
+        store.Stories.Create(CanonicalStory("target", "logic_input", "in", "kingdom_gate"));
+        var graph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+
+        graph.SelectedLogicSource = graph.LogicSources.Single();
+        graph.SelectedLogicTarget = graph.LogicTargets.Single();
+        graph.AddLogicConnectionCommand.Execute(null);
+
+        Assert.HasCount(1, graph.LogicConnections);
+        Assert.AreEqual("rescued", store.StoryLogicGraph.Load().Connections.Single().SourcePortId);
+        var restored = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        Assert.HasCount(1, restored.LogicConnections);
+
+        restored.LogicConnections.Single().RemoveCommand.Execute(null);
+        Assert.IsEmpty(restored.LogicConnections);
+        Assert.IsEmpty(store.StoryLogicGraph.Load().Connections);
+    }
+
     private static StoryResource Story(string id, string displayName, params StoryNodeResource[] nodes) => new()
     {
         Id = id, DisplayName = displayName, Title = displayName,
@@ -238,6 +263,14 @@ public sealed class M7ProjectGraphViewModelTests
         Id = id, Type = "enter_story",
         Properties = new Dictionary<string, JsonElement> { ["target_story_id"] = JsonSerializer.SerializeToElement(target) },
     };
+
+    private static GraphResourceEnvelope CanonicalStory(string storyId, string type, string nodeId, string portId)
+    {
+        var node = GraphNodeFactory.Create(GraphScope.StoryFlow, type, nodeId);
+        node.Properties["port_id"] = JsonSerializer.SerializeToElement(portId);
+        node.Properties["display_name"] = JsonSerializer.SerializeToElement(portId);
+        return new(GraphResourceKind.Story, storyId, storyId, new GraphDocument([node]));
+    }
 
     private sealed class GraphDirectory : IDisposable
     {

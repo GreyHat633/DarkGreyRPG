@@ -15,6 +15,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import darkgrey.rpg.identity.EntityDgrIdentityResolver;
+import darkgrey.rpg.item.identity.ItemIdentityRegistry;
+import darkgrey.rpg.item.identity.ItemIdentitySavedData;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 
 /** Forge-to-canonical value normalization. This class has no dispatch side effects. */
@@ -60,8 +62,36 @@ public final class CanonicalTaskForgeEventNormalizer {
         return id == null ? null : CanonicalTaskEvent.killEntity(id);
     }
 
+    /** Normalizes one Forge death into the registry target followed by DGR identities. */
+    public static List<CanonicalTaskEvent> killEvents(Entity entity) {
+        if (entity == null) return Collections.emptyList();
+        return killEventsForIds(normalizeEntityId(entity), EntityDgrIdentityResolver.resolveActorIds(entity));
+    }
+
+    /** Testable multi-target seam; duplicate and blank targets are ignored. */
+    public static List<CanonicalTaskEvent> killEventsForIds(String entityId, List<String> actorIds) {
+        LinkedHashSet<String> targets = new LinkedHashSet<String>();
+        addKillTarget(targets, entityId, true);
+        if (actorIds != null) for (String actorId : actorIds) addKillTarget(targets, actorId, false);
+        if (targets.isEmpty()) return Collections.emptyList();
+        List<CanonicalTaskEvent> events = new ArrayList<CanonicalTaskEvent>();
+        for (String target : targets) events.add(CanonicalTaskEvent.killEntity(target));
+        return Collections.unmodifiableList(events);
+    }
+
+    public static List<CanonicalTaskEvent> killAll(Entity entity) {
+        return killEvents(entity);
+    }
+
     public static CanonicalTaskEvent killEvent(Entity entity) {
         return kill(entity);
+    }
+
+    private static void addKillTarget(LinkedHashSet<String> targets, String raw, boolean entityId) {
+        if (raw == null || raw.trim()
+            .isEmpty()) return;
+        String value = entityId ? normalizeEntityId(raw) : raw.trim();
+        if (value != null && !value.isEmpty()) targets.add(value);
     }
 
     public static String normalizeEntityId(Entity entity) {
@@ -111,6 +141,51 @@ public final class CanonicalTaskForgeEventNormalizer {
         return collect(stack);
     }
 
+    /**
+     * Normalizes one pickup into the Forge registry target followed by every
+     * matching server-owned DGR Item ID and Group.
+     */
+    public static List<CanonicalTaskEvent> collectEvents(ItemStack stack) {
+        if (!isCollectable(stack)) return Collections.emptyList();
+        return collectEvents(stack, ItemIdentitySavedData.get());
+    }
+
+    /** Testable pickup seam using the server-owned identity data instance. */
+    public static List<CanonicalTaskEvent> collectEvents(ItemStack stack, ItemIdentitySavedData identities) {
+        if (!isCollectable(stack) || identities == null) return Collections.emptyList();
+        return collectEventsForIds(
+            registryName(stack),
+            stack.getItemDamage(),
+            stack.stackSize,
+            identities.matchingItemIds(stack),
+            identities.matchingGroupIds(stack));
+    }
+
+    /** Testable pickup seam using a registry snapshot without a live server. */
+    public static List<CanonicalTaskEvent> collectEventsFromRegistry(ItemStack stack, ItemIdentityRegistry identities) {
+        if (!isCollectable(stack) || identities == null) return Collections.emptyList();
+        return collectEventsForIds(
+            registryName(stack),
+            stack.getItemDamage(),
+            stack.stackSize,
+            identities.matchingItemIds(stack),
+            identities.matchingGroupIds(stack));
+    }
+
+    /** Testable multi-target seam; duplicate and blank DGR targets are ignored. */
+    public static List<CanonicalTaskEvent> collectEventsForIds(String registryName, int itemDamage, int amount,
+        List<String> itemIds, List<String> groupIds) {
+        CanonicalTaskEvent registryEvent = collect(registryName, itemDamage, amount);
+        if (registryEvent == null) return Collections.emptyList();
+        LinkedHashSet<String> targets = new LinkedHashSet<String>();
+        if (itemIds != null) for (String itemId : itemIds) addCollectTarget(targets, itemId);
+        if (groupIds != null) for (String groupId : groupIds) addCollectTarget(targets, groupId);
+        List<CanonicalTaskEvent> events = new ArrayList<CanonicalTaskEvent>();
+        events.add(registryEvent);
+        for (String target : targets) events.add(collectDgrTarget(target, itemDamage, amount));
+        return Collections.unmodifiableList(events);
+    }
+
     /** Testable collect seam matching the ItemStack mapping contract. */
     public static CanonicalTaskEvent collect(String registryName, int itemDamage, int amount) {
         if (registryName == null || amount <= 0 || itemDamage < 0) return null;
@@ -119,6 +194,26 @@ public final class CanonicalTaskForgeEventNormalizer {
         if (item.isEmpty() || item.indexOf(':') <= 0 || item.indexOf(':') == item.length() - 1) return null;
         return CanonicalTaskEvent
             .collectItem(item, java.util.Collections.singletonMap("damage", String.valueOf(itemDamage)), amount);
+    }
+
+    private static CanonicalTaskEvent collectDgrTarget(String target, int itemDamage, int amount) {
+        return CanonicalTaskEvent
+            .collectItem(target, java.util.Collections.singletonMap("damage", String.valueOf(itemDamage)), amount);
+    }
+
+    private static void addCollectTarget(LinkedHashSet<String> targets, String raw) {
+        if (raw == null || raw.trim()
+            .isEmpty()) return;
+        targets.add(raw.trim());
+    }
+
+    private static boolean isCollectable(ItemStack stack) {
+        return stack != null && stack.getItem() != null && stack.stackSize > 0;
+    }
+
+    private static String registryName(ItemStack stack) {
+        Object value = Item.itemRegistry.getNameForObject(stack.getItem());
+        return value == null ? null : String.valueOf(value);
     }
 
     public static CanonicalTaskEvent interact(Entity target) {

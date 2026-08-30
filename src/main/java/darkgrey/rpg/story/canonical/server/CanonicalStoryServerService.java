@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceException;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.session.instance.CanonicalSessionResourceResolver;
@@ -85,6 +86,41 @@ public final class CanonicalStoryServerService {
                     .getPortId(),
                 start.getRepeatPolicy(),
                 activationTime));
+    }
+
+    /** Starts a Story through the first authored Logic trigger whose condition is satisfied by the supplied inputs. */
+    public CanonicalStoryDispatch startByLogic(UUID playerUuid, String storyId, Map<String, Boolean> logicInputs,
+        long activationTime) {
+        CanonicalGraphResource story = story(storyId);
+        CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
+        for (CanonicalStoryStartConfiguration.Trigger trigger : start.getLogicTriggers()) try {
+            return dispatch(
+                data.startStory(
+                    requirePlayer(playerUuid),
+                    story,
+                    trigger.getPortId(),
+                    start.getRepeatPolicy(),
+                    logicInputs,
+                    activationTime));
+        } catch (CanonicalGraphResourceException exception) {
+            if (!"story.start.trigger.condition".equals(exception.getCode())) throw exception;
+        }
+        return null;
+    }
+
+    public CanonicalStoryDispatch setLogicInput(UUID playerUuid, String storyId, String portId, boolean value,
+        long eventTime) {
+        return setLogicInputs(
+            playerUuid,
+            storyId,
+            Collections.singletonMap(requireText(portId, "Story Logic input port ID"), Boolean.valueOf(value)),
+            eventTime);
+    }
+
+    public CanonicalStoryDispatch setLogicInputs(UUID playerUuid, String storyId, Map<String, Boolean> values,
+        long eventTime) {
+        return dispatch(
+            data.setStoryLogicInputs(requirePlayer(playerUuid), requireText(storyId, "Story ID"), values, eventTime));
     }
 
     public CanonicalStoryDispatch resumeSession(UUID playerUuid, String storyId, long eventTime) {
@@ -183,6 +219,14 @@ public final class CanonicalStoryServerService {
                 properties,
                 null);
         }
+        if (snapshot.getWaitKind() == CanonicalStoryWaitKind.CONDITION) return new CanonicalStoryDispatch(
+            CanonicalStoryDispatchKind.CONDITION,
+            instance,
+            snapshot.getCurrentNodeId(),
+            null,
+            false,
+            Collections.<String, JsonElement>emptyMap(),
+            null);
         if (snapshot.getWaitKind()
             .isActorInteraction())
             return new CanonicalStoryDispatch(

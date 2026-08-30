@@ -1,6 +1,7 @@
 package darkgrey.rpg.client.gui;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -14,28 +15,26 @@ import darkgrey.rpg.network.message.nominator.C2SNominatorEntityBind;
 import darkgrey.rpg.nominator.NominatorCatalog;
 import darkgrey.rpg.nominator.NominatorStorySearch;
 
-/** Compact entity nominator: story browser/search and individual/group selection. */
+/** Compact entity nominator: enter one exact Studio Actor ID and bind it. */
 public final class GuiNominatorEntity extends GuiScreen {
+
+    private static final int PANEL_HEIGHT = 184;
 
     private final int entityId;
     private final UUID entityUuid;
-    private String story;
     private String individual;
     private final List<String> groups = new ArrayList<String>();
-    private List<NominatorStorySearch.ActorChoice> choices = Collections.emptyList();
-    private List<NominatorStorySearch.ActorChoice> individuals = Collections.emptyList();
-    private List<NominatorStorySearch.ActorChoice> collectiveGroups = Collections.emptyList();
-    private List<NominatorStorySearch.StoryChoice> stories = Collections.emptyList();
-    private int storyChoice;
-    private int individualChoice;
-    private int groupChoice;
-    private GuiTextField searchField;
-    private String lastQuery = "";
     private long revision = -1L;
     private NominatorCatalog catalog;
     private String displayName;
-    private String entityType;
-    private final List<String> typeGroups = new ArrayList<String>();
+    private GuiTextField actorIdField;
+    private GuiButton bindButton;
+    private String lastQuery = "";
+    private NominatorStorySearch.ActorChoice resolvedActor;
+    private String resolutionMessage = "请输入完整 Actor ID。";
+    private int panelLeft;
+    private int panelTop;
+    private int panelWidth;
 
     public GuiNominatorEntity(int entityId, UUID entityUuid) {
         this.entityId = entityId;
@@ -48,7 +47,6 @@ public final class GuiNominatorEntity extends GuiScreen {
         this(entityId, entityUuid);
         this.individual = individual;
         if (groups != null) this.groups.addAll(groups);
-        this.story = story;
         this.revision = revision;
     }
 
@@ -56,8 +54,6 @@ public final class GuiNominatorEntity extends GuiScreen {
         List<String> groups, List<String> typeGroups, String story, long revision, NominatorCatalog catalog) {
         this(entityId, entityUuid, individual, groups, story, revision);
         this.displayName = displayName;
-        this.entityType = entityType;
-        if (typeGroups != null) this.typeGroups.addAll(typeGroups);
         this.catalog = catalog == null ? emptyCatalog() : catalog;
     }
 
@@ -72,143 +68,130 @@ public final class GuiNominatorEntity extends GuiScreen {
     @Override
     public void initGui() {
         buttonList.clear();
-        searchField = new GuiTextField(fontRendererObj, width / 2 - 165, height / 2 - 78, 330, 16);
-        searchField.setMaxStringLength(128);
-        refreshChoices();
-        buttonList.add(new GuiModernButton(1, width / 2 - 145, height / 2 - 45, 130, 20, "浏览故事"));
-        buttonList.add(new GuiModernButton(2, width / 2 + 15, height / 2 - 45, 130, 20, "选择个体"));
-        buttonList.add(new GuiModernButton(3, width / 2 - 145, height / 2 - 10, 130, 20, "添加群组"));
-        buttonList.add(new GuiModernButton(4, width / 2 + 15, height / 2 - 10, 130, 20, "绑定选择"));
-        buttonList.add(new GuiModernButton(5, width / 2 - 145, height / 2 + 25, 130, 20, "清除个体"));
-        buttonList.add(new GuiModernButton(6, width / 2 + 15, height / 2 + 25, 130, 20, "移除群组"));
-        buttonList.add(new GuiModernButton(7, width / 2 - 145, height / 2 + 50, 130, 20, "解除全部"));
-        buttonList.add(new GuiModernButton(8, width / 2 + 15, height / 2 + 50, 130, 20, "转移选择"));
-        buttonList.add(new GuiModernButton(9, width / 2 - 145, height / 2 + 75, 130, 20, "添加类型群组"));
-        buttonList.add(new GuiModernButton(10, width / 2 + 15, height / 2 + 75, 130, 20, "移除类型群组"));
-        buttonList.add(new GuiModernButton(0, width / 2 - 30, height / 2 + 102, 60, 20, "关闭"));
+        panelWidth = Math.min(520, width - 12);
+        panelLeft = (width - panelWidth) / 2;
+        panelTop = Math.max(2, (height - PANEL_HEIGHT) / 2);
+        int contentLeft = panelLeft + 10;
+        int contentWidth = panelWidth - 20;
+        int actionGap = 6;
+        int actionWidth = (contentWidth - actionGap * 2) / 3;
+
+        actorIdField = new GuiTextField(fontRendererObj, contentLeft, panelTop + 43, contentWidth, 17);
+        actorIdField.setMaxStringLength(128);
+        refreshResolution();
+        bindButton = new GuiModernButton(1, contentLeft, panelTop + 86, actionWidth, 17, "指名");
+        bindButton.enabled = isBindableActor();
+        buttonList.add(bindButton);
+        buttonList
+            .add(new GuiModernButton(2, contentLeft + actionWidth + actionGap, panelTop + 86, actionWidth, 17, "解除指名"));
+        buttonList.add(
+            new GuiModernButton(0, contentLeft + (actionWidth + actionGap) * 2, panelTop + 86, actionWidth, 17, "关闭"));
     }
 
-    private void refreshChoices() {
-        String query = searchField == null ? "" : searchField.getText();
-        choices = NominatorStorySearch.actors(catalog, story, query);
-        individuals = new ArrayList<NominatorStorySearch.ActorChoice>();
-        collectiveGroups = new ArrayList<NominatorStorySearch.ActorChoice>();
-        for (NominatorStorySearch.ActorChoice choice : choices) {
-            if ("individual".equals(choice.getType())) individuals.add(choice);
-            if ("collective".equals(choice.getType())) collectiveGroups.add(choice);
-        }
-        stories = NominatorStorySearch.stories(catalog, searchField == null ? "" : searchField.getText());
+    private void refreshResolution() {
+        String query = actorIdField == null ? "" : actorIdField.getText();
+        resolvedActor = NominatorStorySearch.exactActor(catalog, query);
         lastQuery = query;
+        if (catalog.getActors()
+            .isEmpty()) resolutionMessage = "服务器角色目录为空，无法绑定。";
+        else if (query == null || query.trim()
+            .isEmpty()) resolutionMessage = "请输入完整 Actor ID；不支持部分或名称匹配。";
+        else if (resolvedActor == null) resolutionMessage = "未找到精确 Actor ID；部分或名称匹配不会绑定。";
+        else if (!isBindableActor()) resolutionMessage = "该 ID 无法指名。";
+        else resolutionMessage = "已解析：" + resolvedActor.getId() + " · " + resolvedActor.getDisplayName();
+        if (bindButton != null) bindButton.enabled = isBindableActor();
+    }
+
+    private boolean isBindableActor() {
+        return resolvedActor != null
+            && ("individual".equals(resolvedActor.getType()) || "collective".equals(resolvedActor.getType()));
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button.id == 0) mc.displayGuiScreen(null);
-        else {
-            refreshChoices();
-            if (button.id == 1 && !stories.isEmpty()) {
-                story = stories.get(storyChoice++ % stories.size())
-                    .getId();
-                refreshChoices();
-            } else if (button.id == 2 && !individuals.isEmpty())
-                individual = individuals.get(individualChoice++ % individuals.size())
-                    .getId();
-            else if (button.id == 3 && !collectiveGroups.isEmpty()) {
-                String value = collectiveGroups.get(groupChoice++ % collectiveGroups.size())
-                    .getId();
-                if (!groups.contains(value)) groups.add(value);
-            } else if (button.id == 4) {
-                sendSelection(false);
-                mc.displayGuiScreen(null);
-            } else if (button.id == 5) {
-                individual = null;
-            } else if (button.id == 6 && !groups.isEmpty()) {
-                groups.remove(groups.size() - 1);
-            } else if (button.id == 7) {
-                individual = null;
-                groups.clear();
-                sendSelection(false);
-                mc.displayGuiScreen(null);
-            } else if (button.id == 8) {
-                sendSelection(true);
-                mc.displayGuiScreen(null);
-            } else if ((button.id == 9 || button.id == 10) && !collectiveGroups.isEmpty()) {
-                String group = collectiveGroups.get(groupChoice++ % collectiveGroups.size())
-                    .getId();
-                DialogueNetwork.CHANNEL.sendToServer(
-                    new C2SNominatorEntityBind(
-                        entityId,
-                        entityUuid,
-                        individual,
-                        groups,
-                        story,
-                        revision,
-                        false,
-                        true,
-                        group,
-                        button.id == 9));
-                if (button.id == 9 && !typeGroups.contains(group)) typeGroups.add(group);
-                if (button.id == 10) typeGroups.remove(group);
-            }
+        if (button.id == 0) {
+            mc.displayGuiScreen(null);
+        } else if (button.id == 1 && isBindableActor()) {
+            if ("individual".equals(resolvedActor.getType()))
+                sendSelection(resolvedActor.getId(), Collections.<String>emptyList(), resolvedActor.getStoryId());
+            else sendSelection(null, Arrays.asList(resolvedActor.getId()), resolvedActor.getStoryId());
+            mc.displayGuiScreen(null);
+        } else if (button.id == 2) {
+            sendSelection(null, Collections.<String>emptyList(), null);
+            mc.displayGuiScreen(null);
         }
     }
 
-    private void sendSelection(boolean transfer) {
+    private void sendSelection(String individualId, List<String> groupIds, String storyId) {
         DialogueNetwork.CHANNEL.sendToServer(
-            new C2SNominatorEntityBind(entityId, entityUuid, individual, groups, story, revision, transfer));
+            new C2SNominatorEntityBind(entityId, entityUuid, individualId, groupIds, storyId, revision, false));
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        if (searchField != null && !lastQuery.equals(searchField.getText())) refreshChoices();
+        if (actorIdField != null && !lastQuery.equals(actorIdField.getText())) refreshResolution();
         drawDefaultBackground();
-        drawRect(width / 2 - 180, height / 2 - 95, width / 2 + 180, height / 2 + 130, 0xF02B2F4A);
-        drawCenteredString(fontRendererObj, "Nominator: entity", width / 2, height / 2 - 70, 0xFFEEF0FF);
+        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + PANEL_HEIGHT, 0xF02B2F4A);
+        drawCenteredString(fontRendererObj, "Nominator · 实体指名", width / 2, panelTop + 6, 0xFFEEF0FF);
         drawString(
             fontRendererObj,
-            "Target: " + (displayName == null ? "unknown" : displayName)
-                + " / "
-                + (entityType == null ? "unknown" : entityType),
-            width / 2 - 165,
-            height / 2 - 88,
+            fit("目标：" + (displayName == null ? "未知" : displayName), panelWidth - 20),
+            panelLeft + 10,
+            panelTop + 18,
             0xFFEEF0FF);
-        searchField.drawTextBox();
-        drawString(fontRendererObj, "搜索故事/角色 ID、名称、备注或标签", width / 2 - 165, height / 2 - 60, 0xFFB8C0E8);
+        drawString(fontRendererObj, "输入服务器目录中的完整 Actor ID", panelLeft + 10, panelTop + 31, 0xFFB8C0E8);
+        actorIdField.drawTextBox();
+        drawString(fontRendererObj, fit(resolutionMessage, panelWidth - 20), panelLeft + 10, panelTop + 66, 0xFFFFCC88);
+
+        String current = currentBinding();
         drawString(
             fontRendererObj,
-            "故事筛选：" + (story == null ? "全部" : story),
-            width / 2 - 165,
-            height / 2 - 58,
+            fit("当前指名：" + current, panelWidth - 20),
+            panelLeft + 10,
+            panelTop + 113,
             0xFFEEF0FF);
         drawString(
             fontRendererObj,
-            "个体：" + (individual == null ? "无" : individual),
-            width / 2 - 165,
-            height / 2 - 30,
-            0xFFEEF0FF);
-        drawString(fontRendererObj, "群组：" + groups.toString(), width / 2 - 165, height / 2 + 10, 0xFFEEF0FF);
-        drawString(fontRendererObj, "精确类型群组：" + typeGroups, width / 2 - 165, height / 2 + 28, 0xFFB8C0E8);
-        drawString(
-            fontRendererObj,
-            catalog.getActors()
-                .isEmpty() ? "服务器角色目录为空" : "角色目录：服务器快照",
-            width / 2 - 165,
-            height / 2 + 42,
+            fit(
+                catalog.getActors()
+                    .isEmpty() ? "服务器角色目录为空。" : "目录修订 " + revision + " · ID 定义来自 Studio。",
+                panelWidth - 20),
+            panelLeft + 10,
+            panelTop + 132,
             0xFFB8C0E8);
-        drawString(fontRendererObj, "绑定冲突或目录过期时，服务端会拒绝请求；请重新打开。", width / 2 - 165, height / 2 + 56, 0xFFFFCC88);
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    private String currentBinding() {
+        if (individual != null && !individual.trim()
+            .isEmpty()) return individual;
+        if (!groups.isEmpty()) return join(groups);
+        return "无";
+    }
+
+    private String join(List<String> values) {
+        StringBuilder result = new StringBuilder();
+        for (String value : values) {
+            if (result.length() > 0) result.append(", ");
+            result.append(value);
+        }
+        return result.toString();
+    }
+
+    private String fit(String value, int maxWidth) {
+        return fontRendererObj.trimStringToWidth(value, maxWidth);
     }
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
-        if (searchField.textboxKeyTyped(typedChar, keyCode)) return;
+        if (actorIdField.textboxKeyTyped(typedChar, keyCode)) return;
         super.keyTyped(typedChar, keyCode);
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int button) {
         super.mouseClicked(mouseX, mouseY, button);
-        searchField.mouseClicked(mouseX, mouseY, button);
+        actorIdField.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

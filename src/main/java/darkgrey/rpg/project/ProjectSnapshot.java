@@ -2,11 +2,14 @@ package darkgrey.rpg.project;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
 import darkgrey.rpg.graph.canonical.CanonicalStoryMembership;
 import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.story.StoryDefinition;
@@ -152,5 +155,13 @@ public final class ProjectSnapshot {
 
     public CanonicalStoryMembership getCanonicalStoryMembership(String id) {
         return canonicalContent.getMembership(id);
+    }
+
+    public CanonicalStoryLogicGraph getCanonicalStoryLogicGraph() {
+        return canonicalContent.getStoryLogicGraph();
+    }
+
+    public List<CanonicalStoryLogicConnection> getCanonicalStoryLogicConnections() {
+        return canonicalContent.getStoryLogicConnections();
     }
 }

@@ -17,6 +17,7 @@ public static class StoryStartSchema
     // These persisted names match the canonical Story trigger vocabulary.
     public const string ActorInteraction = "interact_actor";
     public const string RegionEntry = "enter_region";
+    public const string Logic = "logic";
     public const string EnterStory = "enter_story";
     /// <summary>Optional per-trigger Logic condition port identity.</summary>
     public const string LogicPortIdProperty = "logic_port_id";
@@ -29,7 +30,7 @@ public static class StoryStartSchema
     public const string RadiusProperty = "radius";
 
     public static IReadOnlyList<string> SupportedTriggerTypes { get; } =
-        [ActorInteraction, RegionEntry];
+        [ActorInteraction, RegionEntry, Logic];
 
     /// <summary>Legacy trigger types accepted only when loading old data.</summary>
     public static IReadOnlyList<string> LegacyTriggerTypes { get; } = [EnterStory];
@@ -78,13 +79,15 @@ public static class StoryStartSchema
             throw new ArgumentException("An actor ID is required for interact_actor.", nameof(actorId));
         if (logicPortId is not null && string.IsNullOrWhiteSpace(logicPortId))
             throw new ArgumentException("A Logic condition port ID cannot be blank.", nameof(logicPortId));
+        if (triggerType == Logic && string.IsNullOrWhiteSpace(logicPortId))
+            throw new ArgumentException("A Logic trigger requires a Logic condition port ID.", nameof(logicPortId));
 
         var properties = DefaultTriggerProperties(triggerType, actorId);
         node.Properties[RepeatPolicyProperty] = JsonSerializer.SerializeToElement(Once);
         var trigger = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["port_id"] = portId,
-            ["display_name"] = triggerType == RegionEntry ? "进入区域" : "角色交互",
+            ["display_name"] = triggerType switch { RegionEntry => "进入区域", Logic => "逻辑条件", _ => "角色交互" },
             ["trigger_type"] = triggerType,
             ["trigger_properties"] = properties,
             ["order"] = 0,
@@ -92,7 +95,9 @@ public static class StoryStartSchema
         if (logicPortId is not null)
             trigger[LogicPortIdProperty] = logicPortId;
         node.Properties[TriggersProperty] = JsonSerializer.SerializeToElement(new[] { trigger });
-        node.Ports.Add(new GraphPort(portId, triggerType == RegionEntry ? "进入区域" : "角色交互", false, GraphInterfaceKind.Flow, 0));
+        node.Ports.Add(new GraphPort(portId,
+            triggerType switch { RegionEntry => "进入区域", Logic => "逻辑条件", _ => "角色交互" },
+            false, GraphInterfaceKind.Flow, 0));
         if (logicPortId is not null)
             node.Ports.Add(new GraphPort(logicPortId, "条件", true, GraphInterfaceKind.Logic, 0));
     }
@@ -165,6 +170,8 @@ public static class StoryStartSchema
                 issues.Add(Issue("graph.story.start.trigger.logic_port_id.invalid", "logic_port_id must be a nonblank string or null.", field, node.Id));
             if (logicPortId is not null && !ids.Add(logicPortId))
                 issues.Add(Issue("graph.story.start.trigger.port_id.duplicate", $"Story Start trigger logic_port_id '{logicPortId}' is duplicated.", field, node.Id));
+            if (triggerType == Logic && logicPortId is null)
+                issues.Add(Issue("graph.story.start.trigger.logic_port_id.required", "Logic Story Start trigger requires logic_port_id.", field, node.Id));
 
             var properties = item.GetProperty("trigger_properties");
             if (triggerType is not null && (SupportedTriggerTypes.Contains(triggerType, StringComparer.Ordinal)
@@ -261,6 +268,7 @@ public static class StoryStartSchema
             ActorInteraction => new[] { ActorIdProperty },
             RegionEntry => new[] { DimensionProperty, XProperty, YProperty, ZProperty, RadiusProperty },
             EnterStory => Array.Empty<string>(),
+            Logic => Array.Empty<string>(),
             _ => Array.Empty<string>(),
         };
         var required = allowed;

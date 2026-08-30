@@ -15,8 +15,10 @@ import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.identity.NpcIdentitySavedData;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.nominator.NominatorPermission;
+import darkgrey.rpg.nominator.NominatorResult;
 import darkgrey.rpg.nominator.NominatorSavedData;
 import darkgrey.rpg.nominator.NominatorService;
+import darkgrey.rpg.runtime.ChatMessages;
 import io.netty.buffer.ByteBuf;
 
 public final class C2SNominatorEntityBind implements IMessage {
@@ -160,11 +162,14 @@ public final class C2SNominatorEntityBind implements IMessage {
                         || entity.dimension != player.dimension
                         || player.getDistanceSqToEntity(entity) > 64.0D) return;
                     NominatorSavedData selections = NominatorSavedData.get();
-                    if (message.expectedRevision < 0L || message.expectedRevision != selections.getRevision()) return;
+                    if (message.expectedRevision < 0L || message.expectedRevision != selections.getRevision()) {
+                        ChatMessages.error(player, "指名器数据已过期，请重新打开后再试。");
+                        return;
+                    }
                     String entityType = NominatorService.entityType(entity);
                     if (message.typeScope) {
                         if (!NominatorService.safeType(entityType)) return;
-                        NominatorService.bindEntityTypeGroup(
+                        NominatorResult result = NominatorService.bindEntityTypeGroup(
                             true,
                             entityType,
                             message.typeGroupId,
@@ -172,9 +177,10 @@ public final class C2SNominatorEntityBind implements IMessage {
                             DarkGreyRpg.getProjectRepository()
                                 .getSnapshot(),
                             selections);
+                        report(player, result, message.typeGroupId, message.addTypeGroup);
                         return;
                     }
-                    NominatorService.bindEntity(
+                    NominatorResult result = NominatorService.bindEntity(
                         true,
                         entity.getUniqueID(),
                         entityType,
@@ -187,9 +193,31 @@ public final class C2SNominatorEntityBind implements IMessage {
                             .getSnapshot(),
                         NpcIdentitySavedData.get(),
                         selections);
+                    String actorId = message.individualId;
+                    if ((actorId == null || actorId.trim()
+                        .isEmpty()) && message.groups != null && !message.groups.isEmpty())
+                        actorId = message.groups.get(0);
+                    report(
+                        player,
+                        result,
+                        actorId,
+                        actorId != null && !actorId.trim()
+                            .isEmpty());
                 }
             });
             return null;
+        }
+
+        private static void report(EntityPlayerMP player, NominatorResult result, String actorId, boolean binding) {
+            if (result == null || !result.isAccepted()) {
+                ChatMessages.error(player, "指名失败：" + (result == null ? "服务器未返回结果。" : result.getExplanation()));
+                return;
+            }
+            if (!binding || actorId == null
+                || actorId.trim()
+                    .isEmpty())
+                ChatMessages.success(player, "已解除当前实体的指名。");
+            else ChatMessages.success(player, "已将当前实体指名为 " + actorId.trim() + "。");
         }
     }
 

@@ -94,6 +94,14 @@ public final class ItemIdentitySavedData extends WorldSavedData {
         return registry.matchesGroup(groupId, stack);
     }
 
+    public synchronized List<String> matchingItemIds(ItemStack stack) {
+        return registry.matchingItemIds(stack);
+    }
+
+    public synchronized List<String> matchingGroupIds(ItemStack stack) {
+        return registry.matchingGroupIds(stack);
+    }
+
     public synchronized List<ItemGroupMember> getGroup(String groupId) {
         return registry.getGroup(groupId);
     }

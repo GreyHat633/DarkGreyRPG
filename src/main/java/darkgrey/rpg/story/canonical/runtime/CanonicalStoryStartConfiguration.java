@@ -25,6 +25,7 @@ public final class CanonicalStoryStartConfiguration {
     public static final String ENTER_STORY = "enter_story";
     public static final String INTERACT_ACTOR = "interact_actor";
     public static final String ENTER_REGION = "enter_region";
+    public static final String LOGIC = "logic";
 
     private final CanonicalStoryRepeatPolicy repeatPolicy;
     private final List<Trigger> triggers;
@@ -161,6 +162,12 @@ public final class CanonicalStoryStartConfiguration {
         }, "enter_region");
     }
 
+    public List<Trigger> getLogicTriggers() {
+        List<Trigger> result = new ArrayList<Trigger>();
+        for (Trigger trigger : triggers) if (LOGIC.equals(trigger.getType())) result.add(trigger);
+        return Collections.unmodifiableList(result);
+    }
+
     private Trigger find(Matcher matcher, String label) {
         Trigger result = null;
         for (Trigger trigger : triggers) if (matcher.matches(trigger)) {
@@ -194,6 +201,10 @@ public final class CanonicalStoryStartConfiguration {
             number(properties, "z");
             if (number(properties, "radius") <= 0D)
                 throw failure("story.start.trigger.properties", "Region radius must be positive.");
+        } else if (LOGIC.equals(type)) {
+            requireExactKeys(values.keySet(), Collections.<String>emptySet(), "logic properties");
+            if (blank(logicPortId))
+                throw failure("story.start.trigger.condition", "Logic Story Start requires logic_port_id.");
         } else throw failure("story.start.trigger.type", "Unsupported Story Start trigger type: " + type);
         return new Trigger(portId, displayName, type, order, values, logicPortId);
     }

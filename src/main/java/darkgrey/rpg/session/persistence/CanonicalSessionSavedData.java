@@ -1,6 +1,7 @@
 package darkgrey.rpg.session.persistence;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -181,15 +182,48 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalStoryInstanceSnapshot startStory(UUID playerUuid, CanonicalGraphResource resource,
         String triggerPortId, CanonicalStoryRepeatPolicy repeatPolicy, long activationTime) {
+        return startStory(
+            playerUuid,
+            resource,
+            triggerPortId,
+            repeatPolicy,
+            java.util.Collections.<String, Boolean>emptyMap(),
+            activationTime);
+    }
+
+    public synchronized CanonicalStoryInstanceSnapshot startStory(UUID playerUuid, CanonicalGraphResource resource,
+        String triggerPortId, CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs,
+        long activationTime) {
         requireStoryBound();
         NBTTagCompound before = persistedState();
         CanonicalStoryInstanceStore candidate = cloneStoryStore();
         CanonicalStoryInstanceSnapshot result = candidate
-            .start(playerUuid, resource, triggerPortId, repeatPolicy, activationTime)
+            .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime)
             .snapshot();
         storyStore = candidate;
         markWorldIfChanged(before);
         return result;
+    }
+
+    public synchronized CanonicalStoryInstanceSnapshot setStoryLogicInput(UUID playerUuid, String storyId,
+        String portId, boolean value, long eventTime) {
+        return setStoryLogicInputs(
+            playerUuid,
+            storyId,
+            java.util.Collections.singletonMap(portId, Boolean.valueOf(value)),
+            eventTime);
+    }
+
+    public synchronized CanonicalStoryInstanceSnapshot setStoryLogicInputs(UUID playerUuid, String storyId,
+        Map<String, Boolean> values, long eventTime) {
+        requireStoryBound();
+        NBTTagCompound before = persistedState();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
+        instance.setLogicInputs(values, eventTime);
+        storyStore = candidate;
+        markWorldIfChanged(before);
+        return instance.snapshot();
     }
 
     public synchronized CanonicalStoryInstanceSnapshot getStorySnapshot(UUID playerUuid, String storyId) {

@@ -3,6 +3,7 @@ using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.ViewModels.Graph;
+using System.Text.Json;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
 
@@ -85,6 +86,28 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         Assert.IsEmpty(initialStore.Sessions.Load("session").Graph!.Nodes);
     }
 
+    [TestMethod]
+    public void ReferencedPublicStoryPortCannotBeDeletedUntilGraphConnectionIsRemoved()
+    {
+        using var project = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(project.Path);
+        var source = StoryWithBoundary("source", "logic_output", "output", "rescued");
+        var target = StoryWithBoundary("target", "logic_input", "input", "kingdom_gate");
+        store.Stories.Create(source);
+        store.Stories.Create(target);
+        store.StoryLogicGraph.Save([new("source", "rescued", "target", "kingdom_gate")]);
+        var before = File.ReadAllText(store.Stories.GetPath("source"));
+        using var editor = new CanonicalGraphResourceEditorViewModel(source);
+        Assert.IsTrue(editor.Host.RemoveNode("output"));
+
+        var exception = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(
+            () => new CanonicalGraphResourceSaveCoordinator(store).Replace(editor));
+
+        Assert.AreEqual("story.logic_graph.port.referenced", exception.Code);
+        Assert.IsTrue(editor.IsDirty);
+        Assert.AreEqual(before, File.ReadAllText(store.Stories.GetPath("source")));
+    }
+
     private static GraphResourceRepository Repository(
         CanonicalProjectGraphStore store,
         GraphResourceKind kind)
@@ -101,6 +124,14 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         string id,
         string displayName)
         => new(kind, id, displayName, new GraphDocument());
+
+    private static GraphResourceEnvelope StoryWithBoundary(string storyId, string type, string nodeId, string portId)
+    {
+        var node = GraphNodeFactory.Create(GraphScope.StoryFlow, type, nodeId);
+        node.Properties["port_id"] = JsonSerializer.SerializeToElement(portId);
+        node.Properties["display_name"] = JsonSerializer.SerializeToElement(portId);
+        return new(GraphResourceKind.Story, storyId, storyId, new GraphDocument([node]));
+    }
 
     private sealed class ThrowingWriter : IAtomicFileWriter
     {

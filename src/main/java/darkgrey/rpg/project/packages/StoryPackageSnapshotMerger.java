@@ -14,6 +14,9 @@ import java.util.Set;
 import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraphLoader;
 import darkgrey.rpg.graph.canonical.CanonicalStoryMembership;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ItemResourceDefinition;
@@ -41,6 +44,7 @@ public final class StoryPackageSnapshotMerger {
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
         Map<String, CanonicalGraphResource> tasks = new LinkedHashMap<String, CanonicalGraphResource>();
         Map<String, CanonicalStoryMembership> memberships = new LinkedHashMap<String, CanonicalStoryMembership>();
+        List<CanonicalStoryLogicConnection> storyLogicConnections = new java.util.ArrayList<CanonicalStoryLogicConnection>();
         Map<String, byte[]> actorOrigins = new LinkedHashMap<String, byte[]>();
         Map<String, byte[]> itemOrigins = new LinkedHashMap<String, byte[]>();
         Map<String, byte[]> itemGroupOrigins = new LinkedHashMap<String, byte[]>();
@@ -105,8 +109,24 @@ public final class StoryPackageSnapshotMerger {
                 value);
             putAllShared(tasks, taskOrigins, snapshot.getCanonicalTasks(), required.getTasks(), "Task", value);
             putAllExclusive(memberships, snapshot.getCanonicalStoryMemberships(), "Story membership", owner);
+            storyLogicConnections.addAll(
+                value.getStoryLogicGraph()
+                    .getConnections());
         }
-        CanonicalProjectContent canonical = new CanonicalProjectContent(canonicalStories, sessions, tasks, memberships);
+        CanonicalStoryLogicGraph storyLogicGraph = new CanonicalStoryLogicGraph(storyLogicConnections);
+        try {
+            new CanonicalStoryLogicGraphLoader().validate(storyLogicGraph, canonicalStories);
+        } catch (darkgrey.rpg.graph.canonical.CanonicalGraphResourceException exception) {
+            throw new ProjectLoadException(
+                "Invalid merged Story public Logic graph: " + exception.getMessage(),
+                exception);
+        }
+        CanonicalProjectContent canonical = new CanonicalProjectContent(
+            canonicalStories,
+            sessions,
+            tasks,
+            memberships,
+            storyLogicGraph);
         return new ProjectSnapshot(
             new ProjectDefinition(2, "installed_story_packages", "Installed Story Packages"),
             actors,

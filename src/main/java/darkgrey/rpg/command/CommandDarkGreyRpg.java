@@ -3,6 +3,7 @@ package darkgrey.rpg.command;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import net.minecraft.command.CommandBase;
@@ -12,14 +13,30 @@ import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.MathHelper;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.EntityInteractEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
 import cpw.mods.fml.common.Loader;
 import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
+import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.dialogue.runtime.DialogueResult;
 import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
+import darkgrey.rpg.entitytools.StorageBoxState;
+import darkgrey.rpg.entitytools.StoragePayload;
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.identity.EntityDgrIdentityResolver;
+import darkgrey.rpg.identity.NpcIdentitySavedData;
+import darkgrey.rpg.item.ItemStorageBox;
+import darkgrey.rpg.item.identity.ItemIdentitySavedData;
+import darkgrey.rpg.nominator.NominatorResult;
+import darkgrey.rpg.nominator.NominatorSavedData;
+import darkgrey.rpg.nominator.NominatorService;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectRepository;
@@ -37,10 +54,14 @@ import darkgrey.rpg.runtime.EntityTargeting;
 import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
 import darkgrey.rpg.story.StoryDefinition;
 import darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeManager;
+import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
 import darkgrey.rpg.story.runtime.StoryInstance;
 import darkgrey.rpg.story.runtime.StoryRuntimeService;
+import darkgrey.rpg.task.event.CanonicalTaskDispatchResult;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
+import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 
 public final class CommandDarkGreyRpg extends CommandBase {
 
@@ -163,7 +184,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/dgr <status|reload|actor|dialogue|quest|story|session|task>";
+        return "/dgr <status|reload|actor|dialogue|quest|story|session|task|debug>";
     }
 
     @Override
@@ -209,7 +230,354 @@ public final class CommandDarkGreyRpg extends CommandBase {
             processTask(sender, arguments);
             return;
         }
+        if ("debug".equalsIgnoreCase(arguments[0])) {
+            processDebug(sender, arguments);
+            return;
+        }
         throw new WrongUsageException(getCommandUsage(sender));
+    }
+
+    /** Temporary acceptance-only entry that directly calls existing DGR services. */
+    private void processDebug(ICommandSender sender, String[] arguments) {
+        String usage = "/dgr debug <player dimension <online_player> <-1|0|1>|nominator clear_type_group <entity_type> <group_id>|item <bind_exact|bind_exact_group|bind_fuzzy> <id>|story <start|set_logic|state> [online_player] ...|task <start|emit_kill|state> [online_player] ...|cnpc <bind_nearest <npc_id>|bind_group_nearest <group_id>|list_nearby>|storage <interact_nearest|release_here|status>>";
+        if (arguments.length == 5 && "player".equalsIgnoreCase(arguments[1])
+            && "dimension".equalsIgnoreCase(arguments[2])) {
+            EntityPlayerMP player = namedMultiplayerPlayer(arguments[3]);
+            int dimension;
+            try {
+                dimension = Integer.parseInt(arguments[4]);
+            } catch (NumberFormatException invalidDimension) {
+                throw new WrongUsageException(usage);
+            }
+            if (dimension < -1 || dimension > 1) throw new WrongUsageException(usage);
+            MinecraftServer server = MinecraftServer.getServer();
+            if (server == null || server.getConfigurationManager() == null
+                || server.worldServerForDimension(dimension) == null)
+                throw new CommandException("Target dimension is unavailable: " + dimension);
+            server.getConfigurationManager()
+                .transferPlayerToDimension(player, dimension);
+            ChatMessages.success(sender, "Debug player dimension: " + arguments[3] + " -> " + player.dimension);
+            return;
+        }
+        if (arguments.length >= 3 && "story".equalsIgnoreCase(arguments[1])) {
+            if (canonicalStoryManager == null) {
+                ChatMessages.error(sender, "Canonical Story manager is unavailable.");
+                return;
+            }
+            if (arguments.length == 5 && "start".equalsIgnoreCase(arguments[2])) {
+                EntityPlayerMP player = namedMultiplayerPlayer(arguments[3]);
+                boolean routed = canonicalStoryManager.startByEntry(player, arguments[4]);
+                ChatMessages.success(sender, "Debug Story start: " + arguments[4] + ", routed=" + routed);
+                return;
+            }
+            boolean namedLogic = arguments.length == 7 && "set_logic".equalsIgnoreCase(arguments[2]);
+            boolean directLogic = arguments.length == 6 && "set_logic".equalsIgnoreCase(arguments[2]);
+            if (namedLogic || directLogic) {
+                EntityPlayerMP player = namedLogic ? namedMultiplayerPlayer(arguments[3])
+                    : requireMultiplayerPlayer(sender);
+                int storyIndex = namedLogic ? 4 : 3;
+                boolean value;
+                if ("true".equalsIgnoreCase(arguments[storyIndex + 2])) value = true;
+                else if ("false".equalsIgnoreCase(arguments[storyIndex + 2])) value = false;
+                else throw new WrongUsageException(usage);
+                boolean routed = canonicalStoryManager
+                    .setLogicInput(player, arguments[storyIndex], arguments[storyIndex + 1], value);
+                ChatMessages.success(
+                    sender,
+                    "Debug Story Logic: " + arguments[storyIndex]
+                        + "."
+                        + arguments[storyIndex + 1]
+                        + "="
+                        + value
+                        + ", routed="
+                        + routed);
+                return;
+            }
+            boolean namedState = arguments.length == 5 && "state".equalsIgnoreCase(arguments[2]);
+            boolean directState = arguments.length == 4 && "state".equalsIgnoreCase(arguments[2]);
+            if (namedState || directState) {
+                EntityPlayerMP player = namedState ? namedMultiplayerPlayer(arguments[3])
+                    : requireMultiplayerPlayer(sender);
+                String storyId = arguments[namedState ? 4 : 3];
+                CanonicalStoryInstanceSnapshot instance = canonicalStoryManager.snapshot(player, storyId);
+                if (instance == null) {
+                    ChatMessages.info(sender, "Canonical Story state: absent (" + storyId + ")");
+                    return;
+                }
+                CanonicalStorySnapshot runtime = instance.getRuntimeSnapshot();
+                ChatMessages.info(
+                    sender,
+                    "Canonical Story state: " + storyId
+                        + " status="
+                        + runtime.getStatus()
+                        + ", wait="
+                        + runtime.getWaitKind()
+                        + ", node="
+                        + runtime.getCurrentNodeId()
+                        + ", logic="
+                        + runtime.getExternalLogicInputs());
+                return;
+            }
+            throw new WrongUsageException(usage);
+        }
+        if (arguments.length >= 3 && "task".equalsIgnoreCase(arguments[1])) {
+            if (canonicalTaskManager == null) {
+                ChatMessages.error(sender, "Canonical Task manager is unavailable.");
+                return;
+            }
+            if (arguments.length == 7 && "start".equalsIgnoreCase(arguments[2])) {
+                EntityPlayerMP player = namedMultiplayerPlayer(arguments[3]);
+                CanonicalTaskInstanceSnapshot snapshot = canonicalTaskManager
+                    .start(player, arguments[5], arguments[6], arguments[4]);
+                ChatMessages.success(sender, "Debug Task start: " + arguments[4] + " status=" + snapshot.getStatus());
+                return;
+            }
+            if (arguments.length == 6 && "state".equalsIgnoreCase(arguments[2])) {
+                EntityPlayerMP player = namedMultiplayerPlayer(arguments[3]);
+                CanonicalTaskInstanceSnapshot snapshot = canonicalTaskManager
+                    .snapshot(player, arguments[4], arguments[5]);
+                if (snapshot == null) {
+                    ChatMessages.info(sender, "Canonical Task state: absent.");
+                    return;
+                }
+                ChatMessages.info(
+                    sender,
+                    "Canonical Task state: status=" + snapshot.getStatus()
+                        + ", progress="
+                        + snapshot.getRuntimeSnapshot()
+                            .getProgress()
+                        + ", objectives="
+                        + snapshot.getRuntimeSnapshot()
+                            .getObjectiveStatuses()
+                        + ", logic="
+                        + snapshot.getRuntimeSnapshot()
+                            .getLogicValues());
+                return;
+            }
+            boolean namedKill = !(sender instanceof EntityPlayerMP) && (arguments.length == 5 || arguments.length == 6)
+                && "emit_kill".equalsIgnoreCase(arguments[2]);
+            boolean directKill = sender instanceof EntityPlayerMP && (arguments.length == 4 || arguments.length == 5)
+                && "emit_kill".equalsIgnoreCase(arguments[2]);
+            if (!namedKill && !directKill) throw new WrongUsageException(usage);
+            EntityPlayerMP player = namedKill ? namedMultiplayerPlayer(arguments[3]) : requireMultiplayerPlayer(sender);
+            int entityIndex = namedKill ? 4 : 3;
+            int amount = 1;
+            if (arguments.length == entityIndex + 2) {
+                try {
+                    amount = Integer.parseInt(arguments[entityIndex + 1]);
+                } catch (NumberFormatException invalidAmount) {
+                    throw new WrongUsageException(usage);
+                }
+                if (amount <= 0) throw new WrongUsageException(usage);
+            }
+            CanonicalTaskDispatchResult dispatch = canonicalTaskManager
+                .dispatch(player, CanonicalTaskEvent.killEntity(arguments[entityIndex], amount));
+            ChatMessages.success(
+                sender,
+                "Debug Task event: candidates=" + dispatch.getCandidateCount()
+                    + ", changed="
+                    + dispatch.getChangedInstanceCount()
+                    + ", settled="
+                    + dispatch.getSettledInstances()
+                        .size());
+            return;
+        }
+        if (arguments.length >= 3 && "cnpc".equalsIgnoreCase(arguments[1])) {
+            EntityPlayerMP player = requireMultiplayerPlayer(sender);
+            if (arguments.length == 4 && "bind_nearest".equalsIgnoreCase(arguments[2])) {
+                Entity target = nearestCustomNpc(player, 16.0D);
+                if (target == null) {
+                    ChatMessages.error(player, "No CustomNPC+ NPC is within 16 blocks.");
+                    return;
+                }
+                NominatorResult binding = NominatorService.bindEntity(
+                    true,
+                    target.getUniqueID(),
+                    NominatorService.entityType(target),
+                    target.dimension,
+                    arguments[3],
+                    Collections.<String>emptyList(),
+                    null,
+                    true,
+                    repository.getSnapshot(),
+                    NpcIdentitySavedData.get(),
+                    NominatorSavedData.get());
+                if (binding.isAccepted()) ChatMessages.success(
+                    player,
+                    "Debug CNPC bound " + target
+                        .getCommandSenderName() + " [" + target.getUniqueID() + "] to " + arguments[3] + ".");
+                else ChatMessages.error(player, "Debug CNPC bind rejected: " + binding.getCode());
+                return;
+            }
+            if (arguments.length == 4 && "bind_group_nearest".equalsIgnoreCase(arguments[2])) {
+                Entity target = nearestCustomNpc(player, 16.0D);
+                if (target == null) {
+                    ChatMessages.error(player, "No CustomNPC+ NPC is within 16 blocks.");
+                    return;
+                }
+                String npcId = NpcIdentitySavedData.get()
+                    .getNpcId(target.getUniqueID());
+                NominatorResult binding = NominatorService.bindEntity(
+                    true,
+                    target.getUniqueID(),
+                    NominatorService.entityType(target),
+                    target.dimension,
+                    npcId,
+                    Collections.singletonList(arguments[3]),
+                    null,
+                    true,
+                    repository.getSnapshot(),
+                    NpcIdentitySavedData.get(),
+                    NominatorSavedData.get());
+                if (binding.isAccepted()) ChatMessages.success(
+                    player,
+                    "Debug CNPC added group " + arguments[3] + " to " + target.getCommandSenderName() + ".");
+                else ChatMessages.error(player, "Debug CNPC group bind rejected: " + binding.getCode());
+                return;
+            }
+            if (arguments.length == 3 && "list_nearby".equalsIgnoreCase(arguments[2])) {
+                List<Entity> nearby = nearbyCustomNpcs(player, 16.0D);
+                if (nearby.isEmpty()) {
+                    ChatMessages.info(player, "No CustomNPC+ NPC is within 16 blocks.");
+                    return;
+                }
+                NpcIdentitySavedData identities = NpcIdentitySavedData.get();
+                NominatorSavedData selections = NominatorSavedData.get();
+                ChatMessages.info(player, "Nearby CustomNPC+ NPCs (" + nearby.size() + "):");
+                for (Entity entity : nearby) {
+                    EntityDgrIdentityResolver.Resolution resolved = EntityDgrIdentityResolver
+                        .resolve(entity, identities, selections);
+                    ChatMessages.info(
+                        player,
+                        "- " + entity.getCommandSenderName()
+                            + " ["
+                            + entity.getUniqueID()
+                            + "] npc_id="
+                            + String.valueOf(resolved.getActorId()));
+                }
+                return;
+            }
+            throw new WrongUsageException(usage);
+        }
+        if (arguments.length == 3 && "storage".equalsIgnoreCase(arguments[1])) {
+            EntityPlayerMP player = requireMultiplayerPlayer(sender);
+            String action = arguments[2].toLowerCase();
+            if ("interact_nearest".equals(action)) {
+                Entity target = nearestCustomNpc(player, 16.0D);
+                if (target == null) {
+                    ChatMessages.error(player, "No CustomNPC+ NPC is within 16 blocks.");
+                    return;
+                }
+                MinecraftForge.EVENT_BUS.post(new EntityInteractEvent(player, target));
+                return;
+            }
+            if ("release_here".equals(action)) {
+                MinecraftForge.EVENT_BUS.post(
+                    new PlayerInteractEvent(
+                        player,
+                        PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK,
+                        MathHelper.floor_double(player.posX),
+                        MathHelper.floor_double(player.posY) - 1,
+                        MathHelper.floor_double(player.posZ),
+                        1,
+                        player.worldObj));
+                return;
+            }
+            if ("status".equals(action)) {
+                ItemStack held = player.getHeldItem();
+                if (held == null || held.getItem() != ModItems.storageBox) {
+                    ChatMessages.error(player, "Hold a DGR Storage Box first.");
+                    return;
+                }
+                StorageBoxState state = ItemStorageBox.loadState(held);
+                if (!state.isOccupied()) {
+                    ChatMessages.info(player, "Debug Storage: empty.");
+                    return;
+                }
+                StoragePayload payload = state.getPayload();
+                ChatMessages.info(
+                    player,
+                    "Debug Storage: mode=" + payload.getMode()
+                        + ", npc_id="
+                        + payload.getReservedNpcId()
+                        + ", groups="
+                        + payload.getTemplate()
+                            .getGroups());
+                return;
+            }
+            throw new WrongUsageException(usage);
+        }
+        NominatorResult result;
+        if (arguments.length == 5 && "nominator".equalsIgnoreCase(arguments[1])
+            && "clear_type_group".equalsIgnoreCase(arguments[2])) {
+            result = NominatorService.bindEntityTypeGroup(
+                true,
+                arguments[3],
+                arguments[4],
+                false,
+                repository.getSnapshot(),
+                NominatorSavedData.get());
+        } else if (arguments.length == 4 && "item".equalsIgnoreCase(arguments[1])) {
+            EntityPlayerMP player = requireMultiplayerPlayer(sender);
+            ItemStack held = player.getHeldItem();
+            String action = arguments[2].toLowerCase();
+            if ("bind_exact".equals(action)) {
+                result = NominatorService.bindInventory(
+                    true,
+                    held,
+                    arguments[3],
+                    null,
+                    Collections.<String>emptyList(),
+                    repository.getSnapshot(),
+                    ItemIdentitySavedData.get());
+            } else if ("bind_exact_group".equals(action)) {
+                result = NominatorService.bindInventory(
+                    true,
+                    held,
+                    null,
+                    arguments[3],
+                    Collections.<String>emptyList(),
+                    repository.getSnapshot(),
+                    ItemIdentitySavedData.get());
+            } else if ("bind_fuzzy".equals(action)) {
+                result = NominatorService.bindInventory(
+                    true,
+                    held,
+                    null,
+                    null,
+                    Collections.singletonList(arguments[3]),
+                    repository.getSnapshot(),
+                    ItemIdentitySavedData.get());
+            } else throw new WrongUsageException(usage);
+        } else throw new WrongUsageException(usage);
+        if (result.isAccepted()) ChatMessages.success(sender, "Debug Nominator: " + result.getExplanation());
+        else ChatMessages.error(sender, "Debug Nominator rejected: " + result.getCode());
+    }
+
+    private static Entity nearestCustomNpc(EntityPlayerMP player, double range) {
+        List<Entity> nearby = nearbyCustomNpcs(player, range);
+        return nearby.isEmpty() ? null : nearby.get(0);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Entity> nearbyCustomNpcs(final EntityPlayerMP player, double range) {
+        List<Entity> result = new ArrayList<Entity>();
+        double maximumDistance = range * range;
+        for (Object value : player.worldObj.loadedEntityList) {
+            if (!(value instanceof Entity)) continue;
+            Entity entity = (Entity) value;
+            if (!CustomNpcActorBinding.isCustomNpc(entity) || player.getDistanceSqToEntity(entity) > maximumDistance)
+                continue;
+            result.add(entity);
+        }
+        Collections.sort(result, new Comparator<Entity>() {
+
+            @Override
+            public int compare(Entity left, Entity right) {
+                return Double.compare(player.getDistanceSqToEntity(left), player.getDistanceSqToEntity(right));
+            }
+        });
+        return result;
     }
 
     private void processSession(ICommandSender sender, String[] arguments) {
@@ -706,6 +1074,17 @@ public final class CommandDarkGreyRpg extends CommandBase {
             throw new CommandException("This command requires a server-side player.");
         }
         return (EntityPlayerMP) sender;
+    }
+
+    private static EntityPlayerMP namedMultiplayerPlayer(String name) {
+        if (name == null || name.trim()
+            .isEmpty()) throw new CommandException("Online player name is required.");
+        MinecraftServer server = MinecraftServer.getServer();
+        if (server != null && server.getConfigurationManager() != null)
+            for (Object value : server.getConfigurationManager().playerEntityList) if (value instanceof EntityPlayerMP
+                && name.equalsIgnoreCase(((EntityPlayerMP) value).getCommandSenderName()))
+                return (EntityPlayerMP) value;
+        throw new CommandException("Online player was not found: " + name);
     }
 
     private static Entity requireTarget(EntityPlayer player) {

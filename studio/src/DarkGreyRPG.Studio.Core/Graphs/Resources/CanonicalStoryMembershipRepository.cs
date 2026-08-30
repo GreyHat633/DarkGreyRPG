@@ -41,7 +41,7 @@ public sealed class CanonicalStoryMembershipRepository
 
     public IReadOnlyList<CanonicalStoryMembershipInfo> List()
     {
-        EnsureDirectory();
+        if (!Directory.Exists(MembershipDirectory)) return [];
         return Directory.EnumerateFiles(MembershipDirectory, "*.json", SearchOption.TopDirectoryOnly)
             .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
             .Select(path =>

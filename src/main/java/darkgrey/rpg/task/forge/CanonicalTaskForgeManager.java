@@ -21,6 +21,7 @@ import darkgrey.rpg.task.journal.CanonicalTaskJournalEntry;
 import darkgrey.rpg.task.journal.CanonicalTaskJournalProjector;
 import darkgrey.rpg.task.persistence.CanonicalTaskSavedData;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
+import darkgrey.rpg.task.runtime.CanonicalTaskWorldLogicBindings;
 
 /** Server-side Forge owner for canonical Task data, dispatch, and read projections. */
 public final class CanonicalTaskForgeManager {
@@ -70,6 +71,12 @@ public final class CanonicalTaskForgeManager {
         Context context = context(player);
         CanonicalGraphResource resource = currentTask(context.project, resourceId);
         CanonicalTaskInstanceSnapshot snapshot = context.data.start(playerUuid, story, placement, resource);
+        snapshot = synchronizeWorldLogic(
+            playerUuid,
+            context.project,
+            context.data,
+            snapshot,
+            player.worldObj.getWorldTime());
         LOG.debug("Canonical Task {} started/re-entered for player {}", resourceId, playerUuid);
         return snapshot;
     }
@@ -140,6 +147,17 @@ public final class CanonicalTaskForgeManager {
         for (CanonicalTaskInstanceSnapshot snapshot : context(player).data.snapshots())
             if (playerUuid.equals(snapshot.getPlayerUuid())) result.add(snapshot);
         return Collections.unmodifiableList(result);
+    }
+
+    /** Synchronizes formal Minecraft-backed Logic Inputs for every active Task owned by this player. */
+    public void synchronizeWorldLogic(EntityPlayerMP player) {
+        Context context = context(player);
+        UUID playerUuid = requirePlayerUuid(player);
+        List<CanonicalTaskInstanceSnapshot> snapshots = new ArrayList<CanonicalTaskInstanceSnapshot>(
+            context.data.snapshots());
+        for (CanonicalTaskInstanceSnapshot snapshot : snapshots) if (playerUuid.equals(snapshot.getPlayerUuid())
+            && snapshot.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE)
+            synchronizeWorldLogic(player, context, snapshot);
     }
 
     public List<CanonicalTaskInstanceSnapshot> snapshotPlayer(EntityPlayerMP player) {
@@ -223,6 +241,47 @@ public final class CanonicalTaskForgeManager {
         CanonicalTaskResourceResolver resolver = resolver(project);
         bindIfNeeded(data, resolver);
         return CanonicalTaskJournalProjector.project(trustedPlayerUuid, data.snapshots(), resolver);
+    }
+
+    CanonicalTaskInstanceSnapshot synchronizeWorldLogicTrustedForProbe(UUID trustedPlayerUuid, ProjectSnapshot project,
+        CanonicalTaskSavedData data, CanonicalTaskInstanceSnapshot snapshot, long worldTime) {
+        if (trustedPlayerUuid == null || project == null || data == null || snapshot == null)
+            throw new IllegalArgumentException("Trusted Task world Logic probe inputs are required.");
+        bindIfNeeded(data, resolver(project));
+        return synchronizeWorldLogic(trustedPlayerUuid, project, data, snapshot, worldTime);
+    }
+
+    private CanonicalTaskInstanceSnapshot synchronizeWorldLogic(EntityPlayerMP player, Context context,
+        CanonicalTaskInstanceSnapshot snapshot) {
+        CanonicalTaskInstanceSnapshot result = synchronizeWorldLogic(
+            requirePlayerUuid(player),
+            context.project,
+            context.data,
+            snapshot,
+            player.worldObj.getWorldTime());
+        if (snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED
+            && result.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED) {
+            StorySettlementListener listener = storySettlementListener;
+            if (listener != null) listener.onStoryTaskSettled(player, result);
+        }
+        return result;
+    }
+
+    private CanonicalTaskInstanceSnapshot synchronizeWorldLogic(UUID playerUuid, ProjectSnapshot project,
+        CanonicalTaskSavedData data, CanonicalTaskInstanceSnapshot snapshot, long worldTime) {
+        CanonicalGraphResource resource = currentTask(project, snapshot.getTaskResourceId());
+        CanonicalTaskInstanceSnapshot current = snapshot;
+        for (CanonicalTaskWorldLogicBindings.Binding binding : CanonicalTaskWorldLogicBindings.parse(resource)) {
+            if (current.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) break;
+            current = data.setLogicInput(
+                playerUuid,
+                current.getStoryInstanceId(),
+                current.getTaskNodePlacementId(),
+                binding.getPortId(),
+                CanonicalTaskWorldLogicBindings.value(binding.getSource(), worldTime),
+                Math.max(System.currentTimeMillis(), current.getActivationTime()));
+        }
+        return current;
     }
 
     private Context context(EntityPlayerMP player) {

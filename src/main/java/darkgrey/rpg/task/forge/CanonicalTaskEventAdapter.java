@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 
 /** One Forge event listener for canonical Task kill, collect, and CustomNPC+ interaction events. */
@@ -31,8 +32,8 @@ public final class CanonicalTaskEventAdapter {
             if (event == null || event.source == null) return;
             Entity attacker = event.source.getEntity();
             if (!(attacker instanceof EntityPlayerMP)) return;
-            CanonicalTaskEvent taskEvent = CanonicalTaskForgeEventNormalizer.kill(event.entityLiving);
-            if (taskEvent != null) dispatch((EntityPlayerMP) attacker, taskEvent);
+            List<CanonicalTaskEvent> taskEvents = CanonicalTaskForgeEventNormalizer.killEvents(event.entityLiving);
+            for (CanonicalTaskEvent taskEvent : taskEvents) dispatch((EntityPlayerMP) attacker, taskEvent);
         } catch (RuntimeException failure) {
             // Forge listeners must not let one malformed entity abort the event bus.
             LOG.warn("Canonical Task kill event was ignored: {}", failure.getMessage());
@@ -43,8 +44,9 @@ public final class CanonicalTaskEventAdapter {
     public void onItemPickup(EntityItemPickupEvent event) {
         try {
             if (event == null || !(event.entityPlayer instanceof EntityPlayerMP) || event.item == null) return;
-            CanonicalTaskEvent taskEvent = CanonicalTaskForgeEventNormalizer.collect(event.item.getEntityItem());
-            if (taskEvent != null) dispatch((EntityPlayerMP) event.entityPlayer, taskEvent);
+            List<CanonicalTaskEvent> taskEvents = CanonicalTaskForgeEventNormalizer
+                .collectEvents(event.item.getEntityItem());
+            for (CanonicalTaskEvent taskEvent : taskEvents) dispatch((EntityPlayerMP) event.entityPlayer, taskEvent);
         } catch (RuntimeException failure) {
             // Forge listeners must not let one malformed stack abort the event bus.
             LOG.warn("Canonical Task pickup event was ignored: {}", failure.getMessage());
@@ -60,6 +62,18 @@ public final class CanonicalTaskEventAdapter {
         } catch (RuntimeException failure) {
             // Forge listeners must not let one malformed CustomNPC+ wrapper abort the event bus.
             LOG.warn("Canonical Task interaction event was ignored: {}", failure.getMessage());
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event == null || event.phase != TickEvent.Phase.END
+            || !(event.player instanceof EntityPlayerMP)
+            || event.player.ticksExisted % 20 != 0) return;
+        try {
+            manager.synchronizeWorldLogic((EntityPlayerMP) event.player);
+        } catch (RuntimeException failure) {
+            LOG.warn("Canonical Task world Logic synchronization failed: {}", failure.getMessage());
         }
     }
 

@@ -2,8 +2,10 @@ package darkgrey.rpg.entitytools;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -50,6 +52,10 @@ public final class CopierState {
         EntityCapture.requireLivingMob(capture);
         EntityTemplate value = EntityTemplate.fromCapture(capture);
         EntityTemplateNbtCodec.decode(EntityTemplateNbtCodec.encode(value));
+        NBTTagCompound fingerprint = EntityTemplateNbtCodec.canonicalTemplate(value);
+        for (EntityTemplate existing : templates) {
+            if (fingerprint.equals(EntityTemplateNbtCodec.canonicalTemplate(existing))) return existing;
+        }
         templates.add(value);
         if (selectedIndex < 0) selectedIndex = 0;
         return value;
@@ -81,20 +87,29 @@ public final class CopierState {
         if (root.getInteger("schema_version") != SCHEMA_VERSION)
             throw EntityTemplateNbtCodec.malformed("unsupported schema_version");
         int selected = root.getInteger("selected_index");
-        NBTTagList list = root.getTagList("templates", 10);
+        NBTTagList list = (NBTTagList) root.getTag("templates");
+        if (list.tagCount() > 0 && list.func_150303_d() != 10)
+            throw EntityTemplateNbtCodec.malformed("templates element type");
+        if (selected < -1 || selected >= list.tagCount()) throw EntityTemplateNbtCodec.malformed("selected_index");
         List<EntityTemplate> candidate = new ArrayList<EntityTemplate>();
-        Set<String> fingerprints = new HashSet<String>();
+        Map<NBTTagCompound, Integer> fingerprints = new HashMap<NBTTagCompound, Integer>();
+        int normalizedSelected = -1;
         for (int i = 0; i < list.tagCount(); i++) {
             EntityTemplate value = EntityTemplateNbtCodec.decodeTemplate(list.getCompoundTagAt(i));
-            String fingerprint = EntityTemplateNbtCodec.encode(value)
-                .toString();
-            if (!fingerprints.add(fingerprint)) throw EntityTemplateNbtCodec.malformed("duplicate copier template");
+            NBTTagCompound fingerprint = EntityTemplateNbtCodec.canonicalTemplate(value);
+            Integer existingIndex = fingerprints.get(fingerprint);
+            if (existingIndex != null) {
+                if (i == selected) normalizedSelected = existingIndex.intValue();
+                continue;
+            }
+            fingerprints.put(fingerprint, Integer.valueOf(candidate.size()));
             candidate.add(value);
+            if (i == selected) normalizedSelected = candidate.size() - 1;
         }
-        if (selected < -1 || selected >= candidate.size()) throw EntityTemplateNbtCodec.malformed("selected_index");
+        if (selected >= 0 && normalizedSelected < 0) throw EntityTemplateNbtCodec.malformed("selected_index");
         templates.clear();
         templates.addAll(candidate);
-        selectedIndex = selected;
+        selectedIndex = normalizedSelected;
     }
 
     private static Set<String> set(String... values) {

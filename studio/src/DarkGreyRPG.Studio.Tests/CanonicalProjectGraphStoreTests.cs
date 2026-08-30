@@ -31,6 +31,8 @@ public sealed class CanonicalProjectGraphStoreTests
 
         Assert.IsFalse(store.IsInitialized);
         Assert.IsFalse(store.HasCanonicalData);
+        Assert.IsEmpty(store.Stories.List());
+        Assert.IsEmpty(store.Memberships.List());
         Assert.IsFalse(Directory.Exists(store.CanonicalDirectory));
     }
 

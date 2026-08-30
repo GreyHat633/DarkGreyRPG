@@ -23,6 +23,8 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphPortDirection;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
 import darkgrey.rpg.graph.canonical.CanonicalStoryMembership;
 import darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet;
 import darkgrey.rpg.project.ActorDefinition;
@@ -56,6 +58,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         bartenderVerticalSlice();
         activeChildrenCleanup();
         failedActionMarksErrorAndCleans();
+        crossStoryPublicLogicAndDynamicResume();
         System.out.println("CANONICAL_STORY_FORGE_AGGREGATE_ROUTE=PASS");
         System.out.println("CANONICAL_STORY_FORGE_TRANSFER_ROUTE=PASS");
         System.out.println("CANONICAL_STORY_FORGE_FAILURE_CLEANUP=PASS");
@@ -63,6 +66,59 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         System.out.println("CANONICAL_STORY_BARTENDER_PERSISTENCE_RELOAD=PASS");
         System.out.println("CANONICAL_STORY_ACTIVE_CHILD_CLEANUP=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_EXECUTION_LOOP=PASS");
+        System.out.println("CANONICAL_STORY_CROSS_STORY_PUBLIC_LOGIC=PASS");
+        System.out.println("CANONICAL_STORY_CROSS_STORY_DYNAMIC_RESUME=PASS");
+    }
+
+    private static void crossStoryPublicLogicAndDynamicResume() {
+        ProjectSnapshot project = crossStoryLogicProject();
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        CanonicalStoryServerService stories = new CanonicalStoryServerService(project, data);
+        RecordingGateway gateway = new RecordingGateway(project, data, false);
+        UUID other = UUID.fromString("40000000-0000-0000-0000-000000000006");
+
+        CanonicalStoryForgeManager
+            .routeTrusted(PLAYER, stories, data, stories.startByEntry(PLAYER, "logic_source", 400L), gateway);
+        CanonicalStoryForgeManager
+            .routeTrusted(PLAYER, stories, data, stories.startByEntry(PLAYER, "logic_wait", 401L), gateway);
+        check(
+            data.getStorySnapshot(PLAYER, "logic_wait")
+                .getRuntimeSnapshot()
+                .getWaitKind() == darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.CONDITION,
+            "Cross-Story target did not enter durable Condition wait");
+        check(
+            !CanonicalStoryForgeManager.propagateStoryLogicTrusted(PLAYER, project, stories, data, gateway),
+            "False public Logic unexpectedly routed a target");
+        check(data.getStorySnapshot(PLAYER, "logic_start") == null, "False public Logic started target Story");
+
+        CanonicalStoryForgeManager.routeTrusted(
+            PLAYER,
+            stories,
+            data,
+            stories.setLogicInput(PLAYER, "logic_source", "source_gate", true, 410L),
+            gateway);
+        check(
+            CanonicalStoryForgeManager.propagateStoryLogicTrusted(PLAYER, project, stories, data, gateway),
+            "True public Logic did not propagate");
+        check(
+            data.getStorySnapshot(PLAYER, "logic_start")
+                .getRuntimeSnapshot()
+                .getStatus() == CanonicalStoryStatus.TERMINATED,
+            "Public Logic did not activate the connected target Story");
+        check(
+            data.getStorySnapshot(PLAYER, "logic_wait")
+                .getRuntimeSnapshot()
+                .getStatus() == CanonicalStoryStatus.TERMINATED,
+            "Public Logic change did not resume the waiting Condition outlet");
+        check(
+            !CanonicalStoryForgeManager.propagateStoryLogicTrusted(PLAYER, project, stories, data, gateway),
+            "Stable public Logic repeated a completed propagation");
+
+        CanonicalStoryServerService otherStories = new CanonicalStoryServerService(project, data);
+        check(
+            !CanonicalStoryForgeManager.propagateStoryLogicTrusted(other, project, otherStories, data, gateway),
+            "One player's public Logic leaked into another player");
+        check(data.getStorySnapshot(other, "logic_start") == null, "Cross-player target Story was created");
     }
 
     private static void bartenderVerticalSlice() {
@@ -428,6 +484,87 @@ public final class CanonicalStoryForgeCoordinatorProbe {
                 sessions,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
                 memberships));
+    }
+
+    private static ProjectSnapshot crossStoryLogicProject() {
+        Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
+        stories.put("logic_source", logicConditionStory("logic_source", "source_gate", "signal"));
+        stories.put("logic_wait", logicConditionStory("logic_wait", "target_gate", null));
+        stories.put("logic_start", logicStartStory());
+        List<CanonicalStoryLogicConnection> connections = Arrays.asList(
+            new CanonicalStoryLogicConnection("logic_source", "signal", "logic_wait", "target_gate"),
+            new CanonicalStoryLogicConnection("logic_source", "signal", "logic_start", "start_gate"));
+        return new ProjectSnapshot(
+            new ProjectDefinition(1, "cross-story-logic", "Cross Story Logic"),
+            Collections.<String, ActorDefinition>emptyMap(),
+            Collections.<String, DialogueDefinition>emptyMap(),
+            Collections.<String, QuestDefinition>emptyMap(),
+            Collections.<String, StoryDefinition>emptyMap(),
+            new CanonicalProjectContent(
+                stories,
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalStoryMembership>emptyMap(),
+                new CanonicalStoryLogicGraph(connections)));
+    }
+
+    private static CanonicalGraphResource logicConditionStory(String storyId, String inputPortId, String outputPortId) {
+        CanonicalGraphNode start = start(storyId);
+        CanonicalGraphNode input = node(
+            "input",
+            "logic_input",
+            ports(logicOut("logic_out", 0)),
+            props("port_id", inputPortId, "display_name", inputPortId));
+        CanonicalGraphNode condition = node(
+            "condition",
+            "condition",
+            ports(in("flow_in", 0), logicIn("logic_in", 1), out("flow_true", 2), out("flow_false", 3)),
+            empty());
+        CanonicalGraphNode end = node("end", "terminate", ports(in("flow_in", 0)), empty());
+        List<CanonicalGraphNode> nodes = new ArrayList<CanonicalGraphNode>(Arrays.asList(start, input, condition, end));
+        List<CanonicalGraphConnection> edges = new ArrayList<CanonicalGraphConnection>(
+            Arrays.asList(
+                edge("start", "entry", "condition", "flow_in"),
+                logicEdge("input", "logic_out", "condition", "logic_in"),
+                edge("condition", "flow_true", "end", "flow_in")));
+        if (outputPortId != null) {
+            nodes.add(
+                node(
+                    "output",
+                    "logic_output",
+                    ports(logicIn("logic_in", 0)),
+                    props("port_id", outputPortId, "display_name", outputPortId)));
+            edges.add(logicEdge("input", "logic_out", "output", "logic_in"));
+        }
+        return resource(storyId, CanonicalGraphResourceKind.STORY, nodes, edges);
+    }
+
+    private static CanonicalGraphResource logicStartStory() {
+        Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
+        properties.put("repeat_policy", json("\"once\""));
+        properties.put(
+            "triggers",
+            json(
+                "[{\"port_id\":\"logic_start\",\"display_name\":\"logic_start\",\"trigger_type\":\"logic\","
+                    + "\"trigger_properties\":{},\"order\":0,\"logic_port_id\":\"logic_condition\"}]"));
+        CanonicalGraphNode start = node(
+            "start",
+            "start",
+            ports(out("logic_start", 0), logicIn("logic_condition", 1)),
+            properties);
+        CanonicalGraphNode input = node(
+            "input",
+            "logic_input",
+            ports(logicOut("logic_out", 0)),
+            props("port_id", "start_gate", "display_name", "start_gate"));
+        CanonicalGraphNode end = node("end", "terminate", ports(in("flow_in", 0)), empty());
+        return resource(
+            "logic_start",
+            CanonicalGraphResourceKind.STORY,
+            Arrays.asList(start, input, end),
+            Arrays.asList(
+                logicEdge("input", "logic_out", "start", "logic_condition"),
+                edge("start", "logic_start", "end", "flow_in")));
     }
 
     private static ProjectSnapshot bartenderProject() {

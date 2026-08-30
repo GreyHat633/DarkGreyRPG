@@ -172,6 +172,21 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         return instance == null ? null : instance.snapshot();
     }
 
+    public synchronized CanonicalTaskInstanceSnapshot setLogicInput(UUID playerUuid, String storyId, String placementId,
+        String portId, boolean value, long eventTime) {
+        requireBound();
+        CanonicalTaskInstance instance = store.get(playerUuid, storyId, placementId);
+        if (instance == null) throw new IllegalStateException("Canonical Task instance does not exist.");
+        NBTTagCompound before = persistedState();
+        instance.setLogicInput(portId, value, eventTime);
+        index.reindex(
+            instance.snapshot(),
+            instance.getRuntime()
+                .getResource());
+        markIfChanged(before);
+        return instance.snapshot();
+    }
+
     public synchronized CanonicalTaskInstanceSnapshot getInstanceSnapshot(UUID playerUuid, String storyId,
         String placementId) {
         return getSnapshot(playerUuid, storyId, placementId);

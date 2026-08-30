@@ -63,6 +63,20 @@ public final class StoryPackageLoaderProbe {
                 loader.reload()
                     .isSuccessful(),
                 "shared Actor repair did not reload");
+            writeLogicPackage(new File(root, "logic_source"), "logic_source", true);
+            writeLogicPackage(new File(root, "logic_target"), "logic_target", false);
+            require(
+                loader.reload()
+                    .isSuccessful(),
+                "cross-Story Logic packages did not load as one set");
+            darkgrey.rpg.project.ProjectSnapshot merged = StoryPackageSnapshotMerger.merge(loader.getPackages());
+            require(
+                merged.getCanonicalStoryLogicConnections()
+                    .size() == 1 && "logic_target".equals(
+                        merged.getCanonicalStoryLogicConnections()
+                            .get(0)
+                            .getTargetStoryId()),
+                "package-owned Story Logic graph was not retained after merge");
             write(new File(first, "manifest.json"), "{");
             StoryPackageLoader.ReloadResult rejected = loader.reload();
             require(
@@ -81,6 +95,7 @@ public final class StoryPackageLoaderProbe {
                 loader.getPackage("alpha") != null && loader.getPackage("beta") != null,
                 "merge conflict disabled active packages");
             System.out.println("STORY_PACKAGE_LOAD_REPLACE_ROLLBACK_ISOLATION=PASS");
+            System.out.println("STORY_PACKAGE_CROSS_STORY_LOGIC_MERGE=PASS");
         } finally {
             delete(root);
         }
@@ -136,6 +151,63 @@ public final class StoryPackageLoaderProbe {
         File manifest = new File(directory, "manifest.json");
         String json = new String(Files.readAllBytes(manifest.toPath()), java.nio.charset.StandardCharsets.UTF_8);
         json = json.replace("\"actors\":[]", "\"actors\":[\"actors/shared_actor.json\"]");
+        write(manifest, json);
+    }
+
+    private static void writeLogicPackage(File directory, String storyId, boolean source) throws Exception {
+        writePackage(directory, storyId, storyId, false, storyId);
+        String canonical = "resources/canonical/";
+        new File(directory, canonical + "stories").mkdirs();
+        new File(directory, canonical + "memberships").mkdirs();
+        new File(directory, canonical + "sessions").mkdirs();
+        new File(directory, canonical + "tasks").mkdirs();
+        String type = source ? "logic_output" : "logic_input";
+        String nodeId = source ? "output" : "input";
+        String portId = source ? "signal" : "gate";
+        String direction = source ? "input" : "output";
+        String nodePort = source ? "logic_in" : "logic_out";
+        write(
+            new File(directory, canonical + "stories/" + storyId + ".json"),
+            "{\"schema_version\":1,\"resource_kind\":\"story\",\"id\":\"" + storyId
+                + "\",\"display_name\":\""
+                + storyId
+                + "\",\"graph\":{\"nodes\":[{\"id\":\"start\",\"type\":\"start\",\"display_name\":\"Start\",\"ports\":[],\"properties\":{}},{\"id\":\""
+                + nodeId
+                + "\",\"type\":\""
+                + type
+                + "\",\"display_name\":\""
+                + nodeId
+                + "\",\"ports\":[{\"port_id\":\""
+                + nodePort
+                + "\",\"display_name\":\"Logic\",\"direction\":\""
+                + direction
+                + "\",\"kind\":\"logic\",\"order\":0}],\"properties\":{\"port_id\":\""
+                + portId
+                + "\",\"display_name\":\""
+                + portId
+                + "\"}}],\"connections\":[]}}");
+        write(
+            new File(directory, canonical + "memberships/" + storyId + ".json"),
+            "{\"schema_version\":1,\"story_id\":\"" + storyId
+                + "\",\"owned_resources\":{\"actors\":[],\"sessions\":[],\"tasks\":[]},"
+                + "\"referenced_resources\":{\"actors\":[],\"sessions\":[],\"tasks\":[]}}");
+        File manifest = new File(directory, "manifest.json");
+        String json = new String(Files.readAllBytes(manifest.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        json = json.replace(
+            "\"canonical_stories\":[]",
+            "\"canonical_stories\":[\"resources/canonical/stories/" + storyId + ".json\"]");
+        json = json.replace(
+            "\"canonical_memberships\":[]",
+            "\"canonical_memberships\":[\"resources/canonical/memberships/" + storyId + ".json\"]");
+        if (source) {
+            write(
+                new File(directory, "resources/story_logic_graph.json"),
+                "{\"schema_version\":1,\"connections\":[{\"source_story_id\":\"logic_source\","
+                    + "\"source_port_id\":\"signal\",\"target_story_id\":\"logic_target\","
+                    + "\"target_port_id\":\"gate\"}]}");
+            json = json
+                .replace("\"tasks\":[]", "\"tasks\":[],\"story_logic_graph\":\"resources/story_logic_graph.json\"");
+        }
         write(manifest, json);
     }
 

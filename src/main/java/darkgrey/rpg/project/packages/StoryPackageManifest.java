@@ -37,7 +37,8 @@ public final class StoryPackageManifest {
         "canonical_stories",
         "canonical_memberships",
         "sessions",
-        "tasks");
+        "tasks",
+        "story_logic_graph");
 
     private final int schemaVersion;
     private final String packageId;
@@ -84,7 +85,8 @@ public final class StoryPackageManifest {
                     paths(file, resources, "canonical_stories"),
                     paths(file, resources, "canonical_memberships"),
                     paths(file, resources, "sessions"),
-                    paths(file, resources, "tasks"));
+                    paths(file, resources, "tasks"),
+                    optionalPath(file, resources, "story_logic_graph"));
                 return new StoryPackageManifest(schema, packageId, packageVersion, storyId, storySchema, required);
             } finally {
                 reader.close();
@@ -129,10 +131,11 @@ public final class StoryPackageManifest {
         private final String story;
         private final List<String> actors, items, itemGroups, dialogues, quests, canonicalStories, canonicalMemberships,
             sessions, tasks;
+        private final String storyLogicGraph;
 
         private RequiredResources(String story, List<String> actors, List<String> items, List<String> itemGroups,
             List<String> dialogues, List<String> quests, List<String> canonicalStories,
-            List<String> canonicalMemberships, List<String> sessions, List<String> tasks) {
+            List<String> canonicalMemberships, List<String> sessions, List<String> tasks, String storyLogicGraph) {
             this.story = story;
             this.actors = freeze(actors);
             this.items = freeze(items);
@@ -143,6 +146,7 @@ public final class StoryPackageManifest {
             this.canonicalMemberships = freeze(canonicalMemberships);
             this.sessions = freeze(sessions);
             this.tasks = freeze(tasks);
+            this.storyLogicGraph = storyLogicGraph;
         }
 
         public String getStory() {
@@ -185,6 +189,10 @@ public final class StoryPackageManifest {
             return tasks;
         }
 
+        public String getStoryLogicGraph() {
+            return storyLogicGraph;
+        }
+
         private static List<String> freeze(List<String> values) {
             return Collections.unmodifiableList(new ArrayList<String>(values));
         }
@@ -215,6 +223,11 @@ public final class StoryPackageManifest {
         if (value.indexOf('\\') >= 0 || value.startsWith("/") || value.contains(".."))
             throw failure(file, "Unsafe resource path: " + value);
         return value;
+    }
+
+    private static String optionalPath(File file, JsonObject json, String field) throws ProjectLoadException {
+        if (!json.has(field)) return null;
+        return requiredPath(file, json, field);
     }
 
     private static JsonObject requiredObject(File file, JsonObject json, String field) throws ProjectLoadException {

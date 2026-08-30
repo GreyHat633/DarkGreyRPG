@@ -41,11 +41,12 @@ public final class CanonicalTaskForgeProbe {
     public static void main(String[] args) {
         normalization();
         managerLifecycle();
+        worldLogicLifecycle();
         adapterShape();
         System.out.println("CANONICAL_TASK_FORGE_NORMALIZATION=PASS");
         System.out.println("CANONICAL_TASK_MULTI_INTERACTION_DISPATCH=PASS");
         System.out.println("CANONICAL_TASK_FORGE_MANAGER_BIND_START_JOURNAL=PASS");
-        System.out.println("CANONICAL_TASK_FORGE_NO_TICK_STAGE5_BOUNDARY=PASS");
+        System.out.println("CANONICAL_TASK_WORLD_LOGIC_LIFECYCLE=PASS");
     }
 
     private static void normalization() {
@@ -97,6 +98,29 @@ public final class CanonicalTaskForgeProbe {
         require(CanonicalTaskForgeEventNormalizer.normalizeEntityId("UnknownMob") == null, "unknown entity rejected");
         require(CanonicalTaskForgeEventNormalizer.normalizeEntityId(" ") == null, "blank entity ignored");
 
+        List<CanonicalTaskEvent> kills = CanonicalTaskForgeEventNormalizer
+            .killEventsForIds(" Minecraft:Zombie ", Arrays.asList("guards", "guard_1", "guards", "", null, "guard_1"));
+        require(kills.size() == 3, "multi-kill deduplication");
+        require(
+            "minecraft:zombie".equals(
+                kills.get(0)
+                    .get("entity")),
+            "multi-kill registry ordering");
+        require(
+            "guards".equals(
+                kills.get(1)
+                    .get("entity")),
+            "multi-kill group ordering");
+        require(
+            "guard_1".equals(
+                kills.get(2)
+                    .get("entity")),
+            "multi-kill identity ordering");
+        require(
+            CanonicalTaskForgeEventNormalizer.killEventsForIds(null, Arrays.asList(" ", "guards"))
+                .size() == 1,
+            "identity-only kill event");
+
         CanonicalTaskEvent collect = CanonicalTaskForgeEventNormalizer.collect("Minecraft:Iron", 7, 3);
         require(
             collect != null && CanonicalTaskEvent.COLLECT_ITEM.equals(collect.getType())
@@ -106,6 +130,40 @@ public final class CanonicalTaskForgeProbe {
             "collect mapping");
         require(CanonicalTaskForgeEventNormalizer.collect("iron", 0, 1) == null, "unnamespaced collect rejected");
         require(CanonicalTaskForgeEventNormalizer.collect("minecraft:iron", -1, 1) == null, "invalid damage rejected");
+        List<CanonicalTaskEvent> pickup = CanonicalTaskForgeEventNormalizer.collectEventsForIds(
+            "Minecraft:Iron",
+            7,
+            3,
+            Arrays.asList("royal_key", "royal_key", "alternate_key"),
+            Arrays.asList("sword", "royal_key", "weapon", "sword"));
+        require(pickup.size() == 5, "pickup multi-target deduplication");
+        require(
+            "minecraft:iron".equals(
+                pickup.get(0)
+                    .get("item")),
+            "pickup registry target first");
+        require(
+            "royal_key".equals(
+                pickup.get(1)
+                    .get("item")),
+            "pickup Item ID ordering");
+        require(
+            "alternate_key".equals(
+                pickup.get(2)
+                    .get("item")),
+            "pickup second Item ID ordering");
+        require(
+            "sword".equals(
+                pickup.get(3)
+                    .get("item")),
+            "pickup Group ordering");
+        require(
+            "weapon".equals(
+                pickup.get(4)
+                    .get("item")),
+            "pickup second Group ordering");
+        for (CanonicalTaskEvent event : pickup)
+            require(event.getAmount() == 3 && "7".equals(event.get("damage")), "pickup amount and damage metadata");
         CanonicalTaskEvent interact = CanonicalTaskForgeEventNormalizer.interact(" actor_7 ");
         require(interact != null && "actor_7".equals(interact.get("actor_id")), "interact mapping");
         require(CanonicalTaskForgeEventNormalizer.interact(" ") == null, "blank actor rejected");
@@ -184,6 +242,33 @@ public final class CanonicalTaskForgeProbe {
                 manager.snapshotTrustedForProbe(PLAYER, project, data, " ", "placement");
             }
         }, "strict snapshot identity");
+
+        CanonicalGraphResource guards = taskResource("task_guards", "guards");
+        ProjectSnapshot guardsProject = project(guards);
+        CanonicalTaskSavedData guardsData = new CanonicalTaskSavedData();
+        manager.startTrustedForProbe(PLAYER, guardsProject, guardsData, "story", "placement", "task_guards");
+        CanonicalTaskDispatchResult nonGuards = dispatchAll(
+            manager,
+            PLAYER,
+            guardsProject,
+            guardsData,
+            CanonicalTaskForgeEventNormalizer.killEventsForIds("minecraft:zombie", Collections.singletonList("town")));
+        require(nonGuards.getChangedInstanceCount() == 0, "non-guards kill ignored");
+        CanonicalTaskDispatchResult guardsKill = dispatchAll(
+            manager,
+            PLAYER,
+            guardsProject,
+            guardsData,
+            CanonicalTaskForgeEventNormalizer
+                .killEventsForIds("minecraft:zombie", Collections.singletonList("guards")));
+        require(guardsKill.getChangedInstanceCount() == 1, "guards kill advances objective");
+    }
+
+    private static CanonicalTaskDispatchResult dispatchAll(CanonicalTaskForgeManager manager, UUID player,
+        ProjectSnapshot project, CanonicalTaskSavedData data, List<CanonicalTaskEvent> events) {
+        CanonicalTaskDispatchResult result = null;
+        for (CanonicalTaskEvent event : events) result = manager.dispatchTrustedForProbe(player, project, data, event);
+        return result;
     }
 
     private static void adapterShape() {
@@ -197,11 +282,56 @@ public final class CanonicalTaskForgeProbe {
             require(
                 type.equals("net.minecraftforge.event.entity.living.LivingDeathEvent")
                     || type.equals("net.minecraftforge.event.entity.player.EntityItemPickupEvent")
-                    || type.equals("net.minecraftforge.event.entity.player.EntityInteractEvent"),
+                    || type.equals("net.minecraftforge.event.entity.player.EntityInteractEvent")
+                    || type.equals("cpw.mods.fml.common.gameevent.TickEvent$PlayerTickEvent"),
                 "event handler type");
-            require(!type.contains("Tick") && !type.contains("FML"), "no tick/FML event");
         }
-        require(handlers == 3, "exactly three task handlers");
+        require(handlers == 4, "exactly four task handlers");
+    }
+
+    private static void worldLogicLifecycle() {
+        CanonicalGraphResource resource = worldBoundTaskResource();
+        ProjectSnapshot project = project(resource);
+        CanonicalTaskSavedData data = new CanonicalTaskSavedData();
+        CanonicalTaskForgeManager manager = new CanonicalTaskForgeManager(new ProjectRepository(new File(".")));
+        CanonicalTaskInstanceSnapshot task = manager
+            .startTrustedForProbe(PLAYER, project, data, "story", "night_kills", resource.getId());
+
+        task = manager.synchronizeWorldLogicTrustedForProbe(PLAYER, project, data, task, 13000L);
+        for (int count = 0; count < 7; count++)
+            manager.dispatchTrustedForProbe(PLAYER, project, data, CanonicalTaskEvent.killEntity("minecraft:slime"));
+        task = manager.snapshotTrustedForProbe(PLAYER, project, data, "story", "night_kills");
+        require(
+            task.getRuntimeSnapshot()
+                .getProgress()
+                .get("kill")
+                .intValue() == 7,
+            "night progress reaches seven");
+
+        task = manager.synchronizeWorldLogicTrustedForProbe(PLAYER, project, data, task, 1000L);
+        for (int count = 0; count < 3; count++)
+            manager.dispatchTrustedForProbe(PLAYER, project, data, CanonicalTaskEvent.killEntity("minecraft:slime"));
+        task = manager.snapshotTrustedForProbe(PLAYER, project, data, "story", "night_kills");
+        require(
+            task.getRuntimeSnapshot()
+                .getProgress()
+                .get("kill")
+                .intValue() == 7,
+            "day events do not advance a night-gated objective");
+
+        task = manager.synchronizeWorldLogicTrustedForProbe(PLAYER, project, data, task, 13000L);
+        for (int count = 0; count < 3; count++)
+            manager.dispatchTrustedForProbe(PLAYER, project, data, CanonicalTaskEvent.killEntity("minecraft:slime"));
+        task = manager.snapshotTrustedForProbe(PLAYER, project, data, "story", "night_kills");
+        require(
+            task.getRuntimeSnapshot()
+                .getProgress()
+                .get("kill")
+                .intValue() == 10,
+            "progress resumes from seven after night returns");
+        require(
+            task.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED,
+            "night-gated Task did not settle at ten");
     }
 
     private static ProjectSnapshot project(CanonicalGraphResource resource) {
@@ -217,6 +347,10 @@ public final class CanonicalTaskForgeProbe {
     }
 
     private static CanonicalGraphResource taskResource(String id) {
+        return taskResource(id, "minecraft:slime");
+    }
+
+    private static CanonicalGraphResource taskResource(String id, String target) {
         CanonicalGraphNode activate = node(
             "activate",
             "activate",
@@ -224,9 +358,9 @@ public final class CanonicalTaskForgeProbe {
             Collections.<String, JsonElement>emptyMap());
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
         properties.put("objective_type", json(CanonicalTaskEvent.KILL_ENTITY));
-        properties.put("description", json("Kill a slime"));
+        properties.put("description", json("Kill " + target));
         properties.put("required", json("1"));
-        properties.put("entity", json("minecraft:slime"));
+        properties.put("entity", json(target));
         CanonicalGraphNode objective = node(
             "kill",
             "objective",
@@ -251,6 +385,53 @@ public final class CanonicalTaskForgeProbe {
             id,
             "Forge Probe Task",
             new CanonicalGraph(Arrays.asList(activate, objective, settle), edges));
+    }
+
+    private static CanonicalGraphResource worldBoundTaskResource() {
+        Map<String, JsonElement> inputProperties = new LinkedHashMap<String, JsonElement>();
+        inputProperties.put("port_id", json("night"));
+        inputProperties.put("display_name", json("Night"));
+        inputProperties.put("source", json("minecraft:night"));
+        CanonicalGraphNode input = node(
+            "night_input",
+            "logic_input",
+            Collections.singletonList(port("logic_out", false, 0)),
+            inputProperties);
+        Map<String, JsonElement> objectiveProperties = new LinkedHashMap<String, JsonElement>();
+        objectiveProperties.put("objective_type", json(CanonicalTaskEvent.KILL_ENTITY));
+        objectiveProperties.put("description", json("Kill slimes at night"));
+        objectiveProperties.put("required", json("10"));
+        objectiveProperties.put("entity", json("minecraft:slime"));
+        CanonicalGraphNode objective = node(
+            "kill",
+            "objective",
+            Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+            objectiveProperties);
+        CanonicalGraphNode settle = node(
+            "settle",
+            "settle",
+            Collections.singletonList(port("done", true, 0)),
+            Collections.<String, JsonElement>emptyMap());
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "night_task",
+            "Night Task",
+            new CanonicalGraph(
+                Arrays.asList(input, objective, settle),
+                Arrays.asList(
+                    new CanonicalGraphConnection(
+                        "night_input",
+                        "logic_out",
+                        "kill",
+                        "logic_enable",
+                        CanonicalGraphInterfaceKind.LOGIC),
+                    new CanonicalGraphConnection(
+                        "kill",
+                        "logic_status",
+                        "settle",
+                        "done",
+                        CanonicalGraphInterfaceKind.LOGIC))));
     }
 
     private static CanonicalGraphNode node(String id, String type, List<CanonicalGraphPort> ports,

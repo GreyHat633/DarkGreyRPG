@@ -32,6 +32,9 @@ public final class GuiNominatorInventory extends GuiScreen {
     private String lastResourceQuery = "";
     private NominatorCatalog catalog;
     private long revision = -1L;
+    private int panelLeft;
+    private int panelTop;
+    private int panelWidth;
 
     public GuiNominatorInventory() {
         this(
@@ -53,19 +56,27 @@ public final class GuiNominatorInventory extends GuiScreen {
     @Override
     public void initGui() {
         buttonList.clear();
-        resourceSearch = new GuiTextField(fontRendererObj, width / 2 - 175, height / 2 - 78, 350, 16);
+        panelWidth = Math.min(520, width - 12);
+        panelLeft = (width - panelWidth) / 2;
+        panelTop = Math.max(4, (height - 228) / 2);
+        int contentLeft = panelLeft + 10;
+        int contentWidth = panelWidth - 20;
+        int columnGap = 10;
+        int columnWidth = (contentWidth - columnGap) / 2;
+        int rightColumn = contentLeft + columnWidth + columnGap;
+        resourceSearch = new GuiTextField(fontRendererObj, contentLeft, panelTop + 32, contentWidth, 18);
         resourceSearch.setMaxStringLength(128);
         refreshResources();
         refreshInventorySlots();
-        buttonList.add(new GuiModernButton(1, width / 2 - 145, height / 2 - 45, 140, 20, "浏览精确物品 ID"));
-        buttonList.add(new GuiModernButton(2, width / 2 + 5, height / 2 - 45, 140, 20, "浏览精确群组"));
-        buttonList.add(new GuiModernButton(3, width / 2 - 145, height / 2 - 10, 140, 20, "添加模糊群组"));
-        GuiModernButton bind = new GuiModernButton(4, width / 2 + 5, height / 2 - 10, 140, 20, "绑定选择");
+        buttonList.add(new GuiModernButton(1, contentLeft, panelTop + 76, columnWidth, 18, "浏览物品"));
+        buttonList.add(new GuiModernButton(2, rightColumn, panelTop + 76, columnWidth, 18, "浏览精确群组"));
+        buttonList.add(new GuiModernButton(3, contentLeft, panelTop + 112, columnWidth, 18, "添加模糊群组"));
+        GuiModernButton bind = new GuiModernButton(4, rightColumn, panelTop + 112, columnWidth, 18, "绑定到当前槽位");
         bind.enabled = selectedSlot >= 0;
         buttonList.add(bind);
-        buttonList.add(new GuiModernButton(10, width / 2 - 145, height / 2 + 55, 65, 20, "上一格"));
-        buttonList.add(new GuiModernButton(11, width / 2 + 80, height / 2 + 55, 65, 20, "下一格"));
-        buttonList.add(new GuiModernButton(0, width / 2 - 30, height / 2 + 82, 60, 20, "关闭"));
+        buttonList.add(new GuiModernButton(10, contentLeft, panelTop + 160, columnWidth, 18, "上一个槽位"));
+        buttonList.add(new GuiModernButton(11, rightColumn, panelTop + 160, columnWidth, 18, "下一个槽位"));
+        buttonList.add(new GuiModernButton(0, width / 2 - 35, panelTop + 202, 70, 18, "关闭"));
     }
 
     @Override
@@ -94,45 +105,56 @@ public final class GuiNominatorInventory extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         if (resourceSearch != null && !lastResourceQuery.equals(resourceSearch.getText())) refreshResources();
         drawDefaultBackground();
-        drawRect(width / 2 - 190, height / 2 - 80, width / 2 + 190, height / 2 + 110, 0xF02B2F4A);
-        drawCenteredString(fontRendererObj, "指名器：物品", width / 2, height / 2 - 70, 0xFFEEF0FF);
+        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + 228, 0xF02B2F4A);
+        drawCenteredString(fontRendererObj, "Nominator · 物品指名", width / 2, panelTop + 8, 0xFFEEF0FF);
+        drawString(fontRendererObj, "搜索物品或群组的 ID、名称与标签", panelLeft + 10, panelTop + 21, 0xFFB8C0E8);
         resourceSearch.drawTextBox();
         ItemStack selected = selectedSlot >= 0
             && selectedSlot < Minecraft.getMinecraft().thePlayer.inventory.mainInventory.length
                 ? Minecraft.getMinecraft().thePlayer.inventory.mainInventory[selectedSlot]
                 : null;
-        drawString(fontRendererObj, "搜索物品/群组 ID、名称或标签", width / 2 - 175, height / 2 - 60, 0xFFB8C0E8);
+        int contentLeft = panelLeft + 10;
+        int contentWidth = panelWidth - 20;
+        int columnWidth = (contentWidth - 10) / 2;
+        int rightColumn = contentLeft + columnWidth + 10;
+        drawString(fontRendererObj, fit("精确物品：" + value(itemId), columnWidth), contentLeft, panelTop + 64, 0xFFEEF0FF);
         drawString(
             fontRendererObj,
-            "选择槽位 " + (selectedSlot < 0 ? "无" : String.valueOf(selectedSlot + 1))
-                + ": "
-                + (selected == null ? "空" : selected.getDisplayName()),
-            width / 2 - 175,
-            height / 2 - 40,
+            fit("精确群组：" + value(exactGroup), columnWidth),
+            rightColumn,
+            panelTop + 64,
+            0xFFEEF0FF);
+        drawString(fontRendererObj, fit("模糊群组：" + fuzzyGroups, contentWidth), contentLeft, panelTop + 100, 0xFFB8C0E8);
+        drawString(
+            fontRendererObj,
+            fit(
+                "当前槽位 " + (selectedSlot < 0 ? "无" : String.valueOf(selectedSlot + 1))
+                    + " · "
+                    + (selected == null ? "空" : selected.getDisplayName()),
+                contentWidth),
+            contentLeft,
+            panelTop + 148,
             0xFFEEF0FF);
         drawString(
             fontRendererObj,
-            "精确物品 ID：" + (itemId == null ? "无" : itemId),
-            width / 2 - 175,
-            height / 2 - 18,
-            0xFFEEF0FF);
-        drawString(
-            fontRendererObj,
-            "精确群组：" + (exactGroup == null ? "无" : exactGroup),
-            width / 2 - 175,
-            height / 2 + 28,
-            0xFFEEF0FF);
-        drawString(fontRendererObj, "模糊群组（仅注册名）：" + fuzzyGroups, width / 2 - 175, height / 2 + 48, 0xFFB8C0E8);
-        drawString(
-            fontRendererObj,
-            catalog.getItems()
-                .isEmpty()
-                && catalog.getItemGroups()
-                    .isEmpty() ? "服务器物品目录为空" : "目录来源：服务器快照；绑定冲突会被服务端拒绝。",
-            width / 2 - 175,
-            height / 2 + 68,
+            fit(
+                catalog.getItems()
+                    .isEmpty()
+                    && catalog.getItemGroups()
+                        .isEmpty() ? "服务器物品目录为空" : "服务器目录修订 " + revision + " · 冲突时会拒绝绑定",
+                contentWidth),
+            contentLeft,
+            panelTop + 184,
             0xFFFFCC88);
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    private String value(String value) {
+        return value == null || value.isEmpty() ? "无" : value;
+    }
+
+    private String fit(String value, int maxWidth) {
+        return fontRendererObj.trimStringToWidth(value, maxWidth);
     }
 
     private void refreshResources() {

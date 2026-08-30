@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
+import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraphLoader;
 import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectRepository;
 
@@ -144,7 +146,24 @@ public final class StoryPackageLoader {
         if (repository.getSnapshot()
             .getStory(manifest.getStoryId()) == null)
             throw new ProjectLoadException("Manifest story_id is not present in the package project");
-        return new LoadedStoryPackage(manifest, directory, repository.getSnapshot());
+        String logicPath = manifest.getRequiredResources()
+            .getStoryLogicGraph();
+        CanonicalStoryLogicGraph logicGraph;
+        try {
+            logicGraph = logicPath == null ? CanonicalStoryLogicGraph.empty()
+                : new CanonicalStoryLogicGraphLoader()
+                    .loadUnresolved(new File(directory, logicPath.replace('/', File.separatorChar)));
+        } catch (darkgrey.rpg.graph.canonical.CanonicalGraphResourceException exception) {
+            throw new ProjectLoadException(
+                "Invalid Story Package public Logic graph: " + exception.getMessage(),
+                exception);
+        }
+        for (darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection connection : logicGraph.getConnections())
+            if (!manifest.getStoryId()
+                .equals(connection.getSourceStoryId()))
+                throw new ProjectLoadException(
+                    "Story Package may only own public Logic connections sourced by its story_id.");
+        return new LoadedStoryPackage(manifest, directory, repository.getSnapshot(), logicGraph);
     }
 
     private static void validateRequiredFiles(File directory, StoryPackageManifest manifest)
@@ -180,6 +199,11 @@ public final class StoryPackageLoader {
         paths.addAll(
             manifest.getRequiredResources()
                 .getTasks());
+        if (manifest.getRequiredResources()
+            .getStoryLogicGraph() != null)
+            paths.add(
+                manifest.getRequiredResources()
+                    .getStoryLogicGraph());
         for (String path : paths) {
             File file = new File(directory, path.replace('/', File.separatorChar));
             if (!file.isFile()) throw new ProjectLoadException("Required package resource is missing: " + path);

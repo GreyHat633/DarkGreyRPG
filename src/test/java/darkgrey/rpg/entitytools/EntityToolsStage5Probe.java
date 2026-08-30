@@ -96,6 +96,11 @@ public final class EntityToolsStage5Probe {
     private static void copier(EntityCapture capture) {
         CopierState source = new CopierState();
         source.capture(capture);
+        source.capture(capture);
+        require(
+            source.getTemplates()
+                .size() == 1,
+            "copier ignores equivalent captures");
         source.capture(
             new EntityCapture(
                 UUID.randomUUID(),
@@ -131,6 +136,23 @@ public final class EntityToolsStage5Probe {
                 && !copy.getConfiguration()
                     .hasKey("Pos"),
             "copier strips transient keys");
+
+        NBTTagCompound duplicate = (NBTTagCompound) saved.copy();
+        NBTTagList duplicateTemplates = duplicate.getTagList("templates", 10);
+        duplicateTemplates.appendTag(duplicateTemplates.getCompoundTagAt(0));
+        duplicate.setInteger("selected_index", 2);
+        CopierState deduplicated = new CopierState();
+        deduplicated.readFromNBT(duplicate);
+        require(
+            deduplicated.getTemplates()
+                .size() == 2 && deduplicated.getSelectedIndex() == 0,
+            "copier repairs persisted duplicate and selection");
+        require(
+            deduplicated.writeToNBT()
+                .getTagList("templates", 10)
+                .tagCount() == 2,
+            "copier writes deduplicated state");
+
         restored.remove(0);
         require(
             restored.getTemplates()
@@ -144,6 +166,20 @@ public final class EntityToolsStage5Probe {
         NBTTagCompound malformed = (NBTTagCompound) saved.copy();
         malformed.setString("unexpected", "reject");
         rejectCopier(malformed);
+
+        NBTTagCompound wrongTemplateList = (NBTTagCompound) saved.copy();
+        NBTTagList wrongTemplates = new NBTTagList();
+        wrongTemplates.appendTag(new net.minecraft.nbt.NBTTagString("not a template"));
+        wrongTemplateList.setTag("templates", wrongTemplates);
+        rejectCopier(wrongTemplateList);
+
+        NBTTagCompound wrongGroups = (NBTTagCompound) saved.copy();
+        NBTTagCompound firstTemplate = wrongGroups.getTagList("templates", 10)
+            .getCompoundTagAt(0);
+        NBTTagList wrongGroupList = new NBTTagList();
+        wrongGroupList.appendTag(new NBTTagCompound());
+        firstTemplate.setTag("groups", wrongGroupList);
+        rejectCopier(wrongGroups);
     }
 
     private static void storage(EntityCapture capture) {

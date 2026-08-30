@@ -10,6 +10,7 @@ import net.minecraftforge.event.entity.player.EntityInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.entitytools.CopierState;
 import darkgrey.rpg.entitytools.EntityCapture;
@@ -55,8 +56,8 @@ public final class EntityToolsRuntime {
         EntityPlayer player = event.entityPlayer;
         ItemStack held = player.getHeldItem();
         if (held == null || (held.getItem() != ModItems.copier && held.getItem() != ModItems.storageBox)) return;
-        event.setCanceled(true);
         if (player.worldObj.isRemote) return;
+        event.setCanceled(true);
         int[] offset = faceOffset(event.face);
         try {
             if (held.getItem() == ModItems.copier)
@@ -103,7 +104,7 @@ public final class EntityToolsRuntime {
                 .getNpcId(target.getUniqueID());
         state.capture(capture, creative ? StorageMode.CREATIVE : StorageMode.SURVIVAL, npcId);
         ItemStorageBox.saveState(stack, state);
-        if (!creative) target.setDead();
+        if (!creative && !CustomNpcActorBinding.deleteForStorage(target)) target.setDead();
         player.addChatMessage(new ChatComponentText(creative ? "已保存创造模式实体模板；原实体保留。" : "实体已收纳；唯一 NPC ID 继续被占用。"));
     }
 

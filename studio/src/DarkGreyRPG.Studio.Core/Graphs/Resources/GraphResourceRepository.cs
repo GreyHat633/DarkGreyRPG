@@ -53,7 +53,7 @@ public sealed class GraphResourceRepository
 
     public IReadOnlyList<GraphResourceInfo> List()
     {
-        EnsureDirectory();
+        if (!Directory.Exists(ResourceDirectory)) return [];
         return Directory.EnumerateFiles(ResourceDirectory, "*.json", SearchOption.TopDirectoryOnly)
             .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
             .Select(path =>

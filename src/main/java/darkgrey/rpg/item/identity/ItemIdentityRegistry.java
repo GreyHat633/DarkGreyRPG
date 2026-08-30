@@ -74,6 +74,23 @@ public final class ItemIdentityRegistry {
         return false;
     }
 
+    /** Returns every exact DGR Item ID matching one stack in stable ID order. */
+    public synchronized List<String> matchingItemIds(ItemStack stack) {
+        List<String> result = new ArrayList<String>();
+        for (ItemBinding binding : itemBindings()) if (binding.getDefinition()
+            .matchesExact(stack)) result.add(binding.getItemId());
+        return Collections.unmodifiableList(result);
+    }
+
+    /** Returns every DGR Item Group matching one stack in stable ID order. */
+    public synchronized List<String> matchingGroupIds(ItemStack stack) {
+        List<String> result = new ArrayList<String>();
+        List<String> ids = new ArrayList<String>(groups.keySet());
+        Collections.sort(ids);
+        for (String groupId : ids) if (matchesGroup(groupId, stack)) result.add(groupId);
+        return Collections.unmodifiableList(result);
+    }
+
     public synchronized List<ItemBinding> itemBindings() {
         List<ItemBinding> result = new ArrayList<ItemBinding>();
         for (Map.Entry<String, ItemStackDefinition> entry : items.entrySet())

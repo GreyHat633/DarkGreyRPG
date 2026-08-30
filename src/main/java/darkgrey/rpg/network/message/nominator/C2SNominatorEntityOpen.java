@@ -1,7 +1,5 @@
 package darkgrey.rpg.network.message.nominator;
 
-import java.util.UUID;
-
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 
@@ -19,29 +17,22 @@ import io.netty.buffer.ByteBuf;
 public final class C2SNominatorEntityOpen implements IMessage {
 
     private int entityId;
-    private UUID entityUuid;
 
     public C2SNominatorEntityOpen() {}
 
-    public C2SNominatorEntityOpen(int entityId, UUID entityUuid) {
-        if (entityUuid == null) throw new IllegalArgumentException("Entity UUID is required.");
+    public C2SNominatorEntityOpen(int entityId) {
         this.entityId = entityId;
-        this.entityUuid = entityUuid;
     }
 
     @Override
     public void fromBytes(ByteBuf buffer) {
         entityId = buffer.readInt();
-        entityUuid = new UUID(buffer.readLong(), buffer.readLong());
         if (buffer.isReadable()) throw new IllegalArgumentException("Trailing nominator open data.");
     }
 
     @Override
     public void toBytes(ByteBuf buffer) {
-        if (entityUuid == null) throw new IllegalArgumentException("Entity UUID is required.");
         buffer.writeInt(entityId);
-        buffer.writeLong(entityUuid.getMostSignificantBits());
-        buffer.writeLong(entityUuid.getLeastSignificantBits());
     }
 
     public static final class Handler implements IMessageHandler<C2SNominatorEntityOpen, IMessage> {
@@ -58,7 +49,6 @@ public final class C2SNominatorEntityOpen implements IMessage {
                         || player.getHeldItem()
                             .getItem() != ModItems.nominator
                         || entity == null
-                        || !message.entityUuid.equals(entity.getUniqueID())
                         || entity.dimension != player.dimension
                         || player.getDistanceSqToEntity(entity) > 64.0D) return;
                     DialogueNetwork.CHANNEL.sendTo(

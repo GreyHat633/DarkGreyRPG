@@ -33,6 +33,8 @@ public sealed class CanonicalGraphResourceSaveCoordinator
         if (!editor.IsDirty)
             return snapshot;
 
+        if (snapshot.ResourceKind == GraphResourceKind.Story)
+            _store.StoryLogicGraph.ValidateStoryReplacement(snapshot);
         var persisted = RepositoryFor(snapshot.ResourceKind).Replace(snapshot);
         editor.MarkSaved();
         return persisted;

@@ -75,6 +75,9 @@ public sealed class StoryPackageRequiredResources
     [JsonPropertyName("canonical_memberships")] public List<string> CanonicalMemberships { get; init; } = [];
     [JsonPropertyName("sessions")] public List<string> Sessions { get; init; } = [];
     [JsonPropertyName("tasks")] public List<string> Tasks { get; init; } = [];
+    [JsonPropertyName("story_logic_graph")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? StoryLogicGraph { get; init; }
 
     internal void Validate()
     {
@@ -84,6 +87,8 @@ public sealed class StoryPackageRequiredResources
             if (list is null || list.Any(string.IsNullOrWhiteSpace) || list.Count != list.Distinct(StringComparer.Ordinal).Count())
                 throw new StoryPackageException("required_resources contains a null or duplicate resource path.");
         }
+        if (StoryLogicGraph is not null && string.IsNullOrWhiteSpace(StoryLogicGraph))
+            throw new StoryPackageException("required_resources.story_logic_graph must be a nonblank path when present.");
     }
 }
 

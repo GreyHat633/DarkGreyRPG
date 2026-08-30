@@ -25,6 +25,18 @@ public final class CanonicalStoryInstanceStore {
      */
     public synchronized CanonicalStoryInstance start(UUID playerUuid, CanonicalGraphResource resource,
         String triggerPortId, CanonicalStoryRepeatPolicy repeatPolicy, long activationTime) {
+        return start(
+            playerUuid,
+            resource,
+            triggerPortId,
+            repeatPolicy,
+            Collections.<String, Boolean>emptyMap(),
+            activationTime);
+    }
+
+    public synchronized CanonicalStoryInstance start(UUID playerUuid, CanonicalGraphResource resource,
+        String triggerPortId, CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs,
+        long activationTime) {
         if (playerUuid == null || resource == null || repeatPolicy == null)
             throw new IllegalArgumentException("Canonical Story start inputs are required.");
         Key key = new Key(playerUuid, resource.getId());
@@ -36,7 +48,7 @@ public final class CanonicalStoryInstanceStore {
                 .getRepeatPolicy() == CanonicalStoryRepeatPolicy.ONCE) return existing;
         }
         CanonicalStoryInstance created = CanonicalStoryInstance
-            .start(playerUuid, resource, triggerPortId, repeatPolicy, activationTime);
+            .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime);
         instances.put(key, created);
         return created;
     }

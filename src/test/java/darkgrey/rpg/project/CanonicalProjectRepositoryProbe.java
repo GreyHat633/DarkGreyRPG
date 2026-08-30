@@ -107,7 +107,6 @@ public final class CanonicalProjectRepositoryProbe {
     private static String taskJson() {
         return "{\"schema_version\":1,\"resource_kind\":\"task\",\"id\":\"canonical_task\","
             + "\"display_name\":\"canonical_task\",\"graph\":{\"nodes\":["
-            + "{\"id\":\"activate\",\"type\":\"activate\",\"display_name\":\"Activate\",\"ports\":[],\"properties\":{}},"
             + "{\"id\":\"settle\",\"type\":\"settle\",\"display_name\":\"Settle\",\"ports\":[],\"properties\":{}}],\"connections\":[]}}";
     }
 

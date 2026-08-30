@@ -205,6 +205,10 @@
                                                       SelectedItem="{Binding SelectedTriggerType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                       DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="StoryStartTriggerType"
                                                       AutomationProperties.Name="Story Start trigger type" />
+                                            <TextBlock Margin="0,4,0,0" Text="将 Story 公共逻辑输入连接到此触发的条件端口。"
+                                                       TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLogic}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                            </TextBlock>
                                             <TextBlock Margin="0,4,0,0" Text="actor_id" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                                                 <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                             </TextBlock>

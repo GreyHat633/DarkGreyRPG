@@ -4,7 +4,13 @@
              xmlns:local="clr-namespace:DarkGreyRPG.Studio.Views"
              Focusable="True" AutomationProperties.Name="故事图谱自由布局画布">
     <Grid>
-        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="10" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <DockPanel>
             <Button DockPanel.Dock="Right" Width="116" Height="34"
                     Command="{Binding DataContext.ShowProjectHomeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -33,7 +39,61 @@
             </StackPanel>
         </DockPanel>
 
-        <Grid Grid.Row="2">
+        <Border Grid.Row="2" Padding="10,8" BorderThickness="1" CornerRadius="5"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock FontWeight="SemiBold" Text="跨 Story 公共逻辑桥" />
+                <Grid Grid.Row="1" Margin="0,7,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox MinWidth="260" ItemsSource="{Binding LogicSources}" SelectedItem="{Binding SelectedLogicSource}"
+                              DisplayMemberPath="Label" AutomationProperties.Name="选择公共逻辑输出" />
+                    <TextBlock Grid.Column="1" Margin="10,0" VerticalAlignment="Center" Text="→" />
+                    <ComboBox Grid.Column="2" MinWidth="260" ItemsSource="{Binding LogicTargets}" SelectedItem="{Binding SelectedLogicTarget}"
+                              DisplayMemberPath="Label" AutomationProperties.Name="选择公共逻辑输入" />
+                    <Button Grid.Column="3" Margin="10,0,0,0" Padding="14,5" Command="{Binding AddLogicConnectionCommand}"
+                            Content="连接" AutomationProperties.Name="连接跨故事公共逻辑" />
+                </Grid>
+                <StackPanel Grid.Row="2" Margin="0,7,0,0">
+                    <ItemsControl ItemsSource="{Binding LogicConnections}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,8,4" Padding="8,3" CornerRadius="3"
+                                        Background="{DynamicResource ControlFillColorDefaultBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock VerticalAlignment="Center" Text="{Binding Label}" />
+                                        <Button Margin="8,0,0,0" Padding="5,1" Command="{Binding RemoveCommand}" Content="移除" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LogicEditorError}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers><DataTrigger Binding="{Binding HasLogicEditorError}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="4">
             <local:AccessibleBorder x:Name="CanvasViewport" ClipToBounds="True" Background="#14171B" Focusable="True"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5"
                     AutomationProperties.Name="故事图谱自由布局画布" AutomationProperties.AutomationId="ProjectGraphCanvasViewport"

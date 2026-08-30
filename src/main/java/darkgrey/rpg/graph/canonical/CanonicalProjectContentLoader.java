@@ -17,17 +17,28 @@ public final class CanonicalProjectContentLoader {
 
     private final CanonicalGraphResourceLoader resourceLoader;
     private final CanonicalStoryMembershipLoader membershipLoader;
+    private final CanonicalStoryLogicGraphLoader storyLogicGraphLoader;
 
     public CanonicalProjectContentLoader() {
-        this(new CanonicalGraphResourceLoader(), new CanonicalStoryMembershipLoader());
+        this(
+            new CanonicalGraphResourceLoader(),
+            new CanonicalStoryMembershipLoader(),
+            new CanonicalStoryLogicGraphLoader());
     }
 
     CanonicalProjectContentLoader(CanonicalGraphResourceLoader resourceLoader,
         CanonicalStoryMembershipLoader membershipLoader) {
+        this(resourceLoader, membershipLoader, new CanonicalStoryLogicGraphLoader());
+    }
+
+    CanonicalProjectContentLoader(CanonicalGraphResourceLoader resourceLoader,
+        CanonicalStoryMembershipLoader membershipLoader, CanonicalStoryLogicGraphLoader storyLogicGraphLoader) {
         if (resourceLoader == null) throw new IllegalArgumentException("resourceLoader cannot be null.");
         if (membershipLoader == null) throw new IllegalArgumentException("membershipLoader cannot be null.");
+        if (storyLogicGraphLoader == null) throw new IllegalArgumentException("storyLogicGraphLoader cannot be null.");
         this.resourceLoader = resourceLoader;
         this.membershipLoader = membershipLoader;
+        this.storyLogicGraphLoader = storyLogicGraphLoader;
     }
 
     public CanonicalProjectContent load(File projectDirectory, Set<String> actorIds)
@@ -79,7 +90,8 @@ public final class CanonicalProjectContentLoader {
         Map<String, CanonicalGraphResource> tasks = resources(taskValues);
         Map<String, CanonicalStoryMembership> memberships = memberships(membershipValues);
         validate(stories, sessions, tasks, memberships, actorIds, itemIds, itemGroupIds);
-        return new CanonicalProjectContent(stories, sessions, tasks, memberships);
+        CanonicalStoryLogicGraph storyLogicGraph = loadStoryLogicGraph(canonicalRoot, stories);
+        return new CanonicalProjectContent(stories, sessions, tasks, memberships, storyLogicGraph);
     }
 
     private List<CanonicalGraphResource> loadStories(Path directory) {
@@ -111,6 +123,17 @@ public final class CanonicalProjectContentLoader {
             return membershipLoader.loadDirectory(directory);
         } catch (CanonicalStoryMembershipException exception) {
             throw wrapped("project.content.memberships.load", directory, exception);
+        }
+    }
+
+    private CanonicalStoryLogicGraph loadStoryLogicGraph(Path canonicalRoot,
+        Map<String, CanonicalGraphResource> stories) {
+        Path file = canonicalRoot.resolve("story_logic_graph.json");
+        if (!Files.exists(file)) return CanonicalStoryLogicGraph.empty();
+        try {
+            return storyLogicGraphLoader.load(file, stories);
+        } catch (CanonicalGraphResourceException exception) {
+            throw wrapped("project.content.story_logic_graph.load", file, exception);
         }
     }
 

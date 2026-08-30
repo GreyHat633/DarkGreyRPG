@@ -46,11 +46,69 @@ public final class CanonicalStoryServerServiceProbe {
     public static void main(String[] args) {
         entrySessionTerminationAndRestart();
         typedTriggerSelection();
+        durableConditionResume();
         errorCancelsSessionChildren();
         System.out.println("CANONICAL_STORY_START_TRIGGER_SCHEMA=PASS");
         System.out.println("CANONICAL_STORY_SESSION_SERVICE=PASS");
         System.out.println("CANONICAL_STORY_ATOMIC_RESTART=PASS");
         System.out.println("CANONICAL_STORY_ERROR_CHILD_CLEANUP=PASS");
+        System.out.println("CANONICAL_STORY_DYNAMIC_LOGIC_RESUME=PASS");
+    }
+
+    private static void durableConditionResume() {
+        Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
+        stories.put("dynamic", dynamicConditionStory());
+        stories.put("dynamic_false", dynamicFalseConditionStory());
+        ProjectSnapshot project = new ProjectSnapshot(
+            new ProjectDefinition(1, "dynamic-logic", "Dynamic Logic"),
+            Collections.<String, ActorDefinition>emptyMap(),
+            Collections.<String, DialogueDefinition>emptyMap(),
+            Collections.<String, QuestDefinition>emptyMap(),
+            Collections.<String, StoryDefinition>emptyMap(),
+            new CanonicalProjectContent(
+                stories,
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalStoryMembership>emptyMap()));
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        CanonicalStoryServerService service = new CanonicalStoryServerService(project, data);
+        CanonicalStoryDispatch waiting = service.startByEntry(PLAYER, "dynamic", 600L);
+        check(
+            waiting.getSnapshot()
+                .getRuntimeSnapshot()
+                .getWaitKind() == darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.CONDITION,
+            "False Condition did not enter a durable wait");
+
+        net.minecraft.nbt.NBTTagCompound persisted = new net.minecraft.nbt.NBTTagCompound();
+        data.writeToNBT(persisted);
+        CanonicalSessionSavedData restored = new CanonicalSessionSavedData();
+        restored.readFromNBT(persisted);
+        CanonicalStoryServerService restoredService = new CanonicalStoryServerService(project, restored);
+        CanonicalStoryDispatch terminated = restoredService.setLogicInput(PLAYER, "dynamic", "gate", true, 700L);
+        check(
+            terminated.getKind() == CanonicalStoryDispatchKind.TERMINATED,
+            "Dynamic Logic did not resume the waiting Condition through its connected outlet");
+        CanonicalStoryDispatch stable = restoredService.setLogicInput(PLAYER, "dynamic", "gate", true, 701L);
+        check(
+            stable.getKind() == CanonicalStoryDispatchKind.TERMINATED,
+            "Repeated Logic value changed a terminal Story");
+
+        CanonicalStoryDispatch inverseWaiting = restoredService
+            .startByLogic(PLAYER, "dynamic_false", Collections.singletonMap("gate", Boolean.TRUE), 800L);
+        check(
+            inverseWaiting != null && inverseWaiting.getSnapshot()
+                .getRuntimeSnapshot()
+                .getWaitKind() == darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.CONDITION,
+            "True Condition with only a false outlet did not enter a durable wait");
+        net.minecraft.nbt.NBTTagCompound inversePersisted = new net.minecraft.nbt.NBTTagCompound();
+        restored.writeToNBT(inversePersisted);
+        CanonicalSessionSavedData inverseRestored = new CanonicalSessionSavedData();
+        inverseRestored.readFromNBT(inversePersisted);
+        CanonicalStoryDispatch inverseTerminated = new CanonicalStoryServerService(project, inverseRestored)
+            .setLogicInput(PLAYER, "dynamic_false", "gate", false, 900L);
+        check(
+            inverseTerminated.getKind() == CanonicalStoryDispatchKind.TERMINATED,
+            "Dynamic Logic did not resume the waiting Condition through its connected false outlet");
     }
 
     private static void errorCancelsSessionChildren() {
@@ -268,6 +326,75 @@ public final class CanonicalStoryServerServiceProbe {
             Arrays.asList(flow("start", "entry_port", "end", "flow_in")));
     }
 
+    private static CanonicalGraphResource dynamicConditionStory() {
+        CanonicalGraphNode start = startNode(
+            "once",
+            "[{\"port_id\":\"entry\",\"display_name\":\"进入故事\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]",
+            ports(flowOut("entry", "进入故事", 0)));
+        CanonicalGraphNode input = node(
+            "gate_input",
+            "logic_input",
+            ports(logicOut("logic_out", 0)),
+            props("port_id", "gate", "display_name", "Gate"));
+        CanonicalGraphNode condition = node(
+            "condition",
+            "condition",
+            ports(
+                flowIn("flow_in", 0),
+                logicIn("logic_in", 1),
+                flowOut("flow_true", "True", 2),
+                flowOut("flow_false", "False", 3)),
+            empty());
+        CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
+        return resource(
+            "dynamic",
+            CanonicalGraphResourceKind.STORY,
+            Arrays.asList(start, input, condition, end),
+            Arrays.asList(
+                flow("start", "entry", "condition", "flow_in"),
+                logic("gate_input", "logic_out", "condition", "logic_in"),
+                flow("condition", "flow_true", "end", "flow_in")));
+    }
+
+    private static CanonicalGraphResource dynamicFalseConditionStory() {
+        Map<String, JsonElement> startProperties = new LinkedHashMap<String, JsonElement>();
+        startProperties.put("repeat_policy", json("\"once\""));
+        startProperties.put(
+            "triggers",
+            json(
+                "[{\"port_id\":\"logic_start\",\"display_name\":\"Logic\",\"trigger_type\":\"logic\","
+                    + "\"trigger_properties\":{},\"order\":0,\"logic_port_id\":\"logic_condition\"}]"));
+        CanonicalGraphNode start = node(
+            "start",
+            "start",
+            ports(flowOut("logic_start", "Logic", 0), logicIn("logic_condition", 1)),
+            startProperties);
+        CanonicalGraphNode input = node(
+            "gate_input",
+            "logic_input",
+            ports(logicOut("logic_out", 0)),
+            props("port_id", "gate", "display_name", "Gate"));
+        CanonicalGraphNode condition = node(
+            "condition",
+            "condition",
+            ports(
+                flowIn("flow_in", 0),
+                logicIn("logic_in", 1),
+                flowOut("flow_true", "True", 2),
+                flowOut("flow_false", "False", 3)),
+            empty());
+        CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
+        return resource(
+            "dynamic_false",
+            CanonicalGraphResourceKind.STORY,
+            Arrays.asList(start, input, condition, end),
+            Arrays.asList(
+                logic("gate_input", "logic_out", "start", "logic_condition"),
+                flow("start", "logic_start", "condition", "flow_in"),
+                logic("gate_input", "logic_out", "condition", "logic_in"),
+                flow("condition", "flow_false", "end", "flow_in")));
+    }
+
     private static CanonicalGraphNode startNode(String repeat, String triggers, List<CanonicalGraphPort> ports) {
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
         properties.put("repeat_policy", json("\"" + repeat + "\""));
@@ -350,6 +477,10 @@ public final class CanonicalStoryServerServiceProbe {
 
     private static CanonicalGraphConnection flow(String fromNode, String fromPort, String toNode, String toPort) {
         return new CanonicalGraphConnection(fromNode, fromPort, toNode, toPort, CanonicalGraphInterfaceKind.FLOW);
+    }
+
+    private static CanonicalGraphConnection logic(String fromNode, String fromPort, String toNode, String toPort) {
+        return new CanonicalGraphConnection(fromNode, fromPort, toNode, toPort, CanonicalGraphInterfaceKind.LOGIC);
     }
 
     private static Map<String, JsonElement> props(String... values) {

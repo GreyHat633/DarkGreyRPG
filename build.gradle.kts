@@ -27,7 +27,6 @@ tasks.register<JavaExec>("phase1ProjectProbe") {
     mainClass.set("darkgrey.rpg.project.ProjectRepositoryProbe")
     args(
         layout.buildDirectory.dir("phase1-runtime-probe").get().asFile.absolutePath,
-        layout.projectDirectory.dir("examples/phase4_project").asFile.absolutePath,
     )
 }
 

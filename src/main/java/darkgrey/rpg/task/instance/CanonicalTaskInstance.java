@@ -184,6 +184,19 @@ public final class CanonicalTaskInstance {
         return changed;
     }
 
+    /** Updates one formal Task Logic Input while preserving every objective's accumulated progress. */
+    public boolean setLogicInput(String portId, boolean value, long eventTime) {
+        if (!isActive()) return false;
+        validateTime(eventTime);
+        if (eventTime < activationTime) throw new IllegalArgumentException("Event timestamp precedes activation.");
+        boolean changed = runtime.setLogicInput(portId, value);
+        if (runtime.isSettled()) {
+            status = CanonicalTaskInstanceStatus.SETTLED;
+            settlementTime = Long.valueOf(eventTime);
+        }
+        return changed;
+    }
+
     public boolean accept(CanonicalTaskEvent event) {
         return accept(event, activationTime);
     }

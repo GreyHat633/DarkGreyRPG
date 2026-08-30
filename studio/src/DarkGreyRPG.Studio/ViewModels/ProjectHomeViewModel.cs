@@ -214,6 +214,10 @@ public sealed class ProjectGraphViewModel : ObservableObject
         IReadOnlyList<ProjectGraphDiagnosticViewModel> Diagnostics);
 
     private readonly ProjectGraphLayoutStore? _layoutStore;
+    private readonly CanonicalStoryLogicGraphRepository? _storyLogicRepository;
+    private ProjectStoryLogicEndpointViewModel? _selectedLogicSource;
+    private ProjectStoryLogicEndpointViewModel? _selectedLogicTarget;
+    private string _logicEditorError = string.Empty;
     private string _searchText = string.Empty;
     private string _selectedFilter = "全部";
     private double _zoom = 1;
@@ -243,6 +247,20 @@ public sealed class ProjectGraphViewModel : ObservableObject
     private ProjectGraphViewModel(BuildInput input, string? homeStoryId, string? projectDirectory)
     {
         _layoutStore = string.IsNullOrWhiteSpace(projectDirectory) ? null : new ProjectGraphLayoutStore(projectDirectory);
+        if (!string.IsNullOrWhiteSpace(projectDirectory))
+        {
+            try
+            {
+                var store = new CanonicalProjectGraphStore(projectDirectory);
+                _storyLogicRepository = store.StoryLogicGraph;
+                LoadLogicEditor(store);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+                or GraphResourceRepositoryException or CanonicalStoryLogicGraphRepositoryException)
+            {
+                LogicEditorError = exception.Message;
+            }
+        }
         var storyIds = input.Nodes.Select(story => story.Id).ToHashSet(StringComparer.Ordinal);
         var diagnostics = input.Diagnostics.ToList();
         var warnedStories = input.Nodes
@@ -318,6 +336,8 @@ public sealed class ProjectGraphViewModel : ObservableObject
                 if (persisted.Nodes.TryGetValue(node.Id, out var position)) node.SetPosition(position.X, position.Y);
         }
         AutoLayoutCommand = new RelayCommand(AutoLayout, () => Nodes.Count > 0);
+        AddLogicConnectionCommand = new RelayCommand(AddLogicConnection,
+            () => _storyLogicRepository is not null && SelectedLogicSource is not null && SelectedLogicTarget is not null);
     }
 
     private static BuildInput CreateLegacyInput(IReadOnlyList<StoryResource> stories)
@@ -406,8 +426,12 @@ public sealed class ProjectGraphViewModel : ObservableObject
     public IReadOnlyList<ProjectGraphNodeViewModel> Nodes { get; }
     public IReadOnlyList<ProjectGraphEdgeViewModel> Edges { get; }
     public IReadOnlyList<ProjectGraphDiagnosticViewModel> Diagnostics { get; }
+    public ObservableCollection<ProjectStoryLogicConnectionViewModel> LogicConnections { get; } = [];
+    public IReadOnlyList<ProjectStoryLogicEndpointViewModel> LogicSources { get; private set; } = [];
+    public IReadOnlyList<ProjectStoryLogicEndpointViewModel> LogicTargets { get; private set; } = [];
     public IReadOnlyList<string> FilterOptions { get; } = ["全部", "已连接", "孤立", "有警告"];
     public RelayCommand AutoLayoutCommand { get; }
+    public RelayCommand AddLogicConnectionCommand { get; }
     public event EventHandler<string>? OpenStoryRequested;
     public event EventHandler<string>? OpenStoryOverviewRequested;
     public bool IsEmpty => Nodes.Count == 0;
@@ -431,6 +455,107 @@ public sealed class ProjectGraphViewModel : ObservableObject
         {
             if (SetProperty(ref _persistenceWarning, value)) OnPropertyChanged(nameof(WarningCount));
         }
+    }
+
+    public ProjectStoryLogicEndpointViewModel? SelectedLogicSource
+    {
+        get => _selectedLogicSource;
+        set
+        {
+            if (SetProperty(ref _selectedLogicSource, value)) AddLogicConnectionCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public ProjectStoryLogicEndpointViewModel? SelectedLogicTarget
+    {
+        get => _selectedLogicTarget;
+        set
+        {
+            if (SetProperty(ref _selectedLogicTarget, value)) AddLogicConnectionCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public string LogicEditorError
+    {
+        get => _logicEditorError;
+        private set
+        {
+            if (SetProperty(ref _logicEditorError, value ?? string.Empty))
+                OnPropertyChanged(nameof(HasLogicEditorError));
+        }
+    }
+
+    public bool HasLogicEditorError => !string.IsNullOrWhiteSpace(LogicEditorError);
+
+    private void LoadLogicEditor(CanonicalProjectGraphStore store)
+    {
+        var stories = store.Stories.List().Select(info => store.Stories.Load(info.Id)).ToArray();
+        LogicSources = FindLogicEndpoints(stories, "logic_output");
+        LogicTargets = FindLogicEndpoints(stories, "logic_input");
+        ReplaceLogicConnections(store.StoryLogicGraph.Load().Connections);
+    }
+
+    private static IReadOnlyList<ProjectStoryLogicEndpointViewModel> FindLogicEndpoints(
+        IEnumerable<GraphResourceEnvelope> stories,
+        string nodeType)
+    {
+        return stories.SelectMany(story => (story.Graph?.Nodes ?? [])
+                .Where(node => string.Equals(node.Type, nodeType, StringComparison.Ordinal))
+                .Select(node =>
+                {
+                    node.Properties.TryGetValue("port_id", out var portValue);
+                    var portId = portValue.ValueKind == JsonValueKind.String ? portValue.GetString() : null;
+                    return string.IsNullOrWhiteSpace(portId)
+                        ? null
+                        : new ProjectStoryLogicEndpointViewModel(
+                            story.Id,
+                            portId!,
+                            string.IsNullOrWhiteSpace(node.DisplayName) ? portId! : node.DisplayName);
+                }))
+            .Where(endpoint => endpoint is not null)
+            .Cast<ProjectStoryLogicEndpointViewModel>()
+            .OrderBy(endpoint => endpoint.StoryId, StringComparer.Ordinal)
+            .ThenBy(endpoint => endpoint.PortId, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private void AddLogicConnection()
+    {
+        if (_storyLogicRepository is null || SelectedLogicSource is null || SelectedLogicTarget is null) return;
+        var connection = new CanonicalStoryLogicConnection(
+            SelectedLogicSource.StoryId,
+            SelectedLogicSource.PortId,
+            SelectedLogicTarget.StoryId,
+            SelectedLogicTarget.PortId);
+        SaveLogicConnections(LogicConnections.Select(item => item.Connection).Append(connection));
+    }
+
+    private void RemoveLogicConnection(CanonicalStoryLogicConnection connection)
+    {
+        SaveLogicConnections(LogicConnections.Select(item => item.Connection).Where(item => item != connection));
+    }
+
+    private void SaveLogicConnections(IEnumerable<CanonicalStoryLogicConnection> connections)
+    {
+        if (_storyLogicRepository is null) return;
+        try
+        {
+            var saved = _storyLogicRepository.Save(connections);
+            ReplaceLogicConnections(saved.Connections);
+            LogicEditorError = string.Empty;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or GraphResourceRepositoryException or CanonicalStoryLogicGraphRepositoryException)
+        {
+            LogicEditorError = exception.Message;
+        }
+    }
+
+    private void ReplaceLogicConnections(IEnumerable<CanonicalStoryLogicConnection> connections)
+    {
+        LogicConnections.Clear();
+        foreach (var connection in connections)
+            LogicConnections.Add(new ProjectStoryLogicConnectionViewModel(connection, () => RemoveLogicConnection(connection)));
     }
 
     public void OpenStoryFlow(string storyId)
@@ -666,6 +791,24 @@ public sealed class ProjectGraphViewModel : ObservableObject
             or "project_graph.target.invalid"
             or "project_graph.enter_story.malformed"
             or "project_graph.enter_story.ambiguous";
+}
+
+public sealed record ProjectStoryLogicEndpointViewModel(string StoryId, string PortId, string DisplayName)
+{
+    public string Label => $"{StoryId} · {DisplayName} ({PortId})";
+}
+
+public sealed class ProjectStoryLogicConnectionViewModel
+{
+    public ProjectStoryLogicConnectionViewModel(CanonicalStoryLogicConnection connection, Action remove)
+    {
+        Connection = connection;
+        RemoveCommand = new RelayCommand(remove);
+    }
+
+    public CanonicalStoryLogicConnection Connection { get; }
+    public string Label => $"{Connection.SourceStoryId}.{Connection.SourcePortId}  →  {Connection.TargetStoryId}.{Connection.TargetPortId}";
+    public RelayCommand RemoveCommand { get; }
 }
 
 public sealed record ProjectGraphFocusRequest(string StoryId, long Sequence);

@@ -28,7 +28,6 @@ import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.network.EntityToolsNetwork;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.network.NominatorNetwork;
-import darkgrey.rpg.nominator.runtime.NominatorRuntime;
 import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
@@ -121,13 +120,16 @@ public final class DarkGreyRpg {
 
         ModItems.register();
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
-        MinecraftForge.EVENT_BUS.register(new NominatorRuntime());
         MinecraftForge.EVENT_BUS.register(new EntityToolsRuntime());
         QuestEventAdapter questEvents = new QuestEventAdapter(questRuntime);
         MinecraftForge.EVENT_BUS.register(questEvents);
         StoryEventAdapter storyEventAdapter = new StoryEventAdapter(storyEvents, canonicalStoryManager);
         MinecraftForge.EVENT_BUS.register(storyEventAdapter);
-        MinecraftForge.EVENT_BUS.register(new CanonicalTaskEventAdapter(canonicalTaskManager));
+        CanonicalTaskEventAdapter canonicalTaskEvents = new CanonicalTaskEventAdapter(canonicalTaskManager);
+        MinecraftForge.EVENT_BUS.register(canonicalTaskEvents);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(canonicalTaskEvents);
         FMLCommonHandler.instance()
             .bus()
             .register(new MainThreadScheduler());

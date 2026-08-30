@@ -51,9 +51,10 @@ public final class EntityDgrIdentityResolver {
         if (entity == null) return Resolution.none();
         UUID uuid = entity.getUniqueID();
         if (uuid == null) return Resolution.none();
+        boolean canonicalUniqueHost = isCanonicalUniqueHost(entity);
         String primaryId = null;
         Source primarySource = Source.NONE;
-        if (identities != null) {
+        if (identities != null && canonicalUniqueHost) {
             String npcId = identities.getNpcId(uuid);
             if (!blank(npcId)) {
                 primaryId = npcId.trim();
@@ -67,7 +68,7 @@ public final class EntityDgrIdentityResolver {
             if (binding != null) {
                 // A registry identity is authoritative over a stale nominator
                 // individual, but never suppresses the selected groups.
-                if (primaryId == null && !blank(binding.getIndividualId())) {
+                if (canonicalUniqueHost && primaryId == null && !blank(binding.getIndividualId())) {
                     primaryId = binding.getIndividualId()
                         .trim();
                     primarySource = Source.NOMINATOR_INDIVIDUAL;
@@ -90,6 +91,29 @@ public final class EntityDgrIdentityResolver {
             // Optional bridge failures must never abort Forge event dispatch.
         }
         return Resolution.none();
+    }
+
+    /**
+     * CustomNPC+ Cloner preserves the source UUID. The first live instance is
+     * the already-existing host; later same-UUID instances may retain groups
+     * but must never resolve the unique individual identity.
+     */
+    private static boolean isCanonicalUniqueHost(Entity entity) {
+        if (!CustomNpcActorBinding.isCustomNpc(entity) || entity.worldObj == null) return true;
+        return isCanonicalUuidHost(entity, entity.worldObj.loadedEntityList);
+    }
+
+    static boolean isCanonicalUuidHost(Entity entity, Iterable<?> loadedEntities) {
+        if (entity == null || entity.getUniqueID() == null || loadedEntities == null) return true;
+        int canonicalEntityId = entity.getEntityId();
+        for (Object value : loadedEntities) {
+            if (!(value instanceof Entity)) continue;
+            Entity candidate = (Entity) value;
+            if (candidate == entity || !entity.getUniqueID()
+                .equals(candidate.getUniqueID())) continue;
+            if (candidate.getEntityId() < canonicalEntityId) return false;
+        }
+        return true;
     }
 
     private static void addIfPresent(LinkedHashSet<String> values, String value) {

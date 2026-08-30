@@ -67,6 +67,19 @@ public final class NominatorStage4Probe {
             Collections.emptyMap(),
             stories,
             darkgrey.rpg.graph.canonical.CanonicalProjectContent.empty());
+        NominatorCatalog catalog = NominatorCatalog.from(snapshot);
+        NominatorStorySearch.ActorChoice exactIndividual = NominatorStorySearch.exactActor(catalog, "hero");
+        require(
+            exactIndividual != null && "hero".equals(exactIndividual.getId())
+                && ActorDefinition.TYPE_INDIVIDUAL.equals(exactIndividual.getType()),
+            "exact individual actor resolution");
+        NominatorStorySearch.ActorChoice exactCollective = NominatorStorySearch.exactActor(catalog, "townfolk");
+        require(
+            exactCollective != null && "townfolk".equals(exactCollective.getId())
+                && ActorDefinition.TYPE_COLLECTIVE.equals(exactCollective.getType()),
+            "exact collective actor resolution");
+        require(NominatorStorySearch.exactActor(catalog, "missing") == null, "unknown actor resolution");
+        require(NominatorStorySearch.exactActor(catalog, "her") == null, "partial actor resolution");
         require(
             NominatorStorySearch.actors(snapshot, "kingdom", "hero")
                 .size() == 1,
@@ -228,7 +241,7 @@ public final class NominatorStage4Probe {
             Arrays.asList("townfolk"),
             Arrays.asList("townfolk"),
             "kingdom",
-            NominatorCatalog.from(snapshot));
+            catalog);
         ByteBuf catalogBuffer = Unpooled.buffer();
         catalogPacket.toBytes(catalogBuffer);
         S2CNominatorEntityOpen decodedCatalog = new S2CNominatorEntityOpen();

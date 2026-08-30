@@ -2,6 +2,7 @@ package darkgrey.rpg.graph.canonical;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Immutable, detached snapshot of all canonical project resources. */
@@ -11,20 +12,30 @@ public final class CanonicalProjectContent {
         Collections.<String, CanonicalGraphResource>emptyMap(),
         Collections.<String, CanonicalGraphResource>emptyMap(),
         Collections.<String, CanonicalGraphResource>emptyMap(),
-        Collections.<String, CanonicalStoryMembership>emptyMap());
+        Collections.<String, CanonicalStoryMembership>emptyMap(),
+        CanonicalStoryLogicGraph.empty());
 
     private final Map<String, CanonicalGraphResource> stories;
     private final Map<String, CanonicalGraphResource> sessions;
     private final Map<String, CanonicalGraphResource> tasks;
     private final Map<String, CanonicalStoryMembership> memberships;
+    private final CanonicalStoryLogicGraph storyLogicGraph;
 
     public CanonicalProjectContent(Map<String, CanonicalGraphResource> stories,
         Map<String, CanonicalGraphResource> sessions, Map<String, CanonicalGraphResource> tasks,
         Map<String, CanonicalStoryMembership> memberships) {
+        this(stories, sessions, tasks, memberships, CanonicalStoryLogicGraph.empty());
+    }
+
+    public CanonicalProjectContent(Map<String, CanonicalGraphResource> stories,
+        Map<String, CanonicalGraphResource> sessions, Map<String, CanonicalGraphResource> tasks,
+        Map<String, CanonicalStoryMembership> memberships, CanonicalStoryLogicGraph storyLogicGraph) {
         this.stories = immutableCopy(stories, "stories");
         this.sessions = immutableCopy(sessions, "sessions");
         this.tasks = immutableCopy(tasks, "tasks");
         this.memberships = immutableCopy(memberships, "memberships");
+        if (storyLogicGraph == null) throw new IllegalArgumentException("storyLogicGraph cannot be null.");
+        this.storyLogicGraph = storyLogicGraph;
     }
 
     public static CanonicalProjectContent empty() {
@@ -69,6 +80,18 @@ public final class CanonicalProjectContent {
 
     public Map<String, CanonicalStoryMembership> getStoryMemberships() {
         return memberships;
+    }
+
+    public CanonicalStoryLogicGraph getStoryLogicGraph() {
+        return storyLogicGraph;
+    }
+
+    public CanonicalStoryLogicGraph getLogicGraph() {
+        return storyLogicGraph;
+    }
+
+    public List<CanonicalStoryLogicConnection> getStoryLogicConnections() {
+        return storyLogicGraph.getConnections();
     }
 
     private static <T> Map<String, T> immutableCopy(Map<String, T> values, String name) {

@@ -46,6 +46,16 @@ public final class EntityTemplateNbtCodec {
         return result;
     }
 
+    /**
+     * Returns the persisted form used to compare templates. NBTTagCompound
+     * implements deep equality, so this remains stable even when the source
+     * compounds were populated in a different key order.
+     */
+    static NBTTagCompound canonicalTemplate(EntityTemplate value) {
+        if (value == null) throw malformed("template");
+        return encodeTemplate(value);
+    }
+
     static EntityTemplate decodeTemplate(NBTTagCompound value) {
         requireKeys(
             value,
@@ -67,7 +77,7 @@ public final class EntityTemplateNbtCodec {
         EntityTemplateSanitizer.requireSanitized(value.getCompoundTag("equipment"));
         EntityTemplateSanitizer.requireSanitized(value.getCompoundTag("ai"));
         EntityTemplateSanitizer.requireSanitized(value.getCompoundTag("extra"));
-        List<String> groups = decodeStrings(value.getTagList("groups", STRING));
+        List<String> groups = decodeStrings((NBTTagList) value.getTag("groups"));
         return new EntityTemplate(
             value.getString("entity_type"),
             value.getCompoundTag("configuration"),
@@ -88,6 +98,7 @@ public final class EntityTemplateNbtCodec {
 
     private static List<String> decodeStrings(NBTTagList values) {
         if (values == null) throw malformed("groups");
+        if (values.tagCount() > 0 && values.func_150303_d() != STRING) throw malformed("groups element type");
         List<String> result = new ArrayList<String>();
         Set<String> seen = new HashSet<String>();
         for (int i = 0; i < values.tagCount(); i++) {

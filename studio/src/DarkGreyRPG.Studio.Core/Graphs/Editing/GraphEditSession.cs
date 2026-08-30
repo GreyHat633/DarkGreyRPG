@@ -988,9 +988,15 @@ public sealed class GraphEditSession
 
         var properties = triggerProperties?.ToDictionary(item => item.Key, item => item.Value.Clone(), StringComparer.Ordinal)
             ?? StoryStartSchema.DefaultTriggerProperties(triggerType!);
+        var logicPortId = string.Equals(triggerType, StoryStartSchema.Logic, StringComparison.Ordinal)
+            ? AllocateDynamicPortId() : null;
+        if (string.Equals(triggerType, StoryStartSchema.Logic, StringComparison.Ordinal) && logicPortId is null)
+            return Fail([StoryStartIssue("graph.story.start.trigger.logic_port_id.unavailable",
+                "No opaque Story Start Logic condition port ID was available.", "logic_port_id", nodeId)]);
         var next = slots!.Select(slot => new StoryStartTriggerSlot(slot.PortId, slot.DisplayName,
             slot.TriggerType, slot.TriggerProperties.Clone(), slot.Order, slot.LogicPortId)).ToList();
-        next.Add(new StoryStartTriggerSlot(id, displayName.Trim(), triggerType!, JsonSerializer.SerializeToElement(properties), next.Count));
+        next.Add(new StoryStartTriggerSlot(id, displayName.Trim(), triggerType!,
+            JsonSerializer.SerializeToElement(properties), next.Count, logicPortId));
         var before = DeepClone(Document);
         ApplyStoryStartSlots(node!, next);
         return CommitValidatedStoryStart(before, node!);
@@ -1010,13 +1016,21 @@ public sealed class GraphEditSession
                 $"Story Start trigger port '{portId}' does not exist.", "port_id", nodeId)]);
         var properties = triggerProperties?.ToDictionary(item => item.Key, item => item.Value.Clone(), StringComparer.Ordinal)
             ?? StoryStartSchema.DefaultTriggerProperties(triggerType!);
+        var logicPortId = string.Equals(triggerType, StoryStartSchema.Logic, StringComparison.Ordinal)
+            ? slots[index].LogicPortId ?? AllocateDynamicPortId()
+            : null;
+        if (string.Equals(triggerType, StoryStartSchema.Logic, StringComparison.Ordinal) && logicPortId is null)
+            return Fail([StoryStartIssue("graph.story.start.trigger.logic_port_id.unavailable",
+                "No opaque Story Start Logic condition port ID was available.", "logic_port_id", nodeId)]);
         var next = slots[index] with
         {
             TriggerType = triggerType!,
             TriggerProperties = JsonSerializer.SerializeToElement(properties),
+            LogicPortId = logicPortId,
         };
         if (string.Equals(slots[index].TriggerType, next.TriggerType, StringComparison.Ordinal)
-            && JsonElement.DeepEquals(slots[index].TriggerProperties, next.TriggerProperties))
+            && JsonElement.DeepEquals(slots[index].TriggerProperties, next.TriggerProperties)
+            && string.Equals(slots[index].LogicPortId, next.LogicPortId, StringComparison.Ordinal))
             return Fail([]);
         var before = DeepClone(Document);
         slots[index] = next;

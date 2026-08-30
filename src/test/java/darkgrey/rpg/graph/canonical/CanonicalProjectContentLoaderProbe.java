@@ -11,7 +11,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Stream;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 /** Executable acceptance matrix for the complete canonical project-content loader. */
 public final class CanonicalProjectContentLoaderProbe {
@@ -30,6 +35,7 @@ public final class CanonicalProjectContentLoaderProbe {
             prepare(project);
             CanonicalProjectContentLoader loader = new CanonicalProjectContentLoader();
             verifyValid(loader, project);
+            verifyStoryLogicGraph(loader, project);
             verifyMissingDirectory(loader, project);
             prepare(project);
             verifyMalformedPropagation(loader, project);
@@ -164,6 +170,125 @@ public final class CanonicalProjectContentLoaderProbe {
         delete(tasks);
         expect(loader, project, "project.content.directory.missing");
         require(!Files.exists(tasks), "Missing canonical directory was created");
+    }
+
+    private static void verifyStoryLogicGraph(CanonicalProjectContentLoader loader, Path project) throws IOException {
+        CanonicalProjectContent absent = load(loader, project);
+        require(
+            absent.getStoryLogicGraph() == CanonicalStoryLogicGraph.empty(),
+            "Absent Story logic graph did not return stable empty graph");
+
+        Path graphFile = project.resolve("resources/canonical/story_logic_graph.json");
+        write(graphFile, "{\"schema_version\":1,\"connections\":[]}");
+        CanonicalProjectContent present = load(loader, project);
+        require(
+            present.getStoryLogicGraph()
+                .getSchemaVersion() == 1,
+            "Story logic graph schema changed");
+        require(
+            present.getStoryLogicGraph()
+                .getConnections()
+                .isEmpty(),
+            "Empty Story logic graph changed");
+        expectStoryLogicFailure(loader, project, "{\"schema_version\":1,\"connections\":[],\"extra\":0}");
+        expectStoryLogicFailure(loader, project, "{\"schema_version\":2,\"connections\":[]}");
+        Files.deleteIfExists(graphFile);
+
+        Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
+        stories.put("source", boundaryStory("source", "out", "in"));
+        stories.put("source2", boundaryStory("source2", "out", "in"));
+        stories.put("target", boundaryStory("target", "out", "in"));
+        CanonicalStoryLogicGraphLoader direct = new CanonicalStoryLogicGraphLoader();
+        write(
+            graphFile,
+            "{\"schema_version\":1,\"connections\":[" + "{\"source_story_id\":\"source\",\"source_port_id\":\"out\","
+                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\"}]}");
+        CanonicalStoryLogicGraph graph = direct.load(graphFile, stories);
+        require(
+            graph.getConnections()
+                .size() == 1,
+            "Story logic edge was not loaded");
+        expectDirectStoryLogicFailure(
+            direct,
+            graphFile,
+            stories,
+            "{\"schema_version\":1,\"connections\":[" + "{\"source_story_id\":\"source\",\"source_port_id\":\"out\","
+                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\"},"
+                + "{\"source_story_id\":\"source2\",\"source_port_id\":\"out\","
+                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\"}]}",
+            "story.logic.graph.target.multiple_sources");
+        Files.delete(graphFile);
+    }
+
+    private static void expectStoryLogicFailure(CanonicalProjectContentLoader loader, Path project, String json)
+        throws IOException {
+        Path file = project.resolve("resources/canonical/story_logic_graph.json");
+        write(file, json);
+        try {
+            load(loader, project);
+            throw new AssertionError("Expected Story logic graph rejection");
+        } catch (CanonicalProjectContentException exception) {
+            require(
+                "project.content.story_logic_graph.load".equals(exception.getCode()),
+                "Story logic graph wrapper code changed");
+            require(
+                exception.getCause() instanceof CanonicalGraphResourceException,
+                "Story logic graph cause was not retained");
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    private static void expectDirectStoryLogicFailure(CanonicalStoryLogicGraphLoader loader, Path file,
+        Map<String, CanonicalGraphResource> stories, String json, String code) throws IOException {
+        write(file, json);
+        try {
+            loader.load(file, stories);
+            throw new AssertionError("Expected " + code);
+        } catch (CanonicalGraphResourceException exception) {
+            require(code.equals(exception.getCode()), "Expected " + code + ", got " + exception.getCode());
+        }
+    }
+
+    private static CanonicalGraphResource boundaryStory(String id, String outputId, String inputId) {
+        Map<String, JsonElement> outputProperties = new LinkedHashMap<String, JsonElement>();
+        outputProperties.put("port_id", new JsonPrimitive(outputId));
+        outputProperties.put("display_name", new JsonPrimitive(outputId));
+        Map<String, JsonElement> inputProperties = new LinkedHashMap<String, JsonElement>();
+        inputProperties.put("port_id", new JsonPrimitive(inputId));
+        inputProperties.put("display_name", new JsonPrimitive(inputId));
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.STORY,
+            id,
+            id,
+            new CanonicalGraph(
+                Arrays.asList(
+                    new CanonicalGraphNode(
+                        "output",
+                        "logic_output",
+                        outputId,
+                        Collections.singletonList(
+                            new CanonicalGraphPort(
+                                "logic_in",
+                                "Logic In",
+                                CanonicalGraphPortDirection.INPUT,
+                                CanonicalGraphInterfaceKind.LOGIC,
+                                0)),
+                        outputProperties),
+                    new CanonicalGraphNode(
+                        "input",
+                        "logic_input",
+                        inputId,
+                        Collections.singletonList(
+                            new CanonicalGraphPort(
+                                "logic_out",
+                                "Logic Out",
+                                CanonicalGraphPortDirection.OUTPUT,
+                                CanonicalGraphInterfaceKind.LOGIC,
+                                0)),
+                        inputProperties)),
+                Collections.<CanonicalGraphConnection>emptyList()));
     }
 
     private static void verifyMalformedPropagation(CanonicalProjectContentLoader loader, Path project)
@@ -313,7 +438,7 @@ public final class CanonicalProjectContentLoaderProbe {
 
     private static String taskJson(String id) {
         return "{\"schema_version\":1,\"resource_kind\":\"task\",\"id\":\"" + id
-            + "\",\"display_name\":\"Task\",\"graph\":{\"nodes\":[{\"id\":\"activate\",\"type\":\"activate\",\"display_name\":\"Activate\",\"ports\":[],\"properties\":{}},{\"id\":\"settle\",\"type\":\"settle\",\"display_name\":\"Settle\",\"ports\":[],\"properties\":{}}],\"connections\":[]}}";
+            + "\",\"display_name\":\"Task\",\"graph\":{\"nodes\":[{\"id\":\"settle\",\"type\":\"settle\",\"display_name\":\"Settle\",\"ports\":[],\"properties\":{}}],\"connections\":[]}}";
     }
 
     private static void write(Path path, String text) throws IOException {

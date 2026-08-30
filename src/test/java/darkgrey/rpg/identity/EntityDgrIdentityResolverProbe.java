@@ -2,6 +2,7 @@ package darkgrey.rpg.identity;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,12 +72,27 @@ public final class EntityDgrIdentityResolverProbe {
             EntityDgrIdentityResolver.resolve(null, identities, selections)
                 .getActorId() == null,
             "null entity resolved unexpectedly");
+        Entity original = allocateEntity(ENTITY);
+        original.setEntityId(40);
+        Entity clone = allocateEntity(ENTITY);
+        clone.setEntityId(41);
+        List<Entity> duplicates = Arrays.asList(original, clone);
+        require(
+            EntityDgrIdentityResolver.isCanonicalUuidHost(original, duplicates),
+            "original same-UUID host was rejected");
+        require(
+            !EntityDgrIdentityResolver.isCanonicalUuidHost(clone, duplicates),
+            "later same-UUID clone retained unique-host eligibility");
+        require(
+            EntityDgrIdentityResolver.isCanonicalUuidHost(original, Collections.singletonList(original)),
+            "single host was rejected");
         System.out.println("DGR_IDENTITY_EXTERNAL_PRECEDENCE=PASS");
         System.out.println("DGR_IDENTITY_NOMINATOR_COMBINATION=PASS");
         System.out.println("DGR_IDENTITY_STALE_INDIVIDUAL_REJECTED=PASS");
         System.out.println("DGR_IDENTITY_GROUP_DEDUP=PASS");
         System.out.println("DGR_IDENTITY_GROUP_ROUTING=PASS");
         System.out.println("DGR_IDENTITY_EXACT_TYPE_GROUP_ROUTING=PASS");
+        System.out.println("DGR_IDENTITY_SAME_UUID_CLONE_GUARD=PASS");
     }
 
     private static Entity allocateEntity(UUID uuid) throws Exception {

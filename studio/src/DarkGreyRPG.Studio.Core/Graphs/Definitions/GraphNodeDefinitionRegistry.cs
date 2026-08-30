@@ -203,7 +203,8 @@ public static class GraphNodeDefinitionRegistry
                 properties: [StringProperty("port_id"), StringProperty("display_name")]),
             Node("logic_input", GraphScope.Task, "逻辑输入", "逻辑", kinds: [GraphInterfaceKind.Logic],
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)],
-                properties: [StringProperty("port_id"), StringProperty("display_name")]),
+                properties: [StringProperty("port_id"), StringProperty("display_name"),
+                    new GraphPropertyDefinition("source", JsonValueKind.String)]),
             Node("settle", GraphScope.Task, "结算", "任务", required: true, unique: true, kinds: logicOnly),
         ];
     }

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraftforge.common.MinecraftForge;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import darkgrey.rpg.client.gui.GuiCopierTemplates;
@@ -21,6 +22,7 @@ public final class ClientProxy extends CommonProxy {
         FMLCommonHandler.instance()
             .bus()
             .register(new ClientQuestKeyHandler());
+        MinecraftForge.EVENT_BUS.register(new NominatorClientRuntime());
     }
 
     @Override

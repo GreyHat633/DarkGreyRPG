@@ -40,6 +40,14 @@ public final class ItemCopier extends Item {
     }
 
     @Override
+    public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
+        float hitX, float hitY, float hitZ) {
+        // The Forge block-interaction event performs the server-authoritative spawn.
+        // Returning true here keeps a block click from falling through to the air-only template GUI.
+        return true;
+    }
+
+    @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean advanced) {
         try {

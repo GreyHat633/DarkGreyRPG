@@ -358,10 +358,35 @@ public final class CanonicalGraphResourceLoader {
 
     private static boolean allowedType(CanonicalGraphResourceKind scope, String type) {
         if (scope == CanonicalGraphResourceKind.STORY) return Arrays
-            .asList("start", "terminate", "session", "task", "condition", "and", "or", "not", "action", "enter_story")
+            .asList(
+                "start",
+                "terminate",
+                "session",
+                "task",
+                "condition",
+                "and",
+                "or",
+                "not",
+                "action",
+                "interact_actor",
+                "enter_region",
+                "enter_story",
+                "logic_input",
+                "logic_output")
             .contains(type);
         if (scope == CanonicalGraphResourceKind.SESSION) return Arrays
-            .asList("start", "line", "choice", "condition", "and", "or", "not", "logic_output", "end", "legacy_jump")
+            .asList(
+                "start",
+                "line",
+                "choice",
+                "condition",
+                "and",
+                "or",
+                "not",
+                "logic_input",
+                "logic_output",
+                "end",
+                "legacy_jump")
             .contains(type);
         // Task activation is owned by the parent Story Flow. A legacy Task
         // containing activate is rejected deterministically below by the

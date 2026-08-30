@@ -339,7 +339,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? StoryStartTriggerRemovalConfirmationRequested { get; set; }
 
     public bool AddStoryStartTrigger(string displayName = "新触发",
-        string triggerType = StoryStartSchema.EnterStory,
+        string triggerType = StoryStartSchema.RegionEntry,
         IReadOnlyDictionary<string, JsonElement>? triggerProperties = null)
     {
         if (!IsStoryStart) return false;
@@ -863,6 +863,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         new(StoryStartSchema.EnterStory, "进入故事"),
         new(StoryStartSchema.ActorInteraction, "角色交互"),
         new(StoryStartSchema.RegionEntry, "进入区域"),
+        new(StoryStartSchema.Logic, "逻辑条件"),
     ];
 
     public string TriggerType => _triggerType;
@@ -882,6 +883,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsActorInteraction));
                 OnPropertyChanged(nameof(IsRegionEntry));
                 OnPropertyChanged(nameof(IsEnterStory));
+                OnPropertyChanged(nameof(IsLogic));
                 NotifyPropertyFields();
             }
         }
@@ -891,6 +893,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     public bool IsActorInteraction => _triggerType == StoryStartSchema.ActorInteraction;
     public bool IsRegionEntry => _triggerType == StoryStartSchema.RegionEntry;
     public bool IsEnterStory => _triggerType == StoryStartSchema.EnterStory;
+    public bool IsLogic => _triggerType == StoryStartSchema.Logic;
     public string ActorId
     {
         get => ReadString(StoryStartSchema.ActorIdProperty);

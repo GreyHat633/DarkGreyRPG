@@ -39,7 +39,7 @@ public final class CanonicalStoryRuntime {
         "enter_story",
         "interact_actor",
         "enter_region");
-    private static final Set<String> LOGIC_TYPES = set("and", "or", "not");
+    private static final Set<String> LOGIC_TYPES = set("and", "or", "not", "logic_input", "logic_output");
 
     private final CanonicalGraphResource resource;
     private final String resourceFingerprint;
@@ -298,12 +298,30 @@ public final class CanonicalStoryRuntime {
 
     /** Sets one externally-owned named Logic input and resumes a waiting Condition once. */
     public boolean setLogicInput(String portId, boolean value) {
+        return setLogicInputs(Collections.singletonMap(portId, Boolean.valueOf(value)));
+    }
+
+    /** Applies one coherent public Logic input snapshot before evaluating a waiting Condition. */
+    public boolean setLogicInputs(Map<String, Boolean> values) {
         ensureInitialized();
-        String id = requireId(portId, "Story Logic input port ID");
-        requireExternalInput(id);
-        Boolean previous = externalLogicInputs.put(id, Boolean.valueOf(value));
+        if (values == null) throw new IllegalArgumentException("Story Logic input values are required.");
+        LinkedHashMap<String, Boolean> validated = new LinkedHashMap<String, Boolean>();
+        for (Map.Entry<String, Boolean> entry : values.entrySet()) {
+            String id = requireId(entry.getKey(), "Story Logic input port ID");
+            if (entry.getValue() == null) throw new IllegalArgumentException("Story Logic input value is required.");
+            requireExternalInput(id);
+            validated.put(id, entry.getValue());
+        }
+        boolean changed = false;
+        for (Map.Entry<String, Boolean> entry : validated.entrySet()) {
+            Boolean previous = externalLogicInputs.put(entry.getKey(), entry.getValue());
+            if (previous == null ? entry.getValue()
+                .booleanValue()
+                : previous.booleanValue() != entry.getValue()
+                    .booleanValue())
+                changed = true;
+        }
         recomputePublicLogic();
-        boolean changed = previous == null ? value : previous.booleanValue() != value;
         if (waitKind == CanonicalStoryWaitKind.CONDITION && changed) {
             CanonicalGraphNode condition = currentNode();
             boolean now = logicInputValue(condition, "logic_in", new HashMap<String, Boolean>());

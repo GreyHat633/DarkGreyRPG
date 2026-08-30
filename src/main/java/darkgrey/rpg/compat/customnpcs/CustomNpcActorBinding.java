@@ -52,6 +52,16 @@ public final class CustomNpcActorBinding {
         return value == null ? "" : String.valueOf(value);
     }
 
+    /**
+     * CNPC overrides setDead() as its respawn lifecycle. Storage capture must
+     * use CNPC's explicit delete operation so the source is actually removed.
+     */
+    public static boolean deleteForStorage(Entity entity) {
+        if (!isCustomNpc(entity)) return false;
+        invoke(entity, "delete", new Class<?>[0]);
+        return true;
+    }
+
     private static Object requireCustomNpc(Entity entity) {
         if (entity == null) throw new IllegalArgumentException("Entity is required.");
         try {
