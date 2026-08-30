@@ -107,12 +107,19 @@ public sealed class GraphNodeDefinitionSchemaTests
         }
 
         CollectionAssert.AreEqual(
-            GraphNodeDefinitionRegistry.ForScope(GraphScope.Session).Where(item => !item.CompatibilityOnly).Select(item => item.Type).ToArray(),
-            GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Select(item => item.Type).ToArray());
-        Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Any(item => item.Type == "legacy_jump"));
-        CollectionAssert.AreEqual(
-            GraphNodeDefinitionRegistry.ForScope(GraphScope.StoryFlow).Where(item => !item.CompatibilityOnly).Select(item => item.Type).ToArray(),
+            new[] { "terminate", "session", "task", "condition", "and", "or", "not", "action",
+                "interact_actor", "enter_region", "logic_input", "logic_output" },
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },
+            GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Select(item => item.Type).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "objective", "and", "or", "not", "logic_output", "logic_input" },
+            GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Task).Select(item => item.Type).ToArray());
+        Assert.IsTrue(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Any(item => item.Type == "choice"));
+        Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Any(item => item.Type is "start" or "legacy_jump"));
+        Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.StoryFlow).Any(item => item.Type == "start"));
+        Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Task).Any(item => item.Type is "activate" or "settle"));
     }
 
     [TestMethod]

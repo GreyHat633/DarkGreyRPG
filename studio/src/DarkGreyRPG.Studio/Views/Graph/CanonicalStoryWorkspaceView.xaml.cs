@@ -13,12 +13,15 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 public partial class CanonicalStoryWorkspaceView : UserControl
 {
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";
+    private static readonly Vector ResourceNodePointerAnchor = new(116d, 38d);
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;
     private Point _resourceDragStart;
     private ICanonicalStoryTreeItem? _resourceDragItem;
     private long _appliedStoryNodeFocusSequence;
     private bool _storyNodeFocusQueued;
     private Func<CanonicalChoiceOptionRemovalConfirmation, bool>? _choiceOptionRemovalConfirmation;
+    private Func<CanonicalTaskResultSlotRemovalConfirmation, bool>? _taskResultSlotRemovalConfirmation;
+    private Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? _storyStartTriggerRemovalConfirmation;
 
     public static readonly DependencyProperty WorkspaceProperty = DependencyProperty.Register(
         nameof(Workspace),
@@ -29,6 +32,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     public CanonicalStoryWorkspaceView()
     {
         InitializeComponent();
+        WorkspaceGraph.InlineEditorFactory = CreateInlineEditor;
         WorkspaceGraph.SelectionChanged += WorkspaceGraph_OnSelectionChanged;
         WorkspaceGraph.NodeEditRequested += WorkspaceGraph_OnNodeEditRequested;
     }
@@ -68,7 +72,27 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         set
         {
             _choiceOptionRemovalConfirmation = value;
-            ApplyChoiceOptionRemovalConfirmation();
+            ApplyRemovalConfirmations();
+        }
+    }
+
+    public Func<CanonicalTaskResultSlotRemovalConfirmation, bool>? TaskResultSlotRemovalConfirmation
+    {
+        get => _taskResultSlotRemovalConfirmation;
+        set
+        {
+            _taskResultSlotRemovalConfirmation = value;
+            ApplyRemovalConfirmations();
+        }
+    }
+
+    public Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? StoryStartTriggerRemovalConfirmation
+    {
+        get => _storyStartTriggerRemovalConfirmation;
+        set
+        {
+            _storyStartTriggerRemovalConfirmation = value;
+            ApplyRemovalConfirmations();
         }
     }
 
@@ -146,8 +170,9 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         }
 
         ResourceDragGhostTitle.Text = graph.DisplayName;
-        Canvas.SetLeft(ResourceDragGhost, viewportPoint.X - ResourceDragGhost.Width / 2d);
-        Canvas.SetTop(ResourceDragGhost, viewportPoint.Y - 38d);
+        var topLeft = ResourceNodeTopLeftFromPointer(viewportPoint);
+        Canvas.SetLeft(ResourceDragGhost, topLeft.X);
+        Canvas.SetTop(ResourceDragGhost, topLeft.Y);
         ResourceDragGhost.Visibility = Visibility.Visible;
         return true;
     }
@@ -156,6 +181,22 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         ResourceDragGhost.Visibility = Visibility.Collapsed;
         ResourceDragGhostTitle.Text = string.Empty;
+    }
+
+    public static Point ResourceNodeTopLeftFromPointer(Point viewportPoint)
+        => viewportPoint - ResourceNodePointerAnchor;
+
+    public Point ResourceGraphPositionFromPointer(Point viewportPoint)
+        => WorkspaceGraph.ScreenToGraph(ResourceNodeTopLeftFromPointer(viewportPoint));
+
+    private CanonicalNodeInspectorViewModel? CreateInlineEditor(GraphEditorNodeViewModel node)
+    {
+        var workspace = Workspace;
+        if (workspace is null || !workspace.ActiveGraphHost.Nodes.Contains(node)) return null;
+        var inspector = new CanonicalNodeInspectorViewModel(
+            workspace.ActiveGraphHost, node, workspace.ActorItems, workspace.ItemItems);
+        ConfigureRemovalConfirmations(inspector);
+        return inspector;
     }
 
     private void ResourceItem_OnClick(object sender, RoutedEventArgs args)
@@ -240,7 +281,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
 
         if (item is CanonicalStoryGraphItem)
         {
-            var graphPoint = WorkspaceGraph.ScreenToGraph(point);
+            var graphPoint = ResourceGraphPositionFromPointer(point);
             args.Effects = PlaceResourceAt(item, graphPoint.X, graphPoint.Y)
                 ? DragDropEffects.Link
                 : DragDropEffects.None;
@@ -375,17 +416,26 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         if (args.PropertyName == nameof(CanonicalStoryWorkspaceViewModel.ActiveGraphHost))
             Workspace?.ClearGraphSelection();
         if (args.PropertyName == nameof(CanonicalStoryWorkspaceViewModel.NodeInspector))
-            ApplyChoiceOptionRemovalConfirmation();
+            ApplyRemovalConfirmations();
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.StoryNodeFocusRequest)
             or nameof(CanonicalStoryWorkspaceViewModel.ActiveGraphHost))
             QueueStoryNodeFocus();
     }
 
-    private void ApplyChoiceOptionRemovalConfirmation()
+    private void ApplyRemovalConfirmations()
     {
         if (Workspace?.NodeInspector is { } inspector)
-            inspector.ChoiceOptionRemovalConfirmationRequested =
-                _choiceOptionRemovalConfirmation ?? ShowChoiceOptionRemovalConfirmation;
+            ConfigureRemovalConfirmations(inspector);
+    }
+
+    private void ConfigureRemovalConfirmations(CanonicalNodeInspectorViewModel inspector)
+    {
+        inspector.ChoiceOptionRemovalConfirmationRequested =
+            _choiceOptionRemovalConfirmation ?? ShowChoiceOptionRemovalConfirmation;
+        inspector.TaskResultSlotRemovalConfirmationRequested =
+            _taskResultSlotRemovalConfirmation ?? ShowTaskResultSlotRemovalConfirmation;
+        inspector.StoryStartTriggerRemovalConfirmationRequested =
+            _storyStartTriggerRemovalConfirmation ?? ShowStoryStartTriggerRemovalConfirmation;
     }
 
     private bool ShowChoiceOptionRemovalConfirmation(CanonicalChoiceOptionRemovalConfirmation confirmation)
@@ -393,6 +443,24 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             Window.GetWindow(this),
             $"删除选项“{confirmation.DisplayText}”将同时移除它的 Flow 和 Logic 引用/连接。\n确定继续吗？",
             "确认删除选择项",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+
+    private bool ShowTaskResultSlotRemovalConfirmation(CanonicalTaskResultSlotRemovalConfirmation confirmation)
+        => MessageBox.Show(
+            Window.GetWindow(this),
+            $"删除结果“{confirmation.DisplayName}”将同时移除它的 Flow 和 Logic 引用/连接。\n确定继续吗？",
+            "确认删除任务结果",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+
+    private bool ShowStoryStartTriggerRemovalConfirmation(CanonicalStoryStartTriggerRemovalConfirmation confirmation)
+        => MessageBox.Show(
+            Window.GetWindow(this),
+            $"删除启动方式“{confirmation.DisplayName}”将同时移除它的 Flow 和 Logic 引用/连接。\n确定继续吗？",
+            "确认删除启动方式",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;

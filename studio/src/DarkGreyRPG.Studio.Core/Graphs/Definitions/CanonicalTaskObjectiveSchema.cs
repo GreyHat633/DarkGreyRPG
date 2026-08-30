@@ -15,6 +15,8 @@ public static class CanonicalTaskObjectiveSchema
     public const string ItemProperty = "item";
     public const string MetadataProperty = "metadata";
     public const string ActorIdProperty = "actor_id";
+    /// <summary>Explicit authoring state used until a DGR identity is selected.</summary>
+    public const string UnselectedTarget = "";
     /// <summary>Stable fixed output carrying the objective completion state.</summary>
     public const string CompletionPortId = "logic_status";
     public const string CompletionDisplayName = "完成";
@@ -42,7 +44,7 @@ public static class CanonicalTaskObjectiveSchema
         _ => new HashSet<string>(StringComparer.Ordinal),
     };
 
-    /// <summary>Creates the deterministic valid default used by new Objective nodes.</summary>
+    /// <summary>Creates the deterministic unselected default used by new Objective nodes.</summary>
     public static void InitializeDefault(GraphNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
@@ -123,6 +125,27 @@ public static class CanonicalTaskObjectiveSchema
 
     public static bool IsValid(GraphNode node) => Validate(node).Count == 0;
 
+    /// <summary>
+    /// Returns true only for the explicit blank target emitted by authoring.
+    /// Missing, malformed, and legacy nonblank targets are not this state.
+    /// </summary>
+    public static bool IsUnselectedTarget(GraphNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        var type = ReadString(node.Properties ?? [], TypeProperty);
+        var targetProperty = type switch
+        {
+            KillEntity => EntityProperty,
+            CollectItem => ItemProperty,
+            InteractActor => ActorIdProperty,
+            _ => null,
+        };
+        return targetProperty is not null
+            && (node.Properties ?? []).TryGetValue(targetProperty, out var target)
+            && target.ValueKind == JsonValueKind.String
+            && string.Equals(target.GetString(), UnselectedTarget, StringComparison.Ordinal);
+    }
+
     private static void InitializeType(GraphNode node, string type, string? actorId = null)
     {
         var properties = node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.Ordinal);
@@ -137,10 +160,10 @@ public static class CanonicalTaskObjectiveSchema
         switch (type)
         {
             case KillEntity:
-                properties[EntityProperty] = JsonSerializer.SerializeToElement("minecraft:slime");
+                properties[EntityProperty] = JsonSerializer.SerializeToElement(UnselectedTarget);
                 break;
             case CollectItem:
-                properties[ItemProperty] = JsonSerializer.SerializeToElement("minecraft:stone");
+                properties[ItemProperty] = JsonSerializer.SerializeToElement(UnselectedTarget);
                 properties[MetadataProperty] = JsonSerializer.SerializeToElement(new Dictionary<string, string>());
                 break;
             case InteractActor:

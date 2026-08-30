@@ -35,7 +35,7 @@ public sealed class GraphNodeAuthoringResult
 }
 
 /// <summary>
-/// Builds a detached, shape-valid graph-node candidate without changing the
+/// Builds a detached, authoring-valid graph-node candidate without changing the
 /// supplied document. Semantic trigger/result initialization remains
 /// deliberately fail-closed until those schemas are available; Session Choice
 /// uses its frozen paired Flow/Logic option contract. Task settlement and
@@ -329,6 +329,14 @@ public sealed class GraphNodeAuthoringService
         // schema or dynamic-role policy changes later.  The graph still sees
         // no mutation if the candidate is rejected.
         var shapeIssues = GraphNodeShapeValidator.Validate(candidate, scope);
+        if (scope == GraphScope.Task
+            && string.Equals(nodeType, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal)
+            && CanonicalTaskObjectiveSchema.IsUnselectedTarget(candidate))
+        {
+            shapeIssues = shapeIssues.Where(issue => issue.Code != "graph.objective.target.invalid"
+                || issue.Field is not ("properties.entity" or "properties.item" or "properties.actor_id"))
+                .ToArray();
+        }
         if (shapeIssues.Count != 0)
             return FailureIssues(shapeIssues);
 

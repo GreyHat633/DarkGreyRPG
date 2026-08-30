@@ -1,0 +1,20 @@
+using System.Windows;
+using System.Windows.Controls;
+using DarkGreyRPG.Studio.ViewModels.Graph;
+
+namespace DarkGreyRPG.Studio.Views.Graph;
+
+/// <summary>High-frequency canonical parameter controls hosted directly inside a graph node.</summary>
+public partial class CanonicalInlineNodeEditorControl : UserControl
+{
+    public static readonly DependencyProperty EditorProperty = DependencyProperty.Register(
+        nameof(Editor), typeof(CanonicalNodeInspectorViewModel), typeof(CanonicalInlineNodeEditorControl));
+
+    public CanonicalInlineNodeEditorControl() => InitializeComponent();
+
+    public CanonicalNodeInspectorViewModel? Editor
+    {
+        get => (CanonicalNodeInspectorViewModel?)GetValue(EditorProperty);
+        set => SetValue(EditorProperty, value);
+    }
+}

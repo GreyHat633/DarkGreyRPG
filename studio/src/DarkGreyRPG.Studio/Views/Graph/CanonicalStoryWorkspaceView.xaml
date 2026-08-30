@@ -7,6 +7,46 @@
              AutomationProperties.AutomationId="CanonicalStoryWorkspace">
     <UserControl.Resources>
         <graph:CanonicalStorySelectionEqualityConverter x:Key="CanonicalStorySelectionEqualityConverter" />
+        <Style x:Key="InstantFolderExpanderStyle" TargetType="{x:Type Expander}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Expander}">
+                        <StackPanel>
+                            <ToggleButton x:Name="HeaderToggle" HorizontalContentAlignment="Stretch"
+                                          FocusVisualStyle="{x:Null}"
+                                          Content="{TemplateBinding Header}"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Border Padding="3,4" Background="Transparent">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="14" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Path x:Name="Arrow" Width="6" Height="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Data="M 0,0 L 6,5 L 0,10 Z" Fill="{TemplateBinding Foreground}"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.RenderTransform><RotateTransform Angle="0" /></Path.RenderTransform>
+                                                </Path>
+                                                <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}"
+                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                  VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90" /></Setter.Value></Setter></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True"><Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" /></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid DataContext="{Binding Workspace, ElementName=Root}">
         <Grid.ColumnDefinitions>
@@ -63,11 +103,14 @@
                     <ItemsControl ItemsSource="{Binding Folders}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:CanonicalStoryFolderViewModel}">
-                                <Expander Margin="0,2" Header="{Binding DisplayName}"
-                                          Tag="{Binding}"
-                                          IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
-                                          PreviewMouseLeftButtonDown="Folder_OnPreviewMouseLeftButtonDown"
-                                          PreviewMouseRightButtonDown="Folder_OnPreviewMouseRightButtonDown">
+                                <Expander Margin="0,2" Style="{StaticResource InstantFolderExpanderStyle}"
+                                          IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
+                                    <Expander.Header>
+                                        <TextBlock Padding="2,1" Text="{Binding DisplayName}" Tag="{Binding}"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                   PreviewMouseLeftButtonDown="Folder_OnPreviewMouseLeftButtonDown"
+                                                   PreviewMouseRightButtonDown="Folder_OnPreviewMouseRightButtonDown" />
+                                    </Expander.Header>
                                     <ItemsControl Margin="10,2,0,6" ItemsSource="{Binding Items}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -81,7 +124,7 @@
                                                         PreviewMouseRightButtonDown="ResourceItem_OnPreviewMouseRightButtonDown"
                                                         KeyDown="ResourceItem_OnKeyDown">
                                                     <Button.Style>
-                                                        <Style TargetType="Button">
+                                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                                             <Setter Property="Background" Value="Transparent" />
                                                             <Setter Property="BorderBrush" Value="Transparent" />
                                                             <Setter Property="BorderThickness" Value="1" />
@@ -101,7 +144,8 @@
                                                         </Style>
                                                     </Button.Style>
                                                     <StackPanel>
-                                                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                   Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
                                                         <TextBlock Margin="0,2,0,0" FontSize="11"
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                    Text="{Binding IdentityText}" TextTrimming="CharacterEllipsis" />
@@ -268,7 +312,7 @@
                                             <ComboBox Margin="0,4,0,0" ItemsSource="{Binding ActorOptions}"
                                                       SelectedItem="{Binding SelectedActor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                       DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="StoryStartTriggerActorId">
-                                                <ComboBox.Style><Style TargetType="ComboBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
+                                                <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                                             </ComboBox>
                                             <Grid Margin="0,4,0,0">
                                                 <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
@@ -297,14 +341,14 @@
                               DisplayMemberPath="DisplayName"
                               AutomationProperties.AutomationId="StoryActionTypeSelector"
                               AutomationProperties.Name="Story Action type selector">
-                        <ComboBox.Style><Style TargetType="ComboBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
+                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                     </ComboBox>
                     <TextBlock Margin="0,10,0,3" Text="个体物品">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
                     <ComboBox ItemsSource="{Binding StoryActionItemOptions}" SelectedItem="{Binding SelectedStoryActionItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="DisplayName" IsEditable="False" AutomationProperties.AutomationId="StoryActionItem">
-                        <ComboBox.Style><Style TargetType="ComboBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
+                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                     </ComboBox>
                     <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryActionItemStatusText}" TextWrapping="Wrap">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
@@ -314,7 +358,7 @@
                     </TextBlock>
                     <TextBox Text="{Binding StoryActionAmountText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                              AutomationProperties.AutomationId="StoryActionAmount">
-                        <TextBox.Style><Style TargetType="TextBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
+                        <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
                     </TextBox>
                     <TextBlock Margin="0,10,0,3" Text="消息">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
@@ -322,37 +366,37 @@
                     <TextBox Text="{Binding StoryActionMessage, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                              TextWrapping="Wrap" AcceptsReturn="True"
                              AutomationProperties.AutomationId="StoryActionMessage">
-                        <TextBox.Style><Style TargetType="TextBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
+                        <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
                     </TextBox>
                     <TextBlock Margin="0,10,0,3" Text="目标类型">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
                     <ComboBox ItemsSource="{Binding ObjectiveTypeOptions}" SelectedItem="{Binding SelectedObjectiveType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="TaskObjectiveTypeSelector" AutomationProperties.Name="Task Objective type selector">
-                        <ComboBox.Style><Style TargetType="ComboBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
+                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                     </ComboBox>
                     <TextBlock Margin="0,10,0,3" Text="目标描述">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
                     <TextBox Text="{Binding ObjectiveDescription, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveDescription">
-                        <TextBox.Style><Style TargetType="TextBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
+                        <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
                     </TextBox>
                     <TextBlock Margin="0,10,0,3" Text="需求数量">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
                     <TextBox Text="{Binding ObjectiveRequiredText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveRequired">
-                        <TextBox.Style><Style TargetType="TextBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
+                        <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
                     </TextBox>
                     <TextBlock Margin="0,10,0,3" Text="目标对象">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsKillEntityObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsCollectItemObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsInteractActorObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
                     <ComboBox ItemsSource="{Binding ObjectiveItemOptions}" SelectedItem="{Binding SelectedObjectiveItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" IsEditable="False" AutomationProperties.AutomationId="TaskObjectiveItemSelector">
-                        <ComboBox.Style><Style TargetType="ComboBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsCollectItemObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
+                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsCollectItemObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                     </ComboBox>
                     <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ObjectiveItemStatusText}" TextWrapping="Wrap">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsCollectItemObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
                     <ComboBox ItemsSource="{Binding ObjectiveActorOptions}" SelectedItem="{Binding SelectedObjectiveActor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" IsEditable="False" AutomationProperties.AutomationId="TaskObjectiveActorSelector" AutomationProperties.Name="Task Objective actor selector">
-                        <ComboBox.Style><Style TargetType="ComboBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsKillEntityObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsInteractActorObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
+                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsKillEntityObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsInteractActorObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                     </ComboBox>
                     <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ObjectiveActorStatusText}" TextWrapping="Wrap">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsKillEntityObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsInteractActorObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
@@ -367,7 +411,7 @@
                     </TextBlock>
                     <TextBox Text="{Binding LineText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True">
                         <TextBox.Style>
-                            <Style TargetType="TextBox">
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers><DataTrigger Binding="{Binding IsLine}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                             </Style>
@@ -388,7 +432,7 @@
                               AutomationProperties.AutomationId="SessionLineActorSelector"
                               AutomationProperties.Name="Session Line Actor selector">
                         <ComboBox.Style>
-                            <Style TargetType="ComboBox">
+                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers><DataTrigger Binding="{Binding IsLine}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                             </Style>
@@ -413,7 +457,7 @@
                     </TextBlock>
                     <TextBox Text="{Binding ChoicePrompt, Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
                         <TextBox.Style>
-                            <Style TargetType="TextBox">
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers><DataTrigger Binding="{Binding IsChoice}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                             </Style>
@@ -488,7 +532,7 @@
                     </TextBlock>
                     <TextBox Text="{Binding EndDisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
                         <TextBox.Style>
-                            <Style TargetType="TextBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsEnd}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsEnd}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style>
                         </TextBox.Style>
                     </TextBox>
                     <TextBlock Margin="0,10,0,3" Text="逻辑输出显示名">
@@ -498,7 +542,7 @@
                     </TextBlock>
                     <TextBox Text="{Binding LogicOutputDisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
                         <TextBox.Style>
-                            <Style TargetType="TextBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLogicOutput}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLogicOutput}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style>
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>

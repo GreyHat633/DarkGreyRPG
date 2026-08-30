@@ -344,9 +344,6 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public Action? ReferenceItemRequested { get; set; }
     public Action<ICanonicalStoryTreeItem>? DeleteResourceRequested { get; set; }
 
-    /// <summary>Optional shell-owned unsaved-changes gate for graph switching.</summary>
-    public Func<CanonicalGraphResourceEditorViewModel, bool>? CanLeaveGraph { get; set; }
-
     public CanonicalGraphResourceEditorViewModel ActiveEditor
     {
         get => _activeEditor;
@@ -588,7 +585,6 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         ArgumentNullException.ThrowIfNull(item);
         if (!Contains(item)) return false;
         if (ReferenceEquals(ActiveEditor, item.Editor)) return true;
-        if (CanLeaveGraph is not null && !CanLeaveGraph(ActiveEditor)) return false;
         SelectedTreeItem = item;
         ActiveEditor = item.Editor;
         ClearGraphSelection();
@@ -600,7 +596,6 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     {
         ThrowIfDisposed();
         if (IsStoryFlowActive) return true;
-        if (CanLeaveGraph is not null && !CanLeaveGraph(ActiveEditor)) return false;
         ActiveEditor = StoryEditor;
         ClearGraphSelection();
         InspectorSelection = StoryEditor;

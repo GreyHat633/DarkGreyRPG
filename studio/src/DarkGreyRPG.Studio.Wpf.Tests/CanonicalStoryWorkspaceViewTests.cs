@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
@@ -26,6 +27,22 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.AreSame(workspace.StoryEditor.Host, view.GraphView.Host);
         Assert.IsGreaterThan(0d, view.ActualWidth);
         Assert.IsGreaterThan(0d, view.ActualHeight);
+    }
+
+    [STATestMethod]
+    public void InstantFolderTemplateKeepsEveryFolderHeaderVisible()
+    {
+        using var workspace = Workspace("story-a");
+        var view = Arrange(workspace);
+        var visibleHeaders = Descendants<ToggleButton>(view)
+            .Where(toggle => toggle.Name == "HeaderToggle")
+            .Select(toggle => toggle.Content)
+            .OfType<TextBlock>()
+            .Select(text => text.Text)
+            .ToArray();
+
+        foreach (var expected in new[] { "角色", "物品", "会话", "任务" })
+            CollectionAssert.Contains(visibleHeaders, expected);
     }
 
     [STATestMethod]
@@ -105,17 +122,49 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
-    public void UnsavedGateBlocksVisualActivationWithoutReplacingHost()
+    public void InlineStartRemovalConfirmationIsInjectedAtViewBoundary()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "region");
+        var target = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "target");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story",
+                new GraphDocument([start, target],
+                    [new GraphConnection("start", "region", "target", "flow_in", GraphInterfaceKind.Flow)])));
+        var view = Arrange(workspace);
+        var prompts = 0;
+        view.StoryStartTriggerRemovalConfirmation = confirmation =>
+        {
+            prompts++;
+            Assert.AreEqual("进入区域", confirmation.DisplayName);
+            return true;
+        };
+        var inline = view.GraphView.InlineEditorFactory!(workspace.ActiveGraphHost.Nodes.Single(node => node.Id == "start"));
+        Assert.IsNotNull(inline);
+        Assert.IsTrue(inline.AddStoryStartTrigger("角色触发", StoryStartSchema.ActorInteraction,
+            StoryStartSchema.DefaultTriggerProperties(StoryStartSchema.ActorInteraction, "actor")));
+
+        Assert.IsTrue(inline.RemoveStoryStartTrigger("region"));
+        Assert.AreEqual(1, prompts);
+        Assert.HasCount(1, inline.StoryStartTriggers);
+        Assert.AreEqual(StoryStartSchema.ActorInteraction, inline.StoryStartTriggers.Single().TriggerType);
+        Assert.IsEmpty(workspace.StoryEditor.Host.Graph.Connections);
+    }
+
+    [STATestMethod]
+    public void DirtyGraphAllowsVisualActivationAndKeepsOriginalDraft()
     {
         using var workspace = Workspace("story-a");
         var view = Arrange(workspace);
         var storyHost = view.GraphView.Host;
-        workspace.CanLeaveGraph = _ => false;
+        Assert.IsTrue(workspace.StoryEditor.Host.AddNode(
+            GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "dirty-action")));
 
-        Assert.IsFalse(view.ActivateResourceItem(workspace.TaskItems.Single()));
+        Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
 
-        Assert.AreSame(storyHost, view.GraphView.Host);
-        Assert.IsTrue(workspace.IsStoryFlowActive);
+        Assert.AreNotSame(storyHost, view.GraphView.Host);
+        Assert.IsFalse(workspace.IsStoryFlowActive);
+        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        Assert.IsTrue(workspace.StoryEditor.Host.Graph.Nodes.Any(node => node.Id == "dirty-action"));
     }
 
     [STATestMethod]
@@ -254,6 +303,23 @@ public sealed class CanonicalStoryWorkspaceViewTests
         view.CancelResourceDragPreview();
         Assert.IsFalse(view.IsResourceDragGhostVisible);
         Assert.AreEqual(before, workspace.StoryEditor.Host.Graph.ToJson());
+    }
+
+    [STATestMethod]
+    public void ResourceGhostAndDropShareTopLeftAnchorAcrossZoomAndPan()
+    {
+        using var workspace = AggregateWorkspace();
+        var view = Arrange(workspace);
+        view.GraphView.ViewportController.Zoom = 2d;
+        view.GraphView.ViewportController.PanX = 40d;
+        view.GraphView.ViewportController.PanY = -20d;
+
+        var pointer = new Point(300d, 240d);
+        Assert.AreEqual(new Point(184d, 202d),
+            CanonicalStoryWorkspaceView.ResourceNodeTopLeftFromPointer(pointer));
+        Assert.IsTrue(view.PreviewResourceDrag(workspace.SessionItems.Single(), pointer));
+        Assert.AreEqual(new Point(184d, 202d), view.ResourceDragGhostViewportPosition);
+        Assert.AreEqual(new Point(72d, 111d), view.ResourceGraphPositionFromPointer(pointer));
     }
 
     [STATestMethod]

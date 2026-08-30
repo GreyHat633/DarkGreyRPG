@@ -89,6 +89,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public bool IsInteractActorObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.InteractActor;
     public bool HasEditableFields => IsLine || IsChoice || IsEnd || IsLogicOutput || IsTaskSettle || IsObjective
         || IsStoryStart || IsStoryAction;
+    public bool HasInlineFields => IsLine || IsObjective || IsStoryStart || IsStoryAction;
 
     public IReadOnlyList<CanonicalStoryActionTypeOption> StoryActionTypeOptions { get; } =
     [
@@ -668,6 +669,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
 
         _repeatPolicy = current.Properties.TryGetValue(StoryStartSchema.RepeatPolicyProperty, out var repeat)
             && repeat.ValueKind == JsonValueKind.String ? repeat.GetString() ?? StoryStartSchema.Once : StoryStartSchema.Once;
+        var previousStoryStartTriggers = StoryStartTriggers.ToArray();
         StoryStartTriggers.Clear();
         if (IsStoryStart)
         {
@@ -675,6 +677,8 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
                 current.DisplayName, current.Inputs.Concat(current.Outputs).Select(port => new GraphPort(port.PortId,
                     port.DisplayName, port.IsInput, port.GraphInterfaceKind, port.Order)), current.Properties)))
                 StoryStartTriggers.Add(new CanonicalStoryStartTriggerViewModel(this, slot));
+            foreach (var trigger in previousStoryStartTriggers.Concat(StoryStartTriggers))
+                trigger.RefreshCommandStates();
         }
 
         _speakerActorId = current.Properties.TryGetValue("speaker_actor_id", out var speaker)
@@ -1096,6 +1100,13 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     public RelayCommand RemoveCommand { get; }
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
+
+    internal void RefreshCommandStates()
+    {
+        RemoveCommand.RaiseCanExecuteChanged();
+        MoveUpCommand.RaiseCanExecuteChanged();
+        MoveDownCommand.RaiseCanExecuteChanged();
+    }
 
     private string ReadString(string property)
         => _triggerProperties.ValueKind == JsonValueKind.Object

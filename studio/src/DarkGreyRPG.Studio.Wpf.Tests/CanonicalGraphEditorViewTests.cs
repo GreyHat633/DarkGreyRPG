@@ -3,6 +3,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
+using System.Windows.Threading;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -159,6 +160,59 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsNull(view.SelectedConnection);
         Assert.IsEmpty(host.Connections);
         Assert.HasCount(2, host.Nodes);
+    }
+
+    [STATestMethod]
+    public void ExistingWireDragReusesFormalWireVisualAndScissorsUsesCustomCursor()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("target", "settle", "Target", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("target", "in", GraphInterfaceKind.Logic)));
+        var view = Arrange(host);
+        Assert.IsTrue(view.BeginExistingConnectionDrag(host.Connections.Single()));
+        Assert.HasCount(1, view.ConnectionVisuals);
+        Assert.AreSame(view.ConnectionVisuals.Single(), view.ActiveWireVisuals.Single());
+        Assert.AreEqual(GraphConnectionVisualStyle.LogicSelectedColor,
+            ((SolidColorBrush)view.ConnectionVisuals.Single().Stroke).Color);
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+
+        view.SetScissorsMode(true);
+        Assert.AreSame(view.ScissorsCursor, view.ViewportElement.Cursor);
+        Assert.AreNotSame(Cursors.Cross, view.ViewportElement.Cursor);
+    }
+
+    [STATestMethod]
+    public void InlineLineParametersEditWithoutPriorSelectionAndExpanderChangesRealHeight()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        var host = new GraphEditorHostViewModel(new GraphDocument([line]), GraphScope.Session);
+        var view = Arrange(host);
+        var visual = view.NodeVisuals.Single();
+        var editor = visual.InlineEditor;
+        Assert.IsNotNull(editor);
+        Assert.IsNull(view.SelectedNode);
+
+        var textBox = Descendants<TextBox>(visual).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "InlineLineText");
+        Assert.IsTrue(visual.IsParameterInteractionSource(textBox));
+        Assert.IsFalse(visual.IsHeaderDragSource(textBox));
+        editor.LineText = "直接编辑";
+        Assert.AreEqual("直接编辑", host.Graph.Nodes.Single().Properties["text"].GetString());
+        Assert.IsNull(view.SelectedNode);
+
+        var expander = Descendants<Expander>(visual).Single();
+        var expandedHeight = visual.ActualHeight;
+        expander.IsExpanded = false;
+        view.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+        view.UpdateLayout();
+        Assert.IsLessThan(expandedHeight, visual.ActualHeight);
+        expander.IsExpanded = true;
+        view.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+        view.UpdateLayout();
+        Assert.AreEqual(expandedHeight, visual.ActualHeight, 0.5);
     }
 
     [STATestMethod]
@@ -408,7 +462,7 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
 
         CollectionAssert.AreEqual(
-            new[] { "start", "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },
+            new[] { "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
         CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },
@@ -451,10 +505,9 @@ public sealed class CanonicalGraphEditorViewTests
             add.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
 
         var session = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "会话"));
-        var start = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "起始"));
         var line = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "台词"));
         var choice = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "选择"));
-        Assert.IsFalse(start.IsEnabled);
+        Assert.IsFalse(session.Items.Cast<MenuItem>().Any(item => Equals(item.Header, "起始")));
         Assert.IsTrue(choice.IsEnabled);
         Assert.IsTrue(line.IsEnabled);
 
@@ -568,5 +621,15 @@ public sealed class CanonicalGraphEditorViewTests
         root.Arrange(new Rect(0, 0, 900, 600));
         root.UpdateLayout();
         return view;
+    }
+
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is T result) yield return result;
+            foreach (var descendant in Descendants<T>(child)) yield return descendant;
+        }
     }
 }

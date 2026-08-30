@@ -1,7 +1,9 @@
+using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.IO;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels;
@@ -164,7 +166,7 @@ public sealed class CanonicalStoryResourceShellTests
     }
 
     [TestMethod]
-    public void DeleteOwnedIsBlockedByOtherStoryAndDirtyGraphsBlockAllLifecycleDialogs()
+    public void DirtyStoryAllowsActorItemSessionTaskCreationAndGraphNavigationWithoutLosingDraft()
     {
         using var project = new CanonicalProjectFixture();
         project.Store.Tasks.Create(Envelope(GraphResourceKind.Task, "owned_task", "Owned Task"));
@@ -180,7 +182,19 @@ public sealed class CanonicalStoryResourceShellTests
             CreateResult = new CanonicalGraphResourceIdentityRequest("must_not_create", "Must Not Create"),
             DeleteOwnedConfirmed = true,
         };
-        var shell = project.OpenShell(dialogs);
+        var actorDialogs = new FakeActorDialogs
+        {
+            CreateResult = new ActorIdentityRequest("dirty_actor", "Dirty Actor"),
+        };
+        var itemDialogs = new FakeItemDialogs
+        {
+            CreateResult = new ItemIdentityRequest(
+                CanonicalStoryItemKind.Individual,
+                "dirty_item",
+                "Dirty Item",
+                []),
+        };
+        var shell = project.OpenShell(dialogs, actorDialogs: actorDialogs, itemDialogs: itemDialogs);
         var owned = shell.CanonicalStoryWorkspace!.TaskItems.Single();
 
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestDelete(owned));
@@ -196,12 +210,30 @@ public sealed class CanonicalStoryResourceShellTests
             project.Store.Memberships.Load("opening").OwnedResources.Tasks,
             "owned_task");
 
-        Assert.IsTrue(shell.CanonicalStoryWorkspace!.StoryEditor.Host.AddNode(
+        var workspace = shell.CanonicalStoryWorkspace!;
+        Assert.IsTrue(workspace.StoryEditor.Host.AddNode(
             GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "dirty_action")));
-        Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestCreate(CanonicalStoryFolderKind.Sessions));
-        Assert.AreEqual(0, dialogs.CreateRequestCount);
-        Assert.IsFalse(File.Exists(project.Store.Sessions.GetPath("must_not_create")));
-        StringAssert.Contains(shell.StatusMessage, "请先保存");
+        Assert.IsTrue(workspace.RequestCreate(CanonicalStoryFolderKind.Actors));
+        Assert.IsTrue(workspace.RequestCreate(CanonicalStoryFolderKind.Items));
+        Assert.IsTrue(workspace.RequestCreate(CanonicalStoryFolderKind.Sessions));
+        Assert.IsTrue(workspace.RequestCreate(CanonicalStoryFolderKind.Tasks));
+
+        Assert.AreSame(workspace, shell.CanonicalStoryWorkspace);
+        Assert.AreEqual(1, actorDialogs.CreateRequestCount);
+        Assert.AreEqual(1, itemDialogs.CreateRequestCount);
+        Assert.AreEqual(2, dialogs.CreateRequestCount);
+        Assert.IsTrue(workspace.ActorItems.Any(item => item.Id == "dirty_actor"));
+        Assert.IsTrue(workspace.ItemItems.Any(item => item.Id == "dirty_item"));
+        Assert.IsTrue(File.Exists(project.Store.Sessions.GetPath("must_not_create")));
+        Assert.IsTrue(File.Exists(project.Store.Tasks.GetPath("must_not_create")));
+        Assert.IsTrue(workspace.OpenGraphResource(workspace.SessionItems.Single(item => item.Id == "must_not_create")));
+        Assert.IsTrue(workspace.OpenGraphResource(workspace.TaskItems.Single(item => item.Id == "must_not_create")));
+        Assert.IsTrue(workspace.ReturnToStory());
+        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        Assert.IsTrue(workspace.StoryEditor.Host.Graph.Nodes.Any(node => node.Id == "dirty_action"));
+        Assert.IsFalse(shell.Output.Entries.Any(entry =>
+            entry.Message.Contains("请先保存", StringComparison.Ordinal)
+            || entry.Message.Contains("请逐个保存", StringComparison.Ordinal)));
     }
 
     private static GraphResourceEnvelope Envelope(
@@ -263,13 +295,17 @@ public sealed class CanonicalStoryResourceShellTests
 
         public ShellViewModel OpenShell(
             ICanonicalStoryResourceDialogs dialogs,
-            Func<string, CanonicalProjectGraphStore>? storeFactory = null)
+            Func<string, CanonicalProjectGraphStore>? storeFactory = null,
+            IActorWorkspaceDialogs? actorDialogs = null,
+            IItemWorkspaceDialogs? itemDialogs = null)
         {
             var shell = new ShellViewModel(
                 new ProjectService(),
                 new FixedProjectFolderPicker(Root),
+                actorWorkspaceDialogs: actorDialogs,
                 canonicalStoryResourceDialogs: dialogs,
-                canonicalGraphStoreFactory: storeFactory);
+                canonicalGraphStoreFactory: storeFactory,
+                itemWorkspaceDialogs: itemDialogs);
             shell.OpenProjectCommand.Execute(null);
             shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
             Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
@@ -342,6 +378,50 @@ public sealed class CanonicalStoryResourceShellTests
             CanonicalGraphResourceChoice resource,
             IReadOnlyList<string> storyIds)
             => LastDeleteBlockers = storyIds.ToArray();
+    }
+
+    private sealed class FakeActorDialogs : IActorWorkspaceDialogs
+    {
+        public ActorIdentityRequest? CreateResult { get; init; }
+        public int CreateRequestCount { get; private set; }
+
+        public ActorCreationMode? RequestCreationMode(string storyDisplayName) => ActorCreationMode.Blank;
+        public ActorIdentityRequest? RequestCreate(string suggestedId)
+        {
+            CreateRequestCount++;
+            return CreateResult;
+        }
+        public ActorIdentityRequest? RequestImportIdentity(ActorResourceInfo source, string suggestedId) => null;
+        public ActorResourceInfo? PickActor(
+            IReadOnlyList<ActorResourceInfo> candidates,
+            ActorPickerMode mode,
+            string storyDisplayName) => null;
+        public string? RequestRename(ActorResourceInfo actor, string suggestedId) => null;
+        public bool ConfirmDelete(ActorResourceInfo actor) => false;
+        public bool ConfirmRemoveReference(ActorResourceInfo actor, string storyDisplayName) => false;
+        public void ShowReferences(ActorResourceInfo actor, IReadOnlyList<ResourceDescriptor> references) { }
+        public bool ConfirmSaveBeforeSwitch(ActorResourceInfo actor) => false;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ActorResourceInfo actor)
+            => UnsavedChangesChoice.Cancel;
+    }
+
+    private sealed class FakeItemDialogs : IItemWorkspaceDialogs
+    {
+        public ItemIdentityRequest? CreateResult { get; init; }
+        public int CreateRequestCount { get; private set; }
+
+        public ItemCreationMode? RequestCreationMode(string storyDisplayName) => ItemCreationMode.Individual;
+        public ItemIdentityRequest? RequestCreate(CanonicalStoryItemKind kind, string suggestedId)
+        {
+            CreateRequestCount++;
+            return CreateResult;
+        }
+        public ItemWorkspaceChoice? PickReference(
+            IReadOnlyList<ItemResourceInfo> candidates,
+            string storyDisplayName) => null;
+        public bool ConfirmRemoveReference(ItemWorkspaceChoice resource, string storyDisplayName) => false;
+        public bool ConfirmDeleteOwned(ItemWorkspaceChoice resource) => false;
+        public void ShowDeleteBlocked(ItemWorkspaceChoice resource, IReadOnlyList<string> storyIds) { }
     }
 
     private sealed class ThrowingWriter : IAtomicFileWriter

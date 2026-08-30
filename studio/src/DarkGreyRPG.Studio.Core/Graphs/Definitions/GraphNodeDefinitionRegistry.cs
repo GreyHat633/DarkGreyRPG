@@ -24,7 +24,10 @@ public static class GraphNodeDefinitionRegistry
 
     /// <summary>Returns authorable definitions in canonical registry order.</summary>
     public static IReadOnlyList<GraphNodeDefinition> ForAuthoringScope(GraphScope scope)
-        => _definitions.Where(definition => definition.Scope == scope && !definition.CompatibilityOnly).ToArray();
+        => _definitions.Where(definition => definition.Scope == scope
+            && !definition.CompatibilityOnly
+            && !definition.Required
+            && !definition.Unique).ToArray();
 
     public static IReadOnlyList<GraphNodeDefinition> GetForAuthoringScope(GraphScope scope)
         => ForAuthoringScope(scope);

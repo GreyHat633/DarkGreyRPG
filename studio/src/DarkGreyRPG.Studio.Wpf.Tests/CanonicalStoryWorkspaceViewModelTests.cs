@@ -170,17 +170,20 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     }
 
     [TestMethod]
-    public void UnsavedChangesGateCanBlockLocalGraphSwitchAndReturn()
+    public void DirtyLocalGraphCanSwitchToAnotherGraphAndReturnWithoutLosingDraft()
     {
         using var workspace = Workspace();
         var session = workspace.SessionItems.Single();
         var task = workspace.TaskItems.Single();
         Assert.IsTrue(workspace.OpenGraphResource(session));
-        workspace.CanLeaveGraph = editor => !ReferenceEquals(editor, session.Editor);
+        Assert.IsTrue(session.Editor.Host.AddNode(
+            GraphNodeFactory.Create(GraphScope.Session, "line", "dirty-line")));
 
-        Assert.IsFalse(workspace.OpenGraphResource(task));
-        Assert.IsFalse(workspace.ReturnToStory());
-        Assert.AreSame(session.Editor, workspace.ActiveEditor);
+        Assert.IsTrue(workspace.OpenGraphResource(task));
+        Assert.IsTrue(workspace.ReturnToStory());
+        Assert.IsTrue(session.Editor.IsDirty);
+        Assert.IsTrue(session.Editor.Host.Graph.Nodes.Any(node => node.Id == "dirty-line"));
+        Assert.AreSame(workspace.StoryEditor, workspace.ActiveEditor);
     }
 
     [TestMethod]

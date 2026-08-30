@@ -262,8 +262,8 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.1"
-        : "DarkGrey RPG Studio 0.3.1.1";
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.2A"
+        : "DarkGrey RPG Studio 0.3.1.2A";
 
     public string ProjectDirectory
     {
@@ -955,13 +955,6 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
-    private bool CanLeaveCanonicalGraph(CanonicalGraphResourceEditorViewModel editor)
-    {
-        if (!editor.IsDirty) return true;
-        ReportWarning($"Canonical 图 '{editor.Id}' 尚未保存。", $"canonical/{editor.ResourceKind}/{editor.Id}");
-        return false;
-    }
-
     private void ConfigureCanonicalResourceActions(CanonicalStoryWorkspaceViewModel workspace)
     {
         workspace.CreateResourceRequested = CreateCanonicalStoryResource;
@@ -979,8 +972,7 @@ public sealed class ShellViewModel : ObservableObject
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
         var project = _projectService.CurrentProject;
-        if (workspace is null || store is null || project is null
-            || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null || project is null) return;
         try
         {
             if (!_actorWorkspaceDialogs.SupportsCanonicalActorKinds)
@@ -1035,8 +1027,7 @@ public sealed class ShellViewModel : ObservableObject
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
         var project = _projectService.CurrentProject;
-        if (workspace is null || store is null || project is null
-            || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null || project is null) return;
         try
         {
             var presentIds = workspace.Folders
@@ -1077,7 +1068,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
-        if (workspace is null || store is null || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null) return;
         try
         {
             var repository = CanonicalRepository(store, resourceKind);
@@ -1109,7 +1100,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
-        if (workspace is null || store is null || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null) return;
         try
         {
             var repository = CanonicalRepository(store, resourceKind);
@@ -1153,8 +1144,7 @@ public sealed class ShellViewModel : ObservableObject
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
         var project = _projectService.CurrentProject;
-        if (workspace is null || store is null || project is null
-            || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null || project is null) return;
         try
         {
             var repository = new ItemRepository(project.ProjectDirectory);
@@ -1195,8 +1185,7 @@ public sealed class ShellViewModel : ObservableObject
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
         var project = _projectService.CurrentProject;
-        if (workspace is null || store is null || project is null
-            || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null || project is null) return;
         try
         {
             var repository = new ItemRepository(project.ProjectDirectory);
@@ -1233,7 +1222,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
-        if (workspace is null || store is null || !CanMutateCanonicalStoryResources(workspace)) return;
+        if (workspace is null || store is null) return;
         if (item is CanonicalStoryActorItem
             || item is CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors })
         {
@@ -1406,15 +1395,6 @@ public sealed class ShellViewModel : ObservableObject
                 exception,
                 sourceOverride: $"canonical/actor/{actor.Id}");
         }
-    }
-
-    private bool CanMutateCanonicalStoryResources(CanonicalStoryWorkspaceViewModel workspace)
-    {
-        if (!workspace.HasDirtyEditors) return true;
-        ReportWarning(
-            "Canonical Story 中存在未保存的图；请先保存，再创建、引用或删除资源。",
-            $"canonical/story/{workspace.StoryEditor.Id}");
-        return false;
     }
 
     private void ReloadCanonicalStoryWorkspace(

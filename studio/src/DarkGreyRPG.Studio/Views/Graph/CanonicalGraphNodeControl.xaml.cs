@@ -21,6 +21,9 @@ public partial class CanonicalGraphNodeControl : UserControl
         nameof(IsSelected), typeof(bool), typeof(CanonicalGraphNodeControl),
         new PropertyMetadata(false, OnIsSelectedChanged));
 
+    public static readonly DependencyProperty InlineEditorProperty = DependencyProperty.Register(
+        nameof(InlineEditor), typeof(CanonicalNodeInspectorViewModel), typeof(CanonicalGraphNodeControl));
+
     public CanonicalGraphNodeControl()
     {
         InitializeComponent();
@@ -28,7 +31,12 @@ public partial class CanonicalGraphNodeControl : UserControl
         Loaded += (_, _) => UpdatePortAutomation();
     }
 
-    public CanonicalGraphNodeControl(GraphEditorNodeViewModel node) : this() => Node = node;
+    public CanonicalGraphNodeControl(GraphEditorNodeViewModel node,
+        CanonicalNodeInspectorViewModel? inlineEditor = null) : this()
+    {
+        Node = node;
+        InlineEditor = inlineEditor;
+    }
 
     private static Brush CreateFrozenBrush(Color color)
     {
@@ -43,6 +51,12 @@ public partial class CanonicalGraphNodeControl : UserControl
         set => SetValue(NodeProperty, value);
     }
 
+    public CanonicalNodeInspectorViewModel? InlineEditor
+    {
+        get => (CanonicalNodeInspectorViewModel?)GetValue(InlineEditorProperty);
+        set => SetValue(InlineEditorProperty, value);
+    }
+
     /// <summary>Transient editor selection; it is never written to graph JSON.</summary>
     public bool IsSelected
     {
@@ -52,6 +66,18 @@ public partial class CanonicalGraphNodeControl : UserControl
 
     public IReadOnlyList<FlowPortControl> PortControls => _portControls;
     private readonly List<FlowPortControl> _portControls = [];
+
+    public bool IsHeaderDragSource(DependencyObject? source)
+        => source is not null && HeaderDragZone.IsAncestorOf(source);
+
+    public bool IsParameterInteractionSource(DependencyObject? source)
+        => source is not null && ParameterInteractiveZone.IsAncestorOf(source);
+
+    public void DisposeInlineEditor()
+    {
+        InlineEditor?.Dispose();
+        InlineEditor = null;
+    }
 
     private static void OnNodeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {

@@ -417,6 +417,8 @@ public sealed class CanonicalNodeInspectorViewModelTests
             [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "actor.json", []))]);
 
         var initialTrigger = inspector.StoryStartTriggers.Single();
+        var removeStateChanges = 0;
+        initialTrigger.RemoveCommand.CanExecuteChanged += (_, _) => removeStateChanges++;
         Assert.IsFalse(initialTrigger.RemoveCommand.CanExecute(null));
         Assert.IsFalse(initialTrigger.TriggerTypeOptions.Any(option => option.Value == StoryStartSchema.EnterStory));
 
@@ -428,6 +430,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
                 StoryStartSchema.ActorInteraction, "actor")));
         var trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId != "opaque-start");
         Assert.IsTrue(initialTrigger.RemoveCommand.CanExecute(null));
+        Assert.IsGreaterThan(0, removeStateChanges);
         Assert.IsTrue(trigger.RemoveCommand.CanExecute(null));
         Assert.AreEqual(StoryStartSchema.ActorInteraction, trigger.TriggerType);
         Assert.IsFalse(string.IsNullOrWhiteSpace(trigger.StablePortId));
@@ -437,6 +440,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual("8", trigger.RadiusText);
         Assert.AreEqual(trigger.StablePortId, editor.Host.Graph.Nodes.Single().Ports.OrderBy(port => port.Order).Last().Id);
         Assert.IsTrue(StoryStartSchema.IsValid(editor.Host.Graph.Nodes.Single()));
+        Assert.IsTrue(inspector.RemoveStoryStartTrigger("opaque-start"));
+        var remaining = inspector.StoryStartTriggers.Single();
+        Assert.AreEqual(trigger.StablePortId, remaining.StablePortId);
+        Assert.IsFalse(remaining.RemoveCommand.CanExecute(null));
     }
 
     [TestMethod]

@@ -451,7 +451,7 @@
                             </StackPanel>
                         </DockPanel>
                         <Grid Grid.Row="1" Margin="0,18,0,0">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel Width="420" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -462,7 +462,8 @@
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectHome.EmptyStateTitle}" />
                                 <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center" TextAlignment="Center"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectHome.EmptyStateDescription}" />
-                                <Button Width="128" Height="36" Margin="0,14,0,0" Command="{Binding CreateStoryCommand}"
+                                <Button Width="128" Height="36" Margin="0,14,0,0" HorizontalAlignment="Center"
+                                        Command="{Binding CreateStoryCommand}"
                                         Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="从空状态新建故事" Content="新建故事" />
                             </StackPanel>
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">

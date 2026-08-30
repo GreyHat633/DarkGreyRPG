@@ -10,7 +10,7 @@ public sealed class GraphNodeAuthoringServiceTests
     [DataRow(GraphScope.StoryFlow, "terminate", "终止")]
     [DataRow(GraphScope.Session, "line", "台词")]
     [DataRow(GraphScope.Task, "objective", "目标")]
-    public void FixedOnlyCandidatesAreLocalizedDetachedAndShapeValid(
+    public void FixedOnlyCandidatesAreLocalizedDetachedAndAuthoringValid(
         GraphScope scope, string type, string expectedName)
     {
         var graph = new GraphDocument();
@@ -21,7 +21,16 @@ public sealed class GraphNodeAuthoringServiceTests
         Assert.IsTrue(result.IsSuccess, string.Join(",", result.Issues.Select(issue => issue.Code)));
         Assert.IsNotNull(result.Candidate);
         Assert.AreEqual(expectedName, result.Candidate.DisplayName);
-        Assert.IsTrue(GraphNodeShapeValidator.IsValid(result.Candidate, scope));
+        if (scope == GraphScope.Task && type == CanonicalTaskObjectiveSchema.NodeType)
+        {
+            Assert.IsTrue(CanonicalTaskObjectiveSchema.IsUnselectedTarget(result.Candidate));
+            CollectionAssert.Contains(GraphNodeShapeValidator.Validate(result.Candidate, scope)
+                .Select(issue => issue.Code).ToArray(), "graph.objective.target.invalid");
+        }
+        else
+        {
+            Assert.IsTrue(GraphNodeShapeValidator.IsValid(result.Candidate, scope));
+        }
         Assert.AreEqual(before, graph.ToJson());
 
         result.Candidate.DisplayName = "changed";

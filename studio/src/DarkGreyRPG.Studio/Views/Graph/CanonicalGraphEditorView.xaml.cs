@@ -70,6 +70,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private GraphConnection? _wireOriginal;
     private Path? _draftWire;
     private readonly List<Path> _draftWires = [];
+    private readonly HashSet<Path> _transientWireVisuals = [];
     private IReadOnlyList<GraphConnection> _wireOriginals = [];
     private bool _incidentWireReconnect;
     private bool _scissorsMode;
@@ -148,9 +149,18 @@ public partial class CanonicalGraphEditorView : UserControl
     public IReadOnlyCollection<FlowPortControl> PortVisuals => _ports.Values;
     public IReadOnlyCollection<Path> ConnectionHitTargets => _connectionHits.Keys;
     public IReadOnlyCollection<Path> ConnectionVisuals => GraphCanvas.Children.OfType<Path>().Where(path => !path.IsHitTestVisible).ToArray();
+    public IReadOnlyCollection<Path> ActiveWireVisuals => _draftWires;
     public bool IsScissorsMode => _scissorsMode;
     public bool IsTemporaryScissorsMode => _altScissorsMode;
+    public Cursor ScissorsCursor => ScissorsCursorFactory.Cursor;
+
+    public void SetScissorsMode(bool enabled)
+    {
+        _scissorsMode = enabled;
+        CanvasViewport.Cursor = enabled ? ScissorsCursorFactory.Cursor : Cursors.Arrow;
+    }
     public event Action<GraphEditorNodeViewModel>? NodeEditRequested;
+    public Func<GraphEditorNodeViewModel, CanonicalNodeInspectorViewModel?>? InlineEditorFactory { get; set; }
 
     public Point ScreenToGraph(Point viewportPoint) => _viewportController.ScreenToGraph(viewportPoint);
 
@@ -447,6 +457,7 @@ public partial class CanonicalGraphEditorView : UserControl
         if (!selectedNodeIsUniqueInDocument) selectedNodeId = null;
         CancelPointerGesture(false);
         foreach (var node in _nodeVisuals.Keys) node.PropertyChanged -= NodePropertyChanged;
+        foreach (var visual in _nodeVisuals.Values) visual.DisposeInlineEditor();
         GraphCanvas.Children.Clear();
         _nodeVisuals.Clear();
         _ports.Clear();
@@ -478,7 +489,9 @@ public partial class CanonicalGraphEditorView : UserControl
         if (_nodeVisuals.ContainsKey(node)) return;
         node.PropertyChanged -= NodePropertyChanged;
         node.PropertyChanged += NodePropertyChanged;
-        var visual = new CanonicalGraphNodeControl(node);
+        var inlineEditor = InlineEditorFactory?.Invoke(node)
+            ?? (_host is null ? null : new CanonicalNodeInspectorViewModel(_host, node));
+        var visual = new CanonicalGraphNodeControl(node, inlineEditor);
         _nodeVisuals[node] = visual;
         GraphCanvas.Children.Add(visual);
         Canvas.SetLeft(visual, Safe(node.X));
@@ -489,7 +502,11 @@ public partial class CanonicalGraphEditorView : UserControl
     private void RemoveNodeVisual(GraphEditorNodeViewModel node)
     {
         node.PropertyChanged -= NodePropertyChanged;
-        if (_nodeVisuals.Remove(node, out var visual)) GraphCanvas.Children.Remove(visual);
+        if (_nodeVisuals.Remove(node, out var visual))
+        {
+            visual.DisposeInlineEditor();
+            GraphCanvas.Children.Remove(visual);
+        }
         if (ReferenceEquals(_selectedNode, node)) _selectedNode = null;
     }
 
@@ -604,16 +621,17 @@ public partial class CanonicalGraphEditorView : UserControl
             e.Handled = true;
             return;
         }
-        if (FindAncestor<CanonicalGraphNodeControl>(source) is { Node: { } node })
+        if (FindAncestor<CanonicalGraphNodeControl>(source) is { Node: { } node } nodeVisual)
         {
             SelectNode(node);
+            if (nodeVisual.IsParameterInteractionSource(source)) return;
             if (e.ClickCount >= 2)
             {
                 _ = RequestNodeEdit(node);
                 e.Handled = true;
                 return;
             }
-            if (!_pointerState.Begin(GraphPointerMode.NodeDrag)) return;
+            if (!nodeVisual.IsHeaderDragSource(source) || !_pointerState.Begin(GraphPointerMode.NodeDrag)) return;
             _dragNode = node;
             _pointerStart = e.GetPosition(GraphCanvas);
             _dragOrigin = new Point(node.X, node.Y);
@@ -708,8 +726,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void Scissors_OnClick(object sender, RoutedEventArgs e)
     {
-        _scissorsMode = !_scissorsMode;
-        CanvasViewport.Cursor = _scissorsMode ? Cursors.Cross : Cursors.Arrow;
+        SetScissorsMode(!_scissorsMode);
         e.Handled = true;
     }
 
@@ -722,7 +739,7 @@ public partial class CanonicalGraphEditorView : UserControl
         _scissorsModeBeforeAlt = _scissorsMode;
         _altScissorsMode = true;
         _scissorsMode = true;
-        CanvasViewport.Cursor = Cursors.Cross;
+        CanvasViewport.Cursor = ScissorsCursorFactory.Cursor;
         e.Handled = true;
     }
 
@@ -731,7 +748,7 @@ public partial class CanonicalGraphEditorView : UserControl
         if (!IsLeftAlt(e) || !_altScissorsMode) return;
         _altScissorsMode = false;
         _scissorsMode = _scissorsModeBeforeAlt;
-        CanvasViewport.Cursor = _scissorsMode ? Cursors.Cross : Cursors.Arrow;
+        CanvasViewport.Cursor = _scissorsMode ? ScissorsCursorFactory.Cursor : Cursors.Arrow;
         e.Handled = true;
     }
 
@@ -775,12 +792,33 @@ public partial class CanonicalGraphEditorView : UserControl
         }
         _pointerStart = point;
         _draftWires.Clear();
-        var wireCount = _incidentWireReconnect ? _wireOriginals.Count : 1;
-        for (var index = 0; index < wireCount; index++)
+        _transientWireVisuals.Clear();
+        if (_wireOriginals.Count > 0)
         {
-            var draft = new Path { Stroke = Brushes.White, StrokeThickness = 3, IsHitTestVisible = false };
-            _draftWires.Add(draft);
-            GraphCanvas.Children.Add(draft);
+            foreach (var draggedConnection in _wireOriginals)
+            {
+                var visual = _connectionVisuals.FirstOrDefault(pair => pair.Key.Connection.Equals(draggedConnection)).Value;
+                if (visual.Line is null)
+                {
+                    CancelPointerGesture();
+                    return false;
+                }
+                _draftWires.Add(visual.Line);
+            }
+        }
+        else
+        {
+            var style = GraphConnectionVisualStyle.For(endpoint.InterfaceKind, selected: true);
+            var wire = new Path
+            {
+                Stroke = new SolidColorBrush(style.StrokeColor),
+                StrokeThickness = style.StrokeThickness,
+                IsHitTestVisible = false,
+                Tag = "UncommittedCanonicalConnection",
+            };
+            _draftWires.Add(wire);
+            _transientWireVisuals.Add(wire);
+            GraphCanvas.Children.Insert(0, wire);
         }
         _draftWire = _draftWires.FirstOrDefault();
         CanvasViewport.CaptureMouse();
@@ -1127,8 +1165,10 @@ public partial class CanonicalGraphEditorView : UserControl
             _dragNode = null;
             _wireStart = null;
             _wireOriginal = null;
-            foreach (var draft in _draftWires) GraphCanvas.Children.Remove(draft);
+            foreach (var draft in _transientWireVisuals) GraphCanvas.Children.Remove(draft);
+            RestoreDraggedConnectionVisuals();
             _draftWires.Clear();
+            _transientWireVisuals.Clear();
             _draftWire = null;
             _wireOriginals = [];
             _incidentWireReconnect = false;
@@ -1140,10 +1180,26 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void EndPointerGesture() => CancelPointerGesture();
 
+    private void RestoreDraggedConnectionVisuals()
+    {
+        foreach (var original in _wireOriginals)
+        {
+            var pair = _connectionVisuals.FirstOrDefault(item => item.Key.Connection.Equals(original));
+            if (pair.Key is null
+                || !TryGetPort(pair.Key.FromNodeId, pair.Key.FromPortId, out var from)
+                || !TryGetPort(pair.Key.ToNodeId, pair.Key.ToPortId, out var to))
+                continue;
+            var geometry = WireGeometry(from.GetAnchorPoint(GraphCanvas), to.GetAnchorPoint(GraphCanvas));
+            pair.Value.Line.Data = geometry;
+            pair.Value.Hit.Data = geometry;
+        }
+    }
+
     private void ClearVisualState()
     {
         CancelPointerGesture(false);
         foreach (var node in _nodeVisuals.Keys) node.PropertyChanged -= NodePropertyChanged;
+        foreach (var visual in _nodeVisuals.Values) visual.DisposeInlineEditor();
         GraphCanvas.Children.Clear();
         _nodeVisuals.Clear();
         _ports.Clear();

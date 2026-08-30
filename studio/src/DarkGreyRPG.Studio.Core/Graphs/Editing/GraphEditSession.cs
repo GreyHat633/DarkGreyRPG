@@ -113,7 +113,8 @@ public sealed class GraphEditSession
 
             if (Scope.Value == GraphScope.Task
                 && string.Equals(node.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
-                issues.AddRange(CanonicalTaskObjectiveSchema.Validate(node));
+                issues.AddRange(AllowUnselectedObjectiveTarget(node,
+                    CanonicalTaskObjectiveSchema.Validate(node)));
             if (Scope.Value == GraphScope.StoryFlow
                 && string.Equals(node.Type, CanonicalStoryActionSchema.NodeType, StringComparison.Ordinal))
                 issues.AddRange(CanonicalStoryActionSchema.Validate(node));
@@ -636,7 +637,9 @@ public sealed class GraphEditSession
 
             var candidate = Clone(node);
             candidate.Properties[property] = value.Clone();
-            var objectiveIssues = CanonicalTaskObjectiveSchema.Validate(candidate);
+            var objectiveIssues = AllowUnselectedObjectiveTarget(
+                candidate,
+                CanonicalTaskObjectiveSchema.Validate(candidate));
             if (objectiveIssues.Count != 0) return Fail(objectiveIssues);
             var beforeObjective = DeepClone(Document);
             node.Properties[property] = value.Clone();
@@ -748,7 +751,8 @@ public sealed class GraphEditSession
         if (!CanonicalTaskObjectiveSchema.TryInitializeType(candidate, type, actorId, out var typeIssues))
             return Fail(typeIssues);
         var shapeIssues = GraphNodeShapeValidator.Validate(candidate, GraphScope.Task);
-        if (shapeIssues.Count != 0) return Fail(shapeIssues);
+        var authoringShapeIssues = AllowUnselectedObjectiveTarget(candidate, shapeIssues);
+        if (authoringShapeIssues.Count != 0) return Fail(authoringShapeIssues);
 
         var before = DeepClone(Document);
         node.Properties = candidate.Properties;
@@ -1577,6 +1581,17 @@ public sealed class GraphEditSession
 
     private static ValidationIssue ObjectivePropertyIssue(string code, string message, string field, string? nodeId)
         => new(code, message, $"properties.{field}", NodeId: NullIfBlank(nodeId));
+
+    private static IReadOnlyList<ValidationIssue> AllowUnselectedObjectiveTarget(
+        GraphNode node, IReadOnlyList<ValidationIssue> issues)
+    {
+        if (!CanonicalTaskObjectiveSchema.IsUnselectedTarget(node)) return issues;
+        return issues.Where(issue => !IsObjectiveTargetIssue(issue)).ToArray();
+    }
+
+    private static bool IsObjectiveTargetIssue(ValidationIssue issue)
+        => issue.Code == "graph.objective.target.invalid"
+            && issue.Field is "properties.entity" or "properties.item" or "properties.actor_id";
 
     private string? AllocateDynamicPortId()
     {

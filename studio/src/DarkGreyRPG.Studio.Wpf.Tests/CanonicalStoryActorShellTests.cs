@@ -52,7 +52,7 @@ public sealed class CanonicalStoryActorShellTests
     }
 
     [TestMethod]
-    public void LegacyStoryBlocksOwnedDeleteAndDirtyGraphBlocksActorCreation()
+    public void LegacyStoryBlocksOwnedDeleteButDirtyGraphAllowsActorCreation()
     {
         using var project = new CanonicalActorProjectFixture();
         project.SaveActor("owned_actor", "Owned Actor", "opening");
@@ -95,9 +95,11 @@ public sealed class CanonicalStoryActorShellTests
         Assert.IsTrue(shell.CanonicalStoryWorkspace!.StoryEditor.Host.AddNode(
             GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "dirty_action")));
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestCreate(CanonicalStoryFolderKind.Actors));
-        Assert.AreEqual(0, dialogs.CreateRequestCount);
-        Assert.IsFalse(File.Exists(project.ActorPath("must_not_create")));
-        StringAssert.Contains(shell.StatusMessage, "请先保存");
+        Assert.AreEqual(1, dialogs.CreateRequestCount);
+        Assert.IsTrue(File.Exists(project.ActorPath("must_not_create")));
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.StoryEditor.IsDirty);
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.StoryEditor.Host.Graph.Nodes.Any(node => node.Id == "dirty_action"));
+        Assert.IsFalse(shell.StatusMessage.Contains("请先保存", StringComparison.Ordinal));
     }
 
     private sealed class CanonicalActorProjectFixture : IDisposable
