@@ -60,4 +60,9 @@ dist\DarkGreyRPGStudio\DarkGreyRPGStudio.exe
 
 The packaged executable embeds the .NET runtime and native libraries. End users do not need to install .NET or Godot, and this WPF Studio does not depend on Godot at runtime.
 
+Do not distribute or directly launch the framework-dependent executable under
+`studio\src\DarkGreyRPG.Studio\bin\Release\net10.0-windows`. That file is only
+a normal build output and requires a matching system-wide .NET Desktop Runtime.
+The `dist` executable above is the runnable delivery artifact.
+
 The package script replaces only the exact `dist\DarkGreyRPGStudio` directory before publishing. It prints the resulting SHA-256 hash and fails if the expected single executable is absent or if additional files are emitted.

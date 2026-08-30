@@ -26,9 +26,12 @@
 - WPF：350/350 PASS，0 fail，0 skip。证据：`TestResults/Wpf/Wpf-0.3.1.1-final.trx`。
 - Release solution build：PASS，0 error；20 个既有 MSTest analyzer warning。
 - `git diff --check`：PASS；仅显示 Git 的 LF/CRLF 后续转换提示，无 whitespace error。
-- Studio EXE：`studio/src/DarkGreyRPG.Studio/bin/Release/net10.0-windows/DarkGreyRPGStudio.exe`。
+- Studio 交付 EXE：`dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe`（Windows x64、自包含、单文件）。
+- `studio/src/DarkGreyRPG.Studio/bin/Release/net10.0-windows/DarkGreyRPGStudio.exe` 是依赖系统 .NET Desktop Runtime 的普通构建输出，不是交付文件。
 - EXE FileVersion / ProductVersion：`0.3.1.1` / `0.3.1.1`。
-- EXE SHA-256：`418C040BEF3069DBB845A42F2A258DD929F5E6A75AAB115F9DE4FBEE62962C57`。
+- 交付 EXE 大小：`141324502` bytes（约 134.78 MiB）。
+- 交付 EXE SHA-256：`2B0284C832482293B94DD9C8E0A43416CA509BC3735B6E973A84AFACB9A0EB81`。
+- 无系统 .NET 启动探针：PASS；将 `DOTNET_ROOT` / `DOTNET_ROOT_X64` 指向不存在的目录并设置 `DOTNET_MULTILEVEL_LOOKUP=0` 后，交付 EXE 持续运行 8 秒，随后由探针主动关闭。
 
 ## 人工 Studio acceptance
 
