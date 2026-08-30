@@ -44,6 +44,7 @@
 ## Git 状态
 
 - 分支：`codex/0.3.1.1`。
-- 当前 HEAD：`96c821d1a2b4038fecdc62bdbbbd8078291a8d0e`（0.3.1.0 基线）。
-- 0.3.1.1 实现目前保留为本地未提交改动；未提交、未推送、未创建 tag / Release。
-- 原因：PLAN 是施工与验收上下文，不单独视为对 Git 提交、GitHub 推送或发布的外部写入授权。
+- 0.3.1.1 实现提交：`eec4325`（`feat(studio): complete 0.3.1.1 repair scope`）。
+- 源码、测试及本报告已推送到 `origin/codex/0.3.1.1`。
+- 未创建 tag / GitHub Release，未合并 `main`。
+- `.codex/config.toml`、`AGENTS.md`、`.dotnet-home` 与其它用户文档未纳入提交。
