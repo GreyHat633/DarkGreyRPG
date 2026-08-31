@@ -8,6 +8,13 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class CanonicalStoryResourceDialogs(Func<Window?> ownerProvider) : ICanonicalStoryResourceDialogs
 {
+    public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
+    {
+        var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName);
+        var dialog = new DisplayNameDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true ? viewModel.DisplayName.Trim() : null;
+    }
+
     public CanonicalGraphResourceIdentityRequest? RequestCreate(GraphResourceKind resourceKind, string suggestedId)
     {
         CanonicalResourceIdentityDialogViewModel.EnsureSupportedKind(resourceKind);

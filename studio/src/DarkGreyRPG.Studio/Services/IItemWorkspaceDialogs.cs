@@ -52,6 +52,8 @@ public sealed record ItemWorkspaceChoice(
 /// <summary>UI boundary for canonical Story Item and Item Group actions.</summary>
 public interface IItemWorkspaceDialogs
 {
+    string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName) => null;
+
     ItemCreationMode? RequestCreationMode(string storyDisplayName);
 
     ItemIdentityRequest? RequestCreate(

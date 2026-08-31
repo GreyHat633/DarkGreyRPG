@@ -61,6 +61,22 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         NotifyWorkspaceState();
     }
 
+    /// <summary>Applies an already-persisted display-name change without consuming graph dirtiness.</summary>
+    public void ApplyPersistedDisplayName(string displayName)
+    {
+        ThrowIfDisposed();
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new ArgumentException("Display name is required.", nameof(displayName));
+        var normalized = displayName.Trim();
+        if (string.Equals(DisplayName, normalized, StringComparison.Ordinal)) return;
+        var savedEnvelope = GraphResourceEnvelopeSerializer.Deserialize(_savedJson);
+        savedEnvelope.DisplayName = normalized;
+        _savedJson = GraphResourceEnvelopeSerializer.Serialize(savedEnvelope, indented: false);
+        Document.SetDisplayName(normalized);
+        OnPropertyChanged(nameof(DisplayName));
+        NotifyWorkspaceState();
+    }
+
     /// <summary>Reprojects direct document changes and refreshes workspace state.</summary>
     public void RefreshFromDocument()
     {

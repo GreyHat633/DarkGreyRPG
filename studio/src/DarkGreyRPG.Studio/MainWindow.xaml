@@ -337,7 +337,7 @@
                                     <MultiDataTrigger>
                                         <MultiDataTrigger.Conditions>
                                             <Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" />
-                                            <Condition Binding="{Binding HasCanonicalStoryWorkspace}" Value="False" />
+                                            <Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" />
                                         </MultiDataTrigger.Conditions>
                                         <Setter Property="Visibility" Value="Visible" />
                                     </MultiDataTrigger>
@@ -404,7 +404,7 @@
 
                     <DockPanel>
                         <DockPanel.Style>
-                            <Style TargetType="DockPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="True" /><Condition Binding="{Binding HasCanonicalStoryWorkspace}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
+                            <Style TargetType="DockPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="True" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
                         </DockPanel.Style>
                         <Button DockPanel.Dock="Top" Margin="0,0,0,12" Padding="8,6" HorizontalContentAlignment="Left" Command="{Binding ShowProjectHomeCommand}" Content="← 返回项目首页" />
                         <TextBlock DockPanel.Dock="Top" FontSize="17" FontWeight="SemiBold" Text="{Binding StoryWorkspace.StoryDisplayName}" TextWrapping="Wrap" />
@@ -438,7 +438,7 @@
 
                     <Grid>
                         <Grid.Style>
-                            <Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding HasProject}" Value="True" /><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" /><Condition Binding="{Binding HasCanonicalStoryWorkspace}" Value="False" /><Condition Binding="{Binding ProjectHome.IsHomeVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
+                            <Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding HasProject}" Value="True" /><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /><Condition Binding="{Binding ProjectHome.IsHomeVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
                         </Grid.Style>
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                         <DockPanel>
@@ -493,17 +493,17 @@
                     </Grid>
 
                     <Grid>
-                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" /><Condition Binding="{Binding HasCanonicalStoryWorkspace}" Value="False" /><Condition Binding="{Binding ProjectHome.IsGraphVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style>
+                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /><Condition Binding="{Binding ProjectHome.IsGraphVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style>
                         <views:ProjectGraphView DataContext="{Binding ProjectHome.Graph}" />
                     </Grid>
 
                     <Grid>
-                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding HasCanonicalStoryWorkspace}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
+                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
                         <graphViews:CanonicalStoryWorkspaceView Workspace="{Binding CanonicalStoryWorkspace}" />
                     </Grid>
 
                     <Grid>
-                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="True" /><Condition Binding="{Binding HasCanonicalStoryWorkspace}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style>
+                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="True" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style>
                         <Grid.RowDefinitions><RowDefinition Height="*" /></Grid.RowDefinitions>
                         <Grid Grid.Row="0">
                             <Grid>

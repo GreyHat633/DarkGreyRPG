@@ -355,6 +355,7 @@ public partial class CanonicalGraphEditorView : UserControl
         host.Nodes.CollectionChanged += HostNodesCollectionChanged;
         host.Connections.CollectionChanged += HostConnectionsCollectionChanged;
         host.GraphChanged += HostGraphChanged;
+        host.PortsChanged += HostPortsChanged;
         foreach (var node in host.Nodes) node.PropertyChanged += NodePropertyChanged;
     }
 
@@ -365,6 +366,7 @@ public partial class CanonicalGraphEditorView : UserControl
         host.Nodes.CollectionChanged -= HostNodesCollectionChanged;
         host.Connections.CollectionChanged -= HostConnectionsCollectionChanged;
         host.GraphChanged -= HostGraphChanged;
+        host.PortsChanged -= HostPortsChanged;
         foreach (var node in host.Nodes) node.PropertyChanged -= NodePropertyChanged;
     }
 
@@ -421,12 +423,26 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void HostGraphChanged(object? sender, EventArgs args)
     {
-        // Existing node projections can change their ports/properties without a
-        // node collection replacement. Re-index after WPF materializes those
-        // local ItemsControl changes, while retaining every node control.
+        // Port changes are handled by HostPortsChanged after the affected node
+        // projection has been identified. Keep this notification lightweight.
         GraphCanvas.UpdateLayout();
         IndexPorts();
-        RedrawConnections();
+    }
+
+    private void HostPortsChanged(object? sender, GraphPortsChangedEventArgs args)
+    {
+        if (_host is null) return;
+        foreach (var nodeId in args.NodeIds)
+        {
+            var node = _host.Nodes.FirstOrDefault(candidate =>
+                string.Equals(candidate.NodeId, nodeId, StringComparison.Ordinal));
+            if (node is not null && _nodeVisuals.TryGetValue(node, out var visual))
+                visual.RefreshPorts();
+        }
+
+        GraphCanvas.UpdateLayout();
+        IndexPorts();
+        foreach (var nodeId in args.NodeIds) RedrawIncidentConnections(nodeId);
     }
 
     private void NodePropertyChanged(object? sender, PropertyChangedEventArgs args)
@@ -615,7 +631,7 @@ public partial class CanonicalGraphEditorView : UserControl
             return;
         }
         if (e.ChangedButton != MouseButton.Left) return;
-        if (FindAncestor<FlowPortControl>(source) is { } port)
+        if (FindAncestor<FlowPortControl>(source) is { } port && port.IsAnchorHitTarget(source))
         {
             BeginWire(port, e.GetPosition(GraphCanvas));
             e.Handled = true;
@@ -864,7 +880,9 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         if (e.ChangedButton == MouseButton.Left && _pointerState.Is(GraphPointerMode.WireDrag))
         {
-            var target = FindAncestor<FlowPortControl>(CanvasViewport.InputHitTest(e.GetPosition(CanvasViewport)) as DependencyObject);
+            var hit = CanvasViewport.InputHitTest(e.GetPosition(CanvasViewport)) as DependencyObject;
+            var target = FindAncestor<FlowPortControl>(hit);
+            if (target is not null && !target.IsAnchorHitTarget(hit)) target = null;
             _ = CompleteWire(target);
             e.Handled = true;
         }
@@ -876,7 +894,9 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         if (_draftWires.Count == 0 || _wireStart is null) return;
         var viewportPoint = GraphCanvas.TransformToAncestor(CanvasViewport).Transform(point);
-        var target = FindAncestor<FlowPortControl>(CanvasViewport.InputHitTest(viewportPoint) as DependencyObject);
+        var hit = CanvasViewport.InputHitTest(viewportPoint) as DependencyObject;
+        var target = FindAncestor<FlowPortControl>(hit);
+        if (target is not null && !target.IsAnchorHitTarget(hit)) target = null;
         foreach (var port in _ports.Values) port.IsConnecting = ReferenceEquals(port, target) || (TryEndpoint(port, out var ep) && ep == _wireStart.Value);
         if (target is not null && TryEndpoint(target, out var targetEndpoint) && _host is not null)
         {

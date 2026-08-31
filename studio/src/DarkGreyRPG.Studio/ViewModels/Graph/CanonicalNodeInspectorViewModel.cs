@@ -166,7 +166,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         set
         {
             if (!IsStoryStart || string.Equals(_repeatPolicy, value, StringComparison.Ordinal)) return;
-            if (_host.Session.SetStoryStartRepeatPolicy(NodeId, value))
+            if (_host.SetStoryStartRepeatPolicy(NodeId, value))
             {
                 _host.Refresh();
                 RefreshFromHost();
@@ -397,27 +397,21 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         IReadOnlyDictionary<string, JsonElement>? triggerProperties = null)
     {
         if (!IsStoryStart) return false;
-        var result = _host.Session.AddStoryStartTrigger(NodeId, displayName, triggerType, triggerProperties);
-        _host.Refresh(); RefreshFromHost();
-        return result;
+        return _host.AddStoryStartTrigger(NodeId, displayName, triggerType, triggerProperties);
     }
 
     public bool SetStoryStartTriggerType(string portId, string triggerType)
     {
         if (!IsStoryStart) return false;
         var actorId = _actorItems.FirstOrDefault()?.Id;
-        var result = _host.Session.SetStoryStartTriggerType(NodeId, portId, triggerType, actorId);
-        _host.Refresh(); RefreshFromHost();
-        return result;
+        return _host.SetStoryStartTriggerType(NodeId, portId, triggerType, actorId);
     }
 
     public bool SetStoryStartTriggerProperties(string portId,
         IReadOnlyDictionary<string, JsonElement> triggerProperties)
     {
         if (!IsStoryStart) return false;
-        var result = _host.Session.SetStoryStartTriggerProperties(NodeId, portId, triggerProperties);
-        _host.Refresh(); RefreshFromHost();
-        return result;
+        return _host.SetStoryStartTriggerProperties(NodeId, portId, triggerProperties);
     }
 
     internal bool SetStoryStartTriggerProperty(string portId, string property, JsonElement value)
@@ -435,31 +429,25 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public bool RenameStoryStartTrigger(string portId, string displayName)
     {
         if (!IsStoryStart) return false;
-        var result = _host.Session.RenameStoryStartTrigger(NodeId, portId, displayName);
-        _host.Refresh(); RefreshFromHost();
-        return result;
+        return _host.RenameStoryStartTrigger(NodeId, portId, displayName);
     }
 
     public bool ReorderStoryStartTrigger(string portId, int order)
     {
         if (!IsStoryStart) return false;
-        var result = _host.Session.ReorderStoryStartTrigger(NodeId, portId, order);
-        _host.Refresh(); RefreshFromHost();
-        return result;
+        return _host.ReorderStoryStartTrigger(NodeId, portId, order);
     }
 
     public bool RemoveStoryStartTrigger(string portId)
     {
         if (!IsStoryStart) return false;
-        var result = _host.Session.RemoveStoryStartTrigger(NodeId, portId);
-        if (result) { _host.Refresh(); RefreshFromHost(); return true; }
-        if (!_host.Session.LastValidationIssues.Any(issue => issue.Code == "graph.story.start.trigger.references.confirmation_required")) return false;
+        var result = _host.RemoveStoryStartTrigger(NodeId, portId);
+        if (result) return true;
+        if (!_host.LastValidationIssues.Any(issue => issue.Code == "graph.story.start.trigger.references.confirmation_required")) return false;
         var slot = StoryStartTriggers.FirstOrDefault(item => item.Identity == portId);
         if (slot is null || StoryStartTriggerRemovalConfirmationRequested is null
             || !StoryStartTriggerRemovalConfirmationRequested(new CanonicalStoryStartTriggerRemovalConfirmation(slot.DisplayName))) return false;
-        result = _host.Session.RemoveStoryStartTrigger(NodeId, portId, true);
-        _host.Refresh(); RefreshFromHost();
-        return result;
+        return _host.RemoveStoryStartTrigger(NodeId, portId, true);
     }
 
     public bool RenameChoiceOption(string optionId, string displayText)

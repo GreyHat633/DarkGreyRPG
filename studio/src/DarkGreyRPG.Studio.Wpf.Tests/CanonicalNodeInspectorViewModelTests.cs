@@ -154,7 +154,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual("选项 1", inspector.ChoiceOptions[0].DisplayText);
         Assert.IsFalse(inspector.ChoiceOptions[0].MoveUpCommand.CanExecute(null));
         Assert.IsFalse(inspector.ChoiceOptions[0].MoveDownCommand.CanExecute(null));
+        var changedNodes = new List<string>();
+        editor.Host.PortsChanged += (_, args) => changedNodes.AddRange(args.NodeIds);
         Assert.IsTrue(inspector.AddChoiceOption("Second"));
+        Assert.AreEqual("choice", changedNodes.Single());
         var first = inspector.ChoiceOptions[0];
         var second = inspector.ChoiceOptions[1];
         Assert.IsFalse(first.MoveUpCommand.CanExecute(null));
@@ -325,7 +328,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
 
         Assert.HasCount(2, inspector.TaskResultSlots);
         var second = inspector.TaskResultSlots[1];
+        var changedNodes = new List<string>();
+        editor.Host.PortsChanged += (_, args) => changedNodes.AddRange(args.NodeIds);
         Assert.IsTrue(inspector.AddTaskResultSlot("C"));
+        Assert.AreEqual("settle", changedNodes.Single());
         Assert.IsTrue(inspector.RenameTaskResultSlot(second.PortId, "Renamed"));
         Assert.IsTrue(inspector.ReorderTaskResultSlot(second.PortId, 0));
 
@@ -417,6 +423,8 @@ public sealed class CanonicalNodeInspectorViewModelTests
             [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "actor.json", []))]);
 
         var initialTrigger = inspector.StoryStartTriggers.Single();
+        var changedNodes = new List<string>();
+        editor.Host.PortsChanged += (_, args) => changedNodes.AddRange(args.NodeIds);
         var removeStateChanges = 0;
         initialTrigger.RemoveCommand.CanExecuteChanged += (_, _) => removeStateChanges++;
         Assert.IsFalse(initialTrigger.RemoveCommand.CanExecute(null));
@@ -428,12 +436,18 @@ public sealed class CanonicalNodeInspectorViewModelTests
             displayName: "角色触发", triggerType: StoryStartSchema.ActorInteraction,
             triggerProperties: StoryStartSchema.DefaultTriggerProperties(
                 StoryStartSchema.ActorInteraction, "actor")));
+        Assert.AreEqual("start", changedNodes.Single());
         var trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId != "opaque-start");
         Assert.IsTrue(initialTrigger.RemoveCommand.CanExecute(null));
         Assert.IsGreaterThan(0, removeStateChanges);
         Assert.IsTrue(trigger.RemoveCommand.CanExecute(null));
         Assert.AreEqual(StoryStartSchema.ActorInteraction, trigger.TriggerType);
         Assert.IsFalse(string.IsNullOrWhiteSpace(trigger.StablePortId));
+        changedNodes.Clear();
+        Assert.IsTrue(inspector.SetStoryStartTriggerType(trigger.StablePortId, StoryStartSchema.Logic));
+        Assert.AreEqual("start", changedNodes.Single());
+        Assert.IsTrue(inspector.StoryStartTriggers.Single(item => item.StablePortId == trigger.StablePortId).IsLogic);
+        changedNodes.Clear();
         Assert.IsTrue(inspector.SetStoryStartTriggerType(trigger.StablePortId, StoryStartSchema.RegionEntry));
         trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId == trigger.StablePortId);
         trigger.RadiusText = "8";

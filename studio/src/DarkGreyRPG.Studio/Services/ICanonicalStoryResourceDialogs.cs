@@ -42,6 +42,8 @@ public sealed record CanonicalGraphResourceChoice(
 /// </summary>
 public interface ICanonicalStoryResourceDialogs
 {
+    string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName) => null;
+
     CanonicalGraphResourceIdentityRequest? RequestCreate(
         GraphResourceKind resourceKind,
         string suggestedId);

@@ -518,7 +518,11 @@ public sealed class CanonicalStoryResourceLifecycleService
         CanonicalStoryMembershipManifest source,
         CanonicalStoryMembershipSet owned,
         CanonicalStoryMembershipSet referenced)
-        => new(source.StoryId, owned, referenced) { SchemaVersion = source.SchemaVersion };
+        => new(source.StoryId, owned, referenced)
+        {
+            SchemaVersion = source.SchemaVersion,
+            DisplayOrder = source.DisplayOrder,
+        };
 
     private static void EnsureResourceId(string id)
     {

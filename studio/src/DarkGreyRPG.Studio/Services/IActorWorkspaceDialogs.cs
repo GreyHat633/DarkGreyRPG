@@ -27,6 +27,8 @@ public enum UnsavedChangesChoice
 
 public interface IActorWorkspaceDialogs
 {
+    string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName) => null;
+
     bool SupportsCanonicalActorKinds => false;
 
     CanonicalStoryActorKind? RequestCanonicalCreationKind(string storyDisplayName)

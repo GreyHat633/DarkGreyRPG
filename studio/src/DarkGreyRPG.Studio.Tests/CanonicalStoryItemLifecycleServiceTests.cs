@@ -9,10 +9,18 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class CanonicalStoryItemLifecycleServiceTests
 {
     [TestMethod]
-    public void CreatesIndividualAndGroupWithSchemaTwoMembership()
+    public void CreatesIndividualAndGroupWithoutChangingMembershipSchema()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = NewStore(project.Root, "story");
+        var original = store.Memberships.Load("story");
+        store.Memberships.Replace(new CanonicalStoryMembershipManifest(
+            original.StoryId,
+            original.OwnedResources,
+            original.ReferencedResources)
+        {
+            SchemaVersion = CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion,
+        });
         var service = new CanonicalStoryItemLifecycleService(store);
 
         var item = service.CreateOwned("story", CanonicalStoryItemKind.Individual, "key", "钥匙", ["quest", "key"]);
@@ -23,10 +31,39 @@ public sealed class CanonicalStoryItemLifecycleServiceTests
         Assert.AreEqual(1, item.SchemaVersion);
         CollectionAssert.AreEqual(new[] { "quest", "key" }, item.Tags.ToArray());
         var membership = store.Memberships.Load("story");
-        Assert.AreEqual(CanonicalStoryMembershipManifest.CurrentSchemaVersion, membership.SchemaVersion);
+        Assert.AreEqual(CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion, membership.SchemaVersion);
         CollectionAssert.AreEqual(new[] { "key" }, membership.OwnedResources.Items);
         CollectionAssert.AreEqual(new[] { "weapon" }, membership.OwnedResources.ItemGroups);
         StringAssert.Contains(File.ReadAllText(new ItemRepository(project.Root).GetGroupPath("weapon")), "\"group_id\": \"weapon\"");
+    }
+
+    [TestMethod]
+    public void DeleteAndCreatePreservePersistedDisplayOrderAndAppendMembership()
+    {
+        using var project = new TestProjectDirectory(createProjectFile: false);
+        var store = NewStore(project.Root, "story");
+        var service = new CanonicalStoryItemLifecycleService(store);
+        service.CreateOwnedItem("story", "item_a", "物品 A");
+        service.CreateOwnedItem("story", "item_b", "物品 B");
+        service.CreateOwnedItem("story", "item_c", "物品 C");
+
+        var membership = store.Memberships.Load("story");
+        membership.DisplayOrder = new CanonicalStoryDisplayOrder
+        {
+            Items = ["item:item_c", "item:item_b", "item:item_a"],
+        };
+        store.Memberships.Replace(membership);
+
+        service.DeleteOwnedItem("story", "item_b");
+        service.CreateOwnedItem("story", "item_d", "物品 D");
+
+        var reloaded = store.Memberships.Load("story");
+        Assert.AreEqual(CanonicalStoryMembershipManifest.CurrentSchemaVersion, reloaded.SchemaVersion);
+        CollectionAssert.AreEqual(
+            new[] { "item:item_c", "item:item_b", "item:item_a" },
+            reloaded.DisplayOrder.Items);
+        CollectionAssert.AreEqual(new[] { "item_a", "item_c", "item_d" }, reloaded.OwnedResources.Items);
+
     }
 
     [TestMethod]

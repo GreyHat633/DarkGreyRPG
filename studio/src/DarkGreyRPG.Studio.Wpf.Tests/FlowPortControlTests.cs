@@ -173,6 +173,27 @@ public sealed class FlowPortControlTests
         Assert.AreEqual("story 输出端口 branch", AutomationProperties.GetName(input));
     }
 
+    [STATestMethod]
+    public void OnlyRenderedAnchorIsAWireHitTarget()
+    {
+        var flow = CreateControl("node", "branch", isInput: false);
+        var flowPanel = (StackPanel)flow.Content!;
+        var flowAnchor = flowPanel.Children.OfType<Grid>().Single().Children[0];
+        var flowLabel = flowPanel.Children.OfType<TextBlock>().Single();
+
+        Assert.IsTrue(flow.IsAnchorHitTarget(flowAnchor));
+        Assert.IsFalse(flow.IsAnchorHitTarget(flowLabel));
+
+        var logic = CreateControl("node", "condition", isInput: true);
+        logic.InterfaceKind = GraphInterfaceKind.Logic;
+        var logicPanel = (StackPanel)logic.Content!;
+        var logicAnchor = logicPanel.Children.OfType<Grid>().Single().Children[0];
+        var logicLabel = logicPanel.Children.OfType<TextBlock>().Single();
+
+        Assert.IsTrue(logic.IsAnchorHitTarget(logicAnchor));
+        Assert.IsFalse(logic.IsAnchorHitTarget(logicLabel));
+    }
+
     private static FlowPortControl CreateControl(string nodeId, string portName, bool isInput)
     {
         var control = new FlowPortControl

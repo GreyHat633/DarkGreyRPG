@@ -16,6 +16,31 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalGraphEditorViewTests
 {
     [STATestMethod]
+    public void DynamicPortRefreshRebuildsOnlyAffectedNodeAndPreservesSelectionViewport()
+    {
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "target", "Target");
+        settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
+        var host = new GraphEditorHostViewModel(new GraphDocument([
+            GraphNodeFactory.Create(GraphScope.Task, "objective", "source", "Source"), settle]), GraphScope.Task);
+        var view = Arrange(host);
+        var sourceVisual = view.NodeVisuals.Single(node => node.Node?.NodeId == "source");
+        var targetVisual = view.NodeVisuals.Single(node => node.Node?.NodeId == "target");
+        view.ViewportController.PanBy(29, -13);
+        view.ViewportController.SetZoomAt(1.3, new Point(240, 180));
+        var viewport = (view.ViewportController.Zoom, view.ViewportController.PanX, view.ViewportController.PanY);
+        Assert.IsTrue(view.SelectNode("target"));
+
+        Assert.IsTrue(host.AddDynamicPort("target", "Added result", GraphPortDirection.Input,
+            GraphInterfaceKind.Logic));
+
+        Assert.AreSame(sourceVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "source"));
+        Assert.AreSame(targetVisual, view.NodeVisuals.Single(node => node.Node?.NodeId == "target"));
+        Assert.AreSame(host.Nodes.Single(node => node.NodeId == "target"), view.SelectedNode);
+        Assert.AreEqual(viewport, (view.ViewportController.Zoom, view.ViewportController.PanX, view.ViewportController.PanY));
+        Assert.IsTrue(view.PortVisuals.Any(port => port.NodeId == "target" && port.EffectiveDisplayName == "Added result"));
+    }
+
+    [STATestMethod]
     public void IncrementalNodeAndConnectionChangesKeepExistingVisualViewportAndSelection()
     {
         var host = new GraphEditorHostViewModel(Graph(GraphScope.StoryFlow), GraphScope.StoryFlow);

@@ -364,7 +364,7 @@ public sealed class GraphResourceDocument
     public GraphResourceKind ResourceKind { get; }
     public GraphScope Scope { get; }
     public string Id { get; }
-    public string DisplayName { get; }
+    public string DisplayName { get; private set; }
     /// <summary>
     /// The document-owned mutable graph used by an editor host. It is detached
     /// from the source envelope when the document is opened.
@@ -375,6 +375,13 @@ public sealed class GraphResourceDocument
     public void ReplaceGraph(GraphDocument graph)
         => _graph = GraphResourceEnvelopeSerializer.CloneGraph(
             graph ?? throw new ArgumentNullException(nameof(graph)));
+
+    public void SetDisplayName(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new ArgumentException("Display name is required.", nameof(displayName));
+        DisplayName = displayName.Trim();
+    }
 
     /// <summary>Creates a detached persistence snapshot of the current edit state.</summary>
     public GraphResourceEnvelope ToEnvelope()

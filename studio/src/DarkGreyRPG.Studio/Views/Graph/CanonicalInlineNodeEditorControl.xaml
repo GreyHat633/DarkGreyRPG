@@ -30,12 +30,10 @@
                                 <TextBlock Margin="0,4,0,0" Foreground="#C8D8E8" Text="连接此启动方式的逻辑输入端口">
                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLogic}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                 </TextBlock>
-                                <Grid Margin="0,4,0,0">
-                                    <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                    <StackPanel Margin="0,0,2,0"><TextBlock Text="维度" /><TextBox Text="{Binding DimensionText, UpdateSourceTrigger=LostFocus}" /></StackPanel>
-                                    <StackPanel Grid.Column="1" Margin="2,0,0,0"><TextBlock Text="半径" /><TextBox Text="{Binding RadiusText, UpdateSourceTrigger=LostFocus}" /></StackPanel>
-                                </Grid>
+                                <StackPanel Margin="0,4,0,0">
+                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                                    <TextBlock Text="维度" /><TextBox Text="{Binding DimensionText, UpdateSourceTrigger=LostFocus}" />
+                                </StackPanel>
                                 <Grid Margin="0,3,0,0">
                                     <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
@@ -43,6 +41,10 @@
                                     <StackPanel Grid.Column="1" Margin="2,0"><TextBlock Text="Y" /><TextBox Text="{Binding YText, UpdateSourceTrigger=LostFocus}" /></StackPanel>
                                     <StackPanel Grid.Column="2" Margin="2,0,0,0"><TextBlock Text="Z" /><TextBox Text="{Binding ZText, UpdateSourceTrigger=LostFocus}" /></StackPanel>
                                 </Grid>
+                                <StackPanel Margin="0,3,0,0">
+                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                                    <TextBlock Text="半径" /><TextBox Text="{Binding RadiusText, UpdateSourceTrigger=LostFocus}" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </DataTemplate>

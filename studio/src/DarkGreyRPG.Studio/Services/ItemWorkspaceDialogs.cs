@@ -8,6 +8,13 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class ItemWorkspaceDialogs(Func<Window?> ownerProvider) : IItemWorkspaceDialogs
 {
+    public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
+    {
+        var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName);
+        var dialog = new DisplayNameDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true ? viewModel.DisplayName.Trim() : null;
+    }
+
     public ItemCreationMode? RequestCreationMode(string storyDisplayName)
     {
         var viewModel = new CanonicalItemCreationChoiceViewModel(storyDisplayName);

@@ -67,6 +67,13 @@ public partial class CanonicalGraphNodeControl : UserControl
     public IReadOnlyList<FlowPortControl> PortControls => _portControls;
     private readonly List<FlowPortControl> _portControls = [];
 
+    /// <summary>Refreshes only this node's rendered port controls.</summary>
+    public void RefreshPorts()
+    {
+        RebuildPorts();
+        UpdatePortAutomation();
+    }
+
     public bool IsHeaderDragSource(DependencyObject? source)
         => source is not null && HeaderDragZone.IsAncestorOf(source);
 

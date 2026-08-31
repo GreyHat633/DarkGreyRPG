@@ -22,14 +22,38 @@ public sealed class CanonicalStoryMembershipSet
     };
 }
 
+/// <summary>
+/// Optional per-folder presentation order. Membership ownership remains in
+/// <see cref="CanonicalStoryMembershipSet"/>; these lists only control display.
+/// Item handles are prefixed with <c>item:</c> or <c>item_group:</c> so the two
+/// resource kinds can share one folder without identity collisions.
+/// </summary>
+public sealed class CanonicalStoryDisplayOrder
+{
+    public List<string> Actors { get; set; } = [];
+    public List<string> Items { get; set; } = [];
+    public List<string> Sessions { get; set; } = [];
+    public List<string> Tasks { get; set; } = [];
+
+    public CanonicalStoryDisplayOrder Clone() => new()
+    {
+        Actors = [.. (Actors ?? [])],
+        Items = [.. (Items ?? [])],
+        Sessions = [.. (Sessions ?? [])],
+        Tasks = [.. (Tasks ?? [])],
+    };
+}
+
 /// <summary>Strict membership identity beside canonical graph envelopes.</summary>
 public sealed class CanonicalStoryMembershipManifest
 {
     public const int LegacySchemaVersion = 1;
-    public const int CurrentSchemaVersion = 2;
+    public const int ItemMembershipSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 
     private CanonicalStoryMembershipSet _ownedResources = new();
     private CanonicalStoryMembershipSet _referencedResources = new();
+    private CanonicalStoryDisplayOrder _displayOrder = new();
 
     public CanonicalStoryMembershipManifest() { }
 
@@ -55,6 +79,11 @@ public sealed class CanonicalStoryMembershipManifest
         get => _referencedResources.Clone();
         set => _referencedResources = (value ?? throw new ArgumentNullException(nameof(value))).Clone();
     }
+    public CanonicalStoryDisplayOrder DisplayOrder
+    {
+        get => _displayOrder.Clone();
+        set => _displayOrder = (value ?? throw new ArgumentNullException(nameof(value))).Clone();
+    }
 
     public string ToJson(bool indented = true)
         => CanonicalStoryMembershipSerializer.Serialize(this, indented);
@@ -64,6 +93,7 @@ public sealed class CanonicalStoryMembershipManifest
 
     internal CanonicalStoryMembershipSet SnapshotOwned() => _ownedResources.Clone();
     internal CanonicalStoryMembershipSet SnapshotReferenced() => _referencedResources.Clone();
+    internal CanonicalStoryDisplayOrder SnapshotDisplayOrder() => _displayOrder.Clone();
 }
 
 public sealed class CanonicalStoryMembershipException : Exception
@@ -82,8 +112,11 @@ public static class CanonicalStoryMembershipSerializer
     private static readonly Regex IdPattern = new(
         "^[a-z0-9][a-z0-9_-]*$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
-    private static readonly string[] RootMembers =
+    private static readonly string[] LegacyRootMembers =
         ["schema_version", "story_id", "owned_resources", "referenced_resources"];
+    private static readonly string[] CurrentRootMembers =
+        ["schema_version", "story_id", "owned_resources", "referenced_resources", "display_order"];
+    private static readonly string[] DisplayOrderMembers = ["actors", "items", "sessions", "tasks"];
 
     public static string Serialize(CanonicalStoryMembershipManifest manifest, bool indented = true)
     {
@@ -101,6 +134,8 @@ public static class CanonicalStoryMembershipSerializer
             writer.WriteString("story_id", manifest.StoryId);
             WriteSet(writer, "owned_resources", manifest.SnapshotOwned(), manifest.SchemaVersion);
             WriteSet(writer, "referenced_resources", manifest.SnapshotReferenced(), manifest.SchemaVersion);
+            if (manifest.SchemaVersion == CanonicalStoryMembershipManifest.CurrentSchemaVersion)
+                WriteDisplayOrder(writer, manifest.SnapshotDisplayOrder());
             writer.WriteEndObject();
         }
         return System.Text.Encoding.UTF8.GetString(stream.ToArray())
@@ -121,17 +156,23 @@ public static class CanonicalStoryMembershipSerializer
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object)
                 throw Failure("story.membership.root.invalid", "Story membership root must be an object.");
-            EnsureExactMembers(root, RootMembers, "story.membership.root");
             var version = Required(root, "schema_version").GetInt32();
-            if (version is not (CanonicalStoryMembershipManifest.LegacySchemaVersion or CanonicalStoryMembershipManifest.CurrentSchemaVersion))
+            if (!IsSupportedVersion(version))
                 throw Failure("story.membership.schema_version.unsupported",
                     $"Unsupported Story membership schema_version {version}.");
+            EnsureExactMembers(
+                root,
+                version == CanonicalStoryMembershipManifest.CurrentSchemaVersion ? CurrentRootMembers : LegacyRootMembers,
+                "story.membership.root");
             var manifest = new CanonicalStoryMembershipManifest(
                 RequiredString(root, "story_id"),
                 ReadSet(Required(root, "owned_resources"), "owned_resources", version),
                 ReadSet(Required(root, "referenced_resources"), "referenced_resources", version))
             {
                 SchemaVersion = version,
+                DisplayOrder = version == CanonicalStoryMembershipManifest.CurrentSchemaVersion
+                    ? ReadDisplayOrder(Required(root, "display_order"))
+                    : new(),
             };
             Validate(manifest);
             return manifest;
@@ -153,7 +194,7 @@ public static class CanonicalStoryMembershipSerializer
     public static void Validate(CanonicalStoryMembershipManifest manifest)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        if (manifest.SchemaVersion is not (CanonicalStoryMembershipManifest.LegacySchemaVersion or CanonicalStoryMembershipManifest.CurrentSchemaVersion))
+        if (!IsSupportedVersion(manifest.SchemaVersion))
             throw Failure("story.membership.schema_version.unsupported",
                 $"Unsupported Story membership schema_version {manifest.SchemaVersion}.");
         ValidateId(manifest.StoryId, "story.membership.story_id.invalid", "Story ID");
@@ -179,6 +220,14 @@ public static class CanonicalStoryMembershipSerializer
         ValidateNoOverlap(owned.ItemGroups, referenced.ItemGroups, "item_group");
         ValidateNoOverlap(owned.Sessions, referenced.Sessions, "session");
         ValidateNoOverlap(owned.Tasks, referenced.Tasks, "task");
+        if (manifest.SchemaVersion == CanonicalStoryMembershipManifest.CurrentSchemaVersion)
+        {
+            var order = manifest.SnapshotDisplayOrder();
+            ValidateOrderList(order.Actors, "actor", "display_order.actors", ValidateSimpleOrderHandle);
+            ValidateOrderList(order.Items, "item", "display_order.items", ValidateItemOrderHandle);
+            ValidateOrderList(order.Sessions, "session", "display_order.sessions", ValidateSimpleOrderHandle);
+            ValidateOrderList(order.Tasks, "task", "display_order.tasks", ValidateSimpleOrderHandle);
+        }
     }
 
     private static void WriteSet(Utf8JsonWriter writer, string name, CanonicalStoryMembershipSet set, int schemaVersion)
@@ -186,7 +235,7 @@ public static class CanonicalStoryMembershipSerializer
         writer.WritePropertyName(name);
         writer.WriteStartObject();
         WriteIds(writer, "actors", set.Actors);
-        if (schemaVersion == CanonicalStoryMembershipManifest.CurrentSchemaVersion)
+        if (schemaVersion >= CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion)
         {
             WriteIds(writer, "items", set.Items);
             WriteIds(writer, "item_groups", set.ItemGroups);
@@ -214,14 +263,38 @@ public static class CanonicalStoryMembershipSerializer
         return new CanonicalStoryMembershipSet
         {
             Actors = ReadIds(Required(element, "actors"), path + ".actors"),
-            Items = schemaVersion == CanonicalStoryMembershipManifest.CurrentSchemaVersion
+            Items = schemaVersion >= CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion
                 ? ReadIds(Required(element, "items"), path + ".items")
                 : [],
-            ItemGroups = schemaVersion == CanonicalStoryMembershipManifest.CurrentSchemaVersion
+            ItemGroups = schemaVersion >= CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion
                 ? ReadIds(Required(element, "item_groups"), path + ".item_groups")
                 : [],
             Sessions = ReadIds(Required(element, "sessions"), path + ".sessions"),
             Tasks = ReadIds(Required(element, "tasks"), path + ".tasks"),
+        };
+    }
+
+    private static void WriteDisplayOrder(Utf8JsonWriter writer, CanonicalStoryDisplayOrder order)
+    {
+        writer.WriteStartObject("display_order");
+        WriteIds(writer, "actors", order.Actors);
+        WriteIds(writer, "items", order.Items);
+        WriteIds(writer, "sessions", order.Sessions);
+        WriteIds(writer, "tasks", order.Tasks);
+        writer.WriteEndObject();
+    }
+
+    private static CanonicalStoryDisplayOrder ReadDisplayOrder(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+            throw Failure("story.membership.display_order.invalid", "'display_order' must be an object.");
+        EnsureExactMembers(element, DisplayOrderMembers, "story.membership.display_order");
+        return new CanonicalStoryDisplayOrder
+        {
+            Actors = ReadIds(Required(element, "actors"), "display_order.actors"),
+            Items = ReadIds(Required(element, "items"), "display_order.items"),
+            Sessions = ReadIds(Required(element, "sessions"), "display_order.sessions"),
+            Tasks = ReadIds(Required(element, "tasks"), "display_order.tasks"),
         };
     }
 
@@ -252,6 +325,39 @@ public static class CanonicalStoryMembershipSerializer
                     $"'{path}' contains duplicate ID '{id}'.");
         }
     }
+
+    private static void ValidateOrderList(
+        IReadOnlyList<string>? handles,
+        string kind,
+        string path,
+        Func<string, bool> isValid)
+    {
+        if (handles is null)
+            throw Failure($"story.membership.{kind}.order.required", $"'{path}' cannot be null.");
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var handle in handles)
+        {
+            if (!isValid(handle))
+                throw Failure($"story.membership.{kind}.order.invalid", $"Display-order handle '{handle}' is invalid.");
+            if (!seen.Add(handle))
+                throw Failure($"story.membership.{kind}.order.duplicate", $"'{path}' contains duplicate handle '{handle}'.");
+        }
+    }
+
+    private static bool ValidateSimpleOrderHandle(string handle) => IdPattern.IsMatch(handle ?? string.Empty);
+
+    private static bool ValidateItemOrderHandle(string handle)
+    {
+        var separator = handle?.IndexOf(':') ?? -1;
+        if (separator <= 0 || separator == handle!.Length - 1) return false;
+        var prefix = handle[..separator];
+        return prefix is "item" or "item_group" && IdPattern.IsMatch(handle[(separator + 1)..]);
+    }
+
+    private static bool IsSupportedVersion(int version)
+        => version is CanonicalStoryMembershipManifest.LegacySchemaVersion
+            or CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion
+            or CanonicalStoryMembershipManifest.CurrentSchemaVersion;
 
     private static void ValidateNoOverlap(
         IEnumerable<string> owned,

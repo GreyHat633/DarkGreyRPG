@@ -58,7 +58,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
 
         Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
         Assert.AreSame(workspace.SessionItems.Single().Editor.Host, view.GraphView.Host);
-        Assert.HasCount(2, workspace.Breadcrumbs);
+        Assert.HasCount(3, workspace.Breadcrumbs);
         Assert.IsTrue(view.ReturnToStory());
         Assert.AreSame(storyHost, view.GraphView.Host);
     }

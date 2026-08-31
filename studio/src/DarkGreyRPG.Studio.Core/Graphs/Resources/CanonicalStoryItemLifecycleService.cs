@@ -366,7 +366,8 @@ public sealed class CanonicalStoryItemLifecycleService
         CanonicalStoryMembershipSet owned, CanonicalStoryMembershipSet referenced)
         => _store.Memberships.Replace(new(original.StoryId, owned, referenced)
         {
-            SchemaVersion = CanonicalStoryMembershipManifest.CurrentSchemaVersion,
+            SchemaVersion = original.SchemaVersion,
+            DisplayOrder = original.DisplayOrder,
         });
 
     private Exception? TryDelete(CanonicalStoryItemKind kind, string itemId)

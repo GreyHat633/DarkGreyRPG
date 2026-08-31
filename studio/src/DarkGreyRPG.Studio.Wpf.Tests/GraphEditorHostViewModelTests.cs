@@ -190,6 +190,31 @@ public sealed class GraphEditorHostViewModelTests
     }
 
     [TestMethod]
+    public void DynamicPortMutationReportsOnlyTheAffectedNode()
+    {
+        var host = new GraphEditorHostViewModel(ScopedGraph(GraphScope.StoryFlow), GraphScope.StoryFlow);
+        var source = host.Nodes.Single(node => node.NodeId == "source");
+        var target = host.Nodes.Single(node => node.NodeId == "target");
+        var changed = new List<string>();
+        host.PortsChanged += (_, args) => changed.AddRange(args.NodeIds);
+
+        Assert.IsTrue(host.AddDynamicPort("source", "Dynamic", GraphPortDirection.Output, GraphInterfaceKind.Flow));
+        Assert.AreEqual("source", changed.Single());
+        Assert.AreSame(source, host.Nodes.Single(node => node.NodeId == "source"));
+        Assert.AreSame(target, host.Nodes.Single(node => node.NodeId == "target"));
+
+        changed.Clear();
+        var portId = host.Graph.Nodes.Single(node => node.Id == "source").Ports
+            .Single(port => port.DisplayName == "Dynamic").Id;
+        Assert.IsTrue(host.RenamePortDisplayName("source", portId, "Renamed"));
+        Assert.AreEqual("source", changed.Single());
+
+        changed.Clear();
+        Assert.IsTrue(host.RemoveDynamicPort("source", portId));
+        Assert.AreEqual("source", changed.Single());
+    }
+
+    [TestMethod]
     public void DynamicPortReferencesRequireConfirmationAndUndoRestoresCleanup()
     {
         var graph = ScopedGraph(GraphScope.StoryFlow);

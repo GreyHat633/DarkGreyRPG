@@ -15,7 +15,7 @@ public sealed class CanonicalStoryMembershipManifestTests
         using var document = JsonDocument.Parse(json);
 
         CollectionAssert.AreEqual(
-            new[] { "schema_version", "story_id", "owned_resources", "referenced_resources" },
+            new[] { "schema_version", "story_id", "owned_resources", "referenced_resources", "display_order" },
             document.RootElement.EnumerateObject().Select(property => property.Name).ToArray());
         CollectionAssert.AreEqual(
             new[] { "actors", "items", "item_groups", "sessions", "tasks" },
@@ -25,6 +25,8 @@ public sealed class CanonicalStoryMembershipManifestTests
         CollectionAssert.AreEqual(new[] { "item_b", "item_a" }, restored.OwnedResources.Items);
         CollectionAssert.AreEqual(new[] { "group_a" }, restored.ReferencedResources.ItemGroups);
         CollectionAssert.AreEqual(new[] { "session_a", "session_b" }, restored.ReferencedResources.Sessions);
+        CollectionAssert.AreEqual(new[] { "actor_a", "actor_b" }, restored.DisplayOrder.Actors);
+        CollectionAssert.AreEqual(new[] { "item_group:group_a", "item:item_b", "item:item_a" }, restored.DisplayOrder.Items);
         Assert.IsTrue(json.EndsWith("}\n", StringComparison.Ordinal));
         Assert.AreNotEqual('\n', json[^2]);
     }
@@ -32,7 +34,9 @@ public sealed class CanonicalStoryMembershipManifestTests
     [TestMethod]
     public void ReorderedValidSchemaTwoFieldsAreAcceptedAndCanonicalizedOnSerialization()
     {
-        var canonical = Manifest().ToJson(indented: false).TrimEnd();
+        var schemaTwo = Manifest();
+        schemaTwo.SchemaVersion = CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion;
+        var canonical = schemaTwo.ToJson(indented: false).TrimEnd();
         var reordered = canonical.Replace(
             "\"actors\":[\"actor_b\",\"actor_a\"],\"items\":[\"item_b\",\"item_a\"],\"item_groups\":[],\"sessions\":[],\"tasks\":[\"task_a\"]",
             "\"tasks\":[\"task_a\"],\"item_groups\":[],\"actors\":[\"actor_b\",\"actor_a\"],\"sessions\":[],\"items\":[\"item_b\",\"item_a\"]",
@@ -62,8 +66,8 @@ public sealed class CanonicalStoryMembershipManifestTests
         foreach (var (json, code) in new[]
         {
             (valid.Replace("\"story_id\":", "\"extra\":true,\"story_id\":", StringComparison.Ordinal), "story.membership.root.member.unsupported"),
-            (valid.Replace(",\"referenced_resources\":{\"actors\":[],\"items\":[],\"item_groups\":[\"group_a\"],\"sessions\":[\"session_a\",\"session_b\"],\"tasks\":[\"task_b\"]}", string.Empty, StringComparison.Ordinal), "story.membership.root.member.required"),
-            (valid.Replace("\"schema_version\":2", "\"schema_version\":99", StringComparison.Ordinal), "story.membership.schema_version.unsupported"),
+            (valid.Replace(",\"display_order\":{\"actors\":[\"actor_a\",\"actor_b\"],\"items\":[\"item_group:group_a\",\"item:item_b\",\"item:item_a\"],\"sessions\":[\"session_b\",\"session_a\"],\"tasks\":[\"task_b\",\"task_a\"]}", string.Empty, StringComparison.Ordinal), "story.membership.root.member.required"),
+            (valid.Replace("\"schema_version\":3", "\"schema_version\":99", StringComparison.Ordinal), "story.membership.schema_version.unsupported"),
             (valid.Replace("\"actors\":[\"actor_b\",\"actor_a\"]", "\"actors\":[\"actor_b\",\"actor_a\"],\"dialogues\":[]", StringComparison.Ordinal), "story.membership.set.member.unsupported"),
             ("{\"schema_version\":2,\"id\":\"legacy\",\"owned_resources\":{}}", "story.membership.root.member.unsupported"),
         })
@@ -126,6 +130,23 @@ public sealed class CanonicalStoryMembershipManifestTests
     }
 
     [TestMethod]
+    public void SchemaTwoKeepsItsExactShapeAndLoadsWithoutDisplayOrder()
+    {
+        var schemaTwo = Manifest();
+        schemaTwo.SchemaVersion = CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion;
+
+        var json = schemaTwo.ToJson(indented: false);
+        using var document = JsonDocument.Parse(json);
+        CollectionAssert.AreEqual(
+            new[] { "schema_version", "story_id", "owned_resources", "referenced_resources" },
+            document.RootElement.EnumerateObject().Select(property => property.Name).ToArray());
+        var restored = CanonicalStoryMembershipManifest.FromJson(json);
+        Assert.AreEqual(CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion, restored.SchemaVersion);
+        Assert.IsEmpty(restored.DisplayOrder.Actors);
+        Assert.AreEqual(json, restored.ToJson(indented: false));
+    }
+
+    [TestMethod]
     public void LegacySchemaOneCannotSilentlyDropItemMembership()
     {
         var legacy = new CanonicalStoryMembershipManifest(
@@ -138,7 +159,8 @@ public sealed class CanonicalStoryMembershipManifestTests
     }
 
     private static CanonicalStoryMembershipManifest Manifest()
-        => new(
+    {
+        var manifest = new CanonicalStoryMembershipManifest(
             "story",
             new CanonicalStoryMembershipSet
             {
@@ -156,6 +178,15 @@ public sealed class CanonicalStoryMembershipManifestTests
                 Sessions = ["session_a", "session_b"],
                 Tasks = ["task_b"],
             });
+        manifest.DisplayOrder = new CanonicalStoryDisplayOrder
+        {
+            Actors = ["actor_a", "actor_b"],
+            Items = ["item_group:group_a", "item:item_b", "item:item_a"],
+            Sessions = ["session_b", "session_a"],
+            Tasks = ["task_b", "task_a"],
+        };
+        return manifest;
+    }
 
     private static void AssertCode(CanonicalStoryMembershipManifest manifest, string code)
         => Assert.AreEqual(code,

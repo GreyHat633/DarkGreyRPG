@@ -9,6 +9,13 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorWorkspaceDialogs
 {
+    public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
+    {
+        var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName);
+        var dialog = new DisplayNameDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true ? viewModel.DisplayName.Trim() : null;
+    }
+
     public bool SupportsCanonicalActorKinds => true;
 
     public CanonicalStoryActorKind? RequestCanonicalCreationKind(string storyDisplayName)

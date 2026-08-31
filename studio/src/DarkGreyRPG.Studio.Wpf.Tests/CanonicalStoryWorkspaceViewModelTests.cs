@@ -12,6 +12,78 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalStoryWorkspaceViewModelTests
 {
     [TestMethod]
+    public void DisplayOrderInterleavesItemKindsAndReorderPublishesStableHandles()
+    {
+        using var directory = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Path);
+        var items = new ItemRepository(directory.Path);
+        items.SaveItem(new IndividualItemResource { ItemId = "item_a", DisplayName = "A" });
+        items.SaveItem(new IndividualItemResource { ItemId = "item_b", DisplayName = "B" });
+        items.SaveGroup(new CollectiveItemResource { GroupId = "group_a", DisplayName = "Group" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        var membership = new CanonicalStoryMembershipManifest(
+            "story",
+            new CanonicalStoryMembershipSet { Items = ["item_a", "item_b"] },
+            new CanonicalStoryMembershipSet { ItemGroups = ["group_a"] })
+        {
+            DisplayOrder = new CanonicalStoryDisplayOrder
+            {
+                Items = ["item_group:group_a", "item:item_b", "item:item_a"],
+            },
+        };
+        store.Memberships.Create(membership);
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new CanonicalStoryWorkspaceLoader(store, items: items).Load("story"));
+        var folder = workspace.Folders.Single(candidate => candidate.Kind == CanonicalStoryFolderKind.Items);
+        CollectionAssert.AreEqual(new[] { "group_a", "item_b", "item_a" },
+            folder.Items.Select(item => item.Id).ToArray());
+        IReadOnlyList<string>? persisted = null;
+        workspace.ResourceOrderChangeRequested = (kind, handles) =>
+        {
+            Assert.AreEqual(CanonicalStoryFolderKind.Items, kind);
+            persisted = handles;
+            return true;
+        };
+
+        Assert.IsTrue(workspace.ReorderResource(folder.Items[2], folder.Items[0]));
+
+        CollectionAssert.AreEqual(new[] { "item_a", "group_a", "item_b" },
+            folder.Items.Select(item => item.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "item:item_a", "item_group:group_a", "item:item_b" },
+            persisted!.ToArray());
+        Assert.IsTrue(workspace.ItemItems.Single(item => item.Id == "item_a").IsOwned);
+        Assert.IsTrue(workspace.ItemItems.Single(item => item.Id == "group_a").IsReferenced);
+    }
+
+    [TestMethod]
+    public void StaleDisplayOrderIsFilteredAndNewResourcesAppendAfterReload()
+    {
+        using var directory = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Path);
+        var items = new ItemRepository(directory.Path);
+        items.SaveItem(new IndividualItemResource { ItemId = "item_a", DisplayName = "A" });
+        items.SaveItem(new IndividualItemResource { ItemId = "item_c", DisplayName = "C" });
+        items.SaveItem(new IndividualItemResource { ItemId = "item_d", DisplayName = "D" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "story",
+            new CanonicalStoryMembershipSet { Items = ["item_a", "item_c", "item_d"] })
+        {
+            DisplayOrder = new CanonicalStoryDisplayOrder
+            {
+                Items = ["item:item_c", "item:item_b", "item:item_a"],
+            },
+        });
+
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new CanonicalStoryWorkspaceLoader(store, items: items).Load("story"));
+
+        CollectionAssert.AreEqual(
+            new[] { "item_c", "item_a", "item_d" },
+            workspace.ItemItems.Select(item => item.Id).ToArray());
+    }
+
+    [TestMethod]
     public void ResourceSnapshotAddsOnlyChangedEntriesAndKeepsUnrelatedIdentitySelectionAndEditor()
     {
         using var directory = new TemporaryProjectDirectory();
@@ -84,8 +156,9 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
             workspace.Folders.Select(folder => folder.Kind).ToArray());
         CollectionAssert.AreEqual(new[] { "角色", "物品", "会话", "任务" },
             workspace.Folders.Select(folder => folder.DisplayName).ToArray());
-        Assert.HasCount(1, workspace.Breadcrumbs);
-        Assert.AreEqual(GraphResourceKind.Story, workspace.Breadcrumbs[0].ResourceKind);
+        Assert.HasCount(2, workspace.Breadcrumbs);
+        Assert.AreEqual(CanonicalStoryBreadcrumbKind.Project, workspace.Breadcrumbs[0].Kind);
+        Assert.AreEqual(GraphResourceKind.Story, workspace.Breadcrumbs[1].ResourceKind);
     }
 
     [TestMethod]
@@ -137,8 +210,8 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
 
         workspace.OpenSelectedResourceCommand.Execute(null);
         Assert.AreSame(session.Editor, workspace.ActiveEditor);
-        Assert.HasCount(2, workspace.Breadcrumbs);
-        Assert.AreEqual(GraphResourceKind.Session, workspace.Breadcrumbs[1].ResourceKind);
+        Assert.HasCount(3, workspace.Breadcrumbs);
+        Assert.AreEqual(GraphResourceKind.Session, workspace.Breadcrumbs[2].ResourceKind);
         Assert.IsTrue(session.Editor.Host.AddNode(
             GraphNodeFactory.Create(GraphScope.Session, "line", "line-1")));
 

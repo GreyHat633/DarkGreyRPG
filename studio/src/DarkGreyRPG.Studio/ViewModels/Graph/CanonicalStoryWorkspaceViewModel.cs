@@ -34,9 +34,9 @@ public sealed record CanonicalStoryActorItem(
     public string DisplayName => Actor.DisplayName;
     public string IdentityText => Actor.Type switch
     {
-        IndividualActorResource.ResourceType => $"NPC ID: {Id}",
-        CollectiveActorResource.ResourceType => $"Group ID: {Id}",
-        _ => $"角色 ID: {Id}",
+        IndividualActorResource.ResourceType => $"NPC_ID: {Id}",
+        CollectiveActorResource.ResourceType => $"Group_ID: {Id}",
+        _ => $"NPC_ID: {Id}",
     };
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
@@ -50,41 +50,68 @@ public sealed record CanonicalStoryItemItem(
     public string Id => Item.Id;
     public string DisplayName => Item.DisplayName;
     public string IdentityText => Type == IndividualItemResource.ResourceType
-        ? $"Item ID: {Id}"
-        : $"Group ID: {Id}";
+        ? $"Item_ID: {Id}"
+        : $"Group_ID: {Id}";
     public string Type => Item.Type;
     public IReadOnlyList<string> Tags => Item.Tags;
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
 }
 
-public sealed record CanonicalStoryGraphItem(
-    CanonicalGraphResourceEditorViewModel Editor,
-    CanonicalStoryWorkspaceMembershipKind MembershipKind = CanonicalStoryWorkspaceMembershipKind.Owned)
-    : ICanonicalStoryTreeItem
+public sealed class CanonicalStoryGraphItem : ObservableObject, ICanonicalStoryTreeItem
 {
+    public CanonicalStoryGraphItem(
+        CanonicalGraphResourceEditorViewModel editor,
+        CanonicalStoryWorkspaceMembershipKind membershipKind = CanonicalStoryWorkspaceMembershipKind.Owned)
+    {
+        Editor = editor ?? throw new ArgumentNullException(nameof(editor));
+        MembershipKind = membershipKind;
+        Editor.PropertyChanged += EditorOnPropertyChanged;
+    }
+
+    public CanonicalGraphResourceEditorViewModel Editor { get; }
+    public CanonicalStoryWorkspaceMembershipKind MembershipKind { get; }
     public string Id => Editor.Id;
     public string DisplayName => Editor.DisplayName;
+    public string IdentityText => string.Empty;
     public GraphResourceKind ResourceKind => Editor.ResourceKind;
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
+
+    private void EditorOnPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(CanonicalGraphResourceEditorViewModel.DisplayName))
+            OnPropertyChanged(nameof(DisplayName));
+    }
 }
 
 public sealed record CanonicalStoryMissingItem(
     string Id,
     CanonicalStoryFolderKind FolderKind,
     CanonicalStoryWorkspaceMembershipKind MembershipKind,
-    ValidationIssue Issue) : ICanonicalStoryTreeItem
+    ValidationIssue Issue,
+    string OrderHandle) : ICanonicalStoryTreeItem
 {
     public string DisplayName => $"{Id}（缺失）";
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
 }
 
+public enum CanonicalStoryBreadcrumbKind
+{
+    Project,
+    Story,
+    Session,
+    Task,
+}
+
 public sealed record CanonicalStoryBreadcrumb(
     string Id,
     string DisplayName,
-    GraphResourceKind ResourceKind);
+    CanonicalStoryBreadcrumbKind Kind,
+    GraphResourceKind? ResourceKind,
+    bool IsFirst,
+    bool IsCurrent);
 
 public sealed record CanonicalStoryNodeFocusRequest(
     string NodeId,
@@ -138,6 +165,15 @@ public sealed class CanonicalStoryFolderViewModel : ObservableObject
         }
         while (_items.Count > next.Count) _items.RemoveAt(_items.Count - 1);
     }
+
+    internal bool Move(ICanonicalStoryTreeItem item, ICanonicalStoryTreeItem target)
+    {
+        var sourceIndex = _items.IndexOf(item);
+        var targetIndex = _items.IndexOf(target);
+        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex == targetIndex) return false;
+        _items.Move(sourceIndex, targetIndex);
+        return true;
+    }
 }
 
 /// <summary>
@@ -155,6 +191,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     private CanonicalStoryNodeFocusRequest? _storyNodeFocusRequest;
     private long _storyNodeFocusSequence;
     private string _parameterDropMessage = string.Empty;
+    private string _projectId = "project";
+    private string _projectDisplayName = "项目";
     private bool _disposed;
 
     public CanonicalStoryWorkspaceViewModel(
@@ -201,13 +239,9 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             throw;
         }
         ActorItems = actorResources
-            .OrderBy(actor => actor.DisplayName, StringComparer.Ordinal)
-            .ThenBy(actor => actor.Id, StringComparer.Ordinal)
             .Select(actor => new CanonicalStoryActorItem(actor))
             .ToArray();
         ItemItems = (items ?? [])
-            .OrderBy(item => item.DisplayName, StringComparer.Ordinal)
-            .ThenBy(item => item.Id, StringComparer.Ordinal)
             .Select(item => new CanonicalStoryItemItem(item))
             .ToArray();
         SessionItems = SessionEditors.Select(editor => new CanonicalStoryGraphItem(editor)).ToArray();
@@ -266,32 +300,46 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             CanonicalStoryFolderKind.Actors,
             actorsById,
             missing,
-            (item, membershipKind) => new CanonicalStoryActorItem(item.Actor, membershipKind));
+            (item, membershipKind) => new CanonicalStoryActorItem(item.Actor, membershipKind),
+            id => id);
         var sessionFolderItems = AdaptEntries(
             snapshot.Sessions,
             CanonicalStoryFolderKind.Sessions,
             sessionsById,
             missing,
-            (item, membershipKind) => new CanonicalStoryGraphItem(item.Editor, membershipKind));
-        var itemFolderItems = AdaptEntries(
+            (item, membershipKind) => new CanonicalStoryGraphItem(item.Editor, membershipKind),
+            id => id);
+        var individualFolderItems = AdaptEntries(
                 snapshot.Items,
                 CanonicalStoryFolderKind.Items,
                 individualItemsById,
                 missing,
-                (item, membershipKind) => new CanonicalStoryItemItem(item.Item, membershipKind))
-            .Concat(AdaptEntries(
+                (item, membershipKind) => new CanonicalStoryItemItem(item.Item, membershipKind),
+                id => $"item:{id}");
+        var groupFolderItems = AdaptEntries(
                 snapshot.ItemGroups,
                 CanonicalStoryFolderKind.Items,
                 collectiveItemsById,
                 missing,
-                (item, membershipKind) => new CanonicalStoryItemItem(item.Item, membershipKind)))
-            .ToArray();
+                (item, membershipKind) => new CanonicalStoryItemItem(item.Item, membershipKind),
+                id => $"item_group:{id}");
         var taskFolderItems = AdaptEntries(
             snapshot.Tasks,
             CanonicalStoryFolderKind.Tasks,
             tasksById,
             missing,
-            (item, membershipKind) => new CanonicalStoryGraphItem(item.Editor, membershipKind));
+            (item, membershipKind) => new CanonicalStoryGraphItem(item.Editor, membershipKind),
+            id => id);
+
+        var displayOrder = snapshot.Membership.DisplayOrder;
+        actorFolderItems = ApplyDisplayOrder(actorFolderItems, displayOrder.Actors,
+            item => OrderHandle(CanonicalStoryFolderKind.Actors, item));
+        var itemFolderItems = ApplyDisplayOrder(individualFolderItems.Concat(groupFolderItems), displayOrder.Items,
+            item => OrderHandle(CanonicalStoryFolderKind.Items, item));
+        sessionFolderItems = ApplyDisplayOrder(sessionFolderItems, displayOrder.Sessions,
+            item => OrderHandle(CanonicalStoryFolderKind.Sessions, item));
+        taskFolderItems = ApplyDisplayOrder(taskFolderItems, displayOrder.Tasks,
+            item => OrderHandle(CanonicalStoryFolderKind.Tasks, item));
 
         ActorItems = actorFolderItems.OfType<CanonicalStoryActorItem>().ToArray();
         ItemItems = itemFolderItems.OfType<CanonicalStoryItemItem>().ToArray();
@@ -343,6 +391,9 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public Action? CreateItemRequested { get; set; }
     public Action? ReferenceItemRequested { get; set; }
     public Action<ICanonicalStoryTreeItem>? DeleteResourceRequested { get; set; }
+    public Action<ICanonicalStoryTreeItem>? RenameResourceRequested { get; set; }
+    public Func<CanonicalStoryFolderKind, IReadOnlyList<string>, bool>? ResourceOrderChangeRequested { get; set; }
+    public Action? ReturnToProjectRequested { get; set; }
 
     public CanonicalGraphResourceEditorViewModel ActiveEditor
     {
@@ -471,8 +522,36 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public CanonicalStoryMissingItem? SelectedMissingResource => SelectedTreeItem as CanonicalStoryMissingItem;
 
     public IReadOnlyList<CanonicalStoryBreadcrumb> Breadcrumbs => IsStoryFlowActive
-        ? [Breadcrumb(StoryEditor)]
-        : [Breadcrumb(StoryEditor), Breadcrumb(ActiveEditor)];
+        ? [ProjectBreadcrumb(), Breadcrumb(StoryEditor, isCurrent: true)]
+        : [ProjectBreadcrumb(), Breadcrumb(StoryEditor, isCurrent: false), Breadcrumb(ActiveEditor, isCurrent: true)];
+
+    public void ConfigureProjectBreadcrumb(string projectId, string displayName, Action returnToProject)
+    {
+        ThrowIfDisposed();
+        if (string.IsNullOrWhiteSpace(projectId)) throw new ArgumentException("Project ID is required.", nameof(projectId));
+        if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("Project display name is required.", nameof(displayName));
+        _projectId = projectId;
+        _projectDisplayName = displayName;
+        ReturnToProjectRequested = returnToProject ?? throw new ArgumentNullException(nameof(returnToProject));
+        OnPropertyChanged(nameof(Breadcrumbs));
+    }
+
+    public bool ActivateBreadcrumb(CanonicalStoryBreadcrumb breadcrumb)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(breadcrumb);
+        if (breadcrumb.IsCurrent) return true;
+        switch (breadcrumb.Kind)
+        {
+            case CanonicalStoryBreadcrumbKind.Project:
+                ReturnToProjectRequested?.Invoke();
+                return ReturnToProjectRequested is not null;
+            case CanonicalStoryBreadcrumbKind.Story:
+                return ReturnToStory();
+            default:
+                return false;
+        }
+    }
 
     public CanonicalStoryNodeFocusRequest? StoryNodeFocusRequest
     {
@@ -572,6 +651,46 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         if (!SelectTreeItem(item) || !CanDeleteSelectedResource() || DeleteResourceRequested is null)
             return false;
         DeleteResourceRequested(item);
+        return true;
+    }
+
+    public bool RequestRename(ICanonicalStoryTreeItem item)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(item);
+        if (item is CanonicalStoryMissingItem || RenameResourceRequested is null || !SelectTreeItem(item))
+            return false;
+        RenameResourceRequested(item);
+        return true;
+    }
+
+    /// <summary>Moves a resource inside its current folder without changing membership ownership.</summary>
+    public bool CanReorderResource(ICanonicalStoryTreeItem item, ICanonicalStoryTreeItem target)
+    {
+        if (_disposed || item is null || target is null || ReferenceEquals(item, target)) return false;
+        return Contains(item) && Contains(target) && FolderFor(item) == FolderFor(target);
+    }
+
+    /// <summary>Moves a resource inside its current folder without changing membership ownership.</summary>
+    public bool ReorderResource(ICanonicalStoryTreeItem item, ICanonicalStoryTreeItem target)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(target);
+        if (!CanReorderResource(item, target)) return false;
+        var folderKind = FolderFor(item);
+        var folder = Folders.Single(candidate => candidate.Kind == folderKind);
+        var next = folder.Items.ToList();
+        var sourceIndex = next.IndexOf(item);
+        var targetIndex = next.IndexOf(target);
+        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex == targetIndex) return false;
+        next.RemoveAt(sourceIndex);
+        next.Insert(targetIndex, item);
+        var handles = next.Select(candidate => OrderHandle(folderKind, candidate)).ToArray();
+        if (ResourceOrderChangeRequested is not null
+            && !ResourceOrderChangeRequested(folderKind, handles)) return false;
+        if (!folder.Move(item, target)) return false;
+        SynchronizeTypedFolderOrder(folderKind, folder.Items);
         return true;
     }
 
@@ -839,11 +958,15 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
                     return graph;
                 case CanonicalStoryActorItem actor
                     when currentActors.TryGetValue(actor.Id, out var existingActor)
-                         && existingActor.MembershipKind == actor.MembershipKind:
+                         && existingActor.MembershipKind == actor.MembershipKind
+                         && string.Equals(existingActor.DisplayName, actor.DisplayName, StringComparison.Ordinal)
+                         && string.Equals(existingActor.Actor.Type, actor.Actor.Type, StringComparison.Ordinal):
                     return existingActor;
                 case CanonicalStoryItemItem itemResource
                     when currentItems.TryGetValue((itemResource.Type, itemResource.Id), out var existingItem)
-                         && existingItem.MembershipKind == itemResource.MembershipKind:
+                         && existingItem.MembershipKind == itemResource.MembershipKind
+                         && string.Equals(existingItem.DisplayName, itemResource.DisplayName, StringComparison.Ordinal)
+                         && existingItem.Tags.SequenceEqual(itemResource.Tags, StringComparer.Ordinal):
                     return existingItem;
                 case CanonicalStoryMissingItem missing
                     when currentMissing.TryGetValue((missing.FolderKind, missing.Id, missing.MembershipKind), out var existingMissing):
@@ -1024,6 +1147,64 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         _ => throw new ArgumentOutOfRangeException(nameof(item)),
     };
 
+    private void SynchronizeTypedFolderOrder(
+        CanonicalStoryFolderKind folderKind,
+        IReadOnlyList<ICanonicalStoryTreeItem> items)
+    {
+        switch (folderKind)
+        {
+            case CanonicalStoryFolderKind.Actors:
+                ActorItems = items.OfType<CanonicalStoryActorItem>().ToArray();
+                OnPropertyChanged(nameof(ActorItems));
+                break;
+            case CanonicalStoryFolderKind.Items:
+                ItemItems = items.OfType<CanonicalStoryItemItem>().ToArray();
+                OnPropertyChanged(nameof(ItemItems));
+                break;
+            case CanonicalStoryFolderKind.Sessions:
+                SessionItems = items.OfType<CanonicalStoryGraphItem>().ToArray();
+                OnPropertyChanged(nameof(SessionItems));
+                break;
+            case CanonicalStoryFolderKind.Tasks:
+                TaskItems = items.OfType<CanonicalStoryGraphItem>().ToArray();
+                OnPropertyChanged(nameof(TaskItems));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(folderKind), folderKind, null);
+        }
+    }
+
+    private static string OrderHandle(CanonicalStoryFolderKind folderKind, ICanonicalStoryTreeItem item)
+        => item switch
+        {
+            CanonicalStoryItemItem resource => resource.Type == IndividualItemResource.ResourceType
+                ? $"item:{resource.Id}"
+                : $"item_group:{resource.Id}",
+            CanonicalStoryMissingItem missing => missing.OrderHandle,
+            _ when folderKind is CanonicalStoryFolderKind.Actors
+                or CanonicalStoryFolderKind.Sessions
+                or CanonicalStoryFolderKind.Tasks => item.Id,
+            _ => throw new ArgumentOutOfRangeException(nameof(item)),
+        };
+
+    private static IReadOnlyList<ICanonicalStoryTreeItem> ApplyDisplayOrder(
+        IEnumerable<ICanonicalStoryTreeItem> items,
+        IReadOnlyList<string> order,
+        Func<ICanonicalStoryTreeItem, string> keySelector)
+    {
+        var source = items.ToArray();
+        if (order.Count == 0) return source;
+        var remaining = source.ToDictionary(keySelector, StringComparer.Ordinal);
+        var result = new List<ICanonicalStoryTreeItem>(source.Length);
+        foreach (var handle in order)
+        {
+            if (!remaining.Remove(handle, out var item)) continue;
+            result.Add(item);
+        }
+        result.AddRange(source.Where(item => remaining.ContainsKey(keySelector(item))));
+        return result;
+    }
+
     private static GraphResourceEnvelope SnapshotStory(CanonicalStoryWorkspaceSnapshot? snapshot)
         => (snapshot ?? throw new ArgumentNullException(nameof(snapshot))).Story;
 
@@ -1058,7 +1239,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         CanonicalStoryFolderKind folderKind,
         IReadOnlyDictionary<string, TItem> resolvedById,
         ICollection<CanonicalStoryMissingItem> missing,
-        Func<TItem, CanonicalStoryWorkspaceMembershipKind, ICanonicalStoryTreeItem> resolvedFactory)
+        Func<TItem, CanonicalStoryWorkspaceMembershipKind, ICanonicalStoryTreeItem> resolvedFactory,
+        Func<string, string> orderHandleFactory)
         where TEntry : class
         where TItem : ICanonicalStoryTreeItem
     {
@@ -1081,7 +1263,12 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
                     FolderField(folderKind),
                     ValidationSeverity.Error,
                     entry.Id);
-            var item = new CanonicalStoryMissingItem(entry.Id, folderKind, entry.MembershipKind, issue);
+            var item = new CanonicalStoryMissingItem(
+                entry.Id,
+                folderKind,
+                entry.MembershipKind,
+                issue,
+                orderHandleFactory(entry.Id));
             missing.Add(item);
             result.Add(item);
         }
@@ -1117,8 +1304,25 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         return source;
     }
 
-    private static CanonicalStoryBreadcrumb Breadcrumb(CanonicalGraphResourceEditorViewModel editor)
-        => new(editor.Id, editor.DisplayName, editor.ResourceKind);
+    private CanonicalStoryBreadcrumb ProjectBreadcrumb()
+        => new(_projectId, _projectDisplayName, CanonicalStoryBreadcrumbKind.Project, null, IsFirst: true, IsCurrent: false);
+
+    private static CanonicalStoryBreadcrumb Breadcrumb(
+        CanonicalGraphResourceEditorViewModel editor,
+        bool isCurrent)
+        => new(
+            editor.Id,
+            editor.DisplayName,
+            editor.ResourceKind switch
+            {
+                GraphResourceKind.Story => CanonicalStoryBreadcrumbKind.Story,
+                GraphResourceKind.Session => CanonicalStoryBreadcrumbKind.Session,
+                GraphResourceKind.Task => CanonicalStoryBreadcrumbKind.Task,
+                _ => throw new ArgumentOutOfRangeException(nameof(editor)),
+            },
+            editor.ResourceKind,
+            IsFirst: false,
+            IsCurrent: isCurrent);
 
     private IEnumerable<CanonicalGraphResourceEditorViewModel> AllEditors()
         => new[] { StoryEditor }.Concat(SessionEditors).Concat(TaskEditors);

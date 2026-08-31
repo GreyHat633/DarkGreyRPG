@@ -233,12 +233,34 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var data = new DataObject(ResourceDragFormat, item);
         try
         {
-            _ = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link);
+            _ = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link | DragDropEffects.Move);
         }
         finally
         {
             CancelResourceDragPreview();
         }
+        args.Handled = true;
+    }
+
+    private void ResourceItem_OnDragOver(object sender, DragEventArgs args)
+    {
+        args.Effects = sender is Button { Tag: ICanonicalStoryTreeItem target }
+            && TryGetDraggedResource(args.Data, out var item)
+            && item is not null
+            && Workspace?.CanReorderResource(item, target) == true
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+        args.Handled = true;
+    }
+
+    private void ResourceItem_OnDrop(object sender, DragEventArgs args)
+    {
+        args.Effects = sender is Button { Tag: ICanonicalStoryTreeItem target }
+            && TryGetDraggedResource(args.Data, out var item)
+            && item is not null
+            && Workspace?.ReorderResource(item, target) == true
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
         args.Handled = true;
     }
 
@@ -365,6 +387,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             () => _ = item is CanonicalStoryGraphItem
                 ? ActivateResourceItem(item)
                 : SelectResourceItem(item)));
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "重命名",
+            () => _ = Workspace.RequestRename(item),
+            item is not CanonicalStoryMissingItem));
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
             $"新建{label}",
@@ -386,8 +412,8 @@ public partial class CanonicalStoryWorkspaceView : UserControl
 
     private void Breadcrumb_OnClick(object sender, RoutedEventArgs args)
     {
-        if (sender is Button { Tag: CanonicalStoryBreadcrumb { ResourceKind: GraphResourceKind.Story } })
-            _ = ReturnToStory();
+        if (sender is Button { Tag: CanonicalStoryBreadcrumb breadcrumb })
+            _ = Workspace?.ActivateBreadcrumb(breadcrumb);
     }
 
     private static bool TryGetDraggedResource(IDataObject data, out ICanonicalStoryTreeItem? item)

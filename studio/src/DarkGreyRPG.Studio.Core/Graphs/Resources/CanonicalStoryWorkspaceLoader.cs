@@ -79,6 +79,7 @@ public sealed class CanonicalStoryWorkspaceSnapshot
         => new(manifest.StoryId, manifest.OwnedResources, manifest.ReferencedResources)
         {
             SchemaVersion = manifest.SchemaVersion,
+            DisplayOrder = manifest.DisplayOrder,
         };
 }
 

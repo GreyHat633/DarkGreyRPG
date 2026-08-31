@@ -71,6 +71,14 @@ public sealed class FlowPortControl : Button
     public string EffectiveDisplayName => string.IsNullOrWhiteSpace(DisplayName) ? PortName : DisplayName;
 
     /// <summary>
+    /// Returns true only when the pointer source is the rendered circle or
+    /// diamond. Labels deliberately remain outside the wire hit target.
+    /// </summary>
+    public bool IsAnchorHitTarget(DependencyObject? source)
+        => source is not null && _anchor is not null
+            && (ReferenceEquals(source, _anchor) || _anchor.IsAncestorOf(source));
+
+    /// <summary>
     /// Checks the inexpensive endpoint invariants needed before a drag can ask
     /// the Story view model to validate a connection. This method deliberately
     /// has no side effects; cardinality, scope, and cycle rules remain owned by

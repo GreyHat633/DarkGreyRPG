@@ -526,7 +526,7 @@ public sealed class ShellViewModelTests
     }
 
     [TestMethod]
-    public void ExistingCanonicalRootsMountLiveWorkspaceAndSaveOneDirtyGraphBeforeLeaving()
+    public void ExistingCanonicalRootsMountLiveWorkspaceAndRetainDirtyGraphAcrossProjectHome()
     {
         using var directory = new TestProjectDirectory();
         new StoryRepository(directory.Root).CreateStory("opening", "Legacy Opening");
@@ -571,14 +571,21 @@ public sealed class ShellViewModelTests
 
         shell.ShowProjectHomeCommand.Execute(null);
 
-        Assert.IsTrue(shell.HasCanonicalStoryWorkspace, "Dirty canonical graphs must block navigation.");
+        Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
+        Assert.IsFalse(shell.IsCanonicalStoryWorkspaceVisible);
+        Assert.IsTrue(canonical.StoryEditor.IsDirty);
+        Assert.IsTrue(shell.EffectiveResourceBrowserVisible);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+        Assert.IsTrue(shell.IsCanonicalStoryWorkspaceVisible);
+        Assert.AreSame(canonical, shell.CanonicalStoryWorkspace);
         shell.SaveCurrentResourceCommand.Execute(null);
         Assert.IsFalse(shell.CanonicalStoryWorkspace.HasDirtyEditors);
         Assert.HasCount(2, store.Stories.Load("opening").Graph!.Nodes);
 
         shell.ShowProjectHomeCommand.Execute(null);
 
-        Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
+        Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
+        Assert.IsFalse(shell.IsCanonicalStoryWorkspaceVisible);
         Assert.IsTrue(shell.EffectiveResourceBrowserVisible);
         Assert.AreEqual("opening", shell.ProjectHome.SelectedStory?.Id);
     }

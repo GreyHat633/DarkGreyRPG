@@ -15,6 +15,14 @@ public readonly record struct GraphEditorNodePosition(double X, double Y)
     public bool IsFinite => double.IsFinite(X) && double.IsFinite(Y);
 }
 
+/// <summary>Identifies nodes whose rendered port projection changed.</summary>
+public sealed class GraphPortsChangedEventArgs : EventArgs
+{
+    public GraphPortsChangedEventArgs(IReadOnlyList<string> nodeIds) => NodeIds = nodeIds;
+
+    public IReadOnlyList<string> NodeIds { get; }
+}
+
 /// <summary>Bindable canonical port projection.</summary>
 public sealed class GraphEditorPortViewModel : ObservableObject
 {
@@ -221,6 +229,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     /// advance the graph revision.
     /// </summary>
     public event EventHandler? GraphChanged;
+    public event EventHandler<GraphPortsChangedEventArgs>? PortsChanged;
 
     public GraphEditorHostViewModel(GraphDocument graph, GraphScope scope)
         : this(graph, scope, compatibilityMode: false, layout: null) { }
@@ -419,6 +428,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         if (originals is null || originals.Count == 0) return false;
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
+        var beforePorts = CapturePortSignatures();
         var current = originals.Where(connection => connection is not null).ToArray();
         if (current.Length != originals.Count || current.Select(connection => connection).Distinct().Count() != current.Length)
             return false;
@@ -431,7 +441,11 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         {
             var disconnected = _session.ReplaceConnections(current, []);
             Refresh(_session.LastValidationIssues);
-            if (disconnected) PublishGraphChanged();
+            if (disconnected)
+            {
+                PublishGraphChanged();
+                PublishPortsChanged(beforePorts);
+            }
             NotifyHistoryStateChanged(oldUndo, oldRedo);
             return disconnected;
         }
@@ -467,7 +481,11 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
         var reconnected = _session.ReplaceConnections(current, candidates);
         Refresh(_session.LastValidationIssues);
-        if (reconnected) PublishGraphChanged();
+        if (reconnected)
+        {
+            PublishGraphChanged();
+            PublishPortsChanged(beforePorts);
+        }
         NotifyHistoryStateChanged(oldUndo, oldRedo);
         return reconnected;
     }
@@ -585,6 +603,26 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         IReadOnlyDictionary<string, JsonElement> properties)
         => ExecuteSession(() => _session.SetStoryStartTriggerProperties(nodeId, portId, properties));
 
+    public bool AddStoryStartTrigger(string nodeId, string displayName, string triggerType,
+        IReadOnlyDictionary<string, JsonElement>? triggerProperties = null)
+        => ExecuteSession(() => _session.AddStoryStartTrigger(nodeId, displayName, triggerType, triggerProperties));
+
+    public bool SetStoryStartTriggerType(string nodeId, string portId, string triggerType,
+        string? actorId = null)
+        => ExecuteSession(() => _session.SetStoryStartTriggerType(nodeId, portId, triggerType, actorId));
+
+    public bool RenameStoryStartTrigger(string nodeId, string portId, string displayName)
+        => ExecuteSession(() => _session.RenameStoryStartTrigger(nodeId, portId, displayName));
+
+    public bool ReorderStoryStartTrigger(string nodeId, string portId, int order)
+        => ExecuteSession(() => _session.ReorderStoryStartTrigger(nodeId, portId, order));
+
+    public bool RemoveStoryStartTrigger(string nodeId, string portId, bool confirmReferencedRemoval = false)
+        => ExecuteSession(() => _session.RemoveStoryStartTrigger(nodeId, portId, confirmReferencedRemoval));
+
+    public bool SetStoryStartRepeatPolicy(string nodeId, string repeatPolicy)
+        => ExecuteSession(() => _session.SetStoryStartRepeatPolicy(nodeId, repeatPolicy));
+
     public bool ChangeObjectiveType(string nodeId, string? type, string? actorId = null)
         => ExecuteSession(() => _session.ChangeObjectiveType(nodeId, type, actorId));
 
@@ -639,12 +677,14 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         var oldUndoCount = _session.UndoCount;
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
+        var beforePorts = CapturePortSignatures();
         var result = _session.ApplyAggregateSynchronization(plan, confirmReferencedRemoval);
         var changed = result && _session.UndoCount != oldUndoCount;
         if (changed)
         {
             Refresh(_session.LastValidationIssues);
             PublishGraphChanged();
+            PublishPortsChanged(beforePorts);
         }
         else PublishState(_session.LastValidationIssues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -662,12 +702,14 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     {
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
+        var beforePorts = CapturePortSignatures();
         var result = command();
         var issues = _commandBridge.LastValidationIssues;
         if (result)
         {
             Refresh(issues);
             PublishGraphChanged();
+            PublishPortsChanged(beforePorts);
         }
         else PublishState(issues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -678,12 +720,14 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     {
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
+        var beforePorts = CapturePortSignatures();
         var result = command();
         var issues = _session.LastValidationIssues;
         if (result)
         {
             Refresh(issues);
             PublishGraphChanged();
+            PublishPortsChanged(beforePorts);
         }
         else PublishState(issues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -701,6 +745,36 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         GraphRevision++;
         OnPropertyChanged(nameof(GraphRevision));
         GraphChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private Dictionary<string, string> CapturePortSignatures()
+    {
+        var signatures = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var node in (Graph.Nodes ?? []).Where(node => node is not null))
+        {
+            var id = node.Id ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(id)) continue;
+            var signature = string.Join("\u001e", (node.Ports ?? [])
+                .Where(port => port is not null)
+                .OrderBy(port => port.Order)
+                .ThenBy(port => port.Id ?? string.Empty, StringComparer.Ordinal)
+                .Select(port => string.Join("\u001f", port.Id ?? string.Empty, port.DisplayName ?? string.Empty,
+                    port.Direction, port.InterfaceKind, port.Order)));
+            if (!signatures.TryAdd(id, signature)) signatures.Remove(id);
+        }
+        return signatures;
+    }
+
+    private void PublishPortsChanged(IReadOnlyDictionary<string, string> before)
+    {
+        var after = CapturePortSignatures();
+        var changed = before.Keys.Union(after.Keys, StringComparer.Ordinal)
+            .Where(id => !before.TryGetValue(id, out var oldSignature)
+                || !after.TryGetValue(id, out var newSignature)
+                || !string.Equals(oldSignature, newSignature, StringComparison.Ordinal))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        if (changed.Length != 0) PortsChanged?.Invoke(this, new GraphPortsChangedEventArgs(changed));
     }
 
     private void PublishState(IReadOnlyList<ValidationIssue> issues)

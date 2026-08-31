@@ -15,6 +15,124 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalStoryResourceShellTests
 {
     [TestMethod]
+    public void DisplayNameOnlyRenamePreservesIdentityOwnershipAndSynchronizesGraphAggregates()
+    {
+        using var project = new CanonicalProjectFixture();
+        project.AddOwnedSessionWithAggregate(includeConnection: false);
+        var actors = new ActorRepository(project.Root);
+        actors.SaveActor(actors.CreateActor("actor", "Actor"));
+        var items = new ItemRepository(project.Root);
+        items.SaveItem(new IndividualItemResource { ItemId = "item", DisplayName = "Item", Tags = ["tag"] });
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
+        settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
+        var task = new GraphResourceEnvelope(
+            GraphResourceKind.Task,
+            "opening_task",
+            "Opening Task",
+            new GraphDocument([
+                GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"),
+                settle ]));
+        project.Store.Tasks.Create(task);
+        var membership = project.Store.Memberships.Load("opening");
+        var owned = membership.OwnedResources;
+        owned.Actors.Add("actor");
+        owned.Items.Add("item");
+        owned.Tasks.Add("opening_task");
+        membership.OwnedResources = owned;
+        project.Store.Memberships.Replace(membership);
+        var graphDialogs = new FakeCanonicalDialogs { DisplayNameResult = "Renamed Graph" };
+        var actorDialogs = new FakeActorDialogs { DisplayNameResult = "Renamed Actor" };
+        var itemDialogs = new FakeItemDialogs { DisplayNameResult = "Renamed Item" };
+        var shell = project.OpenShell(graphDialogs, actorDialogs: actorDialogs, itemDialogs: itemDialogs);
+        var workspace = shell.CanonicalStoryWorkspace!;
+        Assert.IsTrue(workspace.PlaceAggregate(workspace.TaskItems.Single(), "task-placement", 100, 100));
+        shell.SaveCurrentResourceCommand.Execute(null);
+        Assert.IsFalse(workspace.StoryEditor.IsDirty, shell.StatusMessage);
+        var ownershipBefore = project.Store.Memberships.Load("opening").ToJson(indented: false);
+
+        Assert.IsTrue(workspace.RequestRename(workspace.ActorItems.Single()));
+        Assert.IsTrue(workspace.RequestRename(workspace.ItemItems.Single()));
+        Assert.IsTrue(workspace.RequestRename(workspace.SessionItems.Single()));
+        Assert.IsTrue(workspace.RequestRename(workspace.TaskItems.Single()));
+
+        Assert.AreEqual("Renamed Actor", actors.LoadActor("actor").DisplayName);
+        Assert.AreEqual("Renamed Item", items.LoadItem("item").DisplayName);
+        Assert.AreEqual(IndividualItemResource.ResourceType, items.LoadItem("item").Type);
+        CollectionAssert.AreEqual(new[] { "tag" }, items.LoadItem("item").Tags);
+        Assert.AreEqual("Renamed Graph", project.Store.Sessions.Load("opening_session").DisplayName);
+        Assert.AreEqual("Renamed Graph", project.Store.Tasks.Load("opening_task").DisplayName, shell.StatusMessage);
+        Assert.AreEqual("Renamed Actor", workspace.ActorItems.Single().DisplayName);
+        Assert.AreEqual("Renamed Item", workspace.ItemItems.Single().DisplayName);
+        Assert.AreEqual("Renamed Graph", workspace.SessionItems.Single().DisplayName);
+        Assert.AreEqual("Renamed Graph", workspace.TaskItems.Single().DisplayName);
+        var persistedStory = project.Store.Stories.Load("opening");
+        Assert.AreEqual("Renamed Graph", persistedStory.Graph!.Nodes.Single(node =>
+            node.Properties.TryGetValue("resource_id", out var id) && id.GetString() == "opening_session").DisplayName);
+        Assert.AreEqual("Renamed Graph", persistedStory.Graph!.Nodes.Single(node =>
+            node.Properties.TryGetValue("resource_id", out var id) && id.GetString() == "opening_task").DisplayName);
+        Assert.AreEqual(ownershipBefore, project.Store.Memberships.Load("opening").ToJson(indented: false));
+    }
+
+    [TestMethod]
+    public void ProjectBreadcrumbKeepsDirtyCanonicalWorkspaceAliveAndSameStoryRestoresIt()
+    {
+        using var project = new CanonicalProjectFixture();
+        project.AddOwnedSessionWithAggregate(includeConnection: false);
+        var shell = project.OpenShell(new FakeCanonicalDialogs());
+        var workspace = shell.CanonicalStoryWorkspace!;
+        var session = workspace.SessionItems.Single();
+        Assert.IsTrue(workspace.OpenGraphResource(session));
+        Assert.IsTrue(session.Editor.Host.AddNode(
+            GraphNodeFactory.Create(GraphScope.Session, "line", "draft-line")));
+        var projectBreadcrumb = workspace.Breadcrumbs[0];
+        Assert.AreEqual("Test Project", projectBreadcrumb.DisplayName);
+
+        Assert.IsTrue(workspace.ActivateBreadcrumb(projectBreadcrumb));
+
+        Assert.IsFalse(shell.IsCanonicalStoryWorkspaceVisible);
+        Assert.AreSame(workspace, shell.CanonicalStoryWorkspace);
+        Assert.AreSame(session.Editor, workspace.ActiveEditor);
+        Assert.IsTrue(session.Editor.IsDirty);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+        Assert.IsTrue(shell.IsCanonicalStoryWorkspaceVisible);
+        Assert.AreSame(workspace, shell.CanonicalStoryWorkspace);
+        Assert.AreSame(session.Editor, workspace.ActiveEditor);
+        Assert.IsTrue(session.Editor.Host.Graph.Nodes.Any(node => node.Id == "draft-line"));
+    }
+
+    [TestMethod]
+    public void ResourceOrderPersistsAcrossShellReloadAndSurvivesDeleteCreate()
+    {
+        using var project = new CanonicalProjectFixture();
+        var lifecycle = new CanonicalStoryResourceLifecycleService(project.Store);
+        lifecycle.CreateOwnedSession("opening", "session_a", "Session A");
+        lifecycle.CreateOwnedSession("opening", "session_b", "Session B");
+        lifecycle.CreateOwnedSession("opening", "session_c", "Session C");
+        var firstShell = project.OpenShell(new FakeCanonicalDialogs());
+        var firstFolder = firstShell.CanonicalStoryWorkspace!.Folders
+            .Single(folder => folder.Kind == CanonicalStoryFolderKind.Sessions);
+
+        Assert.IsTrue(firstShell.CanonicalStoryWorkspace.ReorderResource(
+            firstFolder.Items.Single(item => item.Id == "session_c"),
+            firstFolder.Items.Single(item => item.Id == "session_a")));
+        CollectionAssert.AreEqual(
+            new[] { "session_c", "session_a", "session_b" },
+            project.Store.Memberships.Load("opening").DisplayOrder.Sessions);
+
+        var reloadedShell = project.OpenShell(new FakeCanonicalDialogs());
+        CollectionAssert.AreEqual(
+            new[] { "session_c", "session_a", "session_b" },
+            reloadedShell.CanonicalStoryWorkspace!.SessionItems.Select(item => item.Id).ToArray());
+
+        lifecycle.DeleteOwnedSession("opening", "session_a");
+        lifecycle.CreateOwnedSession("opening", "session_d", "Session D");
+        var changedShell = project.OpenShell(new FakeCanonicalDialogs());
+        CollectionAssert.AreEqual(
+            new[] { "session_c", "session_b", "session_d" },
+            changedShell.CanonicalStoryWorkspace!.SessionItems.Select(item => item.Id).ToArray());
+    }
+
+    [TestMethod]
     public void SavingSessionSynchronizesEveryStoryAggregateAndPreservesStableConnections()
     {
         using var project = new CanonicalProjectFixture();
@@ -325,6 +443,7 @@ public sealed class CanonicalStoryResourceShellTests
 
     private sealed class FakeCanonicalDialogs : ICanonicalStoryResourceDialogs
     {
+        public string? DisplayNameResult { get; init; }
         public CanonicalGraphResourceIdentityRequest? CreateResult { get; init; }
         public CanonicalGraphResourceChoice? PickResult { get; init; }
         public bool RemoveReferenceConfirmed { get; init; }
@@ -336,6 +455,9 @@ public sealed class CanonicalStoryResourceShellTests
         public int AggregateRemovalConfirmationCount { get; private set; }
         public IReadOnlyList<string> LastDeleteBlockers { get; private set; } = [];
         public IReadOnlyList<GraphConnection> LastAggregateReferences { get; private set; } = [];
+
+        public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
+            => DisplayNameResult;
 
         public CanonicalGraphResourceIdentityRequest? RequestCreate(
             GraphResourceKind resourceKind,
@@ -382,8 +504,12 @@ public sealed class CanonicalStoryResourceShellTests
 
     private sealed class FakeActorDialogs : IActorWorkspaceDialogs
     {
+        public string? DisplayNameResult { get; init; }
         public ActorIdentityRequest? CreateResult { get; init; }
         public int CreateRequestCount { get; private set; }
+
+        public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
+            => DisplayNameResult;
 
         public ActorCreationMode? RequestCreationMode(string storyDisplayName) => ActorCreationMode.Blank;
         public ActorIdentityRequest? RequestCreate(string suggestedId)
@@ -407,8 +533,12 @@ public sealed class CanonicalStoryResourceShellTests
 
     private sealed class FakeItemDialogs : IItemWorkspaceDialogs
     {
+        public string? DisplayNameResult { get; init; }
         public ItemIdentityRequest? CreateResult { get; init; }
         public int CreateRequestCount { get; private set; }
+
+        public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
+            => DisplayNameResult;
 
         public ItemCreationMode? RequestCreationMode(string storyDisplayName) => ItemCreationMode.Individual;
         public ItemIdentityRequest? RequestCreate(CanonicalStoryItemKind kind, string suggestedId)
