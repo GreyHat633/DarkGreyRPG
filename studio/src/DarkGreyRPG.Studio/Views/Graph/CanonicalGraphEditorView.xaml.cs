@@ -776,17 +776,29 @@ public partial class CanonicalGraphEditorView : UserControl
         _wireOriginal = original;
         _incidentWireReconnect = false;
         _wireOriginals = original is null ? [] : [original];
-        if (original is null && IsMultiIncidentPort(endpoint))
+        if (original is null)
         {
             var incident = (_host.Graph.Connections ?? [])
                 .Where(connection => connection is not null && IsIncident(connection, endpoint))
                 .ToArray();
-            // A single existing edge remains the normal "add a wire" gesture;
-            // bundle dragging is reserved for an endpoint that actually has
-            // multiple incident wires.
-            if (incident.Length > 1)
+            if (IsMultiIncidentPort(endpoint))
             {
-                _incidentWireReconnect = true;
+                // Flow inputs and Logic outputs may fan in/out. A single
+                // existing edge therefore remains the normal add gesture;
+                // bundle dragging starts only when there are multiple real
+                // incident wires to move together.
+                if (incident.Length > 1)
+                {
+                    _incidentWireReconnect = true;
+                    _wireOriginals = incident;
+                }
+            }
+            else if (incident.Length == 1)
+            {
+                // Flow outputs and Logic inputs have cardinality one. Dragging
+                // an occupied endpoint must carry its existing formal wire as
+                // a reconnect transaction instead of drawing a second draft.
+                _wireOriginal = incident[0];
                 _wireOriginals = incident;
             }
         }

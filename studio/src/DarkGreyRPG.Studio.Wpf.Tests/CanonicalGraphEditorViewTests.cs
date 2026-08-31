@@ -61,6 +61,20 @@ public sealed class CanonicalGraphEditorViewTests
     }
 
     [STATestMethod]
+    public void InlineParameterLabelsUseReadableForegroundOnDarkNodeSurface()
+    {
+        var host = new GraphEditorHostViewModel(Graph(GraphScope.Task), GraphScope.Task);
+        var view = Arrange(host);
+        var source = view.NodeVisuals.Single(node => node.Node?.NodeId == "source");
+        var expected = Color.FromRgb(0xF7, 0xFA, 0xFC);
+
+        Assert.AreEqual(expected, ((SolidColorBrush)source.Foreground).Color);
+        foreach (var label in Descendants<TextBlock>(source)
+                     .Where(text => text.Text is "参数" or "目标类型" or "目标对象" or "数量"))
+            Assert.AreEqual(expected, ((SolidColorBrush)label.Foreground).Color, label.Text);
+    }
+
+    [STATestMethod]
     public void ConnectionAndDisconnectRouteThroughHostWithoutChangingLayout()
     {
         var graph = Graph(GraphScope.StoryFlow);
@@ -363,6 +377,57 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.HasCount(2, host.Connections);
         Assert.IsFalse(host.Connections.Any(connection => connection.ToNodeId == original.ToNodeId));
         Assert.IsTrue(host.Connections.Any(connection => connection.ToNodeId == "three"));
+    }
+
+    [STATestMethod]
+    public void DirectConnectedFlowOutputReusesFormalWireAndReconnectsInsteadOfCreatingPreview()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "action", "Source", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("original", "action", "Original", [new("in", "Input", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("replacement", "action", "Replacement", [new("in", "Input", true, GraphInterfaceKind.Flow)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("original", "in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var replacement = view.PortVisuals.Single(port => port.NodeId == "replacement");
+        var originalVisual = view.ConnectionVisuals.Single();
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.HasCount(1, view.ActiveWireVisuals);
+        Assert.AreSame(originalVisual, view.ActiveWireVisuals.Single());
+        Assert.IsTrue(view.CompleteConnectionDrag(replacement));
+
+        var connection = host.Connections.Single();
+        Assert.AreEqual("source", connection.FromNodeId);
+        Assert.AreEqual("out", connection.FromPortId);
+        Assert.AreEqual("replacement", connection.ToNodeId);
+        Assert.AreEqual("in", connection.ToPortId);
+        Assert.IsFalse(host.LastValidationIssues.Any(issue =>
+            issue.Code == "graph.connection.flow.output.multiple_targets"));
+    }
+
+    [STATestMethod]
+    public void DirectConnectedFlowOutputCancelRestoresOriginalFormalWire()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "action", "Source", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("target", "action", "Target", [new("in", "Input", true, GraphInterfaceKind.Flow)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("target", "in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var originalVisual = view.ConnectionVisuals.Single();
+        var before = graph.ToJson();
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreSame(originalVisual, view.ActiveWireVisuals.Single());
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.AreEqual(view.ConnectionHitTargets.Single().Data.ToString(), originalVisual.Data.ToString());
     }
 
     [STATestMethod]

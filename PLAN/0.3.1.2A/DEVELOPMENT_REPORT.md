@@ -2,9 +2,11 @@
 
 ## Result
 
-`0.3.1.2A RC — NEED_USER_VERIFICATION`
+`0.3.1.2A PLAN A — USER_CLOSED_FOR_HANDOFF (PROVISIONAL)`
 
-All A1-A15 work packages are implemented in source. Automated regression and the standalone Release EXE pass the recorded cases, but the PLAN's complete user-facing matrix is not fully closed. No A-scope failure is labeled PASS, and no `USER_ACCEPTED` claim is made.
+All A1-A15 work packages are implemented in source. On 2026-09-01, the user explicitly instructed that PLAN A be treated as complete for now so the next session can continue. This is a user-authorized handoff closure: historical strict-Gate evidence gaps remain documented and are not relabeled as agent-verified.
+
+Latest local handoff candidate after the A8 cursor redesign: `.tooling/0312a-cursor-icon/publish/DarkGreyRPGStudio.exe`, SHA-256 `411485E355885AAE9CD95FA31E41B5C6A9B5EF5FEB192508C28002EB1C2D41AD`; final WPF regression **360/360 PASS**. The older `dist` RC remains unchanged.
 
 ## Source and artifact
 
@@ -56,9 +58,9 @@ The final WPF suite includes live-found regression coverage for folder-header re
 
 Available intermediate failure screenshots are retained under `evidence/live/diagnostics/` and excluded from passing evidence.
 
-## Remaining manual Gate
+## Deferred historical Gate evidence
 
-The following need user verification or a later fully instrumented acceptance run before `USER_ACCEPTED`:
+The following were not fully instrumented under the original strict matrix. They are retained for traceability but were explicitly deferred by the user's provisional PLAN A closure:
 
 - A1 at 100% DPI.
 - A2 original Alt defect reproduction on the user's interaction path.
@@ -76,7 +78,7 @@ A4, A7, A11, and A14 are `AGENT_VERIFIED`; other Gate statuses and partial evide
 
 ## Delivery boundary
 
-- The RC branch may be pushed.
-- Do not merge, tag, or create a GitHub Release from this report.
-- Do not begin 0.3.1.2B until the user explicitly says `0.3.1.2A 通过`.
+- PLAN A may be treated as complete by the next session, with the provisional/user-authorized evidence boundary above.
+- Do not push, merge, tag, create a GitHub Release, or replace the old `dist` RC without separate authorization.
+- The next session may continue subsequent planned work; it must not reinterpret deferred Gate evidence as having been independently re-run.
 - User-owned `.codex/config.toml`, `AGENTS.md`, `.dotnet-home/`, and unrelated pre-existing PLAN files remain outside the RC commits.

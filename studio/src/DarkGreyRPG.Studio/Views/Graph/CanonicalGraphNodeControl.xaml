@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:DarkGreyRPG.Studio.Views"
              xmlns:graphview="clr-namespace:DarkGreyRPG.Studio.Views.Graph"
-             Width="232" MinHeight="92" Focusable="True">
+             Width="232" MinHeight="92" Focusable="True" Foreground="#F7FAFC">
     <Border x:Name="NodeBorder" Background="#25292F" BorderBrush="#59616D" BorderThickness="1" CornerRadius="6"
             Padding="0" AutomationProperties.AutomationId="CanonicalGraphNodeBorder">
         <Grid>
@@ -24,6 +24,7 @@
                 <StackPanel x:Name="OutputPortsPanel" Grid.Column="1" HorizontalAlignment="Right" />
             </Grid>
             <Expander x:Name="ParameterInteractiveZone" Grid.Row="2" Margin="7,0,7,7" Header="参数" IsExpanded="True"
+                       Foreground="#F7FAFC"
                        AutomationProperties.AutomationId="CanonicalNodeParameterSummary">
                 <Expander.Style>
                     <Style TargetType="Expander">

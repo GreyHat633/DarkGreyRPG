@@ -1,6 +1,29 @@
 # DarkGrey RPG Studio 0.3.1.2A Manual Acceptance
 
-Overall status: **0.3.1.2A RC — NEED_USER_VERIFICATION**
+Overall status: **0.3.1.2A PLAN A — USER_CLOSED_FOR_HANDOFF (PROVISIONAL)**
+
+## 2026-09-01 User closure for handoff
+
+- The user explicitly instructed that PLAN A be recorded as complete for now so the next session can continue subsequent work.
+- This is a **user-authorized provisional closure**, not a claim that every historical strict Gate was re-run or that every earlier evidence gap became agent-verified.
+- A1 is accepted at 125% with the unavailable 100% run waived; A2 is user-accepted on the clarified held-Alt plus middle-pan path; the replacement A8 scissors cursor is accepted for PLAN A handoff.
+- Remaining historical evidence gaps in A3/A5/A6/A9/A10/A12/A13/A15 are deferred by the user and do not block this handoff status. Their original records remain below for traceability.
+- This closure does not authorize commit, push, merge, tag, Release creation, or replacement of the old `dist` RC.
+
+## 2026-09-01 A8 replacement candidate
+
+- **A8: REPAIRED_IN_CANDIDATE / NEED_USER_VERIFICATION.** The rejected thin-line scissors artwork was replaced with a compact 32x32 pointer icon: two separated tapered blades, two small finger loops with transparent openings, a blue-gray outline that remains visible on the dark Flow canvas, and an explicit `(11,17)` cutting-pivot hotspot.
+- Candidate EXE: `.tooling/0312a-cursor-icon/publish/DarkGreyRPGStudio.exe`, SHA-256 `411485E355885AAE9CD95FA31E41B5C6A9B5EF5FEB192508C28002EB1C2D41AD`.
+- Validation: focused cursor payload/geometry tests 2/2 PASS; complete WPF suite 360/360 PASS; the real candidate window returned hotspot `(11,17)` and was captured at `.tooling/0312a-cursor-icon/live-scissors-cursor.png`.
+- Final A8 visual acceptance remains with the user; the historical Gate A8 record below describes the earlier rejected cursor and is retained unchanged.
+
+## 2026-08-31 User follow-up
+
+- **A1: USER_ACCEPTED.** The user confirmed that this workstation cannot provide a separate 100% DPI run and explicitly accepted the verified 125% results as sufficient. The earlier 100% DPI evidence requirement is waived for this release candidate.
+- **A2: USER_ACCEPTED.** The user manually exercised the latest candidate using the clarified gesture (hold Left Alt, then middle-mouse pan the Flow graph) and reported that the white rectangle no longer appears. The earlier BLOCKED result came from an incomplete short Alt down/up reproduction path and is superseded by this user check.
+- **A8: REOPENED / USER_REJECTED.** The custom scissors cursor is functionally present, but the user rejected its current visual design as too ugly and requested a compact pointer-oriented scissors icon. A8 must be re-verified after the cursor artwork is replaced.
+
+The historical Gate entries below are retained as the evidence state of the earlier RC and are not rewritten retroactively.
 
 Build source SHA for every Gate below: `34105dbbfac109df0b3db5f6ac4b8f605e6be98b`.
 
@@ -173,4 +196,4 @@ Status: BLOCKED — NEED_USER_VERIFICATION.
 
 ## User Gate
 
-This document does not claim `USER_ACCEPTED`. Per PLAN, that state is allowed only after the user explicitly says `0.3.1.2A 通过`.
+PLAN A is recorded as `USER_CLOSED_FOR_HANDOFF (PROVISIONAL)` by explicit user instruction on 2026-09-01. Historical Gate statuses above remain evidence records rather than current blockers. No publication action is implied.

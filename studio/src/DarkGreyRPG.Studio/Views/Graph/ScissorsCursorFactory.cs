@@ -3,10 +3,15 @@ using System.Windows.Input;
 
 namespace DarkGreyRPG.Studio.Views.Graph;
 
-/// <summary>Creates the Studio's small high-contrast scissors cursor without an external asset.</summary>
+/// <summary>Creates the Studio's compact high-contrast scissors cursor without an external asset.</summary>
 internal static class ScissorsCursorFactory
 {
     private const int Size = 32;
+    private const int HotspotX = 11;
+    private const int HotspotY = 17;
+    private const byte OutlineRed = 24;
+    private const byte OutlineGreen = 76;
+    private const byte OutlineBlue = 99;
     private static readonly MemoryStream CursorStream = new(BuildCursorBytes(), writable: false);
 
     public static Cursor Cursor { get; } = new(CursorStream);
@@ -14,16 +19,31 @@ internal static class ScissorsCursorFactory
     private static byte[] BuildCursorBytes()
     {
         var pixels = new byte[Size * Size * 4];
-        DrawLine(pixels, 12, 17, 28, 3, 3, 20, 24, 30);
-        DrawLine(pixels, 12, 17, 28, 3, 1, 235, 242, 248);
-        DrawLine(pixels, 13, 18, 27, 13, 3, 20, 24, 30);
-        DrawLine(pixels, 13, 18, 27, 13, 1, 235, 242, 248);
-        DrawCircle(pixels, 8, 22, 6, 2, 20, 24, 30);
-        DrawCircle(pixels, 8, 22, 4, 2, 112, 215, 255);
-        DrawCircle(pixels, 16, 25, 6, 2, 20, 24, 30);
-        DrawCircle(pixels, 16, 25, 4, 2, 112, 215, 255);
-        FillCircle(pixels, 13, 18, 3, 20, 24, 30);
-        FillCircle(pixels, 13, 18, 1, 235, 242, 248);
+
+        // Compact loop handles: dark outer edge, cyan metal, and transparent finger openings.
+        DrawLoop(pixels,
+            [(2, 20), (4, 17), (7, 17), (10, 19), (11, 22), (9, 25), (6, 26), (3, 24)],
+            [(4, 20), (5, 19), (7, 19), (8, 20), (9, 22), (8, 23), (6, 24), (4, 23)],
+            [(6, 20), (7, 20), (8, 22), (7, 23), (6, 22)]);
+        DrawLoop(pixels,
+            [(10, 23), (12, 20), (15, 21), (18, 24), (19, 27), (17, 30), (14, 30), (11, 27)],
+            [(12, 24), (13, 22), (15, 23), (17, 25), (17, 27), (15, 28), (13, 27)],
+            [(14, 24), (15, 24), (16, 25), (16, 27), (14, 26)]);
+
+        // Two separate tapered blades open toward the upper-right and lower-right.
+        DrawBlade(pixels,
+            [(10, 16), (12, 14), (27, 2), (30, 2), (29, 5), (13, 18)],
+            [(12, 16), (13, 15), (27, 4), (28, 4), (28, 5), (13, 17)],
+            235, 242, 248);
+        DrawBlade(pixels,
+            [(10, 17), (13, 17), (29, 9), (30, 11), (29, 14), (13, 20)],
+            [(12, 18), (14, 18), (28, 11), (29, 11), (28, 12), (14, 19)],
+            112, 215, 255);
+
+        // Small pivot reinforces the cutting point without hiding the blade split.
+        FillPolygon(pixels, [(8, 16), (11, 14), (14, 16), (14, 19), (11, 21), (8, 19)],
+            OutlineRed, OutlineGreen, OutlineBlue);
+        FillPolygon(pixels, [(10, 16), (11, 15), (13, 17), (12, 19), (10, 18)], 235, 242, 248);
 
         var andMask = BuildAndMask(pixels);
         const int bitmapHeaderSize = 40;
@@ -37,8 +57,8 @@ internal static class ScissorsCursorFactory
         writer.Write((byte)Size);
         writer.Write((byte)0);
         writer.Write((byte)0);
-        writer.Write((ushort)13);
-        writer.Write((ushort)18);
+        writer.Write((ushort)HotspotX);
+        writer.Write((ushort)HotspotY);
         writer.Write(imageSize);
         writer.Write(22);
 
@@ -58,6 +78,21 @@ internal static class ScissorsCursorFactory
         return stream.ToArray();
     }
 
+    private static void DrawLoop(byte[] pixels, (int X, int Y)[] outer, (int X, int Y)[] inner,
+        (int X, int Y)[] hole)
+    {
+        FillPolygon(pixels, outer, OutlineRed, OutlineGreen, OutlineBlue);
+        FillPolygon(pixels, inner, 112, 215, 255);
+        ClearPolygon(pixels, hole);
+    }
+
+    private static void DrawBlade(byte[] pixels, (int X, int Y)[] outer, (int X, int Y)[] inner,
+        byte red, byte green, byte blue)
+    {
+        FillPolygon(pixels, outer, OutlineRed, OutlineGreen, OutlineBlue);
+        FillPolygon(pixels, inner, red, green, blue);
+    }
+
     private static byte[] BuildAndMask(byte[] pixels)
     {
         var stride = ((Size + 31) / 32) * 4;
@@ -73,44 +108,44 @@ internal static class ScissorsCursorFactory
         return mask;
     }
 
-    private static void DrawLine(byte[] pixels, int x0, int y0, int x1, int y1, int thickness,
+    private static void FillPolygon(byte[] pixels, (int X, int Y)[] points,
         byte red, byte green, byte blue)
     {
-        var dx = Math.Abs(x1 - x0);
-        var sx = x0 < x1 ? 1 : -1;
-        var dy = -Math.Abs(y1 - y0);
-        var sy = y0 < y1 ? 1 : -1;
-        var error = dx + dy;
-        while (true)
-        {
-            FillCircle(pixels, x0, y0, thickness / 2, red, green, blue);
-            if (x0 == x1 && y0 == y1) break;
-            var twice = error * 2;
-            if (twice >= dy) { error += dy; x0 += sx; }
-            if (twice <= dx) { error += dx; y0 += sy; }
-        }
+        var minX = Math.Max(0, points.Min(point => point.X));
+        var maxX = Math.Min(Size - 1, points.Max(point => point.X));
+        var minY = Math.Max(0, points.Min(point => point.Y));
+        var maxY = Math.Min(Size - 1, points.Max(point => point.Y));
+        for (var y = minY; y <= maxY; y++)
+        for (var x = minX; x <= maxX; x++)
+            if (IsInsidePolygon(x + 0.5, y + 0.5, points))
+                SetPixel(pixels, x, y, red, green, blue);
     }
 
-    private static void DrawCircle(byte[] pixels, int centerX, int centerY, int radius, int thickness,
-        byte red, byte green, byte blue)
+    private static void ClearPolygon(byte[] pixels, (int X, int Y)[] points)
     {
-        var inner = Math.Max(0, radius - thickness);
-        for (var y = centerY - radius; y <= centerY + radius; y++)
-        for (var x = centerX - radius; x <= centerX + radius; x++)
-        {
-            var distance = (x - centerX) * (x - centerX) + (y - centerY) * (y - centerY);
-            if (distance <= radius * radius && distance >= inner * inner)
-                SetPixel(pixels, x, y, red, green, blue);
-        }
+        var minX = Math.Max(0, points.Min(point => point.X));
+        var maxX = Math.Min(Size - 1, points.Max(point => point.X));
+        var minY = Math.Max(0, points.Min(point => point.Y));
+        var maxY = Math.Min(Size - 1, points.Max(point => point.Y));
+        for (var y = minY; y <= maxY; y++)
+        for (var x = minX; x <= maxX; x++)
+            if (IsInsidePolygon(x + 0.5, y + 0.5, points))
+                ClearPixel(pixels, x, y);
     }
 
-    private static void FillCircle(byte[] pixels, int centerX, int centerY, int radius,
-        byte red, byte green, byte blue)
+    private static bool IsInsidePolygon(double x, double y, (int X, int Y)[] points)
     {
-        for (var y = centerY - radius; y <= centerY + radius; y++)
-        for (var x = centerX - radius; x <= centerX + radius; x++)
-            if ((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY) <= radius * radius)
-                SetPixel(pixels, x, y, red, green, blue);
+        var inside = false;
+        for (var i = 0; i < points.Length; i++)
+        {
+            var current = points[i];
+            var next = points[(i + 1) % points.Length];
+            if ((current.Y > y) == (next.Y > y)) continue;
+            var intersectionX = (next.X - current.X) * (y - current.Y) /
+                                (next.Y - current.Y) + current.X;
+            if (x < intersectionX) inside = !inside;
+        }
+        return inside;
     }
 
     private static void SetPixel(byte[] pixels, int x, int y, byte red, byte green, byte blue)
@@ -121,6 +156,15 @@ internal static class ScissorsCursorFactory
         pixels[offset + 1] = green;
         pixels[offset + 2] = red;
         pixels[offset + 3] = 255;
+    }
+
+    private static void ClearPixel(byte[] pixels, int x, int y)
+    {
+        var offset = PixelOffset(x, y);
+        pixels[offset] = 0;
+        pixels[offset + 1] = 0;
+        pixels[offset + 2] = 0;
+        pixels[offset + 3] = 0;
     }
 
     private static int PixelOffset(int x, int y) => ((Size - 1 - y) * Size + x) * 4;
