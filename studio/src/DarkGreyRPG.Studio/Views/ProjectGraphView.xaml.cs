@@ -119,19 +119,26 @@ public partial class ProjectGraphView : UserControl
         var root = new AccessibleBorder
         {
             Width = NodeWidth, Height = NodeHeight, Tag = node, Cursor = Cursors.SizeAll,
-            Background = new SolidColorBrush(Color.FromRgb(37, 41, 47)),
-            BorderBrush = node.HasWarning ? Brushes.Orange : new SolidColorBrush(Color.FromRgb(82, 88, 98)),
             BorderThickness = node.HasWarning ? new Thickness(2) : new Thickness(1), CornerRadius = new CornerRadius(6),
             ToolTip = node.WarningText.Length == 0 ? "双击打开 Story Flow" : node.WarningText,
         };
+        root.SetResourceReference(BackgroundProperty, "CardBackgroundFillColorDefaultBrush");
+        root.SetResourceReference(BorderBrushProperty,
+            node.HasWarning ? "SystemFillColorCautionBrush" : "CardStrokeColorDefaultBrush");
         AutomationProperties.SetName(root, $"故事图谱节点 {node.DisplayName} {node.Id}");
         root.PreviewMouseLeftButtonDown += Node_OnPreviewMouseLeftButtonDown;
 
         var panel = new StackPanel();
-        var header = new Border { Background = new SolidColorBrush(node.IsHomeStory ? Color.FromRgb(67, 160, 71) : Color.FromRgb(45, 125, 170)), Padding = new Thickness(10, 7, 10, 7), CornerRadius = new CornerRadius(5, 5, 0, 0) };
-        header.Child = new TextBlock { Text = node.IsHomeStory ? $"★ {node.DisplayName}" : node.DisplayName, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis };
+        var header = new Border { Padding = new Thickness(10, 7, 10, 7), CornerRadius = new CornerRadius(5, 5, 0, 0) };
+        header.SetResourceReference(BackgroundProperty,
+            node.IsHomeStory ? "SystemFillColorSuccessBrush" : "AccentFillColorDefaultBrush");
+        var headerText = new TextBlock { Text = node.IsHomeStory ? $"★ {node.DisplayName}" : node.DisplayName, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis };
+        headerText.SetResourceReference(TextBlock.ForegroundProperty, "TextOnAccentFillColorPrimaryBrush");
+        header.Child = headerText;
         panel.Children.Add(header);
-        panel.Children.Add(new TextBlock { Text = node.Id, Margin = new Thickness(10, 7, 10, 3), Foreground = Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis });
+        var idText = new TextBlock { Text = node.Id, Margin = new Thickness(10, 7, 10, 3), TextTrimming = TextTrimming.CharacterEllipsis };
+        idText.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        panel.Children.Add(idText);
         root.Child = panel;
         return root;
     }
@@ -169,18 +176,18 @@ public partial class ProjectGraphView : UserControl
             var visiblePath = new Path
             {
                 Data = shape.Geometry,
-                Stroke = new SolidColorBrush(Color.FromRgb(108, 177, 255)),
                 StrokeThickness = 3,
                 IsHitTestVisible = false,
             };
+            visiblePath.SetResourceReference(Shape.StrokeProperty, "AccentFillColorDefaultBrush");
             Panel.SetZIndex(visiblePath, -7);
             GraphCanvas.Children.Add(visiblePath);
             var arrow = new Polygon
             {
                 Points = ProjectGraphEdgeGeometry.CreateArrow(shape),
-                Fill = new SolidColorBrush(Color.FromRgb(108, 177, 255)),
                 IsHitTestVisible = false,
             };
+            arrow.SetResourceReference(Shape.FillProperty, "AccentFillColorDefaultBrush");
             Panel.SetZIndex(arrow, -6);
             GraphCanvas.Children.Add(arrow);
             if (edge.Count > 1)
@@ -189,10 +196,12 @@ public partial class ProjectGraphView : UserControl
                 {
                     Padding = new Thickness(5, 1, 5, 1),
                     CornerRadius = new CornerRadius(8),
-                    Background = new SolidColorBrush(Color.FromRgb(34, 78, 112)),
-                    Child = new TextBlock { Text = $"×{edge.Count}", Foreground = Brushes.White, FontSize = 11 },
                     IsHitTestVisible = false,
                 };
+                label.SetResourceReference(BackgroundProperty, "AccentFillColorSecondaryBrush");
+                var countText = new TextBlock { Text = $"×{edge.Count}", FontSize = 11 };
+                countText.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+                label.Child = countText;
                 Canvas.SetLeft(label, shape.LabelPoint.X - 12);
                 Canvas.SetTop(label, shape.LabelPoint.Y - 8);
                 Panel.SetZIndex(label, -5);

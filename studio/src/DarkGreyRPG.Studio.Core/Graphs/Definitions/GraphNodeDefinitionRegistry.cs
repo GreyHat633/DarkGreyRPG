@@ -27,7 +27,9 @@ public static class GraphNodeDefinitionRegistry
         => _definitions.Where(definition => definition.Scope == scope
             && !definition.CompatibilityOnly
             && !definition.Required
-            && !definition.Unique).ToArray();
+            && !definition.Unique
+            && !(scope == GraphScope.StoryFlow && definition.Type is
+                "session" or "task" or "interact_actor" or "enter_region")).ToArray();
 
     public static IReadOnlyList<GraphNodeDefinition> GetForAuthoringScope(GraphScope scope)
         => ForAuthoringScope(scope);
@@ -200,7 +202,7 @@ public static class GraphNodeDefinitionRegistry
                 properties: [
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.TypeProperty, JsonValueKind.String, true, Json("\"kill_entity\"")),
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.DescriptionProperty, JsonValueKind.String, true, Json("\"消灭史莱姆\"")),
-                    NumberProperty(CanonicalTaskObjectiveSchema.RequiredProperty, 10),
+                    NumberProperty(CanonicalTaskObjectiveSchema.RequiredProperty, 10, required: false),
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.EntityProperty, JsonValueKind.String),
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.ItemProperty, JsonValueKind.String),
                     ObjectProperty(CanonicalTaskObjectiveSchema.MetadataProperty),

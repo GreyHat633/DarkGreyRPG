@@ -12,9 +12,6 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <DockPanel>
-            <Button DockPanel.Dock="Right" Width="116" Height="34"
-                    Command="{Binding DataContext.ShowProjectHomeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                    Content="返回故事列表" AutomationProperties.Name="图谱返回故事列表" />
             <StackPanel Orientation="Horizontal">
                 <TextBox Width="170" Margin="0,0,8,0" Padding="8,5" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          AutomationProperties.Name="搜索故事图谱" />
@@ -94,7 +91,7 @@
         </Border>
 
         <Grid Grid.Row="4">
-            <local:AccessibleBorder x:Name="CanvasViewport" ClipToBounds="True" Background="#14171B" Focusable="True"
+            <local:AccessibleBorder x:Name="CanvasViewport" ClipToBounds="True" Background="{DynamicResource LayerFillColorAltBrush}" Focusable="True"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5"
                     AutomationProperties.Name="故事图谱自由布局画布" AutomationProperties.AutomationId="ProjectGraphCanvasViewport"
                     PreviewMouseLeftButtonDown="GraphCanvas_OnPreviewMouseLeftButtonDown"

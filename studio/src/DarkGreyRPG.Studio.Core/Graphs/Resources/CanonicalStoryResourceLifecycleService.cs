@@ -112,7 +112,7 @@ public sealed class CanonicalStoryResourceLifecycleService
         var repository = Repository(resourceKind);
         lock (_lifecycleGate)
         {
-            var (_, membership) = RequireStory(storyId);
+            var (story, membership) = RequireStory(storyId);
             EnsureResourceId(resourceId);
             try
             {
@@ -151,7 +151,7 @@ public sealed class CanonicalStoryResourceLifecycleService
         _ = ScopeFor(resourceKind);
         lock (_lifecycleGate)
         {
-            var (_, membership) = RequireStory(storyId);
+            var (story, membership) = RequireStory(storyId);
             EnsureResourceId(resourceId);
             var members = Members(membership, resourceKind);
             if (members.Owned.Contains(resourceId, StringComparer.Ordinal))
@@ -162,7 +162,34 @@ public sealed class CanonicalStoryResourceLifecycleService
                     $"Referenced {KindText(resourceKind)} '{resourceId}' was not found in Story '{storyId}'.");
 
             var updated = RemoveReferenced(membership, resourceKind, resourceId);
-            ReplaceMembership(updated, "remove_reference", storyId, resourceKind, resourceId);
+            var cleanedStory = RemoveAggregatePlacements(story, resourceKind, resourceId, out var placementCount);
+            if (placementCount == 0)
+            {
+                ReplaceMembership(updated, "remove_reference", storyId, resourceKind, resourceId);
+                return;
+            }
+
+            var storyPath = _store.Stories.GetPath(storyId);
+            var storyBytes = ReadLifecycleSnapshot(storyPath, "Story", storyId);
+            try
+            {
+                _store.Stories.Replace(cleanedStory);
+                _store.Memberships.Replace(updated);
+            }
+            catch (Exception exception) when (exception is GraphResourceRepositoryException
+                or CanonicalStoryMembershipRepositoryException or IOException or UnauthorizedAccessException)
+            {
+                try { RestoreExactResource(storyPath, storyBytes, story); }
+                catch (Exception restoreException)
+                {
+                    throw Failure("story.resource.lifecycle.rollback_failed",
+                        $"Removing the reference failed and Story '{storyId}' aggregate placements could not be restored.",
+                        new AggregateException(exception, restoreException));
+                }
+                throw Failure("story.resource.lifecycle.membership_replace_failed",
+                    $"Could not remove referenced {KindText(resourceKind)} '{resourceId}' and its aggregate placements from Story '{storyId}'.",
+                    exception);
+            }
         }
     }
 
@@ -246,7 +273,7 @@ public sealed class CanonicalStoryResourceLifecycleService
         var repository = Repository(resourceKind);
         lock (_lifecycleGate)
         {
-            var (_, membership) = RequireStory(ownerStoryId);
+            var (story, membership) = RequireStory(ownerStoryId);
             EnsureResourceId(resourceId);
             EnsureOwned(membership, ownerStoryId, resourceKind, resourceId);
             GraphResourceEnvelope snapshot;
@@ -274,6 +301,9 @@ public sealed class CanonicalStoryResourceLifecycleService
                     $"Owned {KindText(resourceKind)} '{resourceId}' is still referenced by: {string.Join(", ", blockers.Select(item => item.StoryId))}.");
 
             var updated = RemoveOwned(membership, resourceKind, resourceId);
+            var cleanedStory = RemoveAggregatePlacements(story, resourceKind, resourceId, out var placementCount);
+            var storyPath = _store.Stories.GetPath(ownerStoryId);
+            var storyBytes = placementCount == 0 ? null : ReadLifecycleSnapshot(storyPath, "Story", ownerStoryId);
             try
             {
                 repository.Delete(resourceId);
@@ -285,13 +315,16 @@ public sealed class CanonicalStoryResourceLifecycleService
 
             try
             {
+                if (placementCount != 0) _store.Stories.Replace(cleanedStory);
                 _store.Memberships.Replace(updated);
             }
-            catch (Exception exception) when (exception is CanonicalStoryMembershipRepositoryException or IOException or UnauthorizedAccessException)
+            catch (Exception exception) when (exception is GraphResourceRepositoryException
+                or CanonicalStoryMembershipRepositoryException or IOException or UnauthorizedAccessException)
             {
                 try
                 {
                     RestoreExactResource(resourcePath, resourceBytes, snapshot);
+                    if (storyBytes is not null) RestoreExactResource(storyPath, storyBytes, story);
                 }
                 catch (Exception restoreException)
                 {
@@ -411,6 +444,44 @@ public sealed class CanonicalStoryResourceLifecycleService
                     "graph.resource.repository.staged_id.changed",
                     "The restored canonical resource identity changed during rollback.");
         });
+    }
+
+    private static byte[] ReadLifecycleSnapshot(string path, string kind, string id)
+    {
+        try { return File.ReadAllBytes(path); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            throw Failure("story.resource.lifecycle.resource_read_failed",
+                $"Could not snapshot {kind} '{id}' before lifecycle mutation.", exception);
+        }
+    }
+
+    private static GraphResourceEnvelope RemoveAggregatePlacements(
+        GraphResourceEnvelope story,
+        GraphResourceKind resourceKind,
+        string resourceId,
+        out int removedCount)
+    {
+        var aggregateType = resourceKind == GraphResourceKind.Session ? "session" : "task";
+        var graph = story.Graph ?? throw Failure("story.resource.story.graph_required",
+            $"Story '{story.Id}' graph is missing.");
+        var removedIds = graph.Nodes
+            .Where(node => string.Equals(node.Type, aggregateType, StringComparison.Ordinal)
+                && node.Properties.TryGetValue("resource_id", out var binding)
+                && binding.ValueKind == System.Text.Json.JsonValueKind.String
+                && string.Equals(binding.GetString(), resourceId, StringComparison.Ordinal))
+            .Select(node => node.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        removedCount = removedIds.Count;
+        if (removedCount == 0) return story;
+
+        graph.Nodes.RemoveAll(node => removedIds.Contains(node.Id));
+        graph.Connections.RemoveAll(connection => removedIds.Contains(connection.FromNodeId)
+            || removedIds.Contains(connection.ToNodeId));
+        return new GraphResourceEnvelope(GraphResourceKind.Story, story.Id, story.DisplayName, graph)
+        {
+            SchemaVersion = story.SchemaVersion,
+        };
     }
 
     private void ReplaceMembership(CanonicalStoryMembershipManifest updated, string operation, string storyId, GraphResourceKind kind, string id)

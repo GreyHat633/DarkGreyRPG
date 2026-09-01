@@ -12,7 +12,8 @@
         Width="1180" Height="760" MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource ApplicationBackgroundBrush}"
-        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+        PreviewKeyDown="MainWindow_OnPreviewKeyDown">
     <Window.Resources>
         <DataTemplate x:Key="ActorEditorTemplate">
             <Grid Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
@@ -359,13 +360,6 @@
                             </Button>
                             <TextBlock VerticalAlignment="Center" FontSize="17" FontWeight="SemiBold" Text="项目首页" />
                         </DockPanel>
-                        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
-                            <Button Margin="0,0,4,0" Padding="6" HorizontalContentAlignment="Left"
-                                    Command="{Binding ShowProjectHomeCommand}" Content="故事列表" />
-                            <Button Grid.Column="1" Margin="4,0,0,0" Padding="6" HorizontalContentAlignment="Right"
-                                    Command="{Binding ShowProjectGraphCommand}" Content="故事图谱" />
-                        </Grid>
                         <TextBox x:Name="StorySearchBox" DockPanel.Dock="Top" Margin="0,0,0,8" Padding="8,5"
                                  AutomationProperties.Name="搜索故事" ToolTip="按 ID、显示名称或标签搜索"
                                  Text="{Binding ProjectHome.SearchText, UpdateSourceTrigger=PropertyChanged}" />
@@ -445,56 +439,35 @@
                             <Button DockPanel.Dock="Right" Width="116" Height="34" Command="{Binding OpenSelectedStoryCommand}"
                                     Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="进入选中故事" Content="进入故事" />
                             <StackPanel>
-                                <TextBlock FontSize="26" FontWeight="SemiBold" Text="故事概览" />
+                                <TextBlock FontSize="26" FontWeight="SemiBold" Text="项目故事图谱" />
                                 <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Text="故事选择与搜索统一在左侧完成；这里显示当前选中故事的信息。" />
+                                           Text="左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。" />
                             </StackPanel>
                         </DockPanel>
                         <Grid Grid.Row="1" Margin="0,18,0,0">
-                            <StackPanel Width="420" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding ProjectHome.IsEmptyProject}" Value="True" /><Condition Binding="{Binding ProjectHome.IsHomeVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock HorizontalAlignment="Center" TextAlignment="Center" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectHome.EmptyStateTitle}" />
-                                <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center" TextAlignment="Center"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectHome.EmptyStateDescription}" />
-                                <Button Width="128" Height="36" Margin="0,14,0,0" HorizontalAlignment="Center"
-                                        Command="{Binding CreateStoryCommand}"
-                                        Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="从空状态新建故事" Content="新建故事" />
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ProjectHome.IsSearchNoResults}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style>
-                                </StackPanel.Style>
-                                <TextBlock HorizontalAlignment="Center" TextAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectHome.SearchNoResultsTitle}" />
-                                <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center" TextAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ProjectHome.SearchNoResultsDescription}" />
-                                <Button Width="128" Height="36" Margin="0,14,0,0" Command="{Binding ProjectHome.ClearSearchCommand}" Content="清空搜索" />
-                            </StackPanel>
-                            <StackPanel Margin="0,8,0,0" VerticalAlignment="Top"
-                                        DataContext="{Binding ProjectHome.SelectedStory.Overview}">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><Trigger Property="DataContext" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger></Style.Triggers></Style>
-                                </StackPanel.Style>
-                                <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}"
-                                           AutomationProperties.Name="选中故事完整概览" />
-                                <TextBlock Margin="0,4,0,18" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" />
-                                <TextBlock FontWeight="SemiBold" Text="描述" />
-                                <TextBlock Margin="0,6,0,18" TextWrapping="Wrap" Text="{Binding Description}" />
-                                <TextBlock FontWeight="SemiBold" Text="资源归属" />
-                                <TextBlock Margin="0,6,0,18" Text="{Binding MembershipSummary}" />
-                                <TextBlock FontWeight="SemiBold" Text="Flow" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding FlowNodeCount, StringFormat={}{0} 个节点}" />
-                            </StackPanel>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="8" /><ColumnDefinition Width="300" /></Grid.ColumnDefinitions>
+                            <views:ProjectGraphView DataContext="{Binding ProjectHome.Graph}" />
+                            <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
+                            <Border Grid.Column="2" Padding="16" Background="{DynamicResource LayerFillColorAltBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
+                                <StackPanel DataContext="{Binding ProjectHome.SelectedStory.Overview}">
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="故事详情" />
+                                    <TextBlock Margin="0,4,0,0" FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}"
+                                               AutomationProperties.Name="选中故事完整概览" />
+                                    <TextBlock Margin="0,4,0,18" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" />
+                                    <TextBlock FontWeight="SemiBold" Text="描述" />
+                                    <TextBlock Margin="0,6,0,18" TextWrapping="Wrap" Text="{Binding Description}" />
+                                    <TextBlock FontWeight="SemiBold" Text="资源归属" />
+                                    <TextBlock Margin="0,6,0,18" TextWrapping="Wrap" Text="{Binding MembershipSummary}" />
+                                    <TextBlock FontWeight="SemiBold" Text="Flow" />
+                                    <TextBlock Margin="0,6,0,0" Text="{Binding FlowNodeCount, StringFormat={}{0} 个节点}" />
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </Grid>
 
                     <Grid>
-                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /><Condition Binding="{Binding ProjectHome.IsGraphVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style>
-                        <views:ProjectGraphView DataContext="{Binding ProjectHome.Graph}" />
+                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /></Style></Grid.Style>
                     </Grid>
 
                     <Grid>

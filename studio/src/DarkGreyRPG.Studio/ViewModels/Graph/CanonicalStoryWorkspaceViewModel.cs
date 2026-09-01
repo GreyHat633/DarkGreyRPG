@@ -423,6 +423,10 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             OnPropertyChanged(nameof(InspectorId));
             OnPropertyChanged(nameof(InspectorSaveStateText));
             OnPropertyChanged(nameof(InspectorValidationText));
+            OnPropertyChanged(nameof(HasResourceInspectorDetails));
+            OnPropertyChanged(nameof(InspectorIdentityLabel));
+            OnPropertyChanged(nameof(InspectorTagsText));
+            OnPropertyChanged(nameof(InspectorOwnershipText));
         }
     }
 
@@ -442,10 +446,11 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
     public string InspectorKindText => InspectorSelection switch
     {
-        CanonicalNodeInspectorViewModel node => node.NodeType,
+        CanonicalNodeInspectorViewModel node => NodeKindText(node),
+        CanonicalStoryActorItem { Actor.Type: CollectiveActorResource.ResourceType } => "角色组",
         CanonicalStoryActorItem => "角色",
-        CanonicalStoryItemItem { Item: IndividualItemResource } => "个体物品",
-        CanonicalStoryItemItem { Item: CollectiveItemResource } => "集体物品",
+        CanonicalStoryItemItem { Item: IndividualItemResource } => "物品",
+        CanonicalStoryItemItem { Item: CollectiveItemResource } => "物品组",
         CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Actors } => "缺失角色",
         CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Items } => "缺失物品",
         CanonicalStoryMissingItem { FolderKind: CanonicalStoryFolderKind.Sessions } => "缺失会话",
@@ -465,6 +470,33 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         _ => StoryEditor.Id,
     };
 
+    public bool HasResourceInspectorDetails => InspectorSelection is CanonicalStoryActorItem
+        or CanonicalStoryItemItem or CanonicalStoryGraphItem or CanonicalGraphResourceEditorViewModel;
+
+    public string InspectorIdentityLabel => InspectorSelection switch
+    {
+        CanonicalStoryActorItem { Actor.Type: CollectiveActorResource.ResourceType } => "Group_ID",
+        CanonicalStoryActorItem => "NPC_ID",
+        CanonicalStoryItemItem { Item: CollectiveItemResource } => "Group_ID",
+        CanonicalStoryItemItem => "Item_ID",
+        _ => "Resource_ID",
+    };
+
+    public string InspectorTagsText => InspectorSelection switch
+    {
+        CanonicalStoryActorItem actor => actor.Actor.Tags.Count == 0 ? "—" : string.Join("、", actor.Actor.Tags),
+        CanonicalStoryItemItem item => item.Tags.Count == 0 ? "—" : string.Join("、", item.Tags),
+        _ => "—",
+    };
+
+    public string InspectorOwnershipText => InspectorSelection switch
+    {
+        CanonicalStoryActorItem { IsReferenced: true } or CanonicalStoryItemItem { IsReferenced: true }
+            or CanonicalStoryGraphItem { IsReferenced: true } => "引用",
+        CanonicalStoryActorItem or CanonicalStoryItemItem or CanonicalStoryGraphItem => "拥有",
+        _ => string.Empty,
+    };
+
     public string InspectorSaveStateText => InspectorSelection switch
     {
         CanonicalNodeInspectorViewModel node => ActiveEditor.IsDirty ? "未保存" : "已保存",
@@ -476,11 +508,16 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public string InspectorValidationText => InspectorSelection switch
     {
         CanonicalNodeInspectorViewModel node => string.Join(Environment.NewLine,
-            node.ValidationIssues.Select(ValidationIssuePresentation.Format)),
+            node.ValidationIssues.Select(ValidationIssuePresentation.FormatCompact)),
         CanonicalGraphResourceEditorViewModel editor => editor.ValidationText,
-        CanonicalStoryMissingItem missing => ValidationIssuePresentation.Format(missing.Issue),
+        CanonicalStoryMissingItem missing => $"资源“{missing.Id}”缺失，请重新添加或解除该资源。{Environment.NewLine}请在“问题”面板查看详情。",
         _ => string.Empty,
     };
+
+    private static string NodeKindText(CanonicalNodeInspectorViewModel node)
+        => GraphNodeDefinitionRegistry.TryGet(node.Host.Scope, node.NodeType, out var definition)
+            ? definition.DisplayName
+            : "节点";
 
     public ICanonicalStoryTreeItem? SelectedTreeItem
     {
@@ -673,6 +710,9 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
     /// <summary>Moves a resource inside its current folder without changing membership ownership.</summary>
     public bool ReorderResource(ICanonicalStoryTreeItem item, ICanonicalStoryTreeItem target)
+        => ReorderResource(item, target, insertAfter: false);
+
+    public bool ReorderResource(ICanonicalStoryTreeItem item, ICanonicalStoryTreeItem target, bool insertAfter)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(item);
@@ -681,15 +721,14 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         var folderKind = FolderFor(item);
         var folder = Folders.Single(candidate => candidate.Kind == folderKind);
         var next = folder.Items.ToList();
-        var sourceIndex = next.IndexOf(item);
+        if (!next.Remove(item)) return false;
         var targetIndex = next.IndexOf(target);
-        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex == targetIndex) return false;
-        next.RemoveAt(sourceIndex);
-        next.Insert(targetIndex, item);
+        if (targetIndex < 0) return false;
+        next.Insert(targetIndex + (insertAfter ? 1 : 0), item);
         var handles = next.Select(candidate => OrderHandle(folderKind, candidate)).ToArray();
         if (ResourceOrderChangeRequested is not null
             && !ResourceOrderChangeRequested(folderKind, handles)) return false;
-        if (!folder.Move(item, target)) return false;
+        folder.SynchronizeItems(next);
         SynchronizeTypedFolderOrder(folderKind, folder.Items);
         return true;
     }
@@ -837,7 +876,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
                 return CommitParameterDrop(() => ActiveGraphHost.SetStoryStartTriggerProperties(
                     node.NodeId, trigger.PortId, properties));
             }
-            return FailParameterDrop("Start 节点中没有“角色交互”启动方式，请先在 Inspector 中添加或切换启动方式。");
+            return FailParameterDrop("Start 节点中没有“角色交互”启动条件，请先在 Inspector 中添加或切换启动条件。");
         }
 
         return FailParameterDrop("角色资源只能拖到 Start 的角色交互、会话台词说话者或任务角色目标。");
@@ -934,6 +973,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         ArgumentNullException.ThrowIfNull(snapshot);
         if (!string.Equals(snapshot.Story.Id, StoryEditor.Id, StringComparison.Ordinal))
             throw new ArgumentException("A resource refresh must target the active canonical Story.", nameof(snapshot));
+
+        _ = StoryEditor.ApplyPersistedSnapshot(snapshot.Story);
 
         var incoming = new CanonicalStoryWorkspaceViewModel(snapshot);
         var currentGraphItems = SessionItems.Concat(TaskItems)

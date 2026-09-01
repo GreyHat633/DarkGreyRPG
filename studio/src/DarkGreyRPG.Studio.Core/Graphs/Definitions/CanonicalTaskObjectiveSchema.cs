@@ -30,7 +30,7 @@ public static class CanonicalTaskObjectiveSchema
         [KillEntity, CollectItem, InteractActor];
 
     public static IReadOnlySet<string> CommonProperties { get; } =
-        new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty], StringComparer.Ordinal);
+        new HashSet<string>([TypeProperty, DescriptionProperty], StringComparer.Ordinal);
 
     public static IReadOnlySet<string> AllProperties { get; } =
         new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty,
@@ -40,7 +40,7 @@ public static class CanonicalTaskObjectiveSchema
     {
         KillEntity => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, EntityProperty], StringComparer.Ordinal),
         CollectItem => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, ItemProperty, MetadataProperty], StringComparer.Ordinal),
-        InteractActor => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, ActorIdProperty], StringComparer.Ordinal),
+        InteractActor => new HashSet<string>([TypeProperty, DescriptionProperty, ActorIdProperty], StringComparer.Ordinal),
         _ => new HashSet<string>(StringComparer.Ordinal),
     };
 
@@ -85,7 +85,7 @@ public static class CanonicalTaskObjectiveSchema
 
         var expected = PropertiesFor(type!);
         foreach (var key in properties.Keys)
-            if (!expected.Contains(key))
+            if (!expected.Contains(key) && !IsSafeLegacyInteractRequired(type!, key, properties))
                 issues.Add(Issue("graph.objective.property.unsupported", $"Objective property '{key}' is not valid for type '{type}'.", $"properties.{key}", node.Id));
         foreach (var key in expected)
             if (!properties.ContainsKey(key))
@@ -96,10 +96,20 @@ public static class CanonicalTaskObjectiveSchema
             || string.IsNullOrWhiteSpace(description.GetString()))
             issues.Add(Issue("graph.objective.description.invalid", "Objective description must be a nonblank string.", $"properties.{DescriptionProperty}", node.Id));
 
-        if (!properties.TryGetValue(RequiredProperty, out var required)
-            || required.ValueKind != JsonValueKind.Number
-            || !required.TryGetInt32(out var count) || count <= 0)
-            issues.Add(Issue("graph.objective.required.invalid", "Objective required must be a positive integer.", $"properties.{RequiredProperty}", node.Id));
+        if (type is KillEntity or CollectItem)
+        {
+            if (!properties.TryGetValue(RequiredProperty, out var required)
+                || required.ValueKind != JsonValueKind.Number
+                || !required.TryGetInt32(out var count) || count <= 0)
+                issues.Add(Issue("graph.objective.required.invalid", "Objective required must be a positive integer.", $"properties.{RequiredProperty}", node.Id));
+        }
+        else if (type == InteractActor && properties.TryGetValue(RequiredProperty, out var legacyRequired)
+                 && (!legacyRequired.TryGetInt32(out var legacyCount) || legacyCount != 1))
+        {
+            issues.Add(Issue("graph.objective.interact.required.legacy_count",
+                "旧版角色交互目标的次数只能为 1；请迁移为不含 required 的角色交互目标。",
+                $"properties.{RequiredProperty}", node.Id));
+        }
 
         switch (type)
         {
@@ -124,6 +134,27 @@ public static class CanonicalTaskObjectiveSchema
     }
 
     public static bool IsValid(GraphNode node) => Validate(node).Count == 0;
+
+    /// <summary>
+    /// Removes only the safe legacy interact_actor required=1 field. Larger or
+    /// malformed legacy counts remain untouched so validation can request an
+    /// explicit migration decision.
+    /// </summary>
+    public static int NormalizeLegacyInteractRequired(GraphDocument graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        var normalized = 0;
+        foreach (var node in (graph.Nodes ?? []).Where(node => node is not null))
+        {
+            if (!string.Equals(node.Type, NodeType, StringComparison.Ordinal)
+                || ReadString(node.Properties ?? [], TypeProperty) != InteractActor
+                || !(node.Properties ?? []).TryGetValue(RequiredProperty, out var required)
+                || !required.TryGetInt32(out var count) || count != 1) continue;
+            node!.Properties!.Remove(RequiredProperty);
+            normalized++;
+        }
+        return normalized;
+    }
 
     /// <summary>
     /// Returns true only for the explicit blank target emitted by authoring.
@@ -156,7 +187,8 @@ public static class CanonicalTaskObjectiveSchema
         properties[TypeProperty] = JsonSerializer.SerializeToElement(type);
         properties[DescriptionProperty] = JsonSerializer.SerializeToElement(
             string.IsNullOrWhiteSpace(description) ? DefaultDescription(type) : description);
-        properties[RequiredProperty] = JsonSerializer.SerializeToElement(required);
+        if (type is KillEntity or CollectItem)
+            properties[RequiredProperty] = JsonSerializer.SerializeToElement(required);
         switch (type)
         {
             case KillEntity:
@@ -190,6 +222,12 @@ public static class CanonicalTaskObjectiveSchema
     private static string? ReadString(IReadOnlyDictionary<string, JsonElement> properties, string name)
         => properties.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() : null;
+
+    private static bool IsSafeLegacyInteractRequired(string type, string key,
+        IReadOnlyDictionary<string, JsonElement> properties)
+        => type == InteractActor && key == RequiredProperty
+            && properties.TryGetValue(RequiredProperty, out var value)
+            && value.TryGetInt32(out var count) && count == 1;
 
     private static string DefaultDescription(string type) => type switch
     {

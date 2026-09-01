@@ -6,6 +6,7 @@ using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Editing;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -64,6 +65,35 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void StorySessionAndTaskRestoreIndependentTransientViewports()
+    {
+        using var workspace = Workspace("story-a");
+        var view = Arrange(workspace);
+        view.GraphView.ViewportController.PanX = 10;
+        view.GraphView.ViewportController.PanY = 20;
+        view.GraphView.ViewportController.Zoom = 1.1;
+
+        Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+        Assert.AreEqual((0d, 0d, 1d), Viewport(view));
+        view.GraphView.ViewportController.PanX = 30;
+        view.GraphView.ViewportController.PanY = 40;
+        view.GraphView.ViewportController.Zoom = 1.3;
+
+        Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
+        Assert.AreEqual((0d, 0d, 1d), Viewport(view));
+        view.GraphView.ViewportController.PanX = 50;
+        view.GraphView.ViewportController.PanY = 60;
+        view.GraphView.ViewportController.Zoom = .8;
+
+        Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+        Assert.AreEqual((30d, 40d, 1.3d), Viewport(view));
+        Assert.IsTrue(view.ReturnToStory());
+        Assert.AreEqual((10d, 20d, 1.1d), Viewport(view));
+        Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
+        Assert.AreEqual((50d, 60d, .8d), Viewport(view));
+    }
+
+    [STATestMethod]
     public void GraphNodeSelectionRoutesNodeInspectorAndClearRestoresActiveResource()
     {
         using var workspace = Workspace("story-a");
@@ -80,6 +110,50 @@ public sealed class CanonicalStoryWorkspaceViewTests
         view.GraphView.ClearSelection();
         Assert.IsNull(workspace.NodeInspector);
         Assert.AreSame(session.Editor, workspace.InspectorSelection);
+    }
+
+    [STATestMethod]
+    public void ResourceSelectionClearsVisualNodeSoSameNodeCanRestoreInspector()
+    {
+        using var workspace = Workspace("story-a");
+        var view = Arrange(workspace);
+
+        Assert.IsTrue(view.GraphView.SelectNode("story-a"));
+        Assert.IsNotNull(workspace.NodeInspector);
+
+        Assert.IsTrue(view.SelectResourceItem(workspace.ActorItems.Single()));
+        Assert.IsNull(view.GraphView.SelectedNode);
+        Assert.AreSame(workspace.ActorItems.Single(), workspace.InspectorSelection);
+
+        Assert.IsTrue(view.GraphView.SelectNode("story-a"));
+        Assert.IsNotNull(workspace.NodeInspector);
+        Assert.AreEqual("story-a", workspace.NodeInspector!.NodeId);
+    }
+
+    [STATestMethod]
+    public void InlineEditorsCanRefreshResourceOptionsWithoutRebuildingGraphState()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "actor-trigger");
+        Assert.IsTrue(new GraphEditSession(new GraphDocument([start]), GraphScope.StoryFlow)
+            .SetStoryStartTriggerType("start", "actor-trigger", StoryStartSchema.ActorInteraction, "actor"));
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])),
+            [new ActorResourceInfo("actor", "Actor", "actor.json", [])]);
+        var view = Arrange(workspace);
+        var visual = Descendants<CanonicalGraphNodeControl>(view).Single();
+        var original = visual.InlineEditor;
+        var selected = view.GraphView.SelectNode("start");
+        var viewport = Viewport(view);
+
+        view.GraphView.RefreshInlineEditors();
+
+        Assert.IsTrue(selected);
+        Assert.IsNotNull(visual.InlineEditor);
+        Assert.AreNotSame(original, visual.InlineEditor);
+        Assert.AreEqual("actor", visual.InlineEditor!.StoryStartTriggers.Single().SelectedActor?.Id);
+        Assert.AreEqual("start", view.GraphView.SelectedNode?.NodeId);
+        Assert.AreEqual(viewport, Viewport(view));
+        Assert.HasCount(1, workspace.StoryEditor.Host.Graph.Nodes);
     }
 
     [STATestMethod]
@@ -135,7 +209,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         view.StoryStartTriggerRemovalConfirmation = confirmation =>
         {
             prompts++;
-            Assert.AreEqual("进入区域", confirmation.DisplayName);
+            Assert.AreEqual("启动条件 1", confirmation.DisplayName);
             return true;
         };
         var inline = view.GraphView.InlineEditorFactory!(workspace.ActiveGraphHost.Nodes.Single(node => node.Id == "start"));
@@ -297,7 +371,8 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.IsTrue(view.PreviewResourceDrag(item, new Point(300, 240)));
         Assert.IsTrue(view.IsResourceDragGhostVisible);
         Assert.AreEqual(item.DisplayName, view.ResourceDragGhostDisplayName);
-        Assert.AreEqual(new Point(184, 202), view.ResourceDragGhostViewportPosition);
+        Assert.AreEqual(new Point(184, 194), view.ResourceDragGhostViewportPosition);
+        Assert.AreEqual(new Vector(116, 46), view.ResourceDragGhostPointerOffset);
         Assert.AreEqual(before, workspace.StoryEditor.Host.Graph.ToJson());
 
         view.CancelResourceDragPreview();
@@ -315,11 +390,11 @@ public sealed class CanonicalStoryWorkspaceViewTests
         view.GraphView.ViewportController.PanY = -20d;
 
         var pointer = new Point(300d, 240d);
-        Assert.AreEqual(new Point(184d, 202d),
+        Assert.AreEqual(new Point(184d, 194d),
             CanonicalStoryWorkspaceView.ResourceNodeTopLeftFromPointer(pointer));
         Assert.IsTrue(view.PreviewResourceDrag(workspace.SessionItems.Single(), pointer));
-        Assert.AreEqual(new Point(184d, 202d), view.ResourceDragGhostViewportPosition);
-        Assert.AreEqual(new Point(72d, 111d), view.ResourceGraphPositionFromPointer(pointer));
+        Assert.AreEqual(new Point(184d, 194d), view.ResourceDragGhostViewportPosition);
+        Assert.AreEqual(new Point(72d, 107d), view.ResourceGraphPositionFromPointer(pointer));
     }
 
     [STATestMethod]
@@ -388,6 +463,10 @@ public sealed class CanonicalStoryWorkspaceViewTests
             foreach (var descendant in Descendants<T>(child)) yield return descendant;
         }
     }
+
+    private static (double PanX, double PanY, double Zoom) Viewport(CanonicalStoryWorkspaceView view)
+        => (view.GraphView.ViewportController.PanX, view.GraphView.ViewportController.PanY,
+            view.GraphView.ViewportController.Zoom);
 
     private static CanonicalStoryWorkspaceViewModel Workspace(string storyId)
         => new(

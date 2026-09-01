@@ -54,13 +54,25 @@ public sealed class ProblemsViewModelTests
 
     [TestMethod]
     [DataRow("graph.dynamic_port.id.duplicate", "动态端口")]
-    [DataRow("graph.story.start.triggers.required", "启动方式")]
+    [DataRow("graph.story.start.triggers.required", "启动条件")]
     [DataRow("graph.objective.target.invalid", "任务目标")]
     [DataRow("story.resource.missing", "Story 资源")]
     [DataRow("save.persistence.failed", "保存失败")]
     [DataRow("project.migration.required", "项目迁移")]
     public void RequiredValidationFamiliesHaveChineseAuthorMessages(string code, string expected)
         => StringAssert.Contains(ValidationIssuePresentation.Format(code, "Technical detail."), expected);
+
+    [TestMethod]
+    public void CompactValidationPresentationKeepsCodesAndDetailsOutOfInspectorCopy()
+    {
+        var compact = ValidationIssuePresentation.FormatCompact(
+            new ValidationIssue("graph.objective.target.invalid", "Technical detail."));
+
+        StringAssert.Contains(compact, "任务目标");
+        StringAssert.Contains(compact, "“问题”面板");
+        Assert.IsFalse(compact.Contains("graph.objective.target.invalid", StringComparison.Ordinal));
+        Assert.IsFalse(compact.Contains("Technical detail", StringComparison.Ordinal));
+    }
 
     [TestMethod]
     public void ReplaceAndClearUpdateObservableCounts()

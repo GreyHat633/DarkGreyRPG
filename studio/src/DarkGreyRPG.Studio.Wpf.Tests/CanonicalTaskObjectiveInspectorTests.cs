@@ -21,6 +21,14 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsTrue(inspector.IsObjective);
         inspector.ObjectiveDescription = "Defeat the boss";
         inspector.ObjectiveRequiredText = "3";
+        inspector.ObjectiveRequiredText = "not-a-number";
+        Assert.AreEqual("not-a-number", inspector.ObjectiveRequiredText);
+        StringAssert.Contains(inspector.ObjectiveRequiredError, "不小于 1");
+        Assert.AreEqual(3, editor.Host.Graph.Nodes.Single().Properties["required"].GetInt32());
+        Assert.IsTrue(editor.Host.LastValidationIssues.Any(issue =>
+            issue.Code == "graph.objective.required.authoring_invalid"));
+        inspector.ObjectiveRequiredText = "3";
+        Assert.AreEqual(string.Empty, inspector.ObjectiveRequiredError);
         Assert.IsTrue(inspector.IsKillEntityObjective);
         var undoCount = editor.Host.Session.UndoCount;
         inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(option => option.Value == "collect_item");
@@ -48,6 +56,23 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(item => item.Id == "known");
         Assert.AreEqual("known", editor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
         Assert.IsTrue(inspector.IsObjectiveActorResolved);
+    }
+
+    [TestMethod]
+    public void LegacyInteractRequiredOneIsRemovedAndMarksEditorDirtyForNextSave()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective,
+            CanonicalTaskObjectiveSchema.InteractActor, "known", out _));
+        objective.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(1);
+
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+
+        Assert.IsTrue(editor.IsDirty);
+        Assert.IsFalse(editor.Host.Graph.Nodes.Single().Properties.ContainsKey(
+            CanonicalTaskObjectiveSchema.RequiredProperty));
+        Assert.IsTrue(editor.CanSave);
     }
 
     [TestMethod]

@@ -115,7 +115,7 @@ public sealed class CanonicalProjectMigrationUiTests
         Assert.IsTrue(refreshedStory.HasLegacyStory);
         Assert.IsTrue(refreshedStory.HasCanonicalStory);
         Assert.IsTrue(shell.Output.Entries.Any(entry =>
-            entry.Kind == OutputKind.Success && entry.Source == "migration" && entry.Message.Contains("Canonical 迁移成功", StringComparison.Ordinal)));
+            entry.Kind == OutputKind.Success && entry.Source == "migration" && entry.Message.Contains("项目格式迁移成功", StringComparison.Ordinal)));
     }
 
     [TestMethod]

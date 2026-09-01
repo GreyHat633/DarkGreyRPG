@@ -12,6 +12,39 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalNodeInspectorViewModelTests
 {
     [TestMethod]
+    public void LargeGraphRefreshesOnlyInspectorForChangedNode()
+    {
+        var nodes = new List<GraphNode>();
+        for (var index = 0; index < 30; index++)
+        {
+            var objective = GraphNodeFactory.Create(GraphScope.Task,
+                CanonicalTaskObjectiveSchema.NodeType, $"objective_{index}");
+            objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
+                JsonSerializer.SerializeToElement($"entity_{index}");
+            nodes.Add(objective);
+        }
+        for (var index = 0; index < 70; index++)
+            nodes.Add(new GraphNode($"logic_{index}", "and", $"Logic {index}"));
+        var host = new GraphEditorHostViewModel(new GraphDocument(nodes), GraphScope.Task);
+        var inspectors = host.Nodes.Where(node => node.Type == CanonicalTaskObjectiveSchema.NodeType)
+            .Take(20).Select(node => new CanonicalNodeInspectorViewModel(host, node)).ToArray();
+        try
+        {
+            var before = inspectors.Select(inspector => inspector.RefreshCount).ToArray();
+            inspectors[0].ObjectiveDescription = "仅刷新当前目标";
+
+            Assert.AreEqual(before[0] + 1, inspectors[0].RefreshCount);
+            for (var index = 1; index < inspectors.Length; index++)
+                Assert.AreEqual(before[index], inspectors[index].RefreshCount,
+                    $"Unrelated inspector {index} refreshed.");
+        }
+        finally
+        {
+            foreach (var inspector in inspectors) inspector.Dispose();
+        }
+    }
+
+    [TestMethod]
     public void WorkspaceGraphSelectionUsesOneInspectorPathAndClearRestoresResource()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
@@ -52,7 +85,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     }
 
     [TestMethod]
-    public void StoryActionInspectorAtomicallySwitchesPayloadAndRejectsInvalidFields()
+    public void StoryActionInspectorAtomicallySwitchesPayloadAndStagesInvalidFields()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action-1");
         using var editor = new CanonicalGraphResourceEditorViewModel(
@@ -82,8 +115,16 @@ public sealed class CanonicalNodeInspectorViewModelTests
         inspector.StoryActionAmountText = "25";
         Assert.AreEqual(25, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
         inspector.StoryActionAmountText = "0";
-        Assert.AreEqual("25", inspector.StoryActionAmountText);
+        Assert.AreEqual("0", inspector.StoryActionAmountText);
+        StringAssert.Contains(inspector.StoryActionAmountError, "不小于 1");
+        Assert.IsTrue(editor.Host.LastValidationIssues.Any(issue =>
+            issue.Code == "graph.story.action.amount.authoring_invalid"));
         Assert.AreEqual(25, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
+        inspector.StoryActionAmountText = "30";
+        Assert.AreEqual(string.Empty, inspector.StoryActionAmountError);
+        Assert.IsFalse(editor.Host.LastValidationIssues.Any(issue =>
+            issue.Code == "graph.story.action.amount.authoring_invalid"));
+        Assert.AreEqual(30, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
         Assert.IsTrue(editor.IsDirty);
     }
 
@@ -450,8 +491,18 @@ public sealed class CanonicalNodeInspectorViewModelTests
         changedNodes.Clear();
         Assert.IsTrue(inspector.SetStoryStartTriggerType(trigger.StablePortId, StoryStartSchema.RegionEntry));
         trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId == trigger.StablePortId);
+        var persistedRadius = editor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.TriggersProperty]
+            .GetArrayLength();
+        trigger.RadiusText = "bad";
+        Assert.AreEqual("bad", trigger.RadiusText);
+        StringAssert.Contains(trigger.RadiusError, "大于 0");
+        Assert.IsTrue(editor.Host.LastValidationIssues.Any(issue =>
+            issue.Code == "graph.story.start.trigger.authoring_invalid"));
+        Assert.AreEqual(persistedRadius, editor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.TriggersProperty]
+            .GetArrayLength());
         trigger.RadiusText = "8";
         Assert.AreEqual("8", trigger.RadiusText);
+        Assert.AreEqual(string.Empty, trigger.RadiusError);
         Assert.AreEqual(trigger.StablePortId, editor.Host.Graph.Nodes.Single().Ports.OrderBy(port => port.Order).Last().Id);
         Assert.IsTrue(StoryStartSchema.IsValid(editor.Host.Graph.Nodes.Single()));
         Assert.IsTrue(inspector.RemoveStoryStartTrigger("opaque-start"));

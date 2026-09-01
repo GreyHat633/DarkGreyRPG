@@ -55,13 +55,13 @@ public sealed class CanonicalStoryDiscoveryShellTests
 
         var incomplete = shell.ProjectHome.Stories.Single(story => story.Id == "membership_only");
         Assert.IsTrue(incomplete.IsCanonicalOnly);
-        Assert.AreEqual("Canonical · 数据不完整", incomplete.TagsText);
+        Assert.AreEqual("新格式 · 数据不完整", incomplete.TagsText);
         Assert.IsTrue(shell.Problems.Problems.Any(problem =>
             problem.Source == "canonical-discovery/membership_only"
             && problem.Code == "story.discovery.root.missing"));
         shell.OpenStory(incomplete);
         Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
-        StringAssert.Contains(shell.StatusMessage, "打开 Canonical Story");
+        StringAssert.Contains(shell.StatusMessage, "打开故事");
     }
 
     [TestMethod]

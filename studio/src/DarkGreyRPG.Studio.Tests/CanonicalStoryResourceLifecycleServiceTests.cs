@@ -2,6 +2,7 @@ using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.IO;
+using System.Text.Json;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -118,6 +119,68 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     }
 
     [TestMethod]
+    public void RemovingReferenceCleansEveryAggregatePlacementAndIncidentConnectionOnly()
+    {
+        using var project = NewProject();
+        var store = new CanonicalProjectGraphStore(project.Root);
+        CreateStory(store, "owner");
+        CreateStory(store, "consumer");
+        var service = new CanonicalStoryResourceLifecycleService(store);
+        service.CreateOwnedTask("owner", "task", "Task");
+        service.AddTaskReference("consumer", "task");
+        ReplaceStoryWithPlacements(store, "consumer", GraphResourceKind.Task, "task");
+
+        service.RemoveTaskReference("consumer", "task");
+
+        var graph = store.Stories.Load("consumer").Graph!;
+        CollectionAssert.AreEqual(new[] { "keep" }, graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.IsEmpty(graph.Connections);
+        Assert.IsTrue(File.Exists(store.Tasks.GetPath("task")), "Removing a placement/reference must not delete the resource.");
+    }
+
+    [TestMethod]
+    public void DeletingOwnedResourceCleansEveryOwnerPlacementAndIncidentConnection()
+    {
+        using var project = NewProject();
+        var store = new CanonicalProjectGraphStore(project.Root);
+        CreateStory(store, "owner");
+        var service = new CanonicalStoryResourceLifecycleService(store);
+        service.CreateOwnedSession("owner", "session", "Session");
+        ReplaceStoryWithPlacements(store, "owner", GraphResourceKind.Session, "session");
+
+        service.DeleteOwnedSession("owner", "session");
+
+        var graph = store.Stories.Load("owner").Graph!;
+        CollectionAssert.AreEqual(new[] { "keep" }, graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.IsEmpty(graph.Connections);
+        Assert.IsFalse(File.Exists(store.Sessions.GetPath("session")));
+    }
+
+    [TestMethod]
+    public void PlacementCleanupRollsBackStoryWhenMembershipWriteFails()
+    {
+        using var project = NewProject();
+        var normal = new CanonicalProjectGraphStore(project.Root);
+        CreateStory(normal, "owner");
+        CreateStory(normal, "consumer");
+        var normalService = new CanonicalStoryResourceLifecycleService(normal);
+        normalService.CreateOwnedTask("owner", "task", "Task");
+        normalService.AddTaskReference("consumer", "task");
+        ReplaceStoryWithPlacements(normal, "consumer", GraphResourceKind.Task, "task");
+        var storyPath = normal.Stories.GetPath("consumer");
+        var membershipPath = normal.Memberships.GetPath("consumer");
+        var storyBytes = File.ReadAllBytes(storyPath);
+        var membershipBytes = File.ReadAllBytes(membershipPath);
+
+        var failing = new CanonicalProjectGraphStore(project.Root, new FailOnWrite(2));
+        AssertCode(() => new CanonicalStoryResourceLifecycleService(failing)
+            .RemoveTaskReference("consumer", "task"), "story.resource.lifecycle.membership_replace_failed");
+
+        CollectionAssert.AreEqual(storyBytes, File.ReadAllBytes(storyPath));
+        CollectionAssert.AreEqual(membershipBytes, File.ReadAllBytes(membershipPath));
+    }
+
+    [TestMethod]
     public void CreationMembershipFailureRemovesJustCreatedResource()
     {
         using var project = NewProject();
@@ -199,6 +262,22 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
         store.Stories.Create(new GraphResourceEnvelope(
             GraphResourceKind.Story, id, id, new GraphDocument([new GraphNode("start", "start", "Start")])));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(id));
+    }
+
+    private static void ReplaceStoryWithPlacements(CanonicalProjectGraphStore store, string storyId,
+        GraphResourceKind kind, string resourceId)
+    {
+        var type = kind == GraphResourceKind.Session ? "session" : "task";
+        GraphNode Placement(string id)
+            => new(id, type, id, properties: new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+            {
+                ["resource_id"] = JsonSerializer.SerializeToElement(resourceId),
+            });
+        var graph = new GraphDocument(
+            [Placement("placement-a"), new GraphNode("keep", "action", "Keep"), Placement("placement-b")],
+            [new GraphConnection("placement-a", "out", "keep", "in", GraphInterfaceKind.Flow),
+             new GraphConnection("keep", "out", "placement-b", "in", GraphInterfaceKind.Flow)]);
+        store.Stories.Replace(new GraphResourceEnvelope(GraphResourceKind.Story, storyId, storyId, graph));
     }
 
     private static void AssertCode(Action action, string code)

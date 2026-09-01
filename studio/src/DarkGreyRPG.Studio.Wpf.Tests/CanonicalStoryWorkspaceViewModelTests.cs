@@ -145,6 +145,47 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     }
 
     [TestMethod]
+    public void ResourceSnapshotAdoptsLifecycleStoryCleanupAndCannotResurrectDeletedPlacement()
+    {
+        using var directory = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Path);
+        var session = Envelope(GraphResourceKind.Session, "session", "Session");
+        var start = GraphNodeFactory.CreateStoryStart("start", "trigger");
+        var aggregate = CanonicalAggregateNodeFactory.Create(session, "session-placement").Candidate!;
+        var story = new GraphResourceEnvelope(
+            GraphResourceKind.Story,
+            "story",
+            "Story",
+            new GraphDocument(
+                [start, aggregate],
+                [new GraphConnection("start", "trigger", "session-placement", "flow_in", GraphInterfaceKind.Flow)]));
+        store.Stories.Create(story);
+        store.Sessions.Create(session);
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "story", new CanonicalStoryMembershipSet { Sessions = ["session"] }));
+        var loader = new CanonicalStoryWorkspaceLoader(store);
+        using var workspace = new CanonicalStoryWorkspaceViewModel(loader.Load("story"));
+        var storyEditor = workspace.StoryEditor;
+
+        Assert.IsTrue(storyEditor.Host.SetStoryStartRepeatPolicy("start", StoryStartSchema.Repeatable));
+        store.Stories.Replace(storyEditor.CreatePersistenceSnapshot());
+        storyEditor.MarkSaved();
+        Assert.IsTrue(storyEditor.Host.CanUndo);
+
+        new CanonicalStoryResourceLifecycleService(store).DeleteOwnedSession("story", "session");
+        workspace.ApplyResourceSnapshot(loader.Load("story"), CanonicalStoryFolderKind.Sessions);
+
+        Assert.AreSame(storyEditor, workspace.StoryEditor);
+        CollectionAssert.AreEqual(new[] { "start" }, storyEditor.Host.Graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.IsEmpty(storyEditor.Host.Graph.Connections);
+        Assert.IsFalse(storyEditor.Host.CanUndo);
+        Assert.IsFalse(storyEditor.IsDirty);
+
+        Assert.IsTrue(storyEditor.Host.SetStoryStartRepeatPolicy("start", StoryStartSchema.Once));
+        CollectionAssert.AreEqual(new[] { "start" }, storyEditor.CreatePersistenceSnapshot().Graph!.Nodes.Select(node => node.Id).ToArray());
+    }
+
+    [TestMethod]
     public void StoryFlowIsDefaultWithActorSessionTaskFolders()
     {
         using var workspace = Workspace();

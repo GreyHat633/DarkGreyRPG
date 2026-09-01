@@ -43,7 +43,7 @@ public sealed class StoryOverviewViewModel : ObservableObject
         Id = story.Id;
         DisplayName = string.IsNullOrWhiteSpace(story.DisplayName) ? story.Id : story.DisplayName;
         Description = story.IsValid && story.IsComplete
-            ? "0.3.1.0 Canonical Story"
+            ? "0.3.1.0 新格式故事"
             : string.Join(Environment.NewLine, story.Diagnostics);
         Tags = [];
         OwnedActorCount = story.OwnedActorCount;
@@ -99,8 +99,8 @@ public sealed class StoryListItemViewModel
     public IReadOnlyList<string> Tags => Overview.Tags;
     public string TagsText => HasCanonicalStory
         ? CanonicalStory!.IsValid && CanonicalStory.IsComplete
-            ? "Canonical"
-            : "Canonical · 数据不完整"
+            ? "新格式"
+            : "新格式 · 数据不完整"
         : string.Join(", ", Tags);
     public int ActorCount => Overview.OwnedActorCount + Overview.ReferencedActorCount;
     public int DialogueCount => Overview.DialogueCount;
@@ -877,8 +877,10 @@ public sealed class ProjectHomeViewModel : ObservableObject
         }
     }
 
+    // 0.3.1.3 uses one persistent three-column Project Home. Legacy route
+    // commands remain callable, but no longer swap the graph and list pages.
     public bool IsGraphVisible => Route == ProjectHomeRoute.Graph;
-    public bool IsHomeVisible => Route == ProjectHomeRoute.Home;
+    public bool IsHomeVisible => true;
     public bool HasStories => Stories.Count > 0;
     public bool HasFilteredStories => FilteredStories.Count > 0;
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchText);

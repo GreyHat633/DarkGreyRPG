@@ -87,7 +87,7 @@ public static class StoryStartSchema
         var trigger = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["port_id"] = portId,
-            ["display_name"] = triggerType switch { RegionEntry => "进入区域", Logic => "逻辑条件", _ => "角色交互" },
+            ["display_name"] = "启动条件 1",
             ["trigger_type"] = triggerType,
             ["trigger_properties"] = properties,
             ["order"] = 0,
@@ -95,9 +95,7 @@ public static class StoryStartSchema
         if (logicPortId is not null)
             trigger[LogicPortIdProperty] = logicPortId;
         node.Properties[TriggersProperty] = JsonSerializer.SerializeToElement(new[] { trigger });
-        node.Ports.Add(new GraphPort(portId,
-            triggerType switch { RegionEntry => "进入区域", Logic => "逻辑条件", _ => "角色交互" },
-            false, GraphInterfaceKind.Flow, 0));
+        node.Ports.Add(new GraphPort(portId, "启动条件 1", false, GraphInterfaceKind.Flow, 0));
         if (logicPortId is not null)
             node.Ports.Add(new GraphPort(logicPortId, "条件", true, GraphInterfaceKind.Logic, 0));
     }

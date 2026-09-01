@@ -113,6 +113,43 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     }
 
     [TestMethod]
+    public void InteractHasNoRequiredFieldAndRejectsRequiredEdits()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        var graph = new GraphDocument([objective]);
+        var session = new GraphEditSession(graph, GraphScope.Task);
+
+        Assert.IsTrue(session.ChangeObjectiveType("objective", CanonicalTaskObjectiveSchema.InteractActor, "actor-1"));
+        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "actor_id" },
+            objective.Properties.Keys.ToArray());
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(objective));
+        Assert.IsFalse(session.SetObjectiveRequired("objective", 2));
+        Assert.IsFalse(objective.Properties.ContainsKey(CanonicalTaskObjectiveSchema.RequiredProperty));
+        Assert.AreEqual("graph.objective.interact.required.unsupported", session.LastValidationIssues.Single().Code);
+    }
+
+    [TestMethod]
+    public void LegacyInteractRequiredOneNormalizesButHigherCountRequestsMigration()
+    {
+        var safe = GraphNodeFactory.Create(GraphScope.Task, "objective", "safe");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(safe,
+            CanonicalTaskObjectiveSchema.InteractActor, "actor-1", out _));
+        safe.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(1);
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(safe));
+        var graph = new GraphDocument([safe]);
+        Assert.AreEqual(1, CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(graph));
+        Assert.IsFalse(safe.Properties.ContainsKey(CanonicalTaskObjectiveSchema.RequiredProperty));
+
+        var ambiguous = GraphNodeFactory.Create(GraphScope.Task, "objective", "ambiguous");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(ambiguous,
+            CanonicalTaskObjectiveSchema.InteractActor, "actor-2", out _));
+        ambiguous.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(3);
+        Assert.AreEqual(0, CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(new GraphDocument([ambiguous])));
+        CollectionAssert.Contains(CanonicalTaskObjectiveSchema.Validate(ambiguous).Select(issue => issue.Code).ToArray(),
+            "graph.objective.interact.required.legacy_count");
+    }
+
+    [TestMethod]
     public void AddAllowsUnselectedObjectiveUntilDgrTargetIsSelected()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");

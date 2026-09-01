@@ -23,6 +23,14 @@ public sealed class GraphPortsChangedEventArgs : EventArgs
     public IReadOnlyList<string> NodeIds { get; }
 }
 
+/// <summary>Identifies graph nodes whose persisted projection changed in one edit.</summary>
+public sealed class GraphNodesChangedEventArgs : EventArgs
+{
+    public GraphNodesChangedEventArgs(IReadOnlyList<string> nodeIds) => NodeIds = nodeIds;
+
+    public IReadOnlyList<string> NodeIds { get; }
+}
+
 /// <summary>Bindable canonical port projection.</summary>
 public sealed class GraphEditorPortViewModel : ObservableObject
 {
@@ -221,7 +229,9 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     private readonly GraphEditorCommandBridge _commandBridge;
     private readonly Dictionary<string, GraphEditorNodeViewModel> _uniqueNodeItems = new(StringComparer.Ordinal);
     private readonly Dictionary<string, GraphEditorNodePosition> _layout = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ValidationIssue> _authoringIssues = new(StringComparer.Ordinal);
     private IReadOnlyList<ValidationIssue> _lastValidationIssues = [];
+    private IReadOnlyList<ValidationIssue> _coreValidationIssues = [];
 
     /// <summary>
     /// Raised only after a successful canonical graph mutation. Preview,
@@ -230,6 +240,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     /// </summary>
     public event EventHandler? GraphChanged;
     public event EventHandler<GraphPortsChangedEventArgs>? PortsChanged;
+    public event EventHandler<GraphNodesChangedEventArgs>? NodesChanged;
 
     public GraphEditorHostViewModel(GraphDocument graph, GraphScope scope)
         : this(graph, scope, compatibilityMode: false, layout: null) { }
@@ -278,9 +289,44 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public IReadOnlyDictionary<string, GraphEditorNodePosition> Layout => _layout;
     public long GraphRevision { get; private set; }
 
+    /// <summary>Publishes or clears a staged editor error without mutating the graph.</summary>
+    public void SetAuthoringIssue(string key, ValidationIssue? issue)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        if (issue is null) _authoringIssues.Remove(key);
+        else _authoringIssues[key] = issue;
+        PublishState(_coreValidationIssues);
+    }
+
     /// <summary>Reprojects the current document while retaining unique node items and layout.</summary>
     public void Refresh()
         => Refresh(_commandBridge.LastValidationIssues);
+
+    /// <summary>
+    /// Reconciles the retained WPF host with a repository-committed graph and
+    /// clears history that belongs to the superseded persistence baseline.
+    /// </summary>
+    public void ApplyPersistedSnapshot(GraphDocument graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        var oldUndo = CanUndo;
+        var oldRedo = CanRedo;
+        var beforePorts = CapturePortSignatures();
+        var beforeNodes = CaptureNodeSignatures();
+        _session.ResetToPersistedSnapshot(graph);
+        _authoringIssues.Clear();
+        var liveNodeIds = (Graph.Nodes ?? [])
+            .Where(node => node is not null && !string.IsNullOrWhiteSpace(node.Id))
+            .Select(node => node.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var staleId in _layout.Keys.Where(id => !liveNodeIds.Contains(id)).ToArray())
+            _layout.Remove(staleId);
+        Refresh(_session.LastValidationIssues);
+        PublishGraphChanged();
+        PublishPortsChanged(beforePorts);
+        PublishNodesChanged(beforeNodes);
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+    }
 
     private void Refresh(IReadOnlyList<ValidationIssue> issues)
     {
@@ -429,6 +475,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
         var beforePorts = CapturePortSignatures();
+        var beforeNodes = CaptureNodeSignatures();
         var current = originals.Where(connection => connection is not null).ToArray();
         if (current.Length != originals.Count || current.Select(connection => connection).Distinct().Count() != current.Length)
             return false;
@@ -445,6 +492,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             {
                 PublishGraphChanged();
                 PublishPortsChanged(beforePorts);
+                PublishNodesChanged(beforeNodes);
             }
             NotifyHistoryStateChanged(oldUndo, oldRedo);
             return disconnected;
@@ -485,6 +533,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         {
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
+            PublishNodesChanged(beforeNodes);
         }
         NotifyHistoryStateChanged(oldUndo, oldRedo);
         return reconnected;
@@ -678,6 +727,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
         var beforePorts = CapturePortSignatures();
+        var beforeNodes = CaptureNodeSignatures();
         var result = _session.ApplyAggregateSynchronization(plan, confirmReferencedRemoval);
         var changed = result && _session.UndoCount != oldUndoCount;
         if (changed)
@@ -685,6 +735,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             Refresh(_session.LastValidationIssues);
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
+            PublishNodesChanged(beforeNodes);
         }
         else PublishState(_session.LastValidationIssues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -703,6 +754,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
         var beforePorts = CapturePortSignatures();
+        var beforeNodes = CaptureNodeSignatures();
         var result = command();
         var issues = _commandBridge.LastValidationIssues;
         if (result)
@@ -710,6 +762,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             Refresh(issues);
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
+            PublishNodesChanged(beforeNodes);
         }
         else PublishState(issues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -721,6 +774,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
         var beforePorts = CapturePortSignatures();
+        var beforeNodes = CaptureNodeSignatures();
         var result = command();
         var issues = _session.LastValidationIssues;
         if (result)
@@ -728,6 +782,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             Refresh(issues);
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
+            PublishNodesChanged(beforeNodes);
         }
         else PublishState(issues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -777,11 +832,37 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         if (changed.Length != 0) PortsChanged?.Invoke(this, new GraphPortsChangedEventArgs(changed));
     }
 
+    private Dictionary<string, string> CaptureNodeSignatures()
+    {
+        var signatures = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var node in (Graph.Nodes ?? []).Where(node => node is not null))
+        {
+            var id = node.Id ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(id)) continue;
+            var signature = JsonSerializer.Serialize(node, GraphSerializer.Options);
+            if (!signatures.TryAdd(id, signature)) signatures.Remove(id);
+        }
+        return signatures;
+    }
+
+    private void PublishNodesChanged(IReadOnlyDictionary<string, string> before)
+    {
+        var after = CaptureNodeSignatures();
+        var changed = before.Keys.Union(after.Keys, StringComparer.Ordinal)
+            .Where(id => !before.TryGetValue(id, out var oldSignature)
+                || !after.TryGetValue(id, out var newSignature)
+                || !string.Equals(oldSignature, newSignature, StringComparison.Ordinal))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        if (changed.Length != 0) NodesChanged?.Invoke(this, new GraphNodesChangedEventArgs(changed));
+    }
+
     private void PublishState(IReadOnlyList<ValidationIssue> issues)
     {
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
-        _lastValidationIssues = issues.ToArray();
+        _coreValidationIssues = issues.ToArray();
+        _lastValidationIssues = _coreValidationIssues.Concat(_authoringIssues.Values).ToArray();
         OnPropertyChanged(nameof(LastValidationIssues));
         if (oldUndo != CanUndo) OnPropertyChanged(nameof(CanUndo));
         if (oldRedo != CanRedo) OnPropertyChanged(nameof(CanRedo));

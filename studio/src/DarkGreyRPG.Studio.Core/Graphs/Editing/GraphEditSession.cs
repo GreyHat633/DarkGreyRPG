@@ -767,8 +767,19 @@ public sealed class GraphEditSession
             JsonSerializer.SerializeToElement(description ?? string.Empty));
 
     public bool SetObjectiveRequired(string nodeId, int required)
-        => SetNodeProperty(nodeId, CanonicalTaskObjectiveSchema.RequiredProperty,
+    {
+        var node = (Document.Nodes ?? []).FirstOrDefault(candidate => candidate is not null
+            && string.Equals(candidate.Id, nodeId, StringComparison.Ordinal));
+        if (node is null || !node.Properties.TryGetValue(CanonicalTaskObjectiveSchema.TypeProperty, out var type)
+            || type.ValueKind != JsonValueKind.String)
+            return SetNodeProperty(nodeId, CanonicalTaskObjectiveSchema.RequiredProperty,
+                JsonSerializer.SerializeToElement(required));
+        if (string.Equals(type.GetString(), CanonicalTaskObjectiveSchema.InteractActor, StringComparison.Ordinal))
+            return Fail([new("graph.objective.interact.required.unsupported",
+                "角色交互目标不使用次数。", $"properties.{CanonicalTaskObjectiveSchema.RequiredProperty}", NodeId: nodeId)]);
+        return SetNodeProperty(nodeId, CanonicalTaskObjectiveSchema.RequiredProperty,
             JsonSerializer.SerializeToElement(required));
+    }
 
     public bool ChangeStoryActionType(string nodeId, string? type)
     {
@@ -1655,6 +1666,22 @@ public sealed class GraphEditSession
         _undo.Push(edit);
         _lastValidationIssues = [];
         return true;
+    }
+
+    /// <summary>
+    /// Replaces the retained live document with an externally persisted
+    /// snapshot and starts a new edit-history baseline. This is intentionally
+    /// not an undoable user edit: repository lifecycle transactions have
+    /// already committed the supplied state.
+    /// </summary>
+    public void ResetToPersistedSnapshot(GraphDocument snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ReplaceContents(snapshot);
+        _undo.Clear();
+        _redo.Clear();
+        _issuedDynamicPortIds.Clear();
+        _lastValidationIssues = [];
     }
 
     /// <summary>

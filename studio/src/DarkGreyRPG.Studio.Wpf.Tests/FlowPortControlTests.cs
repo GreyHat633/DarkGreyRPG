@@ -32,22 +32,22 @@ public sealed class FlowPortControlTests
     }
 
     [STATestMethod]
-    public void HighlightChangesOnlyEllipseSizeInsideStableAnchorSlot()
+    public void HighlightChangesOnlyEllipseSizeInsideCenteredHitTarget()
     {
         var control = CreateControl("node", "next", isInput: false);
         var normal = GetAnchor(control);
 
         Assert.AreEqual(9d, normal.Ellipse.Width);
-        Assert.AreEqual(11d, normal.Slot.Width);
-        Assert.AreEqual(11d, normal.Slot.Height);
+        Assert.AreEqual(20d, normal.Slot.Width);
+        Assert.AreEqual(20d, normal.Slot.Height);
 
         control.IsConnecting = true;
         var highlighted = GetAnchor(control);
 
         Assert.AreEqual(11d, highlighted.Ellipse.Width);
         Assert.AreEqual(11d, highlighted.Ellipse.Height);
-        Assert.AreEqual(11d, highlighted.Slot.Width);
-        Assert.AreEqual(11d, highlighted.Slot.Height);
+        Assert.AreEqual(20d, highlighted.Slot.Width);
+        Assert.AreEqual(20d, highlighted.Slot.Height);
     }
 
     [STATestMethod]
@@ -74,7 +74,7 @@ public sealed class FlowPortControlTests
         control.DisplayName = "条件已满足";
 
         Assert.AreEqual("check_condition", control.EffectivePortId);
-        Assert.AreEqual("条件已满足", ((TextBlock)((StackPanel)control.Content!).Children[0]).Text);
+        Assert.AreEqual("条件已满足", ((TextBlock)((Grid)control.Content!).Children[0]).Text);
     }
 
     [STATestMethod]
@@ -113,7 +113,7 @@ public sealed class FlowPortControlTests
         control.InterfaceKind = GraphInterfaceKind.Logic;
 
         var (slot, shape) = GetShape(control);
-        Assert.AreEqual(11d, slot.Width);
+        Assert.AreEqual(20d, slot.Width);
         Assert.IsInstanceOfType(shape, typeof(Polygon));
         Assert.AreEqual(9d, shape.Width);
         Assert.IsGreaterThan((byte)200, ((SolidColorBrush)((Polygon)shape).Fill).Color.R);
@@ -133,11 +133,11 @@ public sealed class FlowPortControlTests
         control.IsValidTarget = true;
         var highlighted = GetShape(control);
 
-        Assert.AreEqual(11d, normal.Slot.Width);
-        Assert.AreEqual(11d, highlighted.Slot.Width);
+        Assert.AreEqual(20d, normal.Slot.Width);
+        Assert.AreEqual(20d, highlighted.Slot.Width);
         Assert.AreEqual(9d, normal.Shape.Width);
         Assert.AreEqual(11d, highlighted.Shape.Width);
-        Assert.AreEqual(11d, highlighted.Slot.Height);
+        Assert.AreEqual(20d, highlighted.Slot.Height);
     }
 
     [STATestMethod]
@@ -177,7 +177,7 @@ public sealed class FlowPortControlTests
     public void OnlyRenderedAnchorIsAWireHitTarget()
     {
         var flow = CreateControl("node", "branch", isInput: false);
-        var flowPanel = (StackPanel)flow.Content!;
+        var flowPanel = (Grid)flow.Content!;
         var flowAnchor = flowPanel.Children.OfType<Grid>().Single().Children[0];
         var flowLabel = flowPanel.Children.OfType<TextBlock>().Single();
 
@@ -186,12 +186,28 @@ public sealed class FlowPortControlTests
 
         var logic = CreateControl("node", "condition", isInput: true);
         logic.InterfaceKind = GraphInterfaceKind.Logic;
-        var logicPanel = (StackPanel)logic.Content!;
+        var logicPanel = (Grid)logic.Content!;
         var logicAnchor = logicPanel.Children.OfType<Grid>().Single().Children[0];
         var logicLabel = logicPanel.Children.OfType<TextBlock>().Single();
 
         Assert.IsTrue(logic.IsAnchorHitTarget(logicAnchor));
         Assert.IsFalse(logic.IsAnchorHitTarget(logicLabel));
+    }
+
+    [STATestMethod]
+    public void AnchorHitTargetIsCenteredAndDoesNotIncludeLabel()
+    {
+        var control = CreateControl("node", "a long output label", isInput: false);
+        var panel = (Grid)control.Content!;
+        var surface = panel.Children.OfType<Grid>().Single();
+        var label = panel.Children.OfType<TextBlock>().Single();
+
+        Assert.AreEqual(20d, surface.Width);
+        Assert.AreEqual(20d, surface.Height);
+        Assert.IsTrue(control.IsAnchorHitTarget(surface));
+        Assert.IsFalse(control.IsAnchorHitTarget(label));
+        Assert.AreEqual(9d, ((Ellipse)surface.Children[0]).Width);
+        Assert.AreEqual(HorizontalAlignment.Center, surface.HorizontalAlignment);
     }
 
     private static FlowPortControl CreateControl(string nodeId, string portName, bool isInput)
@@ -208,14 +224,14 @@ public sealed class FlowPortControlTests
 
     private static (Grid Slot, Ellipse Ellipse) GetAnchor(FlowPortControl control)
     {
-        var panel = (StackPanel)control.Content!;
+        var panel = (Grid)control.Content!;
         var slot = panel.Children.OfType<Grid>().Single();
         return (slot, (Ellipse)slot.Children[0]);
     }
 
     private static (Grid Slot, FrameworkElement Shape) GetShape(FlowPortControl control)
     {
-        var panel = (StackPanel)control.Content!;
+        var panel = (Grid)control.Content!;
         var slot = panel.Children.OfType<Grid>().Single();
         return (slot, (FrameworkElement)slot.Children[0]);
     }

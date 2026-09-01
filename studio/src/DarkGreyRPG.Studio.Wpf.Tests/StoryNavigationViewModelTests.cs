@@ -119,7 +119,7 @@ public sealed class StoryNavigationViewModelTests
             canonicalOnly.MembershipSummary);
         Assert.AreEqual(5, canonicalOnly.FlowNodeCount);
         var broken = home.Stories.Single(item => item.Id == "broken");
-        Assert.AreEqual("Canonical · 数据不完整", broken.TagsText);
+        Assert.AreEqual("新格式 · 数据不完整", broken.TagsText);
         StringAssert.Contains(broken.Description, "缺少 membership");
         Assert.HasCount(2, home.Graph.Nodes);
     }
@@ -320,7 +320,7 @@ public sealed class StoryNavigationViewModelTests
         Assert.AreEqual(1, File.ReadAllText(FindRepositoryFile("studio/src/DarkGreyRPG.Studio/Views/StoryFlowEditorView.xaml"))
             .Split("Story 流程页面命令栏", StringSplitOptions.None).Length - 1);
         Assert.AreEqual(3, xaml.Split("StoryResourceLibraryWidth, ElementName=RootWindow", StringSplitOptions.None).Length - 1);
-        Assert.AreEqual(3, xaml.Split("GridSplitter Grid.Column=\"1\"", StringSplitOptions.None).Length - 1);
+        Assert.AreEqual(4, xaml.Split("GridSplitter Grid.Column=\"1\"", StringSplitOptions.None).Length - 1);
         StringAssert.Contains(xaml, "MinWidth=\"220\" MaxWidth=\"380\"");
     }
 

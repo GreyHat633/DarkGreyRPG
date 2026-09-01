@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -13,10 +14,12 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 public partial class CanonicalStoryWorkspaceView : UserControl
 {
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";
-    private static readonly Vector ResourceNodePointerAnchor = new(116d, 38d);
+    private static readonly Vector ResourceNodePointerAnchor = new(116d, 46d);
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;
     private Point _resourceDragStart;
     private ICanonicalStoryTreeItem? _resourceDragItem;
+    private Button? _resourceReorderPreviewButton;
+    private bool _resourceReorderInsertAfter;
     private long _appliedStoryNodeFocusSequence;
     private bool _storyNodeFocusQueued;
     private Func<CanonicalChoiceOptionRemovalConfirmation, bool>? _choiceOptionRemovalConfirmation;
@@ -60,6 +63,9 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     public string ResourceDragGhostDisplayName => ResourceDragGhostTitle.Text;
     public Point ResourceDragGhostViewportPosition =>
         new(Canvas.GetLeft(ResourceDragGhost), Canvas.GetTop(ResourceDragGhost));
+    public Vector ResourceDragGhostPointerOffset => ResourceNodePointerAnchor;
+    public string ResourceReorderPreviewPlacement => _resourceReorderPreviewButton is null
+        ? string.Empty : _resourceReorderInsertAfter ? "after" : "before";
 
     /// <summary>
     /// Optional test/host injection for Choice-option removal confirmation.
@@ -97,11 +103,16 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     }
 
     public bool SelectResourceItem(ICanonicalStoryTreeItem? item)
-        => Workspace?.SelectTreeItem(item) == true;
+    {
+        // Resource selection owns the Inspector. Clear the visual graph selection
+        // as well so clicking that same node later emits a fresh selection event.
+        WorkspaceGraph.ClearSelection();
+        return Workspace?.SelectTreeItem(item) == true;
+    }
 
     public bool ActivateResourceItem(ICanonicalStoryTreeItem? item)
     {
-        if (Workspace is null || item is null || !Workspace.SelectTreeItem(item)) return false;
+        if (Workspace is null || item is null || !SelectResourceItem(item)) return false;
         return item is CanonicalStoryGraphItem graph && Workspace.OpenGraphResource(graph);
     }
 
@@ -238,30 +249,65 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         finally
         {
             CancelResourceDragPreview();
+            ClearResourceReorderPreview();
         }
         args.Handled = true;
     }
 
     private void ResourceItem_OnDragOver(object sender, DragEventArgs args)
     {
-        args.Effects = sender is Button { Tag: ICanonicalStoryTreeItem target }
-            && TryGetDraggedResource(args.Data, out var item)
-            && item is not null
-            && Workspace?.CanReorderResource(item, target) == true
-                ? DragDropEffects.Move
-                : DragDropEffects.None;
+        var button = sender as Button;
+        var target = button?.Tag as ICanonicalStoryTreeItem;
+        var valid = button is not null && target is not null
+            && TryGetDraggedResource(args.Data, out var item) && item is not null
+            && Workspace?.CanReorderResource(item, target!) == true;
+        args.Effects = valid ? DragDropEffects.Move : DragDropEffects.None;
+        if (valid)
+        {
+            var insertAfter = args.GetPosition(button!).Y >= Math.Max(1d, button!.ActualHeight) / 2d;
+            ShowResourceReorderPreview(button!, insertAfter);
+        }
+        else ClearResourceReorderPreview();
+        args.Handled = true;
+    }
+
+    private void ResourceItem_OnDragLeave(object sender, DragEventArgs args)
+    {
+        if (ReferenceEquals(sender, _resourceReorderPreviewButton)) ClearResourceReorderPreview();
         args.Handled = true;
     }
 
     private void ResourceItem_OnDrop(object sender, DragEventArgs args)
     {
+        var insertAfter = _resourceReorderInsertAfter;
+        ClearResourceReorderPreview();
         args.Effects = sender is Button { Tag: ICanonicalStoryTreeItem target }
             && TryGetDraggedResource(args.Data, out var item)
             && item is not null
-            && Workspace?.ReorderResource(item, target) == true
+            && Workspace?.ReorderResource(item, target, insertAfter) == true
                 ? DragDropEffects.Move
                 : DragDropEffects.None;
         args.Handled = true;
+    }
+
+    private void ShowResourceReorderPreview(Button button, bool insertAfter)
+    {
+        if (!ReferenceEquals(_resourceReorderPreviewButton, button)) ClearResourceReorderPreview();
+        _resourceReorderPreviewButton = button;
+        _resourceReorderInsertAfter = insertAfter;
+        button.BorderBrush = (Brush)FindResource("AccentFillColorDefaultBrush");
+        button.BorderThickness = insertAfter ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 0);
+    }
+
+    private void ClearResourceReorderPreview()
+    {
+        if (_resourceReorderPreviewButton is not null)
+        {
+            _resourceReorderPreviewButton.ClearValue(Control.BorderBrushProperty);
+            _resourceReorderPreviewButton.ClearValue(Control.BorderThicknessProperty);
+        }
+        _resourceReorderPreviewButton = null;
+        _resourceReorderInsertAfter = false;
     }
 
     private void WorkspaceGraph_OnDragOver(object sender, DragEventArgs args)
@@ -443,6 +489,12 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             Workspace?.ClearGraphSelection();
         if (args.PropertyName == nameof(CanonicalStoryWorkspaceViewModel.NodeInspector))
             ApplyRemovalConfirmations();
+        if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActorItems)
+            or nameof(CanonicalStoryWorkspaceViewModel.ItemItems))
+        {
+            WorkspaceGraph.ClearSelection();
+            WorkspaceGraph.RefreshInlineEditors();
+        }
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.StoryNodeFocusRequest)
             or nameof(CanonicalStoryWorkspaceViewModel.ActiveGraphHost))
             QueueStoryNodeFocus();
@@ -485,8 +537,8 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     private bool ShowStoryStartTriggerRemovalConfirmation(CanonicalStoryStartTriggerRemovalConfirmation confirmation)
         => MessageBox.Show(
             Window.GetWindow(this),
-            $"删除启动方式“{confirmation.DisplayName}”将同时移除它的 Flow 和 Logic 引用/连接。\n确定继续吗？",
-            "确认删除启动方式",
+            $"删除启动条件“{confirmation.DisplayName}”将同时移除它的 Flow 和 Logic 引用/连接。\n确定继续吗？",
+            "确认删除启动条件",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;

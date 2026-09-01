@@ -2,7 +2,7 @@
         x:Name="MigrationDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="迁移到 Canonical"
+        Title="迁移项目格式"
         Width="900" Height="700" MinWidth="760" MinHeight="560"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         AutomationProperties.AutomationId="CanonicalProjectMigrationDialog"
@@ -16,9 +16,9 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock FontSize="21" FontWeight="SemiBold" Text="迁移项目到 Canonical" />
+        <TextBlock FontSize="21" FontWeight="SemiBold" Text="迁移到新项目格式" />
         <TextBlock Grid.Row="1" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                   TextWrapping="Wrap" Text="这是只读预览。只有明确点击确认后才会创建备份并写入 Canonical 文件。" />
+                   TextWrapping="Wrap" Text="这是只读预览。只有明确点击确认后才会创建备份并写入新格式文件。" />
         <StackPanel Grid.Row="2" Margin="0,14,0,14">
             <TextBlock Text="项目路径" FontWeight="SemiBold" />
             <TextBlock Margin="0,3,0,0" TextWrapping="Wrap" Text="{Binding ProjectDirectory}" />

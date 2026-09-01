@@ -27,6 +27,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private string _objectiveType = CanonicalTaskObjectiveSchema.KillEntity;
     private string _objectiveDescription = string.Empty;
     private string _objectiveRequiredText = string.Empty;
+    private string _objectiveRequiredError = string.Empty;
     private string _objectiveTarget = string.Empty;
     private string _objectiveActorId = string.Empty;
     private IReadOnlyList<CanonicalSessionSpeakerOption> _speakerOptions = [];
@@ -42,7 +43,9 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private string _actionType = CanonicalStoryActionSchema.SendMessage;
     private string _actionItem = string.Empty;
     private string _actionAmountText = string.Empty;
+    private string _actionAmountError = string.Empty;
     private string _actionMessage = string.Empty;
+    private bool _suppressTargetedRefresh;
 
     public CanonicalNodeInspectorViewModel(
         GraphEditorHostViewModel host,
@@ -58,7 +61,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         AddTaskResultSlotCommand = new RelayCommand(() => AddTaskResultSlot(), () => IsTaskSettle);
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
         RefreshFromHost();
-        _host.GraphChanged += HostOnGraphChanged;
+        _host.NodesChanged += HostOnNodesChanged;
         _host.PropertyChanged += HostOnPropertyChanged;
     }
 
@@ -142,6 +145,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         set => SetActionInteger(CanonicalStoryActionSchema.AmountProperty, value, 1, ref _actionAmountText,
             nameof(StoryActionAmountText));
     }
+    public string StoryActionAmountError => _actionAmountError;
     public string StoryActionMessage
     {
         get => _actionMessage;
@@ -177,9 +181,9 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
 
     public IReadOnlyList<CanonicalObjectiveTypeOption> ObjectiveTypeOptions { get; } =
     [
-        new(CanonicalTaskObjectiveSchema.KillEntity, "击杀实体"),
-        new(CanonicalTaskObjectiveSchema.CollectItem, "收集物品"),
-        new(CanonicalTaskObjectiveSchema.InteractActor, "交互角色"),
+        new(CanonicalTaskObjectiveSchema.KillEntity, "实体击杀"),
+        new(CanonicalTaskObjectiveSchema.CollectItem, "物品收集"),
+        new(CanonicalTaskObjectiveSchema.InteractActor, "角色交互"),
     ];
 
     public CanonicalObjectiveTypeOption? SelectedObjectiveType
@@ -223,13 +227,19 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         {
             var next = value ?? string.Empty;
             if (string.Equals(_objectiveRequiredText, next, StringComparison.Ordinal)) return;
-            if (int.TryParse(next, out var parsed) && _host.SetObjectiveRequired(NodeId, parsed))
-                _objectiveRequiredText = next;
+            _objectiveRequiredText = next;
+            if (int.TryParse(next, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                && parsed >= 1 && (_host.SetObjectiveRequired(NodeId, parsed)
+                    || HasPersistedInteger(CanonicalTaskObjectiveSchema.RequiredProperty, parsed)))
+                SetObjectiveRequiredError(string.Empty);
             else
-                RefreshFromHost();
+                SetObjectiveRequiredError("请输入不小于 1 的整数。");
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ObjectiveRequired));
         }
     }
+
+    public string ObjectiveRequiredError => _objectiveRequiredError;
 
     public int ObjectiveRequired => int.TryParse(_objectiveRequiredText, out var value) ? value : 0;
     public string ObjectiveTarget
@@ -376,6 +386,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public ObservableCollection<CanonicalStoryStartTriggerViewModel> StoryStartTriggers { get; } = [];
     public IReadOnlyList<CanonicalStoryStartTriggerViewModel> TriggerSlots => StoryStartTriggers;
     public RelayCommand AddStoryStartTriggerCommand { get; }
+    public int RefreshCount { get; private set; }
 
     /// <summary>
     /// Optional UI confirmation boundary for removing a referenced Choice
@@ -392,12 +403,12 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public Func<CanonicalTaskResultSlotRemovalConfirmation, bool>? TaskResultSlotRemovalConfirmationRequested { get; set; }
     public Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? StoryStartTriggerRemovalConfirmationRequested { get; set; }
 
-    public bool AddStoryStartTrigger(string displayName = "新触发",
+    public bool AddStoryStartTrigger(string? displayName = null,
         string triggerType = StoryStartSchema.RegionEntry,
         IReadOnlyDictionary<string, JsonElement>? triggerProperties = null)
     {
         if (!IsStoryStart) return false;
-        return _host.AddStoryStartTrigger(NodeId, displayName, triggerType, triggerProperties);
+        return _host.AddStoryStartTrigger(NodeId, displayName ?? AllocateStoryStartDisplayName(), triggerType, triggerProperties);
     }
 
     public bool SetStoryStartTriggerType(string portId, string triggerType)
@@ -405,6 +416,13 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         if (!IsStoryStart) return false;
         var actorId = _actorItems.FirstOrDefault()?.Id;
         return _host.SetStoryStartTriggerType(NodeId, portId, triggerType, actorId);
+    }
+
+    internal bool SetStoryStartTriggerTypeLocally(string portId, string triggerType)
+    {
+        if (!IsStoryStart) return false;
+        var actorId = _actorItems.FirstOrDefault()?.Id;
+        return ExecuteLocalMutation(() => _host.SetStoryStartTriggerType(NodeId, portId, triggerType, actorId));
     }
 
     public bool SetStoryStartTriggerProperties(string portId,
@@ -423,7 +441,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
                 item => item.Value.Clone(), StringComparer.Ordinal)
             : new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         properties[property] = value.Clone();
-        return SetStoryStartTriggerProperties(portId, properties);
+        return ExecuteLocalMutation(() => _host.SetStoryStartTriggerProperties(NodeId, portId, properties));
     }
 
     public bool RenameStoryStartTrigger(string portId, string displayName)
@@ -431,6 +449,9 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         if (!IsStoryStart) return false;
         return _host.RenameStoryStartTrigger(NodeId, portId, displayName);
     }
+
+    internal bool RenameStoryStartTriggerLocally(string portId, string displayName)
+        => IsStoryStart && ExecuteLocalMutation(() => _host.RenameStoryStartTrigger(NodeId, portId, displayName));
 
     public bool ReorderStoryStartTrigger(string portId, int order)
     {
@@ -547,7 +568,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     {
         if (_disposed) return;
         _disposed = true;
-        _host.GraphChanged -= HostOnGraphChanged;
+        _host.NodesChanged -= HostOnNodesChanged;
         _host.PropertyChanged -= HostOnPropertyChanged;
     }
 
@@ -585,10 +606,38 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         if (_disposed || !IsStoryAction) return;
         var next = value ?? string.Empty;
         if (string.Equals(field, next, StringComparison.Ordinal)) return;
+        field = next;
         if (int.TryParse(next, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) && parsed >= minimum
-            && _host.SetNodeProperty(NodeId, property, JsonSerializer.SerializeToElement(parsed))) field = next;
-        else RefreshFromHost();
+            && (_host.SetNodeProperty(NodeId, property, JsonSerializer.SerializeToElement(parsed))
+                || HasPersistedInteger(property, parsed)))
+            SetActionAmountError(string.Empty);
+        else SetActionAmountError($"请输入不小于 {minimum} 的整数。");
         OnPropertyChanged(propertyName);
+    }
+
+    private void SetObjectiveRequiredError(string message)
+    {
+        if (!SetProperty(ref _objectiveRequiredError, message, nameof(ObjectiveRequiredError))) return;
+        _host.SetAuthoringIssue($"{NodeId}:objective_required",
+            string.IsNullOrEmpty(message) ? null : new ValidationIssue(
+                "graph.objective.required.authoring_invalid", message,
+                CanonicalTaskObjectiveSchema.RequiredProperty, ValidationSeverity.Error, NodeId));
+    }
+
+    private bool HasPersistedInteger(string property, int expected)
+        => _host.Nodes.FirstOrDefault(node => string.Equals(node.NodeId, NodeId, StringComparison.Ordinal))
+            ?.Properties.TryGetValue(property, out var value) == true
+            && value.ValueKind == JsonValueKind.Number
+            && value.TryGetInt32(out var actual)
+            && actual == expected;
+
+    private void SetActionAmountError(string message)
+    {
+        if (!SetProperty(ref _actionAmountError, message, nameof(StoryActionAmountError))) return;
+        _host.SetAuthoringIssue($"{NodeId}:action_amount",
+            string.IsNullOrEmpty(message) ? null : new ValidationIssue(
+                "graph.story.action.amount.authoring_invalid", message,
+                CanonicalStoryActionSchema.AmountProperty, ValidationSeverity.Error, NodeId));
     }
 
     private void SetSelectedSpeaker(CanonicalSessionSpeakerOption? option)
@@ -632,7 +681,44 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             "graph.dynamic_port.references.confirmation_required",
             StringComparison.Ordinal));
 
-    private void HostOnGraphChanged(object? sender, EventArgs args) => RefreshFromHost();
+    private void HostOnNodesChanged(object? sender, GraphNodesChangedEventArgs args)
+    {
+        if (!_suppressTargetedRefresh && args.NodeIds.Contains(NodeId, StringComparer.Ordinal)) RefreshFromHost();
+    }
+
+    internal bool TryGetStoryStartTrigger(string portId, out StoryStartTriggerSlot? slot)
+    {
+        var current = _host.Nodes.FirstOrDefault(candidate =>
+            string.Equals(candidate.NodeId, NodeId, StringComparison.Ordinal));
+        if (current is null)
+        {
+            slot = null;
+            return false;
+        }
+        var node = new GraphNode(current.NodeId, current.Type, current.DisplayName,
+            current.Inputs.Concat(current.Outputs).Select(port => new GraphPort(port.PortId,
+                port.DisplayName, port.IsInput, port.GraphInterfaceKind, port.Order)), current.Properties);
+        slot = StoryStartSchema.ReadTriggers(node).FirstOrDefault(candidate =>
+            string.Equals(candidate.PortId, portId, StringComparison.Ordinal));
+        return slot is not null;
+    }
+
+    private bool ExecuteLocalMutation(Func<bool> mutation)
+    {
+        _suppressTargetedRefresh = true;
+        try { return mutation(); }
+        finally { _suppressTargetedRefresh = false; }
+    }
+
+    private string AllocateStoryStartDisplayName()
+    {
+        var used = StoryStartTriggers.Select(trigger => trigger.DisplayName).ToHashSet(StringComparer.Ordinal);
+        for (var index = 1; ; index++)
+        {
+            var candidate = $"启动条件 {index}";
+            if (!used.Contains(candidate)) return candidate;
+        }
+    }
 
     private void HostOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
@@ -641,7 +727,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     }
 
     public IReadOnlyList<ValidationIssue> ValidationIssues
-        => IsStoryStart ? _host.Session.LastValidationIssues : _host.LastValidationIssues;
+        => _host.LastValidationIssues;
 
     private bool CanEditProperty(string property)
         => property == "speaker_actor_id" && IsLine
@@ -654,6 +740,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         var current = _host.Nodes.FirstOrDefault(candidate =>
             string.Equals(candidate.NodeId, NodeId, StringComparison.Ordinal));
         if (current is null) return;
+        RefreshCount++;
 
         _repeatPolicy = current.Properties.TryGetValue(StoryStartSchema.RepeatPolicyProperty, out var repeat)
             && repeat.ValueKind == JsonValueKind.String ? repeat.GetString() ?? StoryStartSchema.Once : StoryStartSchema.Once;
@@ -675,8 +762,9 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             : string.Empty;
         _actionType = ReadString(current, CanonicalStoryActionSchema.TypeProperty);
         _actionItem = ReadString(current, CanonicalStoryActionSchema.ItemProperty);
-        _actionAmountText = current.Properties.TryGetValue(CanonicalStoryActionSchema.AmountProperty, out var actionAmount)
-            && actionAmount.ValueKind == JsonValueKind.Number ? actionAmount.ToString() : string.Empty;
+        if (string.IsNullOrEmpty(_actionAmountError))
+            _actionAmountText = current.Properties.TryGetValue(CanonicalStoryActionSchema.AmountProperty, out var actionAmount)
+                && actionAmount.ValueKind == JsonValueKind.Number ? actionAmount.ToString() : string.Empty;
         _actionMessage = ReadString(current, CanonicalStoryActionSchema.MessageProperty);
         if (current.Properties.TryGetValue("text", out var text) && text.ValueKind == JsonValueKind.String)
             _lineText = text.GetString() ?? string.Empty;
@@ -695,9 +783,10 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         _objectiveDescription = current.Properties.TryGetValue(CanonicalTaskObjectiveSchema.DescriptionProperty, out var objectiveDescription)
             && objectiveDescription.ValueKind == JsonValueKind.String
             ? objectiveDescription.GetString() ?? string.Empty : string.Empty;
-        _objectiveRequiredText = current.Properties.TryGetValue(CanonicalTaskObjectiveSchema.RequiredProperty, out var objectiveRequired)
-            && objectiveRequired.ValueKind == JsonValueKind.Number
-            ? objectiveRequired.ToString() : string.Empty;
+        if (string.IsNullOrEmpty(_objectiveRequiredError))
+            _objectiveRequiredText = current.Properties.TryGetValue(CanonicalTaskObjectiveSchema.RequiredProperty, out var objectiveRequired)
+                && objectiveRequired.ValueKind == JsonValueKind.Number
+                ? objectiveRequired.ToString() : string.Empty;
         _objectiveTarget = IsKillEntityObjective
             ? ReadString(current, CanonicalTaskObjectiveSchema.EntityProperty)
             : IsCollectItemObjective ? ReadString(current, CanonicalTaskObjectiveSchema.ItemProperty) : string.Empty;
@@ -757,6 +846,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(SelectedObjectiveType));
         OnPropertyChanged(nameof(ObjectiveDescription));
         OnPropertyChanged(nameof(ObjectiveRequiredText));
+        OnPropertyChanged(nameof(ObjectiveRequiredError));
         OnPropertyChanged(nameof(ObjectiveRequired));
         OnPropertyChanged(nameof(ObjectiveTarget));
         OnPropertyChanged(nameof(IsKillEntityObjective));
@@ -778,6 +868,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(SelectedStoryActionItem));
         OnPropertyChanged(nameof(StoryActionItemStatusText));
         OnPropertyChanged(nameof(StoryActionAmountText));
+        OnPropertyChanged(nameof(StoryActionAmountError));
         OnPropertyChanged(nameof(StoryActionMessage));
         OnPropertyChanged(nameof(IsGiveItemAction));
         OnPropertyChanged(nameof(IsGiveXpAction));
@@ -932,6 +1023,16 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     private string _displayName;
     private string _triggerType;
     private JsonElement _triggerProperties;
+    private string _dimensionText = string.Empty;
+    private string _xText = string.Empty;
+    private string _yText = string.Empty;
+    private string _zText = string.Empty;
+    private string _radiusText = string.Empty;
+    private string _dimensionError = string.Empty;
+    private string _xError = string.Empty;
+    private string _yError = string.Empty;
+    private string _zError = string.Empty;
+    private string _radiusError = string.Empty;
     private int _order;
 
     internal CanonicalStoryStartTriggerViewModel(CanonicalNodeInspectorViewModel owner, StoryStartTriggerSlot slot)
@@ -941,6 +1042,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         _displayName = slot.DisplayName;
         _triggerType = slot.TriggerType;
         _triggerProperties = slot.TriggerProperties.Clone();
+        LoadPropertyFields(clearErrors: false);
         _order = slot.Order;
         RemoveCommand = new RelayCommand(
             () => _owner.RemoveStoryStartTrigger(Identity),
@@ -959,7 +1061,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         set
         {
             if (string.Equals(_displayName, value, StringComparison.Ordinal)) return;
-            if (_owner.RenameStoryStartTrigger(Identity, value))
+            if (_owner.RenameStoryStartTriggerLocally(Identity, value))
             {
                 _displayName = value;
                 OnPropertyChanged();
@@ -990,17 +1092,26 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         set
         {
             if (value is null || value.Value == _triggerType) return;
-            if (_owner.SetStoryStartTriggerType(Identity, value.Value))
+            if (_owner.SetStoryStartTriggerTypeLocally(Identity, value.Value))
             {
-                _triggerType = value.Value;
-                _triggerProperties = JsonSerializer.SerializeToElement(
-                    StoryStartSchema.DefaultTriggerProperties(value.Value));
+                if (_owner.TryGetStoryStartTrigger(Identity, out var slot) && slot is not null)
+                {
+                    _triggerType = slot.TriggerType;
+                    _triggerProperties = slot.TriggerProperties.Clone();
+                }
+                else
+                {
+                    _triggerType = value.Value;
+                    _triggerProperties = JsonSerializer.SerializeToElement(
+                        StoryStartSchema.DefaultTriggerProperties(value.Value));
+                }
                 OnPropertyChanged(nameof(TriggerType));
                 OnPropertyChanged(nameof(SelectedTriggerType));
                 OnPropertyChanged(nameof(IsActorInteraction));
                 OnPropertyChanged(nameof(IsRegionEntry));
                 OnPropertyChanged(nameof(IsEnterStory));
                 OnPropertyChanged(nameof(IsLogic));
+                LoadPropertyFields(clearErrors: true);
                 NotifyPropertyFields();
             }
         }
@@ -1044,29 +1155,39 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     }
     public string DimensionText
     {
-        get => ReadNumber(StoryStartSchema.DimensionProperty);
-        set => SetInteger(StoryStartSchema.DimensionProperty, value);
+        get => _dimensionText;
+        set => SetNumberField(StoryStartSchema.DimensionProperty, value, integer: true,
+            ref _dimensionText, ref _dimensionError, nameof(DimensionText), nameof(DimensionError));
     }
+    public string DimensionError => _dimensionError;
     public string XText
     {
-        get => ReadNumber(StoryStartSchema.XProperty);
-        set => SetNumber(StoryStartSchema.XProperty, value);
+        get => _xText;
+        set => SetNumberField(StoryStartSchema.XProperty, value, integer: false,
+            ref _xText, ref _xError, nameof(XText), nameof(XError));
     }
+    public string XError => _xError;
     public string YText
     {
-        get => ReadNumber(StoryStartSchema.YProperty);
-        set => SetNumber(StoryStartSchema.YProperty, value);
+        get => _yText;
+        set => SetNumberField(StoryStartSchema.YProperty, value, integer: false,
+            ref _yText, ref _yError, nameof(YText), nameof(YError));
     }
+    public string YError => _yError;
     public string ZText
     {
-        get => ReadNumber(StoryStartSchema.ZProperty);
-        set => SetNumber(StoryStartSchema.ZProperty, value);
+        get => _zText;
+        set => SetNumberField(StoryStartSchema.ZProperty, value, integer: false,
+            ref _zText, ref _zError, nameof(ZText), nameof(ZError));
     }
+    public string ZError => _zError;
     public string RadiusText
     {
-        get => ReadNumber(StoryStartSchema.RadiusProperty);
-        set => SetNumber(StoryStartSchema.RadiusProperty, value);
+        get => _radiusText;
+        set => SetNumberField(StoryStartSchema.RadiusProperty, value, integer: false,
+            ref _radiusText, ref _radiusError, nameof(RadiusText), nameof(RadiusError));
     }
+    public string RadiusError => _radiusError;
 
     // Short aliases keep the projection convenient for host/test bindings.
     public string Dimension { get => DimensionText; set => DimensionText = value; }
@@ -1118,25 +1239,56 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         }
     }
 
-    private void SetInteger(string property, string? value)
+    private void SetNumberField(string property, string? value, bool integer,
+        ref string text, ref string error, string textProperty, string errorProperty)
     {
-        if (!IsRegionEntry || !int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) return;
-        if (_owner.SetStoryStartTriggerProperty(Identity, property, JsonSerializer.SerializeToElement(parsed)))
+        if (!IsRegionEntry) return;
+        var next = value ?? string.Empty;
+        if (string.Equals(text, next, StringComparison.Ordinal)) return;
+        text = next;
+        OnPropertyChanged(textProperty);
+
+        JsonElement serialized = default;
+        var valid = integer
+            ? int.TryParse(next, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integerValue)
+                && (serialized = JsonSerializer.SerializeToElement(integerValue)).ValueKind == JsonValueKind.Number
+            : double.TryParse(next, NumberStyles.Float, CultureInfo.InvariantCulture, out var numberValue)
+                && double.IsFinite(numberValue)
+                && (property != StoryStartSchema.RadiusProperty || numberValue > 0)
+                && (serialized = JsonSerializer.SerializeToElement(numberValue)).ValueKind == JsonValueKind.Number;
+
+        var message = valid ? string.Empty
+            : property == StoryStartSchema.RadiusProperty ? "半径必须是大于 0 的数字。"
+            : integer ? "请输入有效的整数。" : "请输入有效的数字。";
+        if (!string.Equals(error, message, StringComparison.Ordinal))
         {
-            _triggerProperties = SetLocalProperty(property, JsonSerializer.SerializeToElement(parsed));
+            error = message;
+            OnPropertyChanged(errorProperty);
+        }
+        _owner.Host.SetAuthoringIssue($"{_owner.NodeId}:trigger:{Identity}:{property}",
+            string.IsNullOrEmpty(message) ? null : new ValidationIssue(
+                "graph.story.start.trigger.authoring_invalid", message, property,
+                ValidationSeverity.Error, _owner.NodeId));
+        if (!valid) return;
+        if (_owner.SetStoryStartTriggerProperty(Identity, property, serialized))
+        {
+            _triggerProperties = SetLocalProperty(property, serialized);
             NotifyPropertyFields();
         }
     }
 
-    private void SetNumber(string property, string? value)
+    private void LoadPropertyFields(bool clearErrors)
     {
-        if (!IsRegionEntry || !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            || double.IsNaN(parsed) || double.IsInfinity(parsed) || (property == StoryStartSchema.RadiusProperty && parsed <= 0)) return;
-        if (_owner.SetStoryStartTriggerProperty(Identity, property, JsonSerializer.SerializeToElement(parsed)))
-        {
-            _triggerProperties = SetLocalProperty(property, JsonSerializer.SerializeToElement(parsed));
-            NotifyPropertyFields();
-        }
+        _dimensionText = ReadNumber(StoryStartSchema.DimensionProperty);
+        _xText = ReadNumber(StoryStartSchema.XProperty);
+        _yText = ReadNumber(StoryStartSchema.YProperty);
+        _zText = ReadNumber(StoryStartSchema.ZProperty);
+        _radiusText = ReadNumber(StoryStartSchema.RadiusProperty);
+        if (!clearErrors) return;
+        foreach (var property in new[] { StoryStartSchema.DimensionProperty, StoryStartSchema.XProperty,
+                     StoryStartSchema.YProperty, StoryStartSchema.ZProperty, StoryStartSchema.RadiusProperty })
+            _owner.Host.SetAuthoringIssue($"{_owner.NodeId}:trigger:{Identity}:{property}", null);
+        _dimensionError = _xError = _yError = _zError = _radiusError = string.Empty;
     }
 
     private JsonElement SetLocalProperty(string property, JsonElement value)
@@ -1156,10 +1308,15 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         OnPropertyChanged(nameof(ActorOptions));
         OnPropertyChanged(nameof(SelectedActor));
         OnPropertyChanged(nameof(DimensionText));
+        OnPropertyChanged(nameof(DimensionError));
         OnPropertyChanged(nameof(XText));
+        OnPropertyChanged(nameof(XError));
         OnPropertyChanged(nameof(YText));
+        OnPropertyChanged(nameof(YError));
         OnPropertyChanged(nameof(ZText));
+        OnPropertyChanged(nameof(ZError));
         OnPropertyChanged(nameof(RadiusText));
+        OnPropertyChanged(nameof(RadiusError));
         OnPropertyChanged(nameof(Dimension));
         OnPropertyChanged(nameof(X));
         OnPropertyChanged(nameof(Y));

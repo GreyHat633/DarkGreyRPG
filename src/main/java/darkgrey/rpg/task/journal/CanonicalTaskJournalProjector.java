@@ -159,7 +159,8 @@ public final class CanonicalTaskJournalProjector {
         Map<String, JsonElement> properties = node.getProperties();
         String type = string(properties, "objective_type");
         String description = string(properties, "description");
-        int required = integer(properties, "required");
+        int required = "interact_actor".equals(type) && !properties.containsKey("required") ? 1
+            : integer(properties, "required");
         if (required <= 0) throw new IllegalArgumentException("Task objective required progress must be positive.");
         if (!"kill_entity".equals(type) && !"collect_item".equals(type) && !"interact_actor".equals(type))
             throw new IllegalArgumentException("Unsupported canonical Task objective type.");

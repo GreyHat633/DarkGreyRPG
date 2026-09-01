@@ -21,8 +21,10 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         ArgumentNullException.ThrowIfNull(envelope);
         var scope = GraphResourceScopeAdapter.GetScope(envelope.ResourceKind);
         Document = GraphResourceScopeAdapter.OpenDocument(envelope, scope);
-        Host = new GraphEditorHostViewModel(Document.Graph, Document.Scope);
         _savedJson = SerializeCurrent();
+        if (scope == GraphScope.Task)
+            CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(Document.Graph);
+        Host = new GraphEditorHostViewModel(Document.Graph, Document.Scope);
         UndoCommand = new RelayCommand(() => Host.Undo(), () => Host.CanUndo);
         RedoCommand = new RelayCommand(() => Host.Redo(), () => Host.CanRedo);
         Host.GraphChanged += OnGraphChanged;
@@ -31,6 +33,7 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
 
     public GraphResourceDocument Document { get; }
     public GraphEditorHostViewModel Host { get; }
+    public GraphViewportState ViewportState { get; } = new();
     public string Id => Document.Id;
     public string DisplayName => Document.DisplayName;
     public GraphResourceKind ResourceKind => Document.ResourceKind;
@@ -41,7 +44,7 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
     public IReadOnlyList<ValidationIssue> ValidationIssues => Host.LastValidationIssues;
     public string ValidationText => string.Join(Environment.NewLine,
-        ValidationIssues.Select(ValidationIssuePresentation.Format));
+        ValidationIssues.Select(ValidationIssuePresentation.FormatCompact));
     public RelayCommand UndoCommand { get; }
     public RelayCommand RedoCommand { get; }
 
@@ -75,6 +78,34 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         Document.SetDisplayName(normalized);
         OnPropertyChanged(nameof(DisplayName));
         NotifyWorkspaceState();
+    }
+
+    /// <summary>
+    /// Applies a repository-committed replacement only when its normalized
+    /// contents differ from this editor's saved baseline. Unrelated membership
+    /// refreshes therefore preserve current graph edits and undo history.
+    /// </summary>
+    public bool ApplyPersistedSnapshot(GraphResourceEnvelope envelope)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(envelope);
+        if (envelope.ResourceKind != ResourceKind || !string.Equals(envelope.Id, Id, StringComparison.Ordinal))
+            throw new ArgumentException("Persisted snapshot identity must match the open editor.", nameof(envelope));
+
+        var normalized = GraphResourceEnvelopeSerializer.Serialize(envelope, indented: false);
+        if (string.Equals(normalized, _savedJson, StringComparison.Ordinal)) return false;
+        if (IsDirty)
+            throw new InvalidOperationException("A changed persisted snapshot cannot replace unsaved graph edits.");
+
+        var graph = GraphResourceScopeAdapter.Open(envelope, Scope);
+        if (Scope == GraphScope.Task)
+            CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(graph);
+        Document.SetDisplayName(envelope.DisplayName);
+        Host.ApplyPersistedSnapshot(graph);
+        _savedJson = SerializeCurrent();
+        OnPropertyChanged(nameof(DisplayName));
+        NotifyWorkspaceState();
+        return true;
     }
 
     /// <summary>Reprojects direct document changes and refreshes workspace state.</summary>

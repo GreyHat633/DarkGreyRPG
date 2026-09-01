@@ -265,8 +265,8 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.2B"
-        : "DarkGrey RPG Studio 0.3.1.2B";
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.3 RC"
+        : "DarkGrey RPG Studio 0.3.1.3 RC";
 
     public string ProjectDirectory
     {
@@ -669,7 +669,7 @@ public sealed class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            ReportFailure("预览 Canonical 迁移", exception, sourceOverride: "migration");
+            ReportFailure("预览项目格式迁移", exception, sourceOverride: "migration");
             return;
         }
 
@@ -680,7 +680,7 @@ public sealed class ShellViewModel : ObservableObject
             return;
         if (!preview.CanApply)
         {
-            ReportWarning("Canonical 迁移预览包含错误，无法应用。", "migration");
+            ReportWarning("项目格式迁移预览包含错误，无法应用。", "migration");
             return;
         }
 
@@ -693,12 +693,12 @@ public sealed class ShellViewModel : ObservableObject
             LoadStoryList();
             RefreshProblems();
             ReportSuccess(
-                $"Canonical 迁移成功：已写入 {result.WrittenPaths.Count} 个文件；备份：{result.BackupPath}",
+                $"项目格式迁移成功：已写入 {result.WrittenPaths.Count} 个文件；备份：{result.BackupPath}",
                 "migration");
         }
         catch (Exception exception)
         {
-            ReportFailure("应用 Canonical 迁移", exception, sourceOverride: "migration");
+            ReportFailure("应用项目格式迁移", exception, sourceOverride: "migration");
         }
     }
 
@@ -947,7 +947,7 @@ public sealed class ShellViewModel : ObservableObject
             ReplaceValidationSource(
                 $"canonical/story/{storyId}",
                 workspace.ValidationIssues.Concat(workspace.ActiveEditor.ValidationIssues));
-            StatusMessage = $"已打开 Canonical Story：{storyId}";
+            StatusMessage = $"已打开故事：{storyId}";
             Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
             return CanonicalOpenResult.Opened;
         }
@@ -960,7 +960,7 @@ public sealed class ShellViewModel : ObservableObject
             or ItemDataException)
         {
             ReportFailure(
-                "打开 Canonical Story",
+                "打开故事",
                 exception,
                 sourceOverride: $"canonical/story/{storyId}");
             return CanonicalOpenResult.Failed;
@@ -1049,7 +1049,7 @@ public sealed class ShellViewModel : ObservableObject
                     project.Actors.SaveActor(document);
                     LoadActorList();
                     ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, actor.Id);
-                    ReportSuccess($"Canonical {label} '{actor.Id}' 已重命名。", $"canonical/actor/{actor.Id}");
+                    ReportSuccess($"{label} '{actor.Id}' 已重命名。", $"canonical/actor/{actor.Id}");
                     return;
                 }
                 case CanonicalStoryItemItem itemResource:
@@ -1082,7 +1082,7 @@ public sealed class ShellViewModel : ObservableObject
                         });
                     }
                     ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, itemResource.Id);
-                    ReportSuccess($"Canonical {label} '{itemResource.Id}' 已重命名。", $"canonical/item/{itemResource.Id}");
+                    ReportSuccess($"{label} '{itemResource.Id}' 已重命名。", $"canonical/item/{itemResource.Id}");
                     return;
                 }
                 case CanonicalStoryGraphItem graph:
@@ -1093,7 +1093,7 @@ public sealed class ShellViewModel : ObservableObject
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                "重命名 Canonical 资源",
+                "重命名资源",
                 exception,
                 sourceOverride: $"canonical/story/{workspace.StoryEditor.Id}/resource/{item.Id}");
         }
@@ -1148,7 +1148,7 @@ public sealed class ShellViewModel : ObservableObject
         graph.Editor.ApplyPersistedDisplayName(next);
         if (!storyWasDirty) workspace.StoryEditor.MarkSaved();
         ReportSuccess(
-            $"Canonical {label} '{graph.Id}' 已重命名，Story Flow 聚合显示已同步。",
+            $"{label} '{graph.Id}' 已重命名，故事流程中的聚合显示已同步。",
             $"canonical/{graph.ResourceKind}/{graph.Id}");
     }
 
@@ -1173,7 +1173,7 @@ public sealed class ShellViewModel : ObservableObject
                     CanonicalStoryFolderKind.Actors,
                     legacyCreated.Id);
                 ReportSuccess(
-                    $"Canonical 角色 '{legacyCreated.Id}' 已创建。",
+                    $"角色 '{legacyCreated.Id}' 已创建。",
                     $"canonical/actor/{legacyCreated.Id}");
                 return;
             }
@@ -1195,13 +1195,13 @@ public sealed class ShellViewModel : ObservableObject
                 CanonicalStoryFolderKind.Actors,
                 created.Id);
             ReportSuccess(
-                $"Canonical 角色 '{created.Id}' 已创建。",
+                $"角色 '{created.Id}' 已创建。",
                 $"canonical/actor/{created.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                "创建 Canonical 角色",
+                "创建角色",
                 exception,
                 sourceOverride: "canonical/actor");
         }
@@ -1237,13 +1237,13 @@ public sealed class ShellViewModel : ObservableObject
                 CanonicalStoryFolderKind.Actors,
                 choice.Id);
             ReportSuccess(
-                $"已引用 Canonical 角色 '{choice.Id}'。",
+                $"已引用角色 '{choice.Id}'。",
                 $"canonical/actor/{choice.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                "引用 Canonical 角色",
+                "引用角色",
                 exception,
                 sourceOverride: "canonical/actor");
         }
@@ -1269,13 +1269,13 @@ public sealed class ShellViewModel : ObservableObject
                 request.DisplayName);
             ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, resourceKind, created.Id);
             ReportSuccess(
-                $"Canonical {CanonicalKindLabel(resourceKind)} '{created.Id}' 已创建。",
+                $"{CanonicalKindLabel(resourceKind)} '{created.Id}' 已创建。",
                 $"canonical/{resourceKind}/{created.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                $"创建 Canonical {CanonicalKindLabel(resourceKind)}",
+                $"创建{CanonicalKindLabel(resourceKind)}",
                 exception,
                 sourceOverride: $"canonical/{resourceKind}");
         }
@@ -1312,13 +1312,13 @@ public sealed class ShellViewModel : ObservableObject
                 choice.Id);
             ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, resourceKind, choice.Id);
             ReportSuccess(
-                $"已引用 Canonical {CanonicalKindLabel(resourceKind)} '{choice.Id}'。",
+                $"已引用{CanonicalKindLabel(resourceKind)} '{choice.Id}'。",
                 $"canonical/{resourceKind}/{choice.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                $"引用 Canonical {CanonicalKindLabel(resourceKind)}",
+                $"引用{CanonicalKindLabel(resourceKind)}",
                 exception,
                 sourceOverride: $"canonical/{resourceKind}");
         }
@@ -1356,12 +1356,12 @@ public sealed class ShellViewModel : ObservableObject
                 request.Tags);
             ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, created.Id);
             ReportSuccess(
-                $"Canonical {(kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{created.Id}' 已创建。",
+                $"{(kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{created.Id}' 已创建。",
                 $"canonical/{(kind == CanonicalStoryItemKind.Individual ? "item" : "item_group")}/{created.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
-            ReportFailure("创建 Canonical 物品", exception, sourceOverride: "canonical/item");
+            ReportFailure("创建物品", exception, sourceOverride: "canonical/item");
         }
     }
 
@@ -1394,12 +1394,12 @@ public sealed class ShellViewModel : ObservableObject
                 workspace.StoryEditor.Id, choice.Kind, choice.Id);
             ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, choice.Id);
             ReportSuccess(
-                $"已引用 Canonical {(choice.Kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{choice.Id}'。",
+                $"已引用{(choice.Kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{choice.Id}'。",
                 $"canonical/{(choice.Kind == CanonicalStoryItemKind.Individual ? "item" : "item_group")}/{choice.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
-            ReportFailure("引用 Canonical 物品", exception, sourceOverride: "canonical/item");
+            ReportFailure("引用物品", exception, sourceOverride: "canonical/item");
         }
     }
 
@@ -1427,13 +1427,22 @@ public sealed class ShellViewModel : ObservableObject
         var service = new CanonicalStoryResourceLifecycleService(store);
         try
         {
+            // Resource lifecycle cleanup is computed from the persisted Story.
+            // Advance that baseline first so reloading the committed cleanup
+            // cannot discard unsaved placements or resurrect stale ones later.
+            if (workspace.StoryEditor.IsDirty)
+            {
+                var coordinator = _canonicalSaveCoordinator
+                    ?? throw new InvalidOperationException("Canonical save coordinator is unavailable.");
+                coordinator.Replace(workspace.StoryEditor);
+            }
             if (isReferenced)
             {
                 if (!_canonicalStoryResourceDialogs.ConfirmRemoveReference(choice, storyDisplayName)) return;
                 service.RemoveReference(storyId, choice.ResourceKind, choice.Id);
                 ReloadCanonicalStoryWorkspace(storyId, choice.ResourceKind);
                 ReportSuccess(
-                    $"已解除 Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 的引用。",
+                    $"已解除{CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 的引用。",
                     $"canonical/{choice.ResourceKind}/{choice.Id}");
                 return;
             }
@@ -1441,7 +1450,7 @@ public sealed class ShellViewModel : ObservableObject
             if (isMissing)
             {
                 ReportWarning(
-                    $"拥有的 Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 文件缺失，无法执行安全删除。",
+                    $"拥有的{CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 文件缺失，无法执行安全删除。",
                     $"canonical/{choice.ResourceKind}/{choice.Id}");
                 return;
             }
@@ -1451,7 +1460,7 @@ public sealed class ShellViewModel : ObservableObject
             {
                 _canonicalStoryResourceDialogs.ShowDeleteBlocked(choice, plan.ReferencingStoryIds);
                 ReportWarning(
-                    $"Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 仍被其它 Story 引用，未删除。",
+                    $"{CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 仍被其它故事引用，未删除。",
                     $"canonical/{choice.ResourceKind}/{choice.Id}");
                 return;
             }
@@ -1460,13 +1469,13 @@ public sealed class ShellViewModel : ObservableObject
             service.DeleteOwned(storyId, choice.ResourceKind, choice.Id);
             ReloadCanonicalStoryWorkspace(storyId, choice.ResourceKind);
             ReportSuccess(
-                $"Canonical {CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 已删除。",
+                $"{CanonicalKindLabel(choice.ResourceKind)} '{choice.Id}' 已删除。",
                 $"canonical/{choice.ResourceKind}/{choice.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                $"更新 Canonical {CanonicalKindLabel(choice.ResourceKind)}",
+                $"更新{CanonicalKindLabel(choice.ResourceKind)}",
                 exception,
                 sourceOverride: $"canonical/{choice.ResourceKind}/{choice.Id}");
         }
@@ -1492,12 +1501,12 @@ public sealed class ShellViewModel : ObservableObject
                 if (!_itemWorkspaceDialogs.ConfirmRemoveReference(choice, workspace.StoryEditor.DisplayName)) return;
                 service.RemoveReference(storyId, choice.Kind, choice.Id);
                 ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Items);
-                ReportSuccess($"已解除 Canonical {label} '{choice.Id}' 的引用；文件未删除。", $"canonical/item/{choice.Id}");
+                ReportSuccess($"已解除{label} '{choice.Id}' 的引用；文件未删除。", $"canonical/item/{choice.Id}");
                 return;
             }
             if (isMissing)
             {
-                ReportWarning($"拥有的 Canonical {label} '{choice.Id}' 文件缺失，无法执行安全删除。", $"canonical/item/{choice.Id}");
+                ReportWarning($"拥有的{label} '{choice.Id}' 文件缺失，无法执行安全删除。", $"canonical/item/{choice.Id}");
                 return;
             }
 
@@ -1505,17 +1514,17 @@ public sealed class ShellViewModel : ObservableObject
             if (!plan.CanDelete)
             {
                 _itemWorkspaceDialogs.ShowDeleteBlocked(choice, plan.ReferencingStoryIds);
-                ReportWarning($"Canonical {label} '{choice.Id}' 仍被其它 Story 使用，未删除。", $"canonical/item/{choice.Id}");
+                ReportWarning($"{label} '{choice.Id}' 仍被其它故事使用，未删除。", $"canonical/item/{choice.Id}");
                 return;
             }
             if (!_itemWorkspaceDialogs.ConfirmDeleteOwned(choice)) return;
             service.DeleteOwned(storyId, choice.Kind, choice.Id);
             ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Items);
-            ReportSuccess($"Canonical {label} '{choice.Id}' 已删除。", $"canonical/item/{choice.Id}");
+            ReportSuccess($"{label} '{choice.Id}' 已删除。", $"canonical/item/{choice.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
-            ReportFailure($"更新 Canonical {label}", exception, sourceOverride: $"canonical/item/{choice.Id}");
+            ReportFailure($"更新{label}", exception, sourceOverride: $"canonical/item/{choice.Id}");
         }
     }
 
@@ -1539,7 +1548,7 @@ public sealed class ShellViewModel : ObservableObject
                 service.RemoveReference(storyId, actor.Id);
                 ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Actors);
                 ReportSuccess(
-                    $"已解除 Canonical 角色 '{actor.Id}' 的引用；Actor 文件未删除。",
+                    $"已解除角色 '{actor.Id}' 的引用；角色文件未删除。",
                     $"canonical/actor/{actor.Id}");
                 return;
             }
@@ -1547,7 +1556,7 @@ public sealed class ShellViewModel : ObservableObject
             if (isMissing)
             {
                 ReportWarning(
-                    $"拥有的 Canonical 角色 '{actor.Id}' 文件缺失，无法执行安全删除。",
+                    $"拥有的角色 '{actor.Id}' 文件缺失，无法执行安全删除。",
                     $"canonical/actor/{actor.Id}");
                 return;
             }
@@ -1559,7 +1568,7 @@ public sealed class ShellViewModel : ObservableObject
                     actor,
                     DescribeCanonicalActorBlockers(plan, store, project.Stories));
                 ReportWarning(
-                    $"Canonical 角色 '{actor.Id}' 仍被其它 canonical 或旧版 Story 占用/引用，未删除。",
+                    $"角色 '{actor.Id}' 仍被其它新格式或旧版故事占用/引用，未删除。",
                     $"canonical/actor/{actor.Id}");
                 return;
             }
@@ -1570,13 +1579,13 @@ public sealed class ShellViewModel : ObservableObject
             LoadActorList();
             ReloadCanonicalStoryWorkspace(storyId, CanonicalStoryFolderKind.Actors);
             ReportSuccess(
-                $"Canonical 角色 '{actor.Id}' 已从 actors/ 删除。",
+                $"角色 '{actor.Id}' 已从角色目录删除。",
                 $"canonical/actor/{actor.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                "更新 Canonical 角色",
+                "更新角色",
                 exception,
                 sourceOverride: $"canonical/actor/{actor.Id}");
         }
@@ -1737,7 +1746,7 @@ public sealed class ShellViewModel : ObservableObject
         StoryRepository legacyStories)
         => plan.Blockers.Select(blocker =>
         {
-            var sourceLabel = blocker.IsCanonical ? "Canonical" : "旧版";
+            var sourceLabel = blocker.IsCanonical ? "新格式" : "旧版";
             var membershipLabel = blocker.IsOwned ? "占用" : "引用";
             string displayName;
             string path;
@@ -1779,6 +1788,7 @@ public sealed class ShellViewModel : ObservableObject
 
     private static string CanonicalKindLabel(GraphResourceKind resourceKind) => resourceKind switch
     {
+        GraphResourceKind.Story => "故事",
         GraphResourceKind.Session => "会话",
         GraphResourceKind.Task => "任务",
         _ => throw new ArgumentOutOfRangeException(nameof(resourceKind)),
@@ -1834,7 +1844,7 @@ public sealed class ShellViewModel : ObservableObject
         if (CanonicalStoryWorkspace is null) return;
         SetCanonicalStoryWorkspaceVisible(true);
         Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-        StatusMessage = $"已返回 Canonical Story：{CanonicalStoryWorkspace.StoryEditor.Id}";
+        StatusMessage = $"已返回故事：{CanonicalStoryWorkspace.StoryEditor.Id}";
         Output.Append(StatusMessage, source: $"canonical/story/{CanonicalStoryWorkspace.StoryEditor.Id}");
     }
 
@@ -1843,6 +1853,10 @@ public sealed class ShellViewModel : ObservableObject
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActiveEditor)
             or nameof(CanonicalStoryWorkspaceViewModel.HasDirtyEditors))
             RaiseCurrentEditorStates();
+        if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActiveEditor)
+            or nameof(CanonicalStoryWorkspaceViewModel.InspectorValidationText)
+            or nameof(CanonicalStoryWorkspaceViewModel.ValidationIssues))
+            RefreshProblems();
     }
 
     private void CreateStory()
@@ -1865,7 +1879,7 @@ public sealed class ShellViewModel : ObservableObject
             LoadStoryList();
             ProjectHome.SelectedStory = ProjectHome.Stories.Single(item => item.Id == story.Id);
             ProjectHome.ShowHome();
-            StatusMessage = $"Canonical 故事 '{story.Id}' 已创建。";
+            StatusMessage = $"故事 '{story.Id}' 已创建。";
             Output.Append(StatusMessage, OutputKind.Success, $"canonical/story/{story.Id}");
             Toast.Show(StatusMessage, ToastKind.Success);
         }
@@ -1939,7 +1953,7 @@ public sealed class ShellViewModel : ObservableObject
         if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
         {
             CanonicalStoryWorkspace.ReturnToStory();
-            StatusMessage = $"已从故事图谱打开 Canonical Story Flow：{storyId}";
+            StatusMessage = $"已从故事图谱打开故事流程：{storyId}";
             Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
             return;
         }
@@ -1963,7 +1977,7 @@ public sealed class ShellViewModel : ObservableObject
         if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
         {
             if (!CanonicalStoryWorkspace.RequestStoryNodeFocus(nodeId, field))
-                ReportWarning($"Canonical Story Flow '{storyId}' 中不存在唯一节点 '{nodeId}'。", $"canonical/story/{storyId}/flow/{nodeId}");
+                ReportWarning($"故事流程 '{storyId}' 中不存在唯一节点 '{nodeId}'。", $"canonical/story/{storyId}/flow/{nodeId}");
             return;
         }
         if (CurrentFlow?.Id != storyId) return;
@@ -2054,7 +2068,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         if (CanonicalStoryWorkspace?.HasDirtyEditors == true)
         {
-            ReportWarning("Canonical Story 仍有未保存的图；请逐个保存后再离开。", "canonical/story");
+            ReportWarning("故事仍有未保存的图；请逐个保存后再离开。", "canonical/story");
             return false;
         }
         if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
@@ -2368,7 +2382,7 @@ public sealed class ShellViewModel : ObservableObject
                     synchronization.ObsoleteReferences))
             {
                 ReportWarning(
-                    $"已取消保存 Canonical {editor.ResourceKind} '{editor.Id}'；Story Flow 外部连线未更改。",
+                    $"已取消保存{CanonicalKindLabel(editor.ResourceKind)} '{editor.Id}'；故事流程外部连线未更改。",
                     $"canonical/{editor.ResourceKind}/{editor.Id}");
                 return false;
             }
@@ -2392,7 +2406,7 @@ public sealed class ShellViewModel : ObservableObject
                 ? $"；Story Flow 中 {synchronization!.Placements.Count} 个聚合节点已同步"
                 : string.Empty;
             ReportSuccess(
-                $"Canonical {editor.ResourceKind} '{editor.Id}' 已保存到磁盘{synchronizationSummary}。",
+                $"{CanonicalKindLabel(editor.ResourceKind)} '{editor.Id}' 已保存到磁盘{synchronizationSummary}。",
                 $"canonical/{editor.ResourceKind}/{editor.Id}");
             RaiseCurrentEditorStates();
             return true;
@@ -2402,11 +2416,11 @@ public sealed class ShellViewModel : ObservableObject
             if (synchronizationCommitted && !workspace.RollbackLastStoryEdit())
             {
                 ReportWarning(
-                    $"Canonical {editor.ResourceKind} '{editor.Id}' 写入失败，且 Story Flow 同步回滚失败；请勿继续保存并检查 Problems。",
+                    $"{CanonicalKindLabel(editor.ResourceKind)} '{editor.Id}' 写入失败，且故事流程同步回滚失败；请勿继续保存并检查“问题”面板。",
                     $"canonical/{editor.ResourceKind}/{editor.Id}");
             }
             ReportFailure(
-                "保存 Canonical 图资源",
+                "保存图资源",
                 exception,
                 sourceOverride: $"canonical/{editor.ResourceKind}/{editor.Id}");
             RaiseCurrentEditorStates();
@@ -2436,7 +2450,7 @@ public sealed class ShellViewModel : ObservableObject
                 && string.Equals(workspace.StoryEditor.Id, selected.Id, StringComparison.Ordinal))
             {
                 ReportWarning(
-                    $"无法删除 Canonical 故事 '{selected.Id}'：请先保存或放弃未保存的编辑。",
+                    $"无法删除故事 '{selected.Id}'：请先保存或放弃未保存的编辑。",
                     $"canonical/story/{selected.Id}");
                 return;
             }
@@ -2449,7 +2463,7 @@ public sealed class ShellViewModel : ObservableObject
             if (!plan.CanDelete)
             {
                 ReportWarning(
-                    $"无法删除 Canonical 故事 '{selected.Id}'：{string.Join("；", plan.Blockers.Select(blocker => blocker.Message))}",
+                    $"无法删除故事 '{selected.Id}'：{string.Join("；", plan.Blockers.Select(blocker => blocker.Message))}",
                     $"canonical/story/{selected.Id}");
                 return;
             }
@@ -2475,7 +2489,7 @@ public sealed class ShellViewModel : ObservableObject
             ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == selected.Id);
             ProjectHome.ShowHome();
             ReportSuccess(
-                $"Canonical 故事 '{selected.Id}' 已从项目中删除。",
+                $"故事 '{selected.Id}' 已从项目中删除。",
                 $"canonical/story/{selected.Id}");
         }
         catch (Exception exception) when (
@@ -2483,7 +2497,7 @@ public sealed class ShellViewModel : ObservableObject
             || IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure(
-                "删除 Canonical 故事",
+                "删除故事",
                 exception,
                 sourceOverride: $"canonical/story/{selected.Id}");
         }
@@ -2681,7 +2695,7 @@ public sealed class ShellViewModel : ObservableObject
     {
         if (CanonicalStoryWorkspace is not null)
         {
-            ReportWarning("Canonical Story 暂不提供跨文件 Save All；请逐个保存当前图。", "canonical/story");
+            ReportWarning("故事工作区暂不提供跨文件全部保存；请逐个保存当前图。", "canonical/story");
             return;
         }
         try

@@ -10,9 +10,6 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 /// <summary>Reusable visual projection of one canonical graph node.</summary>
 public partial class CanonicalGraphNodeControl : UserControl
 {
-    private static readonly Brush DefaultBorderBrush = CreateFrozenBrush(Color.FromRgb(0x59, 0x61, 0x6D));
-    private static readonly Brush SelectedBorderBrush = CreateFrozenBrush(Color.FromRgb(0x70, 0xD7, 0xFF));
-
     public static readonly DependencyProperty NodeProperty = DependencyProperty.Register(
         nameof(Node), typeof(GraphEditorNodeViewModel), typeof(CanonicalGraphNodeControl),
         new PropertyMetadata(null, OnNodeChanged));
@@ -36,13 +33,6 @@ public partial class CanonicalGraphNodeControl : UserControl
     {
         Node = node;
         InlineEditor = inlineEditor;
-    }
-
-    private static Brush CreateFrozenBrush(Color color)
-    {
-        var brush = new SolidColorBrush(color);
-        brush.Freeze();
-        return brush;
     }
 
     public GraphEditorNodeViewModel? Node
@@ -101,17 +91,28 @@ public partial class CanonicalGraphNodeControl : UserControl
     {
         var control = (CanonicalGraphNodeControl)sender;
         if (control.NodeBorder is not null)
-            control.NodeBorder.BorderBrush = control.IsSelected ? SelectedBorderBrush : DefaultBorderBrush;
+            control.NodeBorder.SetResourceReference(Border.BorderBrushProperty,
+                control.IsSelected ? "AccentFillColorDefaultBrush" : "CardStrokeColorDefaultBrush");
     }
 
     private void RebuildPorts()
     {
         if (Node is null) return;
         InputPortsPanel.Children.Clear();
+        InputPortsPanel.RowDefinitions.Clear();
         OutputPortsPanel.Children.Clear();
+        OutputPortsPanel.RowDefinitions.Clear();
         _portControls.Clear();
-        foreach (var item in Node.Inputs) InputPortsPanel.Children.Add(CreatePort(item));
-        foreach (var item in Node.Outputs) OutputPortsPanel.Children.Add(CreatePort(item));
+        foreach (var item in Node.Inputs) AddPort(InputPortsPanel, item);
+        foreach (var item in Node.Outputs) AddPort(OutputPortsPanel, item);
+    }
+
+    private void AddPort(Grid panel, GraphEditorPortViewModel item)
+    {
+        var port = CreatePort(item);
+        panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Grid.SetRow(port, panel.RowDefinitions.Count - 1);
+        panel.Children.Add(port);
     }
 
     private FlowPortControl CreatePort(GraphEditorPortViewModel item)
@@ -124,6 +125,14 @@ public partial class CanonicalGraphNodeControl : UserControl
             DisplayName = item.DisplayName,
             InterfaceKind = item.InterfaceKind,
             IsInput = item.IsInput,
+            // Occupy the complete half of the fixed-width node and align the
+            // content toward the corresponding edge. Label length must not
+            // move an anchor along that edge.
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = item.IsInput
+                ? HorizontalAlignment.Left
+                : HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
         };
         var id = port.EffectivePortId;
         var direction = port.IsInput ? "输入" : "输出";

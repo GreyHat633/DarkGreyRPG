@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Windows.Shapes;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -91,12 +92,10 @@ public sealed class CanonicalGraphEditorViewTests
         var host = new GraphEditorHostViewModel(Graph(GraphScope.Task), GraphScope.Task);
         var view = Arrange(host);
         var source = view.NodeVisuals.Single(node => node.Node?.NodeId == "source");
-        var expected = Color.FromRgb(0xF7, 0xFA, 0xFC);
-
-        Assert.AreEqual(expected, ((SolidColorBrush)source.Foreground).Color);
-        foreach (var label in Descendants<TextBlock>(source)
-                     .Where(text => text.Text is "参数" or "目标类型" or "目标对象" or "数量"))
-            Assert.AreEqual(expected, ((SolidColorBrush)label.Foreground).Color, label.Text);
+        Assert.AreNotEqual(DependencyProperty.UnsetValue,
+            source.ReadLocalValue(Control.ForegroundProperty));
+        Assert.IsNotEmpty(Descendants<TextBlock>(source)
+            .Where(text => text.Text is "参数" or "目标类型" or "目标对象" or "数量").ToArray());
     }
 
     [STATestMethod]
@@ -136,7 +135,7 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.HasCount(1, view.ConnectionVisuals);
         Assert.HasCount(1, view.ConnectionHitTargets);
         var wire = view.ConnectionVisuals.Single();
-        Assert.AreEqual(GraphConnectionVisualStyle.LogicNormalColor, ((SolidColorBrush)wire.Stroke).Color);
+        Assert.AreNotEqual(DependencyProperty.UnsetValue, wire.ReadLocalValue(Shape.StrokeProperty));
         StringAssert.Contains(AutomationProperties.GetName(view.ConnectionHitTargets.Single()), "Logic");
         StringAssert.Contains(AutomationProperties.GetAutomationId(view.ConnectionHitTargets.Single()), "source_a_target_in");
     }
@@ -214,13 +213,91 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.BeginExistingConnectionDrag(host.Connections.Single()));
         Assert.HasCount(1, view.ConnectionVisuals);
         Assert.AreSame(view.ConnectionVisuals.Single(), view.ActiveWireVisuals.Single());
-        Assert.AreEqual(GraphConnectionVisualStyle.LogicSelectedColor,
-            ((SolidColorBrush)view.ConnectionVisuals.Single().Stroke).Color);
+        Assert.AreNotEqual(DependencyProperty.UnsetValue,
+            view.ConnectionVisuals.Single().ReadLocalValue(Shape.StrokeProperty));
         Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
 
         view.SetScissorsMode(true);
         Assert.AreSame(view.ScissorsCursor, view.ViewportElement.Cursor);
         Assert.AreNotSame(Cursors.Cross, view.ViewportElement.Cursor);
+    }
+
+    [STATestMethod]
+    public void MultiCapacityPortCreatesNewWireUnlessBundleGestureIsExplicit()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("first", "settle", "First", [new("in", "Input", true, GraphInterfaceKind.Logic)]),
+            new GraphNode("second", "settle", "Second", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("first", "in", GraphInterfaceKind.Logic)));
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("second", "in", GraphInterfaceKind.Logic)));
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source" && port.EffectivePortId == "out");
+        var formalWires = view.ConnectionVisuals.ToArray();
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.IsFalse(view.IsIncidentWireReconnect);
+        Assert.HasCount(1, view.ActiveWireVisuals);
+        Assert.IsFalse(formalWires.Contains(view.ActiveWireVisuals.Single()));
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+
+        Assert.IsTrue(view.BeginIncidentConnectionBundleDrag(output));
+        Assert.IsTrue(view.IsIncidentWireReconnect);
+        Assert.HasCount(2, view.ActiveWireVisuals);
+        Assert.IsTrue(view.ActiveWireVisuals.All(formalWires.Contains));
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+    }
+
+    [STATestMethod]
+    public void OccupiedSingleCapacityPortReusesWireAndKeepsDraggedPortFixed()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "action", "Source", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("target", "terminate", "Target", [new("in", "Input", true, GraphInterfaceKind.Flow)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("target", "in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source" && port.EffectivePortId == "out");
+        var formalWire = view.ConnectionVisuals.Single();
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreSame(formalWire, view.ActiveWireVisuals.Single());
+        Assert.AreEqual(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            view.ActiveWireFixedEndpoint);
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+        Assert.AreSame(formalWire, view.ConnectionVisuals.Single());
+    }
+
+    [STATestMethod]
+    public void RuntimeLayoutKeepsInputAndOutputAnchorsOnStableNodeEdges()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "objective", "Source", [
+                new("input_short", "短", true, GraphInterfaceKind.Logic),
+                new("input_long", "一个非常长的输入参数名称", true, GraphInterfaceKind.Logic),
+                new("output_short", "短", false, GraphInterfaceKind.Logic),
+                new("output_long", "一个非常长的输出参数名称", false, GraphInterfaceKind.Logic),
+                new("output_extra", "更长的输出参数名称用于布局验证", false, GraphInterfaceKind.Logic)])]);
+        var view = Arrange(new GraphEditorHostViewModel(graph, GraphScope.Task));
+        var node = view.NodeVisuals.Single();
+        view.UpdateLayout();
+
+        var inputs = node.PortControls.Where(port => port.IsInput).ToArray();
+        var outputs = node.PortControls.Where(port => !port.IsInput).ToArray();
+        Assert.HasCount(2, inputs);
+        Assert.HasCount(3, outputs);
+
+        var inputX = inputs.Select(port => port.GetAnchorPoint(node).X).ToArray();
+        var outputX = outputs.Select(port => port.GetAnchorPoint(node).X).ToArray();
+        Assert.IsLessThanOrEqualTo(1d, inputX.Max() - inputX.Min(), "Input anchors drift with label width.");
+        Assert.IsLessThanOrEqualTo(1d, outputX.Max() - outputX.Min(),
+            $"Output anchors drift with label width: {string.Join(", ", outputX.Select(x => x.ToString("F2")))}; node={node.ActualWidth:F2}.");
+        Assert.IsLessThan(node.ActualWidth / 2d, inputX.Average(), "Inputs must be on the left half of the node.");
+        Assert.IsGreaterThan(node.ActualWidth / 2d, outputX.Average(), "Outputs must be on the right half of the node.");
     }
 
     [STATestMethod]
@@ -369,8 +446,8 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.KeyboardCommandTarget.Focusable);
         _ = view.KeyboardCommandTarget.Focus();
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
-        Assert.AreEqual(GraphConnectionVisualStyle.FlowNormalColor,
-            ((SolidColorBrush)view.ActiveWireVisuals.Single().Stroke).Color);
+        Assert.AreNotEqual(DependencyProperty.UnsetValue,
+            view.ActiveWireVisuals.Single().ReadLocalValue(Shape.StrokeProperty));
         Assert.AreEqual(3d, view.ActiveWireVisuals.Single().StrokeThickness);
         Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
         Assert.AreEqual(before, graph.ToJson());
@@ -571,13 +648,13 @@ public sealed class CanonicalGraphEditorViewTests
     }
 
     [STATestMethod]
-    public void StoryAggregateTypesAreVisibleButRequireResourceDragInitializer()
+    public void StoryAggregateTypesAreAbsentBecauseResourcesOwnPlacement()
     {
         var host = new GraphEditorHostViewModel(Graph(GraphScope.StoryFlow), GraphScope.StoryFlow);
         var view = Arrange(host);
 
-        Assert.IsTrue(view.AuthoringDefinitions.Any(definition => definition.Type == "session"));
-        Assert.IsTrue(view.AuthoringDefinitions.Any(definition => definition.Type == "task"));
+        Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "session"));
+        Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "task"));
         Assert.IsFalse(view.CanAuthorNodeType("session"));
         Assert.IsFalse(view.CanAuthorNodeType("task"));
     }

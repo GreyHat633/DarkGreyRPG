@@ -444,7 +444,7 @@ public final class CanonicalTaskJournalProjectionProbe {
         Map<String, JsonElement> result = new LinkedHashMap<String, JsonElement>();
         result.put("objective_type", json(type));
         result.put("description", json(type + " objective"));
-        result.put("required", new JsonParser().parse(Integer.toString(required)));
+        if (!"interact_actor".equals(type)) result.put("required", new JsonParser().parse(Integer.toString(required)));
         result.put(key, json(value));
         if (extraKey != null) result.put(extraKey, new JsonParser().parse(extraValue));
         return result;

@@ -92,6 +92,10 @@ public partial class CanonicalGraphEditorView : UserControl
         nameof(Host), typeof(GraphEditorHostViewModel), typeof(CanonicalGraphEditorView),
         new PropertyMetadata(null, OnHostChanged));
 
+    public static readonly DependencyProperty ViewportStateProperty = DependencyProperty.Register(
+        nameof(ViewportState), typeof(GraphViewportState), typeof(CanonicalGraphEditorView),
+        new PropertyMetadata(null, OnViewportStateChanged));
+
     public CanonicalGraphEditorView()
         : this(host: null, nodeIdSource: null, authoringService: null, initialize: true)
     {
@@ -139,6 +143,11 @@ public partial class CanonicalGraphEditorView : UserControl
 
     public GraphEditorHostViewModel? ViewModel => Host;
     public GraphViewportController ViewportController => _viewportController;
+    public GraphViewportState? ViewportState
+    {
+        get => (GraphViewportState?)GetValue(ViewportStateProperty);
+        set => SetValue(ViewportStateProperty, value);
+    }
     public GraphEditorNodeViewModel? SelectedNode => _selectedNode;
     public GraphEditorConnectionViewModel? SelectedConnection => _selectedConnection;
     public event EventHandler<GraphSelectionChangedEventArgs>? SelectionChanged;
@@ -150,6 +159,8 @@ public partial class CanonicalGraphEditorView : UserControl
     public IReadOnlyCollection<Path> ConnectionHitTargets => _connectionHits.Keys;
     public IReadOnlyCollection<Path> ConnectionVisuals => GraphCanvas.Children.OfType<Path>().Where(path => !path.IsHitTestVisible).ToArray();
     public IReadOnlyCollection<Path> ActiveWireVisuals => _draftWires;
+    public GraphEditorEndpoint? ActiveWireFixedEndpoint => _wireStart;
+    public bool IsIncidentWireReconnect => _incidentWireReconnect;
     public bool IsScissorsMode => _scissorsMode;
     public bool IsTemporaryScissorsMode => _altScissorsMode;
     public Cursor ScissorsCursor => ScissorsCursorFactory.Cursor;
@@ -161,6 +172,21 @@ public partial class CanonicalGraphEditorView : UserControl
     }
     public event Action<GraphEditorNodeViewModel>? NodeEditRequested;
     public Func<GraphEditorNodeViewModel, CanonicalNodeInspectorViewModel?>? InlineEditorFactory { get; set; }
+
+    /// <summary>
+    /// Recreates only the transient inline editors while preserving graph nodes,
+    /// selection, layout, connections, and viewport state. Resource option lists
+    /// are supplied by the host workspace and may change without a graph edit.
+    /// </summary>
+    public void RefreshInlineEditors()
+    {
+        foreach (var (node, visual) in _nodeVisuals)
+        {
+            visual.DisposeInlineEditor();
+            visual.InlineEditor = InlineEditorFactory?.Invoke(node)
+                ?? (_host is null ? null : new CanonicalNodeInspectorViewModel(_host, node));
+        }
+    }
 
     public Point ScreenToGraph(Point viewportPoint) => _viewportController.ScreenToGraph(viewportPoint);
 
@@ -301,14 +327,23 @@ public partial class CanonicalGraphEditorView : UserControl
         view.RebuildGraph();
     }
 
+    private static void OnViewportStateChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        var view = (CanonicalGraphEditorView)sender;
+        if (args.OldValue is GraphViewportState oldState) view.CaptureViewport(oldState);
+        view.RestoreViewport(args.NewValue as GraphViewportState);
+    }
+
     private void View_OnLoaded(object sender, RoutedEventArgs args)
     {
         AttachHost(_host);
         RebuildGraph();
+        RestoreViewport(ViewportState);
     }
 
     private void View_OnUnloaded(object sender, RoutedEventArgs args)
     {
+        if (ViewportState is { } state) CaptureViewport(state);
         CancelPointerGesture();
         DetachHost(_host);
     }
@@ -572,7 +607,8 @@ public partial class CanonicalGraphEditorView : UserControl
         AutomationProperties.SetName(hit, $"{style.AutomationLabel} {connection.FromNodeId}:{connection.FromPortId} 到 {connection.ToNodeId}:{connection.ToPortId}");
         AutomationProperties.SetAutomationId(hit, $"CanonicalGraphConnection_{connection.FromNodeId}_{connection.FromPortId}_{connection.ToNodeId}_{connection.ToPortId}");
         hit.PreviewMouseLeftButtonDown += ConnectionHit_OnPreviewMouseLeftButtonDown;
-        var line = new Path { Data = geometry, Stroke = new SolidColorBrush(style.StrokeColor), StrokeThickness = style.StrokeThickness, Fill = null, IsHitTestVisible = false, Tag = connection };
+        var line = new Path { Data = geometry, StrokeThickness = style.StrokeThickness, Fill = null, IsHitTestVisible = false, Tag = connection };
+        ApplyWireBrush(line, connection.InterfaceKind, selected);
         GraphCanvas.Children.Insert(0, line);
         GraphCanvas.Children.Insert(1, hit);
         _connectionHits[hit] = connection;
@@ -633,7 +669,8 @@ public partial class CanonicalGraphEditorView : UserControl
         if (e.ChangedButton != MouseButton.Left) return;
         if (FindAncestor<FlowPortControl>(source) is { } port && port.IsAnchorHitTarget(source))
         {
-            BeginWire(port, e.GetPosition(GraphCanvas));
+            BeginWire(port, e.GetPosition(GraphCanvas), reconnectIncidentBundle:
+                (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control);
             e.Handled = true;
             return;
         }
@@ -780,7 +817,8 @@ public partial class CanonicalGraphEditorView : UserControl
         menu.IsOpen = true;
     }
 
-    private bool BeginWire(FlowPortControl port, Point point, GraphConnection? original = null)
+    private bool BeginWire(FlowPortControl port, Point point, GraphConnection? original = null,
+        bool reconnectIncidentBundle = false)
     {
         if (_host is null || !TryEndpoint(port, out var endpoint) || !_pointerState.Begin(GraphPointerMode.WireDrag)) return false;
         var oldNode = _selectedNode;
@@ -788,7 +826,6 @@ public partial class CanonicalGraphEditorView : UserControl
         ClearNodeSelection();
         if (original is null) ClearConnectionSelection();
         NotifySelectionChanged(oldNode, oldConnection);
-        _wireStart = endpoint;
         _wireOriginal = original;
         _incidentWireReconnect = false;
         _wireOriginals = original is null ? [] : [original];
@@ -799,11 +836,9 @@ public partial class CanonicalGraphEditorView : UserControl
                 .ToArray();
             if (IsMultiIncidentPort(endpoint))
             {
-                // Flow inputs and Logic outputs may fan in/out. A single
-                // existing edge therefore remains the normal add gesture;
-                // bundle dragging starts only when there are multiple real
-                // incident wires to move together.
-                if (incident.Length > 1)
+                // Multi-capacity ports always author a fresh wire. Reconnecting
+                // all incident wires is a separate, explicit Ctrl+drag gesture.
+                if (reconnectIncidentBundle && incident.Length > 0)
                 {
                     _incidentWireReconnect = true;
                     _wireOriginals = incident;
@@ -818,6 +853,7 @@ public partial class CanonicalGraphEditorView : UserControl
                 _wireOriginals = incident;
             }
         }
+        _wireStart = endpoint;
         _pointerStart = point;
         _draftWires.Clear();
         _transientWireVisuals.Clear();
@@ -843,11 +879,11 @@ public partial class CanonicalGraphEditorView : UserControl
             var style = GraphConnectionVisualStyle.For(endpoint.InterfaceKind);
             var wire = new Path
             {
-                Stroke = new SolidColorBrush(style.StrokeColor),
                 StrokeThickness = style.StrokeThickness,
                 IsHitTestVisible = false,
                 Tag = "UncommittedCanonicalConnection",
             };
+            ApplyWireBrush(wire, endpoint.InterfaceKind, selected: false);
             _draftWires.Add(wire);
             _transientWireVisuals.Add(wire);
             GraphCanvas.Children.Insert(0, wire);
@@ -856,6 +892,16 @@ public partial class CanonicalGraphEditorView : UserControl
         CanvasViewport.CaptureMouse();
         UpdateWire(point);
         return true;
+    }
+
+    private static void ApplyWireBrush(Shape shape, GraphInterfaceKind interfaceKind, bool selected)
+    {
+        var resourceKey = selected
+            ? "TextFillColorPrimaryBrush"
+            : interfaceKind == GraphInterfaceKind.Flow
+                ? "AccentFillColorDefaultBrush"
+                : "SystemFillColorCautionBrush";
+        shape.SetResourceReference(Shape.StrokeProperty, resourceKey);
     }
 
     private void CanvasViewport_OnPreviewMouseMove(object sender, MouseEventArgs e)
@@ -1124,6 +1170,10 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Small deterministic seam for tests and keyboard-accessible hosts.</summary>
     public bool BeginNewConnectionDrag(FlowPortControl port) => BeginWire(port, new Point(0, 0));
 
+    /// <summary>Deterministic seam for the explicit Ctrl+drag bundle gesture.</summary>
+    public bool BeginIncidentConnectionBundleDrag(FlowPortControl port)
+        => BeginWire(port, new Point(0, 0), reconnectIncidentBundle: true);
+
     /// <summary>Models an explicit reconnect that replaces the original input.</summary>
     public bool BeginExistingConnectionDrag(GraphEditorConnectionViewModel connection)
     {
@@ -1259,6 +1309,23 @@ public partial class CanonicalGraphEditorView : UserControl
         _scale.ScaleX = _scale.ScaleY = Safe(_viewportController.Zoom);
         _translate.X = Safe(_viewportController.PanX);
         _translate.Y = Safe(_viewportController.PanY);
+    }
+
+    private void CaptureViewport(GraphViewportState state)
+    {
+        state.PanX = Safe(_viewportController.PanX);
+        state.PanY = Safe(_viewportController.PanY);
+        state.Zoom = Math.Clamp(Safe(_viewportController.Zoom), GraphCoordinateTransform.MinZoom,
+            GraphCoordinateTransform.MaxZoom);
+    }
+
+    private void RestoreViewport(GraphViewportState? state)
+    {
+        _viewportController.PanX = state is null ? 0d : Safe(state.PanX);
+        _viewportController.PanY = state is null ? 0d : Safe(state.PanY);
+        _viewportController.Zoom = state is null ? 1d : Math.Clamp(Safe(state.Zoom),
+            GraphCoordinateTransform.MinZoom, GraphCoordinateTransform.MaxZoom);
+        ApplyViewport();
     }
 
     private void Zoom100_OnClick(object sender, RoutedEventArgs e) { _viewportController.SetZoomAt(1, ViewportCenter()); ApplyViewport(); }

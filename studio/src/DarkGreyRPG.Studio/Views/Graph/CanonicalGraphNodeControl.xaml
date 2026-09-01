@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:DarkGreyRPG.Studio.Views"
              xmlns:graphview="clr-namespace:DarkGreyRPG.Studio.Views.Graph"
-             Width="232" MinHeight="92" Focusable="True" Foreground="#F7FAFC">
-    <Border x:Name="NodeBorder" Background="#25292F" BorderBrush="#59616D" BorderThickness="1" CornerRadius="6"
+             Width="232" MinHeight="92" Focusable="True" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Border x:Name="NodeBorder" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6"
             Padding="0" AutomationProperties.AutomationId="CanonicalGraphNodeBorder">
         <Grid>
             <Grid.RowDefinitions>
@@ -12,19 +12,21 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Border x:Name="HeaderDragZone" Background="#2D7DAA" CornerRadius="5,5,0,0" Padding="9,6">
-                <TextBlock Foreground="White" FontWeight="SemiBold" Text="{Binding Node.DisplayName}" TextTrimming="CharacterEllipsis" />
+            <Border x:Name="HeaderDragZone" Background="{DynamicResource AccentFillColorDefaultBrush}" CornerRadius="5,5,0,0" Padding="9,6">
+                <TextBlock Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" FontWeight="SemiBold" Text="{Binding Node.DisplayName}" TextTrimming="CharacterEllipsis" />
             </Border>
             <Grid Grid.Row="1" Margin="7,6,7,7">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <!-- Explicit zero minima prevent long labels from widening
+                         the star columns and moving the edge anchors. -->
+                    <ColumnDefinition Width="*" MinWidth="0" />
+                    <ColumnDefinition Width="*" MinWidth="0" />
                 </Grid.ColumnDefinitions>
-                <StackPanel x:Name="InputPortsPanel" Grid.Column="0" />
-                <StackPanel x:Name="OutputPortsPanel" Grid.Column="1" HorizontalAlignment="Right" />
+                <Grid x:Name="InputPortsPanel" Grid.Column="0" />
+                <Grid x:Name="OutputPortsPanel" Grid.Column="1" />
             </Grid>
             <Expander x:Name="ParameterInteractiveZone" Grid.Row="2" Margin="7,0,7,7" Header="参数" IsExpanded="True"
-                       Foreground="#F7FAFC"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                        AutomationProperties.AutomationId="CanonicalNodeParameterSummary">
                 <Expander.Style>
                     <Style TargetType="Expander">

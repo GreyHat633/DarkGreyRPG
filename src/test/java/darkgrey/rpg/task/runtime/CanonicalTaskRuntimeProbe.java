@@ -685,7 +685,7 @@ public final class CanonicalTaskRuntimeProbe {
 
     private static Map<String, JsonElement> objective(String type, String value, JsonElement metadata, int required) {
         Map<String, JsonElement> props = props("objective_type", type, "description", "Probe objective");
-        props.put("required", new JsonParser().parse(Integer.toString(required)));
+        if (!"interact_actor".equals(type)) props.put("required", new JsonParser().parse(Integer.toString(required)));
         if ("kill_entity".equals(type)) props.put("entity", json(value));
         if ("collect_item".equals(type)) {
             props.put("item", json(value));

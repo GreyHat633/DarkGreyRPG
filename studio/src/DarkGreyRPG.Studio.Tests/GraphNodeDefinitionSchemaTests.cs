@@ -107,8 +107,7 @@ public sealed class GraphNodeDefinitionSchemaTests
         }
 
         CollectionAssert.AreEqual(
-            new[] { "terminate", "session", "task", "condition", "and", "or", "not", "action",
-                "interact_actor", "enter_region", "logic_input", "logic_output" },
+            new[] { "terminate", "condition", "and", "or", "not", "action", "logic_input", "logic_output" },
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray());
         CollectionAssert.AreEqual(
             new[] { "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },

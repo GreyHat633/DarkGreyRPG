@@ -613,6 +613,38 @@ public sealed class ShellViewModelTests
     }
 
     [TestMethod]
+    public void CanonicalNodeAuthoringIssueAppearsAndClearsInProblemsImmediately()
+    {
+        using var directory = new TestProjectDirectory();
+        new StoryRepository(directory.Root).CreateStory("opening", "Legacy Opening");
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(new GraphResourceEnvelope(
+            GraphResourceKind.Story,
+            "opening",
+            "Canonical Opening",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "region")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("opening"));
+        var shell = CreateShell(directory.Root);
+        shell.OpenProjectCommand.Execute(null);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+        var workspace = shell.CanonicalStoryWorkspace!;
+        Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
+        var trigger = workspace.NodeInspector!.StoryStartTriggers.Single();
+
+        trigger.RadiusText = "bad";
+
+        Assert.IsTrue(shell.Problems.Problems.Any(problem =>
+            problem.Code == "graph.story.start.trigger.authoring_invalid"
+            && problem.Field == StoryStartSchema.RadiusProperty
+            && problem.Source == "canonical/story/opening"));
+
+        trigger.RadiusText = "6";
+
+        Assert.IsFalse(shell.Problems.Problems.Any(problem =>
+            problem.Code == "graph.story.start.trigger.authoring_invalid"));
+    }
+
+    [TestMethod]
     public void ExportSelectedStoryPackageCommandBuildsServerReadyPackage()
     {
         using var directory = new TestProjectDirectory();

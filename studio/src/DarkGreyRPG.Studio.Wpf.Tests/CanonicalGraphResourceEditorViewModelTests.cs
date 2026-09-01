@@ -70,7 +70,9 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
         Assert.IsFalse(editor.IsDirty);
         Assert.IsFalse(editor.CanSave);
         Assert.AreEqual("graph.node.id.duplicate", editor.ValidationIssues.Single().Code);
-        StringAssert.Contains(editor.ValidationText, "line-1");
+        StringAssert.Contains(editor.ValidationText, "无法创建或更新该节点");
+        StringAssert.Contains(editor.ValidationText, "“问题”面板");
+        Assert.IsFalse(editor.ValidationText.Contains("line-1", StringComparison.Ordinal));
     }
 
     [TestMethod]

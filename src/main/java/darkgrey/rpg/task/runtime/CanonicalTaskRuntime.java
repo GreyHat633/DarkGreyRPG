@@ -473,8 +473,14 @@ public final class CanonicalTaskRuntime {
             requireProperties(node, "objective_type", "description", "required", "entity");
         if (CanonicalTaskEvent.COLLECT_ITEM.equals(type))
             requireProperties(node, "objective_type", "description", "required", "item", "metadata");
-        if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type))
-            requireProperties(node, "objective_type", "description", "required", "actor_id");
+        if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) {
+            if (node.getProperties()
+                .containsKey("required")) {
+                if (required != 1)
+                    throw failure("task.objective.required", "Legacy interact_actor required must equal one.");
+                requireProperties(node, "objective_type", "description", "required", "actor_id");
+            } else requireProperties(node, "objective_type", "description", "actor_id");
+        }
     }
 
     private void requireObjectivePorts(CanonicalGraphNode node) {
@@ -680,6 +686,13 @@ public final class CanonicalTaskRuntime {
     private int required(CanonicalGraphNode node) {
         JsonElement value = node.getProperties()
             .get("required");
+        JsonElement type = node.getProperties()
+            .get("objective_type");
+        if (value == null && type != null
+            && type.isJsonPrimitive()
+            && type.getAsJsonPrimitive()
+                .isString()
+            && CanonicalTaskEvent.INTERACT_ACTOR.equals(type.getAsString())) return 1;
         if (value == null || !value.isJsonPrimitive()
             || !value.getAsJsonPrimitive()
                 .isNumber())

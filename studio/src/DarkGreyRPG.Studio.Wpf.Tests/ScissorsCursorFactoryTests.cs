@@ -6,12 +6,12 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [DoNotParallelize]
 public sealed class ScissorsCursorFactoryTests
 {
-    private const int Size = 32;
+    private const int Size = 16;
     private const int DibHeaderSize = 40;
     private const int PixelOffset = 22 + DibHeaderSize;
 
     [STATestMethod]
-    public void CursorPayloadHas32PixelDimensionsAndCuttingHotspot()
+    public void CursorPayloadHas16PixelDimensionsAndCuttingHotspot()
     {
         var bytes = BuildPayload();
         using var reader = new BinaryReader(new MemoryStream(bytes));
@@ -22,8 +22,8 @@ public sealed class ScissorsCursorFactoryTests
         Assert.AreEqual((byte)Size, reader.ReadByte());
         Assert.AreEqual((byte)Size, reader.ReadByte());
         reader.ReadBytes(2);
-        Assert.AreEqual((ushort)11, reader.ReadUInt16());
-        Assert.AreEqual((ushort)17, reader.ReadUInt16());
+        Assert.AreEqual((ushort)6, reader.ReadUInt16());
+        Assert.AreEqual((ushort)8, reader.ReadUInt16());
         Assert.AreEqual(bytes.Length - 22, reader.ReadInt32());
         Assert.AreEqual(22, reader.ReadInt32());
 
@@ -35,26 +35,33 @@ public sealed class ScissorsCursorFactoryTests
     }
 
     [STATestMethod]
-    public void CursorPayloadContainsCompactSeparatedBladesAndFingerLoops()
+    public void CursorPayloadContainsCompactMonochromeScissorsSilhouette()
     {
         var pixels = BuildPayload().AsSpan(PixelOffset, Size * Size * 4);
 
-        Assert.IsTrue(IsOpaque(pixels, 11, 17), "The cursor hotspot must land on the pivot.");
-        Assert.IsTrue(IsOpaque(pixels, 27, 3), "The upper blade must reach its tip.");
-        Assert.IsTrue(IsOpaque(pixels, 29, 11), "The lower blade must remain distinct.");
-        Assert.IsTrue(IsOpaque(pixels, 4, 21), "The upper finger loop must be visible.");
-        Assert.IsTrue(IsOpaque(pixels, 12, 26), "The lower finger loop must be visible.");
+        Assert.IsTrue(IsOpaque(pixels, 6, 8), "The cursor hotspot must land on the pivot.");
+        Assert.IsTrue(IsOpaque(pixels, 13, 1), "The upper blade must reach its tip.");
+        Assert.IsTrue(IsOpaque(pixels, 5, 11), "The lower handle must remain visible.");
         Assert.IsFalse(IsOpaque(pixels, 0, 0), "The cursor background must remain transparent.");
-        Assert.IsFalse(IsOpaque(pixels, 7, 21), "The finger openings must remain transparent.");
-        CollectionAssert.AreEqual(new byte[] { 99, 76, 24, 255 }, Pixel(pixels, 3, 21),
-            "The outline must retain a blue-gray edge that remains visible on the dark graph canvas.");
+        Assert.IsTrue(IsGrayscale(pixels), "The cursor must use monochrome pixels only.");
 
         var opaquePixels = 0;
         for (var index = 0; index < Size * Size; index++)
             if (pixels[index * 4 + 3] != 0)
                 opaquePixels++;
-        Assert.IsTrue(opaquePixels is >= 90 and <= 300,
+        Assert.IsTrue(opaquePixels is >= 20 and <= 120,
             $"Expected a compact icon silhouette, got {opaquePixels} opaque pixels.");
+    }
+
+    private static bool IsGrayscale(ReadOnlySpan<byte> pixels)
+    {
+        for (var index = 0; index < Size * Size; index++)
+        {
+            var offset = index * 4;
+            if (pixels[offset] != pixels[offset + 1] || pixels[offset + 1] != pixels[offset + 2])
+                return false;
+        }
+        return true;
     }
 
     private static byte[] BuildPayload()

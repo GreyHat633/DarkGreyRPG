@@ -15,7 +15,7 @@ public sealed class StoryStartAuthoringTests
         Assert.IsTrue(StoryStartSchema.IsValid(node));
         var trigger = StoryStartSchema.ReadTriggers(node).Single();
         Assert.AreEqual("opaque_start", trigger.PortId);
-        Assert.AreEqual("进入区域", trigger.DisplayName);
+        Assert.AreEqual("启动条件 1", trigger.DisplayName);
         Assert.AreEqual(StoryStartSchema.RegionEntry, trigger.TriggerType);
         Assert.AreEqual(StoryStartSchema.Once, node.Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
         Assert.AreEqual("opaque_start", node.Ports.Single().Id);

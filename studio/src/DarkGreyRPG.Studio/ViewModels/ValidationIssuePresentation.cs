@@ -5,6 +5,8 @@ namespace DarkGreyRPG.Studio.ViewModels;
 /// <summary>Chinese author-facing presentation for stable Core validation codes.</summary>
 public static class ValidationIssuePresentation
 {
+    private const string ProblemsHint = "请在“问题”面板查看详情。";
+
     public static string Format(ValidationIssue issue)
     {
         ArgumentNullException.ThrowIfNull(issue);
@@ -20,8 +22,8 @@ public static class ValidationIssuePresentation
             "graph.session.start.logic_output.legacy" => "此 Session Start 使用旧版逻辑输出；可以继续读取，但新建内容只使用流程输出。",
             _ when stableCode.StartsWith("graph.connection.", StringComparison.Ordinal) => "无法建立这条节点连接，请检查端口方向和类型。",
             _ when stableCode.StartsWith("graph.dynamic_port.", StringComparison.Ordinal) => "无法更新节点的动态端口。",
-            _ when stableCode.StartsWith("graph.node.create.", StringComparison.Ordinal) => "无法创建该节点。",
-            _ when stableCode.StartsWith("graph.story.start.", StringComparison.Ordinal) => "Story 开始节点的启动方式配置有误。",
+            _ when stableCode.StartsWith("graph.node.", StringComparison.Ordinal) => "无法创建或更新该节点。",
+            _ when stableCode.StartsWith("graph.story.start.", StringComparison.Ordinal) => "Story 开始节点的启动条件配置有误。",
             _ when stableCode.StartsWith("graph.objective.", StringComparison.Ordinal) => "任务目标的类型、目标资源或数量配置有误。",
             _ when stableCode.StartsWith("graph.story.action.", StringComparison.Ordinal) => "Story 动作的参数配置有误。",
             _ when stableCode.StartsWith("graph.aggregate.", StringComparison.Ordinal) => "Session / Task 聚合节点的资源映射有误。",
@@ -39,6 +41,38 @@ public static class ValidationIssuePresentation
             return $"{message}{Environment.NewLine}[{stableCode}]{detail}";
         }
         return $"操作失败（错误代码：{stableCode}）{Environment.NewLine}技术详情：{technicalDetail}";
+    }
+
+    /// <summary>
+    /// Short author-facing copy for the inspector and near-field validation.
+    /// Stable codes and technical details remain exclusively in Problems.
+    /// </summary>
+    public static string FormatCompact(ValidationIssue issue)
+    {
+        ArgumentNullException.ThrowIfNull(issue);
+        return FormatCompact(issue.Code);
+    }
+
+    public static string FormatCompact(string? code)
+    {
+        var stableCode = string.IsNullOrWhiteSpace(code) ? "unknown" : code;
+        var message = stableCode switch
+        {
+            "graph.connection.logic.input.multiple_sources" => "此逻辑输入已经有一个来源。",
+            "graph.session.start.logic_output.legacy" => "此会话开始节点使用旧版逻辑输出。",
+            _ when stableCode.StartsWith("graph.connection.", StringComparison.Ordinal) => "无法建立这条节点连接，请检查端口方向和类型。",
+            _ when stableCode.StartsWith("graph.dynamic_port.", StringComparison.Ordinal) => "无法更新节点的动态端口。",
+            _ when stableCode.StartsWith("graph.node.", StringComparison.Ordinal) => "无法创建或更新该节点。",
+            _ when stableCode.StartsWith("graph.story.start.", StringComparison.Ordinal) => "故事开始节点的启动条件配置有误。",
+            _ when stableCode.StartsWith("graph.objective.", StringComparison.Ordinal) => "任务目标的类型、目标资源或数量配置有误。",
+            _ when stableCode.StartsWith("graph.story.action.", StringComparison.Ordinal) => "故事动作的参数配置有误。",
+            _ when stableCode.StartsWith("graph.aggregate.", StringComparison.Ordinal) => "会话或任务节点的资源映射有误。",
+            _ when IsResourceCode(stableCode) => "故事资源缺失、重复或配置无效。",
+            _ when IsSaveCode(stableCode) => "保存失败，请检查资源内容和项目状态。",
+            _ when IsMigrationCode(stableCode) => "项目迁移未完成，请先处理迁移问题。",
+            _ => "操作失败。",
+        };
+        return $"{message}{Environment.NewLine}{ProblemsHint}";
     }
 
     private static bool IsResourceCode(string code)

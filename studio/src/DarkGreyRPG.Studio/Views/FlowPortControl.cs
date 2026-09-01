@@ -11,6 +11,7 @@ namespace DarkGreyRPG.Studio.Views;
 public sealed class FlowPortControl : Button
 {
     private FrameworkElement? _anchor;
+    private Grid? _anchorHitTarget;
 
     public static readonly DependencyProperty NodeIdProperty = DependencyProperty.Register(
         nameof(NodeId), typeof(string), typeof(FlowPortControl), new PropertyMetadata(string.Empty, OnVisualPropertyChanged));
@@ -75,8 +76,9 @@ public sealed class FlowPortControl : Button
     /// diamond. Labels deliberately remain outside the wire hit target.
     /// </summary>
     public bool IsAnchorHitTarget(DependencyObject? source)
-        => source is not null && _anchor is not null
-            && (ReferenceEquals(source, _anchor) || _anchor.IsAncestorOf(source));
+        => source is not null && _anchorHitTarget is not null
+            && (ReferenceEquals(source, _anchorHitTarget)
+                || _anchorHitTarget.IsAncestorOf(source));
 
     /// <summary>
     /// Checks the inexpensive endpoint invariants needed before a drag can ask
@@ -111,49 +113,53 @@ public sealed class FlowPortControl : Button
     {
         var highlighted = IsValidTarget || IsConnecting;
         _anchor = CreateAnchor(highlighted);
+        _anchorHitTarget = CreateAnchorHitTarget(_anchor);
 
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var panel = new Grid { VerticalAlignment = VerticalAlignment.Center };
+        panel.ColumnDefinitions.Add(new ColumnDefinition
+        {
+            Width = IsInput ? new GridLength(20) : new GridLength(1, GridUnitType.Star),
+            MinWidth = 0,
+        });
+        panel.ColumnDefinitions.Add(new ColumnDefinition
+        {
+            Width = IsInput ? new GridLength(1, GridUnitType.Star) : new GridLength(20),
+            MinWidth = 0,
+        });
         if (IsInput)
         {
-            panel.Children.Add(new Grid
-            {
-                Width = 11,
-                Height = 11,
-                VerticalAlignment = VerticalAlignment.Center,
-                Children = { _anchor },
-            });
-            panel.Children.Add(new TextBlock
+            Grid.SetColumn(_anchorHitTarget!, 0);
+            panel.Children.Add(_anchorHitTarget!);
+            var label = new TextBlock
             {
                 Text = EffectiveDisplayName,
                 Margin = new Thickness(5, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = Brushes.White,
                 FontSize = 11,
-            });
+            };
+            label.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+            Grid.SetColumn(label, 1);
+            panel.Children.Add(label);
         }
         else if (!string.Equals(EffectivePortId, "next", StringComparison.Ordinal))
         {
-            panel.Children.Add(new TextBlock
+            var label = new TextBlock
             {
                 Text = EffectiveDisplayName,
                 Margin = new Thickness(0, 0, 5, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = Brushes.White,
                 FontSize = 11,
-            });
+            };
+            label.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+            Grid.SetColumn(label, 0);
+            panel.Children.Add(label);
         }
         // Keep the layout slot fixed at the largest anchor size. Either inner
         // shape can grow for highlighting without changing the port's footprint.
         if (!IsInput)
         {
-            var anchorSlot = new Grid
-            {
-                Width = 11,
-                Height = 11,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            anchorSlot.Children.Add(_anchor);
-            panel.Children.Add(anchorSlot);
+            Grid.SetColumn(_anchorHitTarget!, 1);
+            panel.Children.Add(_anchorHitTarget!);
         }
         Content = panel;
         if (InterfaceKind == GraphInterfaceKind.Logic)
@@ -211,10 +217,27 @@ public sealed class FlowPortControl : Button
         };
     }
 
+    private static Grid CreateAnchorHitTarget(FrameworkElement anchor)
+    {
+        // The visible shape remains 9-11 DIP while this centered transparent
+        // surface gives users a forgiving 20-DIP target. The label is a
+        // sibling outside this surface and therefore cannot start a wire.
+        var hitTarget = new Grid
+        {
+            Width = 20,
+            Height = 20,
+            Background = Brushes.Transparent,
+            IsHitTestVisible = true,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        hitTarget.Children.Add(anchor);
+        return hitTarget;
+    }
+
     private static ControlTemplate CreateChromeFreeTemplate()
     {
         var root = new FrameworkElementFactory(typeof(Grid));
-        root.SetValue(Panel.BackgroundProperty, Brushes.Transparent);
         root.SetValue(FrameworkElement.MinWidthProperty, 20d);
         root.SetValue(FrameworkElement.HeightProperty, 20d);
 
