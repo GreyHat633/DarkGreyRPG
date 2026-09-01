@@ -14,9 +14,12 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     IWorkspaceEditorViewModel, IDisposable
 {
     private string _savedJson;
+    private IReadOnlyDictionary<string, GraphEditorNodePosition> _savedLayout;
     private bool _disposed;
 
-    public CanonicalGraphResourceEditorViewModel(GraphResourceEnvelope envelope)
+    public CanonicalGraphResourceEditorViewModel(
+        GraphResourceEnvelope envelope,
+        IReadOnlyDictionary<string, GraphEditorNodePosition>? layout = null)
     {
         ArgumentNullException.ThrowIfNull(envelope);
         var scope = GraphResourceScopeAdapter.GetScope(envelope.ResourceKind);
@@ -24,10 +27,12 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         _savedJson = SerializeCurrent();
         if (scope == GraphScope.Task)
             CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(Document.Graph);
-        Host = new GraphEditorHostViewModel(Document.Graph, Document.Scope);
+        Host = new GraphEditorHostViewModel(Document.Graph, Document.Scope, layout);
+        _savedLayout = CreateLayoutSnapshot();
         UndoCommand = new RelayCommand(() => Host.Undo(), () => Host.CanUndo);
         RedoCommand = new RelayCommand(() => Host.Redo(), () => Host.CanRedo);
         Host.GraphChanged += OnGraphChanged;
+        Host.LayoutChanged += OnLayoutChanged;
         Host.PropertyChanged += OnHostPropertyChanged;
     }
 
@@ -39,8 +44,10 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public GraphResourceKind ResourceKind => Document.ResourceKind;
     public GraphScope Scope => Document.Scope;
     public long GraphRevision => Host.GraphRevision;
-    public bool IsDirty => !string.Equals(_savedJson, SerializeCurrent(), StringComparison.Ordinal);
-    public bool CanSave => IsDirty && ValidationIssues.Count == 0;
+    public bool IsGraphDirty => !string.Equals(_savedJson, SerializeCurrent(), StringComparison.Ordinal);
+    public bool IsLayoutDirty => !LayoutEquals(_savedLayout, CreateLayoutSnapshot());
+    public bool IsDirty => IsGraphDirty || IsLayoutDirty;
+    public bool CanSave => IsLayoutDirty || (IsGraphDirty && ValidationIssues.Count == 0);
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
     public IReadOnlyList<ValidationIssue> ValidationIssues => Host.LastValidationIssues;
     public string ValidationText => string.Join(Environment.NewLine,
@@ -53,6 +60,19 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
 
     public GraphResourceEnvelope CreateSnapshot() => CreatePersistenceSnapshot();
 
+    /// <summary>Returns finite host-only positions for nodes currently present in this graph.</summary>
+    public IReadOnlyDictionary<string, GraphEditorNodePosition> CreateLayoutSnapshot()
+    {
+        var liveNodeIds = (Document.Graph.Nodes ?? [])
+            .Where(node => node is not null && !string.IsNullOrWhiteSpace(node.Id))
+            .Select(node => node.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        return Host.Layout
+            .Where(pair => liveNodeIds.Contains(pair.Key) && pair.Value.IsFinite)
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+    }
+
     /// <summary>
     /// Advances the saved baseline only after an external repository has
     /// durably accepted the supplied/current snapshot.
@@ -61,6 +81,21 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     {
         ThrowIfDisposed();
         _savedJson = SerializeCurrent();
+        _savedLayout = CreateLayoutSnapshot();
+        NotifyWorkspaceState();
+    }
+
+    public void MarkGraphSaved()
+    {
+        ThrowIfDisposed();
+        _savedJson = SerializeCurrent();
+        NotifyWorkspaceState();
+    }
+
+    public void MarkLayoutSaved()
+    {
+        ThrowIfDisposed();
+        _savedLayout = CreateLayoutSnapshot();
         NotifyWorkspaceState();
     }
 
@@ -121,10 +156,13 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         if (_disposed) return;
         _disposed = true;
         Host.GraphChanged -= OnGraphChanged;
+        Host.LayoutChanged -= OnLayoutChanged;
         Host.PropertyChanged -= OnHostPropertyChanged;
     }
 
     private void OnGraphChanged(object? sender, EventArgs args) => NotifyWorkspaceState();
+
+    private void OnLayoutChanged(object? sender, EventArgs args) => NotifyWorkspaceState();
 
     private void OnHostPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
@@ -137,6 +175,8 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     private void NotifyWorkspaceState()
     {
         OnPropertyChanged(nameof(GraphRevision));
+        OnPropertyChanged(nameof(IsGraphDirty));
+        OnPropertyChanged(nameof(IsLayoutDirty));
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(SaveStateText));
@@ -148,6 +188,12 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
 
     private string SerializeCurrent()
         => GraphResourceEnvelopeSerializer.Serialize(Document.ToEnvelope(), indented: false);
+
+    private static bool LayoutEquals(
+        IReadOnlyDictionary<string, GraphEditorNodePosition> left,
+        IReadOnlyDictionary<string, GraphEditorNodePosition> right)
+        => left.Count == right.Count
+           && left.All(pair => right.TryGetValue(pair.Key, out var position) && position == pair.Value);
 
     private void ThrowIfDisposed()
         => ObjectDisposedException.ThrowIf(_disposed, this);

@@ -1,0 +1,785 @@
+{
+  "started_utc": "2026-09-01T19:05:06.2146477Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-choice-layout-live-project-final2",
+  "choice_node_id": "node_0ac86a09f2464f268102c9dd242792e0",
+  "option_count": 10,
+  "original_connection_count": 5,
+  "themes": {
+    "dark": {
+      "status": "PASS",
+      "dpi": 119,
+      "scale": 1.2395833333333333,
+      "node": {
+        "left": 808.0,
+        "top": 424.0,
+        "right": 942.0,
+        "bottom": 751.0
+      },
+      "input": {
+        "left": 813.0,
+        "top": 446.0,
+        "right": 875.0,
+        "bottom": 457.0
+      },
+      "rows": [
+        {
+          "option_id": "dynamic_port_be80afde4be645c09a39859b04920c95",
+          "flow_port_id": "dynamic_port_b5b280c4f9224a7ea98f0a600c3462fe",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 446.0,
+            "right": 938.0,
+            "bottom": 457.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 447.0,
+            "right": 945.0,
+            "bottom": 455.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 457.0,
+            "right": 938.0,
+            "bottom": 469.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_1827f153b38c43979aadbe6b0bde9779",
+          "flow_port_id": "dynamic_port_e695cc16b8474dfd8e1842123c7e13e5",
+          "display_text": "这是一个用于验证长文本排版与稳定端口映射的非常长选项内容",
+          "flow": {
+            "left": 926.0,
+            "top": 476.0,
+            "right": 938.0,
+            "bottom": 487.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 478.0,
+            "right": 1104.0,
+            "bottom": 486.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 487.0,
+            "right": 938.0,
+            "bottom": 499.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_13d58041acc3463ea0a8b507a5e9e7d3",
+          "flow_port_id": "dynamic_port_e59e098881d14b15bc97c3ca0e954733",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 506.0,
+            "right": 938.0,
+            "bottom": 517.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 508.0,
+            "right": 945.0,
+            "bottom": 516.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 517.0,
+            "right": 938.0,
+            "bottom": 529.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_d57dba36c5474d8eb2ddc5c84612e570",
+          "flow_port_id": "dynamic_port_740351a79c5245feb10120811c601cbf",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 536.0,
+            "right": 938.0,
+            "bottom": 548.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 538.0,
+            "right": 945.0,
+            "bottom": 546.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 548.0,
+            "right": 938.0,
+            "bottom": 559.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_5cc012a922db4db98beeda35efe552d8",
+          "flow_port_id": "dynamic_port_bbd70a1906554d379e2bfad9b0133e2e",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 566.0,
+            "right": 938.0,
+            "bottom": 578.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 568.0,
+            "right": 945.0,
+            "bottom": 576.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 578.0,
+            "right": 938.0,
+            "bottom": 589.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_5928d62ec9f044df9fc5116199fa0ca4",
+          "flow_port_id": "dynamic_port_1ca7baf3c3ca413ba233d489843780b5",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 596.0,
+            "right": 938.0,
+            "bottom": 608.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 598.0,
+            "right": 945.0,
+            "bottom": 606.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 608.0,
+            "right": 938.0,
+            "bottom": 619.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_af007c8422bf4d97a1dc9d9c0a13f647",
+          "flow_port_id": "dynamic_port_e72117737e244d9eb27cc2f9a0d75c16",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 626.0,
+            "right": 938.0,
+            "bottom": 638.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 628.0,
+            "right": 945.0,
+            "bottom": 636.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 638.0,
+            "right": 938.0,
+            "bottom": 649.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_aebe8c0822084a48bf7c21d0912a7dac",
+          "flow_port_id": "dynamic_port_9ef17a82275349deb807e68b3ed3a05a",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 656.0,
+            "right": 938.0,
+            "bottom": 668.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 658.0,
+            "right": 945.0,
+            "bottom": 666.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 668.0,
+            "right": 938.0,
+            "bottom": 680.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_1cf8238d31ee47d5842bc8c030897390",
+          "flow_port_id": "dynamic_port_8ec8d1efdf0146079fc2a88dff433a55",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 687.0,
+            "right": 938.0,
+            "bottom": 698.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 688.0,
+            "right": 945.0,
+            "bottom": 696.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 698.0,
+            "right": 938.0,
+            "bottom": 710.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_97752b6164b84c81bf0ba394f2ff3b15",
+          "flow_port_id": "dynamic_port_45cd89feebf746d092ccb6b4160e4089",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 717.0,
+            "right": 938.0,
+            "bottom": 728.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 718.0,
+            "right": 945.0,
+            "bottom": 726.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 728.0,
+            "right": 938.0,
+            "bottom": 740.0
+          }
+        }
+      ]
+    },
+    "light": {
+      "status": "PASS",
+      "dpi": 119,
+      "scale": 1.2395833333333333,
+      "node": {
+        "left": 808.0,
+        "top": 424.0,
+        "right": 942.0,
+        "bottom": 751.0
+      },
+      "input": {
+        "left": 813.0,
+        "top": 446.0,
+        "right": 875.0,
+        "bottom": 457.0
+      },
+      "rows": [
+        {
+          "option_id": "dynamic_port_be80afde4be645c09a39859b04920c95",
+          "flow_port_id": "dynamic_port_b5b280c4f9224a7ea98f0a600c3462fe",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 446.0,
+            "right": 938.0,
+            "bottom": 457.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 447.0,
+            "right": 945.0,
+            "bottom": 455.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 457.0,
+            "right": 938.0,
+            "bottom": 469.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_1827f153b38c43979aadbe6b0bde9779",
+          "flow_port_id": "dynamic_port_e695cc16b8474dfd8e1842123c7e13e5",
+          "display_text": "这是一个用于验证长文本排版与稳定端口映射的非常长选项内容",
+          "flow": {
+            "left": 926.0,
+            "top": 476.0,
+            "right": 938.0,
+            "bottom": 487.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 478.0,
+            "right": 1104.0,
+            "bottom": 486.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 487.0,
+            "right": 938.0,
+            "bottom": 499.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_13d58041acc3463ea0a8b507a5e9e7d3",
+          "flow_port_id": "dynamic_port_e59e098881d14b15bc97c3ca0e954733",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 506.0,
+            "right": 938.0,
+            "bottom": 517.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 508.0,
+            "right": 945.0,
+            "bottom": 516.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 517.0,
+            "right": 938.0,
+            "bottom": 529.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_d57dba36c5474d8eb2ddc5c84612e570",
+          "flow_port_id": "dynamic_port_740351a79c5245feb10120811c601cbf",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 536.0,
+            "right": 938.0,
+            "bottom": 548.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 538.0,
+            "right": 945.0,
+            "bottom": 546.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 548.0,
+            "right": 938.0,
+            "bottom": 559.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_5cc012a922db4db98beeda35efe552d8",
+          "flow_port_id": "dynamic_port_bbd70a1906554d379e2bfad9b0133e2e",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 566.0,
+            "right": 938.0,
+            "bottom": 578.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 568.0,
+            "right": 945.0,
+            "bottom": 576.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 578.0,
+            "right": 938.0,
+            "bottom": 589.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_5928d62ec9f044df9fc5116199fa0ca4",
+          "flow_port_id": "dynamic_port_1ca7baf3c3ca413ba233d489843780b5",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 596.0,
+            "right": 938.0,
+            "bottom": 608.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 598.0,
+            "right": 945.0,
+            "bottom": 606.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 608.0,
+            "right": 938.0,
+            "bottom": 619.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_af007c8422bf4d97a1dc9d9c0a13f647",
+          "flow_port_id": "dynamic_port_e72117737e244d9eb27cc2f9a0d75c16",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 626.0,
+            "right": 938.0,
+            "bottom": 638.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 628.0,
+            "right": 945.0,
+            "bottom": 636.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 638.0,
+            "right": 938.0,
+            "bottom": 649.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_aebe8c0822084a48bf7c21d0912a7dac",
+          "flow_port_id": "dynamic_port_9ef17a82275349deb807e68b3ed3a05a",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 656.0,
+            "right": 938.0,
+            "bottom": 668.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 658.0,
+            "right": 945.0,
+            "bottom": 666.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 668.0,
+            "right": 938.0,
+            "bottom": 680.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_1cf8238d31ee47d5842bc8c030897390",
+          "flow_port_id": "dynamic_port_8ec8d1efdf0146079fc2a88dff433a55",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 687.0,
+            "right": 938.0,
+            "bottom": 698.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 688.0,
+            "right": 945.0,
+            "bottom": 696.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 698.0,
+            "right": 938.0,
+            "bottom": 710.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_97752b6164b84c81bf0ba394f2ff3b15",
+          "flow_port_id": "dynamic_port_45cd89feebf746d092ccb6b4160e4089",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 717.0,
+            "right": 938.0,
+            "bottom": 728.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 718.0,
+            "right": 945.0,
+            "bottom": 726.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 728.0,
+            "right": 938.0,
+            "bottom": 740.0
+          }
+        }
+      ]
+    }
+  },
+  "reconnect": {
+    "status": "PASS",
+    "moved_to_option_6": true,
+    "restored_to_option_1": true,
+    "connection_count": 5,
+    "logic_light_clicks": 20,
+    "logic_click_hash_stable": true
+  },
+  "restart": {
+    "status": "PASS",
+    "connection_count": 5,
+    "layout": {
+      "status": "PASS",
+      "dpi": 119,
+      "scale": 1.2395833333333333,
+      "node": {
+        "left": 808.0,
+        "top": 424.0,
+        "right": 942.0,
+        "bottom": 751.0
+      },
+      "input": {
+        "left": 813.0,
+        "top": 446.0,
+        "right": 875.0,
+        "bottom": 457.0
+      },
+      "rows": [
+        {
+          "option_id": "dynamic_port_be80afde4be645c09a39859b04920c95",
+          "flow_port_id": "dynamic_port_b5b280c4f9224a7ea98f0a600c3462fe",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 446.0,
+            "right": 938.0,
+            "bottom": 457.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 447.0,
+            "right": 945.0,
+            "bottom": 455.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 457.0,
+            "right": 938.0,
+            "bottom": 469.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_1827f153b38c43979aadbe6b0bde9779",
+          "flow_port_id": "dynamic_port_e695cc16b8474dfd8e1842123c7e13e5",
+          "display_text": "这是一个用于验证长文本排版与稳定端口映射的非常长选项内容",
+          "flow": {
+            "left": 926.0,
+            "top": 476.0,
+            "right": 938.0,
+            "bottom": 487.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 478.0,
+            "right": 1104.0,
+            "bottom": 486.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 487.0,
+            "right": 938.0,
+            "bottom": 499.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_13d58041acc3463ea0a8b507a5e9e7d3",
+          "flow_port_id": "dynamic_port_e59e098881d14b15bc97c3ca0e954733",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 506.0,
+            "right": 938.0,
+            "bottom": 517.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 508.0,
+            "right": 945.0,
+            "bottom": 516.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 517.0,
+            "right": 938.0,
+            "bottom": 529.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_d57dba36c5474d8eb2ddc5c84612e570",
+          "flow_port_id": "dynamic_port_740351a79c5245feb10120811c601cbf",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 536.0,
+            "right": 938.0,
+            "bottom": 548.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 538.0,
+            "right": 945.0,
+            "bottom": 546.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 548.0,
+            "right": 938.0,
+            "bottom": 559.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_5cc012a922db4db98beeda35efe552d8",
+          "flow_port_id": "dynamic_port_bbd70a1906554d379e2bfad9b0133e2e",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 566.0,
+            "right": 938.0,
+            "bottom": 578.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 568.0,
+            "right": 945.0,
+            "bottom": 576.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 578.0,
+            "right": 938.0,
+            "bottom": 589.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_5928d62ec9f044df9fc5116199fa0ca4",
+          "flow_port_id": "dynamic_port_1ca7baf3c3ca413ba233d489843780b5",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 596.0,
+            "right": 938.0,
+            "bottom": 608.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 598.0,
+            "right": 945.0,
+            "bottom": 606.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 608.0,
+            "right": 938.0,
+            "bottom": 619.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_af007c8422bf4d97a1dc9d9c0a13f647",
+          "flow_port_id": "dynamic_port_e72117737e244d9eb27cc2f9a0d75c16",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 626.0,
+            "right": 938.0,
+            "bottom": 638.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 628.0,
+            "right": 945.0,
+            "bottom": 636.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 638.0,
+            "right": 938.0,
+            "bottom": 649.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_aebe8c0822084a48bf7c21d0912a7dac",
+          "flow_port_id": "dynamic_port_9ef17a82275349deb807e68b3ed3a05a",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 656.0,
+            "right": 938.0,
+            "bottom": 668.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 658.0,
+            "right": 945.0,
+            "bottom": 666.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 668.0,
+            "right": 938.0,
+            "bottom": 680.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_1cf8238d31ee47d5842bc8c030897390",
+          "flow_port_id": "dynamic_port_8ec8d1efdf0146079fc2a88dff433a55",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 687.0,
+            "right": 938.0,
+            "bottom": 698.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 688.0,
+            "right": 945.0,
+            "bottom": 696.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 698.0,
+            "right": 938.0,
+            "bottom": 710.0
+          }
+        },
+        {
+          "option_id": "dynamic_port_97752b6164b84c81bf0ba394f2ff3b15",
+          "flow_port_id": "dynamic_port_45cd89feebf746d092ccb6b4160e4089",
+          "display_text": "新选项",
+          "flow": {
+            "left": 926.0,
+            "top": 717.0,
+            "right": 938.0,
+            "bottom": 728.0
+          },
+          "label": {
+            "left": 926.0,
+            "top": 718.0,
+            "right": 945.0,
+            "bottom": 726.0
+          },
+          "logic": {
+            "left": 926.0,
+            "top": 728.0,
+            "right": 938.0,
+            "bottom": 740.0
+          }
+        }
+      ]
+    },
+    "live_process_id": 4976
+  },
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-dark-pre-measure.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-dark-10-options.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-flow-reconnect-forward-frame1-down.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-flow-reconnect-forward-frame2-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-flow-reconnect-forward-frame3-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-flow-reconnect-restore-frame1-down.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-flow-reconnect-restore-frame2-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-flow-reconnect-restore-frame3-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-light-10-options.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-final2\\choice-dark-after-process-restart.png"
+  ],
+  "status": "PASS",
+  "finished_utc": "2026-09-01T19:05:54.5551569Z"
+}

@@ -1,5 +1,6 @@
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Editing;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.IO;
 using System.Text.Json;
@@ -136,6 +137,27 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
         CollectionAssert.AreEqual(new[] { "keep" }, graph.Nodes.Select(node => node.Id).ToArray());
         Assert.IsEmpty(graph.Connections);
         Assert.IsTrue(File.Exists(store.Tasks.GetPath("task")), "Removing a placement/reference must not delete the resource.");
+    }
+
+    [TestMethod]
+    public void DeletingAggregatePlacementPreservesOwnedResourceAndMembership()
+    {
+        using var project = NewProject();
+        var store = new CanonicalProjectGraphStore(project.Root);
+        CreateStory(store, "owner");
+        var service = new CanonicalStoryResourceLifecycleService(store);
+        service.CreateOwnedSession("owner", "session", "Session");
+        ReplaceStoryWithPlacements(store, "owner", GraphResourceKind.Session, "session");
+        var story = store.Stories.Load("owner");
+        var session = new GraphEditSession(story.Graph!, GraphScope.StoryFlow);
+
+        Assert.IsTrue(session.RemoveNode("placement-a", confirmReferencedRemoval: true));
+        story.Graph = session.Document;
+        store.Stories.Replace(story);
+
+        Assert.IsFalse(store.Stories.Load("owner").Graph!.Nodes.Any(node => node.Id == "placement-a"));
+        Assert.IsTrue(File.Exists(store.Sessions.GetPath("session")));
+        CollectionAssert.Contains(store.Memberships.Load("owner").OwnedResources.Sessions, "session");
     }
 
     [TestMethod]

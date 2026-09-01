@@ -2,6 +2,9 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Views;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
@@ -57,6 +60,18 @@ public partial class CanonicalGraphNodeControl : UserControl
     public IReadOnlyList<FlowPortControl> PortControls => _portControls;
     private readonly List<FlowPortControl> _portControls = [];
 
+    /// <summary>
+    /// The ordered Choice projection used by the visual node.  The row is
+    /// keyed by the persisted semantic IDs, rather than by display text or
+    /// the incidental order of the node's mixed output list.
+    /// </summary>
+    public IReadOnlyList<ChoiceOptionRow> ChoiceOptionRows => _choiceOptionRows;
+
+    /// <summary>Compatibility alias for callers that describe this as port rows.</summary>
+    public IReadOnlyList<ChoiceOptionRow> ChoiceRows => _choiceOptionRows;
+
+    private readonly List<ChoiceOptionRow> _choiceOptionRows = [];
+
     /// <summary>Refreshes only this node's rendered port controls.</summary>
     public void RefreshPorts()
     {
@@ -102,9 +117,21 @@ public partial class CanonicalGraphNodeControl : UserControl
         InputPortsPanel.RowDefinitions.Clear();
         OutputPortsPanel.Children.Clear();
         OutputPortsPanel.RowDefinitions.Clear();
+        ChoicePortsPanel.Children.Clear();
+        ChoicePortsPanel.RowDefinitions.Clear();
+        ChoicePortsPanel.Visibility = Visibility.Collapsed;
+        OutputPortsPanel.Visibility = Visibility.Visible;
         _portControls.Clear();
         foreach (var item in Node.Inputs) AddPort(InputPortsPanel, item);
-        foreach (var item in Node.Outputs) AddPort(OutputPortsPanel, item);
+        _choiceOptionRows.Clear();
+        if (!TryBuildChoiceRows())
+        {
+            foreach (var item in Node.Outputs) AddPort(OutputPortsPanel, item);
+            return;
+        }
+
+        OutputPortsPanel.Visibility = Visibility.Collapsed;
+        ChoicePortsPanel.Visibility = Visibility.Visible;
     }
 
     private void AddPort(Grid panel, GraphEditorPortViewModel item)
@@ -114,6 +141,128 @@ public partial class CanonicalGraphNodeControl : UserControl
         Grid.SetRow(port, panel.RowDefinitions.Count - 1);
         panel.Children.Add(port);
     }
+
+    private bool TryBuildChoiceRows()
+    {
+        if (Node is null || !string.Equals(Node.Type, "choice", StringComparison.Ordinal)
+            || !Node.Properties.TryGetValue(SessionChoiceSchema.OptionsProperty, out var options)
+            || options.ValueKind != JsonValueKind.Array)
+            return false;
+
+        var outputs = Node.Outputs.ToArray();
+        var flowPorts = outputs.Where(port => port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Flow)
+            .GroupBy(port => port.PortId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count() == 1 ? group.Single() : null,
+                StringComparer.Ordinal);
+        var logicPorts = outputs.Where(port => port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Logic)
+            .GroupBy(port => port.PortId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count() == 1 ? group.Single() : null,
+                StringComparer.Ordinal);
+
+        var parsed = new List<(string OptionId, string DisplayText, string FlowPortId)>();
+        foreach (var option in options.EnumerateArray())
+        {
+            if (option.ValueKind != JsonValueKind.Object
+                || !TryReadString(option, "option_id", out var optionId)
+                || !TryReadString(option, "display_text", out var displayText)
+                || !TryReadString(option, "flow_port_id", out var flowPortId))
+                return false;
+            if (parsed.Any(item => string.Equals(item.OptionId, optionId, StringComparison.Ordinal)
+                || string.Equals(item.FlowPortId, flowPortId, StringComparison.Ordinal)))
+                return false;
+            if (!flowPorts.TryGetValue(flowPortId, out var flowPort) || flowPort is null
+                || !logicPorts.TryGetValue(optionId, out var logicPort) || logicPort is null)
+                return false;
+            parsed.Add((optionId, displayText, flowPortId));
+        }
+
+        if (parsed.Count == 0 || flowPorts.Count != parsed.Count || logicPorts.Count != parsed.Count)
+            return false;
+
+        foreach (var (optionId, displayText, flowPortId) in parsed)
+        {
+            // Keep the complete semantic group in the output half of the
+            // fixed-width node. Flow is above the option name and Logic is
+            // below it, so neither endpoint can drift into the content area.
+            var flowPort = CreatePort(flowPorts[flowPortId]!);
+            var logicPort = CreatePort(logicPorts[optionId]!);
+            var optionLabel = new TextBlock
+            {
+                Text = displayText,
+                MaxWidth = ChoiceOptionLabelMaxWidth,
+                Margin = new Thickness(0, 0, ChoiceOptionLabelRightInset, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                TextAlignment = TextAlignment.Left,
+                FontSize = 11,
+                IsHitTestVisible = false,
+                ToolTip = displayText,
+            };
+            optionLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+
+            logicPort.Width = 20;
+            logicPort.MinWidth = 20;
+            logicPort.HorizontalAlignment = HorizontalAlignment.Right;
+            logicPort.HorizontalContentAlignment = HorizontalAlignment.Right;
+
+            flowPort.Width = 20;
+            flowPort.MinWidth = 20;
+            flowPort.HorizontalAlignment = HorizontalAlignment.Right;
+            flowPort.HorizontalContentAlignment = HorizontalAlignment.Right;
+
+            var group = new Grid
+            {
+                Width = ChoiceOutputGroupWidth,
+                Height = ChoiceOutputGroupHeight,
+                Margin = new Thickness(0, 0, 0, ChoiceOutputGroupGap),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            group.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
+            group.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
+            Grid.SetRow(flowPort, 0);
+            Grid.SetRow(logicPort, 1);
+            Grid.SetRowSpan(optionLabel, 2);
+            group.Children.Add(flowPort);
+            group.Children.Add(optionLabel);
+            group.Children.Add(logicPort);
+
+            var row = new Grid
+            {
+                MinHeight = ChoiceOutputGroupHeight + ChoiceOutputGroupGap,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            row.Children.Add(group);
+            ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(row, ChoicePortsPanel.RowDefinitions.Count - 1);
+            ChoicePortsPanel.Children.Add(row);
+            _choiceOptionRows.Add(new ChoiceOptionRow(
+                _choiceOptionRows.Count, optionId, displayText, flowPortId, logicPort, flowPort, group, optionLabel));
+        }
+
+        return true;
+    }
+
+    private static bool TryReadString(JsonElement element, string propertyName, out string value)
+    {
+        value = string.Empty;
+        if (!element.TryGetProperty(propertyName, out var property)
+            || property.ValueKind != JsonValueKind.String)
+            return false;
+        value = property.GetString() ?? string.Empty;
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+    // The node is 232 DIP wide with 7 DIP margins on both sides and two equal
+    // output/input columns. Keeping the Choice group at the output-column
+    // width makes its right edge—and therefore both endpoint anchors—stable
+    // even when an option label is very long.
+    private const double ChoiceOutputGroupWidth = 108d;
+    private const double ChoiceOptionLabelMaxWidth = 82d;
+    private const double ChoiceOptionLabelRightInset = 22d;
+    private const double ChoiceOutputGroupHeight = 40d;
+    private const double ChoiceOutputGroupGap = 12d;
 
     private FlowPortControl CreatePort(GraphEditorPortViewModel item)
     {
@@ -162,4 +311,33 @@ public partial class CanonicalGraphNodeControl : UserControl
             foreach (var nested in FindVisualChildren<T>(child)) yield return nested;
         }
     }
+}
+
+/// <summary>One stable-ID-backed visual row for a Session Choice option.</summary>
+public sealed class ChoiceOptionRow
+{
+    internal ChoiceOptionRow(int order, string optionId, string displayText, string flowPortId,
+        FlowPortControl logicOutput, FlowPortControl flowOutput, Grid outputGroup,
+        TextBlock displayLabel)
+    {
+        Order = order;
+        OptionId = optionId;
+        DisplayText = displayText;
+        FlowPortId = flowPortId;
+        LogicOutput = logicOutput;
+        FlowOutput = flowOutput;
+        OutputGroup = outputGroup;
+        DisplayLabel = displayLabel;
+    }
+
+    public int Order { get; }
+    public string OptionId { get; }
+    public string DisplayText { get; }
+    public string FlowPortId { get; }
+    public FlowPortControl LogicOutput { get; }
+    public FlowPortControl FlowOutput { get; }
+    public Grid OutputGroup { get; }
+    public TextBlock DisplayLabel { get; }
+    public FlowPortControl LogicPort => LogicOutput;
+    public FlowPortControl FlowPort => FlowOutput;
 }

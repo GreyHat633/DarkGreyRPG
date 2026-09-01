@@ -1,0 +1,19 @@
+{
+  "started_utc": "2026-09-01T14:50:53.6428220Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-stage3-publish\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B0331653A0A98905A7E341C3D64756E9D04C5ED23BACCAFA38436BE387959720",
+  "app_dll_sha256": "9E414DD46C71412E94E4828CED4F73BCA4A5438AA8569503986873AFA34C809F",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-stage3-wire-project",
+  "frames": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage3\\ui\\light-click-20-no-phantom.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage3\\ui\\flow-single-frame1-before.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage3\\ui\\flow-single-frame2-down.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage3\\ui\\flow-single-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage3\\ui\\flow-single-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage3\\ui\\flow-single-frame5-commit.png"
+  ],
+  "light_click_20": {
+    "status": "PASS",
+    "graph_sha256": "67B16905BCF1FAC58D0C9835DA72357551BB4E299DF337CBC3A11A5E9A5227BB"
+  }
+}

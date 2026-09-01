@@ -128,6 +128,13 @@ public sealed class StoryPackageTests
             "Canonical Empty",
             new GraphDocument([new GraphNode("start", "start", "Start")])));
         store.Memberships.Create(new CanonicalStoryMembershipManifest("canonical_empty"));
+        new CanonicalGraphLayoutStore(project.Root).Save(
+            GraphResourceKind.Story,
+            "canonical_empty",
+            new Dictionary<string, ProjectGraphNodeLayout>(StringComparer.Ordinal)
+            {
+                ["start"] = new() { X = 123, Y = 456 },
+            });
 
         var output = Path.Combine(project.Root, "canonical-package");
         var result = new StoryPackageExporter(project.Root).Build("canonical_empty", output);
@@ -136,6 +143,8 @@ public sealed class StoryPackageTests
             Assert.IsTrue(Directory.Exists(Path.Combine(output, "resources", "canonical", directory)));
         Assert.IsTrue(File.Exists(Path.Combine(output, "resources", "canonical", "stories", "canonical_empty.json")));
         Assert.IsTrue(File.Exists(Path.Combine(output, "resources", "canonical", "memberships", "canonical_empty.json")));
+        Assert.IsFalse(File.Exists(Path.Combine(output, "resources", "editor", "studio_layout.json")));
+        Assert.IsFalse(Directory.GetFiles(output, "*layout*", SearchOption.AllDirectories).Any());
         CollectionAssert.AreEqual(new[] { "resources/canonical/stories/canonical_empty.json" }, result.Manifest.RequiredResources.CanonicalStories);
         CollectionAssert.AreEqual(new[] { "resources/canonical/memberships/canonical_empty.json" }, result.Manifest.RequiredResources.CanonicalMemberships);
         CollectionAssert.AreEqual(Array.Empty<string>(), result.Manifest.RequiredResources.Sessions);

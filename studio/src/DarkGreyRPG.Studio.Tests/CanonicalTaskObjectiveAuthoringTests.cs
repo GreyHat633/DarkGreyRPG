@@ -150,6 +150,29 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     }
 
     [TestMethod]
+    public void TargetChangeRepairsIdentityWhileRetainingUnrelatedLegacyIssue()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective,
+            CanonicalTaskObjectiveSchema.InteractActor, "actor", out _));
+        objective.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
+            JsonSerializer.SerializeToElement(3);
+        var graph = new GraphDocument([objective]);
+        var session = new GraphEditSession(graph, GraphScope.Task);
+
+        Assert.IsTrue(session.ChangeObjectiveTarget("objective", "actor-group"));
+
+        Assert.AreEqual("actor-group", objective.Properties[
+            CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
+        Assert.AreEqual(1, session.UndoCount);
+        CollectionAssert.Contains(session.LastValidationIssues.Select(issue => issue.Code).ToArray(),
+            "graph.objective.interact.required.legacy_count");
+        Assert.IsTrue(session.Undo());
+        Assert.AreEqual("actor", graph.Nodes.Single().Properties[
+            CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
+    }
+
+    [TestMethod]
     public void AddAllowsUnselectedObjectiveUntilDgrTargetIsSelected()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");

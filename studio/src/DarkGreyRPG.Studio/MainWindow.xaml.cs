@@ -97,14 +97,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // LostFocus bindings otherwise run after the Ctrl+S command. Commit the
         // currently edited value first so the persistence snapshot cannot lag
         // one keystroke behind what the author can still see in the editor.
-        if (Keyboard.FocusedElement is TextBox textBox)
+        FlushFocusedDraft(Keyboard.FocusedElement);
+    }
+
+    internal static void FlushFocusedDraft(IInputElement? focusedElement)
+    {
+        if (focusedElement is TextBox textBox)
             textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
     }
 
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 0.3.1.3 RC\nStory packages, real entity/item identities, and server-authoritative RPG runtime",
+            "DarkGrey RPG Studio 0.3.1.4 RC\nStory packages, real entity/item identities, and server-authoritative RPG runtime",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);

@@ -98,10 +98,14 @@ public sealed class CanonicalNodeInspectorViewModelTests
         CollectionAssert.AreEqual(
             new[] { CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.SendMessage },
             inspector.StoryActionTypeOptions.Select(option => option.Value).ToArray());
+        var beforeTypeRevision = editor.GraphRevision;
+        var beforeTypeUndo = editor.Host.Session.UndoCount;
 
         inspector.SelectedStoryActionType = inspector.StoryActionTypeOptions
             .Single(option => option.Value == CanonicalStoryActionSchema.GiveItem);
 
+        Assert.AreEqual(beforeTypeRevision + 1, editor.GraphRevision);
+        Assert.AreEqual(beforeTypeUndo + 1, editor.Host.Session.UndoCount);
         Assert.IsTrue(inspector.IsGiveItemAction);
         Assert.AreEqual("starter_reward", inspector.StoryActionItem);
         Assert.AreEqual("10", inspector.StoryActionAmountText);
@@ -144,16 +148,19 @@ public sealed class CanonicalNodeInspectorViewModelTests
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), actors);
 
-        CollectionAssert.AreEqual(new[] { "", "a-id", "z-id", "hero" },
+        CollectionAssert.AreEqual(new[] { "a-id", "z-id", "hero" },
             inspector.SpeakerOptions.Select(option => option.Id).ToArray());
         Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "z-id").IsReferenced);
         Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "a-id").IsOwned);
-        Assert.AreEqual("", inspector.SelectedSpeaker!.Id);
+        Assert.IsNull(inspector.SelectedSpeaker);
         Assert.IsFalse(inspector.IsSpeakerResolved);
-        Assert.IsTrue(inspector.SpeakerStatusText.Contains("请选择角色", StringComparison.Ordinal));
+        Assert.AreEqual(string.Empty, inspector.SpeakerStatusText);
+        Assert.IsFalse(inspector.HasSpeakerStatus);
+        var stableOptions = inspector.SpeakerOptions;
 
         inspector.SelectedSpeaker = inspector.SpeakerOptions.Single(option => option.Id == "z-id");
 
+        Assert.AreSame(stableOptions, inspector.SpeakerOptions);
         Assert.AreEqual("z-id", inspector.SpeakerActorId);
         Assert.AreEqual("z-id", editor.Host.Graph.Nodes.Single().Properties["speaker_actor_id"].GetString());
         Assert.IsTrue(editor.IsDirty);
@@ -347,8 +354,16 @@ public sealed class CanonicalNodeInspectorViewModelTests
         var endInspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(node => node.NodeId == "end"));
         using (endInspector)
         {
+            endInspector.EndDisplayName = string.Empty;
+            Assert.AreEqual(string.Empty, endInspector.EndDisplayName);
+            Assert.IsFalse(string.IsNullOrEmpty(endInspector.EndDisplayNameError));
+            Assert.AreEqual("Done", editor.Host.Graph.Nodes.Single(node => node.Id == "end").Properties["display_name"].GetString());
+            Assert.AreEqual(0L, editor.GraphRevision);
+
             endInspector.EndDisplayName = "Finished";
+            Assert.AreEqual(string.Empty, endInspector.EndDisplayNameError);
             Assert.AreEqual("Finished", editor.Host.Graph.Nodes.Single(node => node.Id == "end").Properties["display_name"].GetString());
+            Assert.AreEqual(1L, editor.GraphRevision);
         }
         using var logicInspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(node => node.NodeId == "logic"));
         logicInspector.LogicOutputDisplayName = "Known now";
@@ -569,7 +584,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
             story.Host, story.Host.Nodes.Single(), [actor], [individual, collective]);
         actionInspector.SelectedStoryActionType = actionInspector.StoryActionTypeOptions.Single(option => option.Value == CanonicalStoryActionSchema.GiveItem);
 
-        CollectionAssert.AreEqual(new[] { "", "coin" }, actionInspector.StoryActionItemOptions.Select(option => option.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "coin" }, actionInspector.StoryActionItemOptions.Select(option => option.Id).ToArray());
         actionInspector.SelectedStoryActionItem = actionInspector.StoryActionItemOptions.Single(option => option.Id == "coin");
         Assert.AreEqual("coin", story.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
     }

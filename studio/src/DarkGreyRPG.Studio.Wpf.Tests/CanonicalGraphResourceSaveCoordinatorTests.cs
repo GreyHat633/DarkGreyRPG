@@ -87,6 +87,36 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
     }
 
     [TestMethod]
+    public void LayoutOnlySaveLeavesCanonicalFileByteIdenticalAndReloadsPosition()
+    {
+        using var project = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(project.Path);
+        var node = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        var envelope = new GraphResourceEnvelope(
+            GraphResourceKind.Session, "session", "Session", new GraphDocument([node]));
+        store.Sessions.Create(envelope);
+        var canonicalPath = store.Sessions.GetPath("session");
+        var before = File.ReadAllBytes(canonicalPath);
+        using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
+
+        editor.Host.SetNodePosition("line-1", 612.5, 318.25);
+        new CanonicalGraphResourceSaveCoordinator(store).Replace(editor);
+
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(canonicalPath));
+        Assert.IsFalse(editor.IsDirty);
+        var layoutStore = new CanonicalGraphLayoutStore(project.Path);
+        Assert.AreEqual(612.5, layoutStore.Load(GraphResourceKind.Session, "session")["line-1"].X);
+        using var reopened = new CanonicalGraphResourceEditorViewModel(
+            store.Sessions.Load("session"),
+            layoutStore.Load(GraphResourceKind.Session, "session").ToDictionary(
+                pair => pair.Key,
+                pair => new GraphEditorNodePosition(pair.Value.X, pair.Value.Y),
+                StringComparer.Ordinal));
+        Assert.AreEqual(new GraphEditorNodePosition(612.5, 318.25), reopened.Host.Layout["line-1"]);
+        Assert.IsFalse(reopened.IsDirty);
+    }
+
+    [TestMethod]
     public void ReferencedPublicStoryPortCannotBeDeletedUntilGraphConnectionIsRemoved()
     {
         using var project = new TemporaryProjectDirectory();

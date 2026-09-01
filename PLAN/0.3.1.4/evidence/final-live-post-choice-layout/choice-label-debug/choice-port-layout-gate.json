@@ -1,0 +1,18 @@
+{
+  "started_utc": "2026-09-01T18:07:42.5260182Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "D464926483D775991DF41FE0C1479E9F8995F4C0EB8967AB138FC98389678B22",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-choice-layout-label-debug",
+  "choice_node_id": "node_0ac86a09f2464f268102c9dd242792e0",
+  "option_count": 10,
+  "original_connection_count": 5,
+  "themes": {},
+  "reconnect": null,
+  "restart": null,
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\choice-label-debug\\choice-dark-pre-measure.png"
+  ],
+  "status": "FAIL",
+  "failure": "Choice outputs are not on the right edge for option 'dynamic_port_be80afde4be645c09a39859b04920c95'.",
+  "finished_utc": "2026-09-01T18:07:52.0453268Z"
+}

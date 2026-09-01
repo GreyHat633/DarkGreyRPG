@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "started_utc": "2026-09-01T20:14:18.6440340Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "exe_product_version": "0.3.1.4-rc",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s20-authoring-project",
+  "evidence_directory": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\s20-canonical-authoring-smoke",
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\s20-canonical-authoring-smoke\\pre-close.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\s20-canonical-authoring-smoke\\post-restart.png"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Create Story 史莱姆清理委托",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:14:22.8964719Z",
+      "completed_utc": "2026-09-01T20:14:26.2334494Z"
+    },
+    {
+      "step": 2,
+      "description": "Create collective actor group slimes",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:14:26.2373397Z",
+      "completed_utc": "2026-09-01T20:14:31.4893497Z"
+    },
+    {
+      "step": 3,
+      "description": "Create individual actor tavern_boss",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:14:31.4895961Z",
+      "completed_utc": "2026-09-01T20:14:36.4345638Z"
+    },
+    {
+      "step": 4,
+      "description": "Create individual item copper_coin",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:14:36.4348584Z",
+      "completed_utc": "2026-09-01T20:14:41.6820233Z"
+    },
+    {
+      "step": 5,
+      "description": "Create Session slime_cleanup_session",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:14:41.6822661Z",
+      "completed_utc": "2026-09-01T20:14:45.0810075Z"
+    },
+    {
+      "step": 6,
+      "description": "Add Session Line and Choice nodes",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:14:45.0814266Z",
+      "completed_utc": "2026-09-01T20:15:15.4070967Z"
+    },
+    {
+      "step": 7,
+      "description": "Add three Choice options and separately connect each option",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:15.4072137Z",
+      "completed_utc": "2026-09-01T20:15:28.5499212Z"
+    },
+    {
+      "step": 8,
+      "description": "Create Task slime_cleanup_task",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:28.5502796Z",
+      "completed_utc": "2026-09-01T20:15:32.1133907Z"
+    },
+    {
+      "step": 9,
+      "description": "Configure Objective kill_entity slimes 10 and use the required Settlement",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:32.1135235Z",
+      "completed_utc": "2026-09-01T20:15:43.9785496Z"
+    },
+    {
+      "step": 10,
+      "description": "Connect Objective to Task Settlement",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:43.9786433Z",
+      "completed_utc": "2026-09-01T20:15:45.8728237Z"
+    },
+    {
+      "step": 11,
+      "description": "Drag Session and Task resources into Story Flow",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:45.8729748Z",
+      "completed_utc": "2026-09-01T20:15:50.2935397Z"
+    },
+    {
+      "step": 12,
+      "description": "Connect Story Start to Session to Task",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:50.2936779Z",
+      "completed_utc": "2026-09-01T20:15:53.8794899Z"
+    },
+    {
+      "step": 13,
+      "description": "Keep optional Give Item reward constrained to copper_coin",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:53.8796283Z",
+      "completed_utc": "2026-09-01T20:15:53.8811203Z"
+    },
+    {
+      "step": 14,
+      "description": "Move multiple nodes through the graph UI",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:15:53.8812448Z",
+      "completed_utc": "2026-09-01T20:16:10.2754780Z"
+    },
+    {
+      "step": 15,
+      "description": "Save All",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:16:10.2755709Z",
+      "completed_utc": "2026-09-01T20:16:11.3529703Z"
+    },
+    {
+      "step": 16,
+      "description": "Close Studio cleanly",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:16:11.3530684Z",
+      "completed_utc": "2026-09-01T20:16:12.0832556Z"
+    },
+    {
+      "step": 17,
+      "description": "Restart Studio and verify live resources and graph layout",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:16:12.0833700Z",
+      "completed_utc": "2026-09-01T20:16:28.2278719Z"
+    },
+    {
+      "step": 18,
+      "description": "Verify resources, connections, option mapping, layout, and order from disk",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:16:28.2280847Z",
+      "completed_utc": "2026-09-01T20:16:28.2823869Z"
+    }
+  ],
+  "disk_assertions": [
+    {
+      "assertion": "story_name",
+      "status": "PASS"
+    },
+    {
+      "assertion": "actor_group_file",
+      "status": "PASS"
+    },
+    {
+      "assertion": "actor_file",
+      "status": "PASS"
+    },
+    {
+      "assertion": "item_file",
+      "status": "PASS"
+    },
+    {
+      "assertion": "membership_actor_group",
+      "status": "PASS"
+    },
+    {
+      "assertion": "membership_actor",
+      "status": "PASS"
+    },
+    {
+      "assertion": "membership_item",
+      "status": "PASS"
+    },
+    {
+      "assertion": "session_has_line",
+      "status": "PASS"
+    },
+    {
+      "assertion": "session_has_choice",
+      "status": "PASS"
+    },
+    {
+      "assertion": "choice_has_three_options",
+      "status": "PASS"
+    },
+    {
+      "assertion": "choice_ports_are_mapped",
+      "status": "PASS"
+    },
+    {
+      "assertion": "choice_options_are_separately_connected",
+      "status": "PASS"
+    },
+    {
+      "assertion": "task_objective_is_kill",
+      "status": "PASS"
+    },
+    {
+      "assertion": "task_has_settlement",
+      "status": "PASS"
+    },
+    {
+      "assertion": "task_objective_reaches_settlement",
+      "status": "PASS"
+    },
+    {
+      "assertion": "story_flow_chain",
+      "status": "PASS"
+    },
+    {
+      "assertion": "layout_has_graphs",
+      "status": "PASS"
+    },
+    {
+      "assertion": "resource_order_present",
+      "status": "PASS"
+    }
+  ],
+  "known_risks": [],
+  "completed_utc": "2026-09-01T20:16:28.9686044Z"
+}

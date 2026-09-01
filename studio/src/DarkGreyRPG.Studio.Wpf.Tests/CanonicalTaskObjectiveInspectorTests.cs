@@ -3,6 +3,7 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
@@ -53,6 +54,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsTrue(inspector.IsInteractActorObjective);
         Assert.IsTrue(inspector.IsObjectiveActorUnresolved);
         Assert.AreEqual("deleted", inspector.SelectedObjectiveActor!.Id);
+        Assert.IsFalse(inspector.ObjectiveActorOptions.Any(option => option.IsPlaceholder));
         inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(item => item.Id == "known");
         Assert.AreEqual("known", editor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
         Assert.IsTrue(inspector.IsObjectiveActorResolved);
@@ -98,5 +100,187 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.AreEqual(before, noActorEditor.Host.Graph.ToJson());
         Assert.AreEqual("kill_entity", noActorInspector.ObjectiveType);
         Assert.AreEqual(0, noActorEditor.Host.Session.UndoCount);
+    }
+
+    [TestMethod]
+    public void ObjectiveTypeSelectionIsOneAtomicRevisionWithLegalPayload()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), [new CanonicalStoryActorItem(new ActorResourceInfo(
+                "actor", "角色", "actor.json", []))]);
+        var revisions = 0;
+        editor.Host.NodesChanged += (_, args) => revisions += args.NodeIds.Contains("objective") ? 1 : 0;
+
+        inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(option =>
+            option.Value == CanonicalTaskObjectiveSchema.CollectItem);
+
+        Assert.AreEqual(1L, editor.Host.GraphRevision);
+        Assert.AreEqual(1, editor.Host.Session.UndoCount);
+        Assert.AreEqual(1, revisions);
+        var changed = editor.Host.Graph.Nodes.Single().Properties;
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.CollectItem,
+            changed[CanonicalTaskObjectiveSchema.TypeProperty].GetString());
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.UnselectedTarget,
+            changed[CanonicalTaskObjectiveSchema.ItemProperty].GetString());
+        Assert.AreEqual(10, changed[CanonicalTaskObjectiveSchema.RequiredProperty].GetInt32());
+        Assert.IsFalse(changed.ContainsKey(CanonicalTaskObjectiveSchema.EntityProperty));
+        // An explicit blank target is the legal authoring state; the session
+        // intentionally suppresses only the target validation issue until a
+        // resource is selected.
+        Assert.IsFalse(editor.Host.LastValidationIssues.Any(issue =>
+            issue.Code == "graph.objective.type.invalid"
+                || issue.Code == "graph.objective.property.unsupported"));
+    }
+
+    [TestMethod]
+    public void RepeatedObjectiveActorProjectionIsIdempotentAndDoesNotReenter()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        var actors = new[]
+        {
+            new CanonicalStoryActorItem(new ActorResourceInfo("actor-a", "甲", "a.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("actor-b", "乙", "b.json", [])),
+        };
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), actors);
+        var nodeChanges = 0;
+        var stableOptions = inspector.ObjectiveActorOptions;
+        editor.Host.NodesChanged += (_, args) => nodeChanges += args.NodeIds.Contains("objective") ? 1 : 0;
+
+        for (var index = 0; index < 100; index++)
+        {
+            var id = index % 2 == 0 ? "actor-a" : "actor-b";
+            inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(option => option.Id == id);
+            // Reprojection recreates option instances; feeding the projected
+            // selection back must remain a no-op rather than a new mutation.
+            editor.Host.Refresh();
+            inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(option => option.Id == id);
+        }
+
+        Assert.AreEqual(100L, editor.Host.GraphRevision);
+        Assert.AreEqual(100, editor.Host.Session.UndoCount);
+        Assert.AreEqual(100, nodeChanges);
+        Assert.AreEqual("actor-b", editor.Host.Graph.Nodes.Single().Properties[
+            CanonicalTaskObjectiveSchema.EntityProperty].GetString());
+        Assert.AreEqual("actor-b", inspector.SelectedObjectiveActor!.Id);
+        Assert.AreSame(stableOptions, inspector.ObjectiveActorOptions);
+    }
+
+    [TestMethod]
+    public void ObjectiveActorChangeSynchronizesEveryInspectorForTheSameNode()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        var actors = new[]
+        {
+            new CanonicalStoryActorItem(new ActorResourceInfo("actor-a", "甲", "a.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("actor-b", "乙", "b.json", [])),
+        };
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+        using var inlineInspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), actors);
+        using var selectedInspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), actors);
+        var inlineOptions = inlineInspector.ObjectiveActorOptions;
+        var selectedOptions = selectedInspector.ObjectiveActorOptions;
+
+        selectedInspector.SelectedObjectiveActor = selectedInspector.ObjectiveActorOptions
+            .Single(option => option.Id == "actor-b");
+
+        Assert.AreEqual("actor-b", editor.Host.Graph.Nodes.Single().Properties[
+            CanonicalTaskObjectiveSchema.EntityProperty].GetString());
+        Assert.AreEqual("actor-b", inlineInspector.SelectedObjectiveActor!.Id);
+        Assert.AreEqual("actor-b", selectedInspector.SelectedObjectiveActor!.Id);
+        Assert.AreSame(inlineOptions, inlineInspector.ObjectiveActorOptions);
+        Assert.AreSame(selectedOptions, selectedInspector.ObjectiveActorOptions);
+    }
+
+    [TestMethod]
+    public void RepeatedObjectiveItemProjectionIsIdempotentAndDoesNotDuplicateRevision()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective,
+            CanonicalTaskObjectiveSchema.CollectItem, out _));
+        var items = new[]
+        {
+            new CanonicalStoryItemItem(new IndividualItemResource { ItemId = "item-a", DisplayName = "甲" }),
+            new CanonicalStoryItemItem(new CollectiveItemResource { GroupId = "item-b", DisplayName = "乙" }),
+        };
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
+            editor.Host.Nodes.Single(), itemItems: items);
+        var nodeChanges = 0;
+        var stableOptions = inspector.ObjectiveItemOptions;
+        editor.Host.NodesChanged += (_, args) => nodeChanges += args.NodeIds.Contains("objective") ? 1 : 0;
+
+        for (var index = 0; index < 100; index++)
+        {
+            var id = index % 2 == 0 ? "item-a" : "item-b";
+            inspector.SelectedObjectiveItem = inspector.ObjectiveItemOptions.Single(option => option.Id == id);
+            editor.Host.Refresh();
+            inspector.SelectedObjectiveItem = inspector.ObjectiveItemOptions.Single(option => option.Id == id);
+        }
+
+        Assert.AreEqual(100L, editor.Host.GraphRevision);
+        Assert.AreEqual(100, editor.Host.Session.UndoCount);
+        Assert.AreEqual(100, nodeChanges);
+        Assert.AreEqual("item-b", editor.Host.Graph.Nodes.Single().Properties[
+            CanonicalTaskObjectiveSchema.ItemProperty].GetString());
+        Assert.AreEqual("item-b", inspector.ObjectiveTarget);
+        Assert.AreSame(stableOptions, inspector.ObjectiveItemOptions);
+    }
+
+    [TestMethod]
+    public void ObjectiveTargetStatusUsesOnlyUnresolvedLegacyIdentifiers()
+    {
+        var kill = GraphNodeFactory.Create(GraphScope.Task, "objective", "kill");
+        using var killEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "kill-task", "Task", new GraphDocument([kill])));
+        using var killInspector = new CanonicalNodeInspectorViewModel(
+            killEditor.Host, killEditor.Host.Nodes.Single());
+        Assert.AreEqual(string.Empty, killInspector.ObjectiveActorStatusText);
+        Assert.IsFalse(killInspector.HasObjectiveActorStatus);
+        Assert.IsNull(killInspector.SelectedObjectiveActor);
+        Assert.IsEmpty(killInspector.ObjectiveActorOptions);
+
+        var collect = GraphNodeFactory.Create(GraphScope.Task, "objective", "collect");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(
+            collect, CanonicalTaskObjectiveSchema.CollectItem, out _));
+        using var collectEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "collect-task", "Task", new GraphDocument([collect])));
+        using var collectInspector = new CanonicalNodeInspectorViewModel(
+            collectEditor.Host, collectEditor.Host.Nodes.Single());
+        Assert.AreEqual(string.Empty, collectInspector.ObjectiveItemStatusText);
+        Assert.IsFalse(collectInspector.HasObjectiveItemStatus);
+        Assert.IsNull(collectInspector.SelectedObjectiveItem);
+        Assert.IsEmpty(collectInspector.ObjectiveItemOptions);
+
+        collectEditor.Host.SetNodeProperty("collect", CanonicalTaskObjectiveSchema.ItemProperty,
+            JsonSerializer.SerializeToElement("deleted-item"));
+        Assert.AreEqual("物品未解析：deleted-item", collectInspector.ObjectiveItemStatusText);
+        Assert.IsTrue(collectInspector.HasObjectiveItemStatus);
+
+        var interact = GraphNodeFactory.Create(GraphScope.Task, "objective", "interact");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(
+            interact, CanonicalTaskObjectiveSchema.InteractActor, "legacy-actor", out _));
+        interact.Properties[CanonicalTaskObjectiveSchema.ActorIdProperty] =
+            JsonSerializer.SerializeToElement(string.Empty);
+        using var interactEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "interact-task", "Task", new GraphDocument([interact])));
+        using var interactInspector = new CanonicalNodeInspectorViewModel(
+            interactEditor.Host, interactEditor.Host.Nodes.Single());
+        Assert.AreEqual(string.Empty, interactInspector.ObjectiveActorStatusText);
+        Assert.IsFalse(interactInspector.HasObjectiveActorStatus);
+
+        interactEditor.Host.SetNodeProperty("interact", CanonicalTaskObjectiveSchema.ActorIdProperty,
+            JsonSerializer.SerializeToElement("deleted-actor"));
+        Assert.AreEqual("角色未解析：deleted-actor", interactInspector.ObjectiveActorStatusText);
+        Assert.IsTrue(interactInspector.HasObjectiveActorStatus);
     }
 }

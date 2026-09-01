@@ -6,6 +6,7 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 public enum GraphPointerMode
 {
     Idle,
+    PortPressed,
     NodeDrag,
     BoxSelect,
     WireDrag,

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "started_utc": "2026-09-01T20:40:57.9373865Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "exe_product_version": "0.3.1.4-rc",
+  "exe_file_version": "0.3.1.4",
+  "exe_bytes": 141430998,
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s20-authoring-project",
+  "evidence_directory": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16",
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-actor-dark.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-actor-group-dark.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-item-dark.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-item-group-dark.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s16-dark-graph-choice-inspector-problems.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s16-light-graph-choice-inspector-problems.png"
+  ],
+  "gates": [
+    {
+      "id": "S13",
+      "description": "Actor, Actor Group, Item and Item Group inspectors use field hierarchy with IDs and tags and omit ownership status",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:41:08.5164057Z",
+      "details": {
+        "resource_count": 4,
+        "resources": [
+          {
+            "kind": "角色",
+            "display_name": "酒馆老板",
+            "identity_label": "NPC_ID",
+            "identity_value": "tavern_boss",
+            "tags": "merchant、npc",
+            "ownership_main_field_present": false,
+            "scroll_pattern": true,
+            "screenshot": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-actor-dark.png"
+          },
+          {
+            "kind": "角色组",
+            "display_name": "史莱姆",
+            "identity_label": "Group_ID",
+            "identity_value": "slimes",
+            "tags": "monster、group",
+            "ownership_main_field_present": false,
+            "scroll_pattern": true,
+            "screenshot": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-actor-group-dark.png"
+          },
+          {
+            "kind": "物品",
+            "display_name": "铜币",
+            "identity_label": "Item_ID",
+            "identity_value": "copper_coin",
+            "tags": "currency、reward",
+            "ownership_main_field_present": false,
+            "scroll_pattern": true,
+            "screenshot": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-item-dark.png"
+          },
+          {
+            "kind": "物品组",
+            "display_name": "货币组",
+            "identity_label": "Group_ID",
+            "identity_value": "currencies",
+            "tags": "currency、group",
+            "ownership_main_field_present": false,
+            "scroll_pattern": true,
+            "screenshot": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s13-item-group-dark.png"
+          }
+        ],
+        "all_omit_ownership_main_field": true
+      },
+      "completed_utc": "2026-09-01T20:41:23.8868679Z"
+    },
+    {
+      "id": "S16",
+      "description": "Graph, Choice, Inspector and Problems are readable in Dark and Light themes",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:41:23.8878099Z",
+      "details": {
+        "dark": {
+          "theme": "Dark",
+          "screenshot": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s16-dark-graph-choice-inspector-problems.png",
+          "average_luminance": 59.1,
+          "problems": {
+            "expanded": true,
+            "height": 185.0,
+            "headers": [
+              "严重性",
+              "资源",
+              "问题",
+              "字段"
+            ]
+          }
+        },
+        "light": {
+          "theme": "Light",
+          "screenshot": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s13-s16\\s16-light-graph-choice-inspector-problems.png",
+          "average_luminance": 246.6,
+          "problems": {
+            "expanded": true,
+            "height": 185.0,
+            "headers": [
+              "严重性",
+              "资源",
+              "问题",
+              "字段"
+            ]
+          }
+        },
+        "luminance_delta": 187.5,
+        "choice_node_id": "node_539b175ffe514161ac13cfb2e7da9ef5",
+        "covered": [
+          "Graph",
+          "Inspector",
+          "Choice",
+          "Problems"
+        ]
+      },
+      "completed_utc": "2026-09-01T20:41:41.7241429Z"
+    }
+  ],
+  "completed_utc": "2026-09-01T20:41:42.3746957Z"
+}

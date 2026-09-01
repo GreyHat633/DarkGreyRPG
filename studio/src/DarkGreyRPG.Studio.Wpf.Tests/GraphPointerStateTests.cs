@@ -41,6 +41,20 @@ public sealed class GraphPointerStateTests
     }
 
     [TestMethod]
+    public void PortPressedIsARealPendingModeAndCannotOverlapWireDrag()
+    {
+        var state = new GraphPointerState();
+
+        Assert.IsTrue(state.Begin(GraphPointerMode.PortPressed));
+        Assert.IsTrue(state.Is(GraphPointerMode.PortPressed));
+        Assert.IsFalse(state.Begin(GraphPointerMode.WireDrag));
+        Assert.AreEqual(GraphPointerMode.PortPressed, state.Mode);
+
+        Assert.IsTrue(state.End(GraphPointerMode.PortPressed));
+        Assert.IsTrue(state.Is(GraphPointerMode.Idle));
+    }
+
+    [TestMethod]
     public void EndRequiresTheExpectedActiveMode()
     {
         var state = new GraphPointerState();

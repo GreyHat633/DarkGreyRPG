@@ -1,0 +1,16 @@
+{
+  "started_utc": "2026-09-01T17:58:35.9524156Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "5FFED89570A02BFA23B54459D29CA1C941F8FA769CFCE0222C20538AEC337D9D",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-choice-layout-live-project-final",
+  "choice_node_id": "node_0ac86a09f2464f268102c9dd242792e0",
+  "option_count": 10,
+  "original_connection_count": 5,
+  "themes": {},
+  "reconnect": null,
+  "restart": null,
+  "screenshots": [],
+  "status": "FAIL",
+  "failure": "Visible element 'CanonicalGraphNode_node_0ac86a09f2464f268102c9dd242792e0' was not found.",
+  "finished_utc": "2026-09-01T17:58:53.4068753Z"
+}

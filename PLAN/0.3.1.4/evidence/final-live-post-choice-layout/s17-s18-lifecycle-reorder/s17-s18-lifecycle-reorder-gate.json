@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-01T18:53:26.3320045Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s17-s18-project",
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s17-s18-lifecycle-reorder\\s17-placement-delete.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s17-s18-lifecycle-reorder\\s17-resource-delete.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s17-s18-lifecycle-reorder\\s18-insertion-preview-before-mouse-up.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s17-s18-lifecycle-reorder\\s18-after-restart.png"
+  ],
+  "operations": [
+    {
+      "operation": "save_all",
+      "status": "PASS",
+      "utc": "2026-09-01T18:53:33.7572609Z"
+    },
+    {
+      "operation": "delete_placement",
+      "target": "placement_a",
+      "status": "PASS",
+      "disk": {
+        "membership_owned_sessions": [
+          "session_a",
+          "session_b",
+          "session_c"
+        ],
+        "membership_display_order_sessions": [
+          "session_a",
+          "session_b",
+          "session_c"
+        ],
+        "session_a_file": true,
+        "session_b_file": true,
+        "session_c_file": true,
+        "story_node_ids": [
+          "story_start",
+          "story_action",
+          "placement_b"
+        ],
+        "story_connections": [
+          "story_start->story_action",
+          "story_action->placement_b"
+        ]
+      }
+    },
+    {
+      "operation": "delete_owned_resource",
+      "target": "session_b",
+      "warning_accepted": true,
+      "status": "PASS",
+      "disk": {
+        "membership_owned_sessions": [
+          "session_a",
+          "session_c"
+        ],
+        "membership_display_order_sessions": [
+          "session_a",
+          "session_b",
+          "session_c"
+        ],
+        "session_a_file": true,
+        "session_b_file": false,
+        "session_c_file": true,
+        "story_node_ids": [
+          "story_start",
+          "story_action"
+        ],
+        "story_connections": [
+          "story_start->story_action"
+        ]
+      }
+    },
+    {
+      "operation": "save_all",
+      "status": "PASS",
+      "utc": "2026-09-01T18:53:42.5110241Z"
+    },
+    {
+      "operation": "reorder",
+      "source": "session_c",
+      "target": "session_a",
+      "placement": "before",
+      "preview_captured": true,
+      "visible_order": [
+        "会话 C",
+        "会话 A"
+      ],
+      "status": "PASS"
+    }
+  ],
+  "disk_assertions": [
+    {
+      "phase": "after-resource-delete",
+      "status": "PASS",
+      "checks": {
+        "session_a_file": true,
+        "session_b_file": true,
+        "session_c_file": true,
+        "owned_sessions": true,
+        "active_display_order_sessions": true,
+        "node_absent_placement_a": true,
+        "node_absent_placement_b": true
+      },
+      "state": {
+        "membership_owned_sessions": [
+          "session_a",
+          "session_c"
+        ],
+        "membership_display_order_sessions": [
+          "session_a",
+          "session_b",
+          "session_c"
+        ],
+        "session_a_file": true,
+        "session_b_file": false,
+        "session_c_file": true,
+        "story_node_ids": [
+          "story_start",
+          "story_action"
+        ],
+        "story_connections": [
+          "story_start->story_action"
+        ]
+      }
+    },
+    {
+      "phase": "after-reorder-save",
+      "status": "PASS",
+      "checks": {
+        "session_a_file": true,
+        "session_b_file": true,
+        "session_c_file": true,
+        "owned_sessions": true,
+        "active_display_order_sessions": true,
+        "node_absent_placement_a": true,
+        "node_absent_placement_b": true
+      },
+      "state": {
+        "membership_owned_sessions": [
+          "session_a",
+          "session_c"
+        ],
+        "membership_display_order_sessions": [
+          "session_c",
+          "session_a"
+        ],
+        "session_a_file": true,
+        "session_b_file": false,
+        "session_c_file": true,
+        "story_node_ids": [
+          "story_start",
+          "story_action"
+        ],
+        "story_connections": [
+          "story_start->story_action"
+        ]
+      }
+    },
+    {
+      "phase": "after-restart",
+      "status": "PASS",
+      "checks": {
+        "session_a_file": true,
+        "session_b_file": true,
+        "session_c_file": true,
+        "owned_sessions": true,
+        "active_display_order_sessions": true,
+        "node_absent_placement_a": true,
+        "node_absent_placement_b": true
+      },
+      "state": {
+        "membership_owned_sessions": [
+          "session_a",
+          "session_c"
+        ],
+        "membership_display_order_sessions": [
+          "session_c",
+          "session_a"
+        ],
+        "session_a_file": true,
+        "session_b_file": false,
+        "session_c_file": true,
+        "story_node_ids": [
+          "story_start",
+          "story_action"
+        ],
+        "story_connections": [
+          "story_start->story_action"
+        ]
+      }
+    }
+  ],
+  "status": "PASS",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "exe_product_version": "0.3.1.4-rc",
+  "fixture": {
+    "schema_version": 1,
+    "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s17-s18-project",
+    "story_id": "s17_s18_gate",
+    "story_display_name": "0314 生命周期与排序门",
+    "sessions": {
+      "a": {
+        "id": "session_a",
+        "display_name": "会话 A"
+      },
+      "b": {
+        "id": "session_b",
+        "display_name": "会话 B（删除）"
+      },
+      "c": {
+        "id": "session_c",
+        "display_name": "会话 C"
+      }
+    },
+    "placement_a": "placement_a",
+    "placement_b": "placement_b",
+    "expected_initial_order": [
+      "session_a",
+      "session_b",
+      "session_c"
+    ]
+  },
+  "visible_order_before_restart": [
+    "会话 C",
+    "会话 A"
+  ],
+  "visible_order_after_restart": [
+    "会话 C",
+    "会话 A"
+  ],
+  "dpi": 119,
+  "completed_utc": "2026-09-01T18:53:48.9249033Z",
+  "finished_utc": "2026-09-01T18:53:49.6194252Z"
+}

@@ -265,8 +265,8 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.3 RC"
-        : "DarkGrey RPG Studio 0.3.1.3 RC";
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.4 RC"
+        : "DarkGrey RPG Studio 0.3.1.4 RC";
 
     public string ProjectDirectory
     {
@@ -938,7 +938,9 @@ public sealed class ShellViewModel : ObservableObject
             if (!storyExists && !membershipExists) return CanonicalOpenResult.NotPresent;
 
             var snapshot = new CanonicalStoryWorkspaceLoader(store).Load(storyId);
-            var workspace = new CanonicalStoryWorkspaceViewModel(snapshot);
+            var workspace = new CanonicalStoryWorkspaceViewModel(
+                snapshot,
+                new CanonicalGraphLayoutStore(store.ProjectDirectory));
             ConfigureCanonicalResourceActions(workspace);
             ClearAllEditorSelections();
             StoryWorkspace.CloseStory();
@@ -2354,16 +2356,17 @@ public sealed class ShellViewModel : ObservableObject
         RefreshCurrentStory(selectedResourceId: selectedId);
     }
 
-    private bool TrySaveCanonicalResource()
+    private bool TrySaveCanonicalResource(CanonicalGraphResourceEditorViewModel? target = null)
     {
         var workspace = CanonicalStoryWorkspace;
         var coordinator = _canonicalSaveCoordinator;
         if (workspace is null || coordinator is null) return false;
-        var editor = workspace.ActiveEditor;
+        var editor = target ?? workspace.ActiveEditor;
         if (!editor.IsDirty) return true;
         CanonicalAggregateSynchronizationPlan? synchronization = null;
         var synchronizationCommitted = false;
-        if (editor.ResourceKind is GraphResourceKind.Session or GraphResourceKind.Task)
+        if (editor.IsGraphDirty
+            && editor.ResourceKind is GraphResourceKind.Session or GraphResourceKind.Task)
         {
             synchronization = workspace.AnalyzeAggregateSynchronization(editor);
             if (!synchronization.IsSuccess)
@@ -2411,16 +2414,20 @@ public sealed class ShellViewModel : ObservableObject
             RaiseCurrentEditorStates();
             return true;
         }
-        catch (GraphResourceRepositoryException exception)
+        catch (Exception exception) when (exception is GraphResourceRepositoryException
+            or IOException
+            or UnauthorizedAccessException)
         {
-            if (synchronizationCommitted && !workspace.RollbackLastStoryEdit())
+            if (exception is GraphResourceRepositoryException
+                && synchronizationCommitted
+                && !workspace.RollbackLastStoryEdit())
             {
                 ReportWarning(
                     $"{CanonicalKindLabel(editor.ResourceKind)} '{editor.Id}' 写入失败，且故事流程同步回滚失败；请勿继续保存并检查“问题”面板。",
                     $"canonical/{editor.ResourceKind}/{editor.Id}");
             }
             ReportFailure(
-                "保存图资源",
+                "保存图资源或布局",
                 exception,
                 sourceOverride: $"canonical/{editor.ResourceKind}/{editor.Id}");
             RaiseCurrentEditorStates();
@@ -2693,9 +2700,9 @@ public sealed class ShellViewModel : ObservableObject
 
     private void SaveAll()
     {
-        if (CanonicalStoryWorkspace is not null)
+        if (CanonicalStoryWorkspace is { } workspace)
         {
-            ReportWarning("故事工作区暂不提供跨文件全部保存；请逐个保存当前图。", "canonical/story");
+            TrySaveAllCanonicalResources(workspace);
             return;
         }
         try
@@ -2713,8 +2720,26 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
+    private bool TrySaveAllCanonicalResources(CanonicalStoryWorkspaceViewModel workspace)
+    {
+        var dirtyEditors = workspace.SessionEditors
+            .Concat(workspace.TaskEditors)
+            .Where(editor => editor.IsDirty)
+            .ToArray();
+        foreach (var editor in dirtyEditors)
+        {
+            if (!TrySaveCanonicalResource(editor)) return false;
+        }
+        if (workspace.StoryEditor.IsDirty
+            && !TrySaveCanonicalResource(workspace.StoryEditor)) return false;
+
+        ReportSuccess("Canonical Story 的所有未保存图资源与布局已写入磁盘。", "canonical/story");
+        RaiseCurrentEditorStates();
+        return true;
+    }
+
     private bool CanSaveAll() =>
-        HasProject && CanonicalStoryWorkspace is null && HasUnsavedDocuments();
+        HasProject && HasUnsavedDocuments();
 
     private bool HasUnsavedDocuments() =>
         _projectService.OpenActorDocuments.Any(document => document.IsDirty) ||

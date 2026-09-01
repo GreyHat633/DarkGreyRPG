@@ -5,6 +5,7 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Validation;
 
@@ -193,6 +194,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     private string _parameterDropMessage = string.Empty;
     private string _projectId = "project";
     private string _projectDisplayName = "项目";
+    private readonly CanonicalGraphLayoutStore? _layoutStore;
     private bool _disposed;
 
     public CanonicalStoryWorkspaceViewModel(
@@ -200,7 +202,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         IEnumerable<ActorResourceInfo>? actors = null,
         IEnumerable<GraphResourceEnvelope>? sessions = null,
         IEnumerable<GraphResourceEnvelope>? tasks = null,
-        IEnumerable<ItemResource>? items = null)
+        IEnumerable<ItemResource>? items = null,
+        CanonicalGraphLayoutStore? layoutStore = null)
     {
         ArgumentNullException.ThrowIfNull(story);
         if (story.ResourceKind != GraphResourceKind.Story)
@@ -216,19 +219,20 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         var sessionResources = ValidateResources(sessions, GraphResourceKind.Session, nameof(sessions));
         var taskResources = ValidateResources(tasks, GraphResourceKind.Task, nameof(tasks));
         var createdEditors = new List<CanonicalGraphResourceEditorViewModel>();
+        _layoutStore = layoutStore;
         try
         {
-            StoryEditor = new CanonicalGraphResourceEditorViewModel(story);
+            StoryEditor = CreateEditor(story, layoutStore);
             createdEditors.Add(StoryEditor);
             SessionEditors = sessionResources.Select(resource =>
             {
-                var editor = new CanonicalGraphResourceEditorViewModel(resource);
+                var editor = CreateEditor(resource, layoutStore);
                 createdEditors.Add(editor);
                 return editor;
             }).ToArray();
             TaskEditors = taskResources.Select(resource =>
             {
-                var editor = new CanonicalGraphResourceEditorViewModel(resource);
+                var editor = CreateEditor(resource, layoutStore);
                 createdEditors.Add(editor);
                 return editor;
             }).ToArray();
@@ -276,13 +280,16 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     /// Adapts a loader snapshot without dropping unresolved membership entries
     /// or their owned/reference provenance.
     /// </summary>
-    public CanonicalStoryWorkspaceViewModel(CanonicalStoryWorkspaceSnapshot snapshot)
+    public CanonicalStoryWorkspaceViewModel(
+        CanonicalStoryWorkspaceSnapshot snapshot,
+        CanonicalGraphLayoutStore? layoutStore = null)
         : this(
             SnapshotStory(snapshot),
             SnapshotActors(snapshot),
             SnapshotGraphs(snapshot, GraphResourceKind.Session),
             SnapshotGraphs(snapshot, GraphResourceKind.Task),
-            SnapshotItems(snapshot))
+            SnapshotItems(snapshot),
+            layoutStore)
     {
         ValidationIssues = snapshot.ValidationIssues.ToArray();
 
@@ -976,7 +983,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
         _ = StoryEditor.ApplyPersistedSnapshot(snapshot.Story);
 
-        var incoming = new CanonicalStoryWorkspaceViewModel(snapshot);
+        var incoming = new CanonicalStoryWorkspaceViewModel(snapshot, _layoutStore);
         var currentGraphItems = SessionItems.Concat(TaskItems)
             .ToDictionary(item => (item.ResourceKind, item.Id));
         var currentActors = ActorItems.ToDictionary(item => item.Id, StringComparer.Ordinal);
@@ -1274,6 +1281,27 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         ArgumentNullException.ThrowIfNull(snapshot);
         return snapshot.Items.Where(entry => entry.Resource is not null).Select(entry => (ItemResource)entry.Resource!)
             .Concat(snapshot.ItemGroups.Where(entry => entry.Resource is not null).Select(entry => (ItemResource)entry.Resource!));
+    }
+
+    private static CanonicalGraphResourceEditorViewModel CreateEditor(
+        GraphResourceEnvelope resource,
+        CanonicalGraphLayoutStore? layoutStore)
+    {
+        if (layoutStore is null)
+            return new CanonicalGraphResourceEditorViewModel(resource);
+
+        var liveNodeIds = (resource.Graph?.Nodes ?? [])
+            .Select(node => node.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        var positions = layoutStore.Load(resource.ResourceKind, resource.Id)
+            .Where(pair => liveNodeIds.Contains(pair.Key)
+                && double.IsFinite(pair.Value.X)
+                && double.IsFinite(pair.Value.Y))
+            .ToDictionary(
+                pair => pair.Key,
+                pair => new GraphEditorNodePosition(pair.Value.X, pair.Value.Y),
+                StringComparer.Ordinal);
+        return new CanonicalGraphResourceEditorViewModel(resource, positions);
     }
 
     private IReadOnlyList<ICanonicalStoryTreeItem> AdaptEntries<TEntry, TItem>(

@@ -1,0 +1,16 @@
+{
+  "started_utc": "2026-09-01T18:07:13.5862260Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "D464926483D775991DF41FE0C1479E9F8995F4C0EB8967AB138FC98389678B22",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-choice-layout-label-project2",
+  "choice_node_id": "node_0ac86a09f2464f268102c9dd242792e0",
+  "option_count": 10,
+  "original_connection_count": 5,
+  "themes": {},
+  "reconnect": null,
+  "restart": null,
+  "screenshots": [],
+  "status": "FAIL",
+  "failure": "Visible option label '新选项' was not found between its two endpoints.",
+  "finished_utc": "2026-09-01T18:07:23.6110279Z"
+}

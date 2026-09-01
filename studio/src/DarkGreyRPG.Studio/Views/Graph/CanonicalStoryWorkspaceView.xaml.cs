@@ -118,6 +118,12 @@ public partial class CanonicalStoryWorkspaceView : UserControl
 
     public bool ActivateSelectedResource() => Workspace?.OpenSelectedResource() == true;
 
+    private void DraftTextBox_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || sender is not TextBox { AcceptsReturn: false } textBox) return;
+        textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+    }
+
     public bool ReturnToStory() => Workspace?.ReturnToStory() == true;
 
     public bool ApplyPendingStoryNodeFocus()
@@ -205,7 +211,8 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var workspace = Workspace;
         if (workspace is null || !workspace.ActiveGraphHost.Nodes.Contains(node)) return null;
         var inspector = new CanonicalNodeInspectorViewModel(
-            workspace.ActiveGraphHost, node, workspace.ActorItems, workspace.ItemItems);
+            workspace.ActiveGraphHost, node, workspace.ActorItems, workspace.ItemItems,
+            subscribeToHostChanges: false);
         ConfigureRemovalConfirmations(inspector);
         return inspector;
     }
@@ -504,6 +511,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         if (Workspace?.NodeInspector is { } inspector)
             ConfigureRemovalConfirmations(inspector);
+        foreach (var inline in WorkspaceGraph.NodeVisuals
+                     .Select(visual => visual.InlineEditor)
+                     .Where(editor => editor is not null))
+            ConfigureRemovalConfirmations(inline!);
     }
 
     private void ConfigureRemovalConfirmations(CanonicalNodeInspectorViewModel inspector)

@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "started_utc": "2026-09-01T20:29:25.2297392Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "exe_product_version": "0.3.1.4-rc",
+  "exe_file_version": "0.3.1.4",
+  "exe_bytes": 141430998,
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s20-authoring-project",
+  "evidence_directory": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5",
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5\\s1-empty-after-two-seconds.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5\\s1-enter-committed.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5\\s3-after-100-switches.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5\\s5-after-delete-no-confirmation.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5\\s5-after-undo-restored.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\s1-s3-s5\\s5-fixed-settlement-rejected-delete.png"
+  ],
+  "gates": [
+    {
+      "id": "S1",
+      "description": "Text Draft remains empty for two seconds, accepts a new name, and commits on Enter",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:29:30.5198927Z",
+      "details": {
+        "empty_immediate": "",
+        "empty_after_2100_ms": "",
+        "typed_value": "s1finaldraft",
+        "committed_value": "s1finaldraft",
+        "persisted_value": "s1finaldraft",
+        "physical_input": "Ctrl+A, Delete, SendKeys, Enter"
+      },
+      "completed_utc": "2026-09-01T20:29:38.8435525Z"
+    },
+    {
+      "id": "S3",
+      "description": "Objective target switches between actor and actor group 100 times without crash",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:29:38.8469091Z",
+      "details": {
+        "completed_switches": 100,
+        "actor": "酒馆老板",
+        "actor_id": "tavern_boss",
+        "actor_group": "史莱姆",
+        "actor_group_id": "slimes",
+        "final_selection": "CanonicalSessionSpeakerOption { Id = slimes, DisplayName = 史莱姆, IsResolved = True, ActorItem = CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = slimes, DisplayName = 史莱姆, SourcePath = E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s20-authoring-project\\actors\\slimes.json, Tags = System.String[], Type = collective }, MembershipKind = Owned, Id = slimes, DisplayName = 史莱姆, IdentityText = Group_ID: slimes, IsOwned = True, IsReferenced = False }, IsPlaceholder = False, IsUnresolved = False, StableId = slimes, Actor = CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = slimes, DisplayName = 史莱姆, SourcePath = E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-s20-authoring-project\\actors\\slimes.json, Tags = System.String[], Type = collective }, MembershipKind = Owned, Id = slimes, DisplayName = 史莱姆, IdentityText = Group_ID: slimes, IsOwned = True, IsReferenced = False }, IsOwned = True, IsReferenced = False }",
+        "persisted_entity": "slimes",
+        "crash_count": 0,
+        "median_ms": 1828.8,
+        "p95_ms": 1949.5,
+        "max_ms": 2018.8
+      },
+      "completed_utc": "2026-09-01T20:32:47.4969773Z"
+    },
+    {
+      "id": "S5",
+      "description": "Ordinary node deletes without confirmation, Ctrl+Z restores it and its edge, fixed Settlement rejects delete",
+      "status": "PASS",
+      "started_utc": "2026-09-01T20:32:47.4971569Z",
+      "details": {
+        "ordinary_node_id": "node_8f08c8e3aedf427d93e1241cd40d294b",
+        "delete_confirmation_dialog": false,
+        "node_absent_after_delete": true,
+        "undo_restored_node": true,
+        "undo_restored_output_port": true,
+        "fixed_node_id": "settle",
+        "fixed_node_still_present": true,
+        "before_node_count": 2,
+        "after_node_count": 2,
+        "before_connection_count": 1,
+        "after_connection_count": 1,
+        "disk_semantics_restored": true
+      },
+      "completed_utc": "2026-09-01T20:32:56.8540611Z"
+    }
+  ],
+  "completed_utc": "2026-09-01T20:32:57.5450682Z"
+}

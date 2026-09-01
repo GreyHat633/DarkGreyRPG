@@ -1,0 +1,81 @@
+{
+  "started_utc": "2026-09-01T19:03:59.4447968Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "app_dll_sha256": null,
+  "package_kind": "single-file",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-stage3-wire-project",
+  "frames": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\light-click-20-no-phantom.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-single-frame1-before.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-single-frame2-down.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-single-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-single-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-single-frame5-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-single-after-save-all.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\glow-frame1-valid.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\glow-frame2-left.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-single-open.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-single-frame1-before.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-single-frame2-down.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-single-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-single-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-single-frame5-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-multi-ordinary-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-multi-ordinary-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-multi-ordinary-frame5-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-multi-ctrl-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-multi-ctrl-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\flow-multi-ctrl-frame5-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-multi-ordinary-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-multi-ordinary-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-multi-ordinary-frame5-commit.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-multi-ctrl-frame3-moving.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-multi-ctrl-frame4-hover.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\final-live-post-choice-layout\\stage3-wire\\ui\\logic-multi-ctrl-frame5-commit.png"
+  ],
+  "light_click_20": {
+    "status": "PASS",
+    "graph_sha256": "67B16905BCF1FAC58D0C9835DA72357551BB4E299DF337CBC3A11A5E9A5227BB"
+  },
+  "flow_single": {
+    "status": "PASS",
+    "connection": {
+      "from_node_id": "flow_replacement",
+      "from_port_id": "flow_out",
+      "to_node_id": "flow_fixed",
+      "to_port_id": "flow_in",
+      "interface_kind": "flow"
+    }
+  },
+  "glow_leave": {
+    "status": "PASS",
+    "evidence": [
+      "glow-frame1-valid.png",
+      "glow-frame2-left.png"
+    ]
+  },
+  "logic_single": {
+    "status": "PASS",
+    "connection": {
+      "from_node_id": "logic_source",
+      "from_port_id": "logic_out",
+      "to_node_id": "logic_replacement",
+      "to_port_id": "logic_in",
+      "interface_kind": "logic"
+    }
+  },
+  "flow_multi": {
+    "status": "PASS",
+    "ordinary_count": 4,
+    "ctrl_bundle_count": 4
+  },
+  "logic_multi": {
+    "status": "PASS",
+    "ordinary_count": 4,
+    "ctrl_bundle_count": 4
+  },
+  "dpi": 119,
+  "status": "PASS",
+  "completed_utc": "2026-09-01T19:04:37.8107299Z"
+}

@@ -266,7 +266,7 @@ public sealed class CanonicalGraphEditorViewTests
 
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
         Assert.AreSame(formalWire, view.ActiveWireVisuals.Single());
-        Assert.AreEqual(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+        Assert.AreEqual(GraphEditorEndpoint.Input("target", "in", GraphInterfaceKind.Flow),
             view.ActiveWireFixedEndpoint);
         Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
         Assert.AreSame(formalWire, view.ConnectionVisuals.Single());
@@ -332,7 +332,7 @@ public sealed class CanonicalGraphEditorViewTests
     }
 
     [STATestMethod]
-    public void UnreferencedNodeDeleteUsesHostAndClearsSelection()
+    public void ContextMenuNodeDeleteExecutesImmediatelyAndClearsSelection()
     {
         var graph = Graph(GraphScope.StoryFlow);
         var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
@@ -340,14 +340,17 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.SelectNode("target"));
         var before = graph.ToJson();
 
-        Assert.IsTrue(view.RemoveSelectedNode());
+        var menu = view.CreateNodeContextMenu(view.SelectedNode!);
+        var delete = menu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "删除"));
+        delete.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+
         Assert.IsNull(view.SelectedNode);
         Assert.IsFalse(host.Nodes.Any(node => node.NodeId == "target"));
         Assert.AreNotEqual(before, graph.ToJson());
     }
 
     [STATestMethod]
-    public void ReferencedDeleteFailsClosedThenConfirmedDeleteSucceeds()
+    public void ReferencedNodeDeleteKeyExecutesImmediatelyAndOneUndoRestoresNodeAndWire()
     {
         var graph = new GraphDocument([
             new GraphNode("source", "line", "Source", [new("flow_out", "Output", false, GraphInterfaceKind.Flow)]),
@@ -358,15 +361,16 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
         Assert.IsTrue(view.SelectNode("source"));
 
-        Assert.IsFalse(view.RemoveSelectedNode());
-        Assert.AreEqual("source", view.SelectedNode?.NodeId);
-        Assert.IsTrue(host.LastValidationIssues.Any(issue => issue.Code == "graph.node.references.confirmation_required"),
-            string.Join(",", host.LastValidationIssues.Select(issue => issue.Code)));
-
-        Assert.IsTrue(view.RemoveSelectedNode(confirmReferencedRemoval: true));
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Delete));
         Assert.IsNull(view.SelectedNode);
         Assert.HasCount(1, host.Nodes);
         Assert.IsEmpty(host.Connections);
+
+        Assert.IsTrue(host.Undo());
+        Assert.IsTrue(host.Nodes.Any(node => node.NodeId == "source"));
+        Assert.HasCount(1, host.Connections);
+        Assert.AreEqual("source", host.Connections.Single().FromNodeId);
+        Assert.AreEqual("target", host.Connections.Single().ToNodeId);
     }
 
     [STATestMethod]
@@ -376,7 +380,7 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
         Assert.IsTrue(view.SelectNode("source"));
 
-        Assert.IsFalse(view.RemoveSelectedNode());
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Delete));
         Assert.AreEqual("source", view.SelectedNode?.NodeId);
         Assert.IsTrue(host.LastValidationIssues.Any(issue => issue.Code == "graph.node.not_deletable"));
     }
@@ -446,11 +450,108 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.KeyboardCommandTarget.Focusable);
         _ = view.KeyboardCommandTarget.Focus();
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreEqual(GraphWireGestureKind.NewConnection, view.ActiveWireGestureKind);
         Assert.AreNotEqual(DependencyProperty.UnsetValue,
             view.ActiveWireVisuals.Single().ReadLocalValue(Shape.StrokeProperty));
         Assert.AreEqual(3d, view.ActiveWireVisuals.Single().StrokeThickness);
         Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
         Assert.AreEqual(before, graph.ToJson());
+    }
+
+    [STATestMethod]
+    public void PortPressStaysPendingBelowThresholdAndLightClicksCreateNoPhantomOrHistory()
+    {
+        var graph = Graph(GraphScope.StoryFlow);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var before = graph.ToJson();
+        var undoBefore = host.CanUndo;
+        var start = new Point(100, 100);
+        var below = new Point(
+            start.X + Math.Max(0, SystemParameters.MinimumHorizontalDragDistance - 1),
+            start.Y + Math.Max(0, SystemParameters.MinimumVerticalDragDistance - 1));
+
+        Assert.IsTrue(view.BeginPendingConnectionPress(output, start));
+        Assert.IsTrue(view.IsWirePressPending);
+        Assert.AreEqual(GraphWireGestureKind.None, view.ActiveWireGestureKind);
+        Assert.IsEmpty(view.ActiveWireVisuals);
+        Assert.IsFalse(view.AdvancePendingConnectionPress(below));
+        Assert.IsTrue(view.IsWirePressPending);
+        Assert.IsEmpty(view.ActiveWireVisuals);
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.AreEqual(undoBefore, host.CanUndo);
+        Assert.IsTrue(view.ReleasePendingConnectionPress());
+        Assert.IsFalse(view.IsWirePressPending);
+        Assert.IsEmpty(view.ActiveWireVisuals);
+        Assert.IsTrue(view.PortVisuals.All(port => !port.IsConnecting && !port.IsValidTarget));
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.AreEqual(undoBefore, host.CanUndo);
+
+        for (var click = 0; click < 20; click++)
+        {
+            Assert.IsTrue(view.BeginPendingConnectionPress(output, start));
+            Assert.IsTrue(view.ReleasePendingConnectionPress());
+        }
+
+        Assert.IsEmpty(view.ActiveWireVisuals);
+        Assert.HasCount(0, view.ConnectionVisuals);
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.AreEqual(undoBefore, host.CanUndo);
+    }
+
+    [STATestMethod]
+    public void PendingPressCrossingDragThresholdBeginsNewWireGestureOnlyOnce()
+    {
+        var graph = Graph(GraphScope.StoryFlow);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var before = graph.ToJson();
+        var start = new Point(100, 100);
+        var threshold = Math.Max(SystemParameters.MinimumHorizontalDragDistance,
+            SystemParameters.MinimumVerticalDragDistance) + 1;
+
+        Assert.IsTrue(view.BeginPendingConnectionPress(output, start));
+        Assert.IsTrue(view.AdvancePendingConnectionPress(new Point(start.X + threshold, start.Y)));
+        Assert.IsFalse(view.IsWirePressPending);
+        Assert.AreEqual(GraphWireGestureKind.NewConnection, view.ActiveWireGestureKind);
+        Assert.HasCount(1, view.ActiveWireVisuals);
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.IsFalse(host.CanUndo);
+        Assert.IsEmpty(view.ActiveWireVisuals);
+        Assert.IsTrue(view.PortVisuals.All(port => !port.IsConnecting && !port.IsValidTarget));
+    }
+
+    [STATestMethod]
+    public void PreviewTargetUsesOneValidityDecisionAndClearsPreviousGlowImmediately()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "action", "Source", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("target", "action", "Target", [new("in", "Input", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("wrong", "objective", "Wrong", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var target = view.PortVisuals.Single(port => port.NodeId == "target");
+        var wrong = view.PortVisuals.Single(port => port.NodeId == "wrong");
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.IsTrue(view.PreviewConnectionTarget(target));
+        Assert.IsTrue(target.IsValidTarget);
+        Assert.IsTrue(output.IsConnecting);
+        Assert.IsFalse(wrong.IsValidTarget);
+
+        Assert.IsFalse(view.PreviewConnectionTarget(wrong));
+        Assert.IsFalse(target.IsValidTarget);
+        Assert.IsFalse(wrong.IsValidTarget);
+        Assert.IsTrue(output.IsConnecting);
+
+        Assert.IsFalse(view.PreviewConnectionTarget(null));
+        Assert.IsTrue(view.PortVisuals.All(port => !port.IsValidTarget));
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+        Assert.IsTrue(view.PortVisuals.All(port => !port.IsConnecting && !port.IsValidTarget));
     }
 
     [STATestMethod]
@@ -470,11 +571,13 @@ public sealed class CanonicalGraphEditorViewTests
         var thirdInput = view.PortVisuals.Single(port => port.NodeId == "three");
 
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreEqual(GraphWireGestureKind.AddOnMultiPort, view.ActiveWireGestureKind);
         Assert.IsTrue(view.CompleteConnectionDrag(secondInput));
         Assert.HasCount(2, host.Connections);
 
         var original = host.Connections.Single(connection => connection.ToNodeId == "one");
         Assert.IsTrue(view.BeginExistingConnectionDrag(host.Connections.Single(connection => connection.ToNodeId == "one")));
+        Assert.AreEqual(GraphWireGestureKind.ReconnectSingleEndpoint, view.ActiveWireGestureKind);
         Assert.IsTrue(view.CompleteConnectionDrag(thirdInput));
         Assert.HasCount(2, host.Connections);
         Assert.IsFalse(host.Connections.Any(connection => connection.ToNodeId == original.ToNodeId));
@@ -487,7 +590,7 @@ public sealed class CanonicalGraphEditorViewTests
         var graph = new GraphDocument([
             new GraphNode("source", "action", "Source", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
             new GraphNode("original", "action", "Original", [new("in", "Input", true, GraphInterfaceKind.Flow)]),
-            new GraphNode("replacement", "action", "Replacement", [new("in", "Input", true, GraphInterfaceKind.Flow)])]);
+            new GraphNode("replacement", "action", "Replacement", [new("out", "Output", false, GraphInterfaceKind.Flow)])]);
         var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
         Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
             GraphEditorEndpoint.Input("original", "in", GraphInterfaceKind.Flow)));
@@ -497,14 +600,19 @@ public sealed class CanonicalGraphEditorViewTests
         var originalVisual = view.ConnectionVisuals.Single();
 
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreEqual(GraphWireGestureKind.ReconnectSingleEndpoint, view.ActiveWireGestureKind);
+        Assert.AreEqual(GraphEditorEndpoint.Input("original", "in", GraphInterfaceKind.Flow),
+            view.ActiveWireFixedEndpoint);
+        Assert.AreEqual(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
+            view.ActiveWireMovingEndpoint);
         Assert.HasCount(1, view.ActiveWireVisuals);
         Assert.AreSame(originalVisual, view.ActiveWireVisuals.Single());
         Assert.IsTrue(view.CompleteConnectionDrag(replacement));
 
         var connection = host.Connections.Single();
-        Assert.AreEqual("source", connection.FromNodeId);
+        Assert.AreEqual("replacement", connection.FromNodeId);
         Assert.AreEqual("out", connection.FromPortId);
-        Assert.AreEqual("replacement", connection.ToNodeId);
+        Assert.AreEqual("original", connection.ToNodeId);
         Assert.AreEqual("in", connection.ToPortId);
         Assert.IsFalse(host.LastValidationIssues.Any(issue =>
             issue.Code == "graph.connection.flow.output.multiple_targets"));
@@ -523,12 +631,16 @@ public sealed class CanonicalGraphEditorViewTests
         var output = view.PortVisuals.Single(port => port.NodeId == "source");
         var originalVisual = view.ConnectionVisuals.Single();
         var before = graph.ToJson();
+        var undoBefore = host.CanUndo;
 
         Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreEqual(GraphWireGestureKind.ReconnectSingleEndpoint, view.ActiveWireGestureKind);
         Assert.AreSame(originalVisual, view.ActiveWireVisuals.Single());
         Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
 
         Assert.AreEqual(before, graph.ToJson());
+        Assert.AreEqual(undoBefore, host.CanUndo);
+        Assert.IsTrue(view.PortVisuals.All(port => !port.IsConnecting && !port.IsValidTarget));
         Assert.AreEqual(view.ConnectionHitTargets.Single().Data.ToString(), originalVisual.Data.ToString());
     }
 
@@ -550,8 +662,13 @@ public sealed class CanonicalGraphEditorViewTests
         var inputPoint = ((BezierSegment)geometry.Figures[0].Segments[0]).Point3;
 
         Assert.IsTrue(view.BeginExistingConnectionDrag(connection, inputPoint));
-        Assert.IsTrue(view.PortVisuals.Single(port => port.NodeId == "source").IsConnecting);
-        Assert.IsFalse(input.IsConnecting);
+        Assert.AreEqual(GraphWireGestureKind.ReconnectSingleEndpoint, view.ActiveWireGestureKind);
+        Assert.AreEqual(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
+            view.ActiveWireFixedEndpoint);
+        Assert.AreEqual(GraphEditorEndpoint.Input("one", "in", GraphInterfaceKind.Logic),
+            view.ActiveWireMovingEndpoint);
+        Assert.IsFalse(view.PortVisuals.Single(port => port.NodeId == "source").IsConnecting);
+        Assert.IsTrue(input.IsConnecting);
         Assert.IsTrue(view.CompleteConnectionDrag(view.PortVisuals.Single(port => port.NodeId == "two")));
 
         var replacement = host.Connections.Single();
@@ -578,8 +695,8 @@ public sealed class CanonicalGraphEditorViewTests
         var outputPoint = geometry.Figures[0].StartPoint;
 
         Assert.IsTrue(view.BeginExistingConnectionDrag(connection, outputPoint));
-        Assert.IsTrue(view.PortVisuals.Single(port => port.NodeId == "target").IsConnecting);
-        Assert.IsFalse(view.PortVisuals.Single(port => port.NodeId == "source").IsConnecting);
+        Assert.IsFalse(view.PortVisuals.Single(port => port.NodeId == "target").IsConnecting);
+        Assert.IsTrue(view.PortVisuals.Single(port => port.NodeId == "source").IsConnecting);
         var beforeWrongDirectionDrop = graph.ToJson();
         Assert.IsFalse(view.CompleteConnectionDrag(view.PortVisuals.Single(port => port.NodeId == "target")));
         Assert.AreEqual(beforeWrongDirectionDrop, graph.ToJson());
@@ -610,8 +727,114 @@ public sealed class CanonicalGraphEditorViewTests
         var inputPoint = ((BezierSegment)geometry.Figures[0].Segments[0]).Point3;
 
         Assert.IsTrue(view.BeginExistingConnectionDrag(connection, inputPoint));
+        Assert.AreEqual(GraphWireGestureKind.ReconnectSingleEndpoint, view.ActiveWireGestureKind);
         Assert.IsTrue(view.CompleteConnectionDrag(null));
         Assert.IsEmpty(host.Connections);
+    }
+
+    [STATestMethod]
+    public void FlowInputOrdinaryDragAddsOneAndCtrlDragMovesTheWholeBundle()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source_a", "action", "A", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("source_b", "action", "B", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("source_c", "action", "C", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("first", "action", "First", [new("in", "Input", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("second", "action", "Second", [new("in", "Input", true, GraphInterfaceKind.Flow)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source_a", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("first", "in", GraphInterfaceKind.Flow)));
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source_b", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("first", "in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        var first = view.PortVisuals.Single(port => port.NodeId == "first");
+        var sourceC = view.PortVisuals.Single(port => port.NodeId == "source_c");
+        var second = view.PortVisuals.Single(port => port.NodeId == "second");
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(first));
+        Assert.AreEqual(GraphWireGestureKind.AddOnMultiPort, view.ActiveWireGestureKind);
+        Assert.IsTrue(view.CompleteConnectionDrag(sourceC));
+        Assert.HasCount(3, host.Connections);
+        Assert.AreEqual(3, host.Connections.Count(connection => connection.ToNodeId == "first"));
+        Assert.IsEmpty(host.Connections.Where(connection => connection.ToNodeId == "second"));
+
+        // Rebuild after the ordinary add so the next drag uses the current
+        // projection and captures all three incident edges deterministically.
+        first = view.PortVisuals.Single(port => port.NodeId == "first");
+        second = view.PortVisuals.Single(port => port.NodeId == "second");
+        Assert.IsTrue(view.BeginIncidentConnectionBundleDrag(first));
+        Assert.AreEqual(GraphWireGestureKind.ReconnectMultiBundle, view.ActiveWireGestureKind);
+        Assert.HasCount(3, view.ActiveWireVisuals);
+        Assert.IsTrue(view.CompleteConnectionDrag(second));
+        Assert.HasCount(3, host.Connections);
+        Assert.IsEmpty(host.Connections.Where(connection => connection.ToNodeId == "first"));
+        Assert.HasCount(3, host.Connections.Where(connection => connection.ToNodeId == "second"));
+    }
+
+    [STATestMethod]
+    public void LogicOutputOrdinaryDragAddsOneAndCtrlDragMovesTheWholeBundle()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("source", "objective", "Source", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("replacement", "objective", "Replacement", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("first", "settle", "First", [new("in", "Input", true, GraphInterfaceKind.Logic)]),
+            new GraphNode("second", "settle", "Second", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("first", "in", GraphInterfaceKind.Logic)));
+        var view = Arrange(host);
+        var output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var second = view.PortVisuals.Single(port => port.NodeId == "second");
+
+        Assert.IsTrue(view.BeginNewConnectionDrag(output));
+        Assert.AreEqual(GraphWireGestureKind.AddOnMultiPort, view.ActiveWireGestureKind);
+        Assert.IsTrue(view.CompleteConnectionDrag(second));
+        Assert.HasCount(2, host.Connections);
+
+        output = view.PortVisuals.Single(port => port.NodeId == "source");
+        var replacement = view.PortVisuals.Single(port => port.NodeId == "replacement");
+        Assert.IsTrue(view.BeginIncidentConnectionBundleDrag(output));
+        Assert.AreEqual(GraphWireGestureKind.ReconnectMultiBundle, view.ActiveWireGestureKind);
+        Assert.HasCount(2, view.ActiveWireVisuals);
+        Assert.IsTrue(view.CompleteConnectionDrag(replacement));
+        Assert.HasCount(2, host.Connections);
+        Assert.IsEmpty(host.Connections.Where(connection => connection.FromNodeId == "source"));
+        Assert.HasCount(2, host.Connections.Where(connection => connection.FromNodeId == "replacement"));
+        Assert.HasCount(1, host.Connections.Where(connection => connection.ToNodeId == "first"));
+    }
+
+    [STATestMethod]
+    public void CardinalityMatrixAllowsFlowInputsAndLogicOutputsButRejectsSingleCapacityFanInFanOut()
+    {
+        var flowGraph = new GraphDocument([
+            new GraphNode("flow_a", "action", "Flow A", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("flow_b", "action", "Flow B", [new("out", "Output", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("flow_x", "action", "Flow X", [new("in", "Input", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("flow_y", "action", "Flow Y", [new("in", "Input", true, GraphInterfaceKind.Flow)])]);
+        var flowHost = new GraphEditorHostViewModel(flowGraph, GraphScope.StoryFlow);
+
+        Assert.IsTrue(flowHost.Connect(GraphEditorEndpoint.Output("flow_a", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("flow_x", "in", GraphInterfaceKind.Flow)));
+        Assert.IsTrue(flowHost.Connect(GraphEditorEndpoint.Output("flow_b", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("flow_x", "in", GraphInterfaceKind.Flow)));
+        Assert.IsFalse(flowHost.CanConnect(GraphEditorEndpoint.Output("flow_a", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("flow_y", "in", GraphInterfaceKind.Flow)));
+
+        var logicGraph = new GraphDocument([
+            new GraphNode("logic_a", "objective", "Logic A", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("logic_b", "objective", "Logic B", [new("out", "Output", false, GraphInterfaceKind.Logic)]),
+            new GraphNode("logic_x", "settle", "Logic X", [new("in", "Input", true, GraphInterfaceKind.Logic)]),
+            new GraphNode("logic_y", "settle", "Logic Y", [new("in", "Input", true, GraphInterfaceKind.Logic)])]);
+        var logicHost = new GraphEditorHostViewModel(logicGraph, GraphScope.Task);
+
+        Assert.IsTrue(logicHost.Connect(GraphEditorEndpoint.Output("logic_a", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("logic_x", "in", GraphInterfaceKind.Logic)));
+        Assert.IsTrue(logicHost.Connect(GraphEditorEndpoint.Output("logic_a", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("logic_y", "in", GraphInterfaceKind.Logic)));
+        Assert.IsFalse(logicHost.CanConnect(GraphEditorEndpoint.Output("logic_b", "out", GraphInterfaceKind.Logic),
+            GraphEditorEndpoint.Input("logic_x", "in", GraphInterfaceKind.Logic)));
+        Assert.HasCount(2, flowHost.Connections);
+        Assert.HasCount(2, logicHost.Connections);
     }
 
     [STATestMethod]

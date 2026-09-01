@@ -239,6 +239,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     /// advance the graph revision.
     /// </summary>
     public event EventHandler? GraphChanged;
+    public event EventHandler? LayoutChanged;
     public event EventHandler<GraphPortsChangedEventArgs>? PortsChanged;
     public event EventHandler<GraphNodesChangedEventArgs>? NodesChanged;
 
@@ -414,7 +415,13 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         if (!double.IsFinite(x) || !double.IsFinite(y)) return;
         var node = Nodes.FirstOrDefault(item => string.Equals(item.NodeId, nodeId, StringComparison.Ordinal));
         if (node is not null) node.SetPosition(x, y);
-        else if (!string.IsNullOrWhiteSpace(nodeId)) _layout[nodeId] = new GraphEditorNodePosition(x, y);
+        else if (!string.IsNullOrWhiteSpace(nodeId))
+        {
+            var position = new GraphEditorNodePosition(x, y);
+            if (_layout.TryGetValue(nodeId, out var current) && current == position) return;
+            _layout[nodeId] = position;
+            LayoutChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public bool CanConnect(GraphEditorEndpoint first, GraphEditorEndpoint second)
@@ -675,6 +682,9 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool ChangeObjectiveType(string nodeId, string? type, string? actorId = null)
         => ExecuteSession(() => _session.ChangeObjectiveType(nodeId, type, actorId));
 
+    public bool ChangeObjectiveTarget(string nodeId, string? targetId)
+        => ExecuteSession(() => _session.ChangeObjectiveTarget(nodeId, targetId));
+
     public bool SetObjectiveType(string nodeId, string? type, string? actorId = null)
         => ChangeObjectiveType(nodeId, type, actorId);
 
@@ -684,8 +694,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool SetObjectiveRequired(string nodeId, int required)
         => ExecuteSession(() => _session.SetObjectiveRequired(nodeId, required));
 
-    public bool ChangeStoryActionType(string nodeId, string? type)
-        => ExecuteSession(() => _session.ChangeStoryActionType(nodeId, type));
+    public bool ChangeStoryActionType(string nodeId, string? type, string? itemId = null)
+        => ExecuteSession(() => _session.ChangeStoryActionType(nodeId, type, itemId));
 
     public bool AddSessionChoiceOption(string nodeId, string displayText)
         => ExecuteSession(() => _session.AddSessionChoiceOption(nodeId, displayText));
@@ -871,7 +881,12 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     private void OnNodePositionChanged(GraphEditorNodeViewModel node, double x, double y)
     {
         if (!string.IsNullOrWhiteSpace(node.NodeId) && double.IsFinite(x) && double.IsFinite(y))
-            _layout[node.NodeId] = new GraphEditorNodePosition(x, y);
+        {
+            var position = new GraphEditorNodePosition(x, y);
+            if (_layout.TryGetValue(node.NodeId, out var current) && current == position) return;
+            _layout[node.NodeId] = position;
+            LayoutChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private static Dictionary<string, int> BuildFallbackIndices(GraphNode[] nodes,

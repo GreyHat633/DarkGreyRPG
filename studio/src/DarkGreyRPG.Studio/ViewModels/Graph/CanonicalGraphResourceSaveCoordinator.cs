@@ -1,4 +1,5 @@
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.ViewModels.Graph;
 
@@ -11,10 +12,14 @@ namespace DarkGreyRPG.Studio.ViewModels.Graph;
 public sealed class CanonicalGraphResourceSaveCoordinator
 {
     private readonly CanonicalProjectGraphStore _store;
+    private readonly CanonicalGraphLayoutStore _layoutStore;
 
-    public CanonicalGraphResourceSaveCoordinator(CanonicalProjectGraphStore store)
+    public CanonicalGraphResourceSaveCoordinator(
+        CanonicalProjectGraphStore store,
+        CanonicalGraphLayoutStore? layoutStore = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
+        _layoutStore = layoutStore ?? new CanonicalGraphLayoutStore(store.ProjectDirectory);
     }
 
     public CanonicalProjectGraphStore Store => _store;
@@ -30,13 +35,31 @@ public sealed class CanonicalGraphResourceSaveCoordinator
         ArgumentNullException.ThrowIfNull(editor);
 
         var snapshot = editor.CreatePersistenceSnapshot();
-        if (!editor.IsDirty)
+        var graphDirty = editor.IsGraphDirty;
+        var layoutDirty = editor.IsLayoutDirty;
+        if (!graphDirty && !layoutDirty)
             return snapshot;
 
-        if (snapshot.ResourceKind == GraphResourceKind.Story)
-            _store.StoryLogicGraph.ValidateStoryReplacement(snapshot);
-        var persisted = RepositoryFor(snapshot.ResourceKind).Replace(snapshot);
-        editor.MarkSaved();
+        var persisted = snapshot;
+        if (graphDirty)
+        {
+            if (snapshot.ResourceKind == GraphResourceKind.Story)
+                _store.StoryLogicGraph.ValidateStoryReplacement(snapshot);
+            persisted = RepositoryFor(snapshot.ResourceKind).Replace(snapshot);
+            editor.MarkGraphSaved();
+        }
+
+        if (layoutDirty)
+        {
+            _layoutStore.Save(
+                editor.ResourceKind,
+                editor.Id,
+                editor.CreateLayoutSnapshot().ToDictionary(
+                    pair => pair.Key,
+                    pair => new ProjectGraphNodeLayout { X = pair.Value.X, Y = pair.Value.Y },
+                    StringComparer.Ordinal));
+            editor.MarkLayoutSaved();
+        }
         return persisted;
     }
 

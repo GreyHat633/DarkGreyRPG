@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "completed_utc": "2026-09-01T19:01:53.1663833Z",
+  "status": "PASS",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "exe_sha256": "B122AAA2E670147C3CC82908C2EE85626D84CD7D3C4D13C19EEB3BEDD019119C",
+  "exe_product_version": "0.3.1.4-rc",
+  "exe_bytes": 141430998,
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-final-stage1-postfix-project",
+  "interaction": "physical_popup_item_click",
+  "cycles": [
+    {
+      "automation_id": "InlineStartTriggerType",
+      "count": 6,
+      "sequence": ["logic", "enter_region", "interact_actor", "logic", "enter_region", "interact_actor"],
+      "elapsed_ms": [668.682, 561.772, 568.853, 538.206, 570.799, 577.977],
+      "final_selection": "interact_actor",
+      "responding": true
+    },
+    {
+      "automation_id": "InlineActionType",
+      "count": 6,
+      "sequence": ["give_item", "give_xp", "send_message", "give_item", "give_xp", "send_message"],
+      "elapsed_ms": [786.544, 604.55, 580.755, 617.881, 624.078, 657.259],
+      "final_selection": "send_message",
+      "responding": true
+    },
+    {
+      "automation_id": "InlineObjectiveType",
+      "count": 6,
+      "sequence": ["kill_entity", "collect_item", "interact_actor", "kill_entity", "collect_item", "interact_actor"],
+      "elapsed_ms": [471.889, 386.999, 391.889, 403.3, 381.18, 374.534],
+      "final_selection": "interact_actor",
+      "responding": true
+    }
+  ],
+  "save_restart_probe": {
+    "saved_inline_values": {
+      "start_trigger_type": "interact_actor",
+      "action_type": "give_xp",
+      "objective_type": "kill_entity"
+    },
+    "disk_values_after_clean_close": {
+      "start_trigger_type": "interact_actor",
+      "action_type": "give_xp",
+      "objective_type": "kill_entity"
+    },
+    "inline_values_after_process_restart": {
+      "start_trigger_type": "interact_actor",
+      "action_type": "give_xp",
+      "objective_type": "kill_entity"
+    },
+    "status": "PASS"
+  },
+  "manual_user_evidence": {
+    "scope": "Objective inline target/type interaction",
+    "statement": "按照我人工测试的结果来看，现在【目标】节点内可以正常切换了。",
+    "status": "USER_CONFIRMED_PARTIAL_SCOPE"
+  }
+}

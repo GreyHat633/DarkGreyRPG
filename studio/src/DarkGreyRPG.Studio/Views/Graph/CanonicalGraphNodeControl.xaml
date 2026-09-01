@@ -24,6 +24,10 @@
                 </Grid.ColumnDefinitions>
                 <Grid x:Name="InputPortsPanel" Grid.Column="0" />
                 <Grid x:Name="OutputPortsPanel" Grid.Column="1" />
+                <!-- Choice outputs use one semantic option row containing its
+                     paired Flow and Logic endpoints.  The generic output
+                     stack remains the projection for every other node type. -->
+                <Grid x:Name="ChoicePortsPanel" Grid.Column="1" Visibility="Collapsed" />
             </Grid>
             <Expander x:Name="ParameterInteractiveZone" Grid.Row="2" Margin="7,0,7,7" Header="参数" IsExpanded="True"
                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"

@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -196,6 +197,132 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void ChoiceOptionRowsPairFlowAndLogicPortsByStableIdsForAllSupportedSizes()
+    {
+        foreach (var count in new[] { 1, 2, 5, 10 })
+        {
+            using var workspace = ChoiceWorkspace(count);
+            var view = Arrange(workspace);
+            Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+            Assert.IsTrue(view.GraphView.SelectNode("choice"));
+            view.UpdateLayout();
+
+            var visual = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == "choice");
+            Assert.HasCount(count, visual.ChoiceOptionRows);
+            CollectionAssert.AreEqual(
+                Enumerable.Range(1, count).Select(index => $"option_{index}").ToArray(),
+                visual.ChoiceOptionRows.Select(row => row.OptionId).ToArray());
+            CollectionAssert.AreEqual(
+                Enumerable.Range(1, count).Select(index => $"flow_{index}").ToArray(),
+                visual.ChoiceOptionRows.Select(row => row.FlowPortId).ToArray());
+
+            foreach (var row in visual.ChoiceOptionRows)
+            {
+                Assert.AreEqual(row.OptionId, row.LogicOutput.PortId);
+                Assert.AreEqual(row.FlowPortId, row.FlowOutput.PortId);
+                Assert.AreEqual(GraphInterfaceKind.Logic, row.LogicOutput.InterfaceKind);
+                Assert.AreEqual(GraphInterfaceKind.Flow, row.FlowOutput.InterfaceKind);
+                Assert.IsFalse(row.LogicOutput.IsInput);
+                Assert.IsFalse(row.FlowOutput.IsInput);
+                Assert.HasCount(3, row.OutputGroup.Children);
+                Assert.AreSame(row.FlowOutput, row.OutputGroup.Children[0]);
+                Assert.AreSame(row.DisplayLabel, row.OutputGroup.Children[1]);
+                Assert.AreSame(row.LogicOutput, row.OutputGroup.Children[2]);
+                Assert.AreEqual(row.DisplayText, row.DisplayLabel.Text);
+                Assert.AreEqual(108d, row.OutputGroup.Width);
+                Assert.AreEqual(TextAlignment.Left, row.DisplayLabel.TextAlignment);
+                Assert.AreEqual(HorizontalAlignment.Right, row.DisplayLabel.HorizontalAlignment);
+                Assert.AreEqual(82d, row.DisplayLabel.MaxWidth);
+                Assert.AreEqual(22d, row.DisplayLabel.Margin.Right);
+                Assert.AreEqual(11d, row.DisplayLabel.FontSize);
+                Assert.AreEqual(40d, row.OutputGroup.Height);
+                Assert.AreEqual(12d, row.OutputGroup.Margin.Bottom);
+                Assert.AreEqual(0, Grid.GetRow(row.FlowOutput));
+                Assert.AreEqual(1, Grid.GetRow(row.LogicOutput));
+                Assert.AreEqual(2, Grid.GetRowSpan(row.DisplayLabel));
+            }
+
+            var flowAnchorXs = visual.ChoiceOptionRows
+                .Select(row => row.FlowOutput.GetAnchorPoint(visual).X).ToArray();
+            var logicAnchorXs = visual.ChoiceOptionRows
+                .Select(row => row.LogicOutput.GetAnchorPoint(visual).X).ToArray();
+            Assert.IsTrue(flowAnchorXs.All(x => Math.Abs(x - flowAnchorXs[0]) < 0.01));
+            Assert.IsTrue(logicAnchorXs.All(x => Math.Abs(x - logicAnchorXs[0]) < 0.01));
+            Assert.IsTrue(flowAnchorXs.Zip(logicAnchorXs).All(pair => Math.Abs(pair.First - pair.Second) < 1d),
+                $"flow={string.Join(",", flowAnchorXs)} logic={string.Join(",", logicAnchorXs)}");
+            Assert.IsGreaterThan(visual.ActualWidth / 2d, flowAnchorXs[0]);
+            if (visual.ChoiceOptionRows.Count > 1)
+            {
+                var withinGroup = visual.ChoiceOptionRows[0].LogicOutput.GetAnchorPoint(visual).Y
+                    - visual.ChoiceOptionRows[0].FlowOutput.GetAnchorPoint(visual).Y;
+                var betweenGroups = visual.ChoiceOptionRows[1].FlowOutput.GetAnchorPoint(visual).Y
+                    - visual.ChoiceOptionRows[0].LogicOutput.GetAnchorPoint(visual).Y;
+                Assert.IsGreaterThan(0d, withinGroup);
+                Assert.IsGreaterThan(withinGroup, betweenGroups,
+                    "Different Choice groups must be farther apart than the two endpoints inside one group.");
+            }
+        }
+    }
+
+    [STATestMethod]
+    public void FitAllUsesRenderedChoiceHeightForTenStackedOptionGroups()
+    {
+        using var workspace = ChoiceWorkspace(10);
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+        view.UpdateLayout();
+
+        var choice = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == "choice");
+        Assert.IsGreaterThan(500d, choice.ActualHeight);
+
+        view.GraphView.FitAllNodes();
+
+        Assert.IsLessThan(2d, view.GraphView.ViewportController.Zoom,
+            "A ten-option stacked Choice must fit from its rendered height instead of the historical fixed 100-DIP height.");
+    }
+
+    [STATestMethod]
+    public void ChoiceRenameAndReorderRefreshOnlySelectedNodeAndPreserveStableConnections()
+    {
+        using var workspace = ChoiceWorkspace(2);
+        var session = workspace.SessionItems.Single();
+        Assert.IsTrue(session.Editor.Host.AddNode(GraphNodeFactory.Create(GraphScope.Session, "line", "target-1")));
+        Assert.IsTrue(session.Editor.Host.AddNode(GraphNodeFactory.Create(GraphScope.Session, "line", "target-2")));
+        Assert.IsTrue(session.Editor.Host.Connect(
+            GraphEditorEndpoint.Output("choice", "flow_1", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("target-1", "flow_in", GraphInterfaceKind.Flow)));
+        Assert.IsTrue(session.Editor.Host.Connect(
+            GraphEditorEndpoint.Output("choice", "flow_2", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("target-2", "flow_in", GraphInterfaceKind.Flow)));
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(session));
+        Assert.IsTrue(view.GraphView.SelectNode("choice"));
+        view.UpdateLayout();
+        var visual = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == "choice");
+        var position = (visual.Node!.X, visual.Node.Y);
+        Assert.IsTrue(session.Editor.Host.RenameSessionChoiceOption("choice", "option_2", new string('改', 60)),
+            string.Join(",", session.Editor.Host.LastValidationIssues.Select(issue => issue.Code)));
+        Assert.IsTrue(session.Editor.Host.ReorderSessionChoiceOption("choice", "option_2", 0));
+        view.UpdateLayout();
+
+        Assert.AreSame(visual, view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == "choice"));
+        Assert.AreEqual("choice", view.GraphView.SelectedNode?.NodeId);
+        Assert.AreEqual(position, (visual.Node!.X, visual.Node.Y));
+        CollectionAssert.AreEqual(new[] { "option_2", "option_1" },
+            visual.ChoiceOptionRows.Select(row => row.OptionId).ToArray());
+        CollectionAssert.AreEqual(new[] { "flow_2", "flow_1" },
+            visual.ChoiceOptionRows.Select(row => row.FlowPortId).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "flow_1", "flow_2" },
+            session.Editor.Host.Connections.Select(connection => connection.FromPortId).ToArray());
+        var flowAnchorXs = visual.ChoiceOptionRows.Select(row => row.FlowOutput.GetAnchorPoint(visual).X).ToArray();
+        var logicAnchorXs = visual.ChoiceOptionRows.Select(row => row.LogicOutput.GetAnchorPoint(visual).X).ToArray();
+        Assert.IsTrue(flowAnchorXs.All(x => Math.Abs(x - flowAnchorXs[0]) < 0.01));
+        Assert.IsTrue(logicAnchorXs.All(x => Math.Abs(x - logicAnchorXs[0]) < 0.01));
+        Assert.IsTrue(flowAnchorXs.Zip(logicAnchorXs).All(pair => Math.Abs(pair.First - pair.Second) < 1d),
+            $"flow={string.Join(",", flowAnchorXs)} logic={string.Join(",", logicAnchorXs)}");
+    }
+
+    [STATestMethod]
     public void InlineStartRemovalConfirmationIsInjectedAtViewBoundary()
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "region");
@@ -212,8 +339,8 @@ public sealed class CanonicalStoryWorkspaceViewTests
             Assert.AreEqual("启动条件 1", confirmation.DisplayName);
             return true;
         };
-        var inline = view.GraphView.InlineEditorFactory!(workspace.ActiveGraphHost.Nodes.Single(node => node.Id == "start"));
-        Assert.IsNotNull(inline);
+        var inline = view.GraphView.NodeVisuals.Single(visual => visual.Node?.NodeId == "start").InlineEditor
+            ?? throw new AssertFailedException("Start node inline inspector was not created.");
         Assert.IsTrue(inline.AddStoryStartTrigger("角色触发", StoryStartSchema.ActorInteraction,
             StoryStartSchema.DefaultTriggerProperties(StoryStartSchema.ActorInteraction, "actor")));
 
@@ -451,6 +578,119 @@ public sealed class CanonicalStoryWorkspaceViewTests
         CollectionAssert.AreEqual(beforeLayout, workspace.StoryEditor.Host.Layout.ToArray());
     }
 
+    [STATestMethod]
+    public void TextDraftChangesTwentyTimesAndCommitsOneGraphRevision()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        line.Properties["text"] = JsonSerializer.SerializeToElement("原值");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+                new GraphDocument([line]))]);
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+        Assert.IsTrue(view.GraphView.SelectNode("line-1"));
+        view.UpdateLayout();
+
+        var draft = Descendants<TextBox>(view)
+            .First(textBox => string.Equals(
+                textBox.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path.Path,
+                "LineText",
+                StringComparison.Ordinal));
+        var binding = draft.GetBindingExpression(TextBox.TextProperty)!;
+        Assert.AreEqual(System.Windows.Data.UpdateSourceTrigger.LostFocus,
+            binding.ParentBinding.UpdateSourceTrigger);
+        var beforeRevision = workspace.ActiveEditor.GraphRevision;
+
+        for (var index = 1; index <= 20; index++)
+        {
+            draft.Text = new string('字', index);
+            Assert.AreEqual(beforeRevision, workspace.ActiveEditor.GraphRevision,
+                $"Draft character {index} must not mutate canonical state.");
+        }
+
+        binding.UpdateSource();
+
+        Assert.AreEqual(beforeRevision + 1, workspace.ActiveEditor.GraphRevision);
+        Assert.AreEqual(new string('字', 20),
+            workspace.ActiveEditor.Host.Graph.Nodes.Single(node => node.NodeId == "line-1")
+                .Properties["text"].GetString());
+    }
+
+    [STATestMethod]
+    public void CtrlSFlushesActiveTextDraftAsOneCanonicalCommit()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        line.Properties["text"] = JsonSerializer.SerializeToElement("原值");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+                new GraphDocument([line]))]);
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+        Assert.IsTrue(view.GraphView.SelectNode("line-1"));
+        view.UpdateLayout();
+
+        var draft = Descendants<TextBox>(view)
+            .First(textBox => string.Equals(
+                textBox.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path.Path,
+                "LineText",
+                StringComparison.Ordinal));
+        var beforeRevision = workspace.ActiveEditor.GraphRevision;
+        var beforeUndo = workspace.ActiveGraphHost.Session.UndoCount;
+        draft.Text = "焦点仍在输入框的最后一个字";
+
+        DarkGreyRPG.Studio.MainWindow.FlushFocusedDraft(draft);
+
+        Assert.AreEqual(beforeRevision + 1, workspace.ActiveEditor.GraphRevision);
+        Assert.AreEqual(beforeUndo + 1, workspace.ActiveGraphHost.Session.UndoCount);
+        Assert.AreEqual("焦点仍在输入框的最后一个字",
+            workspace.ActiveEditor.Host.Graph.Nodes.Single(node => node.NodeId == "line-1")
+                .Properties["text"].GetString());
+    }
+
+    [STATestMethod]
+    public void DirectInlineObjectiveActorSelectionKeepsSelectedInspectorAndGraphInSync()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(
+            objective, CanonicalTaskObjectiveSchema.InteractActor, "actor", out _));
+        objective.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
+            JsonSerializer.SerializeToElement(3);
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            actors:
+            [
+                new ActorResourceInfo("actor", "测试角色", "actor.json", []),
+                new ActorResourceInfo("group", "测试角色组", "group.json", [],
+                    CollectiveActorResource.ResourceType),
+            ],
+            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task",
+                new GraphDocument([objective]))]);
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
+        Assert.IsTrue(view.GraphView.SelectNode("objective"));
+        view.UpdateLayout();
+
+        var actorSelectors = Descendants<ComboBox>(view)
+            .Where(combo => string.Equals(
+                combo.GetBindingExpression(Selector.SelectedValueProperty)?.ParentBinding.Path.Path,
+                "SelectedObjectiveActorId", StringComparison.Ordinal))
+            .ToArray();
+        Assert.HasCount(2, actorSelectors);
+        var selectedInspectorSelector = actorSelectors.Single(combo =>
+            AutomationProperties.GetAutomationId(combo) == "TaskObjectiveActorSelector");
+        var inlineSelector = actorSelectors.Single(combo => !ReferenceEquals(combo, selectedInspectorSelector));
+
+        inlineSelector.SelectedValue = "group";
+        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+        Assert.AreEqual("group", ((CanonicalSessionSpeakerOption)selectedInspectorSelector.SelectedItem).Id);
+        Assert.AreEqual("group", ((CanonicalSessionSpeakerOption)inlineSelector.SelectedItem).Id);
+        Assert.AreEqual("group", workspace.ActiveGraphHost.Graph.Nodes.Single().Properties[
+            CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
+    }
+
     private static CanonicalStoryWorkspaceView Arrange(
         CanonicalStoryWorkspaceViewModel workspace,
         Func<string?>? placementNodeIdSource = null)
@@ -490,6 +730,26 @@ public sealed class CanonicalStoryWorkspaceViewTests
             [new ActorResourceInfo("actor", "Actor", "actor.json", [])],
             [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument())],
             [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument())]);
+
+    private static CanonicalStoryWorkspaceViewModel ChoiceWorkspace(int count)
+    {
+        var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
+        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        var options = new List<object> { new { option_id = "option_1", display_text = "短选项 1", flow_port_id = "flow_1" } };
+        choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "短选项 1";
+        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：短选项 1";
+        for (var index = 2; index <= count; index++)
+        {
+            var text = index == count ? new string('长', 80) : $"短选项 {index}";
+            options.Add(new { option_id = $"option_{index}", display_text = text, flow_port_id = $"flow_{index}" });
+            choice.Ports.Add(new GraphPort($"flow_{index}", text, false, GraphInterfaceKind.Flow, index - 1));
+            choice.Ports.Add(new GraphPort($"option_{index}", $"已选择：{text}", false, GraphInterfaceKind.Logic, index - 1));
+        }
+        choice.Properties[SessionChoiceSchema.OptionsProperty] = JsonSerializer.SerializeToElement(options);
+        return new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([choice]))]);
+    }
 
     private static CanonicalStoryWorkspaceViewModel AggregateWorkspace()
     {

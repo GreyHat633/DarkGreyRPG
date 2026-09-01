@@ -762,6 +762,52 @@ public sealed class GraphEditSession
 
     public bool SetObjectiveType(string nodeId, string? type, string? actorId = null) => ChangeObjectiveType(nodeId, type, actorId);
 
+    /// <summary>
+    /// Changes only the target identity for the Objective's current type. The
+    /// target itself must be legal, while unrelated pre-existing authoring
+    /// issues remain reported so an invalid legacy Objective can be repaired
+    /// incrementally instead of making every picker selection fail closed.
+    /// </summary>
+    public bool ChangeObjectiveTarget(string nodeId, string? targetId)
+    {
+        if (Scope != GraphScope.Task)
+            return Fail([ObjectivePropertyIssue("graph.objective.scope.required",
+                "Objective editing requires a Task graph.", "scope", nodeId)]);
+        if (!TryResolvePropertyNode(nodeId, out var node, out var issues)) return Fail(issues);
+        if (!string.Equals(node!.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
+            return Fail([ObjectivePropertyIssue("graph.objective.node.required",
+                $"Node '{nodeId}' is not a Task Objective.", "type", node.Id)]);
+        if (string.IsNullOrWhiteSpace(targetId))
+            return Fail([ObjectivePropertyIssue("graph.objective.target.required",
+                "Objective target identity must be nonblank.", "target", node.Id)]);
+
+        var type = node.Properties.TryGetValue(CanonicalTaskObjectiveSchema.TypeProperty, out var typeValue)
+            && typeValue.ValueKind == JsonValueKind.String ? typeValue.GetString() : null;
+        var property = type switch
+        {
+            CanonicalTaskObjectiveSchema.KillEntity => CanonicalTaskObjectiveSchema.EntityProperty,
+            CanonicalTaskObjectiveSchema.CollectItem => CanonicalTaskObjectiveSchema.ItemProperty,
+            CanonicalTaskObjectiveSchema.InteractActor => CanonicalTaskObjectiveSchema.ActorIdProperty,
+            _ => null,
+        };
+        if (property is null)
+            return Fail([ObjectivePropertyIssue("graph.objective.type.invalid",
+                $"Unsupported objective type '{type}'.",
+                CanonicalTaskObjectiveSchema.TypeProperty, node.Id)]);
+        if (node.Properties.TryGetValue(property, out var existing)
+            && existing.ValueKind == JsonValueKind.String
+            && string.Equals(existing.GetString(), targetId, StringComparison.Ordinal))
+            return true;
+
+        var before = DeepClone(Document);
+        node.Properties[property] = JsonSerializer.SerializeToElement(targetId);
+        var remainingIssues = AllowUnselectedObjectiveTarget(
+            node, CanonicalTaskObjectiveSchema.Validate(node));
+        Commit(before);
+        _lastValidationIssues = remainingIssues.ToArray();
+        return true;
+    }
+
     public bool SetObjectiveDescription(string nodeId, string? description)
         => SetNodeProperty(nodeId, CanonicalTaskObjectiveSchema.DescriptionProperty,
             JsonSerializer.SerializeToElement(description ?? string.Empty));
@@ -781,7 +827,7 @@ public sealed class GraphEditSession
             JsonSerializer.SerializeToElement(required));
     }
 
-    public bool ChangeStoryActionType(string nodeId, string? type)
+    public bool ChangeStoryActionType(string nodeId, string? type, string? itemId = null)
     {
         if (Scope != GraphScope.StoryFlow)
             return Fail([new("graph.story.action.scope.required",
@@ -797,6 +843,10 @@ public sealed class GraphEditSession
         var candidate = Clone(node);
         if (!CanonicalStoryActionSchema.TryInitializeType(candidate, type, out var typeIssues))
             return Fail(typeIssues);
+        if (string.Equals(type, CanonicalStoryActionSchema.GiveItem, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(itemId))
+            candidate.Properties[CanonicalStoryActionSchema.ItemProperty] =
+                JsonSerializer.SerializeToElement(itemId.Trim());
         var shapeIssues = GraphNodeShapeValidator.Validate(candidate, GraphScope.StoryFlow);
         if (shapeIssues.Count != 0) return Fail(shapeIssues);
         var before = DeepClone(Document);
@@ -1822,9 +1872,11 @@ public sealed class GraphEditorSession
     public bool SetNodeProperty<T>(string nodeId, string property, T value) => _inner.SetNodeProperty(nodeId, property, value);
     public bool ChangeObjectiveType(string nodeId, string? type, string? actorId = null) => _inner.ChangeObjectiveType(nodeId, type, actorId);
     public bool SetObjectiveType(string nodeId, string? type, string? actorId = null) => _inner.SetObjectiveType(nodeId, type, actorId);
+    public bool ChangeObjectiveTarget(string nodeId, string? targetId) => _inner.ChangeObjectiveTarget(nodeId, targetId);
     public bool SetObjectiveDescription(string nodeId, string? description) => _inner.SetObjectiveDescription(nodeId, description);
     public bool SetObjectiveRequired(string nodeId, int required) => _inner.SetObjectiveRequired(nodeId, required);
-    public bool ChangeStoryActionType(string nodeId, string? type) => _inner.ChangeStoryActionType(nodeId, type);
+    public bool ChangeStoryActionType(string nodeId, string? type, string? itemId = null)
+        => _inner.ChangeStoryActionType(nodeId, type, itemId);
     public bool RemoveNodeProperty(string nodeId, string property) => _inner.RemoveNodeProperty(nodeId, property);
     public bool AddDynamicPort(string nodeId, string displayName, GraphPortDirection direction, GraphInterfaceKind interfaceKind)
         => _inner.AddDynamicPort(nodeId, displayName, direction, interfaceKind);

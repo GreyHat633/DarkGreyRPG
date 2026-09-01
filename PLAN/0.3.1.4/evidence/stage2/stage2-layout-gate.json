@@ -1,0 +1,81 @@
+{
+  "started_utc": "2026-09-01T14:19:07.1354079Z",
+  "exe": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-stage2-publish\\DarkGreyRPGStudio.exe",
+  "project": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0314-stage2-layout-project",
+  "viewport": {
+    "status": "PASS",
+    "session": {
+      "x": 1055.0,
+      "y": 425.0
+    },
+    "story": {
+      "x": 884.0,
+      "y": 458.0
+    }
+  },
+  "status": "PASS",
+  "dpi": 119,
+  "layout_sha256": "EF2885618E1E959A3B16D8536190BE1437123B36CE664BB79F051AB4D35737E0",
+  "graph_keys": [
+    "story:layout_gate",
+    "session:layout_session_a",
+    "session:layout_session_b",
+    "task:layout_task_a",
+    "task:layout_task_b"
+  ],
+  "positions_before": {
+    "story": {
+      "x": 948.0,
+      "y": 407.0
+    },
+    "session_a": {
+      "x": 983.0,
+      "y": 387.0
+    },
+    "session_b": {
+      "x": 923.0,
+      "y": 462.0
+    },
+    "task_a": {
+      "x": 686.0,
+      "y": 427.0
+    },
+    "task_b": {
+      "x": 576.0,
+      "y": 497.0
+    }
+  },
+  "positions_after_dark_restart": {
+    "story": {
+      "x": 948.0,
+      "y": 407.0
+    },
+    "session_a": {
+      "x": 983.0,
+      "y": 387.0
+    },
+    "session_b": {
+      "x": 923.0,
+      "y": 462.0
+    },
+    "task_a": {
+      "x": 686.0,
+      "y": 427.0
+    },
+    "task_b": {
+      "x": 576.0,
+      "y": 497.0
+    }
+  },
+  "story_position_light": {
+    "x": 948.0,
+    "y": 407.0
+  },
+  "rename": "布局触发器（已重命名）",
+  "screenshots": [
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage2\\ui\\stage2-dark-before-restart.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage2\\ui\\stage2-dark-after-restart.png",
+    "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.1.4\\evidence\\stage2\\ui\\stage2-light-after-restart.png"
+  ],
+  "completed_utc": "2026-09-01T14:19:48.0383132Z"
+}

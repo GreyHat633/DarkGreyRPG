@@ -4,6 +4,7 @@ using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
+using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
@@ -179,7 +180,14 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         CollectionAssert.AreEqual(new[] { "start" }, storyEditor.Host.Graph.Nodes.Select(node => node.Id).ToArray());
         Assert.IsEmpty(storyEditor.Host.Graph.Connections);
         Assert.IsFalse(storyEditor.Host.CanUndo);
+        Assert.IsFalse(storyEditor.IsGraphDirty);
+        Assert.IsTrue(storyEditor.IsLayoutDirty,
+            "Removing a persisted node leaves its stale layout entry pending cleanup until the next save.");
+        new CanonicalGraphResourceSaveCoordinator(store).Replace(storyEditor);
         Assert.IsFalse(storyEditor.IsDirty);
+        CollectionAssert.AreEqual(
+            new[] { "start" },
+            new CanonicalGraphLayoutStore(directory.Path).Load(GraphResourceKind.Story, "story").Keys.ToArray());
 
         Assert.IsTrue(storyEditor.Host.SetStoryStartRepeatPolicy("start", StoryStartSchema.Once));
         CollectionAssert.AreEqual(new[] { "start" }, storyEditor.CreatePersistenceSnapshot().Graph!.Nodes.Select(node => node.Id).ToArray());
@@ -235,7 +243,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
 
         Assert.IsNotNull(workspace.NodeInspector);
-        CollectionAssert.AreEqual(new[] { "", "referenced", "owned" },
+        CollectionAssert.AreEqual(new[] { "referenced", "owned" },
             workspace.NodeInspector!.SpeakerOptions.Select(option => option.Id).ToArray());
     }
 
@@ -581,6 +589,43 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         StringAssert.Contains(session.Host.Nodes.Single().ParameterSummary, "欢迎来到酒馆");
         Assert.IsTrue(session.Host.Nodes.Single().HasParameterSummary);
     }
+
+    [TestMethod]
+    public void RecreatedWorkspaceLoadsDistinctStorySessionAndTaskLayouts()
+    {
+        using var directory = new TemporaryProjectDirectory();
+        var story = new GraphResourceEnvelope(
+            GraphResourceKind.Story, "story", "Story",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("story-node", "trigger")]));
+        var session = new GraphResourceEnvelope(
+            GraphResourceKind.Session, "session", "Session",
+            new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "line", "session-node")]));
+        var task = new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task",
+            new GraphDocument([GraphNodeFactory.Create(GraphScope.Task, "objective", "task-node")]));
+        var layoutStore = new CanonicalGraphLayoutStore(directory.Path);
+        layoutStore.Save(GraphResourceKind.Story, "story", Positions(("story-node", 101, 201), ("deleted", 9, 9)));
+        layoutStore.Save(GraphResourceKind.Session, "session", Positions(("session-node", 302, 402)));
+        layoutStore.Save(GraphResourceKind.Task, "task", Positions(("task-node", 503, 603)));
+
+        using var reopened = new CanonicalStoryWorkspaceViewModel(
+            story, sessions: [session], tasks: [task], layoutStore: layoutStore);
+
+        Assert.AreEqual(new GraphEditorNodePosition(101, 201), reopened.StoryEditor.Host.Layout["story-node"]);
+        Assert.AreEqual(new GraphEditorNodePosition(302, 402), reopened.SessionEditors.Single().Host.Layout["session-node"]);
+        Assert.AreEqual(new GraphEditorNodePosition(503, 603), reopened.TaskEditors.Single().Host.Layout["task-node"]);
+        Assert.IsFalse(reopened.StoryEditor.Host.Layout.ContainsKey("deleted"));
+        Assert.IsFalse(reopened.HasDirtyEditors);
+        Assert.AreNotSame(reopened.StoryEditor.ViewportState, reopened.SessionEditors.Single().ViewportState);
+        Assert.AreNotSame(reopened.StoryEditor.ViewportState, reopened.TaskEditors.Single().ViewportState);
+    }
+
+    private static IReadOnlyDictionary<string, ProjectGraphNodeLayout> Positions(
+        params (string Id, double X, double Y)[] values)
+        => values.ToDictionary(
+            value => value.Id,
+            value => new ProjectGraphNodeLayout { X = value.X, Y = value.Y },
+            StringComparer.Ordinal);
 
     private static CanonicalStoryWorkspaceViewModel Workspace()
         => new(
