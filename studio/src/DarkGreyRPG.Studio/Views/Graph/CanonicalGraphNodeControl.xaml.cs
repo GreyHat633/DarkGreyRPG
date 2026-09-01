@@ -170,22 +170,26 @@ public partial class CanonicalGraphNodeControl : UserControl
             if (parsed.Any(item => string.Equals(item.OptionId, optionId, StringComparison.Ordinal)
                 || string.Equals(item.FlowPortId, flowPortId, StringComparison.Ordinal)))
                 return false;
-            if (!flowPorts.TryGetValue(flowPortId, out var flowPort) || flowPort is null
-                || !logicPorts.TryGetValue(optionId, out var logicPort) || logicPort is null)
+            if (!flowPorts.TryGetValue(flowPortId, out var flowPort) || flowPort is null)
                 return false;
             parsed.Add((optionId, displayText, flowPortId));
         }
 
-        if (parsed.Count == 0 || flowPorts.Count != parsed.Count || logicPorts.Count != parsed.Count)
+        var optionIds = parsed.Select(item => item.OptionId).ToHashSet(StringComparer.Ordinal);
+        if (parsed.Count == 0 || flowPorts.Count != parsed.Count
+            || logicPorts.Keys.Any(portId => !optionIds.Contains(portId)))
             return false;
+
+        var legacyLogicControls = logicPorts
+            .Where(pair => pair.Value is not null)
+            .ToDictionary(pair => pair.Key, pair => CreatePort(pair.Value!), StringComparer.Ordinal);
 
         foreach (var (optionId, displayText, flowPortId) in parsed)
         {
-            // Keep the complete semantic group in the output half of the
-            // fixed-width node. Flow is above the option name and Logic is
-            // below it, so neither endpoint can drift into the content area.
+            // New authoring is Flow-only: one compact stable-ID row per option.
+            // Any 0.3.1.4 Logic outputs are rendered later in a separate,
+            // explicitly labelled compatibility section.
             var flowPort = CreatePort(flowPorts[flowPortId]!);
-            var logicPort = CreatePort(logicPorts[optionId]!);
             var optionLabel = new TextBlock
             {
                 Text = displayText,
@@ -201,11 +205,6 @@ public partial class CanonicalGraphNodeControl : UserControl
             };
             optionLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
 
-            logicPort.Width = 20;
-            logicPort.MinWidth = 20;
-            logicPort.HorizontalAlignment = HorizontalAlignment.Right;
-            logicPort.HorizontalContentAlignment = HorizontalAlignment.Right;
-
             flowPort.Width = 20;
             flowPort.MinWidth = 20;
             flowPort.HorizontalAlignment = HorizontalAlignment.Right;
@@ -219,14 +218,8 @@ public partial class CanonicalGraphNodeControl : UserControl
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            group.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
-            group.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
-            Grid.SetRow(flowPort, 0);
-            Grid.SetRow(logicPort, 1);
-            Grid.SetRowSpan(optionLabel, 2);
             group.Children.Add(flowPort);
             group.Children.Add(optionLabel);
-            group.Children.Add(logicPort);
 
             var row = new Grid
             {
@@ -238,7 +231,34 @@ public partial class CanonicalGraphNodeControl : UserControl
             Grid.SetRow(row, ChoicePortsPanel.RowDefinitions.Count - 1);
             ChoicePortsPanel.Children.Add(row);
             _choiceOptionRows.Add(new ChoiceOptionRow(
-                _choiceOptionRows.Count, optionId, displayText, flowPortId, logicPort, flowPort, group, optionLabel));
+                _choiceOptionRows.Count, optionId, displayText, flowPortId,
+                legacyLogicControls.GetValueOrDefault(optionId), flowPort, group, optionLabel));
+        }
+
+        if (legacyLogicControls.Count != 0)
+        {
+            var heading = new TextBlock
+            {
+                Text = "旧版逻辑输出（兼容）",
+                Margin = new Thickness(0, 6, 0, 2),
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Right,
+            };
+            heading.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+            AutomationProperties.SetAutomationId(heading, $"CanonicalChoiceLegacyLogic_{Node.NodeId}");
+            ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(heading, ChoicePortsPanel.RowDefinitions.Count - 1);
+            ChoicePortsPanel.Children.Add(heading);
+
+            foreach (var option in parsed)
+            {
+                if (!legacyLogicControls.TryGetValue(option.OptionId, out var legacyPort)) continue;
+                legacyPort.HorizontalAlignment = HorizontalAlignment.Stretch;
+                legacyPort.HorizontalContentAlignment = HorizontalAlignment.Right;
+                ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                Grid.SetRow(legacyPort, ChoicePortsPanel.RowDefinitions.Count - 1);
+                ChoicePortsPanel.Children.Add(legacyPort);
+            }
         }
 
         return true;
@@ -261,7 +281,7 @@ public partial class CanonicalGraphNodeControl : UserControl
     private const double ChoiceOutputGroupWidth = 108d;
     private const double ChoiceOptionLabelMaxWidth = 82d;
     private const double ChoiceOptionLabelRightInset = 22d;
-    private const double ChoiceOutputGroupHeight = 40d;
+    private const double ChoiceOutputGroupHeight = 20d;
     private const double ChoiceOutputGroupGap = 12d;
 
     private FlowPortControl CreatePort(GraphEditorPortViewModel item)
@@ -317,14 +337,14 @@ public partial class CanonicalGraphNodeControl : UserControl
 public sealed class ChoiceOptionRow
 {
     internal ChoiceOptionRow(int order, string optionId, string displayText, string flowPortId,
-        FlowPortControl logicOutput, FlowPortControl flowOutput, Grid outputGroup,
+        FlowPortControl? legacyLogicOutput, FlowPortControl flowOutput, Grid outputGroup,
         TextBlock displayLabel)
     {
         Order = order;
         OptionId = optionId;
         DisplayText = displayText;
         FlowPortId = flowPortId;
-        LogicOutput = logicOutput;
+        LegacyLogicOutput = legacyLogicOutput;
         FlowOutput = flowOutput;
         OutputGroup = outputGroup;
         DisplayLabel = displayLabel;
@@ -334,10 +354,11 @@ public sealed class ChoiceOptionRow
     public string OptionId { get; }
     public string DisplayText { get; }
     public string FlowPortId { get; }
-    public FlowPortControl LogicOutput { get; }
+    public FlowPortControl? LegacyLogicOutput { get; }
     public FlowPortControl FlowOutput { get; }
     public Grid OutputGroup { get; }
     public TextBlock DisplayLabel { get; }
-    public FlowPortControl LogicPort => LogicOutput;
+    public FlowPortControl? LogicOutput => LegacyLogicOutput;
+    public FlowPortControl? LogicPort => LegacyLogicOutput;
     public FlowPortControl FlowPort => FlowOutput;
 }

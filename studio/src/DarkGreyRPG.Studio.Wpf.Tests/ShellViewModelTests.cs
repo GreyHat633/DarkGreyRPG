@@ -310,7 +310,7 @@ public sealed class ShellViewModelTests
     }
 
     [TestMethod]
-    public void DirtyActorPromptsBeforeSwitchAndClose()
+    public void DirtyActorUsesResourcePromptForSwitchAndSingleWorkspacePromptForClose()
     {
         using var directory = new TestProjectDirectory();
         var repository = new ActorRepository(directory.Root);
@@ -321,7 +321,11 @@ public sealed class ShellViewModelTests
             SaveBeforeSwitch = false,
             CloseChoice = UnsavedChangesChoice.Cancel,
         };
-        var shell = CreateShell(directory.Root, dialogs);
+        var projectDialogs = new FakeProjectWorkspaceDialogs(null)
+        {
+            CloseChoice = UnsavedChangesChoice.Cancel,
+        };
+        var shell = CreateShell(directory.Root, dialogs, projectDialogs);
         shell.OpenProjectCommand.Execute(null);
         shell.SelectedActor = shell.Actors.Single(actor => actor.Id == "a");
         shell.CurrentActor!.Notes = "dirty";
@@ -330,6 +334,77 @@ public sealed class ShellViewModelTests
 
         Assert.AreEqual("a", shell.SelectedActor?.Id);
         Assert.IsFalse(shell.TryClose());
+        Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
+    }
+
+    [TestMethod]
+    public void WorkspaceCloseSavePersistsAllDirtyDocumentsThroughOnePrompt()
+    {
+        using var directory = new TestProjectDirectory();
+        var repository = new ActorRepository(directory.Root);
+        repository.SaveActor(repository.CreateActor("teacher", "Teacher"));
+        var projectDialogs = new FakeProjectWorkspaceDialogs(null)
+        {
+            CloseChoice = UnsavedChangesChoice.Save,
+        };
+        var shell = CreateShell(directory.Root, new FakeActorWorkspaceDialogs(), projectDialogs);
+        shell.OpenProjectCommand.Execute(null);
+        shell.SelectedActor = shell.Actors.Single();
+        shell.CurrentActor!.Notes = "saved while closing";
+
+        Assert.IsTrue(shell.TryClose());
+        Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
+        Assert.AreEqual("saved while closing", repository.LoadActor("teacher").Notes);
+        Assert.IsFalse(shell.CurrentActor.Document.IsDirty);
+    }
+
+    [TestMethod]
+    public void WorkspaceCloseSavePersistsTwoOpenDirtyDocumentsThroughOnePrompt()
+    {
+        using var directory = new TestProjectDirectory();
+        var repository = new ActorRepository(directory.Root);
+        repository.SaveActor(repository.CreateActor("first", "First"));
+        repository.SaveActor(repository.CreateActor("second", "Second"));
+        var projectService = new ProjectService();
+        var projectDialogs = new FakeProjectWorkspaceDialogs(null)
+        {
+            CloseChoice = UnsavedChangesChoice.Save,
+        };
+        var shell = new ShellViewModel(
+            projectService,
+            new FixedProjectFolderPicker(directory.Root),
+            new FakeActorWorkspaceDialogs(),
+            projectDialogs);
+        shell.OpenProjectCommand.Execute(null);
+        projectService.OpenActor("first").Notes = "first saved while closing";
+        projectService.OpenActor("second").Notes = "second saved while closing";
+
+        Assert.IsTrue(shell.TryClose());
+        Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
+        Assert.AreEqual("first saved while closing", repository.LoadActor("first").Notes);
+        Assert.AreEqual("second saved while closing", repository.LoadActor("second").Notes);
+        Assert.IsFalse(projectService.OpenActorDocuments.Any(document => document.IsDirty));
+    }
+
+    [TestMethod]
+    public void WorkspaceCloseDiscardClosesWithoutSavingAndPromptsOnlyOnce()
+    {
+        using var directory = new TestProjectDirectory();
+        var repository = new ActorRepository(directory.Root);
+        repository.SaveActor(repository.CreateActor("teacher", "Teacher"));
+        var projectDialogs = new FakeProjectWorkspaceDialogs(null)
+        {
+            CloseChoice = UnsavedChangesChoice.Discard,
+        };
+        var shell = CreateShell(directory.Root, new FakeActorWorkspaceDialogs(), projectDialogs);
+        shell.OpenProjectCommand.Execute(null);
+        shell.SelectedActor = shell.Actors.Single();
+        shell.CurrentActor!.Notes = "discarded change";
+
+        Assert.IsTrue(shell.TryClose());
+        Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
+        Assert.AreNotEqual("discarded change", repository.LoadActor("teacher").Notes);
+        Assert.IsTrue(shell.CurrentActor.Document.IsDirty);
     }
 
     [TestMethod]
@@ -678,6 +753,12 @@ public sealed class ShellViewModelTests
     private static ShellViewModel CreateShell(string projectDirectory, IActorWorkspaceDialogs dialogs) =>
         new(new ProjectService(), new FixedProjectFolderPicker(projectDirectory), dialogs);
 
+    private static ShellViewModel CreateShell(
+        string projectDirectory,
+        IActorWorkspaceDialogs actorDialogs,
+        IProjectWorkspaceDialogs projectDialogs) =>
+        new(new ProjectService(), new FixedProjectFolderPicker(projectDirectory), actorDialogs, projectDialogs);
+
     private static void OpenStoryActors(ShellViewModel shell, string storyId)
     {
         shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == storyId));
@@ -751,11 +832,18 @@ public sealed class ShellViewModelTests
 
     private sealed class FakeProjectWorkspaceDialogs(ProjectCreationRequest? result) : IProjectWorkspaceDialogs
     {
+        public UnsavedChangesChoice CloseChoice { get; set; } = UnsavedChangesChoice.Cancel;
+        public int CloseConfirmationCount { get; private set; }
         public bool DeleteStoryConfirmed { get; set; }
         public int DeleteStoryConfirmationCount { get; private set; }
         public string? LastDeleteStoryId { get; private set; }
         public IReadOnlyList<string> LastDeleteStoryResources { get; private set; } = [];
         public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => result;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges()
+        {
+            CloseConfirmationCount++;
+            return CloseChoice;
+        }
         public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete)
         {
             DeleteStoryConfirmationCount++;

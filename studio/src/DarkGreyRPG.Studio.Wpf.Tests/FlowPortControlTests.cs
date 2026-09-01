@@ -161,6 +161,53 @@ public sealed class FlowPortControlTests
     }
 
     [STATestMethod]
+    public void InputFallbackUsesFixedLeftAnchorSlotCenterForFlowAndLogic()
+    {
+        var root = new Grid { Width = 400, Height = 100 };
+        var flow = CreateControl("flow", "a very long input label", isInput: true);
+        var logic = CreateControl("logic", "另一个很长的逻辑输入标签", isInput: true);
+        logic.InterfaceKind = GraphInterfaceKind.Logic;
+        root.Children.Add(flow);
+        root.Children.Add(logic);
+        root.Measure(new Size(400, 100));
+        root.Arrange(new Rect(0, 0, 400, 100));
+
+        CollapseAnchor(flow);
+        CollapseAnchor(logic);
+        root.UpdateLayout();
+
+        Assert.AreEqual(10d, flow.GetAnchorPoint(flow).X, 0.01);
+        Assert.AreEqual(10d, logic.GetAnchorPoint(logic).X, 0.01);
+    }
+
+    [STATestMethod]
+    public void OutputFallbackUsesRightAnchorSlotCenterWithoutLabelCenterDrift()
+    {
+        var root = new Grid { Width = 400, Height = 100 };
+        var shortOutput = CreateControl("short", "x", isInput: false);
+        var longOutput = CreateControl("long", "一个非常长的输出标签", isInput: false);
+        var logicOutput = CreateControl("logic", "逻辑输出标签", isInput: false);
+        logicOutput.InterfaceKind = GraphInterfaceKind.Logic;
+        shortOutput.Width = 120;
+        longOutput.Width = 120;
+        logicOutput.Width = 120;
+        root.Children.Add(shortOutput);
+        root.Children.Add(longOutput);
+        root.Children.Add(logicOutput);
+        root.Measure(new Size(400, 100));
+        root.Arrange(new Rect(0, 0, 400, 100));
+
+        CollapseAnchor(shortOutput);
+        CollapseAnchor(longOutput);
+        CollapseAnchor(logicOutput);
+        root.UpdateLayout();
+
+        Assert.AreEqual(110d, shortOutput.GetAnchorPoint(shortOutput).X, 0.01);
+        Assert.AreEqual(110d, longOutput.GetAnchorPoint(longOutput).X, 0.01);
+        Assert.AreEqual(110d, logicOutput.GetAnchorPoint(logicOutput).X, 0.01);
+    }
+
+    [STATestMethod]
     public void InputAndOutputAutomationNamesRemainStable()
     {
         var input = CreateControl("story", "input", isInput: true);
@@ -234,5 +281,11 @@ public sealed class FlowPortControlTests
         var panel = (Grid)control.Content!;
         var slot = panel.Children.OfType<Grid>().Single();
         return (slot, (FrameworkElement)slot.Children[0]);
+    }
+
+    private static void CollapseAnchor(FlowPortControl control)
+    {
+        var panel = (Grid)control.Content!;
+        panel.Children.OfType<Grid>().Single().Children[0].Visibility = Visibility.Collapsed;
     }
 }

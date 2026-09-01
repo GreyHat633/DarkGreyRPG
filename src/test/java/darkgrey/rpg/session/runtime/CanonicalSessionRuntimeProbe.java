@@ -29,6 +29,7 @@ public final class CanonicalSessionRuntimeProbe {
         verifyLinearStartLineEnd();
         verifyExactStartAndChoiceHistory();
         verifyLogicActivationAndChoiceOutputs();
+        verifyFlowJudgment();
         verifySnapshotDetachAndRestore();
         verifyFailures();
         System.out.println("CANONICAL_SESSION_RUNTIME_PROBE=PASS");
@@ -149,6 +150,81 @@ public final class CanonicalSessionRuntimeProbe {
             "Not did not invert And true");
     }
 
+    private static void verifyFlowJudgment() {
+        CanonicalGraphResource resource = session(
+            "flow-judgment",
+            new CanonicalGraph(
+                Arrays.asList(
+                    node("start", "start", ports(out("flow_out")), empty()),
+                    node(
+                        "choice",
+                        "choice",
+                        ports(in("flow_in"), out("flow_accept"), out("flow_decline")),
+                        choiceProps()),
+                    node(
+                        "judgment",
+                        "flow_judgment",
+                        ports(in("flow_in"), out("flow_out"), logicOut("executed")),
+                        empty()),
+                    node(
+                        "published",
+                        "logic_output",
+                        ports(logicIn("logic_in")),
+                        props("port_id", "visited", "display_name", "Visited")),
+                    node(
+                        "line",
+                        "line",
+                        ports(in("flow_in"), out("flow_out")),
+                        props("speaker_actor_id", "guide", "text", "Visited")),
+                    node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done"))),
+                Arrays.asList(
+                    edge("start", "flow_out", "choice", "flow_in"),
+                    edge("choice", "flow_accept", "judgment", "flow_in"),
+                    edge("choice", "flow_decline", "end", "flow_in"),
+                    edge("judgment", "flow_out", "line", "flow_in"),
+                    edge("line", "flow_out", "end", "flow_in"),
+                    logicEdge("judgment", "executed", "published", "logic_in"))));
+        CanonicalSessionRuntime runtime = CanonicalSessionRuntime.start(resource);
+        require(
+            Boolean.FALSE.equals(
+                runtime.getInternalLogicValues()
+                    .get("judgment.executed")),
+            "Flow Judgment was true before Flow execution");
+        require(
+            Boolean.FALSE.equals(
+                runtime.getPublicLogicOutputs()
+                    .get("visited")),
+            "public state started true");
+        runtime.choose("accept");
+        require(
+            runtime.getCurrentStep()
+                .getKind() == CanonicalSessionStep.Kind.LINE,
+            "Flow did not continue");
+        require(
+            Boolean.TRUE.equals(
+                runtime.getInternalLogicValues()
+                    .get("judgment.executed")),
+            "Flow Judgment did not become true");
+        require(
+            Boolean.TRUE.equals(
+                runtime.getPublicLogicOutputs()
+                    .get("visited")),
+            "true state was not published");
+        CanonicalSessionSnapshot snapshot = runtime.snapshot();
+        require(
+            snapshot.getExecutedFlowJudgmentNodeIds()
+                .equals(Collections.singletonList("judgment")),
+            "Flow Judgment execution was not snapshotted");
+        CanonicalSessionRuntime restored = CanonicalSessionRuntime.restore(resource, snapshot);
+        require(
+            Boolean.TRUE.equals(
+                restored.getInternalLogicValues()
+                    .get("judgment.executed")),
+            "restored Flow Judgment state was lost");
+        restored.continueLine();
+        require(restored.getStatus() == CanonicalSessionStatus.COMPLETED, "restored Flow did not continue");
+    }
+
     private static void verifyLinearStartLineEnd() {
         CanonicalGraphResource resource = session(
             node("start", "start", startPorts(), empty()),
@@ -220,17 +296,12 @@ public final class CanonicalSessionRuntimeProbe {
         require(runtime.getStatus() == CanonicalSessionStatus.COMPLETED, "choice branch did not complete");
         require("accepted".equals(runtime.getFinalEndPortId()), "choice end port changed");
 
-        expectFailure(new Runnable() {
-
-            @Override
-            public void run() {
-                CanonicalSessionRuntime.start(
-                    session(
-                        node("start", "start", ports(out("flow_out")), empty()),
-                        node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done")),
-                        edge("start", "flow_out", "end", "flow_in")));
-            }
-        }, "session.start.port.missing");
+        CanonicalSessionRuntime flowOnlyStart = CanonicalSessionRuntime.start(
+            session(
+                node("start", "start", ports(out("flow_out")), empty()),
+                node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done")),
+                edge("start", "flow_out", "end", "flow_in")));
+        require(flowOnlyStart.getStatus() == CanonicalSessionStatus.COMPLETED, "Flow-only Start was rejected");
         expectFailure(new Runnable() {
 
             @Override
@@ -475,7 +546,7 @@ public final class CanonicalSessionRuntimeProbe {
             }
         }, "session.choice.option.mapping");
 
-        CanonicalGraphResource missingLogicOutput = session(
+        CanonicalGraphResource flowOnlyChoice = session(
             node("start", "start", startPorts(), empty()),
             node(
                 "choice",
@@ -489,13 +560,9 @@ public final class CanonicalSessionRuntimeProbe {
             node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done")),
             edge("start", "flow_out", "choice", "flow_in"),
             edge("choice", "flow_yes", "end", "flow_in"));
-        expectFailure(new Runnable() {
-
-            @Override
-            public void run() {
-                CanonicalSessionRuntime.start(missingLogicOutput);
-            }
-        }, "session.choice.option.mapping");
+        CanonicalSessionRuntime flowOnlyChoiceRuntime = CanonicalSessionRuntime.start(flowOnlyChoice);
+        flowOnlyChoiceRuntime.choose("yes");
+        require(flowOnlyChoiceRuntime.getStatus() == CanonicalSessionStatus.COMPLETED, "Flow-only Choice was rejected");
 
         CanonicalGraphResource extraLogicOutput = session(
             node("start", "start", startPorts(), empty()),

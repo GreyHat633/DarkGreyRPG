@@ -35,6 +35,7 @@ public final class CanonicalSessionRuntime {
     private final Map<String, Boolean> internalLogicValues = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
+    private final List<String> executedFlowJudgmentNodeIds = new ArrayList<String>();
     private CanonicalSessionStatus status;
     private String currentNodeId;
     private String finalEndPortId;
@@ -254,7 +255,8 @@ public final class CanonicalSessionRuntime {
             selectedChoiceNodeIds,
             externalLogicInputs,
             waitingCondition,
-            waitingConditionValue);
+            waitingConditionValue,
+            executedFlowJudgmentNodeIds);
     }
 
     public CanonicalSessionSnapshot createSnapshot() {
@@ -312,6 +314,12 @@ public final class CanonicalSessionRuntime {
                 transitionFrom(node, output);
                 continue;
             }
+            if ("flow_judgment".equals(type)) {
+                if (!executedFlowJudgmentNodeIds.contains(node.getId())) executedFlowJudgmentNodeIds.add(node.getId());
+                recomputeLogic();
+                transitionFrom(node, "flow_out");
+                continue;
+            }
             throw fail(
                 "session.node.unsupported",
                 "Session node type '" + type + "' is unsupported in Flow execution.");
@@ -346,6 +354,8 @@ public final class CanonicalSessionRuntime {
             Boolean external = externalLogicInputs.get(requiredString(node, "port_id", "session.logic_input"));
             value = external != null && external.booleanValue();
         } else if ("choice".equals(type)) value = portId.equals(selectedChoiceOptions.get(node.getId()));
+        else if ("flow_judgment".equals(type))
+            value = "executed".equals(portId) && executedFlowJudgmentNodeIds.contains(node.getId());
         else if ("and".equals(type) || "or".equals(type)) {
             boolean all = "and".equals(type);
             value = all;
@@ -394,11 +404,7 @@ public final class CanonicalSessionRuntime {
         uniqueNode("start");
         for (CanonicalGraphNode node : nodes.values()) {
             String type = node.getType();
-            if ("start".equals(type)) validateFixedPorts(
-                node,
-                "start",
-                spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW),
-                spec("logic_out", false, CanonicalGraphInterfaceKind.LOGIC));
+            if ("start".equals(type)) validateStartPorts(node);
             else if ("line".equals(type)) {
                 validateFixedPorts(
                     node,
@@ -419,6 +425,12 @@ public final class CanonicalSessionRuntime {
                 requiredString(node, "port_id", "session.end");
                 requiredString(node, "display_name", "session.end");
             } else if ("choice".equals(type)) validateChoicePorts(node);
+            else if ("flow_judgment".equals(type)) validateFixedPorts(
+                node,
+                "flow_judgment",
+                spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW),
+                spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW),
+                spec("executed", false, CanonicalGraphInterfaceKind.LOGIC));
             else if ("condition".equals(type)) validateFixedPorts(
                 node,
                 "condition",
@@ -494,6 +506,18 @@ public final class CanonicalSessionRuntime {
         portMap(node, "legacy_jump");
     }
 
+    private void validateStartPorts(CanonicalGraphNode node) {
+        Map<String, CanonicalGraphPort> ports = portMap(node, "start");
+        CanonicalGraphPort flow = ports.remove("flow_out");
+        if (flow == null || !flow.isOutput() || flow.getKind() != CanonicalGraphInterfaceKind.FLOW)
+            throw failure("session.start.port.missing", "Start requires Flow output 'flow_out'.");
+        CanonicalGraphPort legacyLogic = ports.remove("logic_out");
+        if (legacyLogic != null
+            && (!legacyLogic.isOutput() || legacyLogic.getKind() != CanonicalGraphInterfaceKind.LOGIC))
+            throw failure("session.start.port.kind", "Legacy Start output 'logic_out' must be Logic output.");
+        if (!ports.isEmpty()) throw failure("session.start.port.extra", "Start has an unexpected port.");
+    }
+
     private void validateChoicePorts(CanonicalGraphNode node) {
         Map<String, CanonicalGraphPort> ports = portMap(node, "choice");
         CanonicalGraphPort input = ports.remove("flow_in");
@@ -512,11 +536,11 @@ public final class CanonicalSessionRuntime {
                 "Choice option_id is duplicated: " + option.getOptionId());
             CanonicalGraphPort flow = ports.remove(option.getFlowPortId());
             CanonicalGraphPort logic = ports.remove(option.getOptionId());
-            if (flow == null || logic == null)
-                throw failure("session.choice.option.mapping", "Choice outputs must map one-to-one to options.");
+            if (flow == null)
+                throw failure("session.choice.option.mapping", "Choice Flow outputs must map one-to-one to options.");
             if (!flow.isOutput() || flow.getKind() != CanonicalGraphInterfaceKind.FLOW)
                 throw failure("session.choice.option.flow.kind", "Choice option Flow output is invalid.");
-            if (!logic.isOutput() || logic.getKind() != CanonicalGraphInterfaceKind.LOGIC)
+            if (logic != null && (!logic.isOutput() || logic.getKind() != CanonicalGraphInterfaceKind.LOGIC))
                 throw failure("session.choice.option.logic.kind", "Choice option Logic output is invalid.");
             if (!hasExactlyOneTarget(node, flow.getId())) throw failure(
                 "session.choice.option.unconnected",
@@ -723,6 +747,14 @@ public final class CanonicalSessionRuntime {
         selectedOptionIds.addAll(snapshot.getSelectedOptionIds());
         selectedChoiceNodeIds.addAll(snapshot.getSelectedChoiceNodeIds());
         selectedChoiceOptions.putAll(snapshot.getLatestChoiceSelections());
+        for (String nodeId : snapshot.getExecutedFlowJudgmentNodeIds()) {
+            CanonicalGraphNode executed = nodes.get(nodeId);
+            if (executed == null || !"flow_judgment".equals(executed.getType()))
+                throw failure("session.snapshot.flow_judgment", "Snapshot Flow Judgment node is unknown: " + nodeId);
+            if (executedFlowJudgmentNodeIds.contains(nodeId))
+                throw failure("session.snapshot.flow_judgment", "Snapshot Flow Judgment node is duplicated: " + nodeId);
+            executedFlowJudgmentNodeIds.add(nodeId);
+        }
         for (Map.Entry<String, Boolean> entry : snapshot.getExternalLogicInputs()
             .entrySet()) {
             if (blank(entry.getKey()) || entry.getValue() == null)

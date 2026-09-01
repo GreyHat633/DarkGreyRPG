@@ -38,7 +38,7 @@ public sealed class GraphNodeAuthoringResult
 /// Builds a detached, authoring-valid graph-node candidate without changing the
 /// supplied document. Semantic trigger/result initialization remains
 /// deliberately fail-closed until those schemas are available; Session Choice
-/// uses its frozen paired Flow/Logic option contract. Task settlement and
+/// uses its Flow-only option contract. Task settlement and
 /// public Logic Output boundaries are initialized here because their opaque
 /// identities are part of the authored node shape.
 /// </summary>

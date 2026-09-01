@@ -25,7 +25,7 @@ public sealed class GraphDynamicPortEditTests
             (GraphScope.Session, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Session, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1),
-            (GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 1),
+            (GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0),
             (GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),

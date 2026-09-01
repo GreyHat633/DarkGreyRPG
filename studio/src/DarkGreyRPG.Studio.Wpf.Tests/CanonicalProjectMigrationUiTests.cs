@@ -159,6 +159,7 @@ public sealed class CanonicalProjectMigrationUiTests
         public bool Confirmed { get; init; }
         public int ConfirmationCount { get; private set; }
         public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() => UnsavedChangesChoice.Cancel;
         public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
         public bool ConfirmCanonicalProjectMigration(CanonicalProjectMigrationPreviewResult preview)
         {

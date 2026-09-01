@@ -69,10 +69,10 @@ internal static class CanonicalNodeParameterSummary
         var type = Read(properties, CanonicalStoryActionSchema.TypeProperty);
         return type switch
         {
-            CanonicalStoryActionSchema.GiveItem => $"给予物品：{Read(properties, CanonicalStoryActionSchema.ItemProperty)}"
+            CanonicalStoryActionSchema.GiveItem => $"物品给予：{Read(properties, CanonicalStoryActionSchema.ItemProperty)}"
                 + $" × {ReadNumber(properties, CanonicalStoryActionSchema.AmountProperty)}",
-            CanonicalStoryActionSchema.GiveXp => $"给予经验：{ReadNumber(properties, CanonicalStoryActionSchema.AmountProperty)}",
-            CanonicalStoryActionSchema.SendMessage => $"发送消息：{Shorten(Read(properties, CanonicalStoryActionSchema.MessageProperty))}",
+            CanonicalStoryActionSchema.GiveXp => $"经验给予：{ReadNumber(properties, CanonicalStoryActionSchema.AmountProperty)}",
+            CanonicalStoryActionSchema.SendMessage => $"消息发送：{Shorten(Read(properties, CanonicalStoryActionSchema.MessageProperty))}",
             _ => string.Empty,
         };
     }

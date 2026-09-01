@@ -18,6 +18,15 @@ public static class CanonicalStoryActionSchema
     public const string SendMessage = "send_message";
 
     public static IReadOnlyList<string> ActionTypes { get; } = [GiveItem, GiveXp, SendMessage];
+
+    public static string AuthoringDisplayNameFor(string? type) => type switch
+    {
+        GiveItem => "物品给予",
+        GiveXp => "经验给予",
+        SendMessage => "消息发送",
+        _ => "动作",
+    };
+
     public static IReadOnlySet<string> AllProperties { get; } = new HashSet<string>(
         [TypeProperty, ItemIdProperty, AmountProperty, MessageProperty], StringComparer.Ordinal);
 

@@ -30,6 +30,8 @@ public sealed class GraphNodeDefinitionSchemaTests
         AssertPorts(GraphScope.Session, "choice", ["flow_in"]);
         AssertPorts(GraphScope.Session, "narration", ["flow_in", "flow_out"]);
         AssertPorts(GraphScope.Session, "condition", ["flow_in", "logic_in", "flow_true", "flow_false"]);
+        AssertPorts(GraphScope.Session, FlowJudgmentSchema.NodeType,
+            [FlowJudgmentSchema.FlowInputPortId, FlowJudgmentSchema.FlowOutputPortId, FlowJudgmentSchema.ExecutedPortId]);
         AssertPorts(GraphScope.Session, "and", ["logic_out"]);
         AssertPorts(GraphScope.Session, "or", ["logic_out"]);
         AssertPorts(GraphScope.Session, "not", ["logic_in", "logic_out"]);
@@ -81,6 +83,7 @@ public sealed class GraphNodeDefinitionSchemaTests
             [(GraphScope.Session, "choice")] = "选择",
             [(GraphScope.Session, "narration")] = "旁白",
             [(GraphScope.Session, "condition")] = "条件判断",
+            [(GraphScope.Session, FlowJudgmentSchema.NodeType)] = "流程判断",
             [(GraphScope.Session, "and")] = "与",
             [(GraphScope.Session, "or")] = "或",
             [(GraphScope.Session, "not")] = "非",
@@ -98,7 +101,7 @@ public sealed class GraphNodeDefinitionSchemaTests
             [(GraphScope.Task, "settle")] = "结算",
         };
 
-        Assert.AreEqual(34, GraphNodeDefinitionRegistry.Definitions.Count);
+        Assert.AreEqual(35, GraphNodeDefinitionRegistry.Definitions.Count);
         foreach (var definition in GraphNodeDefinitionRegistry.Definitions)
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(definition.DisplayName));
@@ -110,7 +113,7 @@ public sealed class GraphNodeDefinitionSchemaTests
             new[] { "terminate", "condition", "and", "or", "not", "action", "logic_input", "logic_output" },
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray());
         CollectionAssert.AreEqual(
-            new[] { "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },
+            new[] { "line", "choice", "narration", "condition", "flow_judgment", "and", "or", "not", "logic_output", "logic_input", "end" },
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Select(item => item.Type).ToArray());
         CollectionAssert.AreEqual(
             new[] { "objective", "and", "or", "not", "logic_output", "logic_input" },

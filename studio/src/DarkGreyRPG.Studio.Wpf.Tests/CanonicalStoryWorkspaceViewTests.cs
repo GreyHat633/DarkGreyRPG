@@ -158,6 +158,40 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void ActionTitlesDropdownsAndFieldLabelsUseOneAuthorVocabulary()
+    {
+        var actions = new[]
+        {
+            CreateAction("give-item", CanonicalStoryActionSchema.GiveItem),
+            CreateAction("give-xp", CanonicalStoryActionSchema.GiveXp),
+            CreateAction("send-message", CanonicalStoryActionSchema.SendMessage),
+        };
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument(actions)));
+        var view = Arrange(workspace);
+        var cases = new[]
+        {
+            (Id: "give-item", Name: "物品给予", InspectorLabel: "StoryActionItemLabel", InlineLabel: "InlineActionItemLabel"),
+            (Id: "give-xp", Name: "经验给予", InspectorLabel: "StoryActionXpLabel", InlineLabel: "InlineActionXpLabel"),
+            (Id: "send-message", Name: "消息发送", InspectorLabel: "StoryActionMessageLabel", InlineLabel: "InlineActionMessageLabel"),
+        };
+
+        foreach (var testCase in cases)
+        {
+            Assert.IsTrue(view.GraphView.SelectNode(testCase.Id));
+            view.UpdateLayout();
+            var visual = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == testCase.Id);
+            Assert.AreEqual(testCase.Name, visual.Node!.DisplayName);
+            Assert.AreEqual(testCase.Name, visual.InlineEditor!.SelectedStoryActionType!.DisplayName);
+            Assert.AreEqual(testCase.Name, workspace.NodeInspector!.SelectedStoryActionType!.DisplayName);
+            Assert.AreEqual(Visibility.Visible, Field(view, testCase.InspectorLabel).Visibility);
+            Assert.AreEqual(Visibility.Visible, Field(visual, testCase.InlineLabel).Visibility);
+            Assert.AreEqual(Visibility.Visible, Field(view, "StoryActionTypeLabel").Visibility);
+            Assert.AreEqual(Visibility.Visible, Field(visual, "InlineActionTypeLabel").Visibility);
+        }
+    }
+
+    [STATestMethod]
     public void ChoiceOptionRemovalConfirmationIsInjectedAtViewBoundary()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
@@ -168,7 +202,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
             new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
         });
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
-        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：One";
+        choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
         choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
         var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
@@ -197,7 +231,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
-    public void ChoiceOptionRowsPairFlowAndLogicPortsByStableIdsForAllSupportedSizes()
+    public void ChoiceOptionRowsExposeOneFlowOutputPerStableOptionForAllSupportedSizes()
     {
         foreach (var count in new[] { 1, 2, 5, 10 })
         {
@@ -218,16 +252,13 @@ public sealed class CanonicalStoryWorkspaceViewTests
 
             foreach (var row in visual.ChoiceOptionRows)
             {
-                Assert.AreEqual(row.OptionId, row.LogicOutput.PortId);
                 Assert.AreEqual(row.FlowPortId, row.FlowOutput.PortId);
-                Assert.AreEqual(GraphInterfaceKind.Logic, row.LogicOutput.InterfaceKind);
                 Assert.AreEqual(GraphInterfaceKind.Flow, row.FlowOutput.InterfaceKind);
-                Assert.IsFalse(row.LogicOutput.IsInput);
                 Assert.IsFalse(row.FlowOutput.IsInput);
-                Assert.HasCount(3, row.OutputGroup.Children);
+                Assert.IsNull(row.LegacyLogicOutput);
+                Assert.HasCount(2, row.OutputGroup.Children);
                 Assert.AreSame(row.FlowOutput, row.OutputGroup.Children[0]);
                 Assert.AreSame(row.DisplayLabel, row.OutputGroup.Children[1]);
-                Assert.AreSame(row.LogicOutput, row.OutputGroup.Children[2]);
                 Assert.AreEqual(row.DisplayText, row.DisplayLabel.Text);
                 Assert.AreEqual(108d, row.OutputGroup.Width);
                 Assert.AreEqual(TextAlignment.Left, row.DisplayLabel.TextAlignment);
@@ -235,31 +266,20 @@ public sealed class CanonicalStoryWorkspaceViewTests
                 Assert.AreEqual(82d, row.DisplayLabel.MaxWidth);
                 Assert.AreEqual(22d, row.DisplayLabel.Margin.Right);
                 Assert.AreEqual(11d, row.DisplayLabel.FontSize);
-                Assert.AreEqual(40d, row.OutputGroup.Height);
+                Assert.AreEqual(20d, row.OutputGroup.Height);
                 Assert.AreEqual(12d, row.OutputGroup.Margin.Bottom);
                 Assert.AreEqual(0, Grid.GetRow(row.FlowOutput));
-                Assert.AreEqual(1, Grid.GetRow(row.LogicOutput));
-                Assert.AreEqual(2, Grid.GetRowSpan(row.DisplayLabel));
             }
 
             var flowAnchorXs = visual.ChoiceOptionRows
                 .Select(row => row.FlowOutput.GetAnchorPoint(visual).X).ToArray();
-            var logicAnchorXs = visual.ChoiceOptionRows
-                .Select(row => row.LogicOutput.GetAnchorPoint(visual).X).ToArray();
             Assert.IsTrue(flowAnchorXs.All(x => Math.Abs(x - flowAnchorXs[0]) < 0.01));
-            Assert.IsTrue(logicAnchorXs.All(x => Math.Abs(x - logicAnchorXs[0]) < 0.01));
-            Assert.IsTrue(flowAnchorXs.Zip(logicAnchorXs).All(pair => Math.Abs(pair.First - pair.Second) < 1d),
-                $"flow={string.Join(",", flowAnchorXs)} logic={string.Join(",", logicAnchorXs)}");
             Assert.IsGreaterThan(visual.ActualWidth / 2d, flowAnchorXs[0]);
             if (visual.ChoiceOptionRows.Count > 1)
             {
-                var withinGroup = visual.ChoiceOptionRows[0].LogicOutput.GetAnchorPoint(visual).Y
-                    - visual.ChoiceOptionRows[0].FlowOutput.GetAnchorPoint(visual).Y;
                 var betweenGroups = visual.ChoiceOptionRows[1].FlowOutput.GetAnchorPoint(visual).Y
-                    - visual.ChoiceOptionRows[0].LogicOutput.GetAnchorPoint(visual).Y;
-                Assert.IsGreaterThan(0d, withinGroup);
-                Assert.IsGreaterThan(withinGroup, betweenGroups,
-                    "Different Choice groups must be farther apart than the two endpoints inside one group.");
+                    - visual.ChoiceOptionRows[0].FlowOutput.GetAnchorPoint(visual).Y;
+                Assert.IsGreaterThanOrEqualTo(20d, betweenGroups);
             }
         }
     }
@@ -273,7 +293,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         view.UpdateLayout();
 
         var choice = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == "choice");
-        Assert.IsGreaterThan(500d, choice.ActualHeight);
+        Assert.IsGreaterThan(300d, choice.ActualHeight);
 
         view.GraphView.FitAllNodes();
 
@@ -315,11 +335,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         CollectionAssert.AreEquivalent(new[] { "flow_1", "flow_2" },
             session.Editor.Host.Connections.Select(connection => connection.FromPortId).ToArray());
         var flowAnchorXs = visual.ChoiceOptionRows.Select(row => row.FlowOutput.GetAnchorPoint(visual).X).ToArray();
-        var logicAnchorXs = visual.ChoiceOptionRows.Select(row => row.LogicOutput.GetAnchorPoint(visual).X).ToArray();
         Assert.IsTrue(flowAnchorXs.All(x => Math.Abs(x - flowAnchorXs[0]) < 0.01));
-        Assert.IsTrue(logicAnchorXs.All(x => Math.Abs(x - logicAnchorXs[0]) < 0.01));
-        Assert.IsTrue(flowAnchorXs.Zip(logicAnchorXs).All(pair => Math.Abs(pair.First - pair.Second) < 1d),
-            $"flow={string.Join(",", flowAnchorXs)} logic={string.Join(",", logicAnchorXs)}");
     }
 
     [STATestMethod]
@@ -716,6 +732,18 @@ public sealed class CanonicalStoryWorkspaceViewTests
         }
     }
 
+    private static TextBlock Field(DependencyObject root, string automationId)
+        => Descendants<TextBlock>(root).Single(text =>
+            AutomationProperties.GetAutomationId(text) == automationId);
+
+    private static GraphNode CreateAction(string id, string actionType)
+    {
+        var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, id);
+        Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(action, actionType, out var issues),
+            string.Join("; ", issues.Select(issue => issue.Message)));
+        return action;
+    }
+
     private static (double PanX, double PanY, double Zoom) Viewport(CanonicalStoryWorkspaceView view)
         => (view.GraphView.ViewportController.PanX, view.GraphView.ViewportController.PanY,
             view.GraphView.ViewportController.Zoom);
@@ -737,13 +765,11 @@ public sealed class CanonicalStoryWorkspaceViewTests
         SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
         var options = new List<object> { new { option_id = "option_1", display_text = "短选项 1", flow_port_id = "flow_1" } };
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "短选项 1";
-        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：短选项 1";
         for (var index = 2; index <= count; index++)
         {
             var text = index == count ? new string('长', 80) : $"短选项 {index}";
             options.Add(new { option_id = $"option_{index}", display_text = text, flow_port_id = $"flow_{index}" });
             choice.Ports.Add(new GraphPort($"flow_{index}", text, false, GraphInterfaceKind.Flow, index - 1));
-            choice.Ports.Add(new GraphPort($"option_{index}", $"已选择：{text}", false, GraphInterfaceKind.Logic, index - 1));
         }
         choice.Properties[SessionChoiceSchema.OptionsProperty] = JsonSerializer.SerializeToElement(options);
         return new CanonicalStoryWorkspaceViewModel(

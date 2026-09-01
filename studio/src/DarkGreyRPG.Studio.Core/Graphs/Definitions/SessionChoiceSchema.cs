@@ -5,9 +5,9 @@ using DarkGreyRPG.Studio.Core.Validation;
 namespace DarkGreyRPG.Studio.Core.Graphs.Definitions;
 
 /// <summary>
-/// Frozen 0.3.0.0 Session Choice contract. Each persisted option owns one Flow
-/// output through <c>flow_port_id</c> and one visible Logic output through its
-/// stable <c>option_id</c>.
+/// Session Choice contract. New options expose only their stable Flow output.
+/// A persisted Logic output whose ID equals <c>option_id</c> is accepted only as
+/// a lossless 0.3.1.4 compatibility port; it is not created for new authoring.
 /// </summary>
 public static class SessionChoiceSchema
 {
@@ -38,7 +38,6 @@ public static class SessionChoiceSchema
             },
         });
         node.Ports.Add(new(flowPortId, displayText, false, GraphInterfaceKind.Flow, 0));
-        node.Ports.Add(new(optionId, LogicDisplayName(displayText), false, GraphInterfaceKind.Logic, 0));
     }
 
     public static IReadOnlyList<ValidationIssue> Validate(GraphNode node)
@@ -110,9 +109,44 @@ public static class SessionChoiceSchema
         var logicOutputs = ports.Where(port => port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Logic).ToArray();
         ValidatePorts(options.Select(option => (option.FlowPortId, option.DisplayText)).ToArray(), flowOutputs,
             GraphInterfaceKind.Flow, issues, node.Id);
-        ValidatePorts(options.Select(option => (option.OptionId, LogicDisplayName(option.DisplayText))).ToArray(), logicOutputs,
-            GraphInterfaceKind.Logic, issues, node.Id);
+        ValidateLegacyLogicPorts(options, logicOutputs, issues, node.Id);
         return issues;
+    }
+
+    private static void ValidateLegacyLogicPorts(
+        IReadOnlyList<(string OptionId, string DisplayText, string FlowPortId)> options,
+        IReadOnlyList<GraphPort> actual,
+        List<ValidationIssue> issues,
+        string nodeId)
+    {
+        var expected = options.ToDictionary(option => option.OptionId, StringComparer.Ordinal);
+        foreach (var port in actual)
+        {
+            if (!expected.TryGetValue(port.Id, out var option))
+            {
+                issues.Add(Issue("graph.session.choice.legacy_logic.unmapped",
+                    $"Legacy Session Choice Logic output '{port.Id}' does not map to an option_id.",
+                    $"ports[{port.Id}]", nodeId));
+                continue;
+            }
+
+            var duplicates = actual.Count(candidate => string.Equals(candidate.Id, port.Id, StringComparison.Ordinal));
+            if (duplicates != 1)
+            {
+                issues.Add(Issue("graph.session.choice.legacy_logic.duplicate",
+                    $"Legacy Session Choice Logic output '{port.Id}' must occur at most once.",
+                    $"ports[{port.Id}]", nodeId));
+                continue;
+            }
+
+            var expectedOrder = options.ToList().FindIndex(candidate =>
+                string.Equals(candidate.OptionId, port.Id, StringComparison.Ordinal));
+            if (!string.Equals(port.DisplayName, LogicDisplayName(option.DisplayText), StringComparison.Ordinal)
+                || port.Order != expectedOrder)
+                issues.Add(Issue("graph.session.choice.legacy_logic.presentation",
+                    $"Legacy Session Choice Logic output '{port.Id}' label/order is out of sync with its option.",
+                    $"ports[{port.Id}]", nodeId));
+        }
     }
 
     private static void ValidatePorts(

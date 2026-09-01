@@ -198,7 +198,8 @@ public sealed class GateFWpfTests
     {
         using var project = CreateProject();
         var dialogs = new TestDialogs { CreateResult = new("draft", "Draft") };
-        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root), resourceWorkspaceDialogs: dialogs);
+        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root),
+            projectWorkspaceDialogs: dialogs, resourceWorkspaceDialogs: dialogs);
         shell.OpenProjectCommand.Execute(null);
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single();
         shell.OpenSelectedStoryCommand.Execute(null);
@@ -260,7 +261,8 @@ public sealed class GateFWpfTests
 
     private static ShellViewModel OpenQuests(TestProject project, TestDialogs dialogs)
     {
-        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root), resourceWorkspaceDialogs: dialogs);
+        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root),
+            projectWorkspaceDialogs: dialogs, resourceWorkspaceDialogs: dialogs);
         shell.OpenProjectCommand.Execute(null);
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single();
         shell.OpenSelectedStoryCommand.Execute(null);
@@ -278,7 +280,7 @@ public sealed class GateFWpfTests
         public string? PickProjectFolder() => root;
     }
 
-    private sealed class TestDialogs : IResourceWorkspaceDialogs
+    private sealed class TestDialogs : IResourceWorkspaceDialogs, IProjectWorkspaceDialogs
     {
         public ResourceIdentityRequest? CreateResult { get; set; }
         public UnsavedChangesChoice CloseChoice { get; set; } = UnsavedChangesChoice.Cancel;
@@ -297,5 +299,8 @@ public sealed class GateFWpfTests
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
         public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => CloseChoice;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() => CloseChoice;
+        public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 }

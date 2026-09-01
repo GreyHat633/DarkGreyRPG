@@ -146,6 +146,7 @@ public final class CanonicalSessionInstanceNbtCodec {
         tag.setTag("latest_choice_selections", strings(runtime.getLatestChoiceSelections()));
         tag.setTag("selected_choice_node_ids", strings(runtime.getSelectedChoiceNodeIds()));
         tag.setTag("external_logic_inputs", booleans(runtime.getExternalLogicInputs()));
+        tag.setTag("executed_flow_judgment_node_ids", strings(runtime.getExecutedFlowJudgmentNodeIds()));
         tag.setBoolean("waiting_condition", runtime.isWaitingCondition());
         if (runtime.isWaitingCondition()) tag.setBoolean(
             "waiting_condition_value",
@@ -174,6 +175,7 @@ public final class CanonicalSessionInstanceNbtCodec {
             "instance",
             "final_end_port_id",
             "external_logic_inputs",
+            "executed_flow_judgment_node_ids",
             "waiting_condition",
             "waiting_condition_value");
         String player = string(tag, "player_uuid");
@@ -214,6 +216,9 @@ public final class CanonicalSessionInstanceNbtCodec {
         Map<String, Boolean> externalInputs = tag.hasKey("external_logic_inputs")
             ? decodeBooleans(tag, "external_logic_inputs")
             : Collections.<String, Boolean>emptyMap();
+        List<String> executedFlowJudgments = tag.hasKey("executed_flow_judgment_node_ids")
+            ? decodeStrings(tag, "executed_flow_judgment_node_ids")
+            : Collections.<String>emptyList();
         boolean waiting = false;
         if (tag.hasKey("waiting_condition")) {
             requireType(tag, "waiting_condition", BYTE);
@@ -244,7 +249,8 @@ public final class CanonicalSessionInstanceNbtCodec {
             choiceNodes,
             externalInputs,
             waiting,
-            waitingValue);
+            waitingValue,
+            executedFlowJudgments);
         return new CanonicalSessionInstanceSnapshot(uuid, story, placement, resource, transport, runtime);
     }
 

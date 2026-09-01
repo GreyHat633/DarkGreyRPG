@@ -13,6 +13,10 @@ public sealed record ProjectCreationRequest(
 public interface IProjectWorkspaceDialogs
 {
     ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null);
+
+    /// <summary>Resolves one close decision for all unsaved workspace documents.</summary>
+    UnsavedChangesChoice ConfirmCloseWithUnsavedChanges();
+
     bool ConfirmDeleteStory(
         string storyId,
         string displayName,

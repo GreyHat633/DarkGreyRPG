@@ -222,7 +222,8 @@ public sealed class GateEWpfTests
 
     private static ShellViewModel OpenDialogues(TestProject project, GateEDialogs dialogs)
     {
-        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root), resourceWorkspaceDialogs: dialogs);
+        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root),
+            projectWorkspaceDialogs: dialogs, resourceWorkspaceDialogs: dialogs);
         shell.OpenProjectCommand.Execute(null);
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single();
         shell.OpenSelectedStoryCommand.Execute(null);
@@ -243,7 +244,7 @@ public sealed class GateEWpfTests
         public string? PickProjectFolder() => root;
     }
 
-    private sealed class GateEDialogs : IResourceWorkspaceDialogs
+    private sealed class GateEDialogs : IResourceWorkspaceDialogs, IProjectWorkspaceDialogs
     {
         public ResourceIdentityRequest? CreateResult { get; init; }
         public ResourceCreationMode? CreationMode { get; init; }
@@ -263,5 +264,8 @@ public sealed class GateEWpfTests
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
         public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => CloseChoice;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() => CloseChoice;
+        public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 }

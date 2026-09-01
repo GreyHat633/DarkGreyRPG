@@ -117,16 +117,16 @@ public sealed class GraphNodeShapeValidatorTests
     }
 
     [TestMethod]
-    public void SessionChoiceRequiresOptionsAndPairedFlowLogicPortsToRemainSynchronized()
+    public void SessionChoiceRequiresFlowPortsAndValidatesRetainedLegacyLogicPorts()
     {
         var node = Node(GraphScope.Session, "choice");
         SessionChoiceSchema.InitializeDefault(node, "option_1", "flow_1");
         Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, GraphScope.Session));
 
-        node.Ports.Single(port => port.Id == "option_1").DisplayName = "Desynchronized";
+        node.Ports.Add(new("option_1", "Desynchronized", false, GraphInterfaceKind.Logic, 0));
         var issues = GraphNodeShapeValidator.Validate(node, GraphScope.Session);
         CollectionAssert.Contains(issues.Select(issue => issue.Code).ToArray(),
-            "graph.session.choice.port.presentation");
+            "graph.session.choice.legacy_logic.presentation");
 
         node = Node(GraphScope.Session, "choice");
         node.Properties["options"] = JsonSerializer.SerializeToElement(new[]

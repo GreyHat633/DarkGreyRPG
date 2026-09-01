@@ -890,8 +890,8 @@ public sealed class GraphEditSession
     }
 
     /// <summary>
-    /// Adds one Session Choice option and its paired Flow/Logic outputs as one
-    /// atomic edit. The two generated IDs are opaque and never label-derived.
+    /// Adds one Session Choice option and its Flow output as one atomic edit.
+    /// The option and Flow IDs are opaque and never label-derived.
     /// </summary>
     public bool AddSessionChoiceOption(string nodeId, string displayText)
     {
@@ -908,7 +908,7 @@ public sealed class GraphEditSession
                 "Two unique opaque IDs are required for a Session Choice option.", "ports", nodeId)]);
 
         var before = DeepClone(Document);
-        options!.Add(new(optionId, displayText, flowPortId));
+        options!.Add(new(optionId, displayText, flowPortId, HasLegacyLogicOutput: false));
         ApplySessionChoiceOptions(node!, options);
         return CommitValidatedChoice(before, node!);
     }
@@ -933,7 +933,7 @@ public sealed class GraphEditSession
         return CommitValidatedChoice(before, node!);
     }
 
-    /// <summary>Moves one option and both outputs to the same zero-based order.</summary>
+    /// <summary>Moves one option and its retained outputs to the same zero-based order.</summary>
     public bool ReorderSessionChoiceOption(string nodeId, string optionId, int order)
     {
         if (!TryResolveSessionChoice(nodeId, out var node, out var options, out var issues))
@@ -956,8 +956,9 @@ public sealed class GraphEditSession
     }
 
     /// <summary>
-    /// Removes one option and both outputs. Any Flow or Logic references require
-    /// explicit confirmation and are then cleaned in the same Undo unit.
+    /// Removes one option and its Flow output plus any retained legacy Logic
+    /// output. References require explicit confirmation and are cleaned in the
+    /// same Undo unit.
     /// </summary>
     public bool RemoveSessionChoiceOption(
         string nodeId,
@@ -1509,11 +1510,16 @@ public sealed class GraphEditSession
             return false;
         }
 
-        options = node.Properties[SessionChoiceSchema.OptionsProperty].EnumerateArray()
+        var choiceNode = node;
+        options = choiceNode.Properties[SessionChoiceSchema.OptionsProperty].EnumerateArray()
             .Select(element => new SessionChoiceOptionState(
                 element.GetProperty("option_id").GetString()!,
                 element.GetProperty("display_text").GetString()!,
-                element.GetProperty("flow_port_id").GetString()!))
+                element.GetProperty("flow_port_id").GetString()!,
+                (choiceNode.Ports ?? []).Any(port => port is not null
+                    && port.IsOutput
+                    && port.InterfaceKind == GraphInterfaceKind.Logic
+                    && string.Equals(port.Id, element.GetProperty("option_id").GetString(), StringComparison.Ordinal))))
             .ToList();
         issues = [];
         return true;
@@ -1534,7 +1540,8 @@ public sealed class GraphEditSession
         {
             var option = options[index];
             node.Ports.Add(new(option.FlowPortId, option.DisplayText, false, GraphInterfaceKind.Flow, index));
-            node.Ports.Add(new(option.OptionId, $"已选择：{option.DisplayText}", false, GraphInterfaceKind.Logic, index));
+            if (option.HasLegacyLogicOutput)
+                node.Ports.Add(new(option.OptionId, $"已选择：{option.DisplayText}", false, GraphInterfaceKind.Logic, index));
         }
     }
 
@@ -1824,7 +1831,8 @@ public sealed class GraphEditSession
     private sealed record SessionChoiceOptionState(
         string OptionId,
         string DisplayText,
-        string FlowPortId);
+        string FlowPortId,
+        bool HasLegacyLogicOutput);
 }
 
 /// <summary>Short alias for consumers that call the object an editor session.</summary>

@@ -90,16 +90,28 @@
 
         <StackPanel>
             <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-            <TextBlock Text="动作类型" /><ComboBox ItemsSource="{Binding StoryActionTypeOptions}" SelectedItem="{Binding SelectedStoryActionType, Mode=TwoWay}"
+            <TextBlock Text="动作类型" AutomationProperties.AutomationId="InlineActionTypeLabel" /><ComboBox ItemsSource="{Binding StoryActionTypeOptions}" SelectedItem="{Binding SelectedStoryActionType, Mode=TwoWay}"
                                              DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineActionType" />
-            <ComboBox Margin="0,4,0,0" ItemsSource="{Binding StoryActionItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedStoryActionItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName">
+            <TextBlock Margin="0,4,0,0" Text="物品" AutomationProperties.AutomationId="InlineActionItemLabel">
+                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+            </TextBlock>
+            <ComboBox ItemsSource="{Binding StoryActionItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedStoryActionItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineActionItem">
                 <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
             </ComboBox>
-            <TextBox Margin="0,4,0,0" Text="{Binding StoryActionAmountText, UpdateSourceTrigger=LostFocus}">
+            <TextBlock Margin="0,4,0,0" Text="数量" AutomationProperties.AutomationId="InlineActionAmountLabel">
+                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+            </TextBlock>
+            <TextBlock Margin="0,4,0,0" Text="经验值" AutomationProperties.AutomationId="InlineActionXpLabel">
+                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+            </TextBlock>
+            <TextBox Text="{Binding StoryActionAmountText, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineActionAmount">
                 <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
             </TextBox>
             <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionAmountError}" TextWrapping="Wrap" />
-            <TextBox Margin="0,4,0,0" Text="{Binding StoryActionMessage, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True">
+            <TextBlock Margin="0,4,0,0" Text="消息" AutomationProperties.AutomationId="InlineActionMessageLabel">
+                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+            </TextBlock>
+            <TextBox Text="{Binding StoryActionMessage, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.AutomationId="InlineActionMessage">
                 <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
             </TextBox>
             <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionMessageError}" TextWrapping="Wrap" />

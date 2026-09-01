@@ -855,12 +855,13 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
 
         CollectionAssert.AreEqual(
-            new[] { "line", "choice", "narration", "condition", "and", "or", "not", "logic_output", "logic_input", "end" },
+            new[] { "line", "choice", "narration", "condition", "flow_judgment", "and", "or", "not", "logic_output", "logic_input", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
         CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },
             view.AuthoringCategories.Select(category => category.Name).ToArray());
         Assert.IsTrue(view.CanAuthorNodeType("choice"));
+        Assert.IsTrue(view.CanAuthorNodeType("flow_judgment"));
         Assert.IsFalse(view.CanAuthorNodeType("start"));
         Assert.IsFalse(view.CanAuthorNodeType("legacy_jump"));
         Assert.IsTrue(view.CanAuthorNodeType("line"));
@@ -899,7 +900,7 @@ public sealed class CanonicalGraphEditorViewTests
 
         var logic = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "逻辑"));
         CollectionAssert.AreEqual(
-            new[] { "与", "或", "非", "逻辑输出", "逻辑输入", "条件判断" },
+            new[] { "条件判断", "流程判断", "与", "或", "非", "逻辑输出", "逻辑输入" },
             logic.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
 
         var session = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "会话"));

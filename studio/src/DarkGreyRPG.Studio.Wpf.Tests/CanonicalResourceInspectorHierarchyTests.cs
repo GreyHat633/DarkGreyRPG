@@ -46,12 +46,17 @@ public sealed class CanonicalResourceInspectorHierarchyTests
             view.UpdateLayout();
 
             Assert.AreEqual(kind, workspace.InspectorKindText);
-            Assert.AreEqual(identityLabel, Field(view, "ResourceInspectorIdentityLabel").Text);
-            Assert.AreEqual(id, Field(view, "ResourceInspectorIdentityValue").Text);
-            Assert.AreEqual(11d, Field(view, "ResourceInspectorDisplayNameLabel").FontSize);
-            Assert.AreEqual(14d, Field(view, "ResourceInspectorDisplayNameValue").FontSize);
-            Assert.AreEqual(11d, Field(view, "ResourceInspectorTagsLabel").FontSize);
+            Assert.AreEqual($"{identityLabel}：{id}", Field(view, "ResourceInspectorIdentityLine").Text);
+            Assert.AreEqual("标签：", Field(view, "ResourceInspectorTagsLabel").Text);
+            Assert.AreEqual(14d, Field(view, "ResourceInspectorTagsLabel").FontSize);
             Assert.AreEqual(14d, Field(view, "ResourceInspectorTagsValue").FontSize);
+            var tagsRow = Descendants<Grid>(view).Single(grid =>
+                AutomationProperties.GetAutomationId(grid) == "ResourceInspectorTagsRow");
+            Assert.AreEqual(2, tagsRow.ColumnDefinitions.Count);
+            Assert.IsTrue(tagsRow.ColumnDefinitions[0].Width.IsAuto);
+            Assert.IsTrue(tagsRow.ColumnDefinitions[1].Width.IsStar);
+            Assert.AreEqual(1, Grid.GetColumn(Field(view, "ResourceInspectorTagsValue")));
+            Assert.IsFalse(Descendants<TextBlock>(view).Any(text => text.Text is "资源属性" or "显示名称"));
             Assert.IsFalse(Descendants<TextBlock>(view).Any(text => text.Text == "拥有/引用状态"));
         }
 

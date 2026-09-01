@@ -8,6 +8,18 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class ProjectWorkspaceDialogs(Func<Window?> ownerProvider) : IProjectWorkspaceDialogs
 {
+    public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges()
+    {
+        var dialog = new WorkspaceCloseDialog();
+        if (ownerProvider() is { } owner)
+        {
+            dialog.Owner = owner;
+        }
+
+        dialog.ShowDialog();
+        return dialog.Choice;
+    }
+
     public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null)
     {
         var viewModel = ProjectCreationDialogViewModel.ForCreate(initialParentDirectory);

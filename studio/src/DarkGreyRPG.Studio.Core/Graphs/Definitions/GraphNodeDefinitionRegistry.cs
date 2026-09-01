@@ -178,6 +178,12 @@ public static class GraphNodeDefinitionRegistry
                 properties: [StringProperty("text")]),
             Node("condition", GraphScope.Session, "条件判断", "逻辑", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), In("logic_in", "Logic In", GraphInterfaceKind.Logic, 1), Out("flow_true", "True", GraphInterfaceKind.Flow, 2), Out("flow_false", "False", GraphInterfaceKind.Flow, 3)]),
+            Node(FlowJudgmentSchema.NodeType, GraphScope.Session, "流程判断", "逻辑", kinds: all,
+                ports: [
+                    In(FlowJudgmentSchema.FlowInputPortId, "Flow In", GraphInterfaceKind.Flow, 0),
+                    Out(FlowJudgmentSchema.FlowOutputPortId, "Flow Out", GraphInterfaceKind.Flow, 1),
+                    Out(FlowJudgmentSchema.ExecutedPortId, FlowJudgmentSchema.ExecutedDisplayName, GraphInterfaceKind.Logic, 2),
+                ]),
             Node("and", GraphScope.Session, "与", "逻辑", kinds: logicOnly,
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)]),
             Node("or", GraphScope.Session, "或", "逻辑", kinds: logicOnly,

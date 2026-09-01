@@ -302,10 +302,7 @@ public static class CanonicalLegacyMigrationPreview
                 ["flow_port_id"] = ChoiceFlowPortId(source.Id, index),
             }).ToArray());
         for (var index = 0; index < options.Count; index++)
-        {
             node.Ports.Add(new(ChoiceFlowPortId(source.Id, index), options[index].Text, false, GraphInterfaceKind.Flow, index));
-            node.Ports.Add(new(ChoiceOptionId(source.Id, index), $"已选择：{options[index].Text}", false, GraphInterfaceKind.Logic, index));
-        }
         return node;
     }
 

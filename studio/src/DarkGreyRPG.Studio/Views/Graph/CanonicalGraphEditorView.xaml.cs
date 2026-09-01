@@ -232,7 +232,7 @@ public partial class CanonicalGraphEditorView : UserControl
             .GroupBy(definition => definition.Category, StringComparer.Ordinal)
             .Select(group => new GraphNodeAuthoringCategory(
                 group.Key,
-                group.OrderBy(definition => definition.Type == "condition" ? 1 : 0).ToArray()))
+                group.ToArray()))
             .ToArray();
 
     /// <summary>Last non-mutating authoring diagnostics; retained for the Problems surface.</summary>

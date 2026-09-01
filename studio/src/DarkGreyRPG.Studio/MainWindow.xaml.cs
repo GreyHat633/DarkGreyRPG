@@ -109,7 +109,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 0.3.1.4 RC\nStory packages, real entity/item identities, and server-authoritative RPG runtime",
+            "DarkGrey RPG Studio 0.3.1.5 RC\nStory packages, real entity/item identities, and server-authoritative RPG runtime",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -266,6 +266,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
+        FlushFocusedDraft(Keyboard.FocusedElement);
         if (!_shell.TryClose())
         {
             e.Cancel = true;

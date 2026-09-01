@@ -69,7 +69,7 @@ public sealed class GraphEditorHostViewModelTests
 
         Assert.IsTrue(host.AddNode(added));
         Assert.AreSame(source, host.Nodes.Single(node => node.NodeId == "source"));
-        Assert.AreEqual("Action", host.Nodes.Single(node => node.NodeId == "action").DisplayName);
+        Assert.AreEqual("消息发送", host.Nodes.Single(node => node.NodeId == "action").DisplayName);
         Assert.IsEmpty(host.LastValidationIssues);
         Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
             GraphEditorEndpoint.Input("action", "flow_in", GraphInterfaceKind.Flow)));

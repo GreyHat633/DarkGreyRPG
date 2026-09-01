@@ -9,13 +9,12 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class SessionChoiceEditTests
 {
     [TestMethod]
-    public void AddRenameAndReorderKeepOptionsAndBothOutputKindsSynchronized()
+    public void AddRenameAndReorderKeepFlowOnlyOptionsAndStableIdsSynchronized()
     {
         var ids = new Queue<string>(["option_2", "flow_2"]);
         var choice = Choice();
         var flowTarget = Line("flow_target");
-        var logicTarget = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic_target");
-        var graph = new GraphDocument([choice, flowTarget, logicTarget]);
+        var graph = new GraphDocument([choice, flowTarget]);
         var session = new GraphEditSession(graph, GraphScope.Session, dynamicPortIdSource: ids.Dequeue);
 
         Assert.IsTrue(session.AddSessionChoiceOption("choice", "Second"));
@@ -24,7 +23,6 @@ public sealed class SessionChoiceEditTests
             ("option_2", "Second", "flow_2"));
         Assert.AreEqual(1, session.UndoCount);
         graph.Connections.Add(new("choice", "flow_2", "flow_target", "flow_in", GraphInterfaceKind.Flow));
-        graph.Connections.Add(new("choice", "option_2", "logic_target", "logic_in", GraphInterfaceKind.Logic));
 
         Assert.IsTrue(session.RenameSessionChoiceOption("choice", "option_2", "Renamed"));
         AssertOptionShape(choice,
@@ -35,7 +33,7 @@ public sealed class SessionChoiceEditTests
         AssertOptionShape(choice,
             ("option_2", "Renamed", "flow_2"),
             ("option_1", "选项 1", "flow_1"));
-        CollectionAssert.AreEquivalent(new[] { "flow_2", "option_2" },
+        CollectionAssert.AreEquivalent(new[] { "flow_2" },
             graph.Connections.Select(connection => connection.FromPortId).ToArray());
         Assert.IsTrue(session.Undo());
         AssertOptionShape(graph.Nodes.Single(node => node.Id == "choice"),
@@ -44,17 +42,15 @@ public sealed class SessionChoiceEditTests
     }
 
     [TestMethod]
-    public void RemoveRequiresConfirmationForFlowAndLogicReferencesAndIsAtomic()
+    public void RemoveRequiresConfirmationForFlowReferenceAndIsAtomic()
     {
         var ids = new Queue<string>(["option_2", "flow_2"]);
         var choice = Choice();
         var flowTarget = Line("flow_target");
-        var logicTarget = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic_target");
-        var graph = new GraphDocument([choice, flowTarget, logicTarget]);
+        var graph = new GraphDocument([choice, flowTarget]);
         var session = new GraphEditSession(graph, GraphScope.Session, dynamicPortIdSource: ids.Dequeue);
         Assert.IsTrue(session.AddSessionChoiceOption("choice", "Second"));
         graph.Connections.Add(new("choice", "flow_2", "flow_target", "flow_in", GraphInterfaceKind.Flow));
-        graph.Connections.Add(new("choice", "option_2", "logic_target", "logic_in", GraphInterfaceKind.Logic));
         var before = graph.ToJson();
         var undoBefore = session.UndoCount;
 
@@ -87,7 +83,7 @@ public sealed class SessionChoiceEditTests
         Assert.IsFalse(wrongNode.AddSessionChoiceOption("line", "Second"));
         Assert.AreEqual("graph.session.choice.node.required", wrongNode.LastValidationIssues.Single().Code);
 
-        choice.Ports.RemoveAll(port => port.Id == "option_1");
+        choice.Ports.RemoveAll(port => port.Id == "flow_1");
         var malformedGraph = new GraphDocument([choice]);
         var malformed = new GraphEditSession(malformedGraph, GraphScope.Session);
         before = malformedGraph.ToJson();
@@ -125,14 +121,34 @@ public sealed class SessionChoiceEditTests
         {
             var option = expected[index];
             var flow = node.Ports.Single(port => port.Id == option.FlowPortId);
-            var logic = node.Ports.Single(port => port.Id == option.OptionId);
             Assert.AreEqual(GraphInterfaceKind.Flow, flow.InterfaceKind);
-            Assert.AreEqual(GraphInterfaceKind.Logic, logic.InterfaceKind);
             Assert.AreEqual(option.DisplayText, flow.DisplayName);
-            Assert.AreEqual($"已选择：{option.DisplayText}", logic.DisplayName);
             Assert.AreEqual(index, flow.Order);
-            Assert.AreEqual(index, logic.Order);
+            Assert.IsFalse(node.Ports.Any(port => port.Id == option.OptionId));
         }
         Assert.IsTrue(GraphNodeShapeValidator.IsValid(node, GraphScope.Session));
+    }
+
+    [TestMethod]
+    public void LegacyLogicPortAndConnectionRemainLosslessWhileNewOptionsStayFlowOnly()
+    {
+        var ids = new Queue<string>(["option_2", "flow_2"]);
+        var choice = Choice();
+        choice.Ports.Add(new("option_1", "已选择：选项 1", false, GraphInterfaceKind.Logic, 0));
+        var logicTarget = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic_target");
+        var graph = new GraphDocument([choice, logicTarget],
+            [new("choice", "option_1", "logic_target", "logic_in", GraphInterfaceKind.Logic)]);
+        var session = new GraphEditSession(graph, GraphScope.Session, dynamicPortIdSource: ids.Dequeue);
+
+        Assert.IsTrue(session.AddSessionChoiceOption("choice", "Second"));
+        Assert.IsTrue(choice.Ports.Any(port => port.Id == "option_1" && port.InterfaceKind == GraphInterfaceKind.Logic));
+        Assert.IsFalse(choice.Ports.Any(port => port.Id == "option_2"));
+        Assert.HasCount(1, graph.Connections);
+        Assert.IsTrue(session.RenameSessionChoiceOption("choice", "option_1", "Renamed legacy"));
+        Assert.AreEqual("已选择：Renamed legacy", choice.Ports.Single(port => port.Id == "option_1").DisplayName);
+        Assert.IsTrue(session.ReorderSessionChoiceOption("choice", "option_1", 1));
+        Assert.AreEqual(1, choice.Ports.Single(port => port.Id == "option_1").Order);
+        Assert.AreEqual("option_1", graph.Connections.Single().FromPortId);
+        Assert.IsTrue(GraphNodeShapeValidator.IsValid(choice, GraphScope.Session));
     }
 }

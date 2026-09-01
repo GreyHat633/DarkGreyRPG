@@ -10,6 +10,7 @@ namespace DarkGreyRPG.Studio.Views;
 
 public sealed class FlowPortControl : Button
 {
+    private const double AnchorSlotSize = 20d;
     private FrameworkElement? _anchor;
     private Grid? _anchorHitTarget;
 
@@ -102,7 +103,22 @@ public sealed class FlowPortControl : Button
     public Point GetAnchorPoint(UIElement relativeTo)
     {
         if (_anchor is null || _anchor.ActualWidth <= 0 || _anchor.ActualHeight <= 0)
-            return TranslatePoint(new Point(ActualWidth / 2, ActualHeight / 2), relativeTo);
+        {
+            // The shape can briefly be unmeasurable while its parent is
+            // rebuilding the visual tree. Resolve that state to the fixed
+            // 20-DIP anchor slot, never to the label-bearing control center.
+            // Once the control itself has a width, the output slot is the
+            // rightmost 20-DIP column; before that, both directions have the
+            // deterministic center of the minimum slot at x=10.
+            var controlHeight = ActualHeight > 0 ? ActualHeight : Height;
+            var controlWidth = ActualWidth > 0 ? ActualWidth : Width;
+            var anchorX = IsInput
+                ? AnchorSlotSize / 2
+                : controlWidth > AnchorSlotSize
+                    ? controlWidth - AnchorSlotSize / 2
+                    : AnchorSlotSize / 2;
+            return TranslatePoint(new Point(anchorX, controlHeight / 2), relativeTo);
+        }
         return _anchor.TranslatePoint(new Point(_anchor.ActualWidth / 2, _anchor.ActualHeight / 2), relativeTo);
     }
 
@@ -118,12 +134,12 @@ public sealed class FlowPortControl : Button
         var panel = new Grid { VerticalAlignment = VerticalAlignment.Center };
         panel.ColumnDefinitions.Add(new ColumnDefinition
         {
-            Width = IsInput ? new GridLength(20) : new GridLength(1, GridUnitType.Star),
+            Width = IsInput ? new GridLength(AnchorSlotSize) : new GridLength(1, GridUnitType.Star),
             MinWidth = 0,
         });
         panel.ColumnDefinitions.Add(new ColumnDefinition
         {
-            Width = IsInput ? new GridLength(1, GridUnitType.Star) : new GridLength(20),
+            Width = IsInput ? new GridLength(1, GridUnitType.Star) : new GridLength(AnchorSlotSize),
             MinWidth = 0,
         });
         if (IsInput)
@@ -224,8 +240,8 @@ public sealed class FlowPortControl : Button
         // sibling outside this surface and therefore cannot start a wire.
         var hitTarget = new Grid
         {
-            Width = 20,
-            Height = 20,
+            Width = AnchorSlotSize,
+            Height = AnchorSlotSize,
             Background = Brushes.Transparent,
             IsHitTestVisible = true,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -238,8 +254,8 @@ public sealed class FlowPortControl : Button
     private static ControlTemplate CreateChromeFreeTemplate()
     {
         var root = new FrameworkElementFactory(typeof(Grid));
-        root.SetValue(FrameworkElement.MinWidthProperty, 20d);
-        root.SetValue(FrameworkElement.HeightProperty, 20d);
+        root.SetValue(FrameworkElement.MinWidthProperty, AnchorSlotSize);
+        root.SetValue(FrameworkElement.HeightProperty, AnchorSlotSize);
 
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
         presenter.SetValue(ContentPresenter.ContentSourceProperty, "Content");

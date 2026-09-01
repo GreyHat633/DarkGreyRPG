@@ -98,6 +98,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
         CollectionAssert.AreEqual(
             new[] { CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.SendMessage },
             inspector.StoryActionTypeOptions.Select(option => option.Value).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "物品给予", "经验给予", "消息发送" },
+            inspector.StoryActionTypeOptions.Select(option => option.DisplayName).ToArray());
+        Assert.AreEqual("消息发送", editor.Host.Nodes.Single().DisplayName);
         var beforeTypeRevision = editor.GraphRevision;
         var beforeTypeUndo = editor.Host.Session.UndoCount;
 
@@ -107,6 +111,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual(beforeTypeRevision + 1, editor.GraphRevision);
         Assert.AreEqual(beforeTypeUndo + 1, editor.Host.Session.UndoCount);
         Assert.IsTrue(inspector.IsGiveItemAction);
+        Assert.AreEqual("物品给予", editor.Host.Nodes.Single().DisplayName);
         Assert.AreEqual("starter_reward", inspector.StoryActionItem);
         Assert.AreEqual("10", inspector.StoryActionAmountText);
         CollectionAssert.AreEquivalent(new[]
@@ -188,7 +193,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     }
 
     [TestMethod]
-    public void ChoiceOptionsUsePairedSemanticCommandsAndHideStableIdsFromDisplay()
+    public void ChoiceOptionsUseFlowOnlySemanticCommandsAndHideStableIdsFromDisplay()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
         SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
@@ -197,6 +202,11 @@ public sealed class CanonicalNodeInspectorViewModelTests
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
                 "session", "Session", new GraphDocument([choice])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        CollectionAssert.AreEqual(
+            new[] { "flow_in", "flow_1" },
+            choice.Ports.Select(port => port.Id).ToArray());
+        Assert.IsTrue(choice.Ports.All(port => port.Kind == GraphInterfaceKind.Flow));
 
         Assert.HasCount(1, inspector.ChoiceOptions);
         Assert.AreEqual("选项 1", inspector.ChoiceOptions[0].DisplayText);
@@ -235,7 +245,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
             new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
         });
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
-        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：One";
+        choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
         choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
         var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
@@ -617,7 +627,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
             new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
         });
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
-        choice.Ports.Single(port => port.Id == "option_1").DisplayName = "已选择：One";
+        choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
         choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
         if (!includeReference) return choice;

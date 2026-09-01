@@ -432,6 +432,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             OnPropertyChanged(nameof(InspectorValidationText));
             OnPropertyChanged(nameof(HasResourceInspectorDetails));
             OnPropertyChanged(nameof(InspectorIdentityLabel));
+            OnPropertyChanged(nameof(InspectorIdentityText));
             OnPropertyChanged(nameof(InspectorTagsText));
             OnPropertyChanged(nameof(InspectorOwnershipText));
         }
@@ -478,7 +479,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     };
 
     public bool HasResourceInspectorDetails => InspectorSelection is CanonicalStoryActorItem
-        or CanonicalStoryItemItem or CanonicalStoryGraphItem or CanonicalGraphResourceEditorViewModel;
+        or CanonicalStoryItemItem;
 
     public string InspectorIdentityLabel => InspectorSelection switch
     {
@@ -488,6 +489,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         CanonicalStoryItemItem => "Item_ID",
         _ => "Resource_ID",
     };
+
+    public string InspectorIdentityText => $"{InspectorIdentityLabel}：{InspectorId}";
 
     public string InspectorTagsText => InspectorSelection switch
     {
@@ -900,12 +903,12 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             && ReadNodeString(node, CanonicalStoryActionSchema.TypeProperty) == CanonicalStoryActionSchema.GiveItem)
         {
             if (item.Item is not IndividualItemResource)
-                return FailParameterDrop("“给予物品”只能使用个体物品，不能使用物品组。");
+                return FailParameterDrop("“物品给予”只能使用个体物品，不能使用物品组。");
             return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
                 node.NodeId, CanonicalStoryActionSchema.ItemProperty, JsonSerializer.SerializeToElement(item.Id)));
         }
 
-        return FailParameterDrop("物品资源只能拖到“收集物品”目标或“给予物品”动作。");
+        return FailParameterDrop("物品资源只能拖到“收集物品”目标或“物品给予”动作。");
     }
 
     private bool CommitParameterDrop(Func<bool> mutation)

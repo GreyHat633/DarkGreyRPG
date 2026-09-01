@@ -22,6 +22,7 @@ public final class CanonicalSessionSnapshot {
     private final Map<String, Boolean> externalLogicInputs;
     private final boolean waitingCondition;
     private final Boolean waitingConditionValue;
+    private final List<String> executedFlowJudgmentNodeIds;
 
     public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
         List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
@@ -39,7 +40,8 @@ public final class CanonicalSessionSnapshot {
             Collections.<String>emptyList(),
             Collections.<String, Boolean>emptyMap(),
             false,
-            null);
+            null,
+            Collections.<String>emptyList());
     }
 
     public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
@@ -58,7 +60,8 @@ public final class CanonicalSessionSnapshot {
             Collections.<String>emptyList(),
             Collections.<String, Boolean>emptyMap(),
             false,
-            null);
+            null,
+            Collections.<String>emptyList());
     }
 
     /** Full state constructor retaining the old constructors for callers. */
@@ -79,7 +82,8 @@ public final class CanonicalSessionSnapshot {
             selectedChoiceNodeIds,
             Collections.<String, Boolean>emptyMap(),
             false,
-            null);
+            null,
+            Collections.<String>emptyList());
     }
 
     public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
@@ -87,6 +91,28 @@ public final class CanonicalSessionSnapshot {
         Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
         List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
         Boolean waitingConditionValue) {
+        this(
+            sessionResourceId,
+            currentNodeId,
+            status,
+            selectedOptionIds,
+            internalLogicValues,
+            finalEndPortId,
+            publicLogicOutputs,
+            activationLogic,
+            latestChoiceSelections,
+            selectedChoiceNodeIds,
+            externalLogicInputs,
+            waitingCondition,
+            waitingConditionValue,
+            Collections.<String>emptyList());
+    }
+
+    public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
+        List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
+        Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
+        List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
+        Boolean waitingConditionValue, List<String> executedFlowJudgmentNodeIds) {
         this.sessionResourceId = sessionResourceId;
         this.currentNodeId = currentNodeId;
         this.status = status;
@@ -100,6 +126,7 @@ public final class CanonicalSessionSnapshot {
         this.externalLogicInputs = immutableMap(externalLogicInputs);
         this.waitingCondition = waitingCondition;
         this.waitingConditionValue = waitingConditionValue;
+        this.executedFlowJudgmentNodeIds = immutableList(executedFlowJudgmentNodeIds);
         if (waitingCondition != (waitingConditionValue != null))
             throw new IllegalArgumentException("Session Condition wait state and value must be supplied together.");
     }
@@ -178,6 +205,10 @@ public final class CanonicalSessionSnapshot {
 
     public Boolean getWaitingConditionValue() {
         return waitingConditionValue;
+    }
+
+    public List<String> getExecutedFlowJudgmentNodeIds() {
+        return executedFlowJudgmentNodeIds;
     }
 
     private static List<String> immutableList(List<String> values) {

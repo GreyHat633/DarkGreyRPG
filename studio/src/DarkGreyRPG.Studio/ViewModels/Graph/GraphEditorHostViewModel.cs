@@ -152,9 +152,13 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
     internal void Update(GraphNode node)
     {
         Type = node.Type ?? string.Empty;
-        DisplayName = node.DisplayName ?? string.Empty;
         var properties = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         foreach (var pair in node.Properties ?? []) properties[pair.Key] = pair.Value.Clone();
+        DisplayName = Type == CanonicalStoryActionSchema.NodeType
+            && properties.TryGetValue(CanonicalStoryActionSchema.TypeProperty, out var actionType)
+            && actionType.ValueKind == JsonValueKind.String
+                ? CanonicalStoryActionSchema.AuthoringDisplayNameFor(actionType.GetString())
+                : node.DisplayName ?? string.Empty;
         _properties = new ReadOnlyDictionary<string, JsonElement>(properties);
         OnPropertyChanged(nameof(Properties));
         OnPropertyChanged(nameof(ParameterSummary));

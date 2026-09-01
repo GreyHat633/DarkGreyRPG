@@ -104,9 +104,9 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
 
     public IReadOnlyList<CanonicalStoryActionTypeOption> StoryActionTypeOptions { get; } =
     [
-        new(CanonicalStoryActionSchema.GiveItem, "给予物品"),
-        new(CanonicalStoryActionSchema.GiveXp, "给予经验"),
-        new(CanonicalStoryActionSchema.SendMessage, "发送消息"),
+        new(CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.AuthoringDisplayNameFor(CanonicalStoryActionSchema.GiveItem)),
+        new(CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.AuthoringDisplayNameFor(CanonicalStoryActionSchema.GiveXp)),
+        new(CanonicalStoryActionSchema.SendMessage, CanonicalStoryActionSchema.AuthoringDisplayNameFor(CanonicalStoryActionSchema.SendMessage)),
     ];
 
     public CanonicalStoryActionTypeOption? SelectedStoryActionType

@@ -265,8 +265,8 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.4 RC"
-        : "DarkGrey RPG Studio 0.3.1.4 RC";
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.5 RC"
+        : "DarkGrey RPG Studio 0.3.1.5 RC";
 
     public string ProjectDirectory
     {
@@ -386,48 +386,11 @@ public sealed class ShellViewModel : ObservableObject
 
     public bool TryClose()
     {
-        if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
+        if (!HasUnsavedDocuments()) return true;
 
-        if (CurrentActor?.Document.IsDirty == true && SelectedActor is not null)
+        return _projectWorkspaceDialogs.ConfirmCloseWithUnsavedChanges() switch
         {
-            return _actorWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(SelectedActor) switch
-            {
-                UnsavedChangesChoice.Save => TrySaveCurrentActor(),
-                UnsavedChangesChoice.Discard => true,
-                _ => false,
-            };
-        }
-
-        if (CurrentDialogue?.Document.IsNewDraft == true && SelectedStoryResource is { } draftMembership)
-        {
-            var draftResource = new ResourceDescriptor(ProjectResourceType.Dialogue, draftMembership.Id, draftMembership.DisplayName, string.Empty);
-            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
-            {
-                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
-                UnsavedChangesChoice.Discard => DiscardCurrentDialogueDraft(),
-                _ => false,
-            };
-        }
-
-        if (CurrentQuest?.Document.IsNewDraft == true && SelectedStoryResource is { } questDraftMembership)
-        {
-            var draftResource = new ResourceDescriptor(ProjectResourceType.Quest, questDraftMembership.Id, questDraftMembership.DisplayName, string.Empty);
-            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
-            {
-                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
-                UnsavedChangesChoice.Discard => DiscardCurrentQuestDraft(),
-                _ => false,
-            };
-        }
-
-        if (ActiveEditor?.IsDirty != true || SelectedStoryResource?.Descriptor is not { } resource)
-        {
-            return true;
-        }
-
-        return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(resource) switch
-        {
-            UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
+            UnsavedChangesChoice.Save => TrySaveAll(),
             UnsavedChangesChoice.Discard => true,
             _ => false,
         };
@@ -2699,24 +2662,30 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     private void SaveAll()
+        => TrySaveAll();
+
+    private bool TrySaveAll()
     {
         if (CanonicalStoryWorkspace is { } workspace)
         {
-            TrySaveAllCanonicalResources(workspace);
-            return;
+            if (!TrySaveAllCanonicalResources(workspace)) return false;
         }
         try
         {
-            if (CurrentFlow?.IsDirty == true && !TrySaveCurrentFlow()) return;
+            if (CurrentFlow?.IsDirty == true && !TrySaveCurrentFlow()) return false;
+            if ((CurrentDialogue?.Document.IsNewDraft == true || CurrentQuest?.Document.IsNewDraft == true)
+                && !TrySaveCurrentStoryResource()) return false;
             _projectService.SaveAll();
             ReportSuccess("所有未保存的资源已写入磁盘。", "Project");
             SaveActorCommand.RaiseCanExecuteChanged();
             SaveCurrentResourceCommand.RaiseCanExecuteChanged();
             RaiseWorkspaceCommandStates();
+            return !HasUnsavedDocuments();
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
         {
             ReportFailure("保存全部", exception);
+            return false;
         }
     }
 
@@ -3852,6 +3821,7 @@ public sealed class ShellViewModel : ObservableObject
     private sealed class NullProjectWorkspaceDialogs : IProjectWorkspaceDialogs
     {
         public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() => UnsavedChangesChoice.Cancel;
         public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 
