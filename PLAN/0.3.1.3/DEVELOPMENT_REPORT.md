@@ -4,7 +4,7 @@
 
 - Branch：`codex/0.3.1.3`
 - Baseline SHA：`c7ac508d317bf687c16f8d3a0c1e9968b2553fdf`
-- Final implementation SHA：`FINAL_IMPLEMENTATION_SHA_PENDING`
+- Final implementation SHA：`861a8f3aa66030d98077bb833b009822d27844bf`
 - Version：`0.3.1.3-rc`
 - Release EXE：`E:\Java\MinecraftMod\DarkGrey_RPG\dist\DarkGreyRPGStudio\DarkGreyRPGStudio.exe`
 - ProductVersion：`0.3.1.3-rc`
