@@ -1,38 +1,24 @@
+using System.Buffers.Binary;
 using System.IO;
+using System.IO.Compression;
 using System.Windows.Input;
 
 namespace DarkGreyRPG.Studio.Views.Graph;
 
-/// <summary>Creates a small monochrome scissors cursor without an external asset.</summary>
+/// <summary>Provides the diagonal white scissors cursor used by graph cutting mode.</summary>
 internal static class ScissorsCursorFactory
 {
-    private const int Size = 16;
-    private const int HotspotX = 6;
-    private const int HotspotY = 8;
-    private const int BitmapHeaderSize = 40;
+    private const int EntryCount = 4;
+    private const int BaseSize = 32;
+    private const int BaseHotspotX = 2;
+    private const int BaseHotspotY = 6;
+    private static readonly int[] CursorSizes = [32, 48, 64, 96];
 
-    // '#' is the black silhouette and '+' is the white inset. Keeping the
-    // source as a tiny bitmap makes the cursor easy to audit and avoids a
-    // second, colorful illustration language in the graph editor.
-    private static readonly string[] Icon =
-    [
-        "................",
-        ".............#+.",
-        "............+#+.",
-        "..........+##+..",
-        "........+##+....",
-        "......+##+......",
-        "....+##+........",
-        "..##+.##........",
-        ".##...+##.......",
-        ".##..##..##.....",
-        "..####..###.....",
-        "...+##...###....",
-        "....##....###...",
-        "...+##.....###..",
-        "..###.......##..",
-        "................",
-    ];
+    // A gzip-compressed multi-resolution 32-bpp .cur payload derived from the
+    // supplied transparent scissors master. Each entry is grayscale RGBA with
+    // a zeroed AND mask, and is embedded for self-contained publishing.
+    private static readonly byte[] CompressedCursorPayload = Convert.FromBase64String(
+        "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");
 
     private static readonly MemoryStream CursorStream = new(BuildCursorBytes(), writable: false);
 
@@ -40,50 +26,61 @@ internal static class ScissorsCursorFactory
 
     private static byte[] BuildCursorBytes()
     {
-        var pixels = new byte[Size * Size * 4];
-        for (var y = 0; y < Size; y++)
-        for (var x = 0; x < Size; x++)
-        {
-            var marker = Icon[y][x];
-            if (marker == '.') continue;
-            var color = marker == '+' ? (byte)255 : (byte)0;
-            var offset = PixelOffset(x, y);
-            pixels[offset] = color;
-            pixels[offset + 1] = color;
-            pixels[offset + 2] = color;
-            pixels[offset + 3] = 255;
-        }
+        using var compressed = new MemoryStream(CompressedCursorPayload, writable: false);
+        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+        using var cursor = new MemoryStream();
+        gzip.CopyTo(cursor);
 
-        using var stream = new MemoryStream();
-        using var writer = new BinaryWriter(stream);
-        writer.Write((ushort)0);
-        writer.Write((ushort)2);
-        writer.Write((ushort)1);
-        writer.Write((byte)Size);
-        writer.Write((byte)Size);
-        writer.Write((byte)0);
-        writer.Write((byte)0);
-        writer.Write((ushort)HotspotX);
-        writer.Write((ushort)HotspotY);
-        var andMask = new byte[((Size + 31) / 32) * 4 * Size];
-        var imageSize = BitmapHeaderSize + pixels.Length + andMask.Length;
-        writer.Write(imageSize);
-        writer.Write(22);
-        writer.Write(BitmapHeaderSize);
-        writer.Write(Size);
-        writer.Write(Size * 2);
-        writer.Write((ushort)1);
-        writer.Write((ushort)32);
-        writer.Write(0);
-        writer.Write(pixels.Length);
-        writer.Write(0);
-        writer.Write(0);
-        writer.Write(0);
-        writer.Write(0);
-        writer.Write(pixels);
-        writer.Write(andMask);
-        return stream.ToArray();
+        var bytes = cursor.ToArray();
+        ValidateCursor(bytes);
+        return bytes;
     }
 
-    private static int PixelOffset(int x, int y) => ((Size - 1 - y) * Size + x) * 4;
+    private static void ValidateCursor(byte[] bytes)
+    {
+        if (bytes.Length < 6 + EntryCount * 16 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(0, 2)) != 0 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(2, 2)) != 2 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(4, 2)) != EntryCount)
+            throw new InvalidDataException("The embedded scissors cursor payload has an invalid .cur header.");
+
+        var directoryEnd = 6 + EntryCount * 16;
+        for (var index = 0; index < EntryCount; index++)
+        {
+            var entryOffset = 6 + index * 16;
+            var size = bytes[entryOffset];
+            var expectedSize = CursorSizes[index];
+            var expectedHotspotX = BaseHotspotX * expectedSize / BaseSize;
+            var expectedHotspotY = BaseHotspotY * expectedSize / BaseSize;
+            var resourceLength = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(entryOffset + 8, 4));
+            var imageOffset = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(entryOffset + 12, 4));
+
+            if (size != expectedSize ||
+                bytes[entryOffset + 1] != size ||
+                bytes[entryOffset + 2] != 0 ||
+                bytes[entryOffset + 3] != 0 ||
+                BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(entryOffset + 4, 2)) != expectedHotspotX ||
+                BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(entryOffset + 6, 2)) != expectedHotspotY ||
+                imageOffset < directoryEnd ||
+                resourceLength > bytes.Length - imageOffset ||
+                imageOffset + resourceLength < imageOffset)
+                throw new InvalidDataException("The embedded scissors cursor directory is invalid.");
+
+            var dibOffset = checked((int)imageOffset);
+            var resourceEnd = checked((int)(imageOffset + resourceLength));
+            if (resourceLength < 40 ||
+                BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(dibOffset, 4)) != 40 ||
+                BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(dibOffset + 4, 4)) != size ||
+                BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(dibOffset + 8, 4)) != size * 2 ||
+                BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(dibOffset + 12, 2)) != 1 ||
+                BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(dibOffset + 14, 2)) != 32 ||
+                BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(dibOffset + 16, 4)) != 0)
+                throw new InvalidDataException("The embedded scissors cursor image is invalid.");
+
+            var xorBytes = checked(size * size * 4);
+            var maskBytes = checked(((size + 31) / 32 * 4) * size);
+            if (resourceLength != 40 + xorBytes + maskBytes || resourceEnd != (index == EntryCount - 1 ? bytes.Length : BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(entryOffset + 28, 4))))
+                throw new InvalidDataException("The embedded scissors cursor image has an invalid length or offset.");
+        }
+    }
 }

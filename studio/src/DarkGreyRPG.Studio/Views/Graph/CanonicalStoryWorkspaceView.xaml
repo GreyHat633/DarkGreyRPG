@@ -132,7 +132,33 @@
                                                             <Setter Property="Background" Value="Transparent" />
                                                             <Setter Property="BorderBrush" Value="Transparent" />
                                                             <Setter Property="BorderThickness" Value="1" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Padding="{TemplateBinding Padding}"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="4">
+                                                                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                                              RecognizesAccessKey="True" />
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
                                                             <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.56" />
+                                                                </Trigger>
                                                                 <DataTrigger Value="True">
                                                                     <DataTrigger.Binding>
                                                                         <MultiBinding Converter="{StaticResource CanonicalStorySelectionEqualityConverter}">
@@ -143,7 +169,24 @@
                                                                     </DataTrigger.Binding>
                                                                     <Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" />
                                                                     <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
                                                                 </DataTrigger>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                                                                        <Condition Value="True">
+                                                                            <Condition.Binding>
+                                                                                <MultiBinding Converter="{StaticResource CanonicalStorySelectionEqualityConverter}">
+                                                                                    <Binding />
+                                                                                    <Binding Path="Workspace.SelectedTreeItem"
+                                                                                             RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
+                                                                                </MultiBinding>
+                                                                            </Condition.Binding>
+                                                                        </Condition>
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                                </MultiDataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Button.Style>
@@ -153,16 +196,26 @@
                                                             <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
                                                                    Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
                                                         <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                    Text="{Binding IdentityText}" TextTrimming="CharacterEllipsis">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="Visibility" Value="Visible" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
                                                                     <Style.Triggers>
                                                                         <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed" /></Trigger>
+                                                                        <DataTrigger Value="True">
+                                                                            <DataTrigger.Binding>
+                                                                                <MultiBinding Converter="{StaticResource CanonicalStorySelectionEqualityConverter}">
+                                                                                    <Binding />
+                                                                                    <Binding Path="Workspace.SelectedTreeItem"
+                                                                                             RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
+                                                                                </MultiBinding>
+                                                                            </DataTrigger.Binding>
+                                                                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                                                        </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>
                                                             </TextBlock.Style>

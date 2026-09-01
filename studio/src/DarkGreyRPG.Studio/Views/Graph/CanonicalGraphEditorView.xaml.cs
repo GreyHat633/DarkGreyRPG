@@ -213,7 +213,9 @@ public partial class CanonicalGraphEditorView : UserControl
     public IReadOnlyList<GraphNodeAuthoringCategory> AuthoringCategories
         => AuthoringDefinitions
             .GroupBy(definition => definition.Category, StringComparer.Ordinal)
-            .Select(group => new GraphNodeAuthoringCategory(group.Key, group.ToArray()))
+            .Select(group => new GraphNodeAuthoringCategory(
+                group.Key,
+                group.OrderBy(definition => definition.Type == "condition" ? 1 : 0).ToArray()))
             .ToArray();
 
     /// <summary>Last non-mutating authoring diagnostics; retained for the Problems surface.</summary>

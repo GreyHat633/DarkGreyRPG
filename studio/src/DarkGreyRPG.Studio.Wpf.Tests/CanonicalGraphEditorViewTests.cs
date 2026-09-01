@@ -674,6 +674,11 @@ public sealed class CanonicalGraphEditorViewTests
             new[] { "会话", "逻辑", "结束" },
             add.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
 
+        var logic = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "逻辑"));
+        CollectionAssert.AreEqual(
+            new[] { "与", "或", "非", "逻辑输出", "逻辑输入", "条件判断" },
+            logic.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
+
         var session = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "会话"));
         var line = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "台词"));
         var choice = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "选择"));

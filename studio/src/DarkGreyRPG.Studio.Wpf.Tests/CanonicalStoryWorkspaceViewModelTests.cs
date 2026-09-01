@@ -436,6 +436,28 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     }
 
     [TestMethod]
+    public void LoaderSnapshotRetainsCollectiveActorKindAndIdentityLabel()
+    {
+        using var directory = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Path);
+        var actors = new ActorRepository(directory.Path);
+        actors.SaveActor(actors.CreateCollective("guards", "守卫组"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest(
+            "story", new CanonicalStoryMembershipSet { Actors = ["guards"] }));
+
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new CanonicalStoryWorkspaceLoader(store, actors).Load("story"));
+        var actor = workspace.ActorItems.Single();
+
+        Assert.AreEqual(CollectiveActorResource.ResourceType, actor.Actor.Type);
+        Assert.AreEqual("Group_ID: guards", actor.IdentityText);
+        Assert.IsTrue(workspace.SelectTreeItem(actor));
+        Assert.AreEqual("角色组", workspace.InspectorKindText);
+        Assert.AreEqual("Group_ID", workspace.InspectorIdentityLabel);
+    }
+
+    [TestMethod]
     public void ActorDropUpdatesSessionSpeakerWithoutChangingInspectorContext()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");

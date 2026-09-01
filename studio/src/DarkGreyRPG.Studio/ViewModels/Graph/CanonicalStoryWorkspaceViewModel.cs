@@ -1256,7 +1256,8 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
                 entry.Resource!.Id,
                 entry.Resource.DisplayName,
                 entry.Resource.SourcePath ?? string.Empty,
-                entry.Resource.Tags.ToArray()));
+                entry.Resource.Tags.ToArray(),
+                entry.Resource.ToResource().Type ?? ActorResource.LegacyResourceType));
 
     private static IEnumerable<GraphResourceEnvelope> SnapshotGraphs(
         CanonicalStoryWorkspaceSnapshot? snapshot,
