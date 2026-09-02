@@ -195,17 +195,17 @@ SHA-256: BE0DC0C738342DD7843A5CC063A21594300F7ADACF27BBBC1819591A1E14AA14
 Directory file count: 1
 ```
 
-The final Multi-Selection live-window sequence in `.tooling/0.3.2.0_A/multiselection-live/evidence` was produced from the authoritative EXE hash above and finished `AGENT_VERIFIED`. Earlier WP-A through WP-F screenshots remain tied to their recorded earlier RC hash; they are historical evidence, not falsely relabeled as same-hash final evidence. The complete Core/WPF and Gradle regression suites were rerun after final source convergence.
+The final Multi-Selection, modifier, splice, WP-A/WP-B/WP-C/WP-E surface, and exact-project export sequences were all rerun from the authoritative EXE hash above and finished `AGENT_VERIFIED`. The same-hash roll-up is recorded in `.tooling/0.3.2.0_A/final-live/final-hash-acceptance-results.txt`; historical screenshots remain historical and are not relabeled. The complete Core/WPF and Gradle regression suites were rerun after final source convergence.
 
 Final Release EXE live coverage includes:
 
-- WP-A rename, visible End input label, preserved wire and save/reopen.
-- WP-B actor-above-text Inspector order.
-- WP-C Story/Session/Task menu scope, exact order, placed Story/Session nodes and save/reopen.
+- WP-A visible End input label synchronized with the Inspector value `接受委托_验收`: [final-hash-session-end-display-sync.png](../../.tooling/0.3.2.0_A/final-live/final-hash-session-end-display-sync.png); rename/wire/save-reopen behavior remains covered by the same final source regression suite.
+- WP-B actor-above-text Inspector order (`Top 482 < 560`): [final-hash-dialogue-inspector-actor-above-text.png](../../.tooling/0.3.2.0_A/final-live/final-hash-dialogue-inspector-actor-above-text.png).
+- WP-C Story and Session exact Logic-menu ending (`逻辑输出 / 条件判断 / 流程判断`) and Task exclusion: [Story](../../.tooling/0.3.2.0_A/final-live/final-hash-story-logic-menu-expanded.png), [Session](../../.tooling/0.3.2.0_A/final-live/final-hash-session-logic-menu.png), [Task](../../.tooling/0.3.2.0_A/final-live/final-hash-task-logic-menu.png); placed-node/save-reopen behavior remains covered by final regression.
 - WP-E OFF/ON states, exact helper text, port creation, physical wire drag, OFF cleanup, Undo restoration and save/reopen.
 - WP-D/F representative non-empty Story export, one-file output, validator reopen and manifest/entry listing.
-- One workspace-level unsaved-close dialog with `保存 / 不保存 / 取消`: [unsaved-close-single-dialog.png](../../.tooling/0.3.2.0_A/final-live/unsaved-close-single-dialog.png).
-- Dark/Light readability for changed Objective, Dialogue and Session/Flow surfaces: [changed-surface-light.png](../../.tooling/0.3.2.0_A/final-live/changed-surface-light.png), [objective-prerequisite-on-light.png](../../.tooling/0.3.2.0_A/final-live/objective-prerequisite-on-light.png), [dialogue-inspector-light.png](../../.tooling/0.3.2.0_A/final-live/dialogue-inspector-light.png).
+- One final-hash workspace-level unsaved-close dialog with `保存 / 不保存 / 取消`: [failure-keyboard-delete-final-hash.png](../../.tooling/0.3.2.0_A/multiselection-live/evidence/failure-keyboard-delete-final-hash.png).
+- Objective prerequisite readability under both themes: [dark](../../.tooling/0.3.2.0_A/final-live/final-hash-objective-prerequisite-dark.png), [light](../../.tooling/0.3.2.0_A/final-live/final-hash-objective-prerequisite-light.png); Dialogue dark-theme Inspector readability is shown in the WP-B evidence above, while dynamic theme switching remains covered by WPF regression.
 - Four-node marquee selection, real-time equal-delta movement, one-step move Undo, Shift-splice suppression, keyboard/context atomic delete, context Edit no-op, required-node mixed movement/deletion, editable-control Delete focus protection, and Save/full-close/reopen layout persistence.
 - Flow and Logic Shift-splice live runs for both-sided/input-only/output-only shapes, exact ghost counts, one-step Undo, Shift-release cancellation and multi-selection suppression.
 - Exact-project `interact_actor` Inspector readability and export through the real Windows save-path dialog from the authoritative EXE hash above.
