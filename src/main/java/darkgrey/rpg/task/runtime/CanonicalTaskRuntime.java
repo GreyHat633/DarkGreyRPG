@@ -36,6 +36,8 @@ public final class CanonicalTaskRuntime {
     private static final String NOT = "not";
     private static final String LOGIC_OUTPUT = "logic_output";
     private static final String SETTLE = "settle";
+    private static final String PREREQUISITE = "prerequisite";
+    private static final String PREREQUISITE_ENABLED = "prerequisite_enabled";
 
     private final CanonicalGraphResource resource;
     private final String resourceFingerprint;
@@ -58,6 +60,7 @@ public final class CanonicalTaskRuntime {
         this.resource = resource;
         this.nodes = indexAndValidateNodes(resource.getGraph());
         validateEdges(resource.getGraph());
+        validateDormantObjectives(resource.getGraph());
         this.resourceFingerprint = fingerprint(resource);
         if (initialize) initialize();
     }
@@ -247,8 +250,15 @@ public final class CanonicalTaskRuntime {
                 String id = entry.getKey();
                 CanonicalTaskObjectiveStatus current = objectiveStatuses.get(id);
                 if (current != CanonicalTaskObjectiveStatus.COMPLETED) {
-                    CanonicalTaskObjectiveStatus next = objectiveEnabled(entry.getValue())
-                        ? CanonicalTaskObjectiveStatus.ACTIVE
+                    CanonicalTaskObjectiveStatus next;
+                    if (prerequisiteEnabled(entry.getValue())) {
+                        // A prerequisite is an activation edge, not a live gate:
+                        // once true has activated the objective, later false must
+                        // not make it inactive again.
+                        next = current == CanonicalTaskObjectiveStatus.ACTIVE || objectiveEnabled(entry.getValue())
+                            ? CanonicalTaskObjectiveStatus.ACTIVE
+                            : CanonicalTaskObjectiveStatus.INACTIVE;
+                    } else next = objectiveEnabled(entry.getValue()) ? CanonicalTaskObjectiveStatus.ACTIVE
                         : CanonicalTaskObjectiveStatus.INACTIVE;
                     if (current != next) {
                         objectiveStatuses.put(id, next);
@@ -452,9 +462,9 @@ public final class CanonicalTaskRuntime {
         requiredString(node, "description", "task.objective");
         int required = required(node);
         if (required <= 0) throw failure("task.objective.required", "Objective required must be positive.");
-        if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) requiredString(node, "entity", "task.objective");
+        if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) requireObjectiveTarget(node, "entity");
         if (CanonicalTaskEvent.COLLECT_ITEM.equals(type)) {
-            requiredString(node, "item", "task.objective");
+            requireObjectiveTarget(node, "item");
             JsonElement metadata = node.getProperties()
                 .get("metadata");
             if (metadata == null || !metadata.isJsonObject())
@@ -468,18 +478,18 @@ public final class CanonicalTaskRuntime {
                         .isString())
                     throw failure("task.objective.metadata", "Collect objective metadata values must be strings.");
         }
-        if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) requiredString(node, "actor_id", "task.objective");
+        if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) requireObjectiveTarget(node, "actor_id");
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type))
-            requireProperties(node, "objective_type", "description", "required", "entity");
+            requireObjectiveProperties(node, "objective_type", "description", "required", "entity");
         if (CanonicalTaskEvent.COLLECT_ITEM.equals(type))
-            requireProperties(node, "objective_type", "description", "required", "item", "metadata");
+            requireObjectiveProperties(node, "objective_type", "description", "required", "item", "metadata");
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) {
             if (node.getProperties()
                 .containsKey("required")) {
                 if (required != 1)
                     throw failure("task.objective.required", "Legacy interact_actor required must equal one.");
-                requireProperties(node, "objective_type", "description", "required", "actor_id");
-            } else requireProperties(node, "objective_type", "description", "actor_id");
+                requireObjectiveProperties(node, "objective_type", "description", "required", "actor_id");
+            } else requireObjectiveProperties(node, "objective_type", "description", "actor_id");
         }
     }
 
@@ -493,9 +503,27 @@ public final class CanonicalTaskRuntime {
         }
         if (outputs != 1 || !portsContain(node, "logic_status"))
             throw failure("task.objective.ports", "Objective requires exactly one logic_status output.");
+        boolean enabled = prerequisiteEnabled(node);
+        int inputs = 0;
+        for (CanonicalGraphPort port : node.getPorts()) if (port.isInput()) {
+            inputs++;
+            if (enabled && !PREREQUISITE.equals(port.getId())) throw failure(
+                "task.objective.prerequisite.ports",
+                "Enabled objective requires only prerequisite input.");
+            if (!enabled)
+                throw failure("task.objective.prerequisite.ports", "Disabled objective cannot declare input ports.");
+        }
+        if (enabled) {
+            if (inputs != 1 || !portsContain(node, PREREQUISITE)) throw failure(
+                "task.objective.prerequisite.ports",
+                "Enabled objective requires exactly one prerequisite input.");
+            requireDirection(node, PREREQUISITE, true);
+        }
     }
 
     private boolean objectiveEnabled(CanonicalGraphNode node) {
+        if (isUnselectedTarget(node)) return false;
+        if (prerequisiteEnabled(node)) return logicInputValue(node, PREREQUISITE, new HashMap<String, Boolean>());
         for (CanonicalGraphPort port : node.getPorts()) if (port.isInput()) {
             if (!logicInputValue(node, port.getId(), new HashMap<String, Boolean>())) return false;
         }
@@ -515,6 +543,26 @@ public final class CanonicalTaskRuntime {
             node.getProperties()
                 .keySet()))
             throw failure("task.node.properties", "Task node has unknown or missing properties.");
+    }
+
+    private void requireObjectiveProperties(CanonicalGraphNode node, String... required) {
+        Set<String> keys = new HashSet<String>(java.util.Arrays.asList(required));
+        keys.add(PREREQUISITE_ENABLED);
+        Set<String> actual = node.getProperties()
+            .keySet();
+        if (!actual.containsAll(new HashSet<String>(java.util.Arrays.asList(required))) || !keys.containsAll(actual))
+            throw failure("task.node.properties", "Task node has unknown or missing properties.");
+        prerequisiteEnabled(node);
+    }
+
+    private boolean prerequisiteEnabled(CanonicalGraphNode node) {
+        JsonElement value = node.getProperties()
+            .get(PREREQUISITE_ENABLED);
+        if (value == null) return false;
+        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive()
+            .isBoolean())
+            throw failure("task.objective.prerequisite_enabled", "Property prerequisite_enabled must be boolean.");
+        return value.getAsBoolean();
     }
 
     private void validateEdges(CanonicalGraph graph) {
@@ -667,6 +715,7 @@ public final class CanonicalTaskRuntime {
     }
 
     private boolean matches(CanonicalGraphNode node, CanonicalTaskEvent event) {
+        if (isUnselectedTarget(node)) return false;
         String type = requiredString(node, "objective_type", "task.objective");
         if (!type.equals(event.getType())) return false;
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) return value(node, "entity").equals(event.get("entity"));
@@ -716,6 +765,51 @@ public final class CanonicalTaskRuntime {
 
     private static String value(CanonicalGraphNode node, String key) {
         return requiredString(node, key, "task.objective");
+    }
+
+    private static void requireObjectiveTarget(CanonicalGraphNode node, String key) {
+        JsonElement value = node.getProperties()
+            .get(key);
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isString())
+            throw failure("task.objective.property.required", "Property '" + key + "' is required.");
+        String target = value.getAsString();
+        if (target.length() != 0 && blank(target))
+            throw failure("task.objective.property.required", "Property '" + key + "' is required.");
+    }
+
+    private static boolean isUnselectedTarget(CanonicalGraphNode node) {
+        JsonElement type = node.getProperties()
+            .get("objective_type");
+        if (type == null || !type.isJsonPrimitive()
+            || !type.getAsJsonPrimitive()
+                .isString())
+            return false;
+        String key;
+        String value = type.getAsString();
+        if (CanonicalTaskEvent.KILL_ENTITY.equals(value)) key = "entity";
+        else if (CanonicalTaskEvent.COLLECT_ITEM.equals(value)) key = "item";
+        else if (CanonicalTaskEvent.INTERACT_ACTOR.equals(value)) key = "actor_id";
+        else return false;
+        JsonElement target = node.getProperties()
+            .get(key);
+        return target != null && target.isJsonPrimitive()
+            && target.getAsJsonPrimitive()
+                .isString()
+            && target.getAsString()
+                .length() == 0;
+    }
+
+    private static void validateDormantObjectives(CanonicalGraph graph) {
+        Set<String> dormant = new HashSet<String>();
+        for (CanonicalGraphNode node : graph.getNodes())
+            if (OBJECTIVE.equals(node.getType()) && isUnselectedTarget(node)) dormant.add(node.getId());
+        if (dormant.isEmpty()) return;
+        for (CanonicalGraphConnection edge : graph.getConnections())
+            if (dormant.contains(edge.getFromNodeId()) && "logic_status".equals(edge.getFromPortId())) throw failure(
+                "task.objective.target.unselected.connected",
+                "An Objective with an unselected target cannot participate in Task Logic.");
     }
 
     private void requirePorts(CanonicalGraphNode node, int inputs, int outputs, String... fixedIds) {

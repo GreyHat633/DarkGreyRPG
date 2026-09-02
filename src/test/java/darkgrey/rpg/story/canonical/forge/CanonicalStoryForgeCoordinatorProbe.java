@@ -671,6 +671,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         objective.put("description", json("\"击杀 10 只史莱姆\""));
         objective.put("required", json("10"));
         objective.put("entity", json("\"slime\""));
+        objective.put("prerequisite_enabled", json("true"));
         CanonicalGraphNode activate = node(
             "activate",
             "activate",
@@ -679,7 +680,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         CanonicalGraphNode kill = node(
             "kill",
             "objective",
-            ports(logicIn("logic_enable", 0), logicOut("logic_status", 1)),
+            ports(logicIn("prerequisite", 0), logicOut("logic_status", 1)),
             objective);
         CanonicalGraphNode settle = node("settle", "settle", Collections.singletonList(logicIn("done", 0)), empty());
         return resource(
@@ -687,7 +688,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             CanonicalGraphResourceKind.TASK,
             Arrays.asList(activate, kill, settle),
             Arrays.asList(
-                logicEdge("activate", "logic_out", "kill", "logic_enable"),
+                logicEdge("activate", "logic_out", "kill", "prerequisite"),
                 logicEdge("kill", "logic_status", "settle", "done")));
     }
 

@@ -18,7 +18,7 @@ public sealed class GraphScopePolicyTests
     [TestMethod]
     public void RegistryContainsDocumentedTypesAndRequiredMetadata()
     {
-        CollectionAssert.AreEquivalent(new[] { "start", "terminate", "session", "task", "condition", "and", "or", "not", "action", "interact_actor", "enter_region", "enter_story", "logic_input", "logic_output" },
+        CollectionAssert.AreEquivalent(new[] { "start", "terminate", "session", "task", "condition", "flow_judgment", "and", "or", "not", "action", "interact_actor", "enter_region", "enter_story", "logic_input", "logic_output" },
             GraphNodeDefinitionRegistry.ForScope(GraphScope.StoryFlow).Select(item => item.Type).ToArray());
         CollectionAssert.AreEquivalent(new[] { "start", "line", "choice", "narration", "condition", "flow_judgment", "and", "or", "not", "logic_input", "logic_output", "end", "legacy_jump" },
             GraphNodeDefinitionRegistry.ForScope(GraphScope.Session).Select(item => item.Type).ToArray());

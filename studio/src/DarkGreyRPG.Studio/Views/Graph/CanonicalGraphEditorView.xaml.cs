@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -23,6 +24,7 @@ public enum GraphSelectionKind
 {
     Clear,
     Node,
+    MultipleNodes,
     Connection,
 }
 
@@ -39,11 +41,13 @@ public sealed class GraphSelectionChangedEventArgs : EventArgs
 {
     public GraphSelectionChangedEventArgs(GraphSelectionKind kind,
         GraphEditorNodeViewModel? node = null,
-        GraphEditorConnectionViewModel? connection = null)
+        GraphEditorConnectionViewModel? connection = null,
+        IReadOnlyList<GraphEditorNodeViewModel>? nodes = null)
     {
         Kind = kind;
         Node = node;
         Connection = connection;
+        Nodes = nodes ?? (node is null ? [] : [node]);
     }
 
     public GraphSelectionKind Kind { get; }
@@ -52,6 +56,8 @@ public sealed class GraphSelectionChangedEventArgs : EventArgs
     public GraphEditorNodeViewModel? SelectedNode => Node;
     public GraphEditorConnectionViewModel? Connection { get; }
     public GraphEditorConnectionViewModel? SelectedConnection => Connection;
+    public IReadOnlyList<GraphEditorNodeViewModel> Nodes { get; }
+    public IReadOnlyList<GraphEditorNodeViewModel> SelectedNodes => Nodes;
     public bool IsClear => Kind == GraphSelectionKind.Clear;
 }
 
@@ -71,10 +77,23 @@ public partial class CanonicalGraphEditorView : UserControl
     private readonly Dictionary<GraphEditorConnectionViewModel, (Path Line, Path Hit)> _connectionVisuals = [];
     private readonly ScaleTransform _scale = new(1, 1);
     private readonly TranslateTransform _translate = new();
+    private readonly HashSet<GraphEditorNodeViewModel> _selectedNodes = [];
+    private readonly HashSet<string> _pendingSelectedNodeIds = new(StringComparer.Ordinal);
     private GraphEditorHostViewModel? _host;
     private GraphEditorNodeViewModel? _dragNode;
     private Point _pointerStart;
-    private Point _dragOrigin;
+    private Point _lastGraphPointer;
+    private Dictionary<GraphEditorNodeViewModel, Point> _dragOrigins = [];
+    private bool _nodeDragThresholdPassed;
+    private bool _collapseSelectionOnNodeClick;
+    private Rectangle? _selectionBox;
+    private Rect _selectionBoxBounds = Rect.Empty;
+    private HashSet<GraphEditorNodeViewModel> _selectionBeforeMarquee = [];
+    private bool _additiveMarquee;
+    private bool _marqueeThresholdPassed;
+    private GraphEditorConnectionViewModel? _spliceCandidate;
+    private GraphConnectionSplicePlan? _splicePlan;
+    private readonly List<Path> _spliceGhostWires = [];
     private GraphEditorEndpoint? _wireStart;
     private GraphEditorEndpoint? _wireFixedEndpoint;
     private GraphConnection? _wireOriginal;
@@ -91,7 +110,6 @@ public partial class CanonicalGraphEditorView : UserControl
     private bool _scissorsModeBeforeAlt;
     private GraphEditorConnectionViewModel? _selectedConnection;
     private GraphEditorNodeViewModel? _selectedNode;
-    private string? _pendingSelectedNodeId;
     private readonly Func<string?> _nodeIdSource;
     private readonly GraphNodeAuthoringService _authoringService;
     private IReadOnlyList<ValidationIssue> _lastAuthoringIssues = [];
@@ -162,6 +180,7 @@ public partial class CanonicalGraphEditorView : UserControl
         set => SetValue(ViewportStateProperty, value);
     }
     public GraphEditorNodeViewModel? SelectedNode => _selectedNode;
+    public IReadOnlyCollection<GraphEditorNodeViewModel> SelectedNodes => _selectedNodes.ToArray();
     public GraphEditorConnectionViewModel? SelectedConnection => _selectedConnection;
     public event EventHandler<GraphSelectionChangedEventArgs>? SelectionChanged;
     public event EventHandler<GraphSelectionChangedEventArgs>? GraphSelectionChanged;
@@ -179,6 +198,11 @@ public partial class CanonicalGraphEditorView : UserControl
     public bool IsIncidentWireReconnect => _incidentWireReconnect;
     public bool IsScissorsMode => _scissorsMode;
     public bool IsTemporaryScissorsMode => _altScissorsMode;
+    public bool IsBoxSelecting => _pointerState.Is(GraphPointerMode.BoxSelect);
+    public Rect SelectionBoxBounds => _selectionBoxBounds;
+    public GraphEditorConnectionViewModel? ActiveSpliceCandidate => _spliceCandidate;
+    public GraphConnectionSplicePlan? ActiveSplicePlan => _splicePlan;
+    public IReadOnlyCollection<Path> SpliceGhostVisuals => _spliceGhostWires;
     public Cursor ScissorsCursor => ScissorsCursorFactory.Cursor;
 
     public void SetScissorsMode(bool enabled)
@@ -534,11 +558,13 @@ public partial class CanonicalGraphEditorView : UserControl
             NotifySelectionChanged(oldNode, oldConnection);
             return;
         }
-        var selectedNodeId = CurrentUniqueSelectedNodeId() ?? _pendingSelectedNodeId;
-        var selectedNodeIsUniqueInDocument = selectedNodeId is not null &&
-            (_host.Graph.Nodes ?? []).Where(node => node is not null)
-                .Count(node => string.Equals(node.Id, selectedNodeId, StringComparison.Ordinal)) == 1;
-        if (!selectedNodeIsUniqueInDocument) selectedNodeId = null;
+        var selectedNodeIds = _selectedNodes.Select(node => node.NodeId)
+            .Concat(_pendingSelectedNodeIds)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .Where(id => (_host.Graph.Nodes ?? []).Where(node => node is not null)
+                .Count(node => string.Equals(node.Id, id, StringComparison.Ordinal)) == 1)
+            .ToHashSet(StringComparer.Ordinal);
         CancelPointerGesture(false);
         foreach (var node in _nodeVisuals.Keys) node.PropertyChanged -= NodePropertyChanged;
         foreach (var visual in _nodeVisuals.Values) visual.DisposeInlineEditor();
@@ -553,11 +579,14 @@ public partial class CanonicalGraphEditorView : UserControl
             node.PropertyChanged += NodePropertyChanged;
             AddNodeVisual(node);
         }
-        GraphEditorNodeViewModel[] matchingSelectedNodes = selectedNodeId is null
-            ? []
-            : _nodeVisuals.Keys.Where(node => string.Equals(node.NodeId, selectedNodeId, StringComparison.Ordinal)).ToArray();
-        _selectedNode = matchingSelectedNodes.Length == 1 ? matchingSelectedNodes[0] : null;
-        _pendingSelectedNodeId = _selectedNode is null ? selectedNodeId : null;
+        _selectedNodes.Clear();
+        foreach (var node in _nodeVisuals.Keys.Where(node => selectedNodeIds.Contains(node.NodeId)))
+            _selectedNodes.Add(node);
+        _pendingSelectedNodeIds.Clear();
+        foreach (var id in selectedNodeIds.Where(id => !_selectedNodes.Any(node =>
+                     string.Equals(node.NodeId, id, StringComparison.Ordinal))))
+            _pendingSelectedNodeIds.Add(id);
+        SynchronizeUniqueSelectedNode();
         ApplyNodeSelectionVisuals();
         if (_selectedConnection is not null && !_host.Connections.Contains(_selectedConnection))
             _selectedConnection = null;
@@ -592,7 +621,8 @@ public partial class CanonicalGraphEditorView : UserControl
             visual.DisposeInlineEditor();
             GraphCanvas.Children.Remove(visual);
         }
-        if (ReferenceEquals(_selectedNode, node)) _selectedNode = null;
+        _selectedNodes.Remove(node);
+        SynchronizeUniqueSelectedNode();
     }
 
     private void IndexPorts()
@@ -698,6 +728,7 @@ public partial class CanonicalGraphEditorView : UserControl
         if (e.ChangedButton == MouseButton.Middle)
         {
             FocusGraphCanvas();
+            if (!_pointerState.Is(GraphPointerMode.Idle)) CancelPointerGesture();
             _pointerState.PreemptForPan();
             _pointerStart = e.GetPosition(CanvasViewport);
             CanvasViewport.CaptureMouse();
@@ -715,28 +746,40 @@ public partial class CanonicalGraphEditorView : UserControl
         }
         if (FindAncestor<CanonicalGraphNodeControl>(source) is { Node: { } node } nodeVisual)
         {
-            SelectNode(node);
+            // Parameter editors keep their native Ctrl/text-selection behavior;
+            // merely entering an editor selects its node if needed.
+            if (nodeVisual.IsParameterInteractionSource(source))
+            {
+                if (!_selectedNodes.Contains(node)) SelectNode(node);
+                return;
+            }
+            var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            var wasSelectedWithPeers = !controlPressed && _selectedNodes.Contains(node) && _selectedNodes.Count > 1;
+            if (controlPressed) ToggleNodeSelection(node);
+            else if (!wasSelectedWithPeers) SelectNode(node);
             // Inline editors own keyboard focus and popup interaction.  Moving
             // focus to the graph during PreviewMouseDown can close or suppress
             // a ComboBox before its normal WPF mouse route completes.
-            if (nodeVisual.IsParameterInteractionSource(source)) return;
             FocusGraphCanvas();
             if (e.ClickCount >= 2)
             {
+                SelectNode(node);
                 _ = RequestNodeEdit(node);
                 e.Handled = true;
                 return;
             }
-            if (!nodeVisual.IsHeaderDragSource(source) || !_pointerState.Begin(GraphPointerMode.NodeDrag)) return;
-            _dragNode = node;
-            _pointerStart = e.GetPosition(GraphCanvas);
-            _dragOrigin = new Point(node.X, node.Y);
+            if (!nodeVisual.IsHeaderDragSource(source)
+                || !BeginNodeDrag(node, e.GetPosition(GraphCanvas), wasSelectedWithPeers)) return;
             CanvasViewport.CaptureMouse();
             e.Handled = true;
             return;
         }
         FocusGraphCanvas();
-        if (FindAncestor<Path>(source) is not { Tag: GraphEditorConnectionViewModel }) ClearSelection();
+        if (FindAncestor<Path>(source) is { Tag: GraphEditorConnectionViewModel }) return;
+        if (!BeginMarqueeSelection(e.GetPosition(GraphCanvas),
+                (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)) return;
+        CanvasViewport.CaptureMouse();
+        e.Handled = true;
     }
 
     private void FocusGraphCanvas()
@@ -760,7 +803,6 @@ public partial class CanonicalGraphEditorView : UserControl
 
         if (FindAncestor<CanonicalGraphNodeControl>(source) is { Node: { } node })
         {
-            _ = SelectNode(node);
             OpenContextMenu(CreateNodeContextMenu(node));
             e.Handled = true;
             return;
@@ -781,20 +823,24 @@ public partial class CanonicalGraphEditorView : UserControl
     public ContextMenu CreateNodeContextMenu(GraphEditorNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        if (!_selectedNodes.Contains(node) && !SelectNode(node))
+            return FluentContextMenuFactory.Create(GraphCanvas);
         var menu = FluentContextMenuFactory.Create(_nodeVisuals.TryGetValue(node, out var visual) ? visual : GraphCanvas);
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
             "编辑",
             () =>
             {
-                _ = RequestNodeEdit(node);
+                if (_selectedNodes.Count == 1 && _selectedNodes.Contains(node))
+                    _ = RequestNodeEdit(node);
             }));
 
-        var canDelete = Host is { } host &&
-            (!GraphNodeDefinitionRegistry.TryGet(host.Scope, node.Type, out var definition)
-                || (!definition.NonDeletable && !definition.Required));
+        var canDelete = Host is { } host && _selectedNodes.Any(selected =>
+            !GraphNodeDefinitionRegistry.TryGet(host.Scope, selected.Type, out var definition)
+                || !definition.NonDeletable && !definition.Required);
         if (canDelete)
         {
-            menu.Items.Add(FluentContextMenuFactory.CreateItem("删除", () => DeleteNodeImmediately(node), critical: true));
+            menu.Items.Add(FluentContextMenuFactory.CreateItem("删除",
+                () => DeleteCurrentSelection(confirmReferencedRemoval: true), critical: true));
         }
         return menu;
     }
@@ -802,16 +848,10 @@ public partial class CanonicalGraphEditorView : UserControl
     public bool RequestNodeEdit(GraphEditorNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        if (_selectedNodes.Count > 1) return false;
         if (!SelectNode(node)) return false;
         NodeEditRequested?.Invoke(node);
         return true;
-    }
-
-    private bool DeleteNodeImmediately(GraphEditorNodeViewModel node)
-    {
-        if (Host is null) return false;
-        if (!ReferenceEquals(_selectedNode, node) && !SelectNode(node)) return false;
-        return RemoveSelectedNode(confirmReferencedRemoval: true);
     }
 
     private void Scissors_OnClick(object sender, RoutedEventArgs e)
@@ -823,8 +863,17 @@ public partial class CanonicalGraphEditorView : UserControl
     private static bool IsLeftAlt(KeyEventArgs e)
         => e.Key == Key.LeftAlt || e.Key == Key.System && e.SystemKey == Key.LeftAlt;
 
+    private static bool IsSpliceModifierActive()
+        => (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control | ModifierKeys.Alt))
+            == ModifierKeys.Shift;
+
     private void Root_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key is Key.LeftShift or Key.RightShift && _pointerState.Is(GraphPointerMode.NodeDrag))
+        {
+            UpdateSplicePreview(_lastGraphPointer, IsSpliceModifierActive());
+            return;
+        }
         if (!IsLeftAlt(e) || _altScissorsMode) return;
         _scissorsModeBeforeAlt = _scissorsMode;
         _altScissorsMode = true;
@@ -835,6 +884,11 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void Root_OnPreviewKeyUp(object sender, KeyEventArgs e)
     {
+        if (e.Key is Key.LeftShift or Key.RightShift)
+        {
+            ClearSplicePreview();
+            return;
+        }
         if (!IsLeftAlt(e) || !_altScissorsMode) return;
         _altScissorsMode = false;
         _scissorsMode = _scissorsModeBeforeAlt;
@@ -1030,6 +1084,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private void CanvasViewport_OnPreviewMouseMove(object sender, MouseEventArgs e)
     {
         var point = e.GetPosition(GraphCanvas);
+        _lastGraphPointer = point;
         if (_pointerState.Is(GraphPointerMode.Pan))
         {
             var current = e.GetPosition(CanvasViewport);
@@ -1039,9 +1094,9 @@ public partial class CanonicalGraphEditorView : UserControl
         }
         else if (_pointerState.Is(GraphPointerMode.NodeDrag) && _dragNode is not null)
         {
-            var delta = point - _pointerStart;
-            _host?.SetNodePosition(_dragNode.NodeId, Safe(_dragOrigin.X + delta.X), Safe(_dragOrigin.Y + delta.Y));
+            _ = UpdateSelectedNodeDrag(point - _pointerStart, IsSpliceModifierActive());
         }
+        else if (_pointerState.Is(GraphPointerMode.BoxSelect)) UpdateMarquee(point);
         else if (_pointerState.Is(GraphPointerMode.PortPressed))
         {
             if (e.LeftButton != MouseButtonState.Pressed) CancelPointerGesture();
@@ -1063,7 +1118,26 @@ public partial class CanonicalGraphEditorView : UserControl
             CancelPointerGesture();
             e.Handled = true;
         }
-        else if (e.ChangedButton == MouseButton.Left && _pointerState.Is(GraphPointerMode.NodeDrag)) EndPointerGesture();
+        else if (e.ChangedButton == MouseButton.Left && _pointerState.Is(GraphPointerMode.NodeDrag))
+        {
+            var collapseNode = !_nodeDragThresholdPassed && _collapseSelectionOnNodeClick ? _dragNode : null;
+            if (_nodeDragThresholdPassed
+                && IsSpliceModifierActive()
+                && _splicePlan is { } splicePlan)
+            {
+                ClearSplicePreview();
+                _ = _host?.SpliceConnection(splicePlan);
+            }
+            EndPointerGesture();
+            if (collapseNode is not null) SelectNode(collapseNode);
+            e.Handled = true;
+        }
+        else if (e.ChangedButton == MouseButton.Left && _pointerState.Is(GraphPointerMode.BoxSelect))
+        {
+            if (!_marqueeThresholdPassed) ClearSelection();
+            EndPointerGesture();
+            e.Handled = true;
+        }
         else if (e.ChangedButton == MouseButton.Middle && _pointerState.Is(GraphPointerMode.Pan)) EndPointerGesture();
     }
 
@@ -1207,17 +1281,25 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void GraphCanvas_OnKeyDown(object sender, KeyEventArgs e)
     {
-        e.Handled = HandleKeyboardCommand(e.Key);
+        e.Handled = HandleKeyboardCommand(e.Key, e.OriginalSource as DependencyObject);
     }
 
     /// <summary>Shared by the routed GraphCanvas handler and deterministic STA tests.</summary>
     public bool HandleKeyboardCommand(Key key)
+        => HandleKeyboardCommand(key, GraphCanvas);
+
+    /// <summary>
+    /// Editable controls retain their native Delete behavior even while graph
+    /// nodes remain selected behind them.
+    /// </summary>
+    public bool HandleKeyboardCommand(Key key, DependencyObject? source)
     {
         if (key == Key.Escape)
         {
             CancelPointerGesture();
             return true;
         }
+        if (key == Key.Delete && IsEditableKeyboardSource(source)) return false;
         if (key == Key.Delete && _selectedConnection is not null)
         {
             var selected = _selectedConnection;
@@ -1225,13 +1307,18 @@ public partial class CanonicalGraphEditorView : UserControl
             if (result) _selectedConnection = null;
             return true;
         }
-        if (key == Key.Delete && _selectedNode is not null)
+        if (key == Key.Delete && _selectedNodes.Count != 0)
         {
-            _ = DeleteNodeImmediately(_selectedNode);
+            _ = DeleteCurrentSelection(confirmReferencedRemoval: true);
             return true;
         }
         return false;
     }
+
+    private static bool IsEditableKeyboardSource(DependencyObject? source)
+        => FindAncestor<TextBoxBase>(source) is not null
+            || FindAncestor<PasswordBox>(source) is not null
+            || FindAncestor<ComboBox>(source) is not null;
 
     private void CanvasViewport_OnLostMouseCapture(object sender, MouseEventArgs e)
     {
@@ -1253,19 +1340,50 @@ public partial class CanonicalGraphEditorView : UserControl
     /// </summary>
     public bool RemoveSelectedNode(bool confirmReferencedRemoval = false)
     {
-        if (_host is null || _selectedNode is null) return false;
-        var selected = _selectedNode;
-        var result = _host.RemoveNode(selected.NodeId, confirmReferencedRemoval);
-        if (result)
+        if (_selectedNode is null) return false;
+        return DeleteCurrentSelection(confirmReferencedRemoval);
+    }
+
+    /// <summary>
+    /// Deletes every deletable selected node. Required/non-deletable nodes are
+    /// preserved and remain selected; they never block deletable peers.
+    /// </summary>
+    public bool RemoveSelectedNodes(bool confirmReferencedRemoval = false)
+        => DeleteCurrentSelection(confirmReferencedRemoval);
+
+    /// <summary>
+    /// Shared keyboard/context-menu selection delete. Core removes every
+    /// deletable node and all incident wires in one graph/Undo transaction;
+    /// protected peers survive and remain selected.
+    /// </summary>
+    public bool DeleteCurrentSelection(bool confirmReferencedRemoval = false)
+    {
+        if (_host is null || _selectedNodes.Count == 0) return false;
+        var selectedIds = _selectedNodes.Select(node => node.NodeId)
+            .Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToArray();
+        var deletableIds = selectedIds.Where(id =>
         {
-            ClearNodeSelection();
-        }
-        else
+            var matches = _host.Nodes.Where(candidate =>
+                string.Equals(candidate.NodeId, id, StringComparison.Ordinal)).ToArray();
+            return matches.Length == 1 && (!GraphNodeDefinitionRegistry.TryGet(_host.Scope, matches[0].Type, out var definition)
+                || !definition.NonDeletable && !definition.Required);
+        }).ToArray();
+        var protectedIds = selectedIds.Except(deletableIds, StringComparer.Ordinal).ToArray();
+        _host.SetAuthoringIssue("graph.selection.delete", null);
+        var removedAny = _host.RemoveNodes(selectedIds, confirmReferencedRemoval);
+        if (removedAny && protectedIds.Length != 0)
         {
-            // Host.LastValidationIssues is intentionally retained for the Problems surface.
-            ApplyNodeSelectionVisuals();
+            _host.SetAuthoringIssue("graph.selection.delete", new ValidationIssue(
+                "graph.node.not_deletable",
+                $"{protectedIds.Length} selected required/non-deletable node(s) were retained.",
+                "node_id",
+                NodeId: protectedIds[0]));
         }
-        return result;
+
+        var survivingIds = selectedIds.Where(id => _host.Nodes.Count(node =>
+            string.Equals(node.NodeId, id, StringComparison.Ordinal)) == 1).ToArray();
+        SetNodeSelection(_host.Nodes.Where(node => survivingIds.Contains(node.NodeId, StringComparer.Ordinal)));
+        return removedAny;
     }
 
     /// <summary>Deterministically selects a materialized node for STA tests and hosts.</summary>
@@ -1279,10 +1397,95 @@ public partial class CanonicalGraphEditorView : UserControl
             return false;
         }
         ClearConnectionSelection();
-        _selectedNode = node;
-        _pendingSelectedNodeId = null;
-        ApplyNodeSelectionVisuals();
+        SetNodeSelection([node]);
         NotifySelectionChanged(oldNode, oldConnection);
+        return true;
+    }
+
+    /// <summary>Selects unique materialized node IDs, optionally adding them to the current set.</summary>
+    public bool SelectNodes(IEnumerable<string> nodeIds, bool additive = false)
+    {
+        ArgumentNullException.ThrowIfNull(nodeIds);
+        var requested = nodeIds.Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal).ToArray();
+        var matches = requested.Select(id => _nodeVisuals.Keys.Where(node =>
+                string.Equals(node.NodeId, id, StringComparison.Ordinal)).ToArray())
+            .ToArray();
+        if (matches.Any(match => match.Length != 1)) return false;
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        ClearConnectionSelection();
+        var next = additive
+            ? _selectedNodes.Concat(matches.Select(match => match[0])).Distinct().ToArray()
+            : matches.Select(match => match[0]).ToArray();
+        SetNodeSelection(next);
+        NotifySelectionChanged(oldNode, oldConnection);
+        return true;
+    }
+
+    /// <summary>Toggles one unique materialized node without affecting its peers.</summary>
+    public bool ToggleNodeSelection(string nodeId)
+    {
+        var matches = _nodeVisuals.Keys.Where(node => string.Equals(node.NodeId, nodeId,
+            StringComparison.Ordinal)).ToArray();
+        if (matches.Length != 1) return false;
+        ToggleNodeSelection(matches[0]);
+        return true;
+    }
+
+    /// <summary>Starts a deterministic marquee gesture without requiring a real mouse device.</summary>
+    public bool BeginMarqueeSelection(Point start, bool additive = false)
+    {
+        if (!IsFinite(start) || !_pointerState.Begin(GraphPointerMode.BoxSelect)) return false;
+        _pointerStart = start;
+        _lastGraphPointer = start;
+        _selectionBeforeMarquee = [.. _selectedNodes];
+        _additiveMarquee = additive;
+        _marqueeThresholdPassed = false;
+        _selectionBoxBounds = new Rect(start, start);
+        CreateSelectionBox();
+        ClearConnectionSelection();
+        return true;
+    }
+
+    public bool UpdateMarqueeSelection(Point current)
+    {
+        if (!_pointerState.Is(GraphPointerMode.BoxSelect) || !IsFinite(current)) return false;
+        UpdateMarquee(current);
+        return _marqueeThresholdPassed;
+    }
+
+    public bool CompleteMarqueeSelection()
+    {
+        if (!_pointerState.Is(GraphPointerMode.BoxSelect)) return false;
+        if (!_marqueeThresholdPassed) ClearSelection();
+        EndPointerGesture();
+        return true;
+    }
+
+    /// <summary>Applies marquee geometry directly for deterministic STA tests.</summary>
+    public void ApplyMarqueeSelection(Rect bounds, bool additive = false)
+    {
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        var hits = HitTestNodes(bounds);
+        var next = additive ? _selectedNodes.Concat(hits).Distinct().ToArray() : hits;
+        SetNodeSelection(next);
+        ClearConnectionSelection();
+        NotifySelectionChanged(oldNode, oldConnection);
+    }
+
+    /// <summary>Moves the current selection by one finite graph-space delta.</summary>
+    public bool MoveSelectedNodes(Vector delta)
+    {
+        if (_host is null || _selectedNodes.Count == 0
+            || !double.IsFinite(delta.X) || !double.IsFinite(delta.Y)) return false;
+        var selected = _selectedNodes.ToArray();
+        var transactional = selected.Length > 1;
+        if (transactional && !_host.BeginLayoutMove(selected.Select(node => node.NodeId))) return false;
+        foreach (var node in selected)
+            _host.SetNodePosition(node.NodeId, Safe(node.X + delta.X), Safe(node.Y + delta.Y));
+        if (transactional) _ = _host.CommitLayoutMove();
         return true;
     }
 
@@ -1321,9 +1524,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void ClearNodeSelection()
     {
-        _selectedNode = null;
-        _pendingSelectedNodeId = null;
-        ApplyNodeSelectionVisuals();
+        SetNodeSelection([]);
     }
 
     private void ClearConnectionSelection()
@@ -1336,17 +1537,32 @@ public partial class CanonicalGraphEditorView : UserControl
     private void ApplyNodeSelectionVisuals()
     {
         foreach (var pair in _nodeVisuals)
-            pair.Value.IsSelected = ReferenceEquals(pair.Key, _selectedNode);
+            pair.Value.IsSelected = _selectedNodes.Contains(pair.Key);
     }
 
-    private static string? UniqueNodeId(string? nodeId) => string.IsNullOrWhiteSpace(nodeId) ? null : nodeId;
-
-    private string? CurrentUniqueSelectedNodeId()
+    private void SetNodeSelection(IEnumerable<GraphEditorNodeViewModel> nodes)
     {
-        var nodeId = _selectedNode?.NodeId;
-        if (UniqueNodeId(nodeId) is not { } id) return null;
-        return _nodeVisuals.Keys.Count(node => string.Equals(node.NodeId, id, StringComparison.Ordinal)) == 1 ? id : null;
+        _selectedNodes.Clear();
+        foreach (var node in nodes.Where(_nodeVisuals.ContainsKey)) _selectedNodes.Add(node);
+        _pendingSelectedNodeIds.Clear();
+        SynchronizeUniqueSelectedNode();
+        ApplyNodeSelectionVisuals();
     }
+
+    private void ToggleNodeSelection(GraphEditorNodeViewModel node)
+    {
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        ClearConnectionSelection();
+        if (!_selectedNodes.Add(node)) _selectedNodes.Remove(node);
+        _pendingSelectedNodeIds.Clear();
+        SynchronizeUniqueSelectedNode();
+        ApplyNodeSelectionVisuals();
+        NotifySelectionChanged(oldNode, oldConnection);
+    }
+
+    private void SynchronizeUniqueSelectedNode()
+        => _selectedNode = _selectedNodes.Count == 1 ? _selectedNodes.Single() : null;
 
     /// <summary>Small deterministic seam for tests and keyboard-accessible hosts.</summary>
     public bool BeginNewConnectionDrag(FlowPortControl port) => BeginWire(port, new Point(0, 0));
@@ -1442,13 +1658,250 @@ public partial class CanonicalGraphEditorView : UserControl
         return true;
     }
 
+    private static bool CrossedDragThreshold(Vector delta)
+        => Math.Abs(delta.X) >= SystemParameters.MinimumHorizontalDragDistance
+            || Math.Abs(delta.Y) >= SystemParameters.MinimumVerticalDragDistance;
+
+    private bool BeginNodeDrag(GraphEditorNodeViewModel node, Point start, bool collapseSelectionOnClick)
+    {
+        if (!_selectedNodes.Contains(node) || !_pointerState.Begin(GraphPointerMode.NodeDrag)) return false;
+        if (_selectedNodes.Count > 1
+            && (_host is null || !_host.BeginLayoutMove(_selectedNodes.Select(selected => selected.NodeId))))
+        {
+            _pointerState.End(GraphPointerMode.NodeDrag);
+            return false;
+        }
+        _dragNode = node;
+        _pointerStart = start;
+        _lastGraphPointer = start;
+        _dragOrigins = _selectedNodes.ToDictionary(selected => selected,
+            selected => new Point(selected.X, selected.Y));
+        _nodeDragThresholdPassed = false;
+        _collapseSelectionOnNodeClick = collapseSelectionOnClick;
+        return true;
+    }
+
+    /// <summary>Deterministic seam mirroring MouseDown on an already-selected node header.</summary>
+    public bool BeginSelectedNodeDrag(string nodeId)
+    {
+        var matches = _selectedNodes.Where(node => string.Equals(node.NodeId, nodeId,
+            StringComparison.Ordinal)).ToArray();
+        return matches.Length == 1 && BeginNodeDrag(matches[0], new Point(0, 0),
+            collapseSelectionOnClick: _selectedNodes.Count > 1);
+    }
+
+    /// <summary>Applies one graph-space pointer delta to the active selected-node drag.</summary>
+    public bool UpdateSelectedNodeDrag(Vector delta, bool shiftPressed = false)
+    {
+        if (!_pointerState.Is(GraphPointerMode.NodeDrag) || _dragNode is null
+            || !double.IsFinite(delta.X) || !double.IsFinite(delta.Y)) return false;
+        if (!_nodeDragThresholdPassed && CrossedDragThreshold(delta))
+        {
+            _nodeDragThresholdPassed = true;
+            _collapseSelectionOnNodeClick = false;
+        }
+        if (!_nodeDragThresholdPassed) return false;
+        foreach (var (node, origin) in _dragOrigins)
+            _host?.SetNodePosition(node.NodeId, Safe(origin.X + delta.X), Safe(origin.Y + delta.Y));
+        _lastGraphPointer = _pointerStart + delta;
+        UpdateSplicePreview(_lastGraphPointer, shiftPressed && _selectedNodes.Count == 1);
+        return true;
+    }
+
+    public bool CompleteSelectedNodeDrag()
+    {
+        if (!_pointerState.Is(GraphPointerMode.NodeDrag)) return false;
+        EndPointerGesture();
+        return true;
+    }
+
+    private void CreateSelectionBox()
+    {
+        _selectionBox = new Rectangle
+        {
+            Stroke = Brushes.DodgerBlue,
+            StrokeThickness = 1,
+            Fill = new SolidColorBrush(Color.FromArgb(40, 30, 144, 255)),
+            IsHitTestVisible = false,
+        };
+        AutomationProperties.SetAutomationId(_selectionBox, "CanonicalGraphMarqueeSelection");
+        Panel.SetZIndex(_selectionBox, int.MaxValue);
+        GraphCanvas.Children.Add(_selectionBox);
+        Canvas.SetLeft(_selectionBox, _pointerStart.X);
+        Canvas.SetTop(_selectionBox, _pointerStart.Y);
+    }
+
+    private void UpdateMarquee(Point point)
+    {
+        var delta = point - _pointerStart;
+        if (!_marqueeThresholdPassed && !CrossedDragThreshold(delta)) return;
+        _marqueeThresholdPassed = true;
+        _selectionBoxBounds = new Rect(_pointerStart, point);
+        if (_selectionBox is not null)
+        {
+            Canvas.SetLeft(_selectionBox, _selectionBoxBounds.Left);
+            Canvas.SetTop(_selectionBox, _selectionBoxBounds.Top);
+            _selectionBox.Width = _selectionBoxBounds.Width;
+            _selectionBox.Height = _selectionBoxBounds.Height;
+        }
+
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        var hits = HitTestNodes(_selectionBoxBounds);
+        SetNodeSelection(_additiveMarquee ? _selectionBeforeMarquee.Concat(hits) : hits);
+        NotifySelectionChanged(oldNode, oldConnection);
+    }
+
+    private IReadOnlyList<GraphEditorNodeViewModel> HitTestNodes(Rect bounds)
+        => _nodeVisuals.Where(pair => NodeBounds(pair.Key, pair.Value).IntersectsWith(bounds))
+            .Select(pair => pair.Key).ToArray();
+
+    private static Rect NodeBounds(GraphEditorNodeViewModel node, FrameworkElement visual)
+    {
+        var width = double.IsFinite(visual.ActualWidth) && visual.ActualWidth > 0 ? visual.ActualWidth : NodeWidth;
+        var height = double.IsFinite(visual.ActualHeight) && visual.ActualHeight > 0 ? visual.ActualHeight : NodeHeight;
+        return new Rect(Safe(node.X), Safe(node.Y), width, height);
+    }
+
+    private void UpdateSplicePreview(Point graphPoint, bool shiftPressed)
+    {
+        if (!shiftPressed || !_nodeDragThresholdPassed || _host is null || _dragNode is null
+            || _selectedNodes.Count != 1 || !_selectedNodes.Contains(_dragNode))
+        {
+            ClearSplicePreview();
+            return;
+        }
+
+        var pen = new Pen(Brushes.Black, 14);
+        var candidates = _connectionVisuals.Where(pair => pair.Value.Hit.Data is { } geometry
+                && geometry.StrokeContains(pen, graphPoint))
+            .Select(pair => pair.Key)
+            .Distinct()
+            .Select(connection => _host.TryCreateSplicePlan(connection.Connection, _dragNode.NodeId, out var plan)
+                ? (Connection: connection, Plan: plan)
+                : (Connection: null, Plan: null))
+            .Where(candidate => candidate.Connection is not null && candidate.Plan is not null)
+            .ToArray();
+        if (candidates.Length != 1)
+        {
+            ClearSplicePreview();
+            return;
+        }
+
+        var candidate = candidates[0];
+        var activeConnection = candidate.Connection!;
+        var activePlan = candidate.Plan!;
+        if (ReferenceEquals(_spliceCandidate, candidate.Connection))
+        {
+            _splicePlan = activePlan;
+            UpdateSpliceGhostGeometry();
+            return;
+        }
+        ActivateSplicePreview(activeConnection, activePlan);
+    }
+
+    private void ActivateSplicePreview(GraphEditorConnectionViewModel connection,
+        GraphConnectionSplicePlan plan)
+    {
+        ClearSplicePreview();
+        _spliceCandidate = connection;
+        _splicePlan = plan;
+        if (_connectionVisuals.TryGetValue(connection, out var visual))
+            ApplyWireBrush(visual.Line, connection.InterfaceKind, selected: true);
+        for (var index = 0; index < 2; index++)
+        {
+            var ghost = new Path
+            {
+                StrokeThickness = 2,
+                StrokeDashArray = [4, 3],
+                Opacity = .8,
+                IsHitTestVisible = false,
+                Tag = "CanonicalGraphSpliceGhost",
+            };
+            ApplyWireBrush(ghost, connection.InterfaceKind, selected: false);
+            AutomationProperties.SetAutomationId(ghost, $"CanonicalGraphSpliceGhost_{index + 1}");
+            Panel.SetZIndex(ghost, int.MaxValue - 1);
+            _spliceGhostWires.Add(ghost);
+            GraphCanvas.Children.Add(ghost);
+        }
+        UpdateSpliceGhostGeometry();
+    }
+
+    private void UpdateSpliceGhostGeometry()
+    {
+        if (_splicePlan is null || _spliceGhostWires.Count != 2) return;
+        if (TryConnectionGeometry(_splicePlan.Incoming, out var incoming)) _spliceGhostWires[0].Data = incoming;
+        if (TryConnectionGeometry(_splicePlan.Outgoing, out var outgoing)) _spliceGhostWires[1].Data = outgoing;
+    }
+
+    private bool TryConnectionGeometry(GraphConnection connection, out PathGeometry geometry)
+    {
+        geometry = null!;
+        if (!TryGetPort(connection.FromNodeId, connection.FromPortId, out var from)
+            || !TryGetPort(connection.ToNodeId, connection.ToPortId, out var to)) return false;
+        var start = from.GetAnchorPoint(GraphCanvas);
+        var end = to.GetAnchorPoint(GraphCanvas);
+        if (!IsFinite(start) || !IsFinite(end)) return false;
+        geometry = WireGeometry(start, end);
+        return true;
+    }
+
+    private void ClearSplicePreview()
+    {
+        if (_spliceCandidate is not null && _connectionVisuals.TryGetValue(_spliceCandidate, out var visual))
+            ApplyWireBrush(visual.Line, _spliceCandidate.InterfaceKind,
+                ReferenceEquals(_spliceCandidate, _selectedConnection));
+        foreach (var ghost in _spliceGhostWires) GraphCanvas.Children.Remove(ghost);
+        _spliceGhostWires.Clear();
+        _spliceCandidate = null;
+        _splicePlan = null;
+    }
+
+    /// <summary>Deterministic seam for splice validation/preview tests.</summary>
+    public bool PreviewSpliceCandidate(GraphEditorNodeViewModel node,
+        GraphEditorConnectionViewModel connection)
+    {
+        if (_host is null || node is null || connection is null || _selectedNodes.Count != 1
+            || !_selectedNodes.Contains(node)
+            || !_host.TryCreateSplicePlan(connection.Connection, node.NodeId, out var plan))
+            return false;
+        ActivateSplicePreview(connection, plan);
+        return true;
+    }
+
+    /// <summary>Commits the currently preflighted splice as one Core edit.</summary>
+    public bool CompleteActiveSplice()
+    {
+        if (_host is null || _splicePlan is not { } plan) return false;
+        ClearSplicePreview();
+        return _host.SpliceConnection(plan);
+    }
+
     private void CancelPointerGesture(bool releaseCapture = true)
     {
+        var canceledMode = _pointerState.Mode;
+        var oldNode = _selectedNode;
+        var oldConnection = _selectedConnection;
+        var restoreMarqueeSelection = canceledMode == GraphPointerMode.BoxSelect
+            ? _selectionBeforeMarquee.ToArray()
+            : [];
         _canceling = true;
         try
         {
+            if (canceledMode == GraphPointerMode.NodeDrag) _ = _host?.CancelLayoutMove();
             _pointerState.Cancel();
+            ClearSplicePreview();
             _dragNode = null;
+            _dragOrigins.Clear();
+            _nodeDragThresholdPassed = false;
+            _collapseSelectionOnNodeClick = false;
+            if (_selectionBox is not null) GraphCanvas.Children.Remove(_selectionBox);
+            _selectionBox = null;
+            _selectionBoxBounds = Rect.Empty;
+            _marqueeThresholdPassed = false;
+            _additiveMarquee = false;
+            if (canceledMode == GraphPointerMode.BoxSelect) SetNodeSelection(restoreMarqueeSelection);
+            _selectionBeforeMarquee.Clear();
             _pendingWirePort = null;
             _pendingWireBundle = false;
             _wireStart = null;
@@ -1464,11 +1917,18 @@ public partial class CanonicalGraphEditorView : UserControl
             _wireGestureKind = GraphWireGestureKind.None;
             foreach (var port in _ports.Values) { port.IsConnecting = false; port.IsValidTarget = false; }
             if (releaseCapture && Mouse.Captured == CanvasViewport) Mouse.Capture(null);
+            if (canceledMode == GraphPointerMode.BoxSelect) NotifySelectionChanged(oldNode, oldConnection);
         }
         finally { _canceling = false; }
     }
 
-    private void EndPointerGesture() => CancelPointerGesture();
+    private void EndPointerGesture()
+    {
+        if (_pointerState.Is(GraphPointerMode.NodeDrag)) _ = _host?.CommitLayoutMove();
+        if (_pointerState.Is(GraphPointerMode.BoxSelect))
+            _selectionBeforeMarquee = [.. _selectedNodes];
+        CancelPointerGesture();
+    }
 
     private void RestoreDraggedConnectionVisuals()
     {
@@ -1498,7 +1958,8 @@ public partial class CanonicalGraphEditorView : UserControl
         _connectionVisuals.Clear();
         _selectedConnection = null;
         _selectedNode = null;
-        _pendingSelectedNodeId = null;
+        _selectedNodes.Clear();
+        _pendingSelectedNodeIds.Clear();
     }
 
     private static void SetPortAutomation(FlowPortControl port)
@@ -1603,8 +2064,12 @@ public partial class CanonicalGraphEditorView : UserControl
     private void NotifySelectionChanged(GraphEditorNodeViewModel? oldNode,
         GraphEditorConnectionViewModel? oldConnection)
     {
-        if (ReferenceEquals(oldNode, _selectedNode) && ReferenceEquals(oldConnection, _selectedConnection)) return;
-        var args = _selectedNode is { } node
+        if (ReferenceEquals(oldNode, _selectedNode) && ReferenceEquals(oldConnection, _selectedConnection)
+            && _selectedNodes.Count <= 1) return;
+        var args = _selectedNodes.Count > 1
+            ? new GraphSelectionChangedEventArgs(GraphSelectionKind.MultipleNodes,
+                nodes: _selectedNodes.OrderBy(node => node.NodeId, StringComparer.Ordinal).ToArray())
+            : _selectedNode is { } node
             ? new GraphSelectionChangedEventArgs(GraphSelectionKind.Node, node: node)
             : _selectedConnection is { } connection
                 ? new GraphSelectionChangedEventArgs(GraphSelectionKind.Connection, connection: connection)

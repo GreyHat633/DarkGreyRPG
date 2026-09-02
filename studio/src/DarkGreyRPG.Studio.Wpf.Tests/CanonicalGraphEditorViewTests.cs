@@ -855,7 +855,7 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
 
         CollectionAssert.AreEqual(
-            new[] { "line", "choice", "narration", "condition", "flow_judgment", "and", "or", "not", "logic_output", "logic_input", "end" },
+            new[] { "line", "choice", "narration", "and", "or", "not", "logic_input", "logic_output", "condition", "flow_judgment", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
         CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },
@@ -900,7 +900,7 @@ public sealed class CanonicalGraphEditorViewTests
 
         var logic = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "逻辑"));
         CollectionAssert.AreEqual(
-            new[] { "条件判断", "流程判断", "与", "或", "非", "逻辑输出", "逻辑输入" },
+            new[] { "与", "或", "非", "逻辑输入", "逻辑输出", "条件判断", "流程判断" },
             logic.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
 
         var session = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "会话"));
@@ -989,6 +989,294 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.AreEqual(beforeJson, host.Graph.ToJson());
         Assert.AreEqual("graph.node.create.id.duplicate", duplicateView.LastAuthoringIssues.Single().Code);
     }
+
+    [STATestMethod]
+    public void MarqueeCtrlAdditiveSelectionAndGroupMovePreserveTopologyAndOffsets()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("a", "action", "A", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("b", "action", "B", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("c", "action", "C", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)])],
+            [new("a", "flow_out", "b", "flow_in", GraphInterfaceKind.Flow)]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        host.SetNodePosition("a", 20, 30);
+        host.SetNodePosition("b", 320, 80);
+        host.SetNodePosition("c", 650, 140);
+        var view = Arrange(host);
+        var topology = graph.ToJson();
+
+        view.ApplyMarqueeSelection(new Rect(0, 0, 580, 260));
+        CollectionAssert.AreEquivalent(new[] { "a", "b" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.IsNull(view.SelectedNode);
+        Assert.HasCount(2, view.NodeVisuals.Where(node => node.IsSelected));
+
+        view.ApplyMarqueeSelection(new Rect(620, 110, 270, 220), additive: true);
+        CollectionAssert.AreEquivalent(new[] { "a", "b", "c" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        var offsets = host.Nodes.ToDictionary(node => node.NodeId,
+            node => new Point(node.X - host.Nodes.Single(item => item.NodeId == "a").X,
+                node.Y - host.Nodes.Single(item => item.NodeId == "a").Y), StringComparer.Ordinal);
+        var layoutChanged = 0;
+        host.LayoutChanged += (_, _) => layoutChanged++;
+
+        Assert.IsTrue(view.BeginSelectedNodeDrag("a"));
+        CollectionAssert.AreEquivalent(new[] { "a", "b", "c" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.IsTrue(view.UpdateSelectedNodeDrag(new Vector(45, -15), shiftPressed: true));
+        Assert.IsNull(view.ActiveSpliceCandidate);
+        Assert.IsEmpty(view.SpliceGhostVisuals);
+        Assert.IsTrue(view.CompleteSelectedNodeDrag());
+
+        foreach (var node in host.Nodes)
+        {
+            var anchor = host.Nodes.Single(item => item.NodeId == "a");
+            Assert.AreEqual(offsets[node.NodeId], new Point(node.X - anchor.X, node.Y - anchor.Y));
+        }
+        Assert.AreEqual(topology, graph.ToJson());
+        Assert.AreEqual(new GraphEditorNodePosition(65, 15), host.Layout["a"]);
+        Assert.AreEqual(new GraphEditorNodePosition(365, 65), host.Layout["b"]);
+        Assert.AreEqual(new GraphEditorNodePosition(695, 125), host.Layout["c"]);
+        Assert.AreEqual(1, layoutChanged);
+        Assert.IsTrue(host.CanUndo);
+
+        Assert.IsTrue(host.Undo());
+        Assert.AreEqual(new GraphEditorNodePosition(20, 30), host.Layout["a"]);
+        Assert.AreEqual(new GraphEditorNodePosition(320, 80), host.Layout["b"]);
+        Assert.AreEqual(new GraphEditorNodePosition(650, 140), host.Layout["c"]);
+        Assert.IsFalse(host.CanUndo);
+        Assert.IsTrue(host.CanRedo);
+        Assert.IsTrue(host.Redo());
+        Assert.AreEqual(new GraphEditorNodePosition(65, 15), host.Layout["a"]);
+        Assert.AreEqual(new GraphEditorNodePosition(365, 65), host.Layout["b"]);
+        Assert.AreEqual(new GraphEditorNodePosition(695, 125), host.Layout["c"]);
+    }
+
+    [STATestMethod]
+    public void MultiSelectionContextMenuPreservesSelectedTargetAndSharesAtomicDelete()
+    {
+        var graph = ThreeActionGraph();
+        graph.Connections = [
+            new("a", "flow_out", "b", "flow_in", GraphInterfaceKind.Flow),
+            new("b", "flow_out", "c", "flow_in", GraphInterfaceKind.Flow),
+        ];
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNodes(["a", "b"]));
+        var edits = new List<string>();
+        view.NodeEditRequested += node => edits.Add(node.NodeId);
+        var before = graph.ToJson();
+
+        var menu = view.CreateNodeContextMenu(host.Nodes.Single(node => node.NodeId == "b"));
+        CollectionAssert.AreEquivalent(new[] { "a", "b" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        menu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "编辑"))
+            .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Assert.IsEmpty(edits);
+        CollectionAssert.AreEquivalent(new[] { "a", "b" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.AreEqual(before, graph.ToJson());
+
+        menu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "删除"))
+            .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        CollectionAssert.AreEqual(new[] { "c" }, host.Nodes.Select(node => node.NodeId).ToArray());
+        Assert.IsEmpty(host.Connections);
+        Assert.IsTrue(host.Undo());
+        Assert.AreEqual(before, graph.ToJson());
+
+        Assert.IsTrue(view.SelectNodes(["a", "b"]));
+        var singleMenu = view.CreateNodeContextMenu(host.Nodes.Single(node => node.NodeId == "c"));
+        CollectionAssert.AreEqual(new[] { "c" }, view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        singleMenu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "编辑"))
+            .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        CollectionAssert.AreEqual(new[] { "c" }, edits);
+    }
+
+    [STATestMethod]
+    public void EditableControlDeleteNeverDeletesSelectedGraphNodes()
+    {
+        var host = new GraphEditorHostViewModel(ThreeActionGraph(), GraphScope.StoryFlow);
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNodes(["a", "b", "c"]));
+        var before = host.Graph.ToJson();
+        var editor = new TextBox { Text = "abcdef" };
+
+        Assert.IsFalse(view.HandleKeyboardCommand(Key.Delete, editor));
+
+        Assert.AreEqual(before, host.Graph.ToJson());
+        Assert.HasCount(3, view.SelectedNodes);
+        Assert.IsFalse(host.CanUndo);
+    }
+
+    [STATestMethod]
+    public void CtrlToggleAndEscapeRestoreSelectionFromBeforeMarquee()
+    {
+        var host = new GraphEditorHostViewModel(ThreeActionGraph(), GraphScope.StoryFlow);
+        host.SetNodePosition("a", 20, 30);
+        host.SetNodePosition("b", 320, 80);
+        host.SetNodePosition("c", 650, 140);
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNode("c"));
+        Assert.IsTrue(view.ToggleNodeSelection("a"));
+        CollectionAssert.AreEquivalent(new[] { "a", "c" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.IsTrue(view.ToggleNodeSelection("a"));
+        CollectionAssert.AreEqual(new[] { "c" }, view.SelectedNodes.Select(node => node.NodeId).ToArray());
+
+        Assert.IsTrue(view.BeginMarqueeSelection(new Point(0, 0)));
+        Assert.IsTrue(view.UpdateMarqueeSelection(new Point(580, 260)));
+        CollectionAssert.AreEquivalent(new[] { "a", "b" },
+            view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.IsTrue(view.HandleKeyboardCommand(Key.Escape));
+
+        CollectionAssert.AreEqual(new[] { "c" }, view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.AreEqual("c", view.SelectedNode?.NodeId);
+        Assert.IsFalse(view.IsBoxSelecting);
+        Assert.AreEqual(Rect.Empty, view.SelectionBoxBounds);
+    }
+
+    [STATestMethod]
+    public void MixedProtectedMultiDeleteRemovesDeletableNodesAndKeepsRequiredSelection()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("start", "start", "Start", [
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("action", "action", "Action", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)])],
+            [new("start", "flow_out", "action", "flow_in", GraphInterfaceKind.Flow)]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNodes(["start", "action"]));
+
+        Assert.IsTrue(view.RemoveSelectedNodes(confirmReferencedRemoval: true));
+
+        CollectionAssert.AreEqual(new[] { "start" }, host.Nodes.Select(node => node.NodeId).ToArray());
+        Assert.IsEmpty(host.Connections);
+        CollectionAssert.AreEqual(new[] { "start" }, view.SelectedNodes.Select(node => node.NodeId).ToArray());
+        Assert.AreEqual("start", view.SelectedNode?.NodeId);
+        Assert.IsTrue(host.LastValidationIssues.Any(issue => issue.Code == "graph.node.not_deletable"));
+        Assert.AreEqual(1, host.Session.UndoCount);
+        Assert.IsTrue(host.Undo());
+        Assert.HasCount(2, host.Nodes);
+        Assert.HasCount(1, host.Connections);
+    }
+
+    [STATestMethod]
+    public void MultiDeleteRemovesSessionAndTaskPlacementsButLeavesResourcesOwnedOutsideGraph()
+    {
+        var sessionResource = new GraphDocument([new GraphNode("session_start", "start", "Session", [])]);
+        var taskResource = new GraphDocument([new GraphNode("settle", "settle", "Task", [])]);
+        var graph = new GraphDocument([
+            new GraphNode("session_placement", "session", "Session placement", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("task_placement", "task", "Task placement", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow)])]);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNodes(["session_placement", "task_placement"]));
+
+        Assert.IsTrue(view.DeleteCurrentSelection(confirmReferencedRemoval: true));
+
+        Assert.IsEmpty(host.Nodes);
+        Assert.HasCount(1, sessionResource.Nodes);
+        Assert.HasCount(1, taskResource.Nodes);
+        Assert.IsTrue(host.Undo());
+        Assert.HasCount(2, host.Nodes);
+        Assert.HasCount(1, sessionResource.Nodes);
+        Assert.HasCount(1, taskResource.Nodes);
+    }
+
+    [STATestMethod]
+    public void SplicePreviewIsNonMutatingAndCommitAtomicallyReplacesOneWireWithTwo()
+    {
+        var graph = ThreeActionGraph();
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("b", "flow_in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNode("c"));
+        var original = host.Connections.Single();
+        var before = graph.ToJson();
+
+        Assert.IsTrue(view.PreviewSpliceCandidate(view.SelectedNode!, original));
+        Assert.AreSame(original, view.ActiveSpliceCandidate);
+        Assert.HasCount(2, view.SpliceGhostVisuals);
+        Assert.AreEqual(before, graph.ToJson());
+
+        Assert.IsTrue(view.CompleteActiveSplice());
+
+        Assert.HasCount(2, host.Connections);
+        Assert.IsTrue(host.Connections.Any(connection => connection.FromNodeId == "a" && connection.ToNodeId == "c"));
+        Assert.IsTrue(host.Connections.Any(connection => connection.FromNodeId == "c" && connection.ToNodeId == "b"));
+        Assert.IsNull(view.ActiveSpliceCandidate);
+        Assert.IsEmpty(view.SpliceGhostVisuals);
+        Assert.IsTrue(host.Undo());
+        Assert.HasCount(1, host.Connections);
+        Assert.IsTrue(host.Connections.Single().Connection.Equals(original.Connection));
+    }
+
+    [STATestMethod]
+    public void AmbiguousOrMultiSelectedSpliceCandidateStaysOrdinaryLayoutAndDoesNotMutate()
+    {
+        var graph = ThreeActionGraph();
+        graph.Nodes.Single(node => node.Id == "c").Ports.Add(
+            new GraphPort("second_in", "Second", true, GraphInterfaceKind.Flow));
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("b", "flow_in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        var before = graph.ToJson();
+        Assert.IsTrue(view.SelectNode("c"));
+
+        Assert.IsFalse(view.PreviewSpliceCandidate(view.SelectedNode!, host.Connections.Single()));
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.IsTrue(view.SelectNodes(["a", "c"]));
+        Assert.IsFalse(view.PreviewSpliceCandidate(
+            host.Nodes.Single(node => node.NodeId == "c"), host.Connections.Single()));
+        Assert.AreEqual(before, graph.ToJson());
+    }
+
+    [STATestMethod]
+    public void OccupiedDraggedPortRejectsSpliceAndPreservesEveryExistingWire()
+    {
+        var graph = ThreeActionGraph();
+        graph.Nodes.Add(new GraphNode("x", "terminate", "X", [
+            new("flow_in", "In", true, GraphInterfaceKind.Flow)]));
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("b", "flow_in", GraphInterfaceKind.Flow)));
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("c", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("x", "flow_in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNode("c"));
+        var candidate = host.Connections.Single(connection => connection.FromNodeId == "a");
+        var before = graph.ToJson();
+
+        Assert.IsFalse(view.PreviewSpliceCandidate(view.SelectedNode!, candidate));
+
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.HasCount(2, host.Connections);
+        Assert.IsTrue(host.Connections.Any(connection => connection.FromNodeId == "c" && connection.ToNodeId == "x"));
+    }
+
+    private static GraphDocument ThreeActionGraph()
+        => new([
+            new GraphNode("a", "action", "A", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("b", "action", "B", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("c", "action", "C", [
+                new("flow_in", "In", true, GraphInterfaceKind.Flow),
+                new("flow_out", "Out", false, GraphInterfaceKind.Flow)])]);
 
     private static GraphDocument Graph(GraphScope scope)
     {

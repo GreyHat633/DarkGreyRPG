@@ -569,3 +569,17 @@ tasks.register<JavaExec>("storyPackageLoaderProbe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.project.packages.StoryPackageLoaderProbe")
 }
+
+tasks.register<JavaExec>("dgrsPackageRuntimeProbe") {
+    group = "verification"
+    description = "Loads one Studio-produced DGRS through the Java package and Task runtime path."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.DgrsPackageRuntimeProbe")
+    notCompatibleWithConfigurationCache("The external DGRS path is supplied only when this live probe executes.")
+    doFirst {
+        val packagePath = providers.gradleProperty("dgrsPath").orNull
+            ?: throw GradleException("Pass -PdgrsPath=<absolute .dgrs path>")
+        args(packagePath, layout.buildDirectory.dir("dgrs-runtime-probe").get().asFile.absolutePath)
+    }
+}

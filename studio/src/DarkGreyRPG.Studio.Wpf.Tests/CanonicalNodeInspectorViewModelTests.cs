@@ -373,6 +373,8 @@ public sealed class CanonicalNodeInspectorViewModelTests
             endInspector.EndDisplayName = "Finished";
             Assert.AreEqual(string.Empty, endInspector.EndDisplayNameError);
             Assert.AreEqual("Finished", editor.Host.Graph.Nodes.Single(node => node.Id == "end").Properties["display_name"].GetString());
+            Assert.AreEqual("Finished", editor.Host.Graph.Nodes.Single(node => node.Id == "end")
+                .Ports.Single(port => port.Id == "flow_in").DisplayName);
             Assert.AreEqual(1L, editor.GraphRevision);
         }
         using var logicInspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(node => node.NodeId == "logic"));

@@ -1,8 +1,10 @@
 package darkgrey.rpg.project.packages;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,7 +22,14 @@ import darkgrey.rpg.project.ProjectLoadException;
 public final class StoryPackageManifest {
 
     public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final String CURRENT_FORMAT = "dgrs";
+    public static final int CURRENT_FORMAT_VERSION = 1;
+    public static final String CURRENT_PRODUCER = "DarkGreyRPGStudio";
     private static final Set<String> ROOT_FIELDS = set(
+        "format",
+        "format_version",
+        "producer",
+        "producer_version",
         "schema_version",
         "package_id",
         "package_version",
@@ -41,14 +50,23 @@ public final class StoryPackageManifest {
         "story_logic_graph");
 
     private final int schemaVersion;
+    private final String format;
+    private final Integer formatVersion;
+    private final String producer;
+    private final String producerVersion;
     private final String packageId;
     private final String packageVersion;
     private final String storyId;
     private final int storySchemaVersion;
     private final RequiredResources requiredResources;
 
-    private StoryPackageManifest(int schemaVersion, String packageId, String packageVersion, String storyId,
-        int storySchemaVersion, RequiredResources requiredResources) {
+    private StoryPackageManifest(String format, Integer formatVersion, String producer, String producerVersion,
+        int schemaVersion, String packageId, String packageVersion, String storyId, int storySchemaVersion,
+        RequiredResources requiredResources) {
+        this.format = format;
+        this.formatVersion = formatVersion;
+        this.producer = producer;
+        this.producerVersion = producerVersion;
         this.schemaVersion = schemaVersion;
         this.packageId = packageId;
         this.packageVersion = packageVersion;
@@ -59,12 +77,30 @@ public final class StoryPackageManifest {
 
     public static StoryPackageManifest read(File file) throws ProjectLoadException {
         try {
-            FileReader reader = new FileReader(file);
+            InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
             try {
                 JsonElement root = new JsonParser().parse(reader);
                 if (!root.isJsonObject()) throw failure(file, "Manifest root must be an object");
                 JsonObject json = root.getAsJsonObject();
                 rejectUnknown(file, json, ROOT_FIELDS);
+                String format = optionalString(file, json, "format");
+                Integer formatVersion = optionalInt(file, json, "format_version");
+                String producer = optionalString(file, json, "producer");
+                String producerVersion = optionalString(file, json, "producer_version");
+                boolean hasDgrsIdentity = format != null || formatVersion != null
+                    || producer != null
+                    || producerVersion != null;
+                if (hasDgrsIdentity
+                    && (format == null || formatVersion == null || producer == null || producerVersion == null))
+                    throw failure(file, "DGRS identity fields must be present together");
+                if (hasDgrsIdentity) {
+                    if (!CURRENT_FORMAT.equals(format))
+                        throw failure(file, "Unsupported package format '" + format + "'");
+                    if (formatVersion.intValue() != CURRENT_FORMAT_VERSION)
+                        throw failure(file, "Unsupported DGRS format_version " + formatVersion);
+                    if (!CURRENT_PRODUCER.equals(producer))
+                        throw failure(file, "Unsupported DGRS producer '" + producer + "'");
+                }
                 int schema = requiredInt(file, json, "schema_version");
                 if (schema != CURRENT_SCHEMA_VERSION)
                     throw failure(file, "Unsupported package schema_version " + schema);
@@ -87,7 +123,17 @@ public final class StoryPackageManifest {
                     paths(file, resources, "sessions"),
                     paths(file, resources, "tasks"),
                     optionalPath(file, resources, "story_logic_graph"));
-                return new StoryPackageManifest(schema, packageId, packageVersion, storyId, storySchema, required);
+                return new StoryPackageManifest(
+                    format,
+                    formatVersion,
+                    producer,
+                    producerVersion,
+                    schema,
+                    packageId,
+                    packageVersion,
+                    storyId,
+                    storySchema,
+                    required);
             } finally {
                 reader.close();
             }
@@ -100,6 +146,31 @@ public final class StoryPackageManifest {
 
     public int getSchemaVersion() {
         return schemaVersion;
+    }
+
+    public boolean isDgrsV1() {
+        return CURRENT_FORMAT.equals(format) && formatVersion != null
+            && formatVersion.intValue() == CURRENT_FORMAT_VERSION
+            && CURRENT_PRODUCER.equals(producer)
+            && producerVersion != null
+            && !producerVersion.trim()
+                .isEmpty();
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public Integer getFormatVersion() {
+        return formatVersion;
+    }
+
+    public String getProducer() {
+        return producer;
+    }
+
+    public String getProducerVersion() {
+        return producerVersion;
     }
 
     public String getPackageId() {
@@ -248,6 +319,16 @@ public final class StoryPackageManifest {
                 .isNumber())
             throw failure(file, field + " must be an integer");
         return e.getAsInt();
+    }
+
+    private static Integer optionalInt(File file, JsonObject json, String field) throws ProjectLoadException {
+        if (!json.has(field)) return null;
+        return Integer.valueOf(requiredInt(file, json, field));
+    }
+
+    private static String optionalString(File file, JsonObject json, String field) throws ProjectLoadException {
+        if (!json.has(field)) return null;
+        return requiredString(file, json, field);
     }
 
     private static String requiredString(File file, JsonObject json, String field) throws ProjectLoadException {

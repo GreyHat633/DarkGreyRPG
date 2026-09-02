@@ -332,13 +332,13 @@ public final class CanonicalTaskEventPersistenceProbe {
                     "activate",
                     "logic_out",
                     "kill",
-                    "logic_enable",
+                    "prerequisite",
                     CanonicalGraphInterfaceKind.LOGIC),
                 new CanonicalGraphConnection(
                     "kill",
                     "logic_status",
                     "interact",
-                    "logic_enable",
+                    "prerequisite",
                     CanonicalGraphInterfaceKind.LOGIC)));
     }
 
@@ -351,7 +351,7 @@ public final class CanonicalTaskEventPersistenceProbe {
                     "activate",
                     "logic_out",
                     "kill",
-                    "logic_enable",
+                    "prerequisite",
                     CanonicalGraphInterfaceKind.LOGIC),
                 new CanonicalGraphConnection(
                     "kill",
@@ -372,7 +372,7 @@ public final class CanonicalTaskEventPersistenceProbe {
             node(
                 spec.id,
                 "objective",
-                Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+                Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
                 spec.properties()));
         nodes.add(node("settle", "settle", Collections.singletonList(port("done", true, 0)), empty()));
         return new CanonicalGraphResource(1, CanonicalGraphResourceKind.TASK, id, id, new CanonicalGraph(nodes, edges));
@@ -385,7 +385,7 @@ public final class CanonicalTaskEventPersistenceProbe {
                 "activate",
                 "logic_out",
                 spec.id,
-                "logic_enable",
+                "prerequisite",
                 CanonicalGraphInterfaceKind.LOGIC));
         return edges;
     }
@@ -473,6 +473,7 @@ public final class CanonicalTaskEventPersistenceProbe {
             result.put("objective_type", json(type));
             result.put("description", json(id));
             result.put("required", new JsonParser().parse(Integer.toString(required)));
+            result.put("prerequisite_enabled", new JsonParser().parse("true"));
             if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) result.put("entity", json(target));
             else if (CanonicalTaskEvent.COLLECT_ITEM.equals(type)) {
                 result.put("item", json(target));

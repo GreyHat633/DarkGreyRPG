@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-/** Executable acceptance matrix for schema-version-1 Story membership loading. */
+/** Executable acceptance matrix for schema-version-1/2/3 Story membership loading. */
 public final class CanonicalStoryMembershipLoaderProbe {
 
     private CanonicalStoryMembershipLoaderProbe() {}
@@ -29,12 +29,48 @@ public final class CanonicalStoryMembershipLoaderProbe {
             CanonicalStoryMembershipLoader loader = new CanonicalStoryMembershipLoader();
             verifyValid(loader, memberships);
             verifySchemaTwo(loader, memberships);
+            verifySchemaThree(loader, memberships);
             verifyFailures(loader, memberships);
             verifyDirectory(loader, root, memberships);
             System.out.println("CANONICAL_STORY_MEMBERSHIP_PROBE=PASS");
         } finally {
             delete(root);
         }
+    }
+
+    private static void verifySchemaThree(CanonicalStoryMembershipLoader loader, Path directory) throws Exception {
+        Path file = directory.resolve("story_ordered.json");
+        String json = schemaThreeJson("story_ordered");
+        write(file, json);
+        CanonicalStoryMembership membership = loader.load(file);
+        require(membership.getSchemaVersion() == 3, "Schema 3 identity changed");
+        require(
+            Arrays.asList("royal_key")
+                .equals(
+                    membership.getOwnedResources()
+                        .getItems()),
+            "Schema 3 item membership changed");
+        expect(
+            loader,
+            file,
+            json.replace("\"actors\":[\"actor_a\"]", "\"actors\":[\"actor_a\",\"actor_a\"]"),
+            "story.membership.actor.order.duplicate");
+        expect(
+            loader,
+            file,
+            json.replace("\"items\":[\"item:royal_key\",\"item_group:swords\"]", "\"items\":[\"royal_key\"]"),
+            "story.membership.item.order.invalid");
+        expect(
+            loader,
+            file,
+            json.replace("\"display_order\":{", "\"display_order\":{\"extra\":[],"),
+            "story.membership.display_order.member.unsupported");
+        expect(
+            loader,
+            file,
+            json.replace(",\"display_order\":", ",\"unexpected\":[],\"display_order\":"),
+            "story.membership.root.member.unsupported");
+        Files.delete(file);
     }
 
     private static void verifySchemaTwo(CanonicalStoryMembershipLoader loader, Path directory) throws Exception {
@@ -278,6 +314,16 @@ public final class CanonicalStoryMembershipLoaderProbe {
     private static String json(String storyId) {
         return "{\"schema_version\":1,\"story_id\":\"" + storyId
             + "\",\"owned_resources\":{\"actors\":[\"actor_b\",\"actor_a\"],\"sessions\":[\"session_a\"],\"tasks\":[\"task_a\"]},\"referenced_resources\":{\"actors\":[\"actor_c\"],\"sessions\":[\"session_b\"],\"tasks\":[\"task_b\"]}}";
+    }
+
+    private static String schemaThreeJson(String storyId) {
+        return "{\"schema_version\":3,\"story_id\":\"" + storyId
+            + "\",\"owned_resources\":{\"actors\":[\"actor_a\"],\"items\":[\"royal_key\"],"
+            + "\"item_groups\":[\"swords\"],\"sessions\":[\"session_a\"],\"tasks\":[\"task_a\"]},"
+            + "\"referenced_resources\":{\"actors\":[],\"items\":[],\"item_groups\":[],"
+            + "\"sessions\":[],\"tasks\":[]},\"display_order\":{\"actors\":[\"actor_a\"],"
+            + "\"items\":[\"item:royal_key\",\"item_group:swords\"],\"sessions\":[\"session_a\"],"
+            + "\"tasks\":[\"task_a\"]}}";
     }
 
     private static void write(Path path, String text) throws IOException {

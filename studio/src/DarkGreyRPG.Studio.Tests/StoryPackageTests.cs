@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Packaging;
 using DarkGreyRPG.Studio.Core.Stories;
@@ -159,6 +160,29 @@ public sealed class StoryPackageTests
         File.WriteAllText(Path.Combine(output, "resources", "canonical", "sessions", "stale.json"), "stale");
         new StoryPackageExporter(project.Root).Build("canonical_empty", output);
         Assert.IsFalse(File.Exists(Path.Combine(output, "resources", "canonical", "sessions", "stale.json")));
+    }
+
+    [TestMethod]
+    public void BuildCanonicalOnlyStoryDoesNotRequireLegacyStoryRepositoryEntry()
+    {
+        using var project = new TestProjectDirectory();
+        var store = new CanonicalProjectGraphStore(project.Root);
+        store.Stories.Create(new GraphResourceEnvelope(
+            GraphResourceKind.Story,
+            "canonical_only",
+            "Canonical Only",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("canonical_only"));
+
+        var output = Path.Combine(project.Root, "canonical-only-package");
+        var result = new StoryPackageExporter(project.Root).Build("canonical_only", output, "0.3.2.0");
+
+        Assert.AreEqual(
+            "resources/canonical/stories/canonical_only.json",
+            result.Manifest.RequiredResources.Story);
+        Assert.IsFalse(File.Exists(Path.Combine(output, "stories", "canonical_only.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(
+            output, "resources", "canonical", "stories", "canonical_only.json")));
     }
 
     [TestMethod]

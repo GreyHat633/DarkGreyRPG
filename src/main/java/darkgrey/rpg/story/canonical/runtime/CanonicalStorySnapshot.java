@@ -1,7 +1,9 @@
 package darkgrey.rpg.story.canonical.runtime;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Detached immutable state of the pure canonical Story cursor. */
@@ -25,6 +27,7 @@ public final class CanonicalStorySnapshot {
     private final String targetStoryId;
     private final Map<String, Boolean> externalLogicInputs;
     private final Boolean waitingConditionValue;
+    private final List<String> executedFlowJudgmentNodeIds;
 
     public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
         CanonicalStoryRepeatPolicy repeatPolicy, String triggerPortId, String currentNodeId, String currentInputPortId,
@@ -48,7 +51,8 @@ public final class CanonicalStorySnapshot {
             logicValues,
             targetStoryId,
             Collections.<String, Boolean>emptyMap(),
-            null);
+            null,
+            Collections.<String>emptyList());
     }
 
     public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
@@ -73,14 +77,16 @@ public final class CanonicalStorySnapshot {
             logicValues,
             targetStoryId,
             Collections.<String, Boolean>emptyMap(),
-            null);
+            null,
+            Collections.<String>emptyList());
     }
 
     public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
         CanonicalStoryRepeatPolicy repeatPolicy, String triggerPortId, String currentNodeId, String currentInputPortId,
         CanonicalStoryWaitKind waitKind, String waitResourceId, Integer waitDimension, Double waitX, Double waitY,
         Double waitZ, Double waitRadius, Map<String, Boolean> logicValues, String targetStoryId,
-        Map<String, Boolean> externalLogicInputs, Boolean waitingConditionValue) {
+        Map<String, Boolean> externalLogicInputs, Boolean waitingConditionValue,
+        List<String> executedFlowJudgmentNodeIds) {
         if (blank(resourceId) || blank(resourceFingerprint)
             || status == null
             || repeatPolicy == null
@@ -130,6 +136,13 @@ public final class CanonicalStorySnapshot {
                 throw new IllegalArgumentException("Invalid Story external Logic snapshot.");
             external.put(entry.getKey(), entry.getValue());
         }
+        if (executedFlowJudgmentNodeIds == null)
+            throw new IllegalArgumentException("Story Flow Judgment snapshot is required.");
+        ArrayList<String> executed = new ArrayList<String>();
+        for (String nodeId : executedFlowJudgmentNodeIds) {
+            if (blank(nodeId) || !executed.add(nodeId))
+                throw new IllegalArgumentException("Invalid Story Flow Judgment snapshot.");
+        }
         this.resourceId = resourceId;
         this.resourceFingerprint = resourceFingerprint;
         this.status = status;
@@ -148,6 +161,34 @@ public final class CanonicalStorySnapshot {
         this.targetStoryId = targetStoryId;
         this.externalLogicInputs = Collections.unmodifiableMap(external);
         this.waitingConditionValue = waitingConditionValue;
+        this.executedFlowJudgmentNodeIds = Collections.unmodifiableList(executed);
+    }
+
+    public CanonicalStorySnapshot(String resourceId, String resourceFingerprint, CanonicalStoryStatus status,
+        CanonicalStoryRepeatPolicy repeatPolicy, String triggerPortId, String currentNodeId, String currentInputPortId,
+        CanonicalStoryWaitKind waitKind, String waitResourceId, Integer waitDimension, Double waitX, Double waitY,
+        Double waitZ, Double waitRadius, Map<String, Boolean> logicValues, String targetStoryId,
+        Map<String, Boolean> externalLogicInputs, Boolean waitingConditionValue) {
+        this(
+            resourceId,
+            resourceFingerprint,
+            status,
+            repeatPolicy,
+            triggerPortId,
+            currentNodeId,
+            currentInputPortId,
+            waitKind,
+            waitResourceId,
+            waitDimension,
+            waitX,
+            waitY,
+            waitZ,
+            waitRadius,
+            logicValues,
+            targetStoryId,
+            externalLogicInputs,
+            waitingConditionValue,
+            Collections.<String>emptyList());
     }
 
     public String getResourceId() {
@@ -260,6 +301,10 @@ public final class CanonicalStorySnapshot {
 
     public Boolean getWaitingConditionValue() {
         return waitingConditionValue;
+    }
+
+    public List<String> getExecutedFlowJudgmentNodeIds() {
+        return executedFlowJudgmentNodeIds;
     }
 
     private static boolean blank(String value) {

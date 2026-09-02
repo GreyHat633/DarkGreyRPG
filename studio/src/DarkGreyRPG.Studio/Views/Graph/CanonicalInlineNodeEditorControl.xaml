@@ -86,6 +86,23 @@
                                                   AutomationProperties.AutomationId="InlineObjectiveRequired" />
                 <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ObjectiveRequiredError}" TextWrapping="Wrap" />
             </StackPanel>
+            <CheckBox Margin="0,6,0,0" Content="前置条件"
+                      IsChecked="{Binding ObjectivePrerequisiteEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      AutomationProperties.AutomationId="InlineObjectivePrerequisiteToggle" />
+            <TextBlock Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Text="{Binding ObjectivePrerequisiteHelpText}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="InlineObjectivePrerequisiteHelp">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ObjectivePrerequisiteEnabled}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </StackPanel>
 
         <StackPanel>

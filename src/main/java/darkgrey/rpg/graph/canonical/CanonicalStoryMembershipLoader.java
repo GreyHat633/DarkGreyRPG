@@ -27,17 +27,24 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-/** Strict, read-only loader for schema-version-1/2 Story membership manifests. */
+/** Strict, read-only loader for schema-version-1/2/3 Story membership manifests. */
 public final class CanonicalStoryMembershipLoader {
 
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9_-]*$");
-    private static final Set<String> ROOT = set(
+    private static final Set<String> LEGACY_ROOT = set(
         "schema_version",
         "story_id",
         "owned_resources",
         "referenced_resources");
+    private static final Set<String> CURRENT_ROOT = set(
+        "schema_version",
+        "story_id",
+        "owned_resources",
+        "referenced_resources",
+        "display_order");
     private static final Set<String> LEGACY_MEMBERSHIP = set("actors", "sessions", "tasks");
     private static final Set<String> CURRENT_MEMBERSHIP = set("actors", "items", "item_groups", "sessions", "tasks");
+    private static final Set<String> DISPLAY_ORDER = set("actors", "items", "sessions", "tasks");
 
     public CanonicalStoryMembership load(File file) throws CanonicalStoryMembershipException {
         return load(file == null ? null : file.toPath());
@@ -123,13 +130,17 @@ public final class CanonicalStoryMembershipLoader {
                 "Story membership JSON is invalid or contains unsupported fields.",
                 exception);
         }
-        exact(root, ROOT, "story.membership.root");
         int version = integer(root, "schema_version", "story.membership.root");
         if (version != CanonicalStoryMembership.LEGACY_SCHEMA_VERSION
+            && version != CanonicalStoryMembership.ITEM_MEMBERSHIP_SCHEMA_VERSION
             && version != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
             throw CanonicalStoryMembershipException.failure(
                 "story.membership.schema_version.unsupported",
                 "Unsupported Story membership schema_version " + version + ".");
+        exact(
+            root,
+            version == CanonicalStoryMembership.CURRENT_SCHEMA_VERSION ? CURRENT_ROOT : LEGACY_ROOT,
+            "story.membership.root");
         String storyId = string(root, "story_id", "story.membership.root");
         CanonicalStoryMembershipSet owned = membershipSet(
             required(root, "owned_resources", "story.membership.root"),
@@ -139,6 +150,8 @@ public final class CanonicalStoryMembershipLoader {
             required(root, "referenced_resources", "story.membership.root"),
             "referenced_resources",
             version);
+        if (version == CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
+            displayOrder(required(root, "display_order", "story.membership.root"));
         CanonicalStoryMembership result = new CanonicalStoryMembership(version, storyId, owned, referenced);
         validate(result);
         String expectedFile = storyId + ".json";
@@ -153,7 +166,7 @@ public final class CanonicalStoryMembershipLoader {
         if (!element.isJsonObject()) throw CanonicalStoryMembershipException
             .failure("story.membership.set.invalid", "'" + path + "' must be an object.");
         JsonObject object = element.getAsJsonObject();
-        boolean current = version == CanonicalStoryMembership.CURRENT_SCHEMA_VERSION;
+        boolean current = version >= CanonicalStoryMembership.ITEM_MEMBERSHIP_SCHEMA_VERSION;
         exact(object, current ? CURRENT_MEMBERSHIP : LEGACY_MEMBERSHIP, "story.membership.set");
         return new CanonicalStoryMembershipSet(
             ids(required(object, "actors", "story.membership.set"), path + ".actors"),
@@ -163,6 +176,44 @@ public final class CanonicalStoryMembershipLoader {
                 : Collections.<String>emptyList(),
             ids(required(object, "sessions", "story.membership.set"), path + ".sessions"),
             ids(required(object, "tasks", "story.membership.set"), path + ".tasks"));
+    }
+
+    private static void displayOrder(JsonElement element) throws CanonicalStoryMembershipException {
+        if (!element.isJsonObject()) throw CanonicalStoryMembershipException
+            .failure("story.membership.display_order.invalid", "'display_order' must be an object.");
+        JsonObject object = element.getAsJsonObject();
+        exact(object, DISPLAY_ORDER, "story.membership.display_order");
+        orderHandles(required(object, "actors", "story.membership.display_order"), "actor", false);
+        orderHandles(required(object, "items", "story.membership.display_order"), "item", true);
+        orderHandles(required(object, "sessions", "story.membership.display_order"), "session", false);
+        orderHandles(required(object, "tasks", "story.membership.display_order"), "task", false);
+    }
+
+    private static void orderHandles(JsonElement element, String kind, boolean itemHandle)
+        throws CanonicalStoryMembershipException {
+        String path = "display_order." + kind + "s";
+        List<String> handles = ids(element, path);
+        Set<String> seen = new HashSet<String>();
+        for (String handle : handles) {
+            boolean valid = itemHandle ? validItemOrderHandle(handle)
+                : ID_PATTERN.matcher(handle)
+                    .matches();
+            if (!valid) throw CanonicalStoryMembershipException.failure(
+                "story.membership." + kind + ".order.invalid",
+                "Display-order handle '" + handle + "' is invalid.");
+            if (!seen.add(handle)) throw CanonicalStoryMembershipException.failure(
+                "story.membership." + kind + ".order.duplicate",
+                "'" + path + "' contains duplicate handle '" + handle + "'.");
+        }
+    }
+
+    private static boolean validItemOrderHandle(String handle) {
+        int separator = handle == null ? -1 : handle.indexOf(':');
+        if (separator <= 0 || separator == handle.length() - 1 || separator != handle.lastIndexOf(':')) return false;
+        String prefix = handle.substring(0, separator);
+        return ("item".equals(prefix) || "item_group".equals(prefix))
+            && ID_PATTERN.matcher(handle.substring(separator + 1))
+                .matches();
     }
 
     private static List<String> ids(JsonElement element, String path) throws CanonicalStoryMembershipException {
@@ -181,6 +232,7 @@ public final class CanonicalStoryMembershipLoader {
 
     private static void validate(CanonicalStoryMembership membership) throws CanonicalStoryMembershipException {
         if (membership.getSchemaVersion() != CanonicalStoryMembership.LEGACY_SCHEMA_VERSION
+            && membership.getSchemaVersion() != CanonicalStoryMembership.ITEM_MEMBERSHIP_SCHEMA_VERSION
             && membership.getSchemaVersion() != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
             throw CanonicalStoryMembershipException.failure(
                 "story.membership.schema_version.unsupported",

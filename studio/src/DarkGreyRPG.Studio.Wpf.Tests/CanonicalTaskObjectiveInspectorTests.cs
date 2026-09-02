@@ -34,7 +34,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         var undoCount = editor.Host.Session.UndoCount;
         inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(option => option.Value == "collect_item");
         Assert.AreEqual(undoCount + 1, editor.Host.Session.UndoCount);
-        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "item", "metadata" },
+        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "item", "metadata", "prerequisite_enabled" },
             editor.Host.Graph.Nodes.Single().Properties.Keys.ToArray());
         Assert.AreEqual("Defeat the boss", editor.Host.Graph.Nodes.Single().Properties["description"].GetString());
         Assert.AreEqual(3, editor.Host.Graph.Nodes.Single().Properties["required"].GetInt32());
@@ -133,6 +133,25 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsFalse(editor.Host.LastValidationIssues.Any(issue =>
             issue.Code == "graph.objective.type.invalid"
                 || issue.Code == "graph.objective.property.unsupported"));
+    }
+
+    [TestMethod]
+    public void InspectorPrerequisiteToggleProjectsStablePortAndHelperContract()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        Assert.IsFalse(inspector.ObjectivePrerequisiteEnabled);
+        Assert.AreEqual("前置条件为 True 时激活", inspector.ObjectivePrerequisiteHelpText);
+        inspector.ObjectivePrerequisiteEnabled = true;
+
+        Assert.IsTrue(inspector.ObjectivePrerequisiteEnabled);
+        var persisted = editor.Host.Graph.Nodes.Single();
+        Assert.IsTrue(persisted.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty].GetBoolean());
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.PrerequisitePortId,
+            persisted.Ports.Single(port => port.IsInput).Id);
     }
 
     [TestMethod]

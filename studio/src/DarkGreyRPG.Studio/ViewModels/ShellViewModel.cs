@@ -31,6 +31,7 @@ public sealed class ShellViewModel : ObservableObject
     private readonly IProjectWorkspaceDialogs _projectWorkspaceDialogs;
     private readonly IFlowWorkspaceDialogs _flowWorkspaceDialogs;
     private readonly ICrashLogService _crashLogService;
+    private readonly IDgrsExportPathPicker _dgrsExportPathPicker;
     private readonly Func<string, CanonicalProjectGraphStore> _canonicalGraphStoreFactory;
     private readonly Func<string, CanonicalProjectMigrationPreviewResult> _migrationPreview;
     private readonly Func<CanonicalProjectMigrationPreviewResult, CanonicalProjectMigrationTransactionResult> _migrationApply;
@@ -72,7 +73,8 @@ public sealed class ShellViewModel : ObservableObject
         Func<string, CanonicalProjectGraphStore>? canonicalGraphStoreFactory = null,
         Func<string, CanonicalProjectMigrationPreviewResult>? migrationPreview = null,
         Func<CanonicalProjectMigrationPreviewResult, CanonicalProjectMigrationTransactionResult>? migrationApply = null,
-        IItemWorkspaceDialogs? itemWorkspaceDialogs = null)
+        IItemWorkspaceDialogs? itemWorkspaceDialogs = null,
+        IDgrsExportPathPicker? dgrsExportPathPicker = null)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         _projectFolderPicker = projectFolderPicker ?? throw new ArgumentNullException(nameof(projectFolderPicker));
@@ -83,6 +85,7 @@ public sealed class ShellViewModel : ObservableObject
         _itemWorkspaceDialogs = itemWorkspaceDialogs ?? new NullItemWorkspaceDialogs();
         _flowWorkspaceDialogs = flowWorkspaceDialogs ?? new NullFlowWorkspaceDialogs();
         _crashLogService = crashLogService ?? new CrashLogService();
+        _dgrsExportPathPicker = dgrsExportPathPicker ?? new NullDgrsExportPathPicker();
         _canonicalGraphStoreFactory = canonicalGraphStoreFactory
             ?? (projectDirectory => new CanonicalProjectGraphStore(projectDirectory));
         _migrationPreview = migrationPreview ?? CanonicalProjectMigrationPreview.PreviewProject;
@@ -123,7 +126,7 @@ public sealed class ShellViewModel : ObservableObject
         MigrateCanonicalProjectCommand = new RelayCommand(MigrateCanonicalProject, () => HasProject);
         ExportSelectedStoryPackageCommand = new RelayCommand(
             ExportSelectedStoryPackage,
-            () => HasProject && ProjectHome.SelectedStory is not null && !HasUnsavedDocuments());
+            () => HasProject && ProjectHome.SelectedStory is not null);
         ToggleResourceBrowserCommand = new RelayCommand(
             () => IsResourceBrowserVisible = !IsResourceBrowserVisible);
         ToggleBottomPanelCommand = new RelayCommand(
@@ -265,8 +268,8 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.1.5 RC"
-        : "DarkGrey RPG Studio 0.3.1.5 RC";
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.2.0_A RC"
+        : "DarkGrey RPG Studio 0.3.2.0_A RC";
 
     public string ProjectDirectory
     {
@@ -2745,20 +2748,24 @@ public sealed class ShellViewModel : ObservableObject
         var project = _projectService.CurrentProject;
         var story = ProjectHome.SelectedStory;
         if (project is null || story is null) return;
-        if (HasUnsavedDocuments())
+
+        var suggestedDirectory = Path.Combine(project.ProjectDirectory, "build", "story_packages");
+        var output = _dgrsExportPathPicker.PickExportPath(story.Id, suggestedDirectory);
+        if (string.IsNullOrWhiteSpace(output)) return;
+
+        if (HasUnsavedDocuments() && !TrySaveAll())
         {
-            ReportWarning("请先保存当前故事及其资源，再导出故事包。", $"story/{story.Id}");
+            ReportWarning("导出已取消：存在无法保存的故事或资源，请根据“输出/问题”面板修正后重试。", $"story/{story.Id}");
             return;
         }
 
         try
         {
-            var output = Path.Combine(project.ProjectDirectory, "build", "story_packages", story.Id);
-            var result = new StoryPackageExporter(project.ProjectDirectory)
-                .Build(story.Id, output, "0.3.1.0");
+            var result = new DgrsStoryPackageExporter(project.ProjectDirectory)
+                .Build(story.Id, output, "0.3.2.0");
             _lastUiCommand = nameof(ExportSelectedStoryPackage);
             OnPropertyChanged(nameof(LastUiCommand));
-            ReportSuccess($"故事包已导出：{result.PackageDirectory}", $"story/{story.Id}");
+            ReportSuccess($"故事包已导出并验证：{result.PackagePath}", $"story/{story.Id}");
         }
         catch (Exception exception) when (IsWorkspaceException(exception) || exception is StoryPackageException)
         {

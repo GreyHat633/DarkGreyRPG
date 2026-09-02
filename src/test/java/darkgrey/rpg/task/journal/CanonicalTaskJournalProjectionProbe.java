@@ -345,17 +345,17 @@ public final class CanonicalTaskJournalProjectionProbe {
             node(
                 "kill",
                 "objective",
-                Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+                Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
                 objective("kill_entity", required, "entity", "slime")),
             node(
                 "collect",
                 "objective",
-                Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+                Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
                 objective("collect_item", required, "item", "iron", "metadata", "{\"grade\":\"raw\"}")),
             node(
                 "interact",
                 "objective",
-                Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+                Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
                 objective("interact_actor", required, "actor_id", "guard")),
             node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty()),
             node(
@@ -364,15 +364,15 @@ public final class CanonicalTaskJournalProjectionProbe {
                 Collections.singletonList(port("logic_in", true, 0)),
                 props("port_id", "done", "display_name", "Done")));
         List<CanonicalGraphConnection> edges = new ArrayList<CanonicalGraphConnection>();
-        edges.add(edge("activate", "logic_out", "kill", "logic_enable"));
+        edges.add(edge("activate", "logic_out", "kill", "prerequisite"));
         if (sequential) {
-            edges.add(edge("kill", "logic_status", "collect", "logic_enable"));
-            edges.add(edge("collect", "logic_status", "interact", "logic_enable"));
+            edges.add(edge("kill", "logic_status", "collect", "prerequisite"));
+            edges.add(edge("collect", "logic_status", "interact", "prerequisite"));
             edges.add(edge("interact", "logic_status", "settle", "result"));
             edges.add(edge("interact", "logic_status", "done", "logic_in"));
         } else {
-            edges.add(edge("activate", "logic_out", "collect", "logic_enable"));
-            edges.add(edge("activate", "logic_out", "interact", "logic_enable"));
+            edges.add(edge("activate", "logic_out", "collect", "prerequisite"));
+            edges.add(edge("activate", "logic_out", "interact", "prerequisite"));
             edges.add(edge("kill", "logic_status", "settle", "result"));
             edges.add(edge("kill", "logic_status", "done", "logic_in"));
         }
@@ -391,12 +391,12 @@ public final class CanonicalTaskJournalProjectionProbe {
             node(
                 "objective-" + index,
                 "objective",
-                Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+                Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
                 objective("kill_entity", 1, "entity", "entity-" + index)));
         nodes.add(node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty()));
         List<CanonicalGraphConnection> edges = new ArrayList<CanonicalGraphConnection>();
         for (int index = 0; index < count; index++)
-            edges.add(edge("activate", "logic_out", "objective-" + index, "logic_enable"));
+            edges.add(edge("activate", "logic_out", "objective-" + index, "prerequisite"));
         edges.add(edge("objective-0", "logic_status", "settle", "result"));
         return new CanonicalGraphResource(
             1,
@@ -445,6 +445,7 @@ public final class CanonicalTaskJournalProjectionProbe {
         result.put("objective_type", json(type));
         result.put("description", json(type + " objective"));
         if (!"interact_actor".equals(type)) result.put("required", new JsonParser().parse(Integer.toString(required)));
+        result.put("prerequisite_enabled", new JsonParser().parse("true"));
         result.put(key, json(value));
         if (extraKey != null) result.put(extraKey, new JsonParser().parse(extraValue));
         return result;

@@ -3,10 +3,12 @@ package darkgrey.rpg.story.canonical.runtime;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +37,7 @@ public final class CanonicalStoryRuntime {
         "session",
         "task",
         "condition",
+        "flow_judgment",
         "action",
         "enter_story",
         "interact_actor",
@@ -47,6 +50,7 @@ public final class CanonicalStoryRuntime {
     private final Map<String, Boolean> aggregateLogic = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
+    private final List<String> executedFlowJudgmentNodeIds = new ArrayList<String>();
     private CanonicalStoryStatus status;
     private CanonicalStoryRepeatPolicy repeatPolicy;
     private String triggerPortId;
@@ -127,6 +131,13 @@ public final class CanonicalStoryRuntime {
         }
         runtime.externalLogicInputs.putAll(snapshot.getExternalLogicInputs());
         runtime.waitingConditionValue = snapshot.getWaitingConditionValue();
+        for (String nodeId : snapshot.getExecutedFlowJudgmentNodeIds()) {
+            CanonicalGraphNode executed = runtime.nodes.get(nodeId);
+            if (executed == null || !"flow_judgment".equals(executed.getType()))
+                throw failure("story.snapshot.flow_judgment", "Snapshot Flow Judgment node is unknown: " + nodeId);
+            if (!runtime.executedFlowJudgmentNodeIds.add(nodeId))
+                throw failure("story.snapshot.flow_judgment", "Snapshot Flow Judgment node is duplicated: " + nodeId);
+        }
         runtime.recomputePublicLogic();
         runtime.validateRestoredCursor();
         return runtime;
@@ -152,7 +163,8 @@ public final class CanonicalStoryRuntime {
             aggregateLogic,
             targetStoryId,
             externalLogicInputs,
-            waitingConditionValue);
+            waitingConditionValue,
+            executedFlowJudgmentNodeIds);
     }
 
     public CanonicalGraphResource getResource() {
@@ -294,6 +306,11 @@ public final class CanonicalStoryRuntime {
 
     public Map<String, Boolean> getPublicLogic() {
         return getPublicLogicOutputs();
+    }
+
+    public List<String> getExecutedFlowJudgmentNodeIds() {
+        ensureInitialized();
+        return Collections.unmodifiableList(new ArrayList<String>(executedFlowJudgmentNodeIds));
     }
 
     /** Sets one externally-owned named Logic input and resumes a waiting Condition once. */
@@ -444,6 +461,12 @@ public final class CanonicalStoryRuntime {
                 transitionFrom(node, output);
                 continue;
             }
+            if ("flow_judgment".equals(type)) {
+                if (!executedFlowJudgmentNodeIds.contains(node.getId())) executedFlowJudgmentNodeIds.add(node.getId());
+                recomputePublicLogic();
+                transitionFrom(node, "flow_out");
+                continue;
+            }
             if ("session".equals(type)) {
                 waitKind = CanonicalStoryWaitKind.SESSION;
                 waitResourceId = requiredString(node, "resource_id", "story.session.resource");
@@ -499,6 +522,8 @@ public final class CanonicalStoryRuntime {
         boolean value;
         if ("logic_input".equals(type)) value = externalLogicInputsValue(node);
         else if ("logic_output".equals(type)) value = logicInputValue(node, "logic_in", visiting);
+        else if ("flow_judgment".equals(type))
+            value = "executed".equals(portId) && executedFlowJudgmentNodeIds.contains(node.getId());
         else if ("and".equals(type) || "or".equals(type)) {
             boolean all = "and".equals(type);
             value = all;
@@ -673,6 +698,10 @@ public final class CanonicalStoryRuntime {
             requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
             requirePort(node, "flow_true", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
             requirePort(node, "flow_false", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+        } else if ("flow_judgment".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "executed", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.LOGIC);
         } else if ("session".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requiredString(node, "resource_id", "story.session.resource");

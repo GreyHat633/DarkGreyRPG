@@ -28,6 +28,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private string _objectiveDescription = string.Empty;
     private string _objectiveRequiredText = string.Empty;
     private string _objectiveRequiredError = string.Empty;
+    private bool _objectivePrerequisiteEnabled;
     private string _objectiveTarget = string.Empty;
     private string _objectiveActorId = string.Empty;
     private IReadOnlyList<CanonicalSessionSpeakerOption> _speakerOptions = [];
@@ -243,6 +244,22 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public string ObjectiveRequiredError => _objectiveRequiredError;
 
     public int ObjectiveRequired => int.TryParse(_objectiveRequiredText, out var value) ? value : 0;
+    public bool ObjectivePrerequisiteEnabled
+    {
+        get => _objectivePrerequisiteEnabled;
+        set
+        {
+            if (_isProjectingCanonicalChange || !IsObjective
+                || _objectivePrerequisiteEnabled == value) return;
+            if (_host.SetObjectivePrerequisiteEnabled(NodeId, value))
+            {
+                _objectivePrerequisiteEnabled = value;
+                OnPropertyChanged();
+            }
+            else RefreshFromHost();
+        }
+    }
+    public string ObjectivePrerequisiteHelpText => "前置条件为 True 时激活";
     public string ObjectiveTarget
     {
         get => _objectiveTarget;
@@ -853,6 +870,10 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             _objectiveRequiredText = current.Properties.TryGetValue(CanonicalTaskObjectiveSchema.RequiredProperty, out var objectiveRequired)
                 && objectiveRequired.ValueKind == JsonValueKind.Number
                 ? objectiveRequired.ToString() : string.Empty;
+        _objectivePrerequisiteEnabled = current.Properties.TryGetValue(
+                CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty, out var prerequisiteEnabled)
+            && prerequisiteEnabled.ValueKind is JsonValueKind.True or JsonValueKind.False
+            && prerequisiteEnabled.GetBoolean();
         _objectiveTarget = IsKillEntityObjective
             ? ReadString(current, CanonicalTaskObjectiveSchema.EntityProperty)
             : IsCollectItemObjective ? ReadString(current, CanonicalTaskObjectiveSchema.ItemProperty) : string.Empty;
@@ -919,6 +940,8 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(ObjectiveRequiredText));
         OnPropertyChanged(nameof(ObjectiveRequiredError));
         OnPropertyChanged(nameof(ObjectiveRequired));
+        OnPropertyChanged(nameof(ObjectivePrerequisiteEnabled));
+        OnPropertyChanged(nameof(ObjectivePrerequisiteHelpText));
         OnPropertyChanged(nameof(ObjectiveTarget));
         OnPropertyChanged(nameof(IsKillEntityObjective));
         OnPropertyChanged(nameof(IsCollectItemObjective));

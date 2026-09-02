@@ -28,16 +28,94 @@ public final class CanonicalTaskRuntimeProbe {
         priorityAndUnconnectedFalse();
         activationSettlementAndPostSettlement();
         overflowAndParallelSameType();
+        prerequisiteActivationSemantics();
+        dormantUnselectedObjectiveSemantics();
         immutableSnapshotRestore();
         malformedFailsClosed();
         System.out.println("TASK_RUNTIME_PROBE_PASS");
+    }
+
+    private static void prerequisiteActivationSemantics() {
+        CanonicalTaskRuntime legacy = CanonicalTaskRuntime.start(legacyObjectiveResource("legacy_default", null));
+        require(legacy.isObjectiveActive("objective"), "Absent prerequisite property keeps legacy objective active");
+        CanonicalTaskRuntime explicitOff = CanonicalTaskRuntime
+            .start(legacyObjectiveResource("legacy_false", Boolean.FALSE));
+        require(
+            explicitOff.isObjectiveActive("objective"),
+            "False prerequisite property keeps legacy objective active");
+
+        CanonicalTaskRuntime runtime = CanonicalTaskRuntime
+            .start(prerequisiteResource("prerequisite", true, "prerequisite"));
+        require(
+            runtime.getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.INACTIVE,
+            "Enabled prerequisite starts inactive");
+        require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "False prerequisite does not activate");
+        require(runtime.setLogicInput("prerequisite_source", true), "True prerequisite changes input");
+        require(runtime.isObjectiveActive("objective"), "True prerequisite activates objective");
+        require(runtime.setLogicInput("prerequisite_source", false), "False transition changes input");
+        require(runtime.isObjectiveActive("objective"), "Activated prerequisite objective is sticky");
+
+        CanonicalTaskSnapshot activeSnapshot = runtime.snapshot();
+        runtime = CanonicalTaskRuntime
+            .restore(prerequisiteResource("prerequisite", true, "prerequisite"), activeSnapshot);
+        require(runtime.isObjectiveActive("objective"), "Active prerequisite state survives snapshot restore");
+        require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Activated objective completes");
+        require(
+            runtime.getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.COMPLETED,
+            "Completed objective status is retained");
+        require(runtime.setLogicInput("prerequisite_source", true), "Completed input change is observable");
+        require(
+            runtime.getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.COMPLETED,
+            "Completed objective remains completed after input change");
+    }
+
+    private static void dormantUnselectedObjectiveSemantics() {
+        CanonicalTaskRuntime runtime = CanonicalTaskRuntime.start(dormantUnselectedResource(false));
+        require(runtime.isObjectiveActive("configured"), "Configured objective remains active");
+        require(
+            runtime.getObjectiveStatuses()
+                .get("dormant") == CanonicalTaskObjectiveStatus.INACTIVE,
+            "Detached unselected objective remains dormant");
+        require(runtime.accept(CanonicalTaskEvent.killEntity("slimes", 3)), "Configured objective accepts events");
+        require(runtime.isSettled(), "Dormant authoring objective does not block configured Task settlement");
+
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime.start(dormantUnselectedResource(true));
+            }
+        }, "task.objective.target.unselected.connected");
+    }
+
+    private static CanonicalGraphResource dormantUnselectedResource(boolean connectDormant) {
+        List<CanonicalGraphNode> nodes = Arrays.asList(
+            node("configured", "objective", ports(out("logic_status", 0)), objective("kill_entity", "slimes", null, 3)),
+            node("dormant", "objective", ports(out("logic_status", 0)), objective("kill_entity", "", null, 10)),
+            node(
+                "settle",
+                "settle",
+                connectDormant ? ports(in("complete", 0), in("invalid", 1)) : ports(in("complete", 0)),
+                empty()));
+        List<CanonicalGraphConnection> edges = new java.util.ArrayList<CanonicalGraphConnection>();
+        edges.add(edge("configured", "logic_status", "settle", "complete"));
+        if (connectDormant) edges.add(edge("dormant", "logic_status", "settle", "invalid"));
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            connectDormant ? "dormant_connected" : "dormant",
+            "Dormant Objective",
+            new CanonicalGraph(nodes, edges));
     }
 
     private static void canonical0310TaskSemantics() {
         CanonicalTaskRuntime runtime = CanonicalTaskRuntime.start(canonical0310Resource());
         require(runtime.isActive(), "Task without activate starts Active");
         require(runtime.isObjectiveActive("default"), "Objective without conditions is active by default");
-        require(!runtime.isObjectiveActive("gated"), "False condition gates objective");
+        require(!runtime.isObjectiveActive("gated"), "False prerequisite gates objective");
         require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Default objective accepts event");
         require(
             runtime.getProgress()
@@ -45,15 +123,8 @@ public final class CanonicalTaskRuntimeProbe {
                 .intValue() == 1,
             "Default objective progress");
         require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Gated objective pauses counting");
-        require(
-            runtime.getProgress()
-                .get("gated")
-                .intValue() == 0,
-            "Gated objective remains at zero");
-        require(runtime.setLogicInput("night", true), "First condition changes");
-        require(!runtime.isObjectiveActive("gated"), "AND gate remains false with one input");
-        require(runtime.setLogicInput("armed", true), "Second condition changes");
-        require(runtime.isObjectiveActive("gated"), "AND gate activates objective");
+        require(runtime.setLogicInput("night", true), "Prerequisite changes");
+        require(runtime.isObjectiveActive("gated"), "Prerequisite activates objective");
         require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Gated objective counts when enabled");
         require(
             runtime.getProgress()
@@ -62,24 +133,11 @@ public final class CanonicalTaskRuntimeProbe {
             "Gated objective progress");
         CanonicalTaskSnapshot saved = runtime.snapshot();
         runtime = CanonicalTaskRuntime.restore(canonical0310Resource(), saved);
-        require(!runtime.setLogicInput("night", true), "Restored first input survives");
-        require(!runtime.setLogicInput("armed", true), "Restored second input survives");
-        require(runtime.isObjectiveActive("gated"), "Restored gate remains active");
-        require(
-            runtime.getProgress()
-                .get("gated")
-                .intValue() == 1,
-            "Restored progress survives");
-        require(runtime.setLogicInput("armed", false), "Gate can pause dynamically");
-        require(!runtime.isObjectiveActive("gated"), "Dynamic false pauses objective");
-        require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Paused objective ignores new event");
-        require(
-            runtime.getProgress()
-                .get("gated")
-                .intValue() == 1,
-            "Paused objective retains progress");
-        require(runtime.setLogicInput("armed", true), "Gate resumes");
-        require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Resumed objective completes");
+        require(!runtime.setLogicInput("night", true), "Restored input survives");
+        require(runtime.isObjectiveActive("gated"), "Restored objective remains active");
+        require(runtime.setLogicInput("night", false), "False transition changes input");
+        require(runtime.isObjectiveActive("gated"), "Activated objective remains active after false");
+        require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Activated objective completes");
         require(runtime.isSettled() && "success".equals(runtime.getResultPortId()), "First settlement slot wins");
         require(
             runtime.getPublicLogicOutputs()
@@ -90,23 +148,16 @@ public final class CanonicalTaskRuntimeProbe {
     }
 
     private static CanonicalGraphResource canonical0310Resource() {
+        Map<String, JsonElement> gated = objective("kill_entity", "slime", null, 2);
+        gated.put("prerequisite_enabled", bool(true));
         List<CanonicalGraphNode> nodes = Arrays.asList(
             node(
                 "night",
                 "logic_input",
                 ports(out("logic_out", 0)),
                 props("port_id", "night", "display_name", "Night")),
-            node(
-                "armed",
-                "logic_input",
-                ports(out("logic_out", 0)),
-                props("port_id", "armed", "display_name", "Armed")),
             node("default", "objective", ports(out("logic_status", 0)), objective("kill_entity", "slime", null, 1)),
-            node(
-                "gated",
-                "objective",
-                ports(in("night_condition", 0), in("armed_condition", 1), out("logic_status", 2)),
-                objective("kill_entity", "slime", null, 2)),
+            node("gated", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), gated),
             node(
                 "published",
                 "logic_output",
@@ -121,8 +172,7 @@ public final class CanonicalTaskRuntimeProbe {
             new CanonicalGraph(
                 nodes,
                 Arrays.asList(
-                    edge("night", "logic_out", "gated", "night_condition"),
-                    edge("armed", "logic_out", "gated", "armed_condition"),
+                    edge("night", "logic_out", "gated", "prerequisite"),
                     edge("gated", "logic_status", "published", "logic_in"),
                     edge("gated", "logic_status", "settle", "success"))));
     }
@@ -250,10 +300,12 @@ public final class CanonicalTaskRuntimeProbe {
     private static CanonicalGraphResource parallelKillResource() {
         Map<String, JsonElement> first = objective("kill_entity", "slime", null, 2);
         Map<String, JsonElement> second = objective("kill_entity", "slime", null, 2);
+        first.put("prerequisite_enabled", bool(true));
+        second.put("prerequisite_enabled", bool(true));
         List<CanonicalGraphNode> nodes = Arrays.asList(
             node("activate", "activate", ports(out("logic_out", 0)), empty()),
-            node("first_kill", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), first),
-            node("second_kill", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), second),
+            node("first_kill", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), first),
+            node("second_kill", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), second),
             node("settle", "settle", ports(in("done", 0)), empty()));
         return new CanonicalGraphResource(
             1,
@@ -263,8 +315,8 @@ public final class CanonicalTaskRuntimeProbe {
             new CanonicalGraph(
                 nodes,
                 Arrays.asList(
-                    edge("activate", "logic_out", "first_kill", "logic_enable"),
-                    edge("activate", "logic_out", "second_kill", "logic_enable"))));
+                    edge("activate", "logic_out", "first_kill", "prerequisite"),
+                    edge("activate", "logic_out", "second_kill", "prerequisite"))));
     }
 
     private static void immutableSnapshotRestore() {
@@ -361,18 +413,16 @@ public final class CanonicalTaskRuntimeProbe {
 
     private static void malformedFailsClosed() {
         CanonicalGraphResource cycle = resource("cycle", false);
+        Map<String, JsonElement> cycleObjective = objective("kill_entity", "slime", null, 1);
+        cycleObjective.put("prerequisite_enabled", bool(true));
         List<CanonicalGraphNode> nodes = Arrays.asList(
             node("activate", "activate", ports(out("logic_out", 0)), empty()),
-            node(
-                "kill",
-                "objective",
-                ports(in("logic_enable", 0), out("logic_status", 1)),
-                objective("kill_entity", "slime", null, 1)),
+            node("kill", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), cycleObjective),
             node("settle", "settle", ports(in("result", 0)), empty()));
         List<CanonicalGraphConnection> edges = Arrays.asList(
-            edge("activate", "logic_out", "kill", "logic_enable"),
+            edge("activate", "logic_out", "kill", "prerequisite"),
             edge("kill", "logic_status", "settle", "result"),
-            edge("kill", "logic_status", "kill", "logic_enable"));
+            edge("kill", "logic_status", "kill", "prerequisite"));
         expectFailure(new Runnable() {
 
             @Override
@@ -450,6 +500,113 @@ public final class CanonicalTaskRuntimeProbe {
                 CanonicalTaskRuntime.start(resourceWithNegativeSettleOrder());
             }
         }, "task.settle.order");
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime.start(prerequisiteResource("missing_prerequisite", true, null));
+            }
+        }, "task.objective.prerequisite.ports");
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime.start(legacyObjectiveWithInput("absent_other_input", null, "other"));
+            }
+        }, "task.objective.prerequisite.ports");
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime.start(legacyObjectiveWithInput("false_other_input", Boolean.FALSE, "other"));
+            }
+        }, "task.objective.prerequisite.ports");
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime.start(prerequisiteResource("wrong_prerequisite", true, "other"));
+            }
+        }, "task.objective.prerequisite.ports");
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime.start(prerequisiteResource("disabled_prerequisite", false, "prerequisite"));
+            }
+        }, "task.objective.prerequisite.ports");
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalTaskRuntime
+                    .start(prerequisiteResource("invalid_prerequisite_property", "not_boolean", "prerequisite"));
+            }
+        }, "task.objective.prerequisite_enabled");
+    }
+
+    private static CanonicalGraphResource legacyObjectiveResource(String id, Boolean enabled) {
+        Map<String, JsonElement> properties = objective("kill_entity", "slime", null, 1);
+        if (enabled != null) properties.put("prerequisite_enabled", bool(enabled.booleanValue()));
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            id,
+            "Legacy",
+            new CanonicalGraph(
+                Arrays.asList(
+                    node("objective", "objective", ports(out("logic_status", 0)), properties),
+                    node("settle", "settle", ports(in("done", 0)), empty())),
+                Collections.singletonList(edge("objective", "logic_status", "settle", "done"))));
+    }
+
+    private static CanonicalGraphResource legacyObjectiveWithInput(String id, Boolean enabled, String inputId) {
+        Map<String, JsonElement> properties = objective("kill_entity", "slime", null, 1);
+        if (enabled != null) properties.put("prerequisite_enabled", bool(enabled.booleanValue()));
+        return prerequisiteGraphResource(id, properties, inputId);
+    }
+
+    private static CanonicalGraphResource prerequisiteResource(String id, boolean enabled, String inputId) {
+        return prerequisiteResource(id, enabled ? Boolean.TRUE : Boolean.FALSE, inputId);
+    }
+
+    private static CanonicalGraphResource prerequisiteResource(String id, String enabled, String inputId) {
+        Map<String, JsonElement> properties = objective("kill_entity", "slime", null, 1);
+        properties.put("prerequisite_enabled", json(enabled));
+        return prerequisiteGraphResource(id, properties, inputId);
+    }
+
+    private static CanonicalGraphResource prerequisiteResource(String id, Boolean enabled, String inputId) {
+        Map<String, JsonElement> properties = objective("kill_entity", "slime", null, 1);
+        properties.put("prerequisite_enabled", bool(enabled.booleanValue()));
+        return prerequisiteGraphResource(id, properties, inputId);
+    }
+
+    private static CanonicalGraphResource prerequisiteGraphResource(String id, Map<String, JsonElement> properties,
+        String inputId) {
+        List<CanonicalGraphNode> nodes = new java.util.ArrayList<CanonicalGraphNode>();
+        List<CanonicalGraphConnection> edges = new java.util.ArrayList<CanonicalGraphConnection>();
+        if (inputId != null) {
+            nodes.add(
+                node(
+                    "prerequisite_source",
+                    "logic_input",
+                    ports(out("logic_out", 0)),
+                    props("port_id", "prerequisite_source", "display_name", "Prerequisite")));
+            edges.add(edge("prerequisite_source", "logic_out", "objective", inputId));
+        }
+        List<CanonicalGraphPort> objectivePorts = new java.util.ArrayList<CanonicalGraphPort>();
+        if (inputId != null) objectivePorts.add(in(inputId, 0));
+        objectivePorts.add(out("logic_status", inputId == null ? 0 : 1));
+        nodes.add(node("objective", "objective", objectivePorts, properties));
+        nodes.add(node("settle", "settle", ports(in("done", 0)), empty()));
+        edges.add(edge("objective", "logic_status", "settle", "done"));
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            id,
+            "Prerequisite",
+            new CanonicalGraph(nodes, edges));
     }
 
     private static CanonicalGraphResource resourceWithExtraObjectiveProperty() {
@@ -461,7 +618,7 @@ public final class CanonicalTaskRuntimeProbe {
             nodes.get(1)
                 .getProperties());
         properties.put("unexpected", json("nope"));
-        nodes.set(1, node("kill", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), properties));
+        nodes.set(1, node("kill", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), properties));
         return new CanonicalGraphResource(
             1,
             CanonicalGraphResourceKind.TASK,
@@ -481,11 +638,14 @@ public final class CanonicalTaskRuntimeProbe {
         Map<String, JsonElement> all = objective("kill_entity", "slime", null, priority ? 1 : 2);
         Map<String, JsonElement> collect = objective("collect_item", "iron", metadataJson("grade", "raw"), 2);
         Map<String, JsonElement> interact = objective("interact_actor", "tavern_boss", null, 1);
+        all.put("prerequisite_enabled", bool(true));
+        collect.put("prerequisite_enabled", bool(true));
+        interact.put("prerequisite_enabled", bool(true));
         List<CanonicalGraphNode> nodes = Arrays.asList(
             node("activate", "activate", ports(out("logic_out", 0)), empty()),
-            node("kill", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), all),
-            node("collect", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), collect),
-            node("interact", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), interact),
+            node("kill", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), all),
+            node("collect", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), collect),
+            node("interact", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), interact),
             node("all", "and", ports(in("left", 0), in("right", 1), in("third", 2), out("logic_out", 3)), empty()),
             node(
                 "published",
@@ -499,9 +659,9 @@ public final class CanonicalTaskRuntimeProbe {
             node("bad", extraType, Collections.<CanonicalGraphPort>emptyList(), empty()),
             nodes.get(7));
         List<CanonicalGraphConnection> edges = Arrays.asList(
-            edge("activate", "logic_out", "kill", "logic_enable"),
-            edge("activate", "logic_out", "collect", "logic_enable"),
-            edge("kill", "logic_status", "interact", "logic_enable"),
+            edge("activate", "logic_out", "kill", "prerequisite"),
+            edge("activate", "logic_out", "collect", "prerequisite"),
+            edge("kill", "logic_status", "interact", "prerequisite"),
             edge("kill", "logic_status", "all", "left"),
             edge("collect", "logic_status", "all", "right"),
             edge("interact", "logic_status", "all", "third"),
@@ -512,9 +672,9 @@ public final class CanonicalTaskRuntimeProbe {
                 "settle",
                 priority ? "first" : "success"));
         if (priority) edges = Arrays.asList(
-            edge("activate", "logic_out", "kill", "logic_enable"),
-            edge("activate", "logic_out", "collect", "logic_enable"),
-            edge("kill", "logic_status", "interact", "logic_enable"),
+            edge("activate", "logic_out", "kill", "prerequisite"),
+            edge("activate", "logic_out", "collect", "prerequisite"),
+            edge("kill", "logic_status", "interact", "prerequisite"),
             edge("kill", "logic_status", "all", "left"),
             edge("collect", "logic_status", "all", "right"),
             edge("interact", "logic_status", "all", "third"),
@@ -671,7 +831,7 @@ public final class CanonicalTaskRuntimeProbe {
             nodes.get(1)
                 .getProperties());
         kill.put("required", new JsonParser().parse(Integer.toString(required)));
-        nodes.set(1, node("kill", "objective", ports(in("logic_enable", 0), out("logic_status", 1)), kill));
+        nodes.set(1, node("kill", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), kill));
         return new CanonicalGraphResource(
             1,
             CanonicalGraphResourceKind.TASK,
@@ -733,6 +893,10 @@ public final class CanonicalTaskRuntimeProbe {
 
     private static JsonElement json(String value) {
         return new JsonParser().parse("\"" + value + "\"");
+    }
+
+    private static JsonElement bool(boolean value) {
+        return new JsonParser().parse(Boolean.toString(value));
     }
 
     private static JsonElement metadataJson(String key, String value) {

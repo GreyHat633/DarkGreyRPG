@@ -57,17 +57,15 @@ public final class StoryPackageSnapshotMerger {
             ProjectSnapshot snapshot = value.getSnapshot();
             StoryPackageManifest.RequiredResources required = value.getManifest()
                 .getRequiredResources();
+            Map<String, ?> primaryStories = value.getManifest()
+                .isDgrsV1() ? snapshot.getCanonicalStories() : snapshot.getStories();
+            String primaryStoryType = value.getManifest()
+                .isDgrsV1() ? "canonical Story" : "Story";
+            requireIds(primaryStories.keySet(), Collections.singleton(value.getStoryId()), primaryStoryType, owner);
             requireIds(
-                snapshot.getStories()
-                    .keySet(),
-                Collections.singleton(value.getStoryId()),
-                "Story",
-                owner);
-            requireIds(
-                snapshot.getStories()
-                    .keySet(),
+                primaryStories.keySet(),
                 ids(Collections.singletonList(required.getStory())),
-                "declared Story",
+                "declared " + primaryStoryType,
                 owner);
             requireIds(
                 snapshot.getCanonicalStories()

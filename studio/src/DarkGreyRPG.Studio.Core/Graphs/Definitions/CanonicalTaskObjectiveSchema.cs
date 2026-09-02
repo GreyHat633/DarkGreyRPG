@@ -15,11 +15,14 @@ public static class CanonicalTaskObjectiveSchema
     public const string ItemProperty = "item";
     public const string MetadataProperty = "metadata";
     public const string ActorIdProperty = "actor_id";
+    public const string PrerequisiteEnabledProperty = "prerequisite_enabled";
     /// <summary>Explicit authoring state used until a DGR identity is selected.</summary>
     public const string UnselectedTarget = "";
     /// <summary>Stable fixed output carrying the objective completion state.</summary>
     public const string CompletionPortId = "logic_status";
     public const string CompletionDisplayName = "完成";
+    public const string PrerequisitePortId = "prerequisite";
+    public const string PrerequisiteDisplayName = "前置条件";
     public const string ActivationPortPrefix = "logic_enable";
 
     public const string KillEntity = "kill_entity";
@@ -34,7 +37,8 @@ public static class CanonicalTaskObjectiveSchema
 
     public static IReadOnlySet<string> AllProperties { get; } =
         new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty,
-            EntityProperty, ItemProperty, MetadataProperty, ActorIdProperty], StringComparer.Ordinal);
+            EntityProperty, ItemProperty, MetadataProperty, ActorIdProperty,
+            PrerequisiteEnabledProperty], StringComparer.Ordinal);
 
     public static IReadOnlySet<string> PropertiesFor(string type) => type switch
     {
@@ -85,7 +89,9 @@ public static class CanonicalTaskObjectiveSchema
 
         var expected = PropertiesFor(type!);
         foreach (var key in properties.Keys)
-            if (!expected.Contains(key) && !IsSafeLegacyInteractRequired(type!, key, properties))
+            if (!expected.Contains(key)
+                && key != PrerequisiteEnabledProperty
+                && !IsSafeLegacyInteractRequired(type!, key, properties))
                 issues.Add(Issue("graph.objective.property.unsupported", $"Objective property '{key}' is not valid for type '{type}'.", $"properties.{key}", node.Id));
         foreach (var key in expected)
             if (!properties.ContainsKey(key))
@@ -130,7 +136,56 @@ public static class CanonicalTaskObjectiveSchema
                 ValidateString(properties, ActorIdProperty, issues, node.Id);
                 break;
         }
+
+        var prerequisiteEnabled = IsPrerequisiteEnabled(node);
+        if (properties.TryGetValue(PrerequisiteEnabledProperty, out var prerequisiteValue)
+            && prerequisiteValue.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            issues.Add(Issue("graph.objective.prerequisite.enabled.invalid",
+                "Objective prerequisite_enabled must be a JSON boolean.",
+                $"properties.{PrerequisiteEnabledProperty}", node.Id));
+        }
+
+        var prerequisitePorts = (node.Ports ?? [])
+            .Where(port => port is not null && port.IsInput
+                && port.InterfaceKind == GraphInterfaceKind.Logic)
+            .ToArray();
+        if (!prerequisiteEnabled && prerequisitePorts.Length != 0)
+        {
+            issues.Add(Issue("graph.objective.prerequisite.port.disabled",
+                "Objective prerequisite Logic input must be absent while the prerequisite is disabled.",
+                "ports", node.Id));
+        }
+        else if (prerequisiteEnabled)
+        {
+            if (prerequisitePorts.Length != 1)
+            {
+                issues.Add(Issue("graph.objective.prerequisite.port.count",
+                    "An enabled Objective prerequisite requires exactly one Logic input.",
+                    "ports", node.Id));
+            }
+            else
+            {
+                var port = prerequisitePorts[0]!;
+                if (!string.Equals(port.Id, PrerequisitePortId, StringComparison.Ordinal))
+                    issues.Add(Issue("graph.objective.prerequisite.port.id",
+                        $"Objective prerequisite port ID must remain '{PrerequisitePortId}'.",
+                        "ports", node.Id));
+                if (!string.Equals(port.DisplayName, PrerequisiteDisplayName, StringComparison.Ordinal))
+                    issues.Add(Issue("graph.objective.prerequisite.port.display_name",
+                        $"Objective prerequisite port display name must remain '{PrerequisiteDisplayName}'.",
+                        "ports", node.Id));
+            }
+        }
         return issues;
+    }
+
+    public static bool IsPrerequisiteEnabled(GraphNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        return (node.Properties ?? []).TryGetValue(PrerequisiteEnabledProperty, out var value)
+            && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+            && value.GetBoolean();
     }
 
     public static bool IsValid(GraphNode node) => Validate(node).Count == 0;
@@ -177,16 +232,36 @@ public static class CanonicalTaskObjectiveSchema
             && string.Equals(target.GetString(), UnselectedTarget, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// An explicit unselected target may travel in a runtime package only
+    /// while its completion output is not connected. This preserves detached
+    /// authoring work without turning an incomplete Objective into executable
+    /// Task logic.
+    /// </summary>
+    public static bool IsDormantUnselectedTarget(GraphDocument graph, GraphNode node)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(node);
+        return IsUnselectedTarget(node)
+            && !(graph.Connections ?? []).Any(connection => connection is not null
+                && string.Equals(connection.FromNodeId, node.Id, StringComparison.Ordinal)
+                && string.Equals(connection.FromPortId, CompletionPortId, StringComparison.Ordinal));
+    }
+
     private static void InitializeType(GraphNode node, string type, string? actorId = null)
     {
         var properties = node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         var description = ReadString(properties, DescriptionProperty);
         var required = properties.TryGetValue(RequiredProperty, out var count)
             && count.ValueKind == JsonValueKind.Number && count.TryGetInt32(out var parsed) && parsed > 0 ? parsed : 1;
+        var prerequisiteEnabled = properties.TryGetValue(PrerequisiteEnabledProperty, out var prerequisite)
+            && prerequisite.ValueKind is JsonValueKind.True or JsonValueKind.False
+            && prerequisite.GetBoolean();
         properties.Clear();
         properties[TypeProperty] = JsonSerializer.SerializeToElement(type);
         properties[DescriptionProperty] = JsonSerializer.SerializeToElement(
             string.IsNullOrWhiteSpace(description) ? DefaultDescription(type) : description);
+        properties[PrerequisiteEnabledProperty] = JsonSerializer.SerializeToElement(prerequisiteEnabled);
         if (type is KillEntity or CollectItem)
             properties[RequiredProperty] = JsonSerializer.SerializeToElement(required);
         switch (type)
@@ -246,6 +321,8 @@ public static class TaskObjectiveSchema
     public static IReadOnlyList<string> ObjectiveTypes => CanonicalTaskObjectiveSchema.ObjectiveTypes;
     public const string CompletionPortId = CanonicalTaskObjectiveSchema.CompletionPortId;
     public const string CompletionDisplayName = CanonicalTaskObjectiveSchema.CompletionDisplayName;
+    public const string PrerequisitePortId = CanonicalTaskObjectiveSchema.PrerequisitePortId;
+    public const string PrerequisiteDisplayName = CanonicalTaskObjectiveSchema.PrerequisiteDisplayName;
     public static IReadOnlyList<ValidationIssue> Validate(GraphNode node) => CanonicalTaskObjectiveSchema.Validate(node);
     public static bool IsValid(GraphNode node) => CanonicalTaskObjectiveSchema.IsValid(node);
     public static void InitializeDefault(GraphNode node) => CanonicalTaskObjectiveSchema.InitializeDefault(node);

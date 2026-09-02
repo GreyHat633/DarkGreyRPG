@@ -117,6 +117,40 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
     }
 
     [TestMethod]
+    public void MultiLayoutTransactionSavesAndReopensEveryMovedNode()
+    {
+        using var project = new TemporaryProjectDirectory();
+        var store = new CanonicalProjectGraphStore(project.Path);
+        var nodes = new[] { "a", "b", "c" }
+            .Select(id => GraphNodeFactory.Create(GraphScope.Session, "line", id)).ToArray();
+        var envelope = new GraphResourceEnvelope(
+            GraphResourceKind.Session, "session", "Session", new GraphDocument(nodes));
+        store.Sessions.Create(envelope);
+        using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
+        editor.Host.SetNodePosition("a", 10, 20);
+        editor.Host.SetNodePosition("b", 210, 70);
+        editor.Host.SetNodePosition("c", 430, 120);
+
+        Assert.IsTrue(editor.Host.BeginLayoutMove(["a", "b", "c"]));
+        editor.Host.SetNodePosition("a", 110, 70);
+        editor.Host.SetNodePosition("b", 310, 120);
+        editor.Host.SetNodePosition("c", 530, 170);
+        Assert.IsTrue(editor.Host.CommitLayoutMove());
+        new CanonicalGraphResourceSaveCoordinator(store).Replace(editor);
+
+        var layoutStore = new CanonicalGraphLayoutStore(project.Path);
+        var saved = layoutStore.Load(GraphResourceKind.Session, "session");
+        using var reopened = new CanonicalGraphResourceEditorViewModel(
+            store.Sessions.Load("session"),
+            saved.ToDictionary(pair => pair.Key,
+                pair => new GraphEditorNodePosition(pair.Value.X, pair.Value.Y),
+                StringComparer.Ordinal));
+        Assert.AreEqual(new GraphEditorNodePosition(110, 70), reopened.Host.Layout["a"]);
+        Assert.AreEqual(new GraphEditorNodePosition(310, 120), reopened.Host.Layout["b"]);
+        Assert.AreEqual(new GraphEditorNodePosition(530, 170), reopened.Host.Layout["c"]);
+    }
+
+    [TestMethod]
     public void ReferencedPublicStoryPortCannotBeDeletedUntilGraphConnectionIsRemoved()
     {
         using var project = new TemporaryProjectDirectory();

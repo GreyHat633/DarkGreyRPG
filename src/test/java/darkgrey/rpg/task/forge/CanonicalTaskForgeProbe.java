@@ -316,22 +316,11 @@ public final class CanonicalTaskForgeProbe {
             task.getRuntimeSnapshot()
                 .getProgress()
                 .get("kill")
-                .intValue() == 7,
-            "day events do not advance a night-gated objective");
-
-        task = manager.synchronizeWorldLogicTrustedForProbe(PLAYER, project, data, task, 13000L);
-        for (int count = 0; count < 3; count++)
-            manager.dispatchTrustedForProbe(PLAYER, project, data, CanonicalTaskEvent.killEntity("minecraft:slime"));
-        task = manager.snapshotTrustedForProbe(PLAYER, project, data, "story", "night_kills");
-        require(
-            task.getRuntimeSnapshot()
-                .getProgress()
-                .get("kill")
                 .intValue() == 10,
-            "progress resumes from seven after night returns");
+            "activated prerequisite remains active after night becomes false");
         require(
             task.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED,
-            "night-gated Task did not settle at ten");
+            "sticky prerequisite Task did not settle at ten");
     }
 
     private static ProjectSnapshot project(CanonicalGraphResource resource) {
@@ -361,10 +350,11 @@ public final class CanonicalTaskForgeProbe {
         properties.put("description", json("Kill " + target));
         properties.put("required", json("1"));
         properties.put("entity", json(target));
+        properties.put("prerequisite_enabled", new JsonParser().parse("true"));
         CanonicalGraphNode objective = node(
             "kill",
             "objective",
-            Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+            Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
             properties);
         CanonicalGraphNode settle = node(
             "settle",
@@ -376,7 +366,7 @@ public final class CanonicalTaskForgeProbe {
                 "activate",
                 "logic_out",
                 "kill",
-                "logic_enable",
+                "prerequisite",
                 CanonicalGraphInterfaceKind.LOGIC),
             new CanonicalGraphConnection("kill", "logic_status", "settle", "done", CanonicalGraphInterfaceKind.LOGIC));
         return new CanonicalGraphResource(
@@ -402,10 +392,11 @@ public final class CanonicalTaskForgeProbe {
         objectiveProperties.put("description", json("Kill slimes at night"));
         objectiveProperties.put("required", json("10"));
         objectiveProperties.put("entity", json("minecraft:slime"));
+        objectiveProperties.put("prerequisite_enabled", new JsonParser().parse("true"));
         CanonicalGraphNode objective = node(
             "kill",
             "objective",
-            Arrays.asList(port("logic_enable", true, 0), port("logic_status", false, 1)),
+            Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
             objectiveProperties);
         CanonicalGraphNode settle = node(
             "settle",
@@ -424,7 +415,7 @@ public final class CanonicalTaskForgeProbe {
                         "night_input",
                         "logic_out",
                         "kill",
-                        "logic_enable",
+                        "prerequisite",
                         CanonicalGraphInterfaceKind.LOGIC),
                     new CanonicalGraphConnection(
                         "kill",

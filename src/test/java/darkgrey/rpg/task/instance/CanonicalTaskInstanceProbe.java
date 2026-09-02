@@ -108,8 +108,56 @@ public final class CanonicalTaskInstanceProbe {
         require(
             !store.acceptEvent(other, "story-a", "placement-b", CanonicalTaskEvent.killEntity("slime")),
             "terminal event ignore");
+        prerequisitePersistence(player);
         malformedChecks(store, activeResource, player);
         System.out.println("TASK_INSTANCE_PROBE_PASS");
+    }
+
+    private static void prerequisitePersistence(UUID player) {
+        CanonicalGraphResource resource = prerequisiteResource();
+        CanonicalTaskInstanceStore source = new CanonicalTaskInstanceStore();
+        CanonicalTaskInstance instance = source.start(player, "prerequisite", "inactive", resource, 400L);
+        require(
+            instance.getRuntime()
+                .getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.INACTIVE,
+            "prerequisite instance starts inactive");
+        CanonicalTaskInstanceStore inactiveRestored = new CanonicalTaskInstanceStore();
+        inactiveRestored.readFromNbt(source.writeToNbt(), resolver(resource));
+        require(
+            inactiveRestored.get(player, "prerequisite", "inactive")
+                .getRuntime()
+                .getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.INACTIVE,
+            "inactive objective survives NBT restart");
+
+        require(instance.setLogicInput("prerequisite_source", true, 401L), "prerequisite activates instance objective");
+        require(instance.setLogicInput("prerequisite_source", false, 402L), "prerequisite false transition persists");
+        require(
+            instance.getRuntime()
+                .isObjectiveActive("objective"),
+            "activated instance objective is sticky");
+        CanonicalTaskInstanceStore activeRestored = new CanonicalTaskInstanceStore();
+        activeRestored.readFromNbt(source.writeToNbt(), resolver(resource));
+        CanonicalTaskInstance restored = activeRestored.get(player, "prerequisite", "inactive");
+        require(
+            restored.getRuntime()
+                .isObjectiveActive("objective"),
+            "active objective survives NBT restart");
+        require(restored.accept(CanonicalTaskEvent.killEntity("slime"), 403L), "restored objective completes");
+        require(
+            restored.getRuntime()
+                .getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.COMPLETED,
+            "completed objective remains completed");
+        CanonicalTaskInstanceStore completedRestored = new CanonicalTaskInstanceStore();
+        completedRestored.readFromNbt(activeRestored.writeToNbt(), resolver(resource));
+        require(
+            completedRestored.get(player, "prerequisite", "inactive")
+                .getRuntime()
+                .getObjectiveStatuses()
+                .get("objective") == CanonicalTaskObjectiveStatus.COMPLETED,
+            "completed objective survives NBT restart");
     }
 
     private static void malformedChecks(CanonicalTaskInstanceStore store, CanonicalGraphResource resource,
@@ -402,8 +450,7 @@ public final class CanonicalTaskInstanceProbe {
         objective.put("required", new JsonParser().parse(Integer.toString(required)));
         objective.put("entity", json("slime"));
         CanonicalGraphPort activateOut = port("logic_out", false, 0);
-        CanonicalGraphPort enable = port("logic_enable", true, 0);
-        CanonicalGraphPort status = port("logic_status", false, 1);
+        CanonicalGraphPort status = port("logic_status", false, 0);
         CanonicalGraphPort settle = port("success", true, 0);
         CanonicalGraph graph = new CanonicalGraph(
             Arrays.asList(
@@ -412,7 +459,7 @@ public final class CanonicalTaskInstanceProbe {
                     "activate",
                     Collections.singletonList(activateOut),
                     Collections.<String, JsonElement>emptyMap()),
-                node("kill", "objective", Arrays.asList(enable, status), objective),
+                node("kill", "objective", Collections.singletonList(status), objective),
                 node(
                     "settle",
                     "settle",
@@ -424,10 +471,44 @@ public final class CanonicalTaskInstanceProbe {
                     Collections.singletonList(port("logic_in", true, 0)),
                     props("port_id", "done", "display_name", "Done"))),
             Arrays.asList(
-                edge("activate", "logic_out", "kill", "logic_enable"),
                 edge("kill", "logic_status", "settle", "success"),
                 edge("kill", "logic_status", "published", "logic_in")));
         return new CanonicalGraphResource(1, CanonicalGraphResourceKind.TASK, id, display, graph);
+    }
+
+    private static CanonicalGraphResource prerequisiteResource() {
+        Map<String, JsonElement> objective = new LinkedHashMap<String, JsonElement>();
+        objective.put("objective_type", json("kill_entity"));
+        objective.put("description", json("kill"));
+        objective.put("required", new JsonParser().parse("1"));
+        objective.put("entity", json("slime"));
+        objective.put("prerequisite_enabled", new JsonParser().parse("true"));
+        CanonicalGraph graph = new CanonicalGraph(
+            Arrays.asList(
+                node(
+                    "prerequisite_source",
+                    "logic_input",
+                    Collections.singletonList(port("logic_out", false, 0)),
+                    props("port_id", "prerequisite_source", "display_name", "Prerequisite")),
+                node(
+                    "objective",
+                    "objective",
+                    Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
+                    objective),
+                node(
+                    "settle",
+                    "settle",
+                    Collections.singletonList(port("done", true, 0)),
+                    Collections.<String, JsonElement>emptyMap())),
+            Arrays.asList(
+                edge("prerequisite_source", "logic_out", "objective", "prerequisite"),
+                edge("objective", "logic_status", "settle", "done")));
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "prerequisite_instance",
+            "Prerequisite",
+            graph);
     }
 
     private static CanonicalGraphNode node(String id, String type, java.util.List<CanonicalGraphPort> ports,

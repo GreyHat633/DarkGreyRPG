@@ -38,7 +38,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             new FlowWorkspaceDialogs(() => this),
             crashLogService ?? new CrashLogService(settingsService.SettingsPath),
             new CanonicalStoryResourceDialogs(() => this),
-            itemWorkspaceDialogs: new ItemWorkspaceDialogs(() => this));
+            itemWorkspaceDialogs: new ItemWorkspaceDialogs(() => this),
+            dgrsExportPathPicker: new DgrsExportPathPicker(() => this));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
@@ -109,7 +110,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 0.3.1.5 RC\nStory packages, real entity/item identities, and server-authoritative RPG runtime",
+            "DarkGrey RPG Studio 0.3.2.0_A RC\nDGRS packages, finalized authoring flows, and server-authoritative RPG runtime",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);

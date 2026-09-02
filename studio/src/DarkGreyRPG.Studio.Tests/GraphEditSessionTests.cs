@@ -391,6 +391,103 @@ public sealed class GraphEditSessionTests
         Assert.AreEqual("First", graph.Nodes.Single(node => node.Id == "a").Ports.Single().DisplayName);
     }
 
+    [TestMethod]
+    public void ReplaceConnectionsExpandsOneEdgeIntoTwoAsOneUndoUnit()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("a", "A", [new("out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("b", "B", [new("in", "In", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("c", "C", [
+                new("in", "In", true, GraphInterfaceKind.Flow),
+                new("out", "Out", false, GraphInterfaceKind.Flow)])],
+            [new("a", "out", "b", "in", GraphInterfaceKind.Flow)]);
+        var session = new GraphEditSession(graph);
+        var original = graph.Connections.Single();
+
+        Assert.IsTrue(session.ReplaceConnections([original], [
+            new("a", "out", "c", "in", GraphInterfaceKind.Flow),
+            new("c", "out", "b", "in", GraphInterfaceKind.Flow)]));
+
+        Assert.HasCount(2, graph.Connections);
+        Assert.AreEqual(1, session.UndoCount);
+        Assert.IsTrue(session.Undo());
+        Assert.HasCount(1, graph.Connections);
+        Assert.IsTrue(graph.Connections.Single().Equals(original));
+    }
+
+    [TestMethod]
+    public void ReplaceConnectionsExpansionFailureLeavesOriginalAndUnrelatedEdgesUntouched()
+    {
+        var graph = new GraphDocument([
+            new GraphNode("a", "A", [new("out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("b", "B", [new("in", "In", true, GraphInterfaceKind.Flow)]),
+            new GraphNode("c", "C", [
+                new("in", "In", true, GraphInterfaceKind.Flow),
+                new("out", "Out", false, GraphInterfaceKind.Flow)]),
+            new GraphNode("x", "X", [new("in", "In", true, GraphInterfaceKind.Flow)])],
+            [
+                new("a", "out", "b", "in", GraphInterfaceKind.Flow),
+                new("c", "out", "x", "in", GraphInterfaceKind.Flow),
+            ]);
+        var session = new GraphEditSession(graph);
+        var original = graph.Connections.Single(connection => connection.FromNodeId == "a");
+        var before = graph.ToJson();
+
+        Assert.IsFalse(session.ReplaceConnections([original], [
+            new("a", "out", "c", "in", GraphInterfaceKind.Flow),
+            new("c", "out", "b", "in", GraphInterfaceKind.Flow)]));
+
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.IsFalse(session.CanUndo);
+    }
+
+    [TestMethod]
+    public void RemoveNodesDeletesWholeSelectionAndIncidentWiresAsOneUndoUnit()
+    {
+        var graph = new GraphDocument([
+            FlowNode("x"), FlowNode("a"), FlowNode("b"), FlowNode("c"), FlowNode("y")], [
+            Edge("x", "a"), Edge("a", "b"), Edge("b", "c"), Edge("c", "y")]);
+        var session = new GraphEditSession(graph, GraphScope.StoryFlow);
+        var before = graph.ToJson();
+
+        Assert.IsTrue(session.RemoveNodes(["a", "b", "c"], confirmReferencedRemoval: true));
+
+        CollectionAssert.AreEqual(new[] { "x", "y" }, graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.IsEmpty(graph.Connections);
+        Assert.AreEqual(1, session.UndoCount);
+        Assert.IsTrue(session.Undo());
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.IsFalse(session.CanUndo);
+    }
+
+    [TestMethod]
+    public void RemoveNodesRetainsRequiredPeerWithoutBlockingAtomicDelete()
+    {
+        var start = new GraphNode("start", "start", "Start", [
+            new("trigger", "Trigger", false, GraphInterfaceKind.Flow)]);
+        var action = FlowNode("action");
+        var graph = new GraphDocument([start, action], [
+            new("start", "trigger", "action", "in", GraphInterfaceKind.Flow)]);
+        var session = new GraphEditSession(graph, GraphScope.StoryFlow);
+
+        Assert.IsTrue(session.RemoveNodes(["start", "action"], confirmReferencedRemoval: true));
+
+        CollectionAssert.AreEqual(new[] { "start" }, graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.IsEmpty(graph.Connections);
+        Assert.AreEqual(1, session.UndoCount);
+        Assert.IsTrue(session.Undo());
+        Assert.HasCount(2, graph.Nodes);
+        Assert.HasCount(1, graph.Connections);
+    }
+
+    private static GraphNode FlowNode(string id)
+        => new(id, "action", id, [
+            new("in", "In", true, GraphInterfaceKind.Flow),
+            new("out", "Out", false, GraphInterfaceKind.Flow)]);
+
+    private static GraphConnection Edge(string from, string to)
+        => new(from, "out", to, "in", GraphInterfaceKind.Flow);
+
     private static GraphDocument FlowGraph()
         => new([
             new GraphNode("a", "A", [new("out", "Out", false, GraphInterfaceKind.Flow)]),

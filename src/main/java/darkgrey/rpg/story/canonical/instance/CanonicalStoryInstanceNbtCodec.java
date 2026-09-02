@@ -159,6 +159,7 @@ public final class CanonicalStoryInstanceNbtCodec {
         }
         tag.setTag("logic", logic);
         tag.setTag("external_logic_inputs", booleans(value.getExternalLogicInputs()));
+        tag.setTag("executed_flow_judgment_node_ids", strings(value.getExecutedFlowJudgmentNodeIds()));
         if (value.getWaitingConditionValue() != null) tag.setByte(
             "waiting_condition_value",
             (byte) (value.getWaitingConditionValue()
@@ -202,13 +203,29 @@ public final class CanonicalStoryInstanceNbtCodec {
         extendedLegacyWait.add("waiting_condition_value");
         Set<String> extendedLegacyFull = new HashSet<String>(extendedLegacy);
         extendedLegacyFull.add("waiting_condition_value");
+        Set<String> judgment = with(required, "executed_flow_judgment_node_ids");
+        Set<String> judgmentLegacy = with(legacy, "executed_flow_judgment_node_ids");
+        Set<String> judgmentExtended = with(extended, "executed_flow_judgment_node_ids");
+        Set<String> judgmentExtendedWait = with(extendedWait, "executed_flow_judgment_node_ids");
+        Set<String> judgmentExtendedFull = with(extendedFull, "executed_flow_judgment_node_ids");
+        Set<String> judgmentExtendedLegacy = with(extendedLegacy, "executed_flow_judgment_node_ids");
+        Set<String> judgmentExtendedLegacyWait = with(extendedLegacyWait, "executed_flow_judgment_node_ids");
+        Set<String> judgmentExtendedLegacyFull = with(extendedLegacyFull, "executed_flow_judgment_node_ids");
         if (!keys(tag).equals(required) && !keys(tag).equals(legacy)
             && !keys(tag).equals(extended)
             && !keys(tag).equals(extendedWait)
             && !keys(tag).equals(extendedFull)
             && !keys(tag).equals(extendedLegacy)
             && !keys(tag).equals(extendedLegacyWait)
-            && !keys(tag).equals(extendedLegacyFull)) throw malformed("unknown or missing runtime key");
+            && !keys(tag).equals(extendedLegacyFull)
+            && !keys(tag).equals(judgment)
+            && !keys(tag).equals(judgmentLegacy)
+            && !keys(tag).equals(judgmentExtended)
+            && !keys(tag).equals(judgmentExtendedWait)
+            && !keys(tag).equals(judgmentExtendedFull)
+            && !keys(tag).equals(judgmentExtendedLegacy)
+            && !keys(tag).equals(judgmentExtendedLegacyWait)
+            && !keys(tag).equals(judgmentExtendedLegacyFull)) throw malformed("unknown or missing runtime key");
         CanonicalStoryStatus status = enumeration(CanonicalStoryStatus.class, string(tag, "status"), "status");
         CanonicalStoryRepeatPolicy repeat;
         try {
@@ -233,6 +250,9 @@ public final class CanonicalStoryInstanceNbtCodec {
         Map<String, Boolean> external = tag.hasKey("external_logic_inputs")
             ? decodeBooleans(tag, "external_logic_inputs")
             : Collections.<String, Boolean>emptyMap();
+        List<String> executed = tag.hasKey("executed_flow_judgment_node_ids")
+            ? decodeStrings(tag, "executed_flow_judgment_node_ids")
+            : Collections.<String>emptyList();
         Boolean waitingValue = null;
         if (tag.hasKey("waiting_condition_value")) {
             requireType(tag, "waiting_condition_value", BYTE);
@@ -260,7 +280,33 @@ public final class CanonicalStoryInstanceNbtCodec {
             logic,
             optionalString(tag, "target_story_id"),
             external,
-            waitingValue);
+            waitingValue,
+            executed);
+    }
+
+    private static NBTTagList strings(List<String> values) {
+        NBTTagList list = new NBTTagList();
+        for (String value : values) {
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("value", value);
+            list.appendTag(item);
+        }
+        return list;
+    }
+
+    private static List<String> decodeStrings(NBTTagCompound tag, String key) {
+        requireType(tag, key, LIST);
+        NBTTagList list = (NBTTagList) tag.getTag(key);
+        if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND) throw malformed("invalid " + key + " list type");
+        List<String> result = new ArrayList<String>();
+        for (int index = 0; index < list.tagCount(); index++) {
+            NBTTagCompound item = list.getCompoundTagAt(index);
+            requireKeys(item, set("value"), key + " entry");
+            String value = string(item, "value");
+            if (result.contains(value)) throw malformed("duplicate " + key + " value");
+            result.add(value);
+        }
+        return result;
     }
 
     private static NBTTagList booleans(Map<String, Boolean> values) {
@@ -379,6 +425,12 @@ public final class CanonicalStoryInstanceNbtCodec {
     private static Set<String> set(String... values) {
         Set<String> result = new HashSet<String>();
         for (String value : values) result.add(value);
+        return result;
+    }
+
+    private static Set<String> with(Set<String> source, String value) {
+        Set<String> result = new HashSet<String>(source);
+        result.add(value);
         return result;
     }
 

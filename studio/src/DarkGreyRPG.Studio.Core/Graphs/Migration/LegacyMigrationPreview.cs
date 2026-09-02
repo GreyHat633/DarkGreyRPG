@@ -207,6 +207,7 @@ public static class CanonicalLegacyMigrationPreview
             node.Properties.Clear();
             node.Properties[CanonicalTaskObjectiveSchema.TypeProperty] = JsonSerializer.SerializeToElement(objective.Type);
             node.Properties[CanonicalTaskObjectiveSchema.DescriptionProperty] = JsonSerializer.SerializeToElement(objective.Description);
+            node.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty] = JsonSerializer.SerializeToElement(false);
             node.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(objective.Required!.Value);
             switch (objective.Type)
             {
@@ -226,7 +227,11 @@ public static class CanonicalLegacyMigrationPreview
                     break;
             }
             if (group.Mode == "SEQUENCE" && !string.Equals(objective.Id, group.Objectives[0], StringComparison.Ordinal))
-                node.Ports.Add(new GraphPort("logic_enable", "生效条件", true, GraphInterfaceKind.Logic, 0));
+            {
+                node.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty] = JsonSerializer.SerializeToElement(true);
+                node.Ports.Add(new GraphPort(CanonicalTaskObjectiveSchema.PrerequisitePortId,
+                    CanonicalTaskObjectiveSchema.PrerequisiteDisplayName, true, GraphInterfaceKind.Logic, 0));
+            }
             graphNodes.Add(node);
         }
 
@@ -255,7 +260,8 @@ public static class CanonicalLegacyMigrationPreview
         else // SEQUENCE
         {
             for (var index = 0; index < orderedIds.Count - 1; index++)
-                Connect(graphConnections, orderedIds[index], "logic_status", orderedIds[index + 1], "logic_enable");
+                Connect(graphConnections, orderedIds[index], "logic_status", orderedIds[index + 1],
+                    CanonicalTaskObjectiveSchema.PrerequisitePortId);
             Connect(graphConnections, orderedIds[^1], "logic_status", settleId, completionPortId);
         }
 

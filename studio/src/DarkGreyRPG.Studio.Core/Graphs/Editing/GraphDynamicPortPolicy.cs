@@ -47,7 +47,10 @@ public static class GraphDynamicPortPolicy
         new(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
-        new(GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
+        // Objective prerequisite is a schema-owned conditional port. It is
+        // toggled atomically with its persisted authoring flag and is not a
+        // generic user-created dynamic slot.
+        new(GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.Task, "settle", GraphPortDirection.Input, GraphInterfaceKind.Logic, 1),
     ];
 

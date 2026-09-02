@@ -31,6 +31,12 @@ public sealed class GraphNodesChangedEventArgs : EventArgs
     public IReadOnlyList<string> NodeIds { get; }
 }
 
+/// <summary>One validated A→C→B replacement for an existing A→B edge.</summary>
+public sealed record GraphConnectionSplicePlan(
+    GraphConnection Original,
+    GraphConnection Incoming,
+    GraphConnection Outgoing);
+
 /// <summary>Bindable canonical port projection.</summary>
 public sealed class GraphEditorPortViewModel : ObservableObject
 {
@@ -234,8 +240,23 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     private readonly Dictionary<string, GraphEditorNodeViewModel> _uniqueNodeItems = new(StringComparer.Ordinal);
     private readonly Dictionary<string, GraphEditorNodePosition> _layout = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ValidationIssue> _authoringIssues = new(StringComparer.Ordinal);
+    private readonly Stack<HostHistoryEntry> _undoHistory = [];
+    private readonly Stack<HostHistoryEntry> _redoHistory = [];
     private IReadOnlyList<ValidationIssue> _lastValidationIssues = [];
     private IReadOnlyList<ValidationIssue> _coreValidationIssues = [];
+    private Dictionary<string, GraphEditorNodePosition>? _activeLayoutMoveBefore;
+    private bool _suppressLayoutChanged;
+
+    private abstract record HostHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo);
+
+    private sealed record GraphHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
+        : HostHistoryEntry(DisplacedRedo);
+
+    private sealed record LayoutHistoryEntry(
+        IReadOnlyDictionary<string, GraphEditorNodePosition> Before,
+        IReadOnlyDictionary<string, GraphEditorNodePosition> After,
+        IReadOnlyList<HostHistoryEntry> DisplacedRedo)
+        : HostHistoryEntry(DisplacedRedo);
 
     /// <summary>
     /// Raised only after a successful canonical graph mutation. Preview,
@@ -288,8 +309,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public GraphEditorCommandBridge CommandBridge => _commandBridge;
     public ObservableCollection<GraphEditorNodeViewModel> Nodes { get; }
     public ObservableCollection<GraphEditorConnectionViewModel> Connections { get; }
-    public bool CanUndo => _session.CanUndo;
-    public bool CanRedo => _session.CanRedo;
+    public bool CanUndo => _undoHistory.Count != 0;
+    public bool CanRedo => _redoHistory.Count != 0;
     public IReadOnlyList<ValidationIssue> LastValidationIssues => _lastValidationIssues;
     public IReadOnlyDictionary<string, GraphEditorNodePosition> Layout => _layout;
     public long GraphRevision { get; private set; }
@@ -319,6 +340,9 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         var beforePorts = CapturePortSignatures();
         var beforeNodes = CaptureNodeSignatures();
         _session.ResetToPersistedSnapshot(graph);
+        _undoHistory.Clear();
+        _redoHistory.Clear();
+        _activeLayoutMoveBefore = null;
         _authoringIssues.Clear();
         var liveNodeIds = (Graph.Nodes ?? [])
             .Where(node => node is not null && !string.IsNullOrWhiteSpace(node.Id))
@@ -424,8 +448,65 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             var position = new GraphEditorNodePosition(x, y);
             if (_layout.TryGetValue(nodeId, out var current) && current == position) return;
             _layout[nodeId] = position;
-            LayoutChanged?.Invoke(this, EventArgs.Empty);
+            if (!_suppressLayoutChanged) LayoutChanged?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    /// <summary>
+    /// Starts one transient host-only layout transaction. Realtime node motion
+    /// updates the retained projection, but persistence is dirtied only once
+    /// when the transaction commits.
+    /// </summary>
+    public bool BeginLayoutMove(IEnumerable<string> nodeIds)
+    {
+        ArgumentNullException.ThrowIfNull(nodeIds);
+        if (_activeLayoutMoveBefore is not null) return false;
+        var requested = nodeIds.Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal).ToArray();
+        var before = new Dictionary<string, GraphEditorNodePosition>(StringComparer.Ordinal);
+        foreach (var id in requested)
+        {
+            var matches = Nodes.Where(node => string.Equals(node.NodeId, id, StringComparison.Ordinal)).ToArray();
+            if (matches.Length != 1) return false;
+            before[id] = matches[0].Position;
+        }
+        if (before.Count == 0) return false;
+        _activeLayoutMoveBefore = before;
+        _suppressLayoutChanged = true;
+        return true;
+    }
+
+    /// <summary>Commits the active multi-node move as one host Undo entry.</summary>
+    public bool CommitLayoutMove()
+    {
+        if (_activeLayoutMoveBefore is null) return false;
+        var oldUndo = CanUndo;
+        var oldRedo = CanRedo;
+        var before = _activeLayoutMoveBefore;
+        var after = before.Keys.ToDictionary(id => id, id =>
+        {
+            var node = Nodes.Single(item => string.Equals(item.NodeId, id, StringComparison.Ordinal));
+            return node.Position;
+        }, StringComparer.Ordinal);
+        _activeLayoutMoveBefore = null;
+        _suppressLayoutChanged = false;
+        if (SameLayout(before, after)) return false;
+
+        RecordHistory(new LayoutHistoryEntry(before, after, _redoHistory.ToArray()));
+        LayoutChanged?.Invoke(this, EventArgs.Empty);
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+        return true;
+    }
+
+    /// <summary>Restores an uncommitted layout preview without creating history.</summary>
+    public bool CancelLayoutMove()
+    {
+        if (_activeLayoutMoveBefore is null) return false;
+        var before = _activeLayoutMoveBefore;
+        _activeLayoutMoveBefore = null;
+        ApplyLayoutSnapshot(before, publishChange: false);
+        _suppressLayoutChanged = false;
+        return true;
     }
 
     public bool CanConnect(GraphEditorEndpoint first, GraphEditorEndpoint second)
@@ -466,6 +547,54 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool RemoveNode(string nodeId, bool confirmReferencedRemoval = false)
         => ExecuteSession(() => _session.RemoveNode(nodeId, confirmReferencedRemoval));
 
+    public bool RemoveNodes(IReadOnlyList<string> nodeIds, bool confirmReferencedRemoval = false)
+        => ExecuteSession(() => _session.RemoveNodes(nodeIds, confirmReferencedRemoval));
+
+    /// <summary>
+    /// Resolves the dragged node's unique same-kind input/output pair and
+    /// preflights the complete A→C→B graph state on a detached document.
+    /// Invalid and ambiguous candidates are intentionally silent because a
+    /// Shift-drag miss remains an ordinary layout gesture.
+    /// </summary>
+    public bool TryCreateSplicePlan(GraphConnection original, string draggedNodeId,
+        out GraphConnectionSplicePlan plan)
+    {
+        plan = null!;
+        if (original is null || string.IsNullOrWhiteSpace(draggedNodeId)) return false;
+        var liveOriginals = (Graph.Connections ?? []).Where(connection => connection is not null
+            && connection.Equals(original)).ToArray();
+        var nodes = (Graph.Nodes ?? []).Where(node => node is not null
+            && string.Equals(node.Id, draggedNodeId, StringComparison.Ordinal)).ToArray();
+        if (liveOriginals.Length != 1 || nodes.Length != 1) return false;
+
+        var ports = (nodes[0].Ports ?? []).Where(port => port is not null
+            && port.InterfaceKind == original.InterfaceKind
+            && !string.IsNullOrWhiteSpace(port.Id)).ToArray();
+        var inputs = ports.Where(port => port.Direction == GraphPortDirection.Input).ToArray();
+        var outputs = ports.Where(port => port.Direction == GraphPortDirection.Output).ToArray();
+        if (inputs.Length != 1 || outputs.Length != 1) return false;
+
+        var incoming = new GraphConnection(original.FromNodeId, original.FromPortId,
+            draggedNodeId, inputs[0].Id, original.InterfaceKind);
+        var outgoing = new GraphConnection(draggedNodeId, outputs[0].Id,
+            original.ToNodeId, original.ToPortId, original.InterfaceKind);
+        var detached = GraphDocument.FromJson(Graph.ToJson());
+        var preview = new GraphEditSession(detached, Scope, _session.CompatibilityMode);
+        if (!preview.ReplaceConnections([original], [incoming, outgoing])) return false;
+        plan = new GraphConnectionSplicePlan(original, incoming, outgoing);
+        return true;
+    }
+
+    public bool CanSpliceConnection(GraphConnection original, string draggedNodeId)
+        => TryCreateSplicePlan(original, draggedNodeId, out _);
+
+    public bool SpliceConnection(GraphConnectionSplicePlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        return ExecuteSession(() => _session.ReplaceConnections(
+            [plan.Original], [plan.Incoming, plan.Outgoing]));
+    }
+
     public bool CompleteConnectionDrag(GraphEditorEndpoint? first, GraphEditorEndpoint? second,
         GraphConnection? original = null)
         => ExecuteBridge(() => _commandBridge.CompleteConnectionDrag(first, second, original));
@@ -504,6 +633,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
                 PublishGraphChanged();
                 PublishPortsChanged(beforePorts);
                 PublishNodesChanged(beforeNodes);
+                RecordHistory(new GraphHistoryEntry(_redoHistory.ToArray()));
             }
             NotifyHistoryStateChanged(oldUndo, oldRedo);
             return disconnected;
@@ -545,6 +675,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
             PublishNodesChanged(beforeNodes);
+            RecordHistory(new GraphHistoryEntry(_redoHistory.ToArray()));
         }
         NotifyHistoryStateChanged(oldUndo, oldRedo);
         return reconnected;
@@ -698,6 +829,9 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool SetObjectiveRequired(string nodeId, int required)
         => ExecuteSession(() => _session.SetObjectiveRequired(nodeId, required));
 
+    public bool SetObjectivePrerequisiteEnabled(string nodeId, bool enabled)
+        => ExecuteSession(() => _session.SetObjectivePrerequisiteEnabled(nodeId, enabled));
+
     public bool ChangeStoryActionType(string nodeId, string? type, string? itemId = null)
         => ExecuteSession(() => _session.ChangeStoryActionType(nodeId, type, itemId));
 
@@ -750,6 +884,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
             PublishNodesChanged(beforeNodes);
+            RecordHistory(new GraphHistoryEntry(_redoHistory.ToArray()));
         }
         else PublishState(_session.LastValidationIssues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -758,15 +893,61 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
     /// <summary>Compensates the last edit after a failed outer persistence transaction.</summary>
     public bool RollbackLastEdit()
-        => ExecuteSession(_session.RollbackLastEdit);
+    {
+        if (_undoHistory.TryPeek(out var entry) is false || entry is not GraphHistoryEntry)
+            return false;
+        var oldUndo = CanUndo;
+        var oldRedo = CanRedo;
+        var result = ApplyGraphHistory(_session.RollbackLastEdit, () => _session.LastValidationIssues);
+        if (!result) return false;
+        _ = _undoHistory.Pop();
+        _redoHistory.Clear();
+        foreach (var displaced in entry.DisplacedRedo.Reverse()) _redoHistory.Push(displaced);
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+        return true;
+    }
 
-    public bool Undo() => ExecuteBridge(_commandBridge.Undo);
-    public bool Redo() => ExecuteBridge(_commandBridge.Redo);
+    public bool Undo()
+    {
+        if (!_undoHistory.TryPeek(out var entry)) return false;
+        var oldUndo = CanUndo;
+        var oldRedo = CanRedo;
+        var result = entry switch
+        {
+            GraphHistoryEntry => ApplyGraphHistory(_commandBridge.Undo, () => _commandBridge.LastValidationIssues),
+            LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.Before, publishChange: true),
+            _ => false,
+        };
+        if (!result) return false;
+        _ = _undoHistory.Pop();
+        _redoHistory.Push(entry);
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+        return true;
+    }
+
+    public bool Redo()
+    {
+        if (!_redoHistory.TryPeek(out var entry)) return false;
+        var oldUndo = CanUndo;
+        var oldRedo = CanRedo;
+        var result = entry switch
+        {
+            GraphHistoryEntry => ApplyGraphHistory(_commandBridge.Redo, () => _commandBridge.LastValidationIssues),
+            LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.After, publishChange: true),
+            _ => false,
+        };
+        if (!result) return false;
+        _ = _redoHistory.Pop();
+        _undoHistory.Push(entry);
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+        return true;
+    }
 
     private bool ExecuteBridge(Func<bool> command)
     {
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
+        var oldUndoCount = _session.UndoCount;
         var beforePorts = CapturePortSignatures();
         var beforeNodes = CaptureNodeSignatures();
         var result = command();
@@ -777,6 +958,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
             PublishNodesChanged(beforeNodes);
+            if (_session.UndoCount > oldUndoCount)
+                RecordHistory(new GraphHistoryEntry(_redoHistory.ToArray()));
         }
         else PublishState(issues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
@@ -787,6 +970,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     {
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
+        var oldUndoCount = _session.UndoCount;
         var beforePorts = CapturePortSignatures();
         var beforeNodes = CaptureNodeSignatures();
         var result = command();
@@ -797,10 +981,37 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
             PublishNodesChanged(beforeNodes);
+            if (_session.UndoCount > oldUndoCount)
+                RecordHistory(new GraphHistoryEntry(_redoHistory.ToArray()));
         }
         else PublishState(issues);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
         return result;
+    }
+
+    private bool ApplyGraphHistory(
+        Func<bool> command,
+        Func<IReadOnlyList<ValidationIssue>> issues)
+    {
+        var beforePorts = CapturePortSignatures();
+        var beforeNodes = CaptureNodeSignatures();
+        var result = command();
+        if (!result)
+        {
+            PublishState(issues());
+            return false;
+        }
+        Refresh(issues());
+        PublishGraphChanged();
+        PublishPortsChanged(beforePorts);
+        PublishNodesChanged(beforeNodes);
+        return true;
+    }
+
+    private void RecordHistory(HostHistoryEntry entry)
+    {
+        _undoHistory.Push(entry);
+        _redoHistory.Clear();
     }
 
     private void NotifyHistoryStateChanged(bool oldUndo, bool oldRedo)
@@ -889,9 +1100,39 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             var position = new GraphEditorNodePosition(x, y);
             if (_layout.TryGetValue(node.NodeId, out var current) && current == position) return;
             _layout[node.NodeId] = position;
-            LayoutChanged?.Invoke(this, EventArgs.Empty);
+            if (!_suppressLayoutChanged) LayoutChanged?.Invoke(this, EventArgs.Empty);
         }
     }
+
+    private bool ApplyLayoutSnapshot(
+        IReadOnlyDictionary<string, GraphEditorNodePosition> snapshot,
+        bool publishChange)
+    {
+        var resolved = new List<(GraphEditorNodeViewModel Node, GraphEditorNodePosition Position)>(snapshot.Count);
+        foreach (var pair in snapshot)
+        {
+            if (!pair.Value.IsFinite) return false;
+            var matches = Nodes.Where(node => string.Equals(node.NodeId, pair.Key, StringComparison.Ordinal)).ToArray();
+            if (matches.Length != 1) return false;
+            resolved.Add((matches[0], pair.Value));
+        }
+
+        var priorSuppression = _suppressLayoutChanged;
+        _suppressLayoutChanged = true;
+        try
+        {
+            foreach (var item in resolved) item.Node.SetPosition(item.Position.X, item.Position.Y);
+        }
+        finally { _suppressLayoutChanged = priorSuppression; }
+        if (publishChange) LayoutChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    private static bool SameLayout(
+        IReadOnlyDictionary<string, GraphEditorNodePosition> first,
+        IReadOnlyDictionary<string, GraphEditorNodePosition> second)
+        => first.Count == second.Count && first.All(pair =>
+            second.TryGetValue(pair.Key, out var position) && position == pair.Value);
 
     private static Dictionary<string, int> BuildFallbackIndices(GraphNode[] nodes,
         IReadOnlyDictionary<string, int> counts)

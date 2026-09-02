@@ -12,7 +12,8 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void FactoryCreatesUnselectedKillContract()
     {
         var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
-        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "entity" }, node.Properties.Keys.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "entity", "prerequisite_enabled" }, node.Properties.Keys.ToArray());
+        Assert.IsFalse(node.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty].GetBoolean());
         Assert.AreEqual(CanonicalTaskObjectiveSchema.UnselectedTarget, node.Properties["entity"].GetString());
         Assert.IsTrue(CanonicalTaskObjectiveSchema.IsUnselectedTarget(node));
         Assert.IsFalse(CanonicalTaskObjectiveSchema.IsValid(node));
@@ -30,11 +31,11 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
 
         Assert.IsTrue(session.ChangeObjectiveType("objective", "collect_item"));
         Assert.AreEqual(undoCount + 1, session.UndoCount);
-        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "item", "metadata" }, objective.Properties.Keys.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "item", "metadata", "prerequisite_enabled" }, objective.Properties.Keys.ToArray());
         Assert.AreEqual(CanonicalTaskObjectiveSchema.UnselectedTarget, graph.Nodes.Single().Properties["item"].GetString());
         Assert.AreEqual(0, graph.Nodes.Single().Properties["metadata"].EnumerateObject().Count());
         Assert.IsTrue(session.Undo());
-        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "entity" }, graph.Nodes.Single().Properties.Keys.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "required", "entity", "prerequisite_enabled" }, graph.Nodes.Single().Properties.Keys.ToArray());
     }
 
     [TestMethod]
@@ -120,7 +121,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         var session = new GraphEditSession(graph, GraphScope.Task);
 
         Assert.IsTrue(session.ChangeObjectiveType("objective", CanonicalTaskObjectiveSchema.InteractActor, "actor-1"));
-        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "actor_id" },
+        CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "actor_id", "prerequisite_enabled" },
             objective.Properties.Keys.ToArray());
         Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(objective));
         Assert.IsFalse(session.SetObjectiveRequired("objective", 2));
@@ -213,5 +214,52 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
             .Properties[CanonicalTaskObjectiveSchema.TypeProperty].GetString());
         Assert.IsFalse(collectGraph.ToJson().Contains("minecraft:slime", StringComparison.Ordinal));
         Assert.IsFalse(collectGraph.ToJson().Contains("minecraft:stone", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void PrerequisiteToggleOwnsStablePortCleansWiresAndRoundTripsUndo()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("boss");
+        var source = GraphNodeFactory.Create(GraphScope.Task, "logic_input", "source");
+        source.Properties["port_id"] = JsonSerializer.SerializeToElement("source_gate");
+        source.Properties["display_name"] = JsonSerializer.SerializeToElement("Source Gate");
+        var graph = new GraphDocument([source, objective]);
+        var session = new GraphEditSession(graph, GraphScope.Task);
+
+        Assert.IsTrue(session.SetObjectivePrerequisiteEnabled("objective", true));
+        Assert.IsTrue(objective.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty].GetBoolean());
+        var prerequisite = objective.Ports.Single(port => port.IsInput);
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.PrerequisitePortId, prerequisite.Id);
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.PrerequisiteDisplayName, prerequisite.DisplayName);
+        Assert.IsFalse(session.AddDynamicPort("objective", "another", GraphPortDirection.Input,
+            GraphInterfaceKind.Logic));
+
+        graph.Connections.Add(new GraphConnection("source", "logic_out", "objective",
+            CanonicalTaskObjectiveSchema.PrerequisitePortId, GraphInterfaceKind.Logic));
+        var beforeDisable = graph.ToJson();
+        Assert.IsTrue(session.SetObjectivePrerequisiteEnabled("objective", false));
+        Assert.IsFalse(objective.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty].GetBoolean());
+        Assert.IsFalse(objective.Ports.Any(port => port.IsInput));
+        Assert.AreEqual(0, graph.Connections.Count);
+
+        Assert.IsTrue(session.Undo());
+        Assert.AreEqual(beforeDisable, graph.ToJson());
+        var restored = GraphDocument.FromJson(graph.ToJson());
+        Assert.IsTrue(restored.Nodes.Single(node => node.Id == "objective")
+            .Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty].GetBoolean());
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.PrerequisitePortId,
+            restored.Nodes.Single(node => node.Id == "objective").Ports.Single(port => port.IsInput).Id);
+    }
+
+    [TestMethod]
+    public void LegacyObjectiveWithoutPrerequisiteFlagRemainsDefaultActiveShape()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "legacy");
+        objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("boss");
+        objective.Properties.Remove(CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty);
+
+        Assert.IsFalse(CanonicalTaskObjectiveSchema.IsPrerequisiteEnabled(objective));
+        Assert.IsTrue(GraphNodeShapeValidator.IsValid(objective, GraphScope.Task));
     }
 }

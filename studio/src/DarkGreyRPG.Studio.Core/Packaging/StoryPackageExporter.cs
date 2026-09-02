@@ -18,10 +18,18 @@ public sealed class StoryPackageExporter
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(storyId);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
-        var stories = new StoryRepository(_projectDirectory);
-        var story = stories.LoadStory(storyId);
         if (string.IsNullOrWhiteSpace(packageVersion)) throw new StoryPackageException("packageVersion is required.");
-        EnsurePackageableStory(story);
+
+        var stories = new StoryRepository(_projectDirectory);
+        var legacyPath = Path.Combine(stories.StoriesDirectory, storyId + ".json");
+        var legacyStory = File.Exists(legacyPath) ? stories.LoadStory(storyId) : null;
+        var canonicalStore = new CanonicalProjectGraphStore(_projectDirectory);
+        var canonicalPath = Path.Combine(canonicalStore.StoriesDirectory, storyId + ".json");
+        var canonicalStory = File.Exists(canonicalPath) ? canonicalStore.Stories.Load(storyId) : null;
+        if (legacyStory is null && canonicalStory is null)
+            throw new StoryPackageException($"Story '{storyId}' was not found in either the legacy or canonical Story repository.");
+
+        EnsurePackageableStory(storyId, legacyStory, canonicalStory);
         var root = Path.GetFullPath(outputDirectory);
         Directory.CreateDirectory(root);
         // The output directory is the package boundary. Remove only files and
@@ -42,15 +50,23 @@ public sealed class StoryPackageExporter
         foreach (var directory in new[] { "actors", "dialogues", "quests", "stories" })
             Directory.CreateDirectory(Path.Combine(root, directory));
 
-        var required = new StoryPackageRequiredResources { Story = $"stories/{story.Id}.json" };
-        Copy(root, "stories", story.Id + ".json");
-        var membership = story.OwnedResources.Clone();
-        membership.Actors.AddRange(story.ReferencedResources.Actors);
-        membership.Dialogues.AddRange(story.ReferencedResources.Dialogues);
-        membership.Quests.AddRange(story.ReferencedResources.Quests);
-        AddLegacyResources(root, required, membership);
-        AddCanonicalResources(root, required, story.Id);
-        required = AddStoryLogicGraph(root, required, story.Id);
+        var required = new StoryPackageRequiredResources
+        {
+            Story = legacyStory is not null
+                ? $"stories/{storyId}.json"
+                : $"resources/canonical/stories/{storyId}.json",
+        };
+        if (legacyStory is not null)
+        {
+            Copy(root, "stories", legacyStory.Id + ".json");
+            var membership = legacyStory.OwnedResources.Clone();
+            membership.Actors.AddRange(legacyStory.ReferencedResources.Actors);
+            membership.Dialogues.AddRange(legacyStory.ReferencedResources.Dialogues);
+            membership.Quests.AddRange(legacyStory.ReferencedResources.Quests);
+            AddLegacyResources(root, required, membership);
+        }
+        AddCanonicalResources(root, required, storyId);
+        required = AddStoryLogicGraph(root, required, storyId);
         var projectPath = Path.Combine(_projectDirectory, "project.json");
         if (File.Exists(projectPath)) CopyFile(projectPath, Path.Combine(root, "project.json"));
         else
@@ -58,8 +74,8 @@ public sealed class StoryPackageExporter
             var fallbackProject = new Dictionary<string, object?>
             {
                 ["schema_version"] = 2,
-                ["id"] = story.Id,
-                ["display_name"] = story.DisplayName,
+                ["id"] = storyId,
+                ["display_name"] = canonicalStory?.DisplayName ?? legacyStory!.DisplayName,
             };
             File.WriteAllText(
                 Path.Combine(root, "project.json"),
@@ -69,10 +85,11 @@ public sealed class StoryPackageExporter
 
         var manifest = new StoryPackageManifest
         {
-            PackageId = story.Id,
+            ProducerVersion = packageVersion,
+            PackageId = storyId,
             PackageVersion = packageVersion,
-            StoryId = story.Id,
-            StorySchemaVersion = story.SchemaVersion,
+            StoryId = storyId,
+            StorySchemaVersion = canonicalStory?.SchemaVersion ?? legacyStory!.SchemaVersion,
             RequiredResources = required,
         };
         File.WriteAllText(Path.Combine(root, "manifest.json"), manifest.ToJson());
@@ -82,36 +99,21 @@ public sealed class StoryPackageExporter
     public StoryPackageBuildResult Export(string storyId, string outputDirectory, string packageVersion = "1.0.0")
         => Build(storyId, outputDirectory, packageVersion);
 
-    private void EnsurePackageableStory(StoryResource story)
+    private static void EnsurePackageableStory(
+        string storyId,
+        StoryResource? legacyStory,
+        GraphResourceEnvelope? canonicalStory)
     {
-        var source = ContainsCompatibilityEnterStory(story.Nodes)
+        var source = legacyStory is not null && ContainsCompatibilityEnterStory(legacyStory.Nodes)
             ? "legacy EnterStory"
             : null;
-
-        var canonicalStore = new CanonicalProjectGraphStore(_projectDirectory);
-        var canonicalPath = Path.Combine(canonicalStore.StoriesDirectory, story.Id + ".json");
-        if (File.Exists(canonicalPath))
-        {
-            GraphResourceEnvelope canonicalStory;
-            try
-            {
-                canonicalStory = canonicalStore.Stories.Load(story.Id);
-            }
-            catch (GraphResourceRepositoryException exception)
-            {
-                throw new StoryPackageException(
-                    $"Selected Story '{story.Id}' has an unreadable canonical Story graph; export was rejected before changing the output. Project-level cross-Story migration is required before export.",
-                    exception);
-            }
-
-            if (ContainsCompatibilityEnterStory(canonicalStory.Graph?.Nodes))
-                source = source is null ? "canonical enter_story" : "legacy EnterStory and canonical enter_story";
-        }
+        if (canonicalStory is not null && ContainsCompatibilityEnterStory(canonicalStory.Graph?.Nodes))
+            source = source is null ? "canonical enter_story" : "legacy EnterStory and canonical enter_story";
 
         if (source is not null)
         {
             throw new StoryPackageException(
-                $"Selected Story '{story.Id}' contains compatibility-only {source} transition data and cannot be exported as a server-ready single-Story package. Project-level cross-Story migration is required before export.");
+                $"Selected Story '{storyId}' contains compatibility-only {source} transition data and cannot be exported as a server-ready single-Story package. Project-level cross-Story migration is required before export.");
         }
     }
 

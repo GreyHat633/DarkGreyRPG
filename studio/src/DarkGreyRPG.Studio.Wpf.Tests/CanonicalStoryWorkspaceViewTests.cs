@@ -707,6 +707,57 @@ public sealed class CanonicalStoryWorkspaceViewTests
             CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
     }
 
+    [STATestMethod]
+    public void SessionLineInspectorPlacesActorSelectorAboveTextEditor()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+                new GraphDocument([line]))]);
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
+        Assert.IsTrue(view.GraphView.SelectNode("line"));
+        view.UpdateLayout();
+
+        var actor = Descendants<ComboBox>(view).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "SessionLineActorSelector");
+        var text = Descendants<TextBox>(view).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "SessionLineTextEditor");
+        Assert.AreEqual(Visibility.Visible, actor.Visibility);
+        Assert.AreEqual(Visibility.Visible, text.Visibility);
+        Assert.IsLessThan(
+            text.TranslatePoint(new Point(), view).Y,
+            actor.TranslatePoint(new Point(), view).Y);
+    }
+
+    [STATestMethod]
+    public void ObjectivePrerequisiteHelperAppearsOnlyWhenEnabled()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task",
+                new GraphDocument([objective]))]);
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
+        Assert.IsTrue(view.GraphView.SelectNode("objective"));
+        view.UpdateLayout();
+
+        var toggle = Descendants<CheckBox>(view).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "TaskObjectivePrerequisiteToggle");
+        var helper = Descendants<TextBlock>(view).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "TaskObjectivePrerequisiteHelp");
+        Assert.AreEqual("前置条件", toggle.Content);
+        Assert.AreEqual(Visibility.Collapsed, helper.Visibility);
+
+        toggle.IsChecked = true;
+        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+        Assert.AreEqual("前置条件为 True 时激活", helper.Text);
+        Assert.AreEqual(Visibility.Visible, helper.Visibility);
+    }
+
     private static CanonicalStoryWorkspaceView Arrange(
         CanonicalStoryWorkspaceViewModel workspace,
         Func<string?>? placementNodeIdSource = null)

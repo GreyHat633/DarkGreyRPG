@@ -723,21 +723,90 @@ public sealed class ShellViewModelTests
     public void ExportSelectedStoryPackageCommandBuildsServerReadyPackage()
     {
         using var directory = new TestProjectDirectory();
-        Directory.CreateDirectory(Path.Combine(directory.Root, "dialogues"));
-        Directory.CreateDirectory(Path.Combine(directory.Root, "quests"));
-        new StoryRepository(directory.Root).CreateStory("opening", "Opening");
-        var shell = CreateShell(directory.Root);
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(new GraphResourceEnvelope(
+            GraphResourceKind.Story,
+            "opening",
+            "Opening",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("opening"));
+        var package = Path.Combine(directory.Root, "chosen", "opening.dgrs");
+        var picker = new FixedDgrsExportPathPicker(package);
+        var shell = CreateShell(directory.Root, picker);
         shell.OpenProjectCommand.Execute(null);
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "opening");
 
         Assert.IsTrue(shell.ExportSelectedStoryPackageCommand.CanExecute(null));
         shell.ExportSelectedStoryPackageCommand.Execute(null);
 
-        var package = Path.Combine(directory.Root, "build", "story_packages", "opening");
-        Assert.IsTrue(File.Exists(Path.Combine(package, "manifest.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(package, "stories", "opening.json")));
-        StringAssert.Contains(File.ReadAllText(Path.Combine(package, "manifest.json")), "\"package_version\": \"0.3.1.0\"");
+        Assert.IsTrue(File.Exists(package));
+        Assert.AreEqual("opening", picker.StoryId);
+        Assert.AreEqual(
+            Path.Combine(directory.Root, "build", "story_packages"),
+            picker.SuggestedDirectory);
+        Assert.IsFalse(File.Exists(Path.Combine(
+            directory.Root,
+            "build",
+            "story_packages",
+            "opening.dgrs")));
+        Assert.IsFalse(Directory.Exists(Path.Combine(directory.Root, "build", "story_packages", "opening")));
         Assert.AreEqual(OutputKind.Success, shell.Output.Entries.Last().Kind);
+        StringAssert.Contains(shell.Output.Entries.Last().Message, "已导出并验证");
+    }
+
+    [TestMethod]
+    public void ProjectHomeExportRemainsEnabledAndSavesRetainedCanonicalEdits()
+    {
+        using var directory = new TestProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(new GraphResourceEnvelope(
+            GraphResourceKind.Story,
+            "opening",
+            "Opening",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("opening"));
+        var package = Path.Combine(directory.Root, "exports", "opening.dgrs");
+        var shell = CreateShell(directory.Root, new FixedDgrsExportPathPicker(package));
+        shell.OpenProjectCommand.Execute(null);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+        shell.CanonicalStoryWorkspace!.StoryEditor.Host.SetNodePosition("start", 480, 270);
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+
+        shell.ShowProjectHomeCommand.Execute(null);
+
+        Assert.AreEqual("opening", shell.ProjectHome.SelectedStory?.Id);
+        Assert.IsTrue(shell.ExportSelectedStoryPackageCommand.CanExecute(null));
+        shell.ExportSelectedStoryPackageCommand.Execute(null);
+
+        Assert.IsFalse(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+        Assert.IsTrue(File.Exists(package));
+        Assert.AreEqual(OutputKind.Success, shell.Output.Entries.Last().Kind);
+        StringAssert.Contains(shell.Output.Entries.Last().Message, "已导出并验证");
+    }
+
+    [TestMethod]
+    public void CancellingExportPathSelectionDoesNotSaveOrCreatePackage()
+    {
+        using var directory = new TestProjectDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(new GraphResourceEnvelope(
+            GraphResourceKind.Story,
+            "opening",
+            "Opening",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("opening"));
+        var shell = CreateShell(directory.Root, new FixedDgrsExportPathPicker(null));
+        shell.OpenProjectCommand.Execute(null);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+        shell.CanonicalStoryWorkspace!.StoryEditor.Host.SetNodePosition("start", 480, 270);
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+        shell.ShowProjectHomeCommand.Execute(null);
+
+        shell.ExportSelectedStoryPackageCommand.Execute(null);
+
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.HasDirtyEditors);
+        Assert.IsFalse(Directory.Exists(Path.Combine(directory.Root, "build")));
+        Assert.AreNotEqual("ExportSelectedStoryPackage", shell.LastUiCommand);
     }
 
     private static GraphResourceEnvelope Envelope(
@@ -749,6 +818,14 @@ public sealed class ShellViewModelTests
 
     private static ShellViewModel CreateShell(string projectDirectory) =>
         new(new ProjectService(), new FixedProjectFolderPicker(projectDirectory));
+
+    private static ShellViewModel CreateShell(
+        string projectDirectory,
+        IDgrsExportPathPicker exportPathPicker) =>
+        new(
+            new ProjectService(),
+            new FixedProjectFolderPicker(projectDirectory),
+            dgrsExportPathPicker: exportPathPicker);
 
     private static ShellViewModel CreateShell(string projectDirectory, IActorWorkspaceDialogs dialogs) =>
         new(new ProjectService(), new FixedProjectFolderPicker(projectDirectory), dialogs);
@@ -768,6 +845,20 @@ public sealed class ShellViewModelTests
     private sealed class FixedProjectFolderPicker(string projectDirectory) : IProjectFolderPicker
     {
         public string? PickProjectFolder() => projectDirectory;
+    }
+
+    private sealed class FixedDgrsExportPathPicker(string? path) : IDgrsExportPathPicker
+    {
+        public string? StoryId { get; private set; }
+
+        public string? SuggestedDirectory { get; private set; }
+
+        public string? PickExportPath(string storyId, string suggestedDirectory)
+        {
+            StoryId = storyId;
+            SuggestedDirectory = suggestedDirectory;
+            return path;
+        }
     }
 
     private sealed class FakeActorWorkspaceDialogs : IActorWorkspaceDialogs

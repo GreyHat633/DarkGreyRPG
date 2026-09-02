@@ -367,6 +367,74 @@ public sealed class GraphEditSession
         return true;
     }
 
+    /// <summary>
+    /// Removes every deletable node in one document mutation and one Undo unit.
+    /// Required/non-deletable nodes are retained without blocking deletable
+    /// peers. Every edge incident to a removed node is cleaned up atomically.
+    /// </summary>
+    public bool RemoveNodes(
+        IReadOnlyList<string> nodeIds,
+        bool confirmReferencedRemoval = false)
+    {
+        ArgumentNullException.ThrowIfNull(nodeIds);
+        if (!Scope.HasValue)
+            return Fail([new("graph.node.scope.required",
+                "A graph scope is required for node edits.", "scope")]);
+
+        var requestedIds = nodeIds.Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal).ToArray();
+        if (requestedIds.Length == 0)
+            return Fail([new("graph.node.id.required", "At least one graph node ID is required.", "node_id")]);
+
+        var resolved = new List<GraphNode>(requestedIds.Length);
+        foreach (var nodeId in requestedIds)
+        {
+            var matches = (Document.Nodes ?? []).Where(node => node is not null
+                && string.Equals(node.Id, nodeId, StringComparison.Ordinal)).ToArray();
+            if (matches.Length == 0)
+                return Fail([new("graph.node.missing", $"Node '{nodeId}' does not exist.",
+                    "node_id", NodeId: nodeId)]);
+            if (matches.Length > 1)
+                return Fail([new("graph.node.ambiguous", $"Node '{nodeId}' is ambiguous.",
+                    "node_id", NodeId: nodeId)]);
+            resolved.Add(matches[0]);
+        }
+
+        var deletable = resolved.Where(node =>
+            !GraphNodeDefinitionRegistry.TryGet(Scope.Value, node.Type, out var definition)
+            || !definition.NonDeletable && !definition.Required).ToArray();
+        if (deletable.Length == 0)
+        {
+            var protectedNode = resolved[0];
+            return Fail([new("graph.node.not_deletable",
+                $"Node type '{protectedNode.Type}' cannot be deleted in scope '{Scope.Value}'.",
+                "node_id", NodeId: protectedNode.Id)]);
+        }
+
+        var deletableIds = deletable.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
+        var references = (Document.Connections ?? []).Where(connection => connection is not null
+            && (deletableIds.Contains(connection.FromNodeId)
+                || deletableIds.Contains(connection.ToNodeId))).ToArray();
+        if (references.Length != 0 && !confirmReferencedRemoval)
+            return Fail([new("graph.node.references.confirmation_required",
+                $"The selected nodes are referenced by {references.Length} connection(s); "
+                    + "confirm removal to clean them up.",
+                "confirm_referenced_removal")]);
+
+        var before = DeepClone(Document);
+        Document.Nodes ??= [];
+        Document.Nodes.RemoveAll(node => node is not null && deletableIds.Contains(node.Id));
+        if (references.Length != 0)
+        {
+            Document.Connections = (Document.Connections ?? []).Where(connection => connection is null
+                || !deletableIds.Contains(connection.FromNodeId)
+                    && !deletableIds.Contains(connection.ToNodeId)).ToList();
+        }
+
+        Commit(before);
+        return true;
+    }
+
     public bool Connect(string fromNodeId, string fromPortId, string toNodeId, string toPortId, GraphInterfaceKind interfaceKind)
         => Connect(new GraphConnection(fromNodeId, fromPortId, toNodeId, toPortId, interfaceKind));
 
@@ -434,8 +502,10 @@ public sealed class GraphEditSession
 
     /// <summary>
     /// Replaces or removes a validated bundle of existing connections as one
-    /// document mutation and one Undo unit. Passing an empty replacement list
-    /// disconnects the whole bundle.
+    /// document mutation and one Undo unit. The replacement count is allowed
+    /// to differ from the original count so a single edge can be atomically
+    /// expanded into a validated path (the canonical editor's splice gesture).
+    /// Passing an empty replacement list disconnects the whole bundle.
     /// </summary>
     public bool ReplaceConnections(
         IReadOnlyList<GraphConnection> originals,
@@ -443,7 +513,7 @@ public sealed class GraphEditSession
     {
         ArgumentNullException.ThrowIfNull(originals);
         ArgumentNullException.ThrowIfNull(replacements);
-        if (originals.Count == 0 || replacements.Count != 0 && replacements.Count != originals.Count)
+        if (originals.Count == 0)
             return Fail([]);
 
         var uniqueOriginals = originals.Where(connection => connection is not null).Distinct().ToArray();
@@ -456,7 +526,8 @@ public sealed class GraphEditSession
             return Fail([new("graph.connection.bundle.original.missing",
                 "One or more original connections do not exist exactly once.", "connections")]);
 
-        if (replacements.Count != 0 && originals.Zip(replacements).All(pair => pair.First.Equals(pair.Second)))
+        if (originals.Count == replacements.Count
+            && originals.Zip(replacements).All(pair => pair.First.Equals(pair.Second)))
             return Fail([]);
 
         var detached = DeepClone(Document);
@@ -480,17 +551,14 @@ public sealed class GraphEditSession
         }
 
         var before = DeepClone(Document);
-        var replacementByOriginal = originals.Zip(replacements, (original, replacement) => (original, replacement))
-            .ToArray();
-        Document.Connections = (Document.Connections ?? [])
-            .Where(connection => connection is not null)
-            .Select(connection => replacementByOriginal.FirstOrDefault(pair => pair.original.Equals(connection)) is var match
-                && match.original is not null
-                    ? Clone(match.replacement)
-                    : connection)
-            .Where(connection => replacements.Count != 0
-                || !uniqueOriginals.Any(original => original.Equals(connection)))
-            .ToList();
+        var current = (Document.Connections ?? []).Where(connection => connection is not null).ToList();
+        var firstOriginalIndex = current.FindIndex(connection =>
+            uniqueOriginals.Any(original => original.Equals(connection)));
+        var insertionIndex = current.Take(firstOriginalIndex)
+            .Count(connection => !uniqueOriginals.Any(original => original.Equals(connection)));
+        current.RemoveAll(connection => uniqueOriginals.Any(original => original.Equals(connection)));
+        current.InsertRange(insertionIndex, replacements.Select(Clone));
+        Document.Connections = current;
         Commit(before);
         return true;
     }
@@ -631,6 +699,10 @@ public sealed class GraphEditSession
         {
             if (string.Equals(property, CanonicalTaskObjectiveSchema.TypeProperty, StringComparison.Ordinal))
                 return Fail([ObjectiveTypeAtomicIssue(node.Id)]);
+            if (string.Equals(property, CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty, StringComparison.Ordinal))
+                return Fail([ObjectivePropertyIssue("graph.objective.prerequisite.atomic_required",
+                    "Objective prerequisite changes must update the flag, port, and incident connections atomically.",
+                    property, node.Id)]);
             if (!CanonicalTaskObjectiveSchema.AllProperties.Contains(property))
                 return Fail([ObjectivePropertyIssue("graph.objective.property.unsupported",
                     $"Objective property '{property}' is not part of the frozen contract.", property, node.Id)]);
@@ -668,6 +740,9 @@ public sealed class GraphEditSession
 
         var isPublicBoundary = node!.Type is "logic_input" or "logic_output"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
+        var isSessionEndDisplayName = Scope == GraphScope.Session
+            && string.Equals(node.Type, "end", StringComparison.Ordinal)
+            && string.Equals(property, "display_name", StringComparison.Ordinal);
         var isTaskLogicOutput = Scope == GraphScope.Task
             && string.Equals(node.Type, "logic_output", StringComparison.Ordinal);
         if ((node!.Properties ?? []).TryGetValue(property, out var existing)
@@ -681,7 +756,14 @@ public sealed class GraphEditSession
             {
                 return Fail([TaskLogicOutputDisplayNameInvalidIssue(node.Id)]);
             }
-            return Fail([]);
+            var endFlowInput = isSessionEndDisplayName
+                ? (node.Ports ?? []).FirstOrDefault(port => port is not null
+                    && string.Equals(port.Id, "flow_in", StringComparison.Ordinal))
+                : null;
+            if (endFlowInput is null
+                || value.ValueKind != JsonValueKind.String
+                || string.Equals(endFlowInput.DisplayName, value.GetString(), StringComparison.Ordinal))
+                return Fail([]);
         }
 
         if (isTaskLogicOutput && property == "port_id")
@@ -721,6 +803,12 @@ public sealed class GraphEditSession
         var before = DeepClone(Document);
         node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         node.Properties[property] = value.Clone();
+        if (isSessionEndDisplayName)
+        {
+            var flowInput = (node.Ports ?? []).FirstOrDefault(port => port is not null
+                && string.Equals(port.Id, "flow_in", StringComparison.Ordinal));
+            if (flowInput is not null) flowInput.DisplayName = value.GetString()!;
+        }
         Commit(before);
         return true;
     }
@@ -825,6 +913,71 @@ public sealed class GraphEditSession
                 "角色交互目标不使用次数。", $"properties.{CanonicalTaskObjectiveSchema.RequiredProperty}", NodeId: nodeId)]);
         return SetNodeProperty(nodeId, CanonicalTaskObjectiveSchema.RequiredProperty,
             JsonSerializer.SerializeToElement(required));
+    }
+
+    /// <summary>
+    /// Atomically toggles the schema-owned Objective prerequisite flag and its
+    /// single stable Logic input. Disabling the flag also removes every edge
+    /// incident to the removed prerequisite port in the same Undo unit.
+    /// </summary>
+    public bool SetObjectivePrerequisiteEnabled(string nodeId, bool enabled)
+    {
+        if (Scope != GraphScope.Task)
+            return Fail([ObjectivePropertyIssue("graph.objective.scope.required",
+                "Objective editing requires a Task graph.", "scope", nodeId)]);
+        if (!TryResolvePropertyNode(nodeId, out var node, out var issues)) return Fail(issues);
+        if (!string.Equals(node!.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
+            return Fail([ObjectivePropertyIssue("graph.objective.node.required",
+                $"Node '{nodeId}' is not a Task Objective.", "type", node.Id)]);
+
+        var currentInputs = (node.Ports ?? []).Where(port => port is not null
+            && port.IsInput && port.InterfaceKind == GraphInterfaceKind.Logic).ToArray();
+        var alreadyExact = CanonicalTaskObjectiveSchema.IsPrerequisiteEnabled(node) == enabled
+            && (enabled
+                ? currentInputs.Length == 1
+                    && string.Equals(currentInputs[0]!.Id, CanonicalTaskObjectiveSchema.PrerequisitePortId, StringComparison.Ordinal)
+                    && string.Equals(currentInputs[0]!.DisplayName, CanonicalTaskObjectiveSchema.PrerequisiteDisplayName, StringComparison.Ordinal)
+                : currentInputs.Length == 0);
+        if (alreadyExact) return true;
+
+        var candidate = Clone(node);
+        candidate.Properties[CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty] =
+            JsonSerializer.SerializeToElement(enabled);
+        var oldInputIds = currentInputs.Select(port => port!.Id).ToHashSet(StringComparer.Ordinal);
+        candidate.Ports.RemoveAll(port => port is not null
+            && port.IsInput && port.InterfaceKind == GraphInterfaceKind.Logic);
+        if (enabled)
+        {
+            candidate.Ports.Add(new GraphPort(
+                CanonicalTaskObjectiveSchema.PrerequisitePortId,
+                CanonicalTaskObjectiveSchema.PrerequisiteDisplayName,
+                true,
+                GraphInterfaceKind.Logic,
+                0));
+        }
+
+        var shapeIssues = AllowUnselectedObjectiveTarget(candidate,
+            GraphNodeShapeValidator.Validate(candidate, GraphScope.Task));
+        if (shapeIssues.Count != 0) return Fail(shapeIssues);
+
+        var retainedInputIds = candidate.Ports.Where(port => port is not null
+                && port.IsInput && port.InterfaceKind == GraphInterfaceKind.Logic)
+            .Select(port => port.Id).ToHashSet(StringComparer.Ordinal);
+        oldInputIds.ExceptWith(retainedInputIds);
+        var before = DeepClone(Document);
+        node.Properties = candidate.Properties;
+        node.Ports = candidate.Ports;
+        if (oldInputIds.Count != 0)
+        {
+            Document.Connections = (Document.Connections ?? []).Where(connection => connection is not null
+                && !((string.Equals(connection.FromNodeId, node.Id, StringComparison.Ordinal)
+                        && oldInputIds.Contains(connection.FromPortId))
+                    || (string.Equals(connection.ToNodeId, node.Id, StringComparison.Ordinal)
+                        && oldInputIds.Contains(connection.ToPortId))))
+                .ToList();
+        }
+        Commit(before);
+        return true;
     }
 
     public bool ChangeStoryActionType(string nodeId, string? type, string? itemId = null)
@@ -1870,6 +2023,8 @@ public sealed class GraphEditorSession
     public IReadOnlyList<GraphConnection> GetNodeReferences(string nodeId) => _inner.GetNodeReferences(nodeId);
     public bool RemoveNode(string nodeId, bool confirmReferencedRemoval = false)
         => _inner.RemoveNode(nodeId, confirmReferencedRemoval);
+    public bool RemoveNodes(IReadOnlyList<string> nodeIds, bool confirmReferencedRemoval = false)
+        => _inner.RemoveNodes(nodeIds, confirmReferencedRemoval);
     public bool Disconnect(GraphConnection connection) => _inner.Disconnect(connection);
     public bool Reconnect(GraphConnection original, GraphConnection replacement) => _inner.Reconnect(original, replacement);
     public bool RenamePortDisplayName(string nodeId, string portId, string displayName) => _inner.RenamePortDisplayName(nodeId, portId, displayName);

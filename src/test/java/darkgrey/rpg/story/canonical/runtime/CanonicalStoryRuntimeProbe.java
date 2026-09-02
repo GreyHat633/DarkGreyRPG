@@ -37,13 +37,56 @@ public final class CanonicalStoryRuntimeProbe {
 
     public static void main(String[] args) {
         fullSingleCursorPathAndRestore();
+        flowJudgmentPathAndRestore();
         eventWaitPathAndRestore();
         terminalAndFailurePaths();
         strictGraphValidation();
         System.out.println("CANONICAL_STORY_RUNTIME_SINGLE_CURSOR=PASS");
+        System.out.println("CANONICAL_STORY_FLOW_JUDGMENT=PASS");
         System.out.println("CANONICAL_STORY_EVENT_WAITS=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_AGGREGATE_HANDOFF=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_STRICT_VALIDATION=PASS");
+    }
+
+    private static void flowJudgmentPathAndRestore() {
+        CanonicalGraphResource story = flowJudgmentStory();
+        CanonicalStoryRuntime runtime = CanonicalStoryRuntime
+            .start(story, "trigger_accept", CanonicalStoryRepeatPolicy.ONCE);
+        check(
+            runtime.getWaitKind() == CanonicalStoryWaitKind.ACTION,
+            "Flow Judgment setup did not pause before judgment");
+        check(
+            runtime.getExecutedFlowJudgmentNodeIds()
+                .isEmpty(),
+            "Flow Judgment was initially executed");
+        check(
+            !runtime.getPublicLogicOutputs()
+                .get("judgment_executed")
+                .booleanValue(),
+            "Initial executed Logic was not false");
+
+        CanonicalStoryRuntime restored = CanonicalStoryRuntime.restore(story, runtime.snapshot());
+        restored.completeAction("gate");
+        check(restored.getStatus() == CanonicalStoryStatus.TERMINATED, "Flow Judgment did not continue via flow_out");
+        check(
+            restored.getExecutedFlowJudgmentNodeIds()
+                .equals(Collections.singletonList("judgment")),
+            "Flow Judgment execution was not sticky");
+        check(
+            restored.getPublicLogicOutputs()
+                .get("judgment_executed")
+                .booleanValue(),
+            "Executed Logic was not true");
+        CanonicalStoryRuntime roundTrip = CanonicalStoryRuntime.restore(story, restored.snapshot());
+        check(
+            roundTrip.getExecutedFlowJudgmentNodeIds()
+                .equals(Collections.singletonList("judgment")),
+            "Flow Judgment execution did not survive snapshot restore");
+        check(
+            roundTrip.getPublicLogicOutputs()
+                .get("judgment_executed")
+                .booleanValue(),
+            "Restored executed Logic was not true");
     }
 
     private static void eventWaitPathAndRestore() {
@@ -328,6 +371,30 @@ public final class CanonicalStoryRuntimeProbe {
                 flow("start", "trigger_accept", "actor_wait", "flow_in"),
                 flow("actor_wait", "flow_out", "region_wait", "flow_in"),
                 flow("region_wait", "flow_out", "end", "flow_in")));
+    }
+
+    private static CanonicalGraphResource flowJudgmentStory() {
+        return story(
+            "flow_judgment_story",
+            Arrays.asList(
+                start(),
+                node("gate", "action", ports(flowIn("flow_in"), flowOut("flow_out", 1)), empty()),
+                node(
+                    "judgment",
+                    "flow_judgment",
+                    ports(flowIn("flow_in"), flowOut("flow_out", 1), logicOut("executed", 2)),
+                    empty()),
+                node("end", "terminate", ports(flowIn("flow_in")), empty()),
+                node(
+                    "published",
+                    "logic_output",
+                    ports(logicIn("logic_in")),
+                    props("port_id", "judgment_executed", "display_name", "Judgment Executed"))),
+            Arrays.asList(
+                flow("start", "trigger_accept", "gate", "flow_in"),
+                flow("gate", "flow_out", "judgment", "flow_in"),
+                flow("judgment", "flow_out", "end", "flow_in"),
+                logic("judgment", "executed", "published", "logic_in")));
     }
 
     private static CanonicalTaskInstanceSnapshot settledTask(String result, boolean killDone) {

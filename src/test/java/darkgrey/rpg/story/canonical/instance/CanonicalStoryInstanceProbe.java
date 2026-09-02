@@ -37,13 +37,53 @@ public final class CanonicalStoryInstanceProbe {
 
     public static void main(String[] args) {
         oneInstanceAndRepeatPolicy();
+        flowJudgmentRestartRoundTrip();
         restartRoundTripAndAtomicFailure();
         atomicSessionHandoffCheckpoint();
         strictNbtBoundary();
         System.out.println("CANONICAL_STORY_INSTANCE_IDENTITY=PASS");
         System.out.println("CANONICAL_STORY_INSTANCE_REPEAT_POLICY=PASS");
         System.out.println("CANONICAL_STORY_INSTANCE_NBT_RESTORE=PASS");
+        System.out.println("CANONICAL_STORY_FLOW_JUDGMENT_NBT=PASS");
         System.out.println("CANONICAL_STORY_SESSION_CHECKPOINT=PASS");
+    }
+
+    private static void flowJudgmentRestartRoundTrip() {
+        final CanonicalGraphResource story = flowJudgmentStory();
+        CanonicalStoryInstanceStore source = new CanonicalStoryInstanceStore();
+        CanonicalStoryInstance active = source.start(PLAYER, story, "trigger", CanonicalStoryRepeatPolicy.ONCE, 1000L);
+        check(
+            active.getRuntime()
+                .getExecutedFlowJudgmentNodeIds()
+                .isEmpty(),
+            "Flow Judgment was initially executed");
+        NBTTagCompound saved = source.writeToNbt();
+
+        CanonicalStoryInstanceStore restored = new CanonicalStoryInstanceStore();
+        restored.readFromNbt(saved, new CanonicalStoryResourceResolver() {
+
+            @Override
+            public CanonicalGraphResource resolve(String storyId) {
+                return story.getId()
+                    .equals(storyId) ? story : null;
+            }
+        });
+        CanonicalStoryInstance value = restored.get(PLAYER, story.getId());
+        check(value != null, "Flow Judgment Story instance was not restored");
+        value.completeAction("gate", 1100L);
+        check(value.getStatus() == CanonicalStoryStatus.TERMINATED, "Flow Judgment did not continue after restart");
+        check(
+            value.getRuntime()
+                .getExecutedFlowJudgmentNodeIds()
+                .equals(Collections.singletonList("judgment")),
+            "Flow Judgment execution was not retained in the instance");
+        check(
+            CanonicalStoryInstanceNbtCodec.decode(restored.writeToNbt())
+                .get(0)
+                .getRuntimeSnapshot()
+                .getExecutedFlowJudgmentNodeIds()
+                .equals(Collections.singletonList("judgment")),
+            "Flow Judgment execution did not survive Story NBT round trip");
     }
 
     private static void oneInstanceAndRepeatPolicy() {
@@ -241,6 +281,25 @@ public final class CanonicalStoryInstanceProbe {
             Arrays.asList(flow("start", "trigger", "session", "flow_in"), flow("session", "done", "end", "flow_in")));
     }
 
+    private static CanonicalGraphResource flowJudgmentStory() {
+        return story(
+            "flow_judgment_story",
+            "Start",
+            Arrays.asList(
+                start(),
+                node("gate", "action", ports(flowIn("flow_in"), flowOut("flow_out", 1)), empty()),
+                node(
+                    "judgment",
+                    "flow_judgment",
+                    ports(flowIn("flow_in"), flowOut("flow_out", 1), logicOut("executed", 2)),
+                    empty()),
+                node("end", "terminate", ports(flowIn("flow_in")), empty())),
+            Arrays.asList(
+                flow("start", "trigger", "gate", "flow_in"),
+                flow("gate", "flow_out", "judgment", "flow_in"),
+                flow("judgment", "flow_out", "end", "flow_in")));
+    }
+
     private static CanonicalGraphNode start() {
         return node("start", "start", ports(flowOut("trigger", 0)), empty());
     }
@@ -283,6 +342,15 @@ public final class CanonicalStoryInstanceProbe {
             id,
             CanonicalGraphPortDirection.OUTPUT,
             CanonicalGraphInterfaceKind.FLOW,
+            order);
+    }
+
+    private static CanonicalGraphPort logicOut(String id, int order) {
+        return new CanonicalGraphPort(
+            id,
+            id,
+            CanonicalGraphPortDirection.OUTPUT,
+            CanonicalGraphInterfaceKind.LOGIC,
             order);
     }
 

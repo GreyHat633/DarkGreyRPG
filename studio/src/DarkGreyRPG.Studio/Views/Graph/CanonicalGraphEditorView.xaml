@@ -15,7 +15,7 @@
             <Button Margin="0,0,4,0" Padding="8,4" Click="ResetView_OnClick" Content="重置" AutomationProperties.Name="重置图视图" />
             <Button x:Name="ScissorsButton" Margin="0,0,4,0" Padding="8,4" Click="Scissors_OnClick"
                     Content="剪刀" ToolTip="剪断连线&#10;Alt 键" AutomationProperties.Name="剪断连线" />
-            <TextBlock Margin="8,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="拖动节点移动 · 中键平移 · 滚轮缩放" />
+            <TextBlock Margin="8,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放" />
         </StackPanel>
         <Border x:Name="CanvasViewport" Grid.Row="2" ClipToBounds="True" Background="{DynamicResource LayerFillColorAltBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5" Focusable="True" FocusVisualStyle="{x:Null}"
