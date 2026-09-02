@@ -7,6 +7,10 @@ import java.util.UUID;
 
 import net.minecraft.nbt.NBTTagCompound;
 
+import darkgrey.rpg.graph.canonical.CanonicalGraph;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
+import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
 import darkgrey.rpg.identity.NpcIdentitySavedData;
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
 import darkgrey.rpg.network.message.nominator.C2SNominatorEntityBind;
@@ -67,6 +71,50 @@ public final class NominatorStage4Probe {
             Collections.emptyMap(),
             stories,
             darkgrey.rpg.graph.canonical.CanonicalProjectContent.empty());
+        LinkedHashMap<String, CanonicalGraphResource> canonicalStories = new LinkedHashMap<String, CanonicalGraphResource>();
+        canonicalStories.put(
+            "kingdom",
+            new CanonicalGraphResource(
+                1,
+                CanonicalGraphResourceKind.STORY,
+                "kingdom",
+                "Canonical Kingdom",
+                new CanonicalGraph(Collections.emptyList(), Collections.emptyList())));
+        ProjectSnapshot canonicalOnly = new ProjectSnapshot(
+            new ProjectDefinition(1, "canonical_probe", "Canonical Probe"),
+            actors,
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            new CanonicalProjectContent(
+                canonicalStories,
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.emptyMap()));
+        require(canonicalOnly.containsStory("kingdom"), "canonical-only story loaded state");
+        require(!canonicalOnly.containsStory("missing"), "missing story loaded state");
+        require(
+            NominatorCatalog.from(canonicalOnly)
+                .getStories()
+                .size() == 1,
+            "canonical-only story catalog");
+        require(
+            NominatorService
+                .bindEntity(
+                    true,
+                    UUID.randomUUID(),
+                    "probe",
+                    0,
+                    "hero",
+                    Collections.<String>emptyList(),
+                    "kingdom",
+                    canonicalOnly,
+                    new NpcIdentitySavedData("canonical_only_npc"),
+                    new NominatorSavedData("canonical_only_nominator"))
+                .isAccepted(),
+            "canonical-only story binding");
         NominatorCatalog catalog = NominatorCatalog.from(snapshot);
         NominatorStorySearch.ActorChoice exactIndividual = NominatorStorySearch.exactActor(catalog, "hero");
         require(
@@ -207,14 +255,18 @@ public final class NominatorStage4Probe {
             Arrays.asList("townfolk"),
             "kingdom",
             12L,
-            true);
+            true,
+            "kingdom-package",
+            34L);
         ByteBuf entityBuffer = Unpooled.buffer();
         entityPacket.toBytes(entityBuffer);
         C2SNominatorEntityBind decodedEntityPacket = new C2SNominatorEntityBind();
         decodedEntityPacket.fromBytes(entityBuffer);
         require(
             decodedEntityPacket.isTransfer() && decodedEntityPacket.getExpectedRevision() == 12L
-                && decodedEntityPacket.getExpectedRevision() != selections.getRevision(),
+                && decodedEntityPacket.getExpectedRevision() != selections.getRevision()
+                && "kingdom-package".equals(decodedEntityPacket.getPackageId())
+                && decodedEntityPacket.getExpectedCatalogRevision() == 34L,
             "entity codec stale fence");
         S2CNominatorEntityOpen openPacket = new S2CNominatorEntityOpen(
             4,
@@ -235,6 +287,7 @@ public final class NominatorStage4Probe {
             4,
             entity,
             12L,
+            34L,
             "Zombie",
             "minecraft:zombie",
             "hero",
@@ -253,7 +306,8 @@ public final class NominatorStage4Probe {
                     .getActors()
                     .size() == 2
                 && decodedCatalog.getTypeGroups()
-                    .size() == 1,
+                    .size() == 1
+                && decodedCatalog.getCatalogRevision() == 34L,
             "server catalog codec");
         ByteBuf trailing = Unpooled.buffer();
         catalogPacket.toBytes(trailing);
@@ -308,6 +362,23 @@ public final class NominatorStage4Probe {
             decoded.getSelectedSlot() == 5 && decoded.getFuzzyGroups()
                 .size() == 2,
             "selected slot packet");
+        C2SNominatorInventoryBind targetRequest = new C2SNominatorInventoryBind(
+            "kingdom-package",
+            "item",
+            null,
+            12L,
+            34L);
+        ByteBuf targetBuffer = Unpooled.buffer();
+        targetRequest.toBytes(targetBuffer);
+        C2SNominatorInventoryBind decodedTarget = new C2SNominatorInventoryBind();
+        decodedTarget.fromBytes(targetBuffer);
+        require(
+            decodedTarget.getSelectedSlot() == -1 && "kingdom-package".equals(decodedTarget.getPackageId())
+                && decodedTarget.getExpectedRevision() == 12L
+                && decodedTarget.getExpectedCatalogRevision() == 34L
+                && decodedTarget.getFuzzyGroups()
+                    .isEmpty(),
+            "target container package fence packet");
         boolean rejectedSlot = false;
         try {
             new C2SNominatorInventoryBind(36, "item", null, Collections.<String>emptyList()).toBytes(Unpooled.buffer());

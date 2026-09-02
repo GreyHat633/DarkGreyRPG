@@ -1,6 +1,7 @@
 package darkgrey.rpg.project;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -111,26 +112,63 @@ public final class ProjectRepository {
     private final File projectDirectory;
     private volatile ProjectSnapshot snapshot = ProjectSnapshot.empty();
     private volatile ReloadResult lastReload = ReloadResult.failure("Project has not been loaded");
+    private volatile long snapshotRevision;
 
     public ProjectRepository(File projectDirectory) {
         this.projectDirectory = projectDirectory;
+    }
+
+    /** Reuses the strict project parser for one detached DGRS entry. */
+    public static ProjectDefinition readPackagedProject(byte[] bytes, String source) throws ProjectLoadException {
+        File file = packageContext(source);
+        JsonObject json = readObject(bytes, file);
+        rejectUnknownFields(file, json, PROJECT_FIELDS);
+        int schema = requiredInt(file, json, "schema_version");
+        validateSchema(file, schema, 1, 2);
+        return new ProjectDefinition(
+            schema,
+            requiredResourceId(file, json, "id"),
+            requiredString(file, json, "display_name"));
+    }
+
+    /** Reuses the strict Actor parser for one detached DGRS entry. */
+    public static ActorDefinition readPackagedActor(byte[] bytes, String source) throws ProjectLoadException {
+        File file = packageContext(source);
+        return loadActor(file, readObject(bytes, file));
+    }
+
+    /** Reuses the strict Item/Item Group parser for one detached DGRS entry. */
+    public static ItemResourceDefinition readPackagedItem(byte[] bytes, String source, String expectedType)
+        throws ProjectLoadException {
+        File file = packageContext(source);
+        return loadItem(file, expectedType, readObject(bytes, file));
+    }
+
+    /** Reuses the strict Dialogue parser for one detached DGRS entry. */
+    public static DialogueDefinition readPackagedDialogue(byte[] bytes, String source,
+        Map<String, ActorDefinition> actors) throws ProjectLoadException {
+        File file = packageContext(source);
+        return loadDialogue(file, actors, readObject(bytes, file));
+    }
+
+    /** Reuses the strict Quest parser for one detached DGRS entry. */
+    public static QuestDefinition readPackagedQuest(byte[] bytes, String source) throws ProjectLoadException {
+        File file = packageContext(source);
+        return loadQuest(file, readObject(bytes, file));
+    }
+
+    private static File packageContext(String source) throws ProjectLoadException {
+        if (source == null || source.trim()
+            .isEmpty()) throw new ProjectLoadException("DGRS entry source is required");
+        return new File(source);
     }
 
     public synchronized ReloadResult reload() {
         try {
             ProjectSnapshot loaded = loadSnapshot();
             snapshot = loaded;
-            lastReload = ReloadResult.success(
-                loaded.getProject()
-                    .getDisplayName(),
-                loaded.getActors()
-                    .size(),
-                loaded.getDialogues()
-                    .size(),
-                loaded.getQuests()
-                    .size(),
-                loaded.getStories()
-                    .size());
+            snapshotRevision++;
+            lastReload = ReloadResult.success(loaded);
         } catch (ProjectLoadException exception) {
             lastReload = ReloadResult.failure(exception.getMessage());
             LOG.error("Could not reload project from " + projectDirectory.getAbsolutePath(), exception);
@@ -142,6 +180,11 @@ public final class ProjectRepository {
         return snapshot;
     }
 
+    /** Monotonic server-side fence for catalogs derived from the published snapshot. */
+    public long getSnapshotRevision() {
+        return snapshotRevision;
+    }
+
     /**
      * Installs an already parsed and validated immutable snapshot. Story Package
      * integration uses this as the single atomic publication boundary; callers
@@ -150,17 +193,8 @@ public final class ProjectRepository {
     public synchronized ReloadResult installSnapshot(ProjectSnapshot loaded) {
         if (loaded == null) throw new IllegalArgumentException("Project snapshot is required.");
         snapshot = loaded;
-        lastReload = ReloadResult.success(
-            loaded.getProject()
-                .getDisplayName(),
-            loaded.getActors()
-                .size(),
-            loaded.getDialogues()
-                .size(),
-            loaded.getQuests()
-                .size(),
-            loaded.getStories()
-                .size());
+        snapshotRevision++;
+        lastReload = ReloadResult.success(loaded);
         return lastReload;
     }
 
@@ -264,8 +298,12 @@ public final class ProjectRepository {
         return result;
     }
 
-    private ItemResourceDefinition loadItem(File file, String expectedType) throws ProjectLoadException {
-        JsonObject json = readObject(file);
+    private static ItemResourceDefinition loadItem(File file, String expectedType) throws ProjectLoadException {
+        return loadItem(file, expectedType, readObject(file));
+    }
+
+    private static ItemResourceDefinition loadItem(File file, String expectedType, JsonObject json)
+        throws ProjectLoadException {
         boolean individual = ItemResourceDefinition.TYPE_INDIVIDUAL.equals(expectedType);
         rejectUnknownFields(file, json, individual ? ITEM_FIELDS : ITEM_GROUP_FIELDS);
         int version = requiredInt(file, json, "schema_version");
@@ -317,8 +355,11 @@ public final class ProjectRepository {
         return quests;
     }
 
-    private QuestDefinition loadQuest(File file) throws ProjectLoadException {
-        JsonObject json = readObject(file);
+    private static QuestDefinition loadQuest(File file) throws ProjectLoadException {
+        return loadQuest(file, readObject(file));
+    }
+
+    private static QuestDefinition loadQuest(File file, JsonObject json) throws ProjectLoadException {
         rejectUnknownFields(file, json, QUEST_FIELDS);
         int schemaVersion = requiredInt(file, json, "schema_version");
         validateSchema(file, schemaVersion, 1, 2);
@@ -352,7 +393,7 @@ public final class ProjectRepository {
             optionalStringList(file, metadata, "tags"));
     }
 
-    private List<QuestObjective> loadObjectives(File file, JsonElement value) throws ProjectLoadException {
+    private static List<QuestObjective> loadObjectives(File file, JsonElement value) throws ProjectLoadException {
         if (value == null || !value.isJsonArray()
             || value.getAsJsonArray()
                 .size() == 0) {
@@ -415,7 +456,7 @@ public final class ProjectRepository {
         return objectives;
     }
 
-    private List<ObjectiveGroup> loadObjectiveGroups(File file, JsonElement value,
+    private static List<ObjectiveGroup> loadObjectiveGroups(File file, JsonElement value,
         Map<String, QuestObjective> objectivesById) throws ProjectLoadException {
         if (value == null || !value.isJsonArray()
             || value.getAsJsonArray()
@@ -496,9 +537,13 @@ public final class ProjectRepository {
         return dialogues;
     }
 
-    private DialogueDefinition loadDialogue(File file, Map<String, ActorDefinition> actors)
+    private static DialogueDefinition loadDialogue(File file, Map<String, ActorDefinition> actors)
         throws ProjectLoadException {
-        JsonObject json = readObject(file);
+        return loadDialogue(file, actors, readObject(file));
+    }
+
+    private static DialogueDefinition loadDialogue(File file, Map<String, ActorDefinition> actors, JsonObject json)
+        throws ProjectLoadException {
         rejectUnknownFields(file, json, DIALOGUE_FIELDS);
         int schemaVersion = requiredInt(file, json, "schema_version");
         validateSchema(file, schemaVersion, 1, 2);
@@ -539,7 +584,7 @@ public final class ProjectRepository {
         return new DialogueDefinition(schemaVersion, id, title, speakers, entry, nodes, notes, tags);
     }
 
-    private List<DialogueNode> loadNodes(File file, JsonElement value, List<String> speakers)
+    private static List<DialogueNode> loadNodes(File file, JsonElement value, List<String> speakers)
         throws ProjectLoadException {
         if (value == null || !value.isJsonArray()
             || value.getAsJsonArray()
@@ -625,8 +670,11 @@ public final class ProjectRepository {
         }
     }
 
-    private ActorDefinition loadActor(File actorFile) throws ProjectLoadException {
-        JsonObject json = readObject(actorFile);
+    private static ActorDefinition loadActor(File actorFile) throws ProjectLoadException {
+        return loadActor(actorFile, readObject(actorFile));
+    }
+
+    private static ActorDefinition loadActor(File actorFile, JsonObject json) throws ProjectLoadException {
         int schemaVersion = requiredInt(actorFile, json, "schema_version");
         validateSchema(actorFile, schemaVersion, 1, 2, 3);
         if (schemaVersion < 3) {
@@ -660,7 +708,7 @@ public final class ProjectRepository {
         return new ActorDefinition(schemaVersion, type, id, displayName, "", tags, homeStoryId);
     }
 
-    private ActorDefinition loadLegacyActor(File actorFile, JsonObject json, int schemaVersion)
+    private static ActorDefinition loadLegacyActor(File actorFile, JsonObject json, int schemaVersion)
         throws ProjectLoadException {
         String id = requiredResourceId(actorFile, json, "id");
         validateActorFileName(actorFile, id);
@@ -693,11 +741,7 @@ public final class ProjectRepository {
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
             try {
-                JsonElement root = new JsonParser().parse(reader);
-                if (!root.isJsonObject()) {
-                    throw new ProjectLoadException("JSON root must be an object: " + file.getAbsolutePath());
-                }
-                return root.getAsJsonObject();
+                return readObject(reader, file);
             } finally {
                 reader.close();
             }
@@ -708,6 +752,31 @@ public final class ProjectRepository {
                 "Invalid JSON in " + file.getAbsolutePath() + ": " + exception.getMessage(),
                 exception);
         }
+    }
+
+    private static JsonObject readObject(byte[] bytes, File file) throws ProjectLoadException {
+        if (bytes == null) throw new ProjectLoadException("Missing JSON bytes: " + file.getAbsolutePath());
+        BufferedReader reader = new BufferedReader(
+            new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8));
+        try {
+            return readObject(reader, file);
+        } catch (RuntimeException exception) {
+            throw new ProjectLoadException(
+                "Invalid JSON in " + file.getAbsolutePath() + ": " + exception.getMessage(),
+                exception);
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException ignored) {}
+        }
+    }
+
+    private static JsonObject readObject(BufferedReader reader, File file) throws ProjectLoadException {
+        JsonElement root = new JsonParser().parse(reader);
+        if (!root.isJsonObject()) {
+            throw new ProjectLoadException("JSON root must be an object: " + file.getAbsolutePath());
+        }
+        return root.getAsJsonObject();
     }
 
     private static void rejectUnknownFields(File file, JsonObject json, Set<String> allowed)
@@ -887,21 +956,63 @@ public final class ProjectRepository {
         private final int dialogueCount;
         private final int questCount;
         private final int storyCount;
+        private final int itemCount;
+        private final int itemGroupCount;
+        private final int sessionCount;
+        private final int taskCount;
         private final String summary;
 
         private ReloadResult(boolean successful, String projectDisplayName, int actorCount, int dialogueCount,
-            int questCount, int storyCount, String summary) {
+            int questCount, int storyCount, int itemCount, int itemGroupCount, int sessionCount, int taskCount,
+            String summary) {
             this.successful = successful;
             this.projectDisplayName = projectDisplayName;
             this.actorCount = actorCount;
             this.dialogueCount = dialogueCount;
             this.questCount = questCount;
             this.storyCount = storyCount;
+            this.itemCount = itemCount;
+            this.itemGroupCount = itemGroupCount;
+            this.sessionCount = sessionCount;
+            this.taskCount = taskCount;
             this.summary = summary;
+        }
+
+        public static ReloadResult success(ProjectSnapshot snapshot) {
+            if (snapshot == null) throw new IllegalArgumentException("Project snapshot is required.");
+            Set<String> storyIds = new HashSet<String>(
+                snapshot.getStories()
+                    .keySet());
+            storyIds.addAll(
+                snapshot.getCanonicalStories()
+                    .keySet());
+            return success(
+                snapshot.getProject()
+                    .getDisplayName(),
+                snapshot.getActors()
+                    .size(),
+                snapshot.getDialogues()
+                    .size(),
+                snapshot.getQuests()
+                    .size(),
+                storyIds.size(),
+                snapshot.getItems()
+                    .size(),
+                snapshot.getItemGroups()
+                    .size(),
+                snapshot.getCanonicalSessions()
+                    .size(),
+                snapshot.getCanonicalTasks()
+                    .size());
         }
 
         public static ReloadResult success(String projectDisplayName, int actorCount, int dialogueCount, int questCount,
             int storyCount) {
+            return success(projectDisplayName, actorCount, dialogueCount, questCount, storyCount, 0, 0, 0, 0);
+        }
+
+        public static ReloadResult success(String projectDisplayName, int actorCount, int dialogueCount, int questCount,
+            int storyCount, int itemCount, int itemGroupCount, int sessionCount, int taskCount) {
             return new ReloadResult(
                 true,
                 projectDisplayName,
@@ -909,20 +1020,28 @@ public final class ProjectRepository {
                 dialogueCount,
                 questCount,
                 storyCount,
-                "Loaded '" + projectDisplayName
-                    + "' with "
-                    + actorCount
-                    + " actor(s) and "
-                    + dialogueCount
-                    + " dialogue(s) and "
-                    + questCount
-                    + " quest(s) and "
+                itemCount,
+                itemGroupCount,
+                sessionCount,
+                taskCount,
+                "已加载项目“" + projectDisplayName
+                    + "”：故事 "
                     + storyCount
-                    + " story/stories");
+                    + "，角色 "
+                    + actorCount
+                    + "，物品 "
+                    + itemCount
+                    + "，物品组 "
+                    + itemGroupCount
+                    + "，会话 "
+                    + sessionCount
+                    + "，任务 "
+                    + taskCount
+                    + "。");
         }
 
         public static ReloadResult failure(String summary) {
-            return new ReloadResult(false, "", 0, 0, 0, 0, summary);
+            return new ReloadResult(false, "", 0, 0, 0, 0, 0, 0, 0, 0, summary);
         }
 
         public boolean isSuccessful() {
@@ -947,6 +1066,22 @@ public final class ProjectRepository {
 
         public int getStoryCount() {
             return storyCount;
+        }
+
+        public int getItemCount() {
+            return itemCount;
+        }
+
+        public int getItemGroupCount() {
+            return itemGroupCount;
+        }
+
+        public int getSessionCount() {
+            return sessionCount;
+        }
+
+        public int getTaskCount() {
+            return taskCount;
         }
 
         public String getSummary() {

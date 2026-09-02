@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
+import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ItemResourceDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
@@ -27,6 +29,12 @@ public final class NominatorStorySearch {
                 || tagsContain(story.getTags(), needle)) {
                 result.add(new StoryChoice(story.getId(), story.getTitle(), story.getNotes(), story.getTags()));
             }
+        }
+        for (CanonicalGraphResource story : snapshot.getCanonicalStories()
+            .values()) {
+            if (snapshot.getStory(story.getId()) != null) continue;
+            if (needle.isEmpty() || contains(story.getId(), needle) || contains(story.getDisplayName(), needle))
+                result.add(new StoryChoice(story.getId(), story.getDisplayName()));
         }
         Collections.sort(result, StoryChoice.ORDER);
         return Collections.unmodifiableList(result);
@@ -95,6 +103,32 @@ public final class NominatorStorySearch {
         return Collections.unmodifiableList(result);
     }
 
+    /** Searches only the Actor IDs in one package's closure. */
+    public static List<ActorChoice> actors(NominatorCatalog catalog, NominatorCatalog.PackageChoice packageChoice,
+        String query) {
+        if (catalog == null) throw new IllegalArgumentException("Nominator catalog is required.");
+        if (packageChoice == null) throw new IllegalArgumentException("Package choice is required.");
+        String needle = normalize(query);
+        Set<String> allowed = new java.util.HashSet<String>(packageChoice.getActorIds());
+        List<ActorChoice> result = new ArrayList<ActorChoice>();
+        for (NominatorCatalog.Actor actor : catalog.getActors()) {
+            if (!allowed.contains(actor.getId())) continue;
+            if (needle.isEmpty() || contains(actor.getId(), needle)
+                || contains(actor.getDisplayName(), needle)
+                || tagsContain(actor.getTags(), needle))
+                result.add(
+                    new ActorChoice(
+                        actor.getId(),
+                        actor.getDisplayName(),
+                        actor.getType(),
+                        actor.getStoryId(),
+                        actor.getNotes(),
+                        actor.getTags()));
+        }
+        Collections.sort(result, ActorChoice.ORDER);
+        return Collections.unmodifiableList(result);
+    }
+
     /**
      * Resolves one actor from the server-provided catalog. This intentionally
      * does not perform partial, case-insensitive, or display-name matching:
@@ -145,6 +179,26 @@ public final class NominatorStorySearch {
                 || contains(item.getDisplayName(), needle)
                 || tagsContain(item.getTags(), needle))
                 result.add(new ItemChoice(item.getId(), item.getDisplayName(), item.getTags(), groups));
+        Collections.sort(result, ItemChoice.ORDER);
+        return Collections.unmodifiableList(result);
+    }
+
+    /** Searches only Item or Item Group IDs in one package's closure. */
+    public static List<ItemChoice> items(NominatorCatalog catalog, NominatorCatalog.PackageChoice packageChoice,
+        String query, boolean groups) {
+        if (catalog == null) throw new IllegalArgumentException("Nominator catalog is required.");
+        if (packageChoice == null) throw new IllegalArgumentException("Package choice is required.");
+        String needle = normalize(query);
+        Set<String> allowed = new java.util.HashSet<String>(
+            groups ? packageChoice.getItemGroupIds() : packageChoice.getItemIds());
+        List<ItemChoice> result = new ArrayList<ItemChoice>();
+        for (NominatorCatalog.Item item : groups ? catalog.getItemGroups() : catalog.getItems()) {
+            if (!allowed.contains(item.getId())) continue;
+            if (needle.isEmpty() || contains(item.getId(), needle)
+                || contains(item.getDisplayName(), needle)
+                || tagsContain(item.getTags(), needle))
+                result.add(new ItemChoice(item.getId(), item.getDisplayName(), item.getTags(), groups));
+        }
         Collections.sort(result, ItemChoice.ORDER);
         return Collections.unmodifiableList(result);
     }

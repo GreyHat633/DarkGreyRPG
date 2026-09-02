@@ -36,10 +36,10 @@ public final class GuiQuestJournal extends GuiScreen {
         int panelHeight = panelHeight();
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - panelHeight) / 2;
-        buttonList.add(new GuiModernButton(1, left + 16, top + 30, 110, 20, "Active"));
-        buttonList.add(new GuiModernButton(2, left + 132, top + 30, 110, 20, "Completed"));
-        buttonList.add(new GuiModernButton(3, left + 248, top + 30, 110, 20, "Failed"));
-        buttonList.add(new GuiModernButton(0, left + PANEL_WIDTH - 76, top + panelHeight - 30, 60, 20, "Close"));
+        buttonList.add(new GuiModernButton(1, left + 16, top + 30, 110, 20, "进行中"));
+        buttonList.add(new GuiModernButton(2, left + 132, top + 30, 110, 20, "已完成"));
+        buttonList.add(new GuiModernButton(3, left + 248, top + 30, 110, 20, "失败"));
+        buttonList.add(new GuiModernButton(0, left + PANEL_WIDTH - 76, top + panelHeight - 30, 60, 20, "关闭"));
     }
 
     @Override
@@ -76,7 +76,7 @@ public final class GuiQuestJournal extends GuiScreen {
         drawRect(left, top, left + PANEL_WIDTH, top + panelHeight, 0xF02B2F4A); // Deep Space
         drawRect(left, top, left + PANEL_WIDTH, top + 2, 0xFF7D8CFF); // Deep Space Accent
         drawRect(left + 8, top + 58, left + PANEL_WIDTH - 8, top + panelHeight - 38, 0xCC1E213A); // Inner dark panel
-        drawCenteredString(fontRendererObj, "Quest Journal", width / 2, top + 10, 0xFFEEF0FF); // Light title
+        drawCenteredString(fontRendererObj, "任务追踪", width / 2, top + 10, 0xFFEEF0FF); // Light title
 
         List<String> lines = buildLines();
         int y = top + 66 - scrollOffset;
@@ -113,9 +113,9 @@ public final class GuiQuestJournal extends GuiScreen {
             lines.add("");
         }
         if (lines.isEmpty()) {
-            if (tab == QuestStatus.ACTIVE) lines.add("No active quests.");
-            else if (tab == QuestStatus.COMPLETED) lines.add("No completed quests.");
-            else lines.add("No failed quests.");
+            if (tab == QuestStatus.ACTIVE) lines.add("没有进行中的任务。");
+            else if (tab == QuestStatus.COMPLETED) lines.add("没有已完成的任务。");
+            else lines.add("没有失败的任务。");
         }
         return lines;
     }

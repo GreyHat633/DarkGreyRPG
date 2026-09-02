@@ -57,7 +57,9 @@ public final class C2SNominatorEntityOpen implements IMessage {
                             NominatorSavedData.get(),
                             darkgrey.rpg.nominator.NominatorCatalog.from(
                                 darkgrey.rpg.DarkGreyRpg.getProjectRepository()
-                                    .getSnapshot())),
+                                    .getSnapshot(),
+                                darkgrey.rpg.DarkGreyRpg.getStoryPackageLoader()
+                                    .getPackages())),
                         player);
                 }
             });

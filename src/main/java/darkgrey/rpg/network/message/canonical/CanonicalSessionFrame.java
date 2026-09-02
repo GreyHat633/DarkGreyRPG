@@ -57,8 +57,10 @@ public final class CanonicalSessionFrame implements IMessage {
             ? CanonicalSessionNetworkCodec
                 .readOptionalField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES)
             : CanonicalSessionNetworkCodec.readField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
-        String decodedText = CanonicalSessionNetworkCodec
-            .readField(buffer, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        String decodedText = decodedKind == Kind.CHOICE
+            ? CanonicalSessionNetworkCodec
+                .readOptionalField(buffer, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES)
+            : CanonicalSessionNetworkCodec.readField(buffer, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
         if (!buffer.isReadable()) throw CanonicalSessionNetworkCodec.invalid("truncated choice count");
         int count = buffer.readUnsignedByte();
         if (count > CanonicalSessionNetworkCodec.MAX_OPTIONS)
@@ -110,7 +112,12 @@ public final class CanonicalSessionFrame implements IMessage {
             CanonicalSessionNetworkCodec
                 .writeField(buffer, speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
         }
-        CanonicalSessionNetworkCodec.writeField(buffer, text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        if (kind == Kind.CHOICE) {
+            CanonicalSessionNetworkCodec
+                .writeOptionalField(buffer, text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        } else {
+            CanonicalSessionNetworkCodec.writeField(buffer, text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        }
         buffer.writeByte(choices.size());
         for (CanonicalSessionChoiceOption choice : choices) {
             CanonicalSessionNetworkCodec
@@ -189,7 +196,12 @@ public final class CanonicalSessionFrame implements IMessage {
         } else if (speaker == null || !speaker.isEmpty()) {
             throw CanonicalSessionNetworkCodec.invalid(kind.name() + " speaker must be explicitly empty");
         }
-        CanonicalSessionNetworkCodec.requireField(text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        if (kind == Kind.CHOICE) {
+            CanonicalSessionNetworkCodec
+                .requireOptionalField(text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        } else {
+            CanonicalSessionNetworkCodec.requireField(text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
+        }
         if (choices == null || choices.size() > CanonicalSessionNetworkCodec.MAX_OPTIONS)
             throw CanonicalSessionNetworkCodec.invalid("invalid choice count");
         Set<String> ids = CanonicalSessionNetworkCodec.newIdSet();

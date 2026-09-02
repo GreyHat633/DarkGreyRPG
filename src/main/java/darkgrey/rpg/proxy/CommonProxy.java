@@ -7,6 +7,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 
 import darkgrey.rpg.nominator.NominatorCatalog;
+import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
 public class CommonProxy {
 
@@ -19,11 +20,18 @@ public class CommonProxy {
 
     public void openNominatorEntityGui(int entityId, UUID entityUuid, String displayName, String entityType,
         String individual, List<String> groups, List<String> typeGroups, String story, long revision,
-        NominatorCatalog catalog) {}
+        long catalogRevision, NominatorCatalog catalog) {}
 
     public void openNominatorInventoryGui() {}
 
     public void openNominatorInventoryGui(NominatorCatalog catalog, long revision, int selectedSlot) {}
+
+    public void openNominatorInventoryGui(NominatorCatalog catalog, long revision, long catalogRevision,
+        int selectedSlot) {}
+
+    public Object createNominatorInventoryGui(ContainerNominatorInventory container) {
+        return null;
+    }
 
     public void openCopierGui(ItemStack stack) {}
 }

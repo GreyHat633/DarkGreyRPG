@@ -55,6 +55,15 @@ public final class CanonicalSessionNetworkCodecProbe {
             Arrays.asList(
                 new CanonicalSessionChoiceOption("option-左", "左边"),
                 new CanonicalSessionChoiceOption("option-右", "右边")));
+        CanonicalSessionFrame blankPromptChoice = new CanonicalSessionFrame(
+            10L,
+            "故事-1",
+            "session-资源",
+            "空提示选择",
+            CanonicalSessionFrame.Kind.CHOICE,
+            "",
+            "",
+            Collections.singletonList(new CanonicalSessionChoiceOption("option-继续", "继续")));
         CanonicalSessionFrame narration = new CanonicalSessionFrame(
             9L,
             "故事-1",
@@ -77,6 +86,10 @@ public final class CanonicalSessionNetworkCodecProbe {
             !choiceDecoded.canContinue() && choiceDecoded.getChoices()
                 .size() == 2,
             "CHOICE shape");
+        require(
+            roundTrip(blankPromptChoice).getText()
+                .isEmpty(),
+            "CHOICE blank prompt round-trip");
         CanonicalSessionFrame narrationDecoded = roundTrip(narration);
         require(
             narrationDecoded.getKind() == CanonicalSessionFrame.Kind.NARRATION && narrationDecoded.canContinue()
@@ -161,6 +174,14 @@ public final class CanonicalSessionNetworkCodecProbe {
             rawFrame(1L, "story", "resource", "node", 0, "", "text", 0, new String[0]),
             new CanonicalSessionFrame(),
             "LINE with blank speaker");
+        rejectDecode(
+            rawFrame(1L, "story", "resource", "node", 0, "speaker", "", 0, new String[0]),
+            new CanonicalSessionFrame(),
+            "LINE with blank text");
+        rejectDecode(
+            rawFrame(1L, "story", "resource", "node", 1, "", " ", 1, new String[] { "option" }),
+            new CanonicalSessionFrame(),
+            "CHOICE with whitespace prompt");
         rejectDecode(
             rawFrame(1L, "story", "resource", "node", 1, "", "text", 0, new String[0]),
             new CanonicalSessionFrame(),

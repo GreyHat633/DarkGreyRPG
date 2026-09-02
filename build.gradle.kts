@@ -511,6 +511,20 @@ tasks.register<JavaExec>("nominatorStage4Probe") {
     mainClass.set("darkgrey.rpg.nominator.NominatorStage4Probe")
 }
 
+tasks.register<JavaExec>("nominatorItemContainerProbe") {
+    group = "verification"
+    description = "Runs the Item Nominator target-slot movement and return accounting probe."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.nominator.container.NominatorItemContainerProbe")
+}
+
 tasks.register<JavaExec>("entityToolsStage5Probe") {
     group = "verification"
     description = "Runs the pure Stage 5 Copier and Storage Box core probe."
@@ -582,4 +596,13 @@ tasks.register<JavaExec>("dgrsPackageRuntimeProbe") {
             ?: throw GradleException("Pass -PdgrsPath=<absolute .dgrs path>")
         args(packagePath, layout.buildDirectory.dir("dgrs-runtime-probe").get().asFile.absolutePath)
     }
+}
+
+tasks.register<JavaExec>("dgrsArchiveReaderProbe") {
+    group = "verification"
+    description = "Runs the detached, strict DGRS archive reader probe."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.DgrsArchiveReaderProbe")
+    args(layout.buildDirectory.dir("dgrs-archive-reader-probe").get().asFile.absolutePath)
 }

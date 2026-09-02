@@ -523,7 +523,7 @@ public final class CanonicalSessionRuntime {
         CanonicalGraphPort input = ports.remove("flow_in");
         if (input == null || !input.isInput() || input.getKind() != CanonicalGraphInterfaceKind.FLOW)
             throw failure("session.choice.port.missing", "Choice requires Flow input 'flow_in'.");
-        requiredString(node, "prompt", "session.choice");
+        optionalString(node, "prompt");
         List<CanonicalSessionChoiceOption> options = parseChoiceOptions(node);
         Set<String> flows = new HashSet<String>();
         Set<String> ids = new HashSet<String>();

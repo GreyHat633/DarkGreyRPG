@@ -24,19 +24,16 @@ public final class NominatorService {
     /** Applies a collective group to one exact, safe Forge registry type. */
     public static NominatorResult bindEntityTypeGroup(boolean authorized, String entityType, String groupId,
         boolean add, ProjectSnapshot project, NominatorSavedData selections) {
-        if (!authorized) return NominatorResult.rejected("permission_denied", "Nominator permission is required.");
-        if (project == null || selections == null)
-            return NominatorResult.rejected("invalid_request", "Project and persistence are required.");
-        if (!safeType(entityType)) return NominatorResult
-            .rejected("unsafe_entity_type", "This wrapper entity type requires explicit compatibility support.");
+        if (!authorized) return NominatorResult.rejected("permission_denied", "没有使用指名器的权限。");
+        if (project == null || selections == null) return NominatorResult.rejected("invalid_request", "项目或持久化数据不可用。");
+        if (!safeType(entityType)) return NominatorResult.rejected("unsafe_entity_type", "此包装实体类型需要明确的兼容支持。");
         String group = blank(groupId) ? null : groupId.trim();
-        if (group == null) return NominatorResult.rejected("invalid_group", "A collective group is required.");
+        if (group == null) return NominatorResult.rejected("invalid_group", "必须选择一个集体角色组。");
         darkgrey.rpg.project.ActorDefinition actor = project.getActor(group);
-        if (actor == null || !actor.isCollective())
-            return NominatorResult.rejected("invalid_group", "Group is not collective.");
+        if (actor == null || !actor.isCollective()) return NominatorResult.rejected("invalid_group", "所选角色不是集体角色组。");
         boolean changed = add ? selections.addTypeGroup(entityType, group)
             : selections.removeTypeGroup(entityType, group);
-        return NominatorResult.accepted(changed ? "Entity type group persisted." : "Entity type group unchanged.");
+        return NominatorResult.accepted(changed ? "已保存实体类型角色组。" : "实体类型角色组没有变化。");
     }
 
     /** Shared safety policy: never fan out across CNPC/DGR wrapper classes implicitly. */
@@ -97,23 +94,23 @@ public final class NominatorService {
     public static NominatorResult bindEntity(boolean authorized, UUID entityUuid, String entityType, int dimension,
         String individualId, List<String> groupIds, String storyId, boolean transfer, ProjectSnapshot project,
         NpcIdentitySavedData identities, NominatorSavedData selections) {
-        if (!authorized) return NominatorResult.rejected("permission_denied", "Nominator permission is required.");
+        if (!authorized) return NominatorResult.rejected("permission_denied", "没有使用指名器的权限。");
         if (entityUuid == null || project == null || identities == null || selections == null)
-            return NominatorResult.rejected("invalid_request", "Entity, project, and persistence are required.");
+            return NominatorResult.rejected("invalid_request", "实体、项目或持久化数据不可用。");
         try {
             String individual = blank(individualId) ? null : individualId.trim();
             List<String> groups = cleanGroups(groupIds);
-            if (!blank(storyId) && project.getStory(storyId.trim()) == null)
-                return NominatorResult.rejected("unknown_story", "Selected story is not loaded.");
+            if (!blank(storyId) && !project.containsStory(storyId.trim()))
+                return NominatorResult.rejected("unknown_story", "所选故事尚未加载。");
             if (individual != null) {
                 ActorDefinition actor = project.getActor(individual);
                 if (actor == null || !actor.isIndividual())
-                    return NominatorResult.rejected("invalid_individual", "Individual actor is not available.");
+                    return NominatorResult.rejected("invalid_individual", "所选个体角色不可用。");
             }
             for (String group : groups) {
                 ActorDefinition actor = project.getActor(group);
-                if (actor == null || !actor.isCollective()) return NominatorResult
-                    .rejected("invalid_group", "Every selected group must be a collective actor.");
+                if (actor == null || !actor.isCollective())
+                    return NominatorResult.rejected("invalid_group", "所选角色组必须全部是集体角色。");
             }
             NominatorEntityBinding candidate = new NominatorEntityBinding(entityUuid, individual, groups, storyId);
             synchronized (identities) {
@@ -130,14 +127,12 @@ public final class NominatorService {
                     } else {
                         NpcHostIdentity occupiedHost = identities.getHost(individual);
                         if (occupiedHost != null && !entityUuid.equals(occupiedHost.getEntityUuid())) {
-                            if (!transfer) return NominatorResult.rejected(
-                                "conflict",
-                                "NPC ID '" + individual + "' is already occupied; explicit transfer is required.");
+                            if (!transfer)
+                                return NominatorResult.rejected("conflict", "NPC ID“" + individual + "”已被占用；必须明确执行转移。");
                             identities.transfer(individual, host);
                             clearTransferredHostSelection(occupiedHost.getEntityUuid(), selections);
                         } else if (currentNpcId != null && !individual.equals(currentNpcId)) {
-                            return NominatorResult
-                                .rejected("conflict", "Entity already hosts NPC ID '" + currentNpcId + "'.");
+                            return NominatorResult.rejected("conflict", "该实体已经承载 NPC ID“" + currentNpcId + "”。");
                         } else {
                             if (currentNpcId == null) identities.bind(individual, host);
                             else identities.observe(host);
@@ -147,7 +142,7 @@ public final class NominatorService {
                     else if (!selectionSame) selections.put(candidate);
                 }
             }
-            return NominatorResult.accepted("Entity selection persisted.");
+            return NominatorResult.accepted("实体指名已保存。");
         } catch (RuntimeException exception) {
             return NominatorResult.rejected("conflict", safeMessage(exception));
         }
@@ -163,22 +158,22 @@ public final class NominatorService {
 
     public static NominatorResult bindInventory(boolean authorized, ItemStack stack, String itemId, String exactGroupId,
         List<String> fuzzyGroupIds, ProjectSnapshot project, ItemIdentitySavedData identities) {
-        if (!authorized) return NominatorResult.rejected("permission_denied", "Nominator permission is required.");
+        if (!authorized) return NominatorResult.rejected("permission_denied", "没有使用指名器的权限。");
         if (stack == null || project == null || identities == null)
-            return NominatorResult.rejected("invalid_request", "Item, project, and persistence are required.");
+            return NominatorResult.rejected("invalid_request", "物品、项目或持久化数据不可用。");
         try {
             String exact = blank(itemId) ? null : itemId.trim();
             String exactGroup = blank(exactGroupId) ? null : exactGroupId.trim();
             List<String> fuzzy = cleanGroups(fuzzyGroupIds);
             if (exact == null && exactGroup == null && fuzzy.isEmpty())
-                return NominatorResult.rejected("empty_selection", "Choose an Item ID or at least one group.");
+                return NominatorResult.rejected("empty_selection", "请选择物品 ID 或至少一个物品组。");
             ItemStackDefinition definition = ItemStackDefinition.capture(stack);
             if (exact != null && project.getItem(exact) == null)
-                return NominatorResult.rejected("unknown_item_id", "Item ID is not available in the loaded project.");
+                return NominatorResult.rejected("unknown_item_id", "所选物品 ID 不在已加载项目中。");
             if (exactGroup != null && project.getItemGroup(exactGroup) == null)
-                return NominatorResult.rejected("unknown_group", "Exact group is not available in the loaded project.");
+                return NominatorResult.rejected("unknown_group", "所选精确物品组不在已加载项目中。");
             for (String group : fuzzy) if (project.getItemGroup(group) == null)
-                return NominatorResult.rejected("unknown_group", "Fuzzy group is not available in the loaded project.");
+                return NominatorResult.rejected("unknown_group", "所选模糊物品组不在已加载项目中。");
             if (exact != null) identities.bindItem(exact, definition);
             if (exactGroup != null)
                 identities.addGroupMember(exactGroup, new ItemGroupMember(ItemMatchMode.EXACT, definition));
@@ -192,10 +187,10 @@ public final class NominatorService {
 
     private static String explanation(String item, String exactGroup, List<String> fuzzy) {
         List<String> values = new ArrayList<String>();
-        if (item != null) values.add("exact Item ID '" + item + "'");
-        if (exactGroup != null) values.add("exact group '" + exactGroup + "'");
-        for (String group : fuzzy) values.add("fuzzy group '" + group + "' (registry name only)");
-        return "Bound " + join(values) + ".";
+        if (item != null) values.add("精确物品 ID“" + item + "”");
+        if (exactGroup != null) values.add("精确物品组“" + exactGroup + "”");
+        for (String group : fuzzy) values.add("模糊物品组“" + group + "”（仅注册名）");
+        return "已绑定：" + join(values) + "。";
     }
 
     private static boolean same(NominatorEntityBinding left, NominatorEntityBinding right) {
@@ -233,6 +228,6 @@ public final class NominatorService {
     }
 
     private static String safeMessage(RuntimeException exception) {
-        return exception.getMessage() == null ? "Request was rejected by the server." : exception.getMessage();
+        return exception.getMessage() == null ? "服务器拒绝了该请求。" : exception.getMessage();
     }
 }

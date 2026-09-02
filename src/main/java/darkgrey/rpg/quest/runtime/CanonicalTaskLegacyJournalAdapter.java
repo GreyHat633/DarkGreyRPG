@@ -9,6 +9,8 @@ import java.util.List;
 
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus;
 import darkgrey.rpg.task.journal.CanonicalTaskJournalEntry;
+import darkgrey.rpg.task.journal.CanonicalTaskJournalObjectiveRow;
+import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 
 /**
  * Pure compatibility adapter from the canonical Task Journal projection to
@@ -36,9 +38,10 @@ public final class CanonicalTaskLegacyJournalAdapter {
         String identity = requireSafeText(entry.getIdentity(), "Canonical Task identity");
         String questId = transportQuestId(identity);
         String description = description(entry, status);
-        List<String> objectives = new ArrayList<String>(entry.getObjectiveLines());
-        for (int index = 0; index < objectives.size(); index++) {
-            objectives.set(index, safe(requireSafeText(objectives.get(index), "Canonical Task objective")));
+        List<String> objectives = new ArrayList<String>();
+        for (CanonicalTaskJournalObjectiveRow row : entry.getObjectiveRows()) {
+            if (row.getRuntimeStatus() != CanonicalTaskObjectiveStatus.ACTIVE) continue;
+            objectives.add(safe(requireSafeText(row.getDisplayLine(), "Canonical Task objective")));
         }
         return new QuestJournalEntry(
             questId,
@@ -121,18 +124,24 @@ public final class CanonicalTaskLegacyJournalAdapter {
 
     private static String description(CanonicalTaskJournalEntry entry, QuestStatus status) {
         StringBuilder result = new StringBuilder();
-        result.append("Canonical Task [")
-            .append(status.name())
+        result.append("规范任务 [")
+            .append(statusLabel(status))
             .append("]");
-        result.append(" story=")
+        result.append(" 故事实例=")
             .append(safe(entry.getStoryInstanceId()));
-        result.append(" placement=")
+        result.append(" 任务节点=")
             .append(safe(entry.getTaskNodePlacementId()));
-        result.append(" resource=")
+        result.append(" 任务资源=")
             .append(safe(entry.getTaskResourceId()));
-        result.append(" result=")
-            .append(entry.getSettledResultSlot() == null ? "none" : safe(entry.getSettledResultSlot()));
+        result.append(" 结算出口=")
+            .append(entry.getSettledResultSlot() == null ? "无" : safe(entry.getSettledResultSlot()));
         return result.toString();
+    }
+
+    private static String statusLabel(QuestStatus status) {
+        if (status == QuestStatus.ACTIVE) return "进行中";
+        if (status == QuestStatus.COMPLETED) return "已完成";
+        return "失败";
     }
 
     private static String requireSafeText(String value, String label) {

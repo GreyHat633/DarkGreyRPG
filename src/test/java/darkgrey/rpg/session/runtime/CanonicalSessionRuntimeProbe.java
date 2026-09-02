@@ -458,6 +458,27 @@ public final class CanonicalSessionRuntimeProbe {
     }
 
     private static void verifyFailures() {
+        CanonicalGraphResource blankPrompt = session(
+            node("start", "start", startPorts(), empty()),
+            node(
+                "choice",
+                "choice",
+                ports(in("flow_in"), out("flow_yes")),
+                rawProps(
+                    "prompt",
+                    "\"\"",
+                    "options",
+                    "[{\"option_id\":\"yes\",\"display_text\":\"Yes\",\"flow_port_id\":\"flow_yes\"}]")),
+            node("end", "end", ports(in("flow_in")), props("port_id", "yes", "display_name", "Yes")),
+            edge("start", "flow_out", "choice", "flow_in"),
+            edge("choice", "flow_yes", "end", "flow_in"));
+        require(
+            "".equals(
+                CanonicalSessionRuntime.start(blankPrompt)
+                    .currentStep()
+                    .getPrompt()),
+            "Blank Studio Choice prompt was not preserved");
+
         CanonicalGraphResource unknown = session(
             node("start", "start", startPorts(), empty()),
             node(

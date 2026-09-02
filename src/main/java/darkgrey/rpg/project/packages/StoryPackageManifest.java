@@ -1,5 +1,6 @@
 package darkgrey.rpg.project.packages;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import com.google.gson.JsonElement;
@@ -79,61 +81,7 @@ public final class StoryPackageManifest {
         try {
             InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
             try {
-                JsonElement root = new JsonParser().parse(reader);
-                if (!root.isJsonObject()) throw failure(file, "Manifest root must be an object");
-                JsonObject json = root.getAsJsonObject();
-                rejectUnknown(file, json, ROOT_FIELDS);
-                String format = optionalString(file, json, "format");
-                Integer formatVersion = optionalInt(file, json, "format_version");
-                String producer = optionalString(file, json, "producer");
-                String producerVersion = optionalString(file, json, "producer_version");
-                boolean hasDgrsIdentity = format != null || formatVersion != null
-                    || producer != null
-                    || producerVersion != null;
-                if (hasDgrsIdentity
-                    && (format == null || formatVersion == null || producer == null || producerVersion == null))
-                    throw failure(file, "DGRS identity fields must be present together");
-                if (hasDgrsIdentity) {
-                    if (!CURRENT_FORMAT.equals(format))
-                        throw failure(file, "Unsupported package format '" + format + "'");
-                    if (formatVersion.intValue() != CURRENT_FORMAT_VERSION)
-                        throw failure(file, "Unsupported DGRS format_version " + formatVersion);
-                    if (!CURRENT_PRODUCER.equals(producer))
-                        throw failure(file, "Unsupported DGRS producer '" + producer + "'");
-                }
-                int schema = requiredInt(file, json, "schema_version");
-                if (schema != CURRENT_SCHEMA_VERSION)
-                    throw failure(file, "Unsupported package schema_version " + schema);
-                String packageId = requiredId(file, json, "package_id");
-                String packageVersion = requiredString(file, json, "package_version");
-                String storyId = requiredId(file, json, "story_id");
-                int storySchema = requiredInt(file, json, "story_schema_version");
-                if (storySchema <= 0) throw failure(file, "story_schema_version must be positive");
-                JsonObject resources = requiredObject(file, json, "required_resources");
-                rejectUnknown(file, resources, RESOURCE_FIELDS);
-                RequiredResources required = new RequiredResources(
-                    requiredPath(file, resources, "story"),
-                    paths(file, resources, "actors"),
-                    paths(file, resources, "items"),
-                    paths(file, resources, "item_groups"),
-                    paths(file, resources, "dialogues"),
-                    paths(file, resources, "quests"),
-                    paths(file, resources, "canonical_stories"),
-                    paths(file, resources, "canonical_memberships"),
-                    paths(file, resources, "sessions"),
-                    paths(file, resources, "tasks"),
-                    optionalPath(file, resources, "story_logic_graph"));
-                return new StoryPackageManifest(
-                    format,
-                    formatVersion,
-                    producer,
-                    producerVersion,
-                    schema,
-                    packageId,
-                    packageVersion,
-                    storyId,
-                    storySchema,
-                    required);
+                return parse(reader, file);
             } finally {
                 reader.close();
             }
@@ -142,6 +90,77 @@ public final class StoryPackageManifest {
         } catch (IOException | RuntimeException exception) {
             throw new ProjectLoadException("Invalid Story Package manifest " + file, exception);
         }
+    }
+
+    public static StoryPackageManifest read(byte[] bytes, String source) throws ProjectLoadException {
+        if (bytes == null) throw new ProjectLoadException("Story Package manifest bytes are required");
+        File context = new File(source == null ? "manifest.json" : source);
+        InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8);
+        try {
+            return parse(reader, context);
+        } catch (ProjectLoadException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            throw new ProjectLoadException("Invalid Story Package manifest " + context, exception);
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException ignored) {}
+        }
+    }
+
+    private static StoryPackageManifest parse(InputStreamReader reader, File file) throws ProjectLoadException {
+        JsonElement root = new JsonParser().parse(reader);
+        if (!root.isJsonObject()) throw failure(file, "Manifest root must be an object");
+        JsonObject json = root.getAsJsonObject();
+        rejectUnknown(file, json, ROOT_FIELDS);
+        String format = optionalString(file, json, "format");
+        Integer formatVersion = optionalInt(file, json, "format_version");
+        String producer = optionalString(file, json, "producer");
+        String producerVersion = optionalString(file, json, "producer_version");
+        boolean hasDgrsIdentity = format != null || formatVersion != null
+            || producer != null
+            || producerVersion != null;
+        if (hasDgrsIdentity && (format == null || formatVersion == null || producer == null || producerVersion == null))
+            throw failure(file, "DGRS identity fields must be present together");
+        if (hasDgrsIdentity) {
+            if (!CURRENT_FORMAT.equals(format)) throw failure(file, "Unsupported package format '" + format + "'");
+            if (formatVersion.intValue() != CURRENT_FORMAT_VERSION)
+                throw failure(file, "Unsupported DGRS format_version " + formatVersion);
+            if (!CURRENT_PRODUCER.equals(producer)) throw failure(file, "Unsupported DGRS producer '" + producer + "'");
+        }
+        int schema = requiredInt(file, json, "schema_version");
+        if (schema != CURRENT_SCHEMA_VERSION) throw failure(file, "Unsupported package schema_version " + schema);
+        String packageId = requiredId(file, json, "package_id");
+        String packageVersion = requiredString(file, json, "package_version");
+        String storyId = requiredId(file, json, "story_id");
+        int storySchema = requiredInt(file, json, "story_schema_version");
+        if (storySchema <= 0) throw failure(file, "story_schema_version must be positive");
+        JsonObject resources = requiredObject(file, json, "required_resources");
+        rejectUnknown(file, resources, RESOURCE_FIELDS);
+        RequiredResources required = new RequiredResources(
+            requiredPath(file, resources, "story"),
+            paths(file, resources, "actors"),
+            paths(file, resources, "items"),
+            paths(file, resources, "item_groups"),
+            paths(file, resources, "dialogues"),
+            paths(file, resources, "quests"),
+            paths(file, resources, "canonical_stories"),
+            paths(file, resources, "canonical_memberships"),
+            paths(file, resources, "sessions"),
+            paths(file, resources, "tasks"),
+            optionalPath(file, resources, "story_logic_graph"));
+        return new StoryPackageManifest(
+            format,
+            formatVersion,
+            producer,
+            producerVersion,
+            schema,
+            packageId,
+            packageVersion,
+            storyId,
+            storySchema,
+            required);
     }
 
     public int getSchemaVersion() {
@@ -279,11 +298,9 @@ public final class StoryPackageManifest {
             if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive()
                 .isString()) throw failure(file, "Resource paths must be strings");
             String path = value.getAsString();
-            if (path.trim()
-                .isEmpty() || path.indexOf('\\') >= 0
-                || path.startsWith("/")
-                || path.contains("..")) throw failure(file, "Unsafe resource path: " + path);
-            if (!seen.add(path)) throw failure(file, "Duplicate resource path: " + path);
+            validatePath(file, path);
+            if (!seen.add(path.toLowerCase(Locale.ROOT)))
+                throw failure(file, "Duplicate normalized resource path: " + path);
             values.add(path);
         }
         return values;
@@ -291,9 +308,17 @@ public final class StoryPackageManifest {
 
     private static String requiredPath(File file, JsonObject json, String field) throws ProjectLoadException {
         String value = requiredString(file, json, field);
-        if (value.indexOf('\\') >= 0 || value.startsWith("/") || value.contains(".."))
-            throw failure(file, "Unsafe resource path: " + value);
+        validatePath(file, value);
         return value;
+    }
+
+    private static void validatePath(File file, String path) throws ProjectLoadException {
+        if (path == null || path.trim()
+            .isEmpty() || path.indexOf('\\') >= 0 || path.startsWith("/") || path.indexOf(':') >= 0)
+            throw failure(file, "Unsafe resource path: " + path);
+        String[] segments = path.split("/", -1);
+        for (String segment : segments) if (segment.length() == 0 || ".".equals(segment) || "..".equals(segment))
+            throw failure(file, "Unsafe resource path: " + path);
     }
 
     private static String optionalPath(File file, JsonObject json, String field) throws ProjectLoadException {

@@ -15,13 +15,15 @@ import io.netty.buffer.ByteBuf;
 public final class S2CNominatorInventoryOpen implements IMessage {
 
     private long revision;
+    private long catalogRevision = -1L;
     private int selectedSlot;
     private NominatorCatalog catalog;
 
     public S2CNominatorInventoryOpen() {}
 
-    private S2CNominatorInventoryOpen(long revision, int selectedSlot, NominatorCatalog catalog) {
+    private S2CNominatorInventoryOpen(long revision, long catalogRevision, int selectedSlot, NominatorCatalog catalog) {
         this.revision = revision;
+        this.catalogRevision = catalogRevision;
         this.selectedSlot = selectedSlot;
         this.catalog = catalog;
     }
@@ -30,18 +32,14 @@ public final class S2CNominatorInventoryOpen implements IMessage {
         return new S2CNominatorInventoryOpen(
             ItemIdentitySavedData.get()
                 .getRevision(),
-            firstSlot(player),
+            DarkGreyRpg.getProjectRepository()
+                .getSnapshotRevision(),
+            -1,
             NominatorCatalog.from(
                 DarkGreyRpg.getProjectRepository()
-                    .getSnapshot()));
-    }
-
-    private static int firstSlot(EntityPlayerMP player) {
-        for (int i = 0; i < player.inventory.mainInventory.length; i++) {
-            net.minecraft.item.ItemStack stack = player.inventory.mainInventory[i];
-            if (stack != null && stack.getItem() != darkgrey.rpg.content.ModItems.nominator) return i;
-        }
-        return -1;
+                    .getSnapshot(),
+                DarkGreyRpg.getStoryPackageLoader()
+                    .getPackages()));
     }
 
     public long getRevision() {
@@ -52,6 +50,10 @@ public final class S2CNominatorInventoryOpen implements IMessage {
         return selectedSlot;
     }
 
+    public long getCatalogRevision() {
+        return catalogRevision;
+    }
+
     public NominatorCatalog getCatalog() {
         return catalog;
     }
@@ -59,6 +61,7 @@ public final class S2CNominatorInventoryOpen implements IMessage {
     @Override
     public void fromBytes(ByteBuf b) {
         revision = b.readLong();
+        catalogRevision = b.readLong();
         selectedSlot = b.readByte();
         if (selectedSlot < -1 || selectedSlot > 35) throw new IllegalArgumentException("Invalid inventory slot.");
         catalog = NominatorCatalogCodec.read(b);
@@ -68,6 +71,7 @@ public final class S2CNominatorInventoryOpen implements IMessage {
     @Override
     public void toBytes(ByteBuf b) {
         b.writeLong(revision);
+        b.writeLong(catalogRevision);
         b.writeByte(selectedSlot);
         NominatorCatalogCodec.write(b, catalog);
     }
@@ -80,8 +84,11 @@ public final class S2CNominatorInventoryOpen implements IMessage {
 
                 @Override
                 public void run() {
-                    DarkGreyRpg.proxy
-                        .openNominatorInventoryGui(message.catalog, message.revision, message.selectedSlot);
+                    DarkGreyRpg.proxy.openNominatorInventoryGui(
+                        message.catalog,
+                        message.revision,
+                        message.catalogRevision,
+                        message.selectedSlot);
                 }
             });
             return null;

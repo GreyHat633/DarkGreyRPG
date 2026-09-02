@@ -68,6 +68,17 @@ public final class CanonicalStoryMembershipLoader {
         }
     }
 
+    /** Parses one detached package entry through the same strict membership parser as file-backed projects. */
+    public CanonicalStoryMembership load(byte[] bytes, String fileName) throws CanonicalStoryMembershipException {
+        if (bytes == null) throw CanonicalStoryMembershipException
+            .failure("story.membership.bytes.required", "Canonical Story membership bytes are required.");
+        if (fileName == null || fileName.trim()
+            .isEmpty())
+            throw CanonicalStoryMembershipException
+                .failure("story.membership.file.required", "Canonical Story membership file name is required.");
+        return parse(bytes, fileName);
+    }
+
     public List<CanonicalStoryMembership> loadDirectory(File directory) throws CanonicalStoryMembershipException {
         return loadDirectory(directory == null ? null : directory.toPath());
     }

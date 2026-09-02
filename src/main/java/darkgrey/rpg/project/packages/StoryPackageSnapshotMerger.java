@@ -1,8 +1,5 @@
 package darkgrey.rpg.project.packages;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -146,10 +143,10 @@ public final class StoryPackageSnapshotMerger {
     /** Referenced resources may appear in more than one package, but only as byte-identical definitions. */
     private static <T> void putAllShared(Map<String, T> target, Map<String, byte[]> origins, Map<String, T> source,
         List<String> declaredPaths, String type, LoadedStoryPackage value) throws ProjectLoadException {
-        Map<String, File> files = declaredFiles(value, declaredPaths, type);
-        requireIds(source.keySet(), files.keySet(), type, value.getPackageId());
+        Map<String, String> paths = declaredPaths(value, declaredPaths, type);
+        requireIds(source.keySet(), paths.keySet(), type, value.getPackageId());
         for (Map.Entry<String, T> entry : source.entrySet()) {
-            byte[] bytes = read(files.get(entry.getKey()), type, entry.getKey(), value.getPackageId());
+            byte[] bytes = read(value, paths.get(entry.getKey()), type, entry.getKey());
             if (!target.containsKey(entry.getKey())) {
                 target.put(entry.getKey(), entry.getValue());
                 origins.put(entry.getKey(), bytes);
@@ -165,13 +162,12 @@ public final class StoryPackageSnapshotMerger {
         }
     }
 
-    private static Map<String, File> declaredFiles(LoadedStoryPackage value, List<String> paths, String type)
+    private static Map<String, String> declaredPaths(LoadedStoryPackage value, List<String> paths, String type)
         throws ProjectLoadException {
-        Map<String, File> result = new LinkedHashMap<String, File>();
+        Map<String, String> result = new LinkedHashMap<String, String>();
         for (String path : paths) {
             String id = id(path);
-            File file = new File(value.getDirectory(), path.replace('/', File.separatorChar));
-            if (result.put(id, file) != null) throw new ProjectLoadException(
+            if (result.put(id, path) != null) throw new ProjectLoadException(
                 "Duplicate declared " + type + " ID '" + id + "' in package '" + value.getPackageId() + "'.");
         }
         return result;
@@ -200,13 +196,11 @@ public final class StoryPackageSnapshotMerger {
             "Manifest " + type + " IDs do not match package contents for '" + packageId + "'.");
     }
 
-    private static byte[] read(File file, String type, String id, String packageId) throws ProjectLoadException {
-        try {
-            return Files.readAllBytes(file.toPath());
-        } catch (IOException exception) {
-            throw new ProjectLoadException(
-                "Cannot read declared " + type + " ID '" + id + "' from package '" + packageId + "'.",
-                exception);
-        }
+    private static byte[] read(LoadedStoryPackage value, String path, String type, String id)
+        throws ProjectLoadException {
+        byte[] bytes = value.getDeclaredResourceBytes(path);
+        if (bytes == null) throw new ProjectLoadException(
+            "Cannot read declared " + type + " ID '" + id + "' from package '" + value.getPackageId() + "'.");
+        return bytes;
     }
 }

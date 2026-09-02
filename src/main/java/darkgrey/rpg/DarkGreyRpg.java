@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -28,10 +29,10 @@ import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.network.EntityToolsNetwork;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.network.NominatorNetwork;
-import darkgrey.rpg.project.ProjectLoadException;
+import darkgrey.rpg.nominator.container.NominatorGuiHandler;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
-import darkgrey.rpg.project.packages.StoryPackageSnapshotMerger;
+import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
 import darkgrey.rpg.proxy.CommonProxy;
 import darkgrey.rpg.quest.runtime.QuestEventAdapter;
 import darkgrey.rpg.quest.runtime.QuestRuntimeService;
@@ -52,6 +53,9 @@ public final class DarkGreyRpg {
     public static final String MOD_ID = "darkgrey_rpg";
     public static final String MOD_NAME = "DarkGrey RPG";
     public static final Logger LOG = LogManager.getLogger(MOD_NAME);
+
+    @Instance(MOD_ID)
+    public static DarkGreyRpg instance;
 
     @SidedProxy(clientSide = "darkgrey.rpg.client.ClientProxy", serverSide = "darkgrey.rpg.proxy.CommonProxy")
     public static CommonProxy proxy;
@@ -95,30 +99,31 @@ public final class DarkGreyRpg {
         dialogueSessions.addResultListener(storyBridge);
         questRuntime.addCompletionListener(storyBridge);
 
-        ProjectRepository.ReloadResult result = projectRepository.reload();
-        StoryPackageLoader.ReloadResult packageResult = storyPackageLoader.reload();
-        if (!storyPackageLoader.getPackages()
-            .isEmpty()) try {
-                result = projectRepository
-                    .installSnapshot(StoryPackageSnapshotMerger.merge(storyPackageLoader.getPackages()));
-            } catch (ProjectLoadException exception) {
-                LOG.error("Story Package merge failed; using the validated base project.", exception);
-            }
-        if (!packageResult.isSuccessful()) LOG.error("Story Package startup load: {}", packageResult.getSummary());
+        StoryPackageRuntimeReloader.Result startup = StoryPackageRuntimeReloader
+            .startup(projectRepository, storyPackageLoader);
+        ProjectRepository.ReloadResult result = startup.getProjectReload();
+        StoryPackageLoader.ReloadResult packageResult = startup.getPackageReload();
+        if (!startup.isSuccessful()) {
+            LOG.error("Story Package startup load: {}", packageResult.getSummary());
+            for (String error : startup.getErrors()) LOG.error("Story Package startup detail: {}", error);
+        }
         if (result.isSuccessful()) {
             LOG.info(
-                "Loaded DarkGrey RPG project '{}' with {} actor(s), {} dialogue(s), {} quest(s), and {} story/stories from {}",
+                "Loaded DarkGrey RPG project '{}' with {} story/stories, {} actor(s), {} item(s), {} item group(s), {} session(s), and {} task(s) from {}",
                 result.getProjectDisplayName(),
-                result.getActorCount(),
-                result.getDialogueCount(),
-                result.getQuestCount(),
                 result.getStoryCount(),
+                result.getActorCount(),
+                result.getItemCount(),
+                result.getItemGroupCount(),
+                result.getSessionCount(),
+                result.getTaskCount(),
                 projectDirectory.getAbsolutePath());
         } else {
             LOG.error("DarkGrey RPG project reload failed: {}", result.getSummary());
         }
 
         ModItems.register();
+        cpw.mods.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(this, new NominatorGuiHandler());
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
         MinecraftForge.EVENT_BUS.register(new EntityToolsRuntime());
         QuestEventAdapter questEvents = new QuestEventAdapter(questRuntime);
@@ -191,6 +196,10 @@ public final class DarkGreyRpg {
 
     public static ProjectRepository getProjectRepository() {
         return projectRepository;
+    }
+
+    public static StoryPackageLoader getStoryPackageLoader() {
+        return storyPackageLoader;
     }
 
     public static DialogueSessionManager getDialogueSessions() {

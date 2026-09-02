@@ -33,6 +33,8 @@ public final class C2SNominatorEntityBind implements IMessage {
     private boolean typeScope;
     private String typeGroupId;
     private boolean addTypeGroup;
+    private String packageId;
+    private long expectedCatalogRevision = -1L;
 
     public C2SNominatorEntityBind() {}
 
@@ -50,6 +52,13 @@ public final class C2SNominatorEntityBind implements IMessage {
         this.storyId = storyId;
         this.expectedRevision = expectedRevision;
         this.transfer = transfer;
+    }
+
+    public C2SNominatorEntityBind(int entityId, UUID entityUuid, String individualId, List<String> groups,
+        String storyId, long expectedRevision, boolean transfer, String packageId, long expectedCatalogRevision) {
+        this(entityId, entityUuid, individualId, groups, storyId, expectedRevision, transfer);
+        this.packageId = packageId;
+        this.expectedCatalogRevision = expectedCatalogRevision;
     }
 
     public C2SNominatorEntityBind(int entityId, UUID entityUuid, String individualId, List<String> groups,
@@ -101,6 +110,14 @@ public final class C2SNominatorEntityBind implements IMessage {
         return addTypeGroup;
     }
 
+    public String getPackageId() {
+        return packageId;
+    }
+
+    public long getExpectedCatalogRevision() {
+        return expectedCatalogRevision;
+    }
+
     @Override
     public void fromBytes(ByteBuf buffer) {
         entityId = buffer.readInt();
@@ -122,6 +139,11 @@ public final class C2SNominatorEntityBind implements IMessage {
                 addTypeGroup = buffer.readBoolean();
             }
         }
+        if (buffer.isReadable()) {
+            packageId = readString(buffer);
+            if (buffer.readableBytes() < 8) throw new IllegalArgumentException("Missing nominator catalog revision.");
+            expectedCatalogRevision = buffer.readLong();
+        }
         if (buffer.isReadable()) throw new IllegalArgumentException("Trailing nominator bind data.");
     }
 
@@ -142,6 +164,8 @@ public final class C2SNominatorEntityBind implements IMessage {
             writeString(buffer, typeGroupId);
             buffer.writeBoolean(addTypeGroup);
         }
+        writeString(buffer, packageId);
+        buffer.writeLong(expectedCatalogRevision);
     }
 
     public static final class Handler implements IMessageHandler<C2SNominatorEntityBind, IMessage> {
@@ -179,6 +203,27 @@ public final class C2SNominatorEntityBind implements IMessage {
                             selections);
                         report(player, result, message.typeGroupId, message.addTypeGroup);
                         return;
+                    }
+                    boolean binding = !blank(message.individualId)
+                        || message.groups != null && !message.groups.isEmpty();
+                    if (binding) {
+                        darkgrey.rpg.project.ProjectRepository repository = DarkGreyRpg.getProjectRepository();
+                        if (message.expectedCatalogRevision < 0L
+                            || message.expectedCatalogRevision != repository.getSnapshotRevision()) {
+                            ChatMessages.error(player, "故事包目录已更新，请重新打开指名器后再试。");
+                            return;
+                        }
+                        darkgrey.rpg.nominator.NominatorCatalog.PackageChoice choice = darkgrey.rpg.nominator.NominatorCatalog
+                            .from(
+                                repository.getSnapshot(),
+                                DarkGreyRpg.getStoryPackageLoader()
+                                    .getPackages())
+                            .getPackageChoice(message.packageId);
+                        if (choice == null || !choice.getStoryId()
+                            .equals(message.storyId) || !withinPackage(choice, message.individualId, message.groups)) {
+                            ChatMessages.error(player, "所选角色不属于当前故事包，请重新选择。");
+                            return;
+                        }
                     }
                     NominatorResult result = NominatorService.bindEntity(
                         true,
@@ -219,6 +264,19 @@ public final class C2SNominatorEntityBind implements IMessage {
                 ChatMessages.success(player, "已解除当前实体的指名。");
             else ChatMessages.success(player, "已将当前实体指名为 " + actorId.trim() + "。");
         }
+
+        private static boolean withinPackage(darkgrey.rpg.nominator.NominatorCatalog.PackageChoice choice,
+            String individualId, List<String> groups) {
+            if (!blank(individualId) && !choice.containsActor(individualId)) return false;
+            if (groups != null)
+                for (String group : groups) if (!blank(group) && !choice.containsActor(group)) return false;
+            return true;
+        }
+    }
+
+    private static boolean blank(String value) {
+        return value == null || value.trim()
+            .isEmpty();
     }
 
     private static String readString(ByteBuf b) {

@@ -94,6 +94,22 @@ public final class CanonicalProjectContentLoader {
         return new CanonicalProjectContent(stories, sessions, tasks, memberships, storyLogicGraph);
     }
 
+    /** Validates detached DGRS resources without materializing a project directory. */
+    public CanonicalProjectContent loadPackageContent(Map<String, CanonicalGraphResource> stories,
+        Map<String, CanonicalGraphResource> sessions, Map<String, CanonicalGraphResource> tasks,
+        Map<String, CanonicalStoryMembership> memberships, Set<String> actorIds, Set<String> itemIds,
+        Set<String> itemGroupIds) {
+        if (stories == null || sessions == null || tasks == null || memberships == null)
+            throw CanonicalProjectContentException.failure(
+                "project.content.package.resources.required",
+                "Detached canonical package resources are required.");
+        if (actorIds == null || itemIds == null || itemGroupIds == null) throw CanonicalProjectContentException.failure(
+            "project.content.package.identities.required",
+            "Detached package Actor, Item, and Item Group IDs are required.");
+        validate(stories, sessions, tasks, memberships, actorIds, itemIds, itemGroupIds);
+        return new CanonicalProjectContent(stories, sessions, tasks, memberships, CanonicalStoryLogicGraph.empty());
+    }
+
     private List<CanonicalGraphResource> loadStories(Path directory) {
         try {
             return resourceLoader.loadStories(directory);

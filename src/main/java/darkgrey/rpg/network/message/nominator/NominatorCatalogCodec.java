@@ -37,6 +37,18 @@ public final class NominatorCatalogCodec {
         }
         writeItems(b, c.getItems());
         writeItems(b, c.getItemGroups());
+        writeCount(
+            b,
+            c.getPackageChoices()
+                .size());
+        for (NominatorCatalog.PackageChoice v : c.getPackageChoices()) {
+            text(b, v.getPackageId());
+            text(b, v.getStoryId());
+            text(b, v.getDisplayName());
+            ids(b, v.getActorIds());
+            ids(b, v.getItemIds());
+            ids(b, v.getItemGroupIds());
+        }
     }
 
     public static NominatorCatalog read(ByteBuf b) {
@@ -45,7 +57,14 @@ public final class NominatorCatalogCodec {
         List<NominatorCatalog.Actor> actors = new ArrayList<NominatorCatalog.Actor>();
         for (int i = count(b); i-- > 0;)
             actors.add(new NominatorCatalog.Actor(text(b), text(b), text(b), text(b), text(b), tags(b)));
-        return new NominatorCatalog(stories, actors, readItems(b), readItems(b));
+        List<NominatorCatalog.Item> items = readItems(b);
+        List<NominatorCatalog.Item> itemGroups = readItems(b);
+        List<NominatorCatalog.PackageChoice> packages = new ArrayList<NominatorCatalog.PackageChoice>();
+        if (b.readableBytes() >= 2) {
+            for (int i = count(b); i-- > 0;)
+                packages.add(new NominatorCatalog.PackageChoice(text(b), text(b), text(b), ids(b), ids(b), ids(b)));
+        }
+        return new NominatorCatalog(stories, actors, items, itemGroups, packages);
     }
 
     private static void writeItems(ByteBuf b, List<NominatorCatalog.Item> values) {
@@ -60,6 +79,18 @@ public final class NominatorCatalogCodec {
     private static List<NominatorCatalog.Item> readItems(ByteBuf b) {
         List<NominatorCatalog.Item> values = new ArrayList<NominatorCatalog.Item>();
         for (int i = count(b); i-- > 0;) values.add(new NominatorCatalog.Item(text(b), text(b), tags(b)));
+        return values;
+    }
+
+    private static void ids(ByteBuf b, List<String> values) {
+        writeCount(b, values.size());
+        for (String value : values) text(b, value);
+    }
+
+    private static List<String> ids(ByteBuf b) {
+        int n = count(b);
+        List<String> values = new ArrayList<String>();
+        for (int i = 0; i < n; i++) values.add(text(b));
         return values;
     }
 

@@ -88,6 +88,17 @@ public final class CanonicalStoryLogicGraphLoader {
         }
     }
 
+    /** Parses a detached package-owned outgoing fragment; merged validation remains the publication gate. */
+    public CanonicalStoryLogicGraph loadUnresolved(byte[] bytes, String source) throws CanonicalGraphResourceException {
+        if (bytes == null) throw CanonicalGraphResourceException
+            .failure("story.logic.graph.bytes.required", "Canonical Story logic graph bytes are required.");
+        if (source == null || source.trim()
+            .isEmpty())
+            throw CanonicalGraphResourceException
+                .failure("story.logic.graph.file.required", "Canonical Story logic graph source is required.");
+        return parse(bytes, Collections.<String, CanonicalGraphResource>emptyMap(), false);
+    }
+
     private static CanonicalStoryLogicGraph parse(byte[] bytes, Map<String, CanonicalGraphResource> stories,
         boolean validateEndpoints) throws CanonicalGraphResourceException {
         JsonObject root = readRoot(bytes);

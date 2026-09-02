@@ -1,195 +1,237 @@
 package darkgrey.rpg.client.gui;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
+import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 
 import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.network.message.nominator.C2SNominatorInventoryBind;
 import darkgrey.rpg.nominator.NominatorCatalog;
 import darkgrey.rpg.nominator.NominatorStorySearch;
+import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
-/** Inventory nominator view; the server captures the held stack and explains matching semantics. */
-public final class GuiNominatorInventory extends GuiScreen {
+/** Inventory nominator view backed by the server-authoritative target container. */
+public final class GuiNominatorInventory extends GuiContainer {
 
-    private String itemId;
-    private String exactGroup;
-    private final List<String> fuzzyGroups = new ArrayList<String>();
-    private int selectedSlot;
-    private List<NominatorStorySearch.ItemChoice> items = Collections.emptyList();
-    private List<NominatorStorySearch.ItemChoice> itemGroups = Collections.emptyList();
-    private int itemChoice;
-    private int exactGroupChoice;
-    private int fuzzyGroupChoice;
-    private final List<Integer> availableSlots = new ArrayList<Integer>();
-    private GuiTextField resourceSearch;
-    private String lastResourceQuery = "";
     private NominatorCatalog catalog;
-    private long revision = -1L;
-    private int panelLeft;
-    private int panelTop;
-    private int panelWidth;
+    private long revision;
+    private long catalogRevision = -1L;
+    private List<NominatorCatalog.PackageChoice> packages = Collections.emptyList();
+    private List<NominatorStorySearch.ItemChoice> resources = Collections.emptyList();
+    private int packageChoice;
+    private int resourceChoice;
+    private boolean browsingGroups;
+    private String selectedItem;
+    private String selectedGroup;
+    private String lastQuery = "";
+    private GuiTextField searchField;
+    private GuiButton bindButton;
 
     public GuiNominatorInventory() {
-        this(
-            new NominatorCatalog(
-                Collections.<NominatorCatalog.Story>emptyList(),
-                Collections.<NominatorCatalog.Actor>emptyList(),
-                Collections.<NominatorCatalog.Item>emptyList(),
-                Collections.<NominatorCatalog.Item>emptyList()),
-            -1L,
-            -1);
+        this(emptyCatalog(), -1L, -1);
     }
 
     public GuiNominatorInventory(NominatorCatalog catalog, long revision, int selectedSlot) {
-        this.catalog = catalog;
+        this(newContainer(), catalog, revision, -1L);
+    }
+
+    public GuiNominatorInventory(ContainerNominatorInventory container) {
+        this(container, emptyCatalog(), -1L, -1L);
+    }
+
+    public GuiNominatorInventory(ContainerNominatorInventory container, NominatorCatalog catalog, long revision,
+        long catalogRevision) {
+        super(container);
+        this.catalog = catalog == null ? emptyCatalog() : catalog;
         this.revision = revision;
-        this.selectedSlot = selectedSlot;
+        this.catalogRevision = catalogRevision;
+    }
+
+    public void applyServerSnapshot(NominatorCatalog catalog, long revision, long catalogRevision) {
+        this.catalog = catalog == null ? emptyCatalog() : catalog;
+        this.revision = revision;
+        this.catalogRevision = catalogRevision;
+        packages = this.catalog.getPackageChoices();
+        packageChoice = 0;
+        resourceChoice = 0;
+        refreshResources();
+    }
+
+    private static ContainerNominatorInventory newContainer() {
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        return new ContainerNominatorInventory(player);
+    }
+
+    private static NominatorCatalog emptyCatalog() {
+        return new NominatorCatalog(
+            Collections.<NominatorCatalog.Story>emptyList(),
+            Collections.<NominatorCatalog.Actor>emptyList(),
+            Collections.<NominatorCatalog.Item>emptyList(),
+            Collections.<NominatorCatalog.Item>emptyList());
     }
 
     @Override
     public void initGui() {
+        xSize = 360;
+        ySize = 228;
+        super.initGui();
         buttonList.clear();
-        panelWidth = Math.min(520, width - 12);
-        panelLeft = (width - panelWidth) / 2;
-        panelTop = Math.max(4, (height - 228) / 2);
-        int contentLeft = panelLeft + 10;
-        int contentWidth = panelWidth - 20;
-        int columnGap = 10;
-        int columnWidth = (contentWidth - columnGap) / 2;
-        int rightColumn = contentLeft + columnWidth + columnGap;
-        resourceSearch = new GuiTextField(fontRendererObj, contentLeft, panelTop + 32, contentWidth, 18);
-        resourceSearch.setMaxStringLength(128);
+        packages = catalog.getPackageChoices();
+        packageChoice = 0;
+        resourceChoice = 0;
+
+        searchField = new GuiTextField(fontRendererObj, guiLeft + 8, guiTop + 42, 344, 18);
+        searchField.setMaxStringLength(128);
         refreshResources();
-        refreshInventorySlots();
-        buttonList.add(new GuiModernButton(1, contentLeft, panelTop + 76, columnWidth, 18, "浏览物品"));
-        buttonList.add(new GuiModernButton(2, rightColumn, panelTop + 76, columnWidth, 18, "浏览精确群组"));
-        buttonList.add(new GuiModernButton(3, contentLeft, panelTop + 112, columnWidth, 18, "添加模糊群组"));
-        GuiModernButton bind = new GuiModernButton(4, rightColumn, panelTop + 112, columnWidth, 18, "绑定到当前槽位");
-        bind.enabled = selectedSlot >= 0;
-        buttonList.add(bind);
-        buttonList.add(new GuiModernButton(10, contentLeft, panelTop + 160, columnWidth, 18, "上一个槽位"));
-        buttonList.add(new GuiModernButton(11, rightColumn, panelTop + 160, columnWidth, 18, "下一个槽位"));
-        buttonList.add(new GuiModernButton(0, width / 2 - 35, panelTop + 202, 70, 18, "关闭"));
+        buttonList.add(new GuiModernButton(1, guiLeft + 8, guiTop + 20, 110, 18, "上一个包"));
+        buttonList.add(new GuiModernButton(2, guiLeft + 124, guiTop + 20, 110, 18, "下一个包"));
+        buttonList.add(new GuiModernButton(3, guiLeft + 240, guiTop + 20, 112, 18, "浏览物品组"));
+        buttonList.add(new GuiModernButton(4, guiLeft + 8, guiTop + 64, 110, 18, "上一个条目"));
+        buttonList.add(new GuiModernButton(5, guiLeft + 124, guiTop + 64, 110, 18, "下一个条目"));
+        bindButton = new GuiModernButton(6, guiLeft + 240, guiTop + 64, 112, 18, "绑定目标");
+        buttonList.add(bindButton);
+        buttonList.add(new GuiModernButton(0, guiLeft + 270, guiTop + 204, 82, 18, "关闭"));
+        refreshButtonState();
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button.id == 0) mc.displayGuiScreen(null);
-        else if (button.id == 10) cycleSlot(-1);
-        else if (button.id == 11) cycleSlot(1);
-        else if (button.id == 1 && !items.isEmpty()) {
-            itemId = items.get(itemChoice++ % items.size())
-                .getId();
-        } else if (button.id == 2 && !itemGroups.isEmpty()) {
-            exactGroup = itemGroups.get(exactGroupChoice++ % itemGroups.size())
-                .getId();
-        } else if (button.id == 3 && !itemGroups.isEmpty()) {
-            String group = itemGroups.get(fuzzyGroupChoice++ % itemGroups.size())
-                .getId();
-            if (!fuzzyGroups.contains(group)) fuzzyGroups.add(group);
-        } else if (button.id == 4 && selectedSlot >= 0) {
-            DialogueNetwork.CHANNEL
-                .sendToServer(new C2SNominatorInventoryBind(selectedSlot, itemId, exactGroup, fuzzyGroups, revision));
+        if (button.id == 0) {
             mc.displayGuiScreen(null);
+        } else if (button.id == 1 || button.id == 2) {
+            cyclePackage(button.id == 1 ? -1 : 1);
+        } else if (button.id == 3) {
+            browsingGroups = !browsingGroups;
+            button.displayString = browsingGroups ? "浏览物品" : "浏览物品组";
+            resourceChoice = 0;
+            refreshResources();
+        } else if (button.id == 4 || button.id == 5) {
+            cycleResource(button.id == 4 ? -1 : 1);
+        } else if (button.id == 6 && isBindable()) {
+            NominatorCatalog.PackageChoice choice = packages.get(packageChoice);
+            DialogueNetwork.CHANNEL.sendToServer(
+                new C2SNominatorInventoryBind(
+                    choice.getPackageId(),
+                    selectedItem,
+                    selectedGroup,
+                    revision,
+                    catalogRevision));
+            // Main's server handler closes the live container after capture/bind.
         }
+    }
+
+    private void cyclePackage(int direction) {
+        if (packages.isEmpty()) return;
+        packageChoice = (packageChoice + direction + packages.size()) % packages.size();
+        resourceChoice = 0;
+        refreshResources();
+    }
+
+    private void cycleResource(int direction) {
+        if (resources.isEmpty()) return;
+        resourceChoice = (resourceChoice + direction + resources.size()) % resources.size();
+        chooseResource();
+        refreshButtonState();
+    }
+
+    private void refreshResources() {
+        lastQuery = searchField == null ? "" : searchField.getText();
+        if (packages.isEmpty()) resources = Collections.emptyList();
+        else resources = NominatorStorySearch.items(catalog, packages.get(packageChoice), lastQuery, browsingGroups);
+        if (resourceChoice >= resources.size()) resourceChoice = 0;
+        chooseResource();
+        refreshButtonState();
+    }
+
+    private void chooseResource() {
+        if (resources.isEmpty()) {
+            if (browsingGroups) selectedGroup = null;
+            else selectedItem = null;
+            return;
+        }
+        NominatorStorySearch.ItemChoice choice = resources.get(resourceChoice);
+        if (browsingGroups) {
+            selectedGroup = choice.getId();
+            selectedItem = null;
+        } else {
+            selectedItem = choice.getId();
+            selectedGroup = null;
+        }
+    }
+
+    private boolean isBindable() {
+        ItemStack target = ((ContainerNominatorInventory) inventorySlots).getTargetInventory()
+            .getStackInSlot(0);
+        return target != null && !resources.isEmpty() && (selectedItem != null || selectedGroup != null);
+    }
+
+    private void refreshButtonState() {
+        if (bindButton != null) bindButton.enabled = isBindable();
+        for (GuiButton button : buttonList) if (button.id == 1 || button.id == 2) button.enabled = packages.size() > 1;
+        for (GuiButton button : buttonList) if (button.id == 4 || button.id == 5) button.enabled = resources.size() > 1;
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        if (resourceSearch != null && !lastResourceQuery.equals(resourceSearch.getText())) refreshResources();
-        drawDefaultBackground();
-        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + 228, 0xF02B2F4A);
-        drawCenteredString(fontRendererObj, "Nominator · 物品指名", width / 2, panelTop + 8, 0xFFEEF0FF);
-        drawString(fontRendererObj, "搜索物品或群组的 ID、名称与标签", panelLeft + 10, panelTop + 21, 0xFFB8C0E8);
-        resourceSearch.drawTextBox();
-        ItemStack selected = selectedSlot >= 0
-            && selectedSlot < Minecraft.getMinecraft().thePlayer.inventory.mainInventory.length
-                ? Minecraft.getMinecraft().thePlayer.inventory.mainInventory[selectedSlot]
-                : null;
-        int contentLeft = panelLeft + 10;
-        int contentWidth = panelWidth - 20;
-        int columnWidth = (contentWidth - 10) / 2;
-        int rightColumn = contentLeft + columnWidth + 10;
-        drawString(fontRendererObj, fit("精确物品：" + value(itemId), columnWidth), contentLeft, panelTop + 64, 0xFFEEF0FF);
-        drawString(
-            fontRendererObj,
-            fit("精确群组：" + value(exactGroup), columnWidth),
-            rightColumn,
-            panelTop + 64,
-            0xFFEEF0FF);
-        drawString(fontRendererObj, fit("模糊群组：" + fuzzyGroups, contentWidth), contentLeft, panelTop + 100, 0xFFB8C0E8);
-        drawString(
-            fontRendererObj,
-            fit(
-                "当前槽位 " + (selectedSlot < 0 ? "无" : String.valueOf(selectedSlot + 1))
-                    + " · "
-                    + (selected == null ? "空" : selected.getDisplayName()),
-                contentWidth),
-            contentLeft,
-            panelTop + 148,
-            0xFFEEF0FF);
-        drawString(
-            fontRendererObj,
-            fit(
-                catalog.getItems()
-                    .isEmpty()
-                    && catalog.getItemGroups()
-                        .isEmpty() ? "服务器物品目录为空" : "服务器目录修订 " + revision + " · 冲突时会拒绝绑定",
-                contentWidth),
-            contentLeft,
-            panelTop + 184,
-            0xFFFFCC88);
+        if (searchField != null && !lastQuery.equals(searchField.getText())) refreshResources();
+        refreshButtonState();
         super.drawScreen(mouseX, mouseY, partialTicks);
+        if (searchField != null) searchField.drawTextBox();
     }
 
-    private String value(String value) {
-        return value == null || value.isEmpty() ? "无" : value;
+    @Override
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xF02B2F4A);
     }
 
-    private String fit(String value, int maxWidth) {
-        return fontRendererObj.trimStringToWidth(value, maxWidth);
+    @Override
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        drawString(fontRendererObj, "Nominator · 物品指名", 8, 8, 0xFFEEF0FF);
+        drawString(fontRendererObj, "搜索 ID、名称或标签", 240, 8, 0xFFB8C0E8);
+        drawString(fontRendererObj, packageText(), 8, 86, 0xFFB8C0E8);
+        drawString(fontRendererObj, resourceText(), 8, 98, 0xFFEEF0FF);
+        drawString(fontRendererObj, "玩家背包", 178, 121, 0xFFB8C0E8);
+        drawString(fontRendererObj, "目标槽", 286, 165, 0xFFFFCC88);
+        drawString(
+            fontRendererObj,
+            resources.isEmpty() ? "服务器目录为空或无匹配条目" : "指名修订 " + revision + " · 包目录修订 " + catalogRevision,
+            8,
+            110,
+            0xFFFFCC88);
     }
 
-    private void refreshResources() {
-        lastResourceQuery = resourceSearch == null ? "" : resourceSearch.getText();
-        items = NominatorStorySearch.items(catalog, lastResourceQuery, false);
-        itemGroups = NominatorStorySearch.items(catalog, lastResourceQuery, true);
+    private String packageText() {
+        if (packages.isEmpty()) return "故事包：无可用包";
+        NominatorCatalog.PackageChoice choice = packages.get(packageChoice);
+        return fit("故事包：" + choice.getPackageId() + " / " + choice.getDisplayName(), 314);
     }
 
-    private void refreshInventorySlots() {
-        availableSlots.clear();
-        ItemStack[] inventory = Minecraft.getMinecraft().thePlayer.inventory.mainInventory;
-        for (int slot = 0; slot < inventory.length; slot++)
-            if (inventory[slot] != null && inventory[slot].getItem() != darkgrey.rpg.content.ModItems.nominator)
-                availableSlots.add(slot);
-        selectedSlot = availableSlots.isEmpty() ? -1 : availableSlots.get(0);
+    private String resourceText() {
+        if (resources.isEmpty()) return browsingGroups ? "物品组：无匹配条目" : "物品：无匹配条目";
+        NominatorStorySearch.ItemChoice choice = resources.get(resourceChoice);
+        return fit((browsingGroups ? "物品组：" : "物品：") + choice.getId() + " / " + choice.getDisplayName(), 314);
     }
 
-    private void cycleSlot(int direction) {
-        if (availableSlots.isEmpty()) return;
-        int current = availableSlots.indexOf(selectedSlot);
-        if (current < 0) current = 0;
-        current = (current + direction + availableSlots.size()) % availableSlots.size();
-        selectedSlot = availableSlots.get(current);
+    private String fit(String text, int width) {
+        return fontRendererObj.trimStringToWidth(text, width);
     }
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
-        if (resourceSearch.textboxKeyTyped(typedChar, keyCode)) return;
+        if (searchField != null && searchField.textboxKeyTyped(typedChar, keyCode)) return;
         super.keyTyped(typedChar, keyCode);
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int button) {
         super.mouseClicked(mouseX, mouseY, button);
-        resourceSearch.mouseClicked(mouseX, mouseY, button);
+        if (searchField != null) searchField.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

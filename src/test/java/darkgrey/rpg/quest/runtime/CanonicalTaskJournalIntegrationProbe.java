@@ -39,12 +39,33 @@ public final class CanonicalTaskJournalIntegrationProbe {
             "concise public identity context");
         require(
             settledLegacy.getDescription()
-                .contains("result=result"),
+                .contains("结算出口=result"),
             "result context");
         require(
             activeLegacy.getObjectiveLines()
                 .equals(Arrays.asList("objective")),
             "objective preservation");
+
+        CanonicalTaskJournalEntry mixedObjectives = new CanonicalTaskJournalEntry(
+            PLAYER,
+            "story-a",
+            "placement-mixed",
+            "resource-a",
+            "Canonical title",
+            CanonicalTaskInstanceStatus.ACTIVE,
+            1L,
+            null,
+            null,
+            Collections.<String, Boolean>emptyMap(),
+            Arrays.asList(
+                row("inactive", darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus.INACTIVE, 0, 1),
+                row("active", darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus.ACTIVE, 0, 1),
+                row("completed", darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus.COMPLETED, 1, 1)));
+        require(
+            CanonicalTaskLegacyJournalAdapter.adapt(mixedObjectives)
+                .getObjectiveLines()
+                .equals(Collections.singletonList("active")),
+            "only active objectives reach the player Journal");
 
         CanonicalTaskJournalEntry unsafeText = new CanonicalTaskJournalEntry(
             PLAYER,
@@ -136,6 +157,19 @@ public final class CanonicalTaskJournalIntegrationProbe {
                     1,
                     true,
                     "objective")));
+    }
+
+    private static darkgrey.rpg.task.journal.CanonicalTaskJournalObjectiveRow row(String label,
+        darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus status, int current, int required) {
+        return new darkgrey.rpg.task.journal.CanonicalTaskJournalObjectiveRow(
+            label,
+            label,
+            "kill_entity",
+            status,
+            current,
+            required,
+            true,
+            label);
     }
 
     private static void expectFailure(Runnable action, String label) {

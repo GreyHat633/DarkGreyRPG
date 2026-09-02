@@ -29,23 +29,31 @@ public final class CanonicalTaskStage4SurfaceProbe {
         Method processTask = CommandDarkGreyRpg.class
             .getDeclaredMethod("processTask", net.minecraft.command.ICommandSender.class, String[].class);
         require(processTask != null, "task action dispatcher");
+        CommandDarkGreyRpg command = new CommandDarkGreyRpg(
+            new ProjectRepository(new File(".")),
+            new EditorSessionManager(),
+            new DialogueSessionManager(new ProjectRepository(new File("."))),
+            new QuestRuntimeService(new ProjectRepository(new File("."))),
+            null,
+            new CanonicalSessionForgeManager(new ProjectRepository(new File("."))),
+            new CanonicalTaskForgeManager(new ProjectRepository(new File("."))));
+        require(command != null, "task constructor");
+        require("dgr".equals(command.getCommandName()), "primary command root");
         require(
-            new CommandDarkGreyRpg(
-                new ProjectRepository(new File(".")),
-                new EditorSessionManager(),
-                new DialogueSessionManager(new ProjectRepository(new File("."))),
-                new QuestRuntimeService(new ProjectRepository(new File("."))),
-                null,
-                new CanonicalSessionForgeManager(new ProjectRepository(new File("."))),
-                new CanonicalTaskForgeManager(new ProjectRepository(new File(".")))) != null,
-            "task constructor");
+            command.getCommandAliases()
+                .isEmpty(),
+            "historical dgrpg alias removed");
+        require(
+            command.getCommandUsage(null)
+                .startsWith("/dgr "),
+            "root command usage");
 
         String guiSource = new String(
             Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/client/gui/GuiQuestJournal.java")),
             Charset.forName("UTF-8"));
         require(
-            guiSource.contains("\"Active\"") && guiSource.contains("\"Completed\"") && guiSource.contains("\"Failed\""),
-            "three Journal tabs");
+            guiSource.contains("\"进行中\"") && guiSource.contains("\"已完成\"") && guiSource.contains("\"失败\""),
+            "three Chinese Journal tabs");
         require(guiSource.contains("QuestStatus.FAILED"), "failed rendering state");
         require(guiSource.contains("Math.min(PANEL_HEIGHT, height - 20)"), "Journal fits the scale-2 854x480 client");
         System.out.println("CANONICAL_TASK_COMMAND_SURFACE=PASS");

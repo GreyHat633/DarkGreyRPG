@@ -5,9 +5,11 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.nominator.NominatorPermission;
+import darkgrey.rpg.nominator.container.NominatorGuiHandler;
 
 /** Empty client request; the server supplies the inventory/catalog snapshot. */
 public final class C2SNominatorInventoryOpen implements IMessage {
@@ -33,6 +35,7 @@ public final class C2SNominatorInventoryOpen implements IMessage {
                         || player.getHeldItem()
                             .getItem() != ModItems.nominator)
                         return;
+                    player.openGui(DarkGreyRpg.instance, NominatorGuiHandler.ITEM_NOMINATOR, player.worldObj, 0, 0, 0);
                     darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(S2CNominatorInventoryOpen.from(player), player);
                 }
             });

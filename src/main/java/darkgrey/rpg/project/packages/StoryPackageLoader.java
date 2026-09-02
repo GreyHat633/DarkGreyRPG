@@ -1,23 +1,14 @@
 package darkgrey.rpg.project.packages;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
 import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraphLoader;
@@ -94,7 +85,6 @@ public final class StoryPackageLoader {
             packages = Collections.unmodifiableMap(next);
             nextSources.put(sourceKey(source), candidate.getPackageId());
             packageIdsBySourceName = Collections.unmodifiableMap(nextSources);
-            cleanupRuntimeCache(packages);
             lastReload = ReloadResult.success(next.size());
             return lastReload;
         } catch (ProjectLoadException exception) {
@@ -161,7 +151,6 @@ public final class StoryPackageLoader {
         }
         packages = Collections.unmodifiableMap(new LinkedHashMap<String, LoadedStoryPackage>(next));
         packageIdsBySourceName = Collections.unmodifiableMap(new LinkedHashMap<String, String>(nextSources));
-        cleanupRuntimeCache(packages);
         lastReload = errors.isEmpty() ? ReloadResult.success(next.size()) : ReloadResult.partial(next.size(), errors);
         return lastReload;
     }
@@ -176,19 +165,30 @@ public final class StoryPackageLoader {
     }
 
     private LoadedStoryPackage loadArchiveCandidate(File archive) throws ProjectLoadException {
-        File runtimeRoot = new File(installDirectory, RUNTIME_CACHE_DIRECTORY);
-        if (!runtimeRoot.exists() && !runtimeRoot.mkdirs())
-            throw new ProjectLoadException("Cannot create DGRS runtime cache: " + runtimeRoot);
-        File candidate = new File(runtimeRoot, archiveBaseName(archive) + "-" + Long.toHexString(System.nanoTime()));
-        if (!candidate.mkdir()) throw new ProjectLoadException("Cannot create DGRS staging directory: " + candidate);
-        try {
-            extractArchive(archive, candidate);
-            ensureLegacyProjectRoots(candidate);
-            return loadCandidate(candidate, null, true);
-        } catch (ProjectLoadException exception) {
-            deleteTree(candidate);
-            throw exception;
-        }
+        DgrsArchiveReader reader = DgrsArchiveReader.open(archive);
+        reader.readUtf8("manifest.json");
+        reader.readUtf8("project.json");
+        StoryPackageManifest manifest = StoryPackageManifest
+            .read(reader.readBytes("manifest.json"), reader.getSourceIdentity() + "!/manifest.json");
+        if (!manifest.isDgrsV1()) throw new ProjectLoadException("Archive manifest is not DGRS v1");
+        StoryPackageSnapshotReader.Result result = StoryPackageSnapshotReader.read(reader, manifest);
+        if (result.getSnapshot()
+            .getStory(manifest.getStoryId()) == null
+            && result.getSnapshot()
+                .getCanonicalStory(manifest.getStoryId()) == null)
+            throw new ProjectLoadException("Manifest story_id is not present in the DGRS payload");
+        if (result.getSnapshot()
+            .getCanonicalStory(manifest.getStoryId()) != null
+            && result.getSnapshot()
+                .getCanonicalStoryMembership(manifest.getStoryId()) == null)
+            throw new ProjectLoadException("Manifest story_id has no DGRS canonical membership");
+        return new LoadedStoryPackage(
+            manifest,
+            null,
+            archive.getAbsoluteFile(),
+            result.getSnapshot(),
+            result.getStoryLogicGraph(),
+            result.getDeclaredBytes());
     }
 
     private LoadedStoryPackage loadCandidate(File directory, String expectedPackageId, boolean requireDgrs)
@@ -229,7 +229,12 @@ public final class StoryPackageLoader {
                 .equals(connection.getSourceStoryId()))
                 throw new ProjectLoadException(
                     "Story Package may only own public Logic connections sourced by its story_id.");
-        return new LoadedStoryPackage(manifest, directory, repository.getSnapshot(), logicGraph);
+        return new LoadedStoryPackage(
+            manifest,
+            directory,
+            repository.getSnapshot(),
+            logicGraph,
+            readDeclaredBytes(directory, manifest));
     }
 
     private static boolean isDgrs(File file) {
@@ -254,145 +259,43 @@ public final class StoryPackageLoader {
         return source.getName();
     }
 
-    private static void extractArchive(File archive, File destination) throws ProjectLoadException {
-        Set<String> paths = new HashSet<String>();
-        try {
-            ZipFile zip = new ZipFile(archive);
-            try {
-                Enumeration<? extends ZipEntry> entries = zip.entries();
-                while (entries.hasMoreElements()) {
-                    ZipEntry entry = entries.nextElement();
-                    String path = entry.getName();
-                    validateEntryPath(path);
-                    String normalized = path.toLowerCase(Locale.ROOT);
-                    if (!paths.add(normalized))
-                        throw new ProjectLoadException("DGRS contains duplicate normalized entry path '" + path + "'");
-                    if (entry.isDirectory())
-                        throw new ProjectLoadException("DGRS directory entries are not supported: " + path);
-                    File target = new File(destination, path.replace('/', File.separatorChar));
-                    ensureContained(destination, target, path);
-                    File parent = target.getParentFile();
-                    if (parent != null && !parent.exists() && !parent.mkdirs())
-                        throw new ProjectLoadException("Cannot create DGRS entry directory: " + path);
-                    InputStream input = zip.getInputStream(entry);
-                    try {
-                        OutputStream output = new FileOutputStream(target);
-                        try {
-                            byte[] buffer = new byte[8192];
-                            int count;
-                            while ((count = input.read(buffer)) >= 0) output.write(buffer, 0, count);
-                        } finally {
-                            output.close();
-                        }
-                    } finally {
-                        input.close();
-                    }
-                }
-            } finally {
-                zip.close();
-            }
-        } catch (ProjectLoadException exception) {
-            throw exception;
-        } catch (IOException | RuntimeException exception) {
-            throw new ProjectLoadException("Invalid DGRS archive " + archive, exception);
-        }
-    }
-
-    private static void ensureLegacyProjectRoots(File destination) throws ProjectLoadException {
-        for (String name : Arrays.asList("actors", "dialogues", "quests", "stories")) {
-            File directory = new File(destination, name);
-            if (!directory.exists() && !directory.mkdirs())
-                throw new ProjectLoadException("Cannot create DGRS runtime directory: " + name);
-            if (!directory.isDirectory())
-                throw new ProjectLoadException("DGRS runtime path is not a directory: " + name);
-        }
-    }
-
-    private static void validateEntryPath(String path) throws ProjectLoadException {
-        if (path == null || path.length() == 0
-            || path.indexOf('\\') >= 0
-            || path.startsWith("/")
-            || path.indexOf(':') >= 0) throw new ProjectLoadException("Unsafe DGRS entry path: " + path);
-        String[] segments = path.split("/", -1);
-        for (String segment : segments) if (segment.length() == 0 || ".".equals(segment) || "..".equals(segment))
-            throw new ProjectLoadException("Unsafe DGRS entry path: " + path);
-    }
-
-    private static void ensureContained(File root, File target, String path) throws IOException, ProjectLoadException {
-        String rootPath = root.getCanonicalPath() + File.separator;
-        String targetPath = target.getCanonicalPath();
-        if (!targetPath.startsWith(rootPath)) throw new ProjectLoadException("Unsafe DGRS entry path: " + path);
-    }
-
-    private void cleanupRuntimeCache(Map<String, LoadedStoryPackage> active) {
-        File runtimeRoot = new File(installDirectory, RUNTIME_CACHE_DIRECTORY);
-        File[] candidates = runtimeRoot.listFiles();
-        if (candidates == null) return;
-        Set<String> retained = new HashSet<String>();
-        for (LoadedStoryPackage value : active.values()) try {
-            File directory = value.getDirectory();
-            if (directory.getParentFile() != null && runtimeRoot.getCanonicalFile()
-                .equals(
-                    directory.getParentFile()
-                        .getCanonicalFile()))
-                retained.add(directory.getCanonicalPath());
-        } catch (IOException ignored) {}
-        for (File candidate : candidates) try {
-            if (!retained.contains(candidate.getCanonicalPath())) deleteTree(candidate);
-        } catch (IOException ignored) {}
-    }
-
-    private static void deleteTree(File file) {
-        if (file == null || !file.exists()) return;
-        if (file.isDirectory()) {
-            File[] children = file.listFiles();
-            if (children != null) for (File child : children) deleteTree(child);
-        }
-        file.delete();
-    }
-
     private static void validateRequiredFiles(File directory, StoryPackageManifest manifest)
         throws ProjectLoadException {
-        List<String> paths = new ArrayList<String>();
-        paths.add(
-            manifest.getRequiredResources()
-                .getStory());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getActors());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getItems());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getItemGroups());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getDialogues());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getQuests());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getCanonicalStories());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getCanonicalMemberships());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getSessions());
-        paths.addAll(
-            manifest.getRequiredResources()
-                .getTasks());
-        if (manifest.getRequiredResources()
-            .getStoryLogicGraph() != null)
-            paths.add(
-                manifest.getRequiredResources()
-                    .getStoryLogicGraph());
-        for (String path : paths) {
+        for (String path : requiredPaths(manifest)) {
             File file = new File(directory, path.replace('/', File.separatorChar));
             if (!file.isFile()) throw new ProjectLoadException("Required package resource is missing: " + path);
         }
+    }
+
+    private static Map<String, byte[]> readDeclaredBytes(File directory, StoryPackageManifest manifest)
+        throws ProjectLoadException {
+        Map<String, byte[]> result = new LinkedHashMap<String, byte[]>();
+        for (String path : requiredPaths(manifest)) {
+            File file = new File(directory, path.replace('/', File.separatorChar));
+            try {
+                result.put(path, java.nio.file.Files.readAllBytes(file.toPath()));
+            } catch (java.io.IOException exception) {
+                throw new ProjectLoadException("Cannot read declared package resource: " + path, exception);
+            }
+        }
+        return result;
+    }
+
+    private static List<String> requiredPaths(StoryPackageManifest manifest) {
+        StoryPackageManifest.RequiredResources required = manifest.getRequiredResources();
+        List<String> paths = new ArrayList<String>();
+        paths.add(required.getStory());
+        paths.addAll(required.getActors());
+        paths.addAll(required.getItems());
+        paths.addAll(required.getItemGroups());
+        paths.addAll(required.getDialogues());
+        paths.addAll(required.getQuests());
+        paths.addAll(required.getCanonicalStories());
+        paths.addAll(required.getCanonicalMemberships());
+        paths.addAll(required.getSessions());
+        paths.addAll(required.getTasks());
+        if (required.getStoryLogicGraph() != null) paths.add(required.getStoryLogicGraph());
+        return paths;
     }
 
     public static final class ReloadResult {

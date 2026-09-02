@@ -14,9 +14,15 @@ import com.google.gson.JsonElement;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.network.message.nominator.NominatorCatalogCodec;
+import darkgrey.rpg.nominator.NominatorCatalog;
+import darkgrey.rpg.project.ProjectRepository;
+import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 import darkgrey.rpg.task.runtime.CanonicalTaskRuntime;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /** Loads one Studio-produced DGRS through the Java package/runtime path. */
 public final class DgrsPackageRuntimeProbe {
@@ -32,12 +38,20 @@ public final class DgrsPackageRuntimeProbe {
             throw new IllegalStateException("Cannot create probe root: " + parent);
         File install = new File(parent, "install-" + Long.toHexString(System.nanoTime()));
         if (!install.mkdir()) throw new IllegalStateException("Cannot create probe install directory: " + install);
+        File baseProject = new File(parent, "base-" + Long.toHexString(System.nanoTime()));
+        writeBaseProject(baseProject);
+        File replacementSource = new File(parent, "replacement-" + Long.toHexString(System.nanoTime()) + ".dgrs");
         try {
             File installedArchive = new File(install, source.getName());
             Files.copy(source.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(source.toPath(), replacementSource.toPath(), StandardCopyOption.REPLACE_EXISTING);
             StoryPackageLoader loader = new StoryPackageLoader(install);
-            StoryPackageLoader.ReloadResult result = loader.reload();
-            require(result.isSuccessful(), "Runtime rejected DGRS: " + result.getSummary() + " " + result.getErrors());
+            ProjectRepository repository = new ProjectRepository(baseProject);
+            StoryPackageRuntimeReloader.Result startup = StoryPackageRuntimeReloader.startup(repository, loader);
+            require(
+                startup.isSuccessful(),
+                "Runtime rejected DGRS: " + startup.getPackageReload()
+                    .getSummary() + " " + startup.getErrors());
             require(
                 loader.getPackages()
                     .size() == 1,
@@ -46,15 +60,89 @@ public final class DgrsPackageRuntimeProbe {
                 .values()
                 .iterator()
                 .next();
+            CanonicalGraphResource initialPublishedStory = repository.getSnapshot()
+                .getCanonicalStory(loaded.getStoryId());
             require(
                 loaded.getManifest()
                     .isDgrsV1(),
                 "Runtime did not retain DGRS v1 identity");
+            require(loaded.getDirectory() == null, "DGRS package still depends on a materialized directory");
             require(
-                !loaded.getSnapshot()
-                    .getCanonicalTasks()
+                installedArchive.getAbsoluteFile()
+                    .equals(loaded.getSourceArchive()),
+                "DGRS source archive identity was not retained");
+            require(
+                !new File(install, ".dgrs-runtime").exists(),
+                "Direct DGRS loading created an extraction directory");
+            assertNoExtraction(install, installedArchive);
+            require(
+                loaded.getSnapshot()
+                    .getActors()
+                    .size() == 2,
+                "Expected exactly two Actors in the Frozen-A fixture");
+            require(
+                loaded.getSnapshot()
+                    .getItems()
+                    .size() == 1,
+                "Expected exactly one Item in the Frozen-A fixture");
+            require(
+                loaded.getSnapshot()
+                    .getItemGroups()
                     .isEmpty(),
-                "DGRS contains no canonical Task");
+                "Expected no Item Groups in the Frozen-A fixture");
+            require(
+                loaded.getSnapshot()
+                    .getCanonicalStories()
+                    .size() == 1,
+                "Expected exactly one canonical Story in the Frozen-A fixture");
+            require(
+                loaded.getSnapshot()
+                    .getCanonicalSessions()
+                    .size() == 2,
+                "Expected exactly two Sessions in the Frozen-A fixture");
+            require(
+                loaded.getSnapshot()
+                    .getCanonicalTasks()
+                    .size() == 1,
+                "Expected exactly one canonical Task in the Frozen-A fixture");
+            assertPublishedCounts(repository.getLastReload());
+            NominatorCatalog catalog = NominatorCatalog.from(repository.getSnapshot(), loader.getPackages());
+            require(
+                catalog.getPackageChoices()
+                    .size() == 1,
+                "Nominator catalog did not expose the loaded package");
+            NominatorCatalog.PackageChoice packageChoice = catalog.getPackageChoices()
+                .get(0);
+            require(
+                packageChoice.getActorIds()
+                    .size() == 2,
+                "Package catalog did not expose two Actors");
+            require(
+                packageChoice.getItemIds()
+                    .size() == 1,
+                "Package catalog did not expose one Item");
+            require(
+                packageChoice.getItemGroupIds()
+                    .isEmpty(),
+                "Package catalog changed Item Group closure");
+            require(
+                loaded.getStoryId()
+                    .equals(packageChoice.getStoryId()),
+                "Package catalog changed canonical Story identity");
+            ByteBuf catalogBytes = Unpooled.buffer();
+            NominatorCatalogCodec.write(catalogBytes, catalog);
+            NominatorCatalog decodedCatalog = NominatorCatalogCodec.read(catalogBytes);
+            require(!catalogBytes.isReadable(), "Nominator catalog codec left unread package bytes");
+            require(
+                decodedCatalog.getPackageChoices()
+                    .size() == 1,
+                "Nominator package catalog codec lost package");
+            require(
+                decodedCatalog.getPackageChoices()
+                    .get(0)
+                    .getActorIds()
+                    .equals(packageChoice.getActorIds()),
+                "Nominator package catalog codec changed Actor closure");
 
             for (Map.Entry<String, CanonicalGraphResource> entry : loaded.getSnapshot()
                 .getCanonicalTasks()
@@ -89,27 +177,181 @@ public final class DgrsPackageRuntimeProbe {
                 require(runtime.isSettled(), "Task did not settle after all configured Objectives were completed");
             }
 
+            Files.copy(replacementSource.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            StoryPackageRuntimeReloader.Result replacementReload = StoryPackageRuntimeReloader
+                .reload(repository, loader);
+            require(
+                replacementReload.isSuccessful(),
+                "Valid replacement DGRS was rejected: " + replacementReload.getErrors());
+            LoadedStoryPackage replacement = loader.getPackage(loaded.getPackageId());
+            require(replacement != null, "Valid replacement removed the accepted package");
+            require(replacement != loaded, "Valid replacement retained the previous package object");
+            require(
+                replacement.getSourceArchive()
+                    .equals(installedArchive.getAbsoluteFile()),
+                "Valid replacement did not retain the installed archive identity");
+            ProjectSnapshot replacementSnapshot = repository.getSnapshot();
+            CanonicalGraphResource replacementPublishedStory = replacementSnapshot
+                .getCanonicalStory(replacement.getStoryId());
+            require(replacementPublishedStory != null, "Valid replacement did not publish its canonical Story");
+            require(replacementPublishedStory != initialPublishedStory, "Valid replacement retained old Story content");
+            assertPublishedCounts(repository.getLastReload());
+            assertNoExtraction(install, installedArchive);
+
             Files.write(installedArchive.toPath(), "{".getBytes(StandardCharsets.UTF_8));
-            StoryPackageLoader.ReloadResult corruptReload = loader.reload();
+            StoryPackageRuntimeReloader.Result corruptReload = StoryPackageRuntimeReloader.reload(repository, loader);
             require(!corruptReload.isSuccessful(), "Corrupt replacement DGRS was accepted");
-            require(loader.getPackage(loaded.getPackageId()) == loaded, "Corrupt replacement erased the active DGRS");
+            require(
+                loader.getPackage(loaded.getPackageId()) == replacement,
+                "Corrupt replacement erased the active DGRS");
+            require(
+                loader.getPackage(loaded.getPackageId())
+                    .getSnapshot() == replacement.getSnapshot(),
+                "Corrupt replacement changed the accepted package content");
+            require(
+                repository.getSnapshot()
+                    .getCanonicalStory(replacement.getStoryId()) == replacementPublishedStory,
+                "Corrupt replacement changed the published Story content");
+            assertNoExtraction(install, installedArchive);
+
+            Files.delete(installedArchive.toPath());
+            StoryPackageRuntimeReloader.Result removeReload = StoryPackageRuntimeReloader.reload(repository, loader);
+            require(
+                removeReload.isSuccessful(),
+                "Deleting the DGRS produced a reload failure: " + removeReload.getErrors());
+            require(
+                loader.getPackages()
+                    .isEmpty(),
+                "Deleting the installed DGRS left a stale package in the registry");
+            require(
+                loader.getPackage(loaded.getPackageId()) == null,
+                "Deleting the installed DGRS left a stale package object");
+            require(repository.getSnapshot() != replacementSnapshot, "Deleting the last DGRS retained its snapshot");
+            require(
+                repository.getSnapshot()
+                    .getActors()
+                    .isEmpty(),
+                "Deleting the last DGRS retained its Actors");
+            require(
+                repository.getSnapshot()
+                    .getItems()
+                    .isEmpty(),
+                "Deleting the last DGRS retained its Items");
+            require(
+                repository.getSnapshot()
+                    .getCanonicalStories()
+                    .isEmpty(),
+                "Deleting the last DGRS retained its canonical Story");
+            require(
+                repository.getSnapshot()
+                    .getCanonicalTasks()
+                    .isEmpty(),
+                "Deleting the last DGRS retained its canonical Task");
+            assertNoExtraction(install, installedArchive);
+
+            Files.copy(replacementSource.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            StoryPackageRuntimeReloader.Result reinstallReload = StoryPackageRuntimeReloader.reload(repository, loader);
+            require(
+                reinstallReload.isSuccessful(),
+                "Reinstalling the valid DGRS failed: " + reinstallReload.getErrors());
+            LoadedStoryPackage reinstalled = loader.getPackage(loaded.getPackageId());
+            require(reinstalled != null, "Reinstalling the valid DGRS did not restore the package");
+            require(reinstalled != replacement, "Reinstalling the valid DGRS reused a removed package object");
+            require(
+                loader.getPackages()
+                    .size() == 1,
+                "Reinstalling the valid DGRS did not restore one package");
+            require(
+                reinstalled.getSnapshot()
+                    .getActors()
+                    .size() == 2,
+                "Reinstalled DGRS changed Actor count");
+            require(
+                reinstalled.getSnapshot()
+                    .getItems()
+                    .size() == 1,
+                "Reinstalled DGRS changed Item count");
+            require(
+                reinstalled.getSnapshot()
+                    .getCanonicalSessions()
+                    .size() == 2,
+                "Reinstalled DGRS changed Session count");
+            require(
+                reinstalled.getSnapshot()
+                    .getCanonicalTasks()
+                    .size() == 1,
+                "Reinstalled DGRS changed Task count");
+            require(
+                repository.getSnapshot()
+                    .getCanonicalStory(reinstalled.getStoryId()) != null,
+                "Reinstalled DGRS was not published");
+            assertPublishedCounts(repository.getLastReload());
+            assertNoExtraction(install, installedArchive);
 
             Files.copy(source.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
             File escaped = new File(new File(install, ".dgrs-runtime"), "escaped.txt");
             Files.deleteIfExists(escaped.toPath());
-            writeUnsafeArchive(new File(install, "unsafe.dgrs"));
-            StoryPackageLoader.ReloadResult unsafeReload = loader.reload();
+            File unsafeArchive = new File(install, "unsafe.dgrs");
+            writeUnsafeArchive(unsafeArchive);
+            StoryPackageRuntimeReloader.Result unsafeReload = StoryPackageRuntimeReloader.reload(repository, loader);
             require(!unsafeReload.isSuccessful(), "Traversal DGRS was accepted");
             require(!escaped.exists(), "Traversal DGRS wrote outside its runtime staging directory");
+            assertNoExtraction(install, installedArchive);
+            assertNoExtraction(install, unsafeArchive);
             require(loader.getPackage(loaded.getPackageId()) != null, "Traversal DGRS disabled the valid package");
             System.out.println("DGRS_JAVA_LOADER=PASS");
+            System.out.println("DGRS_DIRECT_NO_EXTRACTION=PASS");
+            System.out.println("DGRS_EXACT_COUNTS=PASS");
             System.out.println("DGRS_CANONICAL_TASK_RUNTIME=PASS");
             System.out.println("DGRS_RELOAD_ROLLBACK=PASS");
+            System.out.println("DGRS_RELOAD_LIFECYCLE=PASS");
+            System.out.println("DGRS_AUTHORITATIVE_PUBLICATION=PASS");
+            System.out.println("DGRS_NOMINATOR_PACKAGE_CATALOG=PASS");
             System.out.println("DGRS_UNSAFE_PATH_REJECTED=PASS");
             System.out.println("DGRS_PACKAGE_ID=" + loaded.getPackageId());
         } finally {
             delete(install);
+            delete(baseProject);
+            delete(replacementSource);
         }
+    }
+
+    private static void assertPublishedCounts(ProjectRepository.ReloadResult result) {
+        require(result.getStoryCount() == 1, "Published summary did not count the canonical Story");
+        require(result.getActorCount() == 2, "Published summary did not count Actors");
+        require(result.getItemCount() == 1, "Published summary did not count Items");
+        require(result.getItemGroupCount() == 0, "Published summary changed Item Group count");
+        require(result.getSessionCount() == 2, "Published summary did not count Sessions");
+        require(result.getTaskCount() == 1, "Published summary did not count Tasks");
+    }
+
+    private static void writeBaseProject(File directory) throws Exception {
+        if (!directory.mkdir()) throw new IllegalStateException("Cannot create base project: " + directory);
+        File actors = new File(directory, "actors");
+        if (!actors.mkdir()) throw new IllegalStateException("Cannot create base actors directory: " + actors);
+        requireDirectory(new File(directory, "dialogues"));
+        requireDirectory(new File(directory, "quests"));
+        requireDirectory(new File(directory, "stories"));
+        Files.write(
+            new File(directory, "project.json").toPath(),
+            ("{\"schema_version\":1,\"id\":\"probe_base\",\"display_name\":\"Probe Base\"}")
+                .getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static void requireDirectory(File directory) {
+        if (!directory.mkdir()) throw new IllegalStateException("Cannot create base directory: " + directory);
+    }
+
+    private static void assertNoExtraction(File install, File archive) {
+        require(!new File(install, ".dgrs-runtime").exists(), "DGRS lifecycle created .dgrs-runtime");
+        require(
+            !new File(install, archiveBaseName(archive)).exists(),
+            "DGRS lifecycle created a same-name extraction directory: " + archiveBaseName(archive));
+    }
+
+    private static String archiveBaseName(File archive) {
+        String name = archive.getName();
+        return name.substring(0, name.length() - ".dgrs".length());
     }
 
     private static boolean isUnselected(CanonicalGraphNode node) {

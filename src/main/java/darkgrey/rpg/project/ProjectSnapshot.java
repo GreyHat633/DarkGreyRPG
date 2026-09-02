@@ -121,6 +121,13 @@ public final class ProjectSnapshot {
         return stories.get(id);
     }
 
+    /** Returns whether either the legacy or canonical Story is loaded. */
+    public boolean containsStory(String id) {
+        if (id == null) return false;
+        String value = id.trim();
+        return !value.isEmpty() && (stories.containsKey(value) || canonicalContent.getStory(value) != null);
+    }
+
     public CanonicalProjectContent getCanonicalContent() {
         return canonicalContent;
     }

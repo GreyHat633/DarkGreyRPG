@@ -75,6 +75,18 @@ public final class CanonicalGraphResourceLoader {
         }
     }
 
+    /** Parses one detached package entry through the same strict canonical parser as file-backed projects. */
+    public CanonicalGraphResource load(byte[] bytes, String fileName, CanonicalGraphResourceKind expectedKind)
+        throws CanonicalGraphResourceException {
+        if (bytes == null) throw CanonicalGraphResourceException
+            .failure("graph.resource.bytes.required", "Canonical graph resource bytes are required.");
+        if (fileName == null || fileName.trim()
+            .isEmpty())
+            throw CanonicalGraphResourceException
+                .failure("graph.resource.file.required", "Canonical graph resource file name is required.");
+        return parse(bytes, fileName, expectedKind);
+    }
+
     public List<CanonicalGraphResource> loadDirectory(Path directory, CanonicalGraphResourceKind expectedKind)
         throws CanonicalGraphResourceException {
         if (directory == null) throw CanonicalGraphResourceException

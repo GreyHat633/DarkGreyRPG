@@ -31,6 +31,15 @@ final class CanonicalSessionNetworkCodec {
         return value;
     }
 
+    static String requireOptionalField(String value, String name, int maxBytes) {
+        if (value == null) throw invalid(name + " is required");
+        if (!value.isEmpty() && value.trim()
+            .isEmpty()) throw invalid(name + " must be empty or non-blank");
+        byte[] encoded = value.getBytes(UTF8);
+        if (encoded.length > maxBytes) throw invalid(name + " exceeds " + maxBytes + " UTF-8 bytes");
+        return value;
+    }
+
     static String readField(ByteBuf buffer, String name, int maxBytes) {
         if (buffer.readableBytes() < 2) throw invalid("truncated " + name + " length");
         int length = buffer.readUnsignedShort();
@@ -50,13 +59,18 @@ final class CanonicalSessionNetworkCodec {
         byte[] encoded = new byte[length];
         buffer.readBytes(encoded);
         String value = decodeUtf8(encoded, name);
-        if (value.trim()
-            .isEmpty()) throw invalid(name + " must be empty or non-blank");
-        return value;
+        return requireOptionalField(value, name, maxBytes);
     }
 
     static void writeField(ByteBuf buffer, String value, String name, int maxBytes) {
         byte[] encoded = requireField(value, name, maxBytes).getBytes(UTF8);
+        if (encoded.length > 65535) throw invalid(name + " cannot fit wire length");
+        buffer.writeShort(encoded.length);
+        buffer.writeBytes(encoded);
+    }
+
+    static void writeOptionalField(ByteBuf buffer, String value, String name, int maxBytes) {
+        byte[] encoded = requireOptionalField(value, name, maxBytes).getBytes(UTF8);
         if (encoded.length > 65535) throw invalid(name + " cannot fit wire length");
         buffer.writeShort(encoded.length);
         buffer.writeBytes(encoded);

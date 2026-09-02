@@ -758,7 +758,7 @@ public final class CanonicalStoryRuntime {
 
     private void validatePorts(CanonicalGraphNode node) {
         Set<String> ids = new HashSet<String>();
-        Set<Integer> orders = new HashSet<Integer>();
+        Set<String> orders = new HashSet<String>();
         for (CanonicalGraphPort port : node.getPorts()) {
             if (port == null || blank(port.getId())
                 || blank(port.getDisplayName())
@@ -767,8 +767,14 @@ public final class CanonicalStoryRuntime {
                 || port.getOrder() < 0) throw failure("story.port.invalid", "Invalid canonical Story port.");
             if (!ids.add(port.getId()))
                 throw failure("story.port.duplicate", "Duplicate port ID on node " + node.getId());
-            if (!orders.add(Integer.valueOf(port.getOrder())))
-                throw failure("story.port.order", "Duplicate port order on node " + node.getId());
+            String orderKey = port.getDirection()
+                .name() + ':'
+                + port.getOrder();
+            if (!orders.add(orderKey)) throw failure(
+                "story.port.order",
+                "Duplicate port order for " + port.getDirection()
+                    .name()
+                    .toLowerCase() + " ports on node " + node.getId());
         }
     }
 

@@ -1,6 +1,7 @@
 package darkgrey.rpg.story;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -89,9 +90,29 @@ public final class StoryLoader {
         return stories;
     }
 
+    /** Reuses the strict legacy Story parser for one detached DGRS entry. */
+    public static StoryDefinition loadPackagedStory(byte[] bytes, String source, Map<String, ActorDefinition> actors,
+        Map<String, DialogueDefinition> dialogues, Map<String, QuestDefinition> quests) throws ProjectLoadException {
+        if (bytes == null) throw new ProjectLoadException("Legacy Story bytes are required");
+        if (source == null || source.trim()
+            .isEmpty()) throw new ProjectLoadException("Legacy Story source is required");
+        File file = new File(source);
+        return loadStory(file, actors, dialogues, quests, readObject(bytes, file));
+    }
+
+    public static void validatePackagedStories(Map<String, StoryDefinition> stories) throws ProjectLoadException {
+        if (stories == null) throw new ProjectLoadException("Legacy Story map is required");
+        validateStoryTargets(stories);
+    }
+
     private static StoryDefinition loadStory(File file, Map<String, ActorDefinition> actors,
         Map<String, DialogueDefinition> dialogues, Map<String, QuestDefinition> quests) throws ProjectLoadException {
-        JsonObject json = readObject(file);
+        return loadStory(file, actors, dialogues, quests, readObject(file));
+    }
+
+    private static StoryDefinition loadStory(File file, Map<String, ActorDefinition> actors,
+        Map<String, DialogueDefinition> dialogues, Map<String, QuestDefinition> quests, JsonObject json)
+        throws ProjectLoadException {
         rejectUnknown(file, json, TOP_FIELDS);
         int schema = requiredInt(file, json, "schema_version");
         if (schema != 1 && schema != 2) {
@@ -450,6 +471,24 @@ public final class StoryLoader {
                 if (!root.isJsonObject()) {
                     throw new ProjectLoadException("JSON root must be an object: " + file);
                 }
+                return root.getAsJsonObject();
+            } finally {
+                reader.close();
+            }
+        } catch (IOException exception) {
+            throw new ProjectLoadException("Cannot read " + file, exception);
+        } catch (RuntimeException exception) {
+            throw new ProjectLoadException("Invalid JSON in " + file + ": " + exception.getMessage(), exception);
+        }
+    }
+
+    private static JsonObject readObject(byte[] bytes, File file) throws ProjectLoadException {
+        try {
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8));
+            try {
+                JsonElement root = new JsonParser().parse(reader);
+                if (!root.isJsonObject()) throw new ProjectLoadException("JSON root must be an object: " + file);
                 return root.getAsJsonObject();
             } finally {
                 reader.close();

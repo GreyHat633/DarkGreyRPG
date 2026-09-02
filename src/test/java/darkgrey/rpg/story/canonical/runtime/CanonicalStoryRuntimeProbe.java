@@ -255,6 +255,47 @@ public final class CanonicalStoryRuntimeProbe {
     }
 
     private static void strictGraphValidation() {
+        CanonicalGraphResource directionScopedOrders = story(
+            "direction-scoped-orders",
+            Arrays.asList(
+                start(),
+                node(
+                    "offer",
+                    "session",
+                    ports(flowIn("flow_in"), flowOut("accepted", 0)),
+                    props("resource_id", "offer_session")),
+                node("end", "terminate", ports(flowIn("flow_in")), empty())),
+            Arrays.asList(
+                flow("start", "trigger_accept", "offer", "flow_in"),
+                flow("offer", "accepted", "end", "flow_in")));
+        check(
+            CanonicalStoryRuntime.start(directionScopedOrders, "trigger_accept", CanonicalStoryRepeatPolicy.ONCE)
+                .getWaitKind() == CanonicalStoryWaitKind.SESSION,
+            "Input and output ports may independently start their order at zero");
+
+        final CanonicalGraphResource duplicateOutputOrders = story(
+            "duplicate-output-orders",
+            Arrays.asList(
+                start(),
+                node(
+                    "offer",
+                    "session",
+                    ports(flowIn("flow_in"), flowOut("accepted", 0), flowOut("rejected", 0)),
+                    props("resource_id", "offer_session")),
+                node("accepted_end", "terminate", ports(flowIn("flow_in")), empty()),
+                node("rejected_end", "terminate", ports(flowIn("flow_in")), empty())),
+            Arrays.asList(
+                flow("start", "trigger_accept", "offer", "flow_in"),
+                flow("offer", "accepted", "accepted_end", "flow_in"),
+                flow("offer", "rejected", "rejected_end", "flow_in")));
+        expectFailure("story.port.order", new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalStoryRuntime.start(duplicateOutputOrders, "trigger_accept", CanonicalStoryRepeatPolicy.ONCE);
+            }
+        });
+
         final CanonicalGraphResource multipleTargets = story(
             "multiple",
             Arrays.asList(

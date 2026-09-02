@@ -38,11 +38,10 @@ import darkgrey.rpg.nominator.NominatorResult;
 import darkgrey.rpg.nominator.NominatorSavedData;
 import darkgrey.rpg.nominator.NominatorService;
 import darkgrey.rpg.project.ActorDefinition;
-import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
-import darkgrey.rpg.project.packages.StoryPackageSnapshotMerger;
+import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
 import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.quest.QuestObjective;
 import darkgrey.rpg.quest.runtime.QuestJournalEntry;
@@ -173,13 +172,13 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     @Override
     public String getCommandName() {
-        return "dgrpg";
+        return "dgr";
     }
 
-    /** 0.3.1 public command surface; the historical dgrpg name remains the primary registration key. */
+    /** 0.3.2.0_B public command surface; the historical dgrpg root is intentionally retired. */
     @Override
     public List<String> getCommandAliases() {
-        return Collections.singletonList("dgr");
+        return Collections.emptyList();
     }
 
     @Override
@@ -589,17 +588,17 @@ public final class CommandDarkGreyRpg extends CommandBase {
             requireLength(arguments, 4, sessionUsage(arguments));
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
             if (canonicalSessionManager.start(player, arguments[2], arguments[3])) {
-                ChatMessages.success(player, "Session started: " + arguments[2] + " (" + arguments[3] + ")");
+                ChatMessages.success(player, "已启动会话：" + arguments[2] + "（" + arguments[3] + "）");
             } else {
-                ChatMessages.error(player, "Could not start Session: " + arguments[2]);
+                ChatMessages.error(player, "无法启动会话：" + arguments[2]);
             }
         } else if ("resume".equals(action)) {
             requireLength(arguments, 3, sessionUsage(arguments));
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
             if (canonicalSessionManager.resume(player, arguments[2])) {
-                ChatMessages.success(player, "Session resumed: " + arguments[2]);
+                ChatMessages.success(player, "已恢复会话：" + arguments[2]);
             } else {
-                ChatMessages.error(player, "Could not resume Session: " + arguments[2]);
+                ChatMessages.error(player, "无法恢复会话：" + arguments[2]);
             }
         } else {
             throw new WrongUsageException(sessionUsage(arguments));
@@ -626,21 +625,21 @@ public final class CommandDarkGreyRpg extends CommandBase {
             requireLength(arguments, 5, "/dgr task start <task_id> <story_instance_id> <placement_id>");
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
             if (canonicalTaskManager == null) {
-                ChatMessages.error(player, "Canonical Task manager is unavailable.");
+                ChatMessages.error(player, "任务运行服务当前不可用。");
                 return;
             }
             CanonicalTaskInstanceSnapshot snapshot = canonicalTaskManager
                 .start(player, arguments[3], arguments[4], arguments[2]);
             ChatMessages.success(
                 player,
-                "Direct Stage 4 Task start: " + arguments[2]
-                    + " (story="
+                "已直接启动任务：" + arguments[2]
+                    + "（故事="
                     + arguments[3]
-                    + ", placement="
+                    + "，节点="
                     + arguments[4]
-                    + ", status="
+                    + "，状态="
                     + snapshot.getStatus()
-                    + ")");
+                    + "）");
         } else if ("journal".equals(action)) {
             requireLength(arguments, 2, "/dgr task journal");
             openQuestJournal(requireMultiplayerPlayer(sender));
@@ -670,10 +669,10 @@ public final class CommandDarkGreyRpg extends CommandBase {
                 .keySet());
         Collections.sort(ids);
         if (ids.isEmpty()) {
-            ChatMessages.info(sender, "No canonical Tasks are loaded.");
+            ChatMessages.info(sender, "当前没有已加载的任务。");
             return;
         }
-        ChatMessages.info(sender, "Tasks (" + ids.size() + "):");
+        ChatMessages.info(sender, "任务（" + ids.size() + "）：");
         for (String id : ids) {
             CanonicalGraphResource task = repository.getSnapshot()
                 .getCanonicalTask(id);
@@ -685,14 +684,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
         CanonicalGraphResource task = repository.getSnapshot()
             .getCanonicalTask(id);
         if (task == null) {
-            ChatMessages.error(sender, "Unknown Task ID: " + id);
+            ChatMessages.error(sender, "未知任务 ID：" + id);
             return;
         }
-        ChatMessages.info(sender, "Task: " + task.getId() + " — " + task.getDisplayName());
+        ChatMessages.info(sender, "任务：" + task.getId() + " — " + task.getDisplayName());
         for (CanonicalGraphNode node : task.getGraph()
             .getNodes()) {
             if (node != null && "objective".equals(node.getType()))
-                ChatMessages.info(sender, "- Objective: " + node.getId() + " — " + node.getDisplayName());
+                ChatMessages.info(sender, "- 目标：" + node.getId() + " — " + node.getDisplayName());
         }
     }
 
@@ -713,9 +712,9 @@ public final class CommandDarkGreyRpg extends CommandBase {
             requireLength(arguments, 3, "/dgr story reset <id>");
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
             if (storyRuntime.resetInstance(player, arguments[2])) {
-                ChatMessages.success(player, "Story instance reset: " + arguments[2]);
+                ChatMessages.success(player, "已重置故事实例：" + arguments[2]);
             } else {
-                ChatMessages.error(player, "Unknown Story ID: " + arguments[2]);
+                ChatMessages.error(player, "未知故事 ID：" + arguments[2]);
             }
         } else if ("start".equals(action)) {
             requireLength(arguments, 3, "/dgr story start <id>");
@@ -723,9 +722,9 @@ public final class CommandDarkGreyRpg extends CommandBase {
             boolean started = canonicalStoryManager == null ? storyRuntime.start(player, arguments[2])
                 : canonicalStoryManager.startByEntry(player, arguments[2]);
             if (started) {
-                ChatMessages.success(player, "Story started: " + arguments[2]);
+                ChatMessages.success(player, "已启动故事：" + arguments[2]);
             } else {
-                ChatMessages.error(player, "Could not start Story: " + arguments[2]);
+                ChatMessages.error(player, "无法启动故事：" + arguments[2]);
             }
         } else {
             throw new WrongUsageException("/dgr story <list|info|start|state|reset>");
@@ -733,39 +732,56 @@ public final class CommandDarkGreyRpg extends CommandBase {
     }
 
     private void listStories(ICommandSender sender) {
-        if (repository.getSnapshot()
-            .getStories()
-            .isEmpty()) {
-            ChatMessages.info(sender, "No Stories are loaded.");
+        ProjectSnapshot snapshot = repository.getSnapshot();
+        List<String> ids = new ArrayList<String>(
+            snapshot.getStories()
+                .keySet());
+        for (String id : snapshot.getCanonicalStories()
+            .keySet()) if (!ids.contains(id)) ids.add(id);
+        Collections.sort(ids);
+        if (ids.isEmpty()) {
+            ChatMessages.info(sender, "当前没有已加载的故事。");
             return;
         }
-        ChatMessages.info(
-            sender,
-            "Stories (" + repository.getSnapshot()
-                .getStories()
-                .size() + "):");
-        for (StoryDefinition story : repository.getSnapshot()
-            .getStories()
-            .values()) {
-            ChatMessages.info(sender, "- " + story.getId() + " — " + story.getTitle());
+        ChatMessages.info(sender, "故事（" + ids.size() + "）：");
+        for (String id : ids) {
+            StoryDefinition legacy = snapshot.getStory(id);
+            CanonicalGraphResource canonical = snapshot.getCanonicalStory(id);
+            ChatMessages
+                .info(sender, "- " + id + " — " + (canonical == null ? legacy.getTitle() : canonical.getDisplayName()));
         }
     }
 
     private void showStory(ICommandSender sender, String id) {
         StoryDefinition story = repository.getSnapshot()
             .getStory(id);
-        if (story == null) {
-            ChatMessages.error(sender, "Unknown Story ID: " + id);
+        CanonicalGraphResource canonical = repository.getSnapshot()
+            .getCanonicalStory(id);
+        if (story == null && canonical == null) {
+            ChatMessages.error(sender, "未知故事 ID：" + id);
             return;
         }
-        ChatMessages.info(sender, "Story: " + story.getId() + " — " + story.getTitle());
+        if (canonical != null) {
+            ChatMessages.info(sender, "故事：" + canonical.getId() + " — " + canonical.getDisplayName());
+            ChatMessages.info(
+                sender,
+                "节点：" + canonical.getGraph()
+                    .getNodes()
+                    .size()
+                    + "，连接："
+                    + canonical.getGraph()
+                        .getConnections()
+                        .size());
+            return;
+        }
+        ChatMessages.info(sender, "故事：" + story.getId() + " — " + story.getTitle());
         ChatMessages.info(
             sender,
-            "Entry: " + story.getEntry()
-                + ", Nodes: "
+            "入口：" + story.getEntry()
+                + "，节点："
                 + story.getNodes()
                     .size()
-                + ", Connections: "
+                + "，连接："
                 + story.getConnections()
                     .size());
     }
@@ -774,11 +790,11 @@ public final class CommandDarkGreyRpg extends CommandBase {
         StoryDefinition story = repository.getSnapshot()
             .getStory(id);
         if (story == null) {
-            ChatMessages.error(player, "Unknown Story ID: " + id);
+            ChatMessages.error(player, "未知 legacy 故事 ID：" + id);
             return;
         }
         StoryInstance instance = storyRuntime.getInstance(player, story);
-        ChatMessages.info(player, "Story " + id + ": " + instance.getState() + " at " + instance.getCurrentNodeId());
+        ChatMessages.info(player, "故事 " + id + "：" + instance.getState() + "，当前节点 " + instance.getCurrentNodeId());
         if (!instance.getError()
             .isEmpty()) {
             ChatMessages.error(player, instance.getError());
@@ -816,14 +832,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (repository.getSnapshot()
             .getQuests()
             .isEmpty()) {
-            ChatMessages.info(sender, "No Quests are loaded.");
+            ChatMessages.info(sender, "当前没有已加载的旧版任务。");
             return;
         }
         ChatMessages.info(
             sender,
-            "Quests (" + repository.getSnapshot()
+            "旧版任务（" + repository.getSnapshot()
                 .getQuests()
-                .size() + "):");
+                .size() + "）：");
         for (QuestDefinition quest : repository.getSnapshot()
             .getQuests()
             .values()) {
@@ -835,15 +851,15 @@ public final class CommandDarkGreyRpg extends CommandBase {
         QuestDefinition quest = repository.getSnapshot()
             .getQuest(id);
         if (quest == null) {
-            ChatMessages.error(sender, "Unknown Quest ID: " + id);
+            ChatMessages.error(sender, "未知旧版任务 ID：" + id);
             return;
         }
-        ChatMessages.info(sender, "Quest: " + quest.getId() + " — " + quest.getTitle());
+        ChatMessages.info(sender, "旧版任务：" + quest.getId() + " — " + quest.getTitle());
         ChatMessages.info(sender, quest.getDescription());
         for (QuestObjective objective : quest.getObjectives()) {
             ChatMessages.info(
                 sender,
-                "- [" + objective.getType() + "] " + objective.getDescription() + " x" + objective.getRequiredAmount());
+                "- [" + objective.getType() + "] " + objective.getDescription() + " ×" + objective.getRequiredAmount());
         }
     }
 
@@ -854,7 +870,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
     private void showQuestProgress(EntityPlayerMP player) {
         List<QuestJournalEntry> entries = questRuntime.getJournal(player);
         if (entries.isEmpty()) {
-            ChatMessages.info(player, "Quest journal is empty.");
+            ChatMessages.info(player, "任务日志为空。");
             return;
         }
         for (QuestJournalEntry entry : entries) {
@@ -869,48 +885,49 @@ public final class CommandDarkGreyRpg extends CommandBase {
         ProjectRepository.ReloadResult result = repository.getLastReload();
         ChatMessages.info(
             sender,
-            "Project path: " + repository.getProjectDirectory()
+            "项目路径：" + repository.getProjectDirectory()
                 .getAbsolutePath());
-        ChatMessages.info(sender, "CustomNPC+: " + (Loader.isModLoaded("customnpcs") ? "loaded" : "missing"));
-        if (result.isSuccessful()) {
-            ChatMessages.success(sender, result.getSummary());
-        } else {
+        ChatMessages.info(sender, "CustomNPC+：" + (Loader.isModLoaded("customnpcs") ? "已加载" : "未安装"));
+        if (!result.isSuccessful()) {
             ChatMessages.error(sender, result.getSummary());
+            return;
         }
+        int packageCount = storyPackageLoader == null ? 0
+            : storyPackageLoader.getPackages()
+                .size();
+        ChatMessages.success(sender, "已加载 " + packageCount + " 个故事包。");
+        ChatMessages.info(sender, "故事：" + result.getStoryCount());
+        ChatMessages.info(sender, "角色：" + result.getActorCount());
+        ChatMessages.info(sender, "物品：" + result.getItemCount());
+        ChatMessages.info(sender, "物品组：" + result.getItemGroupCount());
+        ChatMessages.info(sender, "会话：" + result.getSessionCount());
+        ChatMessages.info(sender, "任务：" + result.getTaskCount());
     }
 
     private void reload(ICommandSender sender) {
         if (storyPackageLoader != null) {
-            StoryPackageLoader.ReloadResult packages = storyPackageLoader.reload();
-            if (!storyPackageLoader.getPackages()
-                .isEmpty()) try {
-                    ProjectSnapshot merged = StoryPackageSnapshotMerger.merge(storyPackageLoader.getPackages());
-                    ProjectRepository.ReloadResult installed = repository.installSnapshot(merged);
-                    if (packages.isSuccessful())
-                        ChatMessages.success(sender, packages.getSummary() + "; " + installed.getSummary());
-                    else {
-                        ChatMessages.error(
-                            sender,
-                            "Story Package reload completed with retained definitions: " + packages.getSummary());
-                        for (String error : packages.getErrors()) ChatMessages.error(sender, "- " + error);
-                    }
-                    return;
-                } catch (ProjectLoadException exception) {
-                    ChatMessages.error(
-                        sender,
-                        "Story Package merge failed; active definitions were retained: " + exception.getMessage());
-                    return;
-                }
-            if (!packages.isSuccessful()) {
-                ChatMessages.error(sender, "Story Package reload failed: " + packages.getSummary());
-                return;
+            StoryPackageRuntimeReloader.Result reload = StoryPackageRuntimeReloader
+                .reload(repository, storyPackageLoader);
+            if (reload.isSuccessful()) {
+                ChatMessages.success(
+                    sender,
+                    "已加载 " + reload.getPackageReload()
+                        .getPackageCount()
+                        + " 个故事包；"
+                        + reload.getProjectReload()
+                            .getSummary());
+            } else {
+                ChatMessages.error(sender, "重新加载未完全成功，当前有效定义已保留。");
+                if (!reload.getErrors()
+                    .isEmpty()) ChatMessages.error(sender, "故事包校验失败；详细原因已写入服务器日志。");
             }
+            return;
         }
         ProjectRepository.ReloadResult result = repository.reload();
         if (result.isSuccessful()) {
             ChatMessages.success(sender, result.getSummary());
         } else {
-            ChatMessages.error(sender, "Reload failed: " + result.getSummary());
+            ChatMessages.error(sender, "重新加载失败：" + result.getSummary());
         }
     }
 
@@ -939,14 +956,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (repository.getSnapshot()
             .getDialogues()
             .isEmpty()) {
-            ChatMessages.info(sender, "No Dialogues are loaded.");
+            ChatMessages.info(sender, "当前没有已加载的对话。");
             return;
         }
         ChatMessages.info(
             sender,
-            "Dialogues (" + repository.getSnapshot()
+            "对话（" + repository.getSnapshot()
                 .getDialogues()
-                .size() + "):");
+                .size() + "）：");
         for (DialogueDefinition dialogue : repository.getSnapshot()
             .getDialogues()
             .values()) {
@@ -958,15 +975,15 @@ public final class CommandDarkGreyRpg extends CommandBase {
         DialogueDefinition dialogue = repository.getSnapshot()
             .getDialogue(id);
         if (dialogue == null) {
-            ChatMessages.error(sender, "Unknown Dialogue ID: " + id);
+            ChatMessages.error(sender, "未知对话 ID：" + id);
             return;
         }
-        ChatMessages.info(sender, "Dialogue: " + dialogue.getId() + " — " + dialogue.getTitle());
-        ChatMessages.info(sender, "Speakers: " + dialogue.getSpeakers());
+        ChatMessages.info(sender, "对话：" + dialogue.getId() + " — " + dialogue.getTitle());
+        ChatMessages.info(sender, "发言角色：" + dialogue.getSpeakers());
         ChatMessages.info(
             sender,
-            "Entry: " + dialogue.getEntry()
-                + ", Nodes: "
+            "入口：" + dialogue.getEntry()
+                + "，节点："
                 + dialogue.getNodes()
                     .size());
     }
@@ -974,10 +991,10 @@ public final class CommandDarkGreyRpg extends CommandBase {
     private void showLastResult(EntityPlayer player) {
         DialogueResult result = dialogueSessions.getLastResult(player.getUniqueID());
         if (result == null) {
-            ChatMessages.info(player, "No Dialogue Result has been returned in this server session.");
+            ChatMessages.info(player, "本次服务器会话尚未返回对话结果。");
             return;
         }
-        ChatMessages.info(player, "Last Dialogue Result: " + result.getDialogueId() + " -> " + result.getResult());
+        ChatMessages.info(player, "最近对话结果：" + result.getDialogueId() + " → " + result.getResult());
     }
 
     private void processActor(ICommandSender sender, String[] arguments) {
@@ -1009,14 +1026,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (repository.getSnapshot()
             .getActors()
             .isEmpty()) {
-            ChatMessages.info(sender, "No Actors are loaded.");
+            ChatMessages.info(sender, "当前没有已加载的角色。");
             return;
         }
         ChatMessages.info(
             sender,
-            "Actors (" + repository.getSnapshot()
+            "角色（" + repository.getSnapshot()
                 .getActors()
-                .size() + "):");
+                .size() + "）：");
         for (ActorDefinition actor : repository.getSnapshot()
             .getActors()
             .values()) {
@@ -1028,15 +1045,15 @@ public final class CommandDarkGreyRpg extends CommandBase {
         ActorDefinition actor = repository.getSnapshot()
             .getActor(id);
         if (actor == null) {
-            ChatMessages.error(sender, "Unknown Actor ID: " + id);
+            ChatMessages.error(sender, "未知角色 ID：" + id);
             return;
         }
-        ChatMessages.info(sender, "Actor: " + actor.getId());
-        ChatMessages.info(sender, "Display Name: " + actor.getDisplayName());
-        ChatMessages.info(sender, "Tags: " + actor.getTags());
+        ChatMessages.info(sender, "角色：" + actor.getId());
+        ChatMessages.info(sender, "显示名称：" + actor.getDisplayName());
+        ChatMessages.info(sender, "标签：" + actor.getTags());
         if (!actor.getNotes()
             .isEmpty()) {
-            ChatMessages.info(sender, "Notes: " + actor.getNotes());
+            ChatMessages.info(sender, "备注：" + actor.getNotes());
         }
     }
 
@@ -1044,11 +1061,11 @@ public final class CommandDarkGreyRpg extends CommandBase {
         ActorDefinition actor = repository.getSnapshot()
             .getActor(id);
         if (actor == null) {
-            ChatMessages.error(player, "Unknown Actor ID: " + id);
+            ChatMessages.error(player, "未知角色 ID：" + id);
             return;
         }
         sessions.selectActor(player, id);
-        ChatMessages.success(player, "Selected Actor " + id + ". Right-click a CNPC with the editor tool to bind it.");
+        ChatMessages.success(player, "已选择角色 " + id + "。请用编辑工具右键 CustomNPC+ 实体完成绑定。");
     }
 
     private void bindActor(EntityPlayer player, String id) {
@@ -1064,36 +1081,36 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     private static EntityPlayer requirePlayer(ICommandSender sender) {
         if (!(sender instanceof EntityPlayer)) {
-            throw new CommandException("This command requires a player.");
+            throw new CommandException("此命令必须由玩家执行。");
         }
         return (EntityPlayer) sender;
     }
 
     private static EntityPlayerMP requireMultiplayerPlayer(ICommandSender sender) {
         if (!(sender instanceof EntityPlayerMP)) {
-            throw new CommandException("This command requires a server-side player.");
+            throw new CommandException("此命令必须由服务器中的玩家执行。");
         }
         return (EntityPlayerMP) sender;
     }
 
     private static EntityPlayerMP namedMultiplayerPlayer(String name) {
         if (name == null || name.trim()
-            .isEmpty()) throw new CommandException("Online player name is required.");
+            .isEmpty()) throw new CommandException("必须提供在线玩家名称。");
         MinecraftServer server = MinecraftServer.getServer();
         if (server != null && server.getConfigurationManager() != null)
             for (Object value : server.getConfigurationManager().playerEntityList) if (value instanceof EntityPlayerMP
                 && name.equalsIgnoreCase(((EntityPlayerMP) value).getCommandSenderName()))
                 return (EntityPlayerMP) value;
-        throw new CommandException("Online player was not found: " + name);
+        throw new CommandException("未找到在线玩家：" + name);
     }
 
     private static Entity requireTarget(EntityPlayer player) {
         Entity target = EntityTargeting.findLookedAtEntity(player, TARGET_DISTANCE);
         if (target == null) {
-            throw new CommandException("Look directly at a CustomNPC+ NPC within 8 blocks.");
+            throw new CommandException("请正对 8 格内的 CustomNPC+ NPC。");
         }
         if (!CustomNpcActorBinding.isCustomNpc(target)) {
-            throw new CommandException("The targeted entity is not a CustomNPC+ NPC.");
+            throw new CommandException("目标实体不是 CustomNPC+ NPC。");
         }
         return target;
     }

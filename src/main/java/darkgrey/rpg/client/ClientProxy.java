@@ -12,9 +12,14 @@ import darkgrey.rpg.client.gui.GuiCopierTemplates;
 import darkgrey.rpg.client.gui.GuiNominatorEntity;
 import darkgrey.rpg.client.gui.GuiNominatorInventory;
 import darkgrey.rpg.nominator.NominatorCatalog;
+import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 import darkgrey.rpg.proxy.CommonProxy;
 
 public final class ClientProxy extends CommonProxy {
+
+    private NominatorCatalog pendingInventoryCatalog;
+    private long pendingInventoryRevision = -1L;
+    private long pendingInventoryCatalogRevision = -1L;
 
     @Override
     public void registerClientDialogueNetwork() {
@@ -41,7 +46,7 @@ public final class ClientProxy extends CommonProxy {
     @Override
     public void openNominatorEntityGui(int entityId, UUID entityUuid, String displayName, String entityType,
         String individual, List<String> groups, List<String> typeGroups, String story, long revision,
-        darkgrey.rpg.nominator.NominatorCatalog catalog) {
+        long catalogRevision, darkgrey.rpg.nominator.NominatorCatalog catalog) {
         Minecraft.getMinecraft()
             .displayGuiScreen(
                 new GuiNominatorEntity(
@@ -54,6 +59,7 @@ public final class ClientProxy extends CommonProxy {
                     typeGroups,
                     story,
                     revision,
+                    catalogRevision,
                     catalog));
     }
 
@@ -67,6 +73,31 @@ public final class ClientProxy extends CommonProxy {
     public void openNominatorInventoryGui(NominatorCatalog catalog, long revision, int selectedSlot) {
         Minecraft.getMinecraft()
             .displayGuiScreen(new GuiNominatorInventory(catalog, revision, selectedSlot));
+    }
+
+    @Override
+    public void openNominatorInventoryGui(NominatorCatalog catalog, long revision, long catalogRevision,
+        int selectedSlot) {
+        if (Minecraft.getMinecraft().currentScreen instanceof GuiNominatorInventory) {
+            ((GuiNominatorInventory) Minecraft.getMinecraft().currentScreen)
+                .applyServerSnapshot(catalog, revision, catalogRevision);
+            return;
+        }
+        pendingInventoryCatalog = catalog;
+        pendingInventoryRevision = revision;
+        pendingInventoryCatalogRevision = catalogRevision;
+    }
+
+    @Override
+    public Object createNominatorInventoryGui(ContainerNominatorInventory container) {
+        GuiNominatorInventory gui = new GuiNominatorInventory(container);
+        if (pendingInventoryCatalog != null) {
+            gui.applyServerSnapshot(pendingInventoryCatalog, pendingInventoryRevision, pendingInventoryCatalogRevision);
+            pendingInventoryCatalog = null;
+            pendingInventoryRevision = -1L;
+            pendingInventoryCatalogRevision = -1L;
+        }
+        return gui;
     }
 
     @Override

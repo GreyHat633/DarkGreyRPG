@@ -21,6 +21,7 @@ public final class S2CNominatorEntityOpen implements IMessage {
     private int entityId;
     private UUID entityUuid;
     private long revision;
+    private long catalogRevision = -1L;
     private String individual;
     private List<String> groups = Collections.emptyList();
     private String story;
@@ -58,6 +59,13 @@ public final class S2CNominatorEntityOpen implements IMessage {
         this.catalog = catalog;
     }
 
+    public S2CNominatorEntityOpen(int entityId, UUID uuid, long revision, long catalogRevision, String displayName,
+        String entityType, String individual, List<String> groups, List<String> typeGroups, String story,
+        NominatorCatalog catalog) {
+        this(entityId, uuid, revision, displayName, entityType, individual, groups, typeGroups, story, catalog);
+        this.catalogRevision = catalogRevision;
+    }
+
     static S2CNominatorEntityOpen from(int entityId, UUID uuid, NominatorSavedData selections) {
         S2CNominatorEntityOpen packet = new S2CNominatorEntityOpen();
         packet.entityId = entityId;
@@ -79,6 +87,8 @@ public final class S2CNominatorEntityOpen implements IMessage {
         packet.entityType = darkgrey.rpg.nominator.NominatorService.entityType(entity);
         packet.typeGroups = selections.getTypeGroups(packet.entityType);
         packet.catalog = catalog;
+        packet.catalogRevision = DarkGreyRpg.getProjectRepository()
+            .getSnapshotRevision();
         return packet;
     }
 
@@ -92,6 +102,10 @@ public final class S2CNominatorEntityOpen implements IMessage {
 
     public long getRevision() {
         return revision;
+    }
+
+    public long getCatalogRevision() {
+        return catalogRevision;
     }
 
     public String getIndividualId() {
@@ -141,6 +155,7 @@ public final class S2CNominatorEntityOpen implements IMessage {
         List<String> types = new ArrayList<String>();
         for (int i = 0; i < typeCount; i++) types.add(readString(buffer));
         typeGroups = Collections.unmodifiableList(types);
+        catalogRevision = buffer.readLong();
         catalog = NominatorCatalogCodec.read(buffer);
         if (buffer.isReadable()) throw new IllegalArgumentException("Trailing nominator catalog data.");
     }
@@ -161,6 +176,7 @@ public final class S2CNominatorEntityOpen implements IMessage {
         if (typeGroups.size() > 32) throw new IllegalArgumentException("Too many type groups.");
         buffer.writeByte(typeGroups.size());
         for (String group : typeGroups) writeString(buffer, group);
+        buffer.writeLong(catalogRevision);
         NominatorCatalogCodec.write(
             buffer,
             catalog == null
@@ -205,6 +221,7 @@ public final class S2CNominatorEntityOpen implements IMessage {
                         message.typeGroups,
                         message.story,
                         message.revision,
+                        message.catalogRevision,
                         message.catalog);
                 }
             });
