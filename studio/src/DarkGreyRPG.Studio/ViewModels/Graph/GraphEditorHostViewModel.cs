@@ -31,11 +31,10 @@ public sealed class GraphNodesChangedEventArgs : EventArgs
     public IReadOnlyList<string> NodeIds { get; }
 }
 
-/// <summary>One validated A→C→B replacement for an existing A→B edge.</summary>
+/// <summary>One validated replacement set for inserting C beside an existing A→B edge.</summary>
 public sealed record GraphConnectionSplicePlan(
     GraphConnection Original,
-    GraphConnection Incoming,
-    GraphConnection Outgoing);
+    IReadOnlyList<GraphConnection> Replacements);
 
 /// <summary>Bindable canonical port projection.</summary>
 public sealed class GraphEditorPortViewModel : ObservableObject
@@ -551,8 +550,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         => ExecuteSession(() => _session.RemoveNodes(nodeIds, confirmReferencedRemoval));
 
     /// <summary>
-    /// Resolves the dragged node's unique same-kind input/output pair and
-    /// preflights the complete A→C→B graph state on a detached document.
+    /// Resolves the dragged node's unique same-kind input and/or output and
+    /// preflights the complete replacement graph state on a detached document.
     /// Invalid and ambiguous candidates are intentionally silent because a
     /// Shift-drag miss remains an ordinary layout gesture.
     /// </summary>
@@ -572,16 +571,20 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             && !string.IsNullOrWhiteSpace(port.Id)).ToArray();
         var inputs = ports.Where(port => port.Direction == GraphPortDirection.Input).ToArray();
         var outputs = ports.Where(port => port.Direction == GraphPortDirection.Output).ToArray();
-        if (inputs.Length != 1 || outputs.Length != 1) return false;
+        if (inputs.Length > 1 || outputs.Length > 1 || inputs.Length + outputs.Length == 0)
+            return false;
 
-        var incoming = new GraphConnection(original.FromNodeId, original.FromPortId,
-            draggedNodeId, inputs[0].Id, original.InterfaceKind);
-        var outgoing = new GraphConnection(draggedNodeId, outputs[0].Id,
-            original.ToNodeId, original.ToPortId, original.InterfaceKind);
+        var replacements = new List<GraphConnection>(2);
+        if (inputs.Length == 1)
+            replacements.Add(new GraphConnection(original.FromNodeId, original.FromPortId,
+                draggedNodeId, inputs[0].Id, original.InterfaceKind));
+        if (outputs.Length == 1)
+            replacements.Add(new GraphConnection(draggedNodeId, outputs[0].Id,
+                original.ToNodeId, original.ToPortId, original.InterfaceKind));
         var detached = GraphDocument.FromJson(Graph.ToJson());
         var preview = new GraphEditSession(detached, Scope, _session.CompatibilityMode);
-        if (!preview.ReplaceConnections([original], [incoming, outgoing])) return false;
-        plan = new GraphConnectionSplicePlan(original, incoming, outgoing);
+        if (!preview.ReplaceConnections([original], replacements)) return false;
+        plan = new GraphConnectionSplicePlan(original, replacements.ToArray());
         return true;
     }
 
@@ -592,7 +595,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(plan);
         return ExecuteSession(() => _session.ReplaceConnections(
-            [plan.Original], [plan.Incoming, plan.Outgoing]));
+            [plan.Original], plan.Replacements));
     }
 
     public bool CompleteConnectionDrag(GraphEditorEndpoint? first, GraphEditorEndpoint? second,

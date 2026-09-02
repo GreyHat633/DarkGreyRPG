@@ -751,6 +751,16 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.AreEqual("前置条件", toggle.Content);
         Assert.AreEqual(Visibility.Collapsed, helper.Visibility);
 
+        var darkThemeText = new SolidColorBrush(Color.FromRgb(0xF2, 0xF2, 0xF2));
+        view.Resources["TextFillColorPrimaryBrush"] = darkThemeText;
+        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        Assert.AreSame(darkThemeText, toggle.Foreground);
+
+        var lightThemeText = new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20));
+        view.Resources["TextFillColorPrimaryBrush"] = lightThemeText;
+        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        Assert.AreSame(lightThemeText, toggle.Foreground);
+
         toggle.IsChecked = true;
         view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
 

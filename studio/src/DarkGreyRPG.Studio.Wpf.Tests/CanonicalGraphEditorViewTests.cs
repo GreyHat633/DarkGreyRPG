@@ -1223,6 +1223,117 @@ public sealed class CanonicalGraphEditorViewTests
     }
 
     [STATestMethod]
+    [DataRow("flow", "both", 2)]
+    [DataRow("flow", "input", 1)]
+    [DataRow("flow", "output", 1)]
+    [DataRow("logic", "both", 2)]
+    [DataRow("logic", "input", 1)]
+    [DataRow("logic", "output", 1)]
+    public void SpliceSupportsUniqueDoubleAndOneSidedPortsAsOneUndoUnit(
+        string kindName, string portShape, int replacementCount)
+    {
+        var kind = kindName == "flow" ? GraphInterfaceKind.Flow : GraphInterfaceKind.Logic;
+        var scope = kind == GraphInterfaceKind.Flow ? GraphScope.StoryFlow : GraphScope.Task;
+        var graph = SpliceGraph(kind, portShape);
+        var host = new GraphEditorHostViewModel(graph, scope);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "out", kind),
+            GraphEditorEndpoint.Input("b", "in", kind)));
+        var original = host.Connections.Single().Connection;
+        var undoBefore = host.Session.UndoCount;
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNode("c"));
+
+        Assert.IsTrue(view.PreviewSpliceCandidate(view.SelectedNode!, host.Connections.Single()));
+        Assert.HasCount(replacementCount, view.ActiveSplicePlan!.Replacements);
+        Assert.HasCount(replacementCount, view.SpliceGhostVisuals);
+        Assert.IsTrue(view.CompleteActiveSplice());
+
+        Assert.HasCount(replacementCount, host.Connections);
+        Assert.AreEqual(undoBefore + 1, host.Session.UndoCount);
+        Assert.AreEqual(portShape is "both" or "input",
+            host.Connections.Any(connection => connection.FromNodeId == "a" && connection.ToNodeId == "c"));
+        Assert.AreEqual(portShape is "both" or "output",
+            host.Connections.Any(connection => connection.FromNodeId == "c" && connection.ToNodeId == "b"));
+        Assert.IsTrue(host.Undo());
+        Assert.HasCount(1, host.Connections);
+        Assert.IsTrue(host.Connections.Single().Connection.Equals(original));
+    }
+
+    [STATestMethod]
+    public void SpliceRejectsNodeWithoutSameKindPorts()
+    {
+        var graph = SpliceGraph(GraphInterfaceKind.Flow, "none");
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("b", "in", GraphInterfaceKind.Flow)));
+
+        Assert.IsFalse(host.TryCreateSplicePlan(host.Connections.Single().Connection, "c", out _));
+        Assert.HasCount(1, host.Connections);
+    }
+
+    [STATestMethod]
+    [DataRow("input")]
+    [DataRow("output")]
+    public void SpliceRejectsAmbiguousSameKindSide(string ambiguousSide)
+    {
+        var graph = SpliceGraph(GraphInterfaceKind.Flow, "both");
+        graph.Nodes.Single(node => node.Id == "c").Ports.Add(new GraphPort(
+            $"second_{ambiguousSide}", "Second", ambiguousSide == "input", GraphInterfaceKind.Flow));
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("b", "in", GraphInterfaceKind.Flow)));
+
+        Assert.IsFalse(host.TryCreateSplicePlan(host.Connections.Single().Connection, "c", out _));
+        Assert.HasCount(1, host.Connections);
+    }
+
+    [STATestMethod]
+    [DataRow("flow")]
+    [DataRow("logic")]
+    public void SpliceRejectsOccupiedSingleCapacityPortAndPreservesItsWire(string kindName)
+    {
+        var kind = kindName == "flow" ? GraphInterfaceKind.Flow : GraphInterfaceKind.Logic;
+        var scope = kind == GraphInterfaceKind.Flow ? GraphScope.StoryFlow : GraphScope.Task;
+        var graph = SpliceGraph(kind, "both");
+        graph.Nodes.Add(new GraphNode("x", kind == GraphInterfaceKind.Flow ? "terminate" : "settle", "X",
+            kind == GraphInterfaceKind.Flow
+                ? [new GraphPort("in", "In", true, kind)]
+                : [new GraphPort("out", "Out", false, kind)]));
+        var host = new GraphEditorHostViewModel(graph, scope);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "out", kind),
+            GraphEditorEndpoint.Input("b", "in", kind)));
+        Assert.IsTrue(kind == GraphInterfaceKind.Flow
+            ? host.Connect(GraphEditorEndpoint.Output("c", "out", kind), GraphEditorEndpoint.Input("x", "in", kind))
+            : host.Connect(GraphEditorEndpoint.Output("x", "out", kind), GraphEditorEndpoint.Input("c", "in", kind)));
+        var original = host.Connections.Single(connection => connection.FromNodeId == "a").Connection;
+        var before = graph.ToJson();
+
+        Assert.IsFalse(host.TryCreateSplicePlan(original, "c", out _));
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.HasCount(2, host.Connections);
+    }
+
+    [STATestMethod]
+    public void ReleasingShiftClearsSplicePreviewWithoutChangingTopology()
+    {
+        var graph = ThreeActionGraph();
+        var host = new GraphEditorHostViewModel(graph, GraphScope.StoryFlow);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("a", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("b", "flow_in", GraphInterfaceKind.Flow)));
+        var view = Arrange(host);
+        Assert.IsTrue(view.SelectNode("c"));
+        var before = graph.ToJson();
+        Assert.IsTrue(view.PreviewSpliceCandidate(view.SelectedNode!, host.Connections.Single()));
+
+        Assert.IsTrue(view.BeginSelectedNodeDrag("c"));
+        Assert.IsTrue(view.UpdateSelectedNodeDrag(new Vector(10, 10), shiftPressed: false));
+
+        Assert.IsNull(view.ActiveSpliceCandidate);
+        Assert.IsEmpty(view.SpliceGhostVisuals);
+        Assert.AreEqual(before, graph.ToJson());
+    }
+
+    [STATestMethod]
     public void AmbiguousOrMultiSelectedSpliceCandidateStaysOrdinaryLayoutAndDoesNotMutate()
     {
         var graph = ThreeActionGraph();
@@ -1277,6 +1388,25 @@ public sealed class CanonicalGraphEditorViewTests
             new GraphNode("c", "action", "C", [
                 new("flow_in", "In", true, GraphInterfaceKind.Flow),
                 new("flow_out", "Out", false, GraphInterfaceKind.Flow)])]);
+
+    private static GraphDocument SpliceGraph(GraphInterfaceKind kind, string portShape)
+    {
+        var ports = new List<GraphPort>();
+        if (portShape is "both" or "input") ports.Add(new GraphPort("in", "In", true, kind));
+        if (portShape is "both" or "output") ports.Add(new GraphPort("out", "Out", false, kind));
+        if (portShape == "none")
+        {
+            var otherKind = kind == GraphInterfaceKind.Flow ? GraphInterfaceKind.Logic : GraphInterfaceKind.Flow;
+            ports.Add(new GraphPort("other_in", "Other In", true, otherKind));
+            ports.Add(new GraphPort("other_out", "Other Out", false, otherKind));
+        }
+        return new GraphDocument([
+            new GraphNode("a", kind == GraphInterfaceKind.Flow ? "action" : "objective", "A",
+                [new GraphPort("out", "Out", false, kind)]),
+            new GraphNode("b", kind == GraphInterfaceKind.Flow ? "action" : "settle", "B",
+                [new GraphPort("in", "In", true, kind)]),
+            new GraphNode("c", kind == GraphInterfaceKind.Flow ? "action" : "objective", "C", ports)]);
+    }
 
     private static GraphDocument Graph(GraphScope scope)
     {

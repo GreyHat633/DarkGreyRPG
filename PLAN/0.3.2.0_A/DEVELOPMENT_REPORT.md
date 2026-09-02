@@ -16,6 +16,7 @@ USER_ACCEPTED = NO
 
 - Construction branch: `codex/0.3.2.0_A`
 - Starting HEAD: `becc28c97ae62dbdd314050ef15348f4c05d9125`
+- Freeze-blocker continuation baseline: `4e31f180217187c51d61a329fce0f278e13e48b9`
 - Baseline authoritative EXE:
   - ProductVersion: `0.3.1.5-rc`
   - Size: `141441750` bytes
@@ -82,6 +83,7 @@ Representative final package:
 - Toggling OFF removes attached prerequisite wires as one undoable edit; Undo restored the switch, port and wire during final live acceptance.
 - Task runtime activation is sticky: false remains inactive, true activates, later true-to-false does not deactivate an already activated objective.
 - Runtime/snapshot/NBT and package round-trip paths persist the semantic state.
+- The Objective Inspector checkbox text explicitly follows `TextFillColorPrimaryBrush`; the previously black `前置条件` label is readable in the dark theme and remains theme-correct in the light theme.
 - Evidence: [objective-prerequisite-off.png](../../.tooling/0.3.2.0_A/final-live/objective-prerequisite-off.png), [objective-prerequisite-on-wired-undo.png](../../.tooling/0.3.2.0_A/final-live/objective-prerequisite-on-wired-undo.png), [save-reopen-objective-persistence.png](../../.tooling/0.3.2.0_A/final-live/save-reopen-objective-persistence.png), [objective-prerequisite-on-light.png](../../.tooling/0.3.2.0_A/final-live/objective-prerequisite-on-light.png)
 
 ### WP-F — Export P0 repair
@@ -151,6 +153,9 @@ Reader boundary for this A release is package reopen/validation; Minecraft-side 
 - A selected-node drag preserves the complete temporary selection and applies one shared pointer delta to every selected node.
 - One layout transaction covers the complete multi-node drag; one Undo restores every moved node.
 - Multi-selection Shift-drag cannot create a splice candidate or change graph topology; single-node Shift-splice remains available.
+- Single-node Shift-splice accepts both-sided (`1` matching input + `1` matching output), input-only (`1 + 0`) and output-only (`0 + 1`) candidates for both Flow and Logic wires.
+- The preview renders exactly two replacement ghosts for a both-sided splice and one ghost for either one-sided splice. No matching ports, ambiguous matching ports, occupied capacity and interface-kind mismatches remain fail-closed.
+- Commit replaces only the original wire with the planned replacement set in one graph edit; one Undo restores the original wire.
 - Right-clicking a selected node preserves the selection; right-clicking an unselected node replaces it.
 - Multi-selection Edit is a no-op.
 
@@ -168,7 +173,7 @@ Reader boundary for this A release is package reopen/validation; Minecraft-side 
 | Gate | Result | Evidence |
 |---|---:|---|
 | Studio Core full | `378/378` PASS | final Release test invocation |
-| Studio WPF full | `429/429` PASS | final Release test invocation |
+| Studio WPF full | `441/441` PASS | final Release test invocation |
 | Solution Release build | PASS, `0` warnings, `0` errors | final build output |
 | Java JDK 8 formatting/compile/probes | PASS | `spotlessCheck`, compile, `42` existing/new probes; `58` Gradle tasks (`40` executed, `18` up-to-date) |
 | DGRS reopen validator | `PACKAGE_VALIDATION_PASS` | representative `.dgrs` listed above |
@@ -186,7 +191,7 @@ Build: self-contained Windows x64 Release
 ProductVersion: 0.3.2.0-rc
 FileVersion: 0.3.2.0
 Size: 141522134 bytes
-SHA-256: A34130CAB4A3AD4B517639DBC05FD11AECBBAA49D81D64B1FEA890DF9F0F4C91
+SHA-256: BE0DC0C738342DD7843A5CC063A21594300F7ADACF27BBBC1819591A1E14AA14
 Directory file count: 1
 ```
 
@@ -202,6 +207,8 @@ Final Release EXE live coverage includes:
 - One workspace-level unsaved-close dialog with `保存 / 不保存 / 取消`: [unsaved-close-single-dialog.png](../../.tooling/0.3.2.0_A/final-live/unsaved-close-single-dialog.png).
 - Dark/Light readability for changed Objective, Dialogue and Session/Flow surfaces: [changed-surface-light.png](../../.tooling/0.3.2.0_A/final-live/changed-surface-light.png), [objective-prerequisite-on-light.png](../../.tooling/0.3.2.0_A/final-live/objective-prerequisite-on-light.png), [dialogue-inspector-light.png](../../.tooling/0.3.2.0_A/final-live/dialogue-inspector-light.png).
 - Four-node marquee selection, real-time equal-delta movement, one-step move Undo, Shift-splice suppression, keyboard/context atomic delete, context Edit no-op, required-node mixed movement/deletion, editable-control Delete focus protection, and Save/full-close/reopen layout persistence.
+- Flow and Logic Shift-splice live runs for both-sided/input-only/output-only shapes, exact ghost counts, one-step Undo, Shift-release cancellation and multi-selection suppression.
+- Exact-project `interact_actor` Inspector readability and export through the real Windows save-path dialog from the authoritative EXE hash above.
 
 ## Exact user project boundary
 
@@ -211,21 +218,23 @@ Exact project tested without modification:
 E:\Java\MinecraftMod\RPGProject\project_test
 ```
 
-The final EXE no longer fails with `Story 'kill_slimes' was not found.` It reaches strict canonical validation and reports:
+At the final freeze-blocker recheck, the current on-disk Task resource no longer matched the earlier validation-failure snapshot. Its second Objective is now explicitly `objective_type = interact_actor` with `actor_id = tarven_boss`; it does not use an `entity` target. The Task JSON was treated as user-owned input and was not edited during acceptance:
 
 ```text
-Canonical resource 'resources/canonical/tasks/kill_slimes.json' failed validation:
-graph.objective.target.invalid: Objective 'entity' must be a nonblank string.
+SHA-256 before = CC154B9D4BC33F426888DE534A6A9294B131080D4A894006096641020251951D
+SHA-256 after  = CC154B9D4BC33F426888DE534A6A9294B131080D4A894006096641020251951D
 ```
 
-Concrete source evidence in the exact project:
+The authoritative final EXE displayed `角色交互 / 酒馆老板`, opened the real Windows `导出故事包` save-path dialog, and generated:
 
-- Objective `node_2c0b762cdddd433d8277c3cd4f0e88af`: `entity = "slimes"`.
-- Objective `node_0d58d6b0697d4ad4a64dd7416ebd669e`: `entity = ""`.
+```text
+E:\Java\MinecraftMod\RPGProject\project_test\build\story_packages\kill_slimes.dgrs
+Size: 5559 bytes
+SHA-256: 9D8DA59B83CA61F47E9CB98B2C969F053EB3EBDF80D764AB9C5A542AA64089EC
+Archive entries: 10
+```
 
-The exact project output directory exists but contains `0` items; no `.dgrs`, same-name folder, temp or staging residual was committed. The user project was not edited. Evidence: [exact-project-export-validation-failure.png](../../.tooling/0.3.2.0_A/final-live/exact-project-export-validation-failure.png).
-
-Gate F4 is therefore `NEED_USER_VERIFICATION`: the user must decide whether the blank second Objective is intended and authorize correction/removal if desired. Validator weakening is not an acceptable workaround.
+Reopening the package payload confirms the kill Objective has `entity = slimes` and the interaction Objective has `actor_id = tarven_boss` plus `objective_type = interact_actor`. Gate F4 is therefore `AGENT_VERIFIED` for the exact current project state. Evidence: [exact-task-interact-actor-target.png](../../.tooling/0.3.2.0_A/freeze-blockers/exact-live-evidence/01-exact-task-interact-actor-target.png), [exact-project-final-exe-export-success.png](../../.tooling/0.3.2.0_A/freeze-blockers/exact-live-evidence/02-exact-project-final-exe-export-success.png).
 
 ## Original audit final reread
 
@@ -266,10 +275,12 @@ The following remain explicitly outside `0.3.2.0_A` and were not implemented:
 | F1 | 0.3.1.5 failure reproduced | AGENT_VERIFIED | exact prior error captured |
 | F2 | Root cause documented | AGENT_VERIFIED | dedicated report section |
 | F3 | Representative valid export | AGENT_VERIFIED | final EXE + validator |
-| F4 | Exact user project export | NEED_USER_VERIFICATION | strict validation found blank second Objective entity |
+| F4 | Exact user project export | AGENT_VERIFIED | real save-path dialog, 10-entry DGRS, package payload rechecked |
 | G1 | Temporary multi-selection move | AGENT_VERIFIED | equal-delta real-window drag |
 | G2 | Multi-move one Undo | AGENT_VERIFIED | one-step real-window restore |
 | G3 | Multi-selection Shift safety | AGENT_VERIFIED | topology unchanged under Shift drag |
+| G4 | Flow splice both/input/output | AGENT_VERIFIED | final EXE ghosts `2/1/1`, commit and Undo |
+| G5 | Logic splice both/input/output | AGENT_VERIFIED | final EXE ghosts `2/1/1`, commit and Undo |
 | H1 | Keyboard/context atomic delete | AGENT_VERIFIED | shared command + one-step restore |
 | H2 | Required-node mixed selection | AGENT_VERIFIED | moves with peers and survives delete |
 | H3 | Placement/resource boundary | AGENT_VERIFIED | WPF lifecycle regression |
@@ -285,12 +296,12 @@ The following remain explicitly outside `0.3.2.0_A` and were not implemented:
 | R8 | Node layout restart | AGENT_VERIFIED | WPF regression + final process restart |
 | R9 | Resource lifecycle | AGENT_VERIFIED | Core/WPF regression |
 | R10 | Light/Dark changed surfaces | AGENT_VERIFIED | final-EXE screenshots + WPF theme regression |
+| R11 | Objective prerequisite label contrast | AGENT_VERIFIED | final dark-window screenshot + dynamic theme test |
 
 ## User acceptance remaining
 
 The implementation is ready for user acceptance at the authoritative EXE path. Only the user may:
 
-1. decide how to handle the exact project's blank second Objective;
-2. record `USER_ACCEPTED`;
-3. freeze Studio;
-4. authorize `0.3.2.0_B` or any Git/release operation.
+1. record `USER_ACCEPTED`;
+2. freeze Studio;
+3. authorize `0.3.2.0_B`, Tag, GitHub Release, merge, or binary-asset publication.

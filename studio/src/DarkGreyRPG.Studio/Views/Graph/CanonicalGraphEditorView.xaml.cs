@@ -1808,7 +1808,7 @@ public partial class CanonicalGraphEditorView : UserControl
         _splicePlan = plan;
         if (_connectionVisuals.TryGetValue(connection, out var visual))
             ApplyWireBrush(visual.Line, connection.InterfaceKind, selected: true);
-        for (var index = 0; index < 2; index++)
+        for (var index = 0; index < plan.Replacements.Count; index++)
         {
             var ghost = new Path
             {
@@ -1829,9 +1829,10 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void UpdateSpliceGhostGeometry()
     {
-        if (_splicePlan is null || _spliceGhostWires.Count != 2) return;
-        if (TryConnectionGeometry(_splicePlan.Incoming, out var incoming)) _spliceGhostWires[0].Data = incoming;
-        if (TryConnectionGeometry(_splicePlan.Outgoing, out var outgoing)) _spliceGhostWires[1].Data = outgoing;
+        if (_splicePlan is null || _spliceGhostWires.Count != _splicePlan.Replacements.Count) return;
+        for (var index = 0; index < _splicePlan.Replacements.Count; index++)
+            if (TryConnectionGeometry(_splicePlan.Replacements[index], out var geometry))
+                _spliceGhostWires[index].Data = geometry;
     }
 
     private bool TryConnectionGeometry(GraphConnection connection, out PathGeometry geometry)
