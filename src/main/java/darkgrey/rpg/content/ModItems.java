@@ -12,7 +12,6 @@ import darkgrey.rpg.item.ItemStorageBox;
 public final class ModItems {
 
     public static Item editorTool;
-    public static Item copperCoin;
     public static Item nominator;
     public static Item copier;
     public static Item storageBox;
@@ -26,12 +25,6 @@ public final class ModItems {
             .setCreativeTab(ModCreativeTabs.DARKGREY_RPG)
             .setMaxStackSize(1);
         GameRegistry.registerItem(editorTool, "editor_tool");
-
-        copperCoin = new Item().setUnlocalizedName("darkgrey_rpg.copper_coin")
-            .setTextureName("minecraft:gold_nugget")
-            .setCreativeTab(ModCreativeTabs.DARKGREY_RPG)
-            .setMaxStackSize(64);
-        GameRegistry.registerItem(copperCoin, "copper_coin");
 
         nominator = new ItemNominator().setUnlocalizedName("darkgrey_rpg.nominator")
             .setTextureName("darkgrey_rpg:nominator")

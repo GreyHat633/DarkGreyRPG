@@ -40,6 +40,8 @@ import darkgrey.rpg.nominator.NominatorService;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.ProjectSnapshot;
+import darkgrey.rpg.project.packages.StoryPackageGenerationDelta;
+import darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
 import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
 import darkgrey.rpg.quest.QuestDefinition;
@@ -908,6 +910,12 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (storyPackageLoader != null) {
             StoryPackageRuntimeReloader.Result reload = StoryPackageRuntimeReloader
                 .reload(repository, storyPackageLoader);
+            StoryPackageGenerationLifecycle.Result generations = null;
+            if (reload.isPackageSetCommitted()) generations = StoryPackageGenerationLifecycle.reconcile(
+                MinecraftServer.getServer()
+                    .worldServerForDimension(0).mapStorage,
+                storyPackageLoader.getPackages());
+            if (generations != null) showGenerationDelta(sender, generations);
             if (reload.isSuccessful()) {
                 ChatMessages.success(
                     sender,
@@ -929,6 +937,33 @@ public final class CommandDarkGreyRpg extends CommandBase {
         } else {
             ChatMessages.error(sender, "重新加载失败：" + result.getSummary());
         }
+    }
+
+    private static void showGenerationDelta(ICommandSender sender, StoryPackageGenerationLifecycle.Result result) {
+        for (StoryPackageGenerationDelta.Entry delta : result.getDeltas()) {
+            if (delta.getKind() == StoryPackageGenerationDelta.Kind.UNCHANGED) continue;
+            String oldFingerprint = delta.getPrevious() == null ? "-"
+                : delta.getPrevious()
+                    .shortFingerprint();
+            String newFingerprint = delta.getCurrent() == null ? "-"
+                : delta.getCurrent()
+                    .shortFingerprint();
+            ChatMessages.info(
+                sender,
+                delta.getPackageId() + " " + delta.getKind() + " " + oldFingerprint + " -> " + newFingerprint);
+        }
+        if (!result.getAffectedStoryIds()
+            .isEmpty())
+            ChatMessages.info(
+                sender,
+                "已退役旧代运行状态：Story " + result.getStoryInstancesRetired()
+                    + "，Session "
+                    + result.getSessionInstancesRetired()
+                    + "，Continuation "
+                    + result.getContinuationsRetired()
+                    + "，Task "
+                    + result.getTaskInstancesRetired()
+                    + "。");
     }
 
     private void processDialogue(ICommandSender sender, String[] arguments) {

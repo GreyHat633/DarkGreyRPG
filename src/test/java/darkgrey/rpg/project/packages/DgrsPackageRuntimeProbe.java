@@ -1,14 +1,22 @@
 package darkgrey.rpg.project.packages;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.storage.MapStorage;
 
 import com.google.gson.JsonElement;
 
@@ -18,6 +26,7 @@ import darkgrey.rpg.network.message.nominator.NominatorCatalogCodec;
 import darkgrey.rpg.nominator.NominatorCatalog;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.ProjectSnapshot;
+import darkgrey.rpg.task.persistence.CanonicalTaskSavedData;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 import darkgrey.rpg.task.runtime.CanonicalTaskRuntime;
@@ -46,6 +55,7 @@ public final class DgrsPackageRuntimeProbe {
             File installedArchive = new File(install, source.getName());
             Files.copy(source.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(source.toPath(), replacementSource.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            makeRepeatableGeneration(replacementSource);
             File residue = new File(install, ".dgrs-runtime");
             require(residue.mkdir(), "Cannot create legacy runtime residue directory");
             Files.write(new File(residue, "stale.bin").toPath(), new byte[] { 1, 2, 3 });
@@ -66,6 +76,26 @@ public final class DgrsPackageRuntimeProbe {
                 .values()
                 .iterator()
                 .next();
+            MapStorage generationStorage = new MapStorage(null);
+            StoryPackageGenerationLifecycle.Result initialGeneration = StoryPackageGenerationLifecycle
+                .reconcile(generationStorage, loader.getPackages());
+            require(initialGeneration.isBootstrap(), "First generation reconciliation was not a bootstrap");
+            require(
+                initialGeneration.getDeltas()
+                    .size() == 1
+                    && initialGeneration.getDeltas()
+                        .get(0)
+                        .getKind() == StoryPackageGenerationDelta.Kind.ADDED,
+                "First accepted DGRS was not classified ADDED");
+            CanonicalGraphResource initialTaskResource = loaded.getSnapshot()
+                .getCanonicalTasks()
+                .values()
+                .iterator()
+                .next();
+            UUID progressPlayer = UUID.fromString("10000000-0000-0000-0000-000000000003");
+            CanonicalTaskSavedData taskData = CanonicalTaskSavedData.get(generationStorage);
+            taskData.start(progressPlayer, loaded.getStoryId(), "generation-probe", initialTaskResource, 1L);
+            MapStorage restartStorage = savedGenerationAndTaskStorage(generationStorage, taskData);
             CanonicalGraphResource initialPublishedStory = repository.getSnapshot()
                 .getCanonicalStory(loaded.getStoryId());
             require(
@@ -200,23 +230,112 @@ public final class DgrsPackageRuntimeProbe {
                 .getCanonicalStory(replacement.getStoryId());
             require(replacementPublishedStory != null, "Valid replacement did not publish its canonical Story");
             require(replacementPublishedStory != initialPublishedStory, "Valid replacement retained old Story content");
+            require(
+                !replacement.getContentFingerprint()
+                    .equals(loaded.getContentFingerprint()),
+                "Story repeat_policy change did not produce a new package generation");
+            StoryPackageGenerationLifecycle.Result updatedGeneration = StoryPackageGenerationLifecycle
+                .reconcile(generationStorage, loader.getPackages());
+            require(
+                updatedGeneration.getDeltas()
+                    .size() == 1
+                    && updatedGeneration.getDeltas()
+                        .get(0)
+                        .getKind() == StoryPackageGenerationDelta.Kind.UPDATED,
+                "Valid content replacement was not classified UPDATED");
+            require(
+                updatedGeneration.getTaskInstancesRetired() == 1 && taskData.size() == 0,
+                "UPDATED generation did not retire old Task progress");
+            StoryPackageGenerationLifecycle.Result offlineUpdatedGeneration = StoryPackageGenerationLifecycle
+                .reconcile(restartStorage, loader.getPackages());
+            require(
+                !offlineUpdatedGeneration.isBootstrap() && offlineUpdatedGeneration.getDeltas()
+                    .get(0)
+                    .getKind() == StoryPackageGenerationDelta.Kind.UPDATED
+                    && offlineUpdatedGeneration.getTaskInstancesRetired() == 1,
+                "Offline replacement did not reconcile persisted old generation progress on restart");
+            CanonicalGraphResource taskResource = replacement.getSnapshot()
+                .getCanonicalTasks()
+                .values()
+                .iterator()
+                .next();
+            taskData.start(progressPlayer, replacement.getStoryId(), "generation-probe", taskResource, 1L);
+            String partialObjectiveId = requiredThreeObjectiveId(taskResource);
+            require(
+                taskData.dispatch(progressPlayer, CanonicalTaskEvent.killEntity("slimes"), 2L)
+                    .getChangedInstanceCount() == 1,
+                "Generation probe Task did not accept first progress event");
+            require(
+                taskData.dispatch(progressPlayer, CanonicalTaskEvent.killEntity("slimes"), 3L)
+                    .getChangedInstanceCount() == 1,
+                "Generation probe Task did not accept second progress event");
+            require(
+                taskData.getSnapshot(progressPlayer, replacement.getStoryId(), "generation-probe")
+                    .getRuntimeSnapshot()
+                    .getProgress()
+                    .get(partialObjectiveId)
+                    .intValue() == 2,
+                "Generation probe Task did not reach exact 2/3 progress");
             assertPublishedCounts(repository.getLastReload());
             assertNoExtraction(install, installedArchive);
+
+            StoryPackageRuntimeReloader.Result unchangedReload = StoryPackageRuntimeReloader.reload(repository, loader);
+            require(unchangedReload.isSuccessful(), "Unchanged DGRS reload failed");
+            LoadedStoryPackage unchangedAccepted = loader.getPackage(loaded.getPackageId());
+            require(
+                unchangedAccepted != null && unchangedAccepted.getContentFingerprint()
+                    .equals(replacement.getContentFingerprint()),
+                "Unchanged reload did not retain the accepted generation fingerprint");
+            CanonicalGraphResource unchangedPublishedStory = repository.getSnapshot()
+                .getCanonicalStory(unchangedAccepted.getStoryId());
+            StoryPackageGenerationLifecycle.Result unchangedGeneration = StoryPackageGenerationLifecycle
+                .reconcile(generationStorage, loader.getPackages());
+            require(
+                unchangedGeneration.getDeltas()
+                    .size() == 1
+                    && unchangedGeneration.getDeltas()
+                        .get(0)
+                        .getKind() == StoryPackageGenerationDelta.Kind.UNCHANGED,
+                "Byte-identical accepted DGRS was not classified UNCHANGED");
+            require(
+                unchangedGeneration.getRuntimeStatesRetired() == 0 && taskData.size() == 1,
+                "UNCHANGED generation retired active Task progress");
+            require(
+                taskData.getSnapshot(progressPlayer, replacement.getStoryId(), "generation-probe")
+                    .getRuntimeSnapshot()
+                    .getProgress()
+                    .get(partialObjectiveId)
+                    .intValue() == 2,
+                "UNCHANGED generation changed 2/3 Task progress");
 
             Files.write(installedArchive.toPath(), "{".getBytes(StandardCharsets.UTF_8));
             StoryPackageRuntimeReloader.Result corruptReload = StoryPackageRuntimeReloader.reload(repository, loader);
             require(!corruptReload.isSuccessful(), "Corrupt replacement DGRS was accepted");
             require(
-                loader.getPackage(loaded.getPackageId()) == replacement,
+                loader.getPackage(loaded.getPackageId()) == unchangedAccepted,
                 "Corrupt replacement erased the active DGRS");
             require(
                 loader.getPackage(loaded.getPackageId())
-                    .getSnapshot() == replacement.getSnapshot(),
+                    .getSnapshot() == unchangedAccepted.getSnapshot(),
                 "Corrupt replacement changed the accepted package content");
             require(
                 repository.getSnapshot()
-                    .getCanonicalStory(replacement.getStoryId()) == replacementPublishedStory,
+                    .getCanonicalStory(replacement.getStoryId()) == unchangedPublishedStory,
                 "Corrupt replacement changed the published Story content");
+            StoryPackageGenerationLifecycle.Result corruptGeneration = StoryPackageGenerationLifecycle
+                .reconcile(generationStorage, loader.getPackages());
+            require(
+                corruptGeneration.getDeltas()
+                    .get(0)
+                    .getKind() == StoryPackageGenerationDelta.Kind.UNCHANGED && taskData.size() == 1,
+                "Corrupt reload changed accepted generation or retired Last-Known-Good progress");
+            require(
+                taskData.getSnapshot(progressPlayer, replacement.getStoryId(), "generation-probe")
+                    .getRuntimeSnapshot()
+                    .getProgress()
+                    .get(partialObjectiveId)
+                    .intValue() == 2,
+                "Corrupt replacement changed Last-Known-Good 2/3 Task progress");
             assertNoExtraction(install, installedArchive);
 
             Files.delete(new File(baseProject, "project.json").toPath());
@@ -266,6 +385,18 @@ public final class DgrsPackageRuntimeProbe {
                         .getSummary()
                         .contains("Missing JSON file"),
                 "Clearing the prior snapshot hid the failed base reload from status reporting");
+            StoryPackageGenerationLifecycle.Result removedGeneration = StoryPackageGenerationLifecycle
+                .reconcile(generationStorage, loader.getPackages());
+            require(
+                removedGeneration.getDeltas()
+                    .size() == 1
+                    && removedGeneration.getDeltas()
+                        .get(0)
+                        .getKind() == StoryPackageGenerationDelta.Kind.REMOVED,
+                "Deleted DGRS was not classified REMOVED");
+            require(
+                removedGeneration.getTaskInstancesRetired() == 1 && taskData.size() == 0,
+                "REMOVED generation did not retire active Task progress");
             assertNoExtraction(install, installedArchive);
 
             Files.copy(replacementSource.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -304,6 +435,15 @@ public final class DgrsPackageRuntimeProbe {
                 repository.getSnapshot()
                     .getCanonicalStory(reinstalled.getStoryId()) != null,
                 "Reinstalled DGRS was not published");
+            StoryPackageGenerationLifecycle.Result reinstalledGeneration = StoryPackageGenerationLifecycle
+                .reconcile(generationStorage, loader.getPackages());
+            require(
+                reinstalledGeneration.getDeltas()
+                    .size() == 1
+                    && reinstalledGeneration.getDeltas()
+                        .get(0)
+                        .getKind() == StoryPackageGenerationDelta.Kind.ADDED,
+                "Reinstalled DGRS was not classified ADDED");
             assertPublishedCounts(repository.getLastReload());
             assertNoExtraction(install, installedArchive);
 
@@ -330,7 +470,14 @@ public final class DgrsPackageRuntimeProbe {
             System.out.println("DGRS_AUTHORITATIVE_PUBLICATION=PASS");
             System.out.println("DGRS_NOMINATOR_PACKAGE_CATALOG=PASS");
             System.out.println("DGRS_UNSAFE_PATH_REJECTED=PASS");
+            System.out.println("DGRS_PACKAGE_GENERATION_LIFECYCLE=PASS");
+            System.out.println("DGRS_UNCHANGED_PROGRESS_PRESERVED=PASS");
+            System.out.println("DGRS_CORRUPT_LAST_KNOWN_GOOD_PRESERVED=PASS");
+            System.out.println("DGRS_REMOVED_PROGRESS_RETIRED=PASS");
+            System.out.println("DGRS_OFFLINE_REPLACEMENT_RECONCILED=PASS");
             System.out.println("DGRS_PACKAGE_ID=" + loaded.getPackageId());
+            System.out.println("DGRS_GENERATION_A_ONCE_FINGERPRINT=" + loaded.getContentFingerprint());
+            System.out.println("DGRS_GENERATION_B_REPEATABLE_FINGERPRINT=" + replacement.getContentFingerprint());
         } finally {
             delete(install);
             delete(baseProject);
@@ -416,6 +563,22 @@ public final class DgrsPackageRuntimeProbe {
         throw new AssertionError("Unsupported configured Objective type: " + type);
     }
 
+    private static String requiredThreeObjectiveId(CanonicalGraphResource task) {
+        for (CanonicalGraphNode node : task.getGraph()
+            .getNodes())
+            if ("objective".equals(node.getType()) && node.getProperties()
+                .containsKey("required")
+                && node.getProperties()
+                    .get("required")
+                    .getAsInt() == 3
+                && "kill_entity".equals(
+                    node.getProperties()
+                        .get("objective_type")
+                        .getAsString()))
+                return node.getId();
+        throw new AssertionError("Real kill_slimes fixture has no required=3 kill Objective");
+    }
+
     private static void writeUnsafeArchive(File file) throws Exception {
         ZipOutputStream output = new ZipOutputStream(new FileOutputStream(file));
         try {
@@ -425,6 +588,62 @@ public final class DgrsPackageRuntimeProbe {
         } finally {
             output.close();
         }
+    }
+
+    private static void makeRepeatableGeneration(File archive) throws Exception {
+        File rewritten = new File(archive.getParentFile(), archive.getName() + ".rewrite");
+        ZipFile input = new ZipFile(archive);
+        ZipOutputStream output = new ZipOutputStream(new FileOutputStream(rewritten));
+        try {
+            Enumeration<? extends ZipEntry> entries = input.entries();
+            boolean found = false;
+            byte[] buffer = new byte[8192];
+            while (entries.hasMoreElements()) {
+                ZipEntry original = entries.nextElement();
+                ZipEntry replacement = new ZipEntry(original.getName());
+                output.putNextEntry(replacement);
+                InputStream stream = input.getInputStream(original);
+                ByteArrayOutputStream content = new ByteArrayOutputStream();
+                try {
+                    int read;
+                    while ((read = stream.read(buffer)) >= 0) content.write(buffer, 0, read);
+                } finally {
+                    stream.close();
+                }
+                byte[] bytes = content.toByteArray();
+                if ("resources/canonical/stories/kill_slimes.json".equals(original.getName())) {
+                    String once = new String(bytes, StandardCharsets.UTF_8);
+                    String repeatable = once
+                        .replace("\"repeat_policy\": \"once\"", "\"repeat_policy\": \"repeatable\"");
+                    require(!once.equals(repeatable), "DGRS replacement fixture is not authored once");
+                    bytes = repeatable.getBytes(StandardCharsets.UTF_8);
+                    found = true;
+                }
+                output.write(bytes);
+                output.closeEntry();
+            }
+            require(found, "DGRS replacement fixture has no kill_slimes canonical Story");
+        } finally {
+            output.close();
+            input.close();
+        }
+        Files.move(rewritten.toPath(), archive.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private static MapStorage savedGenerationAndTaskStorage(MapStorage source, CanonicalTaskSavedData taskData) {
+        NBTTagCompound generations = new NBTTagCompound();
+        StoryPackageGenerationSavedData.get(source)
+            .writeToNBT(generations);
+        StoryPackageGenerationSavedData restartedGenerations = new StoryPackageGenerationSavedData();
+        restartedGenerations.readFromNBT(generations);
+        NBTTagCompound tasks = new NBTTagCompound();
+        taskData.writeToNBT(tasks);
+        CanonicalTaskSavedData restartedTasks = new CanonicalTaskSavedData();
+        restartedTasks.readFromNBT(tasks);
+        MapStorage result = new MapStorage(null);
+        result.setData(StoryPackageGenerationSavedData.DATA_NAME, restartedGenerations);
+        result.setData(CanonicalTaskSavedData.DATA_NAME, restartedTasks);
+        return result;
     }
 
     private static void require(boolean condition, String message) {

@@ -1,6 +1,7 @@
 package darkgrey.rpg.session.persistence;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -290,7 +291,25 @@ public final class CanonicalSessionSavedDataProbe {
         require(transferData.acceptAndConsume(completion, route), "exact completion replay idempotent");
         require(!transferData.isDirty(), "exact replay is clean");
         assertCompletionRejections(completion, route);
+        CanonicalSessionSavedData retirement = new CanonicalSessionSavedData();
+        retirement.start(PLAYER, "retired_story", "retired-placement", resource);
+        retirement.start(PLAYER, "retained_story", "retained-placement", resource);
+        CanonicalSessionSavedData.DiscardResult retired = retirement
+            .discardByStoryIds(Collections.singleton("retired_story"));
+        require(
+            retired.getSessionInstances() == 1 && retirement.getSnapshot(PLAYER, "retired_story") == null,
+            "Generation retirement did not remove the selected Session");
+        require(
+            retirement.getSnapshot(PLAYER, "retained_story") != null,
+            "Generation retirement touched another Session");
+        CanonicalSessionSavedData.DiscardResult continuationRetired = transferData
+            .discardByStoryIds(Collections.singleton("story_a"));
+        require(
+            continuationRetired.getContinuations() == 1
+                && transferData.getPendingContinuation(PLAYER, "story_a") == null,
+            "Generation retirement did not remove the selected continuation");
         System.out.println("CANONICAL_SESSION_SAVED_DATA_PROBE=PASS");
+        System.out.println("CANONICAL_SESSION_GENERATION_RETIREMENT=PASS");
     }
 
     private static CanonicalSessionResourceResolver resolver(final CanonicalGraphResource... resources) {

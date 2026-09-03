@@ -2,6 +2,7 @@ package darkgrey.rpg.session.persistence;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -651,6 +652,105 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized int size() {
         requireBound();
         return store.size();
+    }
+
+    /** Permanently retires every persisted Session/Story/continuation owned by the selected Story IDs. */
+    public synchronized DiscardResult discardByStoryIds(Set<String> storyIds) {
+        if (storyIds == null) throw new IllegalArgumentException("Story IDs are required.");
+        if (storyIds.isEmpty()) return new DiscardResult(0, 0, 0);
+        if (pendingRaw != null) return discardPending(storyIds);
+        NBTTagCompound before = persistedState();
+        int sessionsRemoved = store.discardByStoryIds(storyIds);
+        int storiesRemoved = storyStore.discardByStoryIds(storyIds);
+        List<CanonicalStoryPendingContinuation> remaining = filterContinuations(continuations, storyIds);
+        int continuationsRemoved = continuations.size() - remaining.size();
+        if (continuationsRemoved > 0) continuations = remaining;
+        if (sessionsRemoved > 0 || storiesRemoved > 0 || continuationsRemoved > 0) markWorldIfChanged(before);
+        return new DiscardResult(storiesRemoved, sessionsRemoved, continuationsRemoved);
+    }
+
+    private DiscardResult discardPending(Set<String> storyIds) {
+        if (pendingLegacy) {
+            List<CanonicalSessionInstanceSnapshot> sessions = CanonicalSessionInstanceNbtCodec.decode(pendingRaw);
+            List<CanonicalSessionInstanceSnapshot> retained = filterSessions(sessions, storyIds);
+            int removed = sessions.size() - retained.size();
+            if (removed > 0) {
+                pendingRaw = CanonicalSessionInstanceNbtCodec
+                    .encode(retained, CanonicalSessionInstanceNbtCodec.nextTransportId(pendingRaw));
+                markDirty();
+            }
+            return new DiscardResult(0, removed, 0);
+        }
+        CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(pendingRaw);
+        List<CanonicalSessionInstanceSnapshot> sessions = filterSessions(decoded.getSessions(), storyIds);
+        List<CanonicalStoryInstanceSnapshot> stories = filterStories(decoded.getStories(), storyIds);
+        List<CanonicalStoryPendingContinuation> remaining = filterContinuations(decoded.getContinuations(), storyIds);
+        DiscardResult result = new DiscardResult(
+            decoded.getStories()
+                .size() - stories.size(),
+            decoded.getSessions()
+                .size() - sessions.size(),
+            decoded.getContinuations()
+                .size() - remaining.size());
+        if (result.total() > 0) {
+            pendingRaw = CanonicalSessionWorldStateNbtCodec
+                .encode(sessions, decoded.getNextTransportId(), remaining, stories);
+            markDirty();
+        }
+        return result;
+    }
+
+    private static List<CanonicalSessionInstanceSnapshot> filterSessions(List<CanonicalSessionInstanceSnapshot> source,
+        Set<String> storyIds) {
+        List<CanonicalSessionInstanceSnapshot> result = new java.util.ArrayList<CanonicalSessionInstanceSnapshot>();
+        for (CanonicalSessionInstanceSnapshot value : source)
+            if (!storyIds.contains(value.getStoryId())) result.add(value);
+        return result;
+    }
+
+    private static List<CanonicalStoryInstanceSnapshot> filterStories(List<CanonicalStoryInstanceSnapshot> source,
+        Set<String> storyIds) {
+        List<CanonicalStoryInstanceSnapshot> result = new java.util.ArrayList<CanonicalStoryInstanceSnapshot>();
+        for (CanonicalStoryInstanceSnapshot value : source)
+            if (!storyIds.contains(value.getStoryId())) result.add(value);
+        return result;
+    }
+
+    private static List<CanonicalStoryPendingContinuation> filterContinuations(
+        List<CanonicalStoryPendingContinuation> source, Set<String> storyIds) {
+        List<CanonicalStoryPendingContinuation> result = new java.util.ArrayList<CanonicalStoryPendingContinuation>();
+        for (CanonicalStoryPendingContinuation value : source)
+            if (!storyIds.contains(value.getStoryId())) result.add(value);
+        return result;
+    }
+
+    public static final class DiscardResult {
+
+        private final int storyInstances;
+        private final int sessionInstances;
+        private final int continuations;
+
+        DiscardResult(int storyInstances, int sessionInstances, int continuations) {
+            this.storyInstances = storyInstances;
+            this.sessionInstances = sessionInstances;
+            this.continuations = continuations;
+        }
+
+        public int getStoryInstances() {
+            return storyInstances;
+        }
+
+        public int getSessionInstances() {
+            return sessionInstances;
+        }
+
+        public int getContinuations() {
+            return continuations;
+        }
+
+        public int total() {
+            return storyInstances + sessionInstances + continuations;
+        }
     }
 
     @Override

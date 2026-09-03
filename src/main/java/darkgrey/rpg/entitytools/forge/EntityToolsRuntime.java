@@ -105,7 +105,6 @@ public final class EntityToolsRuntime {
         state.capture(capture, creative ? StorageMode.CREATIVE : StorageMode.SURVIVAL, npcId);
         ItemStorageBox.saveState(stack, state);
         if (!creative && !CustomNpcActorBinding.deleteForStorage(target)) target.setDead();
-        player.addChatMessage(new ChatComponentText(creative ? "已保存创造模式实体模板；原实体保留。" : "实体已收纳；唯一 NPC ID 继续被占用。"));
     }
 
     private void spawnStorage(EntityPlayer player, ItemStack stack, double x, double y, double z) {
@@ -114,7 +113,6 @@ public final class EntityToolsRuntime {
         adapter.spawn(player.worldObj, x, y, z, spec);
         state.consumeSuccessfulRelease();
         ItemStorageBox.saveState(stack, state);
-        player.addChatMessage(new ChatComponentText(state.isOccupied() ? "已生成创造模式副本；模板仍保留。" : "实体已恢复；收纳箱已清空。"));
     }
 
     private static int[] faceOffset(int face) {

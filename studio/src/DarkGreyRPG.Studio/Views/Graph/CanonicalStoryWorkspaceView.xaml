@@ -382,12 +382,10 @@
                                 <Style.Triggers><DataTrigger Binding="{Binding IsStoryStart}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                             </Style>
                         </StackPanel.Style>
-                        <TextBlock Text="重复策略" />
-                        <ComboBox Margin="0,3,0,0" ItemsSource="{Binding RepeatPolicyChoices}"
-                                  SelectedItem="{Binding SelectedRepeatPolicy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  DisplayMemberPath="DisplayName"
-                                  AutomationProperties.AutomationId="StoryStartRepeatPolicy"
-                                  AutomationProperties.Name="Story Start repeat policy" />
+                        <CheckBox Content="可重复"
+                                  IsChecked="{Binding IsRepeatable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  AutomationProperties.AutomationId="StoryStartRepeatableToggle"
+                                  AutomationProperties.Name="Story Start repeatable" />
                         <Grid Margin="0,12,0,3">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <TextBlock FontWeight="SemiBold" Text="启动条件" />

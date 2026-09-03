@@ -37,6 +37,7 @@ public final class CanonicalStoryInstanceProbe {
 
     public static void main(String[] args) {
         oneInstanceAndRepeatPolicy();
+        packageGenerationRetirement();
         flowJudgmentRestartRoundTrip();
         restartRoundTripAndAtomicFailure();
         atomicSessionHandoffCheckpoint();
@@ -46,6 +47,7 @@ public final class CanonicalStoryInstanceProbe {
         System.out.println("CANONICAL_STORY_INSTANCE_NBT_RESTORE=PASS");
         System.out.println("CANONICAL_STORY_FLOW_JUDGMENT_NBT=PASS");
         System.out.println("CANONICAL_STORY_SESSION_CHECKPOINT=PASS");
+        System.out.println("CANONICAL_STORY_GENERATION_RETIREMENT=PASS");
     }
 
     private static void flowJudgmentRestartRoundTrip() {
@@ -119,6 +121,20 @@ public final class CanonicalStoryInstanceProbe {
                 .getWaitKind() == CanonicalStoryWaitKind.SESSION,
             "Active cursor moved on re-entry");
         check(activeStore.activeCount(PLAYER) == 1, "Player has more than one active instance for the Story");
+    }
+
+    private static void packageGenerationRetirement() {
+        CanonicalGraphResource retired = terminalStory("retired_story");
+        CanonicalGraphResource retained = terminalStory("retained_story");
+        CanonicalStoryInstanceStore store = new CanonicalStoryInstanceStore();
+        store.start(PLAYER, retired, "trigger", CanonicalStoryRepeatPolicy.ONCE, 1L);
+        store.start(PLAYER, retained, "trigger", CanonicalStoryRepeatPolicy.ONCE, 2L);
+        check(store.size() == 2, "Generation retirement fixture did not persist both terminal Stories");
+        check(
+            store.discardByStoryIds(Collections.singleton(retired.getId())) == 1,
+            "Generation retirement did not remove the selected terminal Story");
+        check(store.get(PLAYER, retired.getId()) == null, "Retired terminal Story remained restart-blocking");
+        check(store.get(PLAYER, retained.getId()) != null, "Generation retirement touched another Story");
     }
 
     private static void restartRoundTripAndAtomicFailure() {

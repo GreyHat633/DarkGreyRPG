@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -206,6 +207,34 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         return store.size();
     }
 
+    /** Permanently retires every persisted Task instance owned by the selected Story IDs. */
+    public synchronized int discardByStoryIds(Set<String> storyIds) {
+        if (storyIds == null) throw new IllegalArgumentException("Story IDs are required.");
+        if (storyIds.isEmpty()) return 0;
+        if (pendingRaw != null) {
+            List<CanonicalTaskInstanceSnapshot> snapshots = CanonicalTaskInstanceNbtCodecBridge.decode(pendingRaw);
+            List<CanonicalTaskInstanceSnapshot> retained = new ArrayList<CanonicalTaskInstanceSnapshot>();
+            for (CanonicalTaskInstanceSnapshot snapshot : snapshots)
+                if (!storyIds.contains(snapshot.getStoryInstanceId())) retained.add(snapshot);
+            int removed = snapshots.size() - retained.size();
+            if (removed > 0) {
+                pendingRaw = CanonicalTaskInstanceNbtCodecBridge.encode(retained);
+                markDirty();
+            }
+            return removed;
+        }
+        NBTTagCompound before = persistedState();
+        for (CanonicalTaskInstanceSnapshot snapshot : store.snapshots())
+            if (storyIds.contains(snapshot.getStoryInstanceId())) index.remove(
+                new CanonicalTaskInstanceIdentity(
+                    snapshot.getPlayerUuid(),
+                    snapshot.getStoryInstanceId(),
+                    snapshot.getTaskNodePlacementId()));
+        int removed = store.discardByStoryIds(storyIds);
+        markIfChanged(before);
+        return removed;
+    }
+
     public synchronized CanonicalTaskSubscriptionIndex getSubscriptionIndex() {
         return index;
     }
@@ -349,6 +378,10 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
 
         static List<CanonicalTaskInstanceSnapshot> decode(NBTTagCompound root) {
             return darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec.decode(root);
+        }
+
+        static NBTTagCompound encode(List<CanonicalTaskInstanceSnapshot> snapshots) {
+            return darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec.encode(snapshots);
         }
     }
 }

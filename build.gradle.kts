@@ -606,3 +606,11 @@ tasks.register<JavaExec>("dgrsArchiveReaderProbe") {
     mainClass.set("darkgrey.rpg.project.packages.DgrsArchiveReaderProbe")
     args(layout.buildDirectory.dir("dgrs-archive-reader-probe").get().asFile.absolutePath)
 }
+
+tasks.register<JavaExec>("storyPackageGenerationProbe") {
+    group = "verification"
+    description = "Runs the B3 package fingerprint, generation delta, and persisted registry probe."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.StoryPackageGenerationProbe")
+}

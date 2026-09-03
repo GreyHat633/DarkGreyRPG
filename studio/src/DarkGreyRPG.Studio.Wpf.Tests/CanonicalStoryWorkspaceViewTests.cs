@@ -158,6 +158,40 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void StoryStartRepeatableCheckboxesShareCanonicalProjection()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
+        using var workspace = new CanonicalStoryWorkspaceViewModel(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+        var view = Arrange(workspace);
+        var visual = Descendants<CanonicalGraphNodeControl>(view).Single();
+        var inlineToggle = Descendants<CheckBox>(visual).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "InlineStartRepeatableToggle");
+
+        Assert.IsTrue(view.GraphView.SelectNode("start"));
+        view.UpdateLayout();
+        var inspectorToggle = Descendants<CheckBox>(view).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "StoryStartRepeatableToggle");
+        Assert.AreEqual("可重复", inlineToggle.Content);
+        Assert.AreEqual("可重复", inspectorToggle.Content);
+        Assert.AreEqual(false, inlineToggle.IsChecked);
+        Assert.AreEqual(false, inspectorToggle.IsChecked);
+
+        inlineToggle.IsChecked = true;
+        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        Assert.AreEqual(true, inlineToggle.IsChecked);
+        Assert.AreEqual(true, inspectorToggle.IsChecked);
+        Assert.AreEqual(StoryStartSchema.Repeatable,
+            workspace.StoryEditor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
+
+        inspectorToggle.IsChecked = false;
+        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        Assert.AreEqual(false, inlineToggle.IsChecked);
+        Assert.AreEqual(StoryStartSchema.Once,
+            workspace.StoryEditor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
+    }
+
+    [STATestMethod]
     public void ActionTitlesDropdownsAndFieldLabelsUseOneAuthorVocabulary()
     {
         var actions = new[]

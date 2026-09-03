@@ -53,8 +53,10 @@ public final class CanonicalTaskEventPersistenceProbe {
         settlementCancellationAndErrors(settled, parallel);
         persistenceAndAtomicBind(parallel);
         playerAndRetainedResourceIsolation(parallel);
+        packageGenerationRetirement(parallel);
         candidateBoundScale(many);
         System.out.println("TASK_EVENT_PERSISTENCE_PROBE_PASS");
+        System.out.println("CANONICAL_TASK_GENERATION_RETIREMENT=PASS");
     }
 
     private static void parallelAndDuplicate(CanonicalGraphResource parallel, CanonicalGraphResource sequential) {
@@ -274,6 +276,25 @@ public final class CanonicalTaskEventPersistenceProbe {
             data.dispatch(PLAYER, CanonicalTaskEvent.killEntity("slime"), 2L)
                 .getCandidateCount() == 1,
             "candidate bounded");
+    }
+
+    private static void packageGenerationRetirement(CanonicalGraphResource resource) {
+        CanonicalTaskSavedData data = new CanonicalTaskSavedData();
+        data.start(PLAYER, "retired_story", "retired-placement", resource, 1L);
+        data.start(PLAYER, "retained_story", "retained-placement", resource, 1L);
+        require(
+            data.discardByStoryIds(Collections.singleton("retired_story")) == 1,
+            "Generation retirement did not remove the selected Task");
+        require(
+            data.getSnapshot(PLAYER, "retired_story", "retired-placement") == null,
+            "Retired Task remained persisted");
+        require(
+            data.getSnapshot(PLAYER, "retained_story", "retained-placement") != null,
+            "Generation retirement touched another Task");
+        require(
+            data.getSubscriptionIndex()
+                .candidateCount(PLAYER, CanonicalTaskEvent.killEntity("slime")) == 1,
+            "Generation retirement left a stale Task subscription");
     }
 
     private static void playerAndRetainedResourceIsolation(CanonicalGraphResource original) {

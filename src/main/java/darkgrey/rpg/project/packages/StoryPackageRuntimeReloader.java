@@ -88,6 +88,11 @@ public final class StoryPackageRuntimeReloader {
             return publicationError;
         }
 
+        /** True when the loader's accepted package set may be reconciled with persisted generations. */
+        public boolean isPackageSetCommitted() {
+            return publicationError == null;
+        }
+
         public List<String> getErrors() {
             List<String> errors = new ArrayList<String>(packageReload.getErrors());
             if (publicationError != null) errors.add(publicationError);

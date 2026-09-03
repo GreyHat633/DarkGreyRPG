@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -140,6 +141,21 @@ public final class CanonicalSessionInstanceStore {
     public synchronized boolean cancelByStory(UUID playerUuid, String storyId) {
         if (playerUuid == null || blank(storyId)) return false;
         return instances.remove(new Key(playerUuid, storyId)) != null;
+    }
+
+    /** Permanently discards every player Session child owned by any selected Story. */
+    public synchronized int discardByStoryIds(Set<String> storyIds) {
+        if (storyIds == null) throw new IllegalArgumentException("Story IDs are required.");
+        int removed = 0;
+        java.util.Iterator<Map.Entry<Key, CanonicalSessionInstance>> iterator = instances.entrySet()
+            .iterator();
+        while (iterator.hasNext()) if (storyIds.contains(
+            iterator.next()
+                .getKey().story)) {
+                    iterator.remove();
+                    removed++;
+                }
+        return removed;
     }
 
     public synchronized NBTTagCompound writeToNbt() {

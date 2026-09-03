@@ -340,6 +340,12 @@ public final class StoryPackageLoader {
     private static Map<String, byte[]> readDeclaredBytes(File directory, StoryPackageManifest manifest)
         throws ProjectLoadException {
         Map<String, byte[]> result = new LinkedHashMap<String, byte[]>();
+        File project = new File(directory, "project.json");
+        try {
+            result.put("project.json", java.nio.file.Files.readAllBytes(project.toPath()));
+        } catch (java.io.IOException exception) {
+            throw new ProjectLoadException("Cannot read declared package resource: project.json", exception);
+        }
         for (String path : requiredPaths(manifest)) {
             File file = new File(directory, path.replace('/', File.separatorChar));
             try {

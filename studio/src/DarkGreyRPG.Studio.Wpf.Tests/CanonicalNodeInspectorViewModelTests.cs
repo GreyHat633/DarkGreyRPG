@@ -539,6 +539,37 @@ public sealed class CanonicalNodeInspectorViewModelTests
     }
 
     [TestMethod]
+    public void StoryStartRepeatableProjectionMapsStringAndUsesHostUndoRedo()
+    {
+        var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
+            GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+
+        Assert.IsFalse(inspector.IsRepeatable);
+        Assert.AreEqual(StoryStartSchema.Once, inspector.RepeatPolicy);
+
+        inspector.IsRepeatable = true;
+        Assert.IsTrue(inspector.IsRepeatable);
+        Assert.AreEqual(StoryStartSchema.Repeatable, inspector.RepeatPolicy);
+        Assert.AreEqual(StoryStartSchema.Repeatable,
+            editor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
+
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.IsFalse(inspector.IsRepeatable);
+        Assert.AreEqual(StoryStartSchema.Once, inspector.RepeatPolicy);
+        Assert.IsTrue(editor.Host.Redo());
+        Assert.IsTrue(inspector.IsRepeatable);
+
+        var snapshot = editor.CreatePersistenceSnapshot();
+        using var reopened = new CanonicalGraphResourceEditorViewModel(snapshot);
+        using var reopenedInspector = new CanonicalNodeInspectorViewModel(
+            reopened.Host, reopened.Host.Nodes.Single());
+        Assert.IsTrue(reopenedInspector.IsRepeatable);
+        Assert.AreEqual(StoryStartSchema.Repeatable, reopenedInspector.RepeatPolicy);
+    }
+
+    [TestMethod]
     public void LegacyEnterStoryTriggerIsVisibleButNotOfferedForNewTriggers()
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "legacy-port");

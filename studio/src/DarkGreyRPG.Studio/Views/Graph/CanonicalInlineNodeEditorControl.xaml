@@ -16,6 +16,10 @@
                     <Style.Triggers><DataTrigger Binding="{Binding IsStoryStart}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                 </Style>
             </StackPanel.Style>
+            <CheckBox Margin="0,0,0,6" Content="可重复"
+                      IsChecked="{Binding IsRepeatable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      AutomationProperties.AutomationId="InlineStartRepeatableToggle"
+                      AutomationProperties.Name="Story Start repeatable" />
             <ItemsControl ItemsSource="{Binding StoryStartTriggers}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>

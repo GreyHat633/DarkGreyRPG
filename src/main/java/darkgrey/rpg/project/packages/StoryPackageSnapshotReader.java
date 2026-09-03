@@ -41,6 +41,7 @@ final class StoryPackageSnapshotReader {
             throw new IllegalArgumentException("archive and manifest are required");
         StoryPackageManifest.RequiredResources required = manifest.getRequiredResources();
         Map<String, byte[]> declaredBytes = requiredBytes(archive, required);
+        declaredBytes.put("project.json", archive.readBytes("project.json"));
         ProjectDefinition project = ProjectRepository
             .readPackagedProject(archive.readBytes("project.json"), source(archive, "project.json"));
 

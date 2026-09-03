@@ -31,6 +31,7 @@ import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.network.NominatorNetwork;
 import darkgrey.rpg.nominator.container.NominatorGuiHandler;
 import darkgrey.rpg.project.ProjectRepository;
+import darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
 import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
 import darkgrey.rpg.proxy.CommonProxy;
@@ -73,6 +74,7 @@ public final class DarkGreyRpg {
     private static CanonicalTaskForgeManager canonicalTaskManager;
     private static CanonicalStoryForgeManager canonicalStoryManager;
     private static StoryPackageLoader storyPackageLoader;
+    private static StoryPackageRuntimeReloader.Result packageStartup;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -101,6 +103,7 @@ public final class DarkGreyRpg {
 
         StoryPackageRuntimeReloader.Result startup = StoryPackageRuntimeReloader
             .startup(projectRepository, storyPackageLoader);
+        packageStartup = startup;
         ProjectRepository.ReloadResult result = startup.getProjectReload();
         StoryPackageLoader.ReloadResult packageResult = startup.getPackageReload();
         if (!startup.isSuccessful()) {
@@ -157,6 +160,10 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        if (packageStartup != null && packageStartup.isPackageSetCommitted()) StoryPackageGenerationLifecycle.reconcile(
+            event.getServer()
+                .worldServerForDimension(0).mapStorage,
+            storyPackageLoader.getPackages());
         event.registerServerCommand(
             new CommandDarkGreyRpg(
                 projectRepository,

@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.LongSupplier;
 
@@ -85,6 +86,21 @@ public final class CanonicalTaskInstanceStore {
 
     public synchronized int size() {
         return instances.size();
+    }
+
+    /** Permanently discards active and terminal Task instances owned by the selected Stories. */
+    public synchronized int discardByStoryIds(Set<String> storyIds) {
+        if (storyIds == null) throw new IllegalArgumentException("Story IDs are required.");
+        int removed = 0;
+        java.util.Iterator<Map.Entry<Key, CanonicalTaskInstance>> iterator = instances.entrySet()
+            .iterator();
+        while (iterator.hasNext()) if (storyIds.contains(
+            iterator.next()
+                .getKey().story)) {
+                    iterator.remove();
+                    removed++;
+                }
+        return removed;
     }
 
     public synchronized boolean acceptEvent(UUID playerUuid, String storyInstanceId, String taskNodePlacementId,

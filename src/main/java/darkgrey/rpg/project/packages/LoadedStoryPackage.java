@@ -17,14 +17,17 @@ public final class LoadedStoryPackage {
     private final ProjectSnapshot snapshot;
     private final CanonicalStoryLogicGraph storyLogicGraph;
     private final Map<String, byte[]> declaredResourceBytes;
+    private final String contentFingerprint;
 
     LoadedStoryPackage(StoryPackageManifest manifest, File directory, ProjectSnapshot snapshot,
-        CanonicalStoryLogicGraph storyLogicGraph, Map<String, byte[]> declaredResourceBytes) {
+        CanonicalStoryLogicGraph storyLogicGraph, Map<String, byte[]> declaredResourceBytes)
+        throws darkgrey.rpg.project.ProjectLoadException {
         this(manifest, directory, null, snapshot, storyLogicGraph, declaredResourceBytes);
     }
 
     LoadedStoryPackage(StoryPackageManifest manifest, File directory, File sourceArchive, ProjectSnapshot snapshot,
-        CanonicalStoryLogicGraph storyLogicGraph, Map<String, byte[]> declaredResourceBytes) {
+        CanonicalStoryLogicGraph storyLogicGraph, Map<String, byte[]> declaredResourceBytes)
+        throws darkgrey.rpg.project.ProjectLoadException {
         this.manifest = manifest;
         this.directory = directory;
         this.sourceArchive = sourceArchive;
@@ -36,6 +39,7 @@ public final class LoadedStoryPackage {
             entry.getValue()
                 .clone());
         this.declaredResourceBytes = Collections.unmodifiableMap(detached);
+        contentFingerprint = StoryPackageContentFingerprint.compute(manifest, this.declaredResourceBytes);
     }
 
     public StoryPackageManifest getManifest() {
@@ -60,6 +64,10 @@ public final class LoadedStoryPackage {
 
     public String getStoryId() {
         return manifest.getStoryId();
+    }
+
+    public String getContentFingerprint() {
+        return contentFingerprint;
     }
 
     public CanonicalStoryLogicGraph getStoryLogicGraph() {

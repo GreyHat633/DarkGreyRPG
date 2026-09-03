@@ -177,8 +177,23 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         {
             if (_isProjectingCanonicalChange || !IsStoryStart
                 || string.Equals(_repeatPolicy, value, StringComparison.Ordinal)) return;
-            if (!_host.SetStoryStartRepeatPolicy(NodeId, value)) OnPropertyChanged(nameof(RepeatPolicy));
+            if (!_host.SetStoryStartRepeatPolicy(NodeId, value))
+            {
+                OnPropertyChanged(nameof(RepeatPolicy));
+                OnPropertyChanged(nameof(IsRepeatable));
+            }
         }
+    }
+
+    /// <summary>
+    /// Author-facing checkbox projection of the schema's string repeat policy.
+    /// The canonical value remains <c>once</c> or <c>repeatable</c> so the
+    /// existing session, persistence, and runtime contracts remain unchanged.
+    /// </summary>
+    public bool IsRepeatable
+    {
+        get => string.Equals(_repeatPolicy, StoryStartSchema.Repeatable, StringComparison.Ordinal);
+        set => RepeatPolicy = value ? StoryStartSchema.Repeatable : StoryStartSchema.Once;
     }
 
     public IReadOnlyList<CanonicalObjectiveTypeOption> ObjectiveTypeOptions { get; } =
@@ -930,6 +945,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(LogicOutputDisplayName));
         OnPropertyChanged(nameof(LogicOutputDisplayNameError));
         OnPropertyChanged(nameof(RepeatPolicy));
+        OnPropertyChanged(nameof(IsRepeatable));
         OnPropertyChanged(nameof(SelectedRepeatPolicy));
         OnPropertyChanged(nameof(StoryStartTriggers));
         OnPropertyChanged(nameof(TriggerSlots));
