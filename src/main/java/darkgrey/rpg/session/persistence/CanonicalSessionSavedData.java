@@ -104,27 +104,76 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         bindInternal(sessionResolver, storyResolver);
     }
 
+    /**
+     * Rebinds against the currently installed project and drops runtime instances whose package resources were
+     * uninstalled. Strict {@link #bind(CanonicalSessionResourceResolver, CanonicalStoryResourceResolver)} remains the
+     * persistence-validation boundary for callers that require every reference to resolve.
+     */
+    public synchronized void bindAvailable(CanonicalSessionResourceResolver sessionResolver,
+        CanonicalStoryResourceResolver storyResolver) {
+        bindInternal(sessionResolver, storyResolver, true);
+    }
+
     private void bindInternal(CanonicalSessionResourceResolver resolver, CanonicalStoryResourceResolver storyResolver) {
+        bindInternal(resolver, storyResolver, false);
+    }
+
+    private void bindInternal(CanonicalSessionResourceResolver resolver, CanonicalStoryResourceResolver storyResolver,
+        boolean discardUnavailable) {
         if (resolver == null) throw new IllegalArgumentException("Session resource resolver is required.");
         CanonicalSessionInstanceStore replacementSessions = new CanonicalSessionInstanceStore();
         CanonicalStoryInstanceStore replacementStories = new CanonicalStoryInstanceStore();
         List<CanonicalStoryPendingContinuation> replacementContinuations = new java.util.ArrayList<CanonicalStoryPendingContinuation>();
-        if (pendingRaw != null) {
-            NBTTagCompound raw = pendingRaw;
-            if (pendingLegacy) {
-                replacementSessions.readFromNbt(raw, resolver);
-            } else {
-                CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(raw);
-                replacementSessions
-                    .readFromNbt(raw.getCompoundTag(CanonicalSessionWorldStateNbtCodec.SESSIONS_KEY), resolver);
-                restoreStories(replacementStories, decoded.getStories(), storyResolver);
-                replacementContinuations.addAll(decoded.getContinuations());
-            }
+        List<CanonicalSessionInstanceSnapshot> sessionSnapshots;
+        List<CanonicalStoryInstanceSnapshot> storySnapshots;
+        List<CanonicalStoryPendingContinuation> pendingContinuations;
+        long replacementNextTransportId;
+        if (pendingRaw != null && pendingLegacy) {
+            sessionSnapshots = CanonicalSessionInstanceNbtCodec.decode(pendingRaw);
+            replacementNextTransportId = CanonicalSessionInstanceNbtCodec.nextTransportId(pendingRaw);
+            storySnapshots = java.util.Collections.emptyList();
+            pendingContinuations = java.util.Collections.emptyList();
+        } else if (pendingRaw != null) {
+            CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(pendingRaw);
+            sessionSnapshots = decoded.getSessions();
+            replacementNextTransportId = decoded.getNextTransportId();
+            storySnapshots = decoded.getStories();
+            pendingContinuations = decoded.getContinuations();
         } else {
-            replacementSessions.readFromNbt(store.writeToNbt(), resolver);
-            restoreStories(replacementStories, storyStore.snapshots(), storyResolver);
-            replacementContinuations.addAll(continuations);
+            sessionSnapshots = store.snapshots();
+            replacementNextTransportId = nextTransportId();
+            storySnapshots = storyStore.snapshots();
+            pendingContinuations = continuations;
         }
+        boolean discarded = false;
+        if (discardUnavailable) {
+            List<CanonicalSessionInstanceSnapshot> availableSessions = new java.util.ArrayList<CanonicalSessionInstanceSnapshot>();
+            for (CanonicalSessionInstanceSnapshot snapshot : sessionSnapshots) {
+                if (resolver.resolve(snapshot.getSessionResourceId()) != null) availableSessions.add(snapshot);
+                else discarded = true;
+            }
+            sessionSnapshots = availableSessions;
+            List<CanonicalStoryInstanceSnapshot> availableStories = new java.util.ArrayList<CanonicalStoryInstanceSnapshot>();
+            for (CanonicalStoryInstanceSnapshot snapshot : storySnapshots) {
+                if (storyResolver != null && storyResolver.resolve(snapshot.getStoryId()) != null)
+                    availableStories.add(snapshot);
+                else discarded = true;
+            }
+            storySnapshots = availableStories;
+            List<CanonicalStoryPendingContinuation> availableContinuations = new java.util.ArrayList<CanonicalStoryPendingContinuation>();
+            for (CanonicalStoryPendingContinuation continuation : pendingContinuations) {
+                if (storyResolver != null && storyResolver.resolve(continuation.getStoryId()) != null
+                    && resolver.resolve(continuation.getSessionResourceId()) != null)
+                    availableContinuations.add(continuation);
+                else discarded = true;
+            }
+            pendingContinuations = availableContinuations;
+        }
+        replacementSessions.readFromNbt(
+            CanonicalSessionInstanceNbtCodec.encode(sessionSnapshots, replacementNextTransportId),
+            resolver);
+        restoreStories(replacementStories, storySnapshots, storyResolver);
+        replacementContinuations.addAll(pendingContinuations);
         validateStoryContinuations(replacementStories, replacementContinuations);
         store = replacementSessions;
         storyStore = replacementStories;
@@ -134,6 +183,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         boundSessionResolver = resolver;
         boundStoryResolver = storyResolver;
         bound = true;
+        if (discarded) markDirty();
     }
 
     public synchronized void restore(CanonicalSessionResourceResolver resolver) {

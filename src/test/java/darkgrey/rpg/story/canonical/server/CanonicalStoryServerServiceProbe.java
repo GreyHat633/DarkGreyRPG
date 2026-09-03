@@ -48,11 +48,38 @@ public final class CanonicalStoryServerServiceProbe {
         typedTriggerSelection();
         durableConditionResume();
         errorCancelsSessionChildren();
+        packageUninstallClearsRuntimeInstances();
         System.out.println("CANONICAL_STORY_START_TRIGGER_SCHEMA=PASS");
         System.out.println("CANONICAL_STORY_SESSION_SERVICE=PASS");
         System.out.println("CANONICAL_STORY_ATOMIC_RESTART=PASS");
         System.out.println("CANONICAL_STORY_ERROR_CHILD_CLEANUP=PASS");
         System.out.println("CANONICAL_STORY_DYNAMIC_LOGIC_RESUME=PASS");
+        System.out.println("CANONICAL_STORY_PACKAGE_UNINSTALL_RUNTIME_CLEAR=PASS");
+    }
+
+    private static void packageUninstallClearsRuntimeInstances() {
+        ProjectSnapshot installed = project();
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        new CanonicalStoryServerService(installed, data).startByEntry(PLAYER, "story", 1000L);
+        new CanonicalSessionServerService(installed, data).start(PLAYER, "story", "session_place");
+        check(data.getStorySnapshot(PLAYER, "story") != null, "Installed Story cursor was not created");
+        check(data.getSnapshot(PLAYER, "story") != null, "Installed Session child was not created");
+
+        new CanonicalStoryServerService(emptyProject(), data);
+        check(data.getStorySnapshot(PLAYER, "story") == null, "Uninstalled Story cursor remained active");
+        check(data.getSnapshot(PLAYER, "story") == null, "Uninstalled Session child remained active");
+        check(
+            data.getPendingContinuations()
+                .isEmpty(),
+            "Uninstalled Story handoff remained active");
+
+        CanonicalStoryDispatch restarted = new CanonicalStoryServerService(installed, data)
+            .startByEntry(PLAYER, "story", 1100L);
+        check(restarted.getKind() == CanonicalStoryDispatchKind.SESSION, "Reinstalled Story did not resolve again");
+        check(
+            restarted.getSnapshot()
+                .getActivationTime() == 1100L,
+            "Reinstalled Story reused the uninstalled runtime cursor");
     }
 
     private static void durableConditionResume() {
@@ -284,6 +311,20 @@ public final class CanonicalStoryServerServiceProbe {
                 sessions,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
                 memberships));
+    }
+
+    private static ProjectSnapshot emptyProject() {
+        return new ProjectSnapshot(
+            new ProjectDefinition(1, "empty-story-probe", "Empty Story Probe"),
+            Collections.<String, ActorDefinition>emptyMap(),
+            Collections.<String, DialogueDefinition>emptyMap(),
+            Collections.<String, QuestDefinition>emptyMap(),
+            Collections.<String, StoryDefinition>emptyMap(),
+            new CanonicalProjectContent(
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalStoryMembership>emptyMap()));
     }
 
     private static CanonicalGraphResource story() {

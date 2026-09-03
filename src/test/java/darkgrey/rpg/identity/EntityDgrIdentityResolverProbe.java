@@ -24,6 +24,20 @@ public final class EntityDgrIdentityResolverProbe {
         NpcIdentitySavedData identities = new NpcIdentitySavedData("probe_identity_resolver");
         NominatorSavedData selections = new NominatorSavedData("probe_identity_resolver_nominator");
 
+        EntityDgrIdentityResolver.Resolution unboundSlime = EntityDgrIdentityResolver
+            .resolve(entity, "minecraft:slime", identities, selections);
+        require(!unboundSlime.isResolved(), "unbound vanilla slime acquired a DGR identity");
+
+        selections.put(new NominatorEntityBinding(ENTITY, null, Collections.singletonList("slimes"), "kill_slimes"));
+        for (String hostType : Arrays.asList("minecraft:cow", "minecraft:pig", "minecraft:zombie")) {
+            EntityDgrIdentityResolver.Resolution nominated = EntityDgrIdentityResolver
+                .resolve(entity, hostType, identities, selections);
+            require(
+                nominated.getActorIds()
+                    .equals(Collections.singletonList("slimes")),
+                hostType + " did not resolve the nominated DGR group");
+        }
+
         selections.put(new NominatorEntityBinding(ENTITY, null, Arrays.asList("guards", "town", "guards"), null));
         EntityDgrIdentityResolver.Resolution groups = EntityDgrIdentityResolver.resolve(entity, identities, selections);
         require(groups.isExternal(), "group selection was not external");
@@ -93,6 +107,8 @@ public final class EntityDgrIdentityResolverProbe {
         System.out.println("DGR_IDENTITY_GROUP_ROUTING=PASS");
         System.out.println("DGR_IDENTITY_EXACT_TYPE_GROUP_ROUTING=PASS");
         System.out.println("DGR_IDENTITY_SAME_UUID_CLONE_GUARD=PASS");
+        System.out.println("DGR_B2_UNBOUND_SLIME_NEGATIVE=PASS");
+        System.out.println("DGR_B2_MULTI_HOST_SLIMES_GROUP=PASS");
     }
 
     private static Entity allocateEntity(UUID uuid) throws Exception {

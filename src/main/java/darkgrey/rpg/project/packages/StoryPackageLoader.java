@@ -1,6 +1,11 @@
 package darkgrey.rpg.project.packages;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,6 +116,7 @@ public final class StoryPackageLoader {
                 .failure(errors, "Story Package install path is not a directory: " + installDirectory);
             return lastReload;
         }
+        cleanupRuntimeResidue(errors);
         File[] children = installDirectory.listFiles();
         if (children == null) {
             lastReload = ReloadResult
@@ -257,6 +263,70 @@ public final class StoryPackageLoader {
 
     private static String sourceKey(File source) {
         return source.getName();
+    }
+
+    /** Removes only the exact legacy cache child, after a no-links safety pass. */
+    private void cleanupRuntimeResidue(List<String> errors) {
+        Path install = installDirectory.toPath()
+            .toAbsolutePath()
+            .normalize();
+        Path residue = install.resolve(RUNTIME_CACHE_DIRECTORY)
+            .normalize();
+        if (!install.equals(residue.getParent())) {
+            errors.add("Cannot safely inspect Story Package runtime residue: " + residue);
+            return;
+        }
+        try {
+            if (isLinkLike(install)) {
+                errors
+                    .add("Cannot safely inspect Story Package runtime residue through a symbolic/reparse install path");
+                return;
+            }
+            if (!Files.exists(residue, LinkOption.NOFOLLOW_LINKS)) return;
+            verifySafeResidue(residue);
+            deleteSafeResidue(residue);
+        } catch (IOException | RuntimeException exception) {
+            errors
+                .add("Cannot safely clean Story Package runtime residue '" + residue + "': " + exception.getMessage());
+        }
+    }
+
+    private static void verifySafeResidue(Path path) throws IOException {
+        if (isLinkLike(path)) throw new IOException("symbolic/reparse link encountered");
+        if (!Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) throw new IOException("residue is not a directory");
+        try (DirectoryStream<Path> children = Files.newDirectoryStream(path)) {
+            for (Path child : children) {
+                if (isLinkLike(child)) throw new IOException("symbolic/reparse link encountered");
+                if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) verifySafeResidue(child);
+            }
+        }
+    }
+
+    private static void deleteSafeResidue(Path path) throws IOException {
+        if (isLinkLike(path)) throw new IOException("symbolic/reparse link encountered");
+        if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+            try (DirectoryStream<Path> children = Files.newDirectoryStream(path)) {
+                for (Path child : children) deleteSafeResidue(child);
+            }
+        }
+        Files.deleteIfExists(path);
+    }
+
+    private static boolean isLinkLike(Path path) throws IOException {
+        if (Files.isSymbolicLink(path)) return true;
+        try {
+            Map<String, Object> dos = Files.readAttributes(path, "dos:reparsePoint", LinkOption.NOFOLLOW_LINKS);
+            if (Boolean.TRUE.equals(dos.get("reparsePoint"))) return true;
+        } catch (UnsupportedOperationException | IllegalArgumentException exception) {
+            // The DOS view is unavailable on non-Windows file systems.
+        }
+        try {
+            return Files
+                .readAttributes(path, java.nio.file.attribute.BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
+                .isOther();
+        } catch (UnsupportedOperationException exception) {
+            return false;
+        }
     }
 
     private static void validateRequiredFiles(File directory, StoryPackageManifest manifest)

@@ -32,7 +32,11 @@ import darkgrey.rpg.project.ProjectLoadException;
 public final class DgrsArchiveReader {
 
     /** Safety bound for one archive entry, including entries with unknown size. */
-    private static final long MAX_ENTRY_BYTES = 64L * 1024L * 1024L;
+    static final long MAX_ENTRY_BYTES = 64L * 1024L * 1024L;
+    /** Maximum number of file entries retained by one detached archive. */
+    static final int MAX_ENTRY_COUNT = 4096;
+    /** Aggregate uncompressed budget for one detached archive. */
+    static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 256L * 1024L * 1024L;
     private static final String MANIFEST_ENTRY = "manifest.json";
     private static final String PROJECT_ENTRY = "project.json";
 
@@ -50,8 +54,13 @@ public final class DgrsArchiveReader {
         Map<String, String> normalizedNames = new HashMap<String, String>();
         try (ZipFile zip = new ZipFile(sourceArchive)) {
             Enumeration<? extends ZipEntry> enumeration = zip.entries();
+            int entryCount = 0;
+            long totalUncompressedBytes = 0L;
             while (enumeration.hasMoreElements()) {
                 ZipEntry entry = enumeration.nextElement();
+                entryCount++;
+                if (entryCount > MAX_ENTRY_COUNT)
+                    throw failure("DGRS archive exceeds the maximum entry count of " + MAX_ENTRY_COUNT, null);
                 String name = entry.getName();
                 validateEntryPath(name, entry);
                 String normalized = name.toLowerCase(Locale.ROOT);
@@ -59,7 +68,8 @@ public final class DgrsArchiveReader {
                 if (previous != null) throw failure(
                     "Duplicate normalized archive entry '" + name + "' (already '" + previous + "')",
                     null);
-                byte[] content = readEntry(zip, entry);
+                byte[] content = readEntry(zip, entry, totalUncompressedBytes);
+                totalUncompressedBytes += content.length;
                 names.add(name);
                 loaded.put(name, content);
             }
@@ -138,10 +148,15 @@ public final class DgrsArchiveReader {
         }
     }
 
-    private static byte[] readEntry(ZipFile zip, ZipEntry entry) throws IOException, ProjectLoadException {
+    private static byte[] readEntry(ZipFile zip, ZipEntry entry, long totalUncompressedBytes)
+        throws IOException, ProjectLoadException {
         long declared = entry.getSize();
         if (declared > MAX_ENTRY_BYTES) throw failure("DGRS entry exceeds the maximum size: " + entry.getName(), null);
-        long limit = declared >= 0 ? declared : MAX_ENTRY_BYTES;
+        long remaining = MAX_TOTAL_UNCOMPRESSED_BYTES - totalUncompressedBytes;
+        if (remaining < 0L || (declared >= 0L && declared > remaining)) throw failure(
+            "DGRS archive exceeds the maximum uncompressed size of " + MAX_TOTAL_UNCOMPRESSED_BYTES,
+            null);
+        long limit = declared >= 0 ? declared : Math.min(MAX_ENTRY_BYTES, remaining);
         int initial = declared >= 0 && declared <= Integer.MAX_VALUE ? (int) declared : 0;
         ByteArrayOutputStream output = new ByteArrayOutputStream(initial);
         InputStream input = zip.getInputStream(entry);

@@ -22,20 +22,22 @@ public final class StoryPackageRuntimeReloader {
         ProjectRepository.ReloadResult base = repository.reload();
         StoryPackageLoader.ReloadResult packages = loader.reload();
         if (loader.getPackages()
-            .isEmpty()) return new Result(packages.isSuccessful() && base.isSuccessful(), packages, base, null);
+            .isEmpty()) {
+            if (!base.isSuccessful()) repository.installUnavailableSnapshot(base.getSummary());
+            return new Result(packages.isSuccessful() && base.isSuccessful(), packages, base, null);
+        }
         return publishAcceptedPackages(repository, loader, packages);
     }
 
     /** Reloads packages and atomically publishes the accepted set or restored base project. */
     public static Result reload(ProjectRepository repository, StoryPackageLoader loader) {
         require(repository, loader);
-        ProjectRepository.ReloadResult previous = repository.getLastReload();
         StoryPackageLoader.ReloadResult packages = loader.reload();
         if (!loader.getPackages()
             .isEmpty()) return publishAcceptedPackages(repository, loader, packages);
-        if (!packages.isSuccessful()) return new Result(false, packages, previous, null);
         ProjectRepository.ReloadResult restoredBase = repository.reload();
-        return new Result(restoredBase.isSuccessful(), packages, restoredBase, null);
+        if (!restoredBase.isSuccessful()) repository.installUnavailableSnapshot(restoredBase.getSummary());
+        return new Result(packages.isSuccessful() && restoredBase.isSuccessful(), packages, restoredBase, null);
     }
 
     private static Result publishAcceptedPackages(ProjectRepository repository, StoryPackageLoader loader,

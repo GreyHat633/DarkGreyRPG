@@ -41,10 +41,16 @@ public final class DgrsPackageRuntimeProbe {
         File baseProject = new File(parent, "base-" + Long.toHexString(System.nanoTime()));
         writeBaseProject(baseProject);
         File replacementSource = new File(parent, "replacement-" + Long.toHexString(System.nanoTime()) + ".dgrs");
+        File unrelated = new File(parent, "unrelated-directory-" + Long.toHexString(System.nanoTime()));
         try {
             File installedArchive = new File(install, source.getName());
             Files.copy(source.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(source.toPath(), replacementSource.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            File residue = new File(install, ".dgrs-runtime");
+            require(residue.mkdir(), "Cannot create legacy runtime residue directory");
+            Files.write(new File(residue, "stale.bin").toPath(), new byte[] { 1, 2, 3 });
+            require(unrelated.mkdir(), "Cannot create unrelated directory");
+            Files.write(new File(unrelated, "keep.bin").toPath(), new byte[] { 4, 5, 6 });
             StoryPackageLoader loader = new StoryPackageLoader(install);
             ProjectRepository repository = new ProjectRepository(baseProject);
             StoryPackageRuntimeReloader.Result startup = StoryPackageRuntimeReloader.startup(repository, loader);
@@ -71,9 +77,8 @@ public final class DgrsPackageRuntimeProbe {
                 installedArchive.getAbsoluteFile()
                     .equals(loaded.getSourceArchive()),
                 "DGRS source archive identity was not retained");
-            require(
-                !new File(install, ".dgrs-runtime").exists(),
-                "Direct DGRS loading created an extraction directory");
+            require(!new File(install, ".dgrs-runtime").exists(), "Legacy runtime residue was not cleaned");
+            require(new File(unrelated, "keep.bin").isFile(), "Residue cleanup touched an unrelated install directory");
             assertNoExtraction(install, installedArchive);
             require(
                 loaded.getSnapshot()
@@ -214,11 +219,13 @@ public final class DgrsPackageRuntimeProbe {
                 "Corrupt replacement changed the published Story content");
             assertNoExtraction(install, installedArchive);
 
+            Files.delete(new File(baseProject, "project.json").toPath());
             Files.delete(installedArchive.toPath());
             StoryPackageRuntimeReloader.Result removeReload = StoryPackageRuntimeReloader.reload(repository, loader);
             require(
-                removeReload.isSuccessful(),
-                "Deleting the DGRS produced a reload failure: " + removeReload.getErrors());
+                !removeReload.isSuccessful() && !removeReload.getProjectReload()
+                    .isSuccessful(),
+                "Deleting the DGRS did not report the failed base reload");
             require(
                 loader.getPackages()
                     .isEmpty(),
@@ -247,6 +254,18 @@ public final class DgrsPackageRuntimeProbe {
                     .getCanonicalTasks()
                     .isEmpty(),
                 "Deleting the last DGRS retained its canonical Task");
+            require(
+                repository.getSnapshot()
+                    .getProject()
+                    .getId()
+                    .equals("unloaded"),
+                "Deleting the last DGRS left the prior snapshot authoritative after base reload failure");
+            require(
+                !repository.getLastReload()
+                    .isSuccessful() && repository.getLastReload()
+                        .getSummary()
+                        .contains("Missing JSON file"),
+                "Clearing the prior snapshot hid the failed base reload from status reporting");
             assertNoExtraction(install, installedArchive);
 
             Files.copy(replacementSource.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -305,6 +324,9 @@ public final class DgrsPackageRuntimeProbe {
             System.out.println("DGRS_CANONICAL_TASK_RUNTIME=PASS");
             System.out.println("DGRS_RELOAD_ROLLBACK=PASS");
             System.out.println("DGRS_RELOAD_LIFECYCLE=PASS");
+            System.out.println("DGRS_DELETE_LAST_BASE_FAILURE_CLEARS_SNAPSHOT=PASS");
+            System.out.println("DGRS_DELETE_LAST_FAILURE_STATUS_RETAINED=PASS");
+            System.out.println("DGRS_RUNTIME_RESIDUE_NARROW_CLEANUP=PASS");
             System.out.println("DGRS_AUTHORITATIVE_PUBLICATION=PASS");
             System.out.println("DGRS_NOMINATOR_PACKAGE_CATALOG=PASS");
             System.out.println("DGRS_UNSAFE_PATH_REJECTED=PASS");
@@ -313,6 +335,7 @@ public final class DgrsPackageRuntimeProbe {
             delete(install);
             delete(baseProject);
             delete(replacementSource);
+            delete(unrelated);
         }
     }
 

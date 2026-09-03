@@ -56,8 +56,15 @@ public final class CanonicalTaskStage4SurfaceProbe {
             "three Chinese Journal tabs");
         require(guiSource.contains("QuestStatus.FAILED"), "failed rendering state");
         require(guiSource.contains("Math.min(PANEL_HEIGHT, height - 20)"), "Journal fits the scale-2 854x480 client");
+        String nominatorSource = new String(
+            Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/client/gui/GuiNominatorEntity.java")),
+            Charset.forName("UTF-8"));
+        require(
+            nominatorSource.contains("\"Group_ID\"") && nominatorSource.contains("\"NPC_ID\""),
+            "Nominator distinguishes Collective Group_ID from Individual NPC_ID");
         System.out.println("CANONICAL_TASK_COMMAND_SURFACE=PASS");
         System.out.println("CANONICAL_TASK_GUI_TABS=PASS");
+        System.out.println("DGR_B2_NOMINATOR_IDENTITY_LABELS=PASS");
     }
 
     private static void require(boolean condition, String label) {

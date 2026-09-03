@@ -48,6 +48,27 @@ public final class DgrsArchiveReaderProbe {
             System.out.println("DGRS_ARCHIVE_READER_VALID=PASS");
             System.out.println("DGRS_ARCHIVE_READER_DETACHED=PASS");
 
+            Entry[] tooManyEntries = new Entry[DgrsArchiveReader.MAX_ENTRY_COUNT + 1];
+            tooManyEntries[0] = new Entry("manifest.json", "{}");
+            tooManyEntries[1] = new Entry("project.json", "{}");
+            for (int i = 2; i < tooManyEntries.length; i++)
+                tooManyEntries[i] = new Entry("content/entry-" + i + ".txt", "x");
+            expectReject(writeArchive(new File(root, "too-many-entries.dgrs"), tooManyEntries), "entry count budget");
+            System.out.println("DGRS_ARCHIVE_READER_ENTRY_COUNT_BUDGET=PASS");
+
+            byte[] maxEntry = new byte[(int) DgrsArchiveReader.MAX_ENTRY_BYTES];
+            expectReject(
+                writeArchive(
+                    new File(root, "too-many-bytes.dgrs"),
+                    new Entry("manifest.json", "{}"),
+                    new Entry("project.json", "{}"),
+                    new Entry("content/large-1.bin", maxEntry),
+                    new Entry("content/large-2.bin", maxEntry),
+                    new Entry("content/large-3.bin", maxEntry),
+                    new Entry("content/large-4.bin", maxEntry)),
+                "aggregate uncompressed byte budget");
+            System.out.println("DGRS_ARCHIVE_READER_TOTAL_BYTE_BUDGET=PASS");
+
             String[] unsafe = { "", "../escape.txt", "a/../escape.txt", "a//b.txt", "a/./b.txt", "a\\b.txt",
                 "/absolute.txt", "C:/drive.txt", "folder:name.txt", "folder/" };
             for (int i = 0; i < unsafe.length; i++) {

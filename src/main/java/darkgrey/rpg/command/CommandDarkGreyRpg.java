@@ -917,7 +917,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
                         + reload.getProjectReload()
                             .getSummary());
             } else {
-                ChatMessages.error(sender, "重新加载未完全成功，当前有效定义已保留。");
+                ChatMessages.error(sender, "重新加载未完全成功；已保留通过校验的定义，已卸载已删除的定义。");
                 if (!reload.getErrors()
                     .isEmpty()) ChatMessages.error(sender, "故事包校验失败；详细原因已写入服务器日志。");
             }

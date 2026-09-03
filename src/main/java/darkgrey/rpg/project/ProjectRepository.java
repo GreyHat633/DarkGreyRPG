@@ -198,6 +198,18 @@ public final class ProjectRepository {
         return lastReload;
     }
 
+    /**
+     * Publishes an empty authoritative snapshot while retaining the failure that
+     * made the previous snapshot unavailable. Package deletion uses this path so
+     * status reporting cannot turn a failed base reload into a false success.
+     */
+    public synchronized ReloadResult installUnavailableSnapshot(String summary) {
+        snapshot = ProjectSnapshot.empty();
+        snapshotRevision++;
+        lastReload = ReloadResult.failure(summary);
+        return lastReload;
+    }
+
     public ReloadResult getLastReload() {
         return lastReload;
     }

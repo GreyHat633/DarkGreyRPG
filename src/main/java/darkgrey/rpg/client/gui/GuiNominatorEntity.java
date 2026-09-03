@@ -205,7 +205,7 @@ public final class GuiNominatorEntity extends GuiScreen {
             panelLeft + 10,
             panelTop + 18,
             0xFFEEF0FF);
-        drawString(fontRendererObj, "选择故事包后搜索角色 ID 或显示名", panelLeft + 10, panelTop + 31, 0xFFB8C0E8);
+        drawString(fontRendererObj, "搜索 NPC_ID、Group_ID 或显示名", panelLeft + 10, panelTop + 31, 0xFFB8C0E8);
         searchField.drawTextBox();
 
         String packageText = packages.isEmpty() ? "无可用故事包" : packageLabel(packages.get(packageChoice));
@@ -237,17 +237,17 @@ public final class GuiNominatorEntity extends GuiScreen {
     }
 
     private String actorLabel(NominatorStorySearch.ActorChoice actor) {
-        return actor.getId() + " / " + value(actor.getDisplayName()) + " (" + typeLabel(actor.getType()) + ")";
+        return value(actor.getDisplayName()) + " / " + typeLabel(actor.getType()) + ": " + actor.getId();
     }
 
     private String typeLabel(String type) {
-        return "collective".equals(type) ? "群组" : "individual".equals(type) ? "个体" : value(type);
+        return "collective".equals(type) ? "Group_ID" : "individual".equals(type) ? "NPC_ID" : value(type);
     }
 
     private String statusText() {
         if (packages.isEmpty()) return "服务器未提供可浏览的故事包。";
         if (candidates.isEmpty()) return lastQuery.trim()
-            .isEmpty() ? "所选故事包没有可绑定角色。" : "未找到匹配的角色 ID 或显示名。";
+            .isEmpty() ? "所选故事包没有可绑定角色。" : "未找到匹配的 NPC_ID、Group_ID 或显示名。";
         if (!isBindable()) return "所选资源类型不支持实体指名。";
         return "已选择角色；包目录修订 " + catalogRevision + "，仅提交所选故事包闭包。";
     }

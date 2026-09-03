@@ -33,7 +33,7 @@ public final class CanonicalStoryServerService {
             throw new IllegalArgumentException("Canonical Story service inputs are required.");
         this.project = project;
         this.data = data;
-        data.bind(new CanonicalSessionResourceResolver() {
+        data.bindAvailable(new CanonicalSessionResourceResolver() {
 
             @Override
             public CanonicalGraphResource resolve(String sessionResourceId) {

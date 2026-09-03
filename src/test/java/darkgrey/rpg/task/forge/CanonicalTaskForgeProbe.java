@@ -41,12 +41,15 @@ public final class CanonicalTaskForgeProbe {
     public static void main(String[] args) {
         normalization();
         managerLifecycle();
+        canonicalIdentityContract();
         worldLogicLifecycle();
         adapterShape();
         System.out.println("CANONICAL_TASK_FORGE_NORMALIZATION=PASS");
         System.out.println("CANONICAL_TASK_MULTI_INTERACTION_DISPATCH=PASS");
         System.out.println("CANONICAL_TASK_FORGE_MANAGER_BIND_START_JOURNAL=PASS");
         System.out.println("CANONICAL_TASK_WORLD_LOGIC_LIFECYCLE=PASS");
+        System.out.println("DGR_B2_ENTITY_IDENTITY_SEQUENCE=PASS");
+        System.out.println("DGR_B2_ITEM_IDENTITY_GUARD=PASS");
     }
 
     private static void normalization() {
@@ -264,6 +267,107 @@ public final class CanonicalTaskForgeProbe {
         require(guardsKill.getChangedInstanceCount() == 1, "guards kill advances objective");
     }
 
+    private static void canonicalIdentityContract() {
+        CanonicalGraphResource resource = taskResource("task_slimes", "slimes", 3);
+        ProjectSnapshot project = project(resource);
+        CanonicalTaskSavedData data = new CanonicalTaskSavedData("b2_identity_contract");
+        CanonicalTaskForgeManager manager = new CanonicalTaskForgeManager(new ProjectRepository(new File(".")));
+        manager.startTrustedForProbe(PLAYER, project, data, "story", "slimes_placement", resource.getId());
+
+        dispatchAll(
+            manager,
+            PLAYER,
+            project,
+            data,
+            CanonicalTaskForgeEventNormalizer.killEventsForIds("minecraft:slime", Collections.<String>emptyList()));
+        require(progress(manager, project, data) == 0, "unbound vanilla slime advanced Group_ID=slimes");
+
+        dispatchAll(
+            manager,
+            PLAYER,
+            project,
+            data,
+            CanonicalTaskForgeEventNormalizer.killEventsForIds("minecraft:cow", Collections.singletonList("slimes")));
+        require(progress(manager, project, data) == 1, "nominated cow did not advance Group_ID=slimes");
+
+        dispatchAll(
+            manager,
+            PLAYER,
+            project,
+            data,
+            CanonicalTaskForgeEventNormalizer.killEventsForIds("minecraft:pig", Collections.singletonList("slimes")));
+        require(progress(manager, project, data) == 2, "nominated pig did not advance Group_ID=slimes");
+
+        dispatchAll(
+            manager,
+            PLAYER,
+            project,
+            data,
+            CanonicalTaskForgeEventNormalizer.killEventsForIds("minecraft:slime", Collections.<String>emptyList()));
+        require(progress(manager, project, data) == 2, "second unbound vanilla slime advanced Group_ID=slimes");
+
+        dispatchAll(
+            manager,
+            PLAYER,
+            project,
+            data,
+            CanonicalTaskForgeEventNormalizer
+                .killEventsForIds("minecraft:zombie", Collections.singletonList("slimes")));
+        require(progress(manager, project, data) == 3, "nominated zombie did not complete Group_ID=slimes");
+
+        List<CanonicalTaskEvent> ordinaryStick = CanonicalTaskForgeEventNormalizer.collectEventsForIds(
+            "minecraft:stick",
+            0,
+            1,
+            Collections.<String>emptyList(),
+            Collections.<String>emptyList());
+        require(ordinaryStick.size() == 1, "unbound stick produced a DGR item identity");
+        require(
+            "minecraft:stick".equals(
+                ordinaryStick.get(0)
+                    .get("item")),
+            "unbound stick registry identity changed");
+        List<CanonicalTaskEvent> nominatedStick = CanonicalTaskForgeEventNormalizer.collectEventsForIds(
+            "minecraft:stick",
+            0,
+            1,
+            Collections.singletonList("copper_coin"),
+            Collections.<String>emptyList());
+        require(nominatedStick.size() == 2, "nominated stick did not add Item_ID=copper_coin");
+        require(
+            "copper_coin".equals(
+                nominatedStick.get(1)
+                    .get("item")),
+            "nominated stick did not preserve Item_ID=copper_coin");
+
+        CanonicalGraphResource itemResource = collectTaskResource("task_copper_coin", "copper_coin");
+        ProjectSnapshot itemProject = project(itemResource);
+        CanonicalTaskSavedData itemData = new CanonicalTaskSavedData("b2_item_identity_contract");
+        manager.startTrustedForProbe(PLAYER, itemProject, itemData, "story", "item_placement", itemResource.getId());
+        dispatchAll(manager, PLAYER, itemProject, itemData, ordinaryStick);
+        require(
+            objectiveProgress(manager, itemProject, itemData, "item_placement", "collect") == 0,
+            "unbound stick advanced Item_ID=copper_coin");
+        dispatchAll(manager, PLAYER, itemProject, itemData, nominatedStick);
+        require(
+            objectiveProgress(manager, itemProject, itemData, "item_placement", "collect") == 1,
+            "nominated stick did not advance Item_ID=copper_coin");
+    }
+
+    private static int progress(CanonicalTaskForgeManager manager, ProjectSnapshot project,
+        CanonicalTaskSavedData data) {
+        return objectiveProgress(manager, project, data, "slimes_placement", "kill");
+    }
+
+    private static int objectiveProgress(CanonicalTaskForgeManager manager, ProjectSnapshot project,
+        CanonicalTaskSavedData data, String placementId, String objectiveId) {
+        return manager.snapshotTrustedForProbe(PLAYER, project, data, "story", placementId)
+            .getRuntimeSnapshot()
+            .getProgress()
+            .get(objectiveId)
+            .intValue();
+    }
+
     private static CanonicalTaskDispatchResult dispatchAll(CanonicalTaskForgeManager manager, UUID player,
         ProjectSnapshot project, CanonicalTaskSavedData data, List<CanonicalTaskEvent> events) {
         CanonicalTaskDispatchResult result = null;
@@ -340,6 +444,10 @@ public final class CanonicalTaskForgeProbe {
     }
 
     private static CanonicalGraphResource taskResource(String id, String target) {
+        return taskResource(id, target, 1);
+    }
+
+    private static CanonicalGraphResource taskResource(String id, String target, int required) {
         CanonicalGraphNode activate = node(
             "activate",
             "activate",
@@ -348,7 +456,7 @@ public final class CanonicalTaskForgeProbe {
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
         properties.put("objective_type", json(CanonicalTaskEvent.KILL_ENTITY));
         properties.put("description", json("Kill " + target));
-        properties.put("required", json("1"));
+        properties.put("required", json(String.valueOf(required)));
         properties.put("entity", json(target));
         properties.put("prerequisite_enabled", new JsonParser().parse("true"));
         CanonicalGraphNode objective = node(
@@ -419,6 +527,51 @@ public final class CanonicalTaskForgeProbe {
                         CanonicalGraphInterfaceKind.LOGIC),
                     new CanonicalGraphConnection(
                         "kill",
+                        "logic_status",
+                        "settle",
+                        "done",
+                        CanonicalGraphInterfaceKind.LOGIC))));
+    }
+
+    private static CanonicalGraphResource collectTaskResource(String id, String target) {
+        CanonicalGraphNode activate = node(
+            "activate",
+            "activate",
+            Collections.singletonList(port("logic_out", false, 0)),
+            Collections.<String, JsonElement>emptyMap());
+        Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
+        properties.put("objective_type", json(CanonicalTaskEvent.COLLECT_ITEM));
+        properties.put("description", json("Collect " + target));
+        properties.put("required", json("1"));
+        properties.put("item", json(target));
+        properties.put("metadata", new JsonParser().parse("{}"));
+        properties.put("prerequisite_enabled", new JsonParser().parse("true"));
+        CanonicalGraphNode objective = node(
+            "collect",
+            "objective",
+            Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
+            properties);
+        CanonicalGraphNode settle = node(
+            "settle",
+            "settle",
+            Collections.singletonList(port("done", true, 0)),
+            Collections.<String, JsonElement>emptyMap());
+        return new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            id,
+            "Item Identity Probe Task",
+            new CanonicalGraph(
+                Arrays.asList(activate, objective, settle),
+                Arrays.asList(
+                    new CanonicalGraphConnection(
+                        "activate",
+                        "logic_out",
+                        "collect",
+                        "prerequisite",
+                        CanonicalGraphInterfaceKind.LOGIC),
+                    new CanonicalGraphConnection(
+                        "collect",
                         "logic_status",
                         "settle",
                         "done",
