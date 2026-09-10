@@ -127,6 +127,19 @@ public final class DarkGreyRpg {
         DialogueNetwork.registerCommon();
         NominatorNetwork.registerCommon();
         EntityToolsNetwork.registerCommon();
+        DialogueNetwork.CHANNEL.registerMessage(
+            darkgrey.rpg.creator.CreatorSnapshot.Handler.class,
+            darkgrey.rpg.creator.CreatorSnapshot.class,
+            17,
+            cpw.mods.fml.relauncher.Side.CLIENT);
+        DialogueNetwork.CHANNEL.registerMessage(
+            darkgrey.rpg.creator.CanonicalTaskUiRequest.Handler.class,
+            darkgrey.rpg.creator.CanonicalTaskUiRequest.class,
+            18,
+            cpw.mods.fml.relauncher.Side.SERVER);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new darkgrey.rpg.creator.CreatorInspectServer());
         proxy.registerClientDialogueNetwork();
     }
 

@@ -1,0 +1,13 @@
+{
+  "version": "0.3.2.1",
+  "artifact": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\darkgrey_rpg-0.3.2.1.jar",
+  "size_bytes": 924009,
+  "sha256": "0F8255DC32E1281D1C8280816BF76E69C8C772AB9EC140A1B4350E6F89E78A72",
+  "delivery": "LOCAL_ACCEPTANCE_CANDIDATE",
+  "user_accepted": false,
+  "studio_changed": false,
+  "probe_tasks_passed": 53,
+  "build": "PASS_WITH_EXPLICIT_SCOPED_SPOTLESS_INIT",
+  "unrestricted_baseline_spotless": "PRE_EXISTING_FAILURE_REMAINS",
+  "test_harness_included": false
+}

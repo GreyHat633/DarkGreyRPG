@@ -182,7 +182,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/dgr <status|reload|actor|dialogue|quest|story|session|task|debug>";
+        return "/dgr <status|reload|actor|dialogue|quest|story|session|task|inspect|debug>";
     }
 
     @Override
@@ -196,6 +196,15 @@ public final class CommandDarkGreyRpg extends CommandBase {
             throw new WrongUsageException(getCommandUsage(sender));
         }
 
+        if ("inspect".equalsIgnoreCase(arguments[0])) {
+            if (arguments.length != 1) throw new WrongUsageException("/dgr inspect");
+            EntityPlayerMP player = getCommandSenderAsPlayer(sender);
+            boolean enabled = darkgrey.rpg.creator.CreatorInspectSavedData.get()
+                .toggle(player.getUniqueID());
+            player.addChatMessage(
+                new net.minecraft.util.ChatComponentText("DGR identity display: " + (enabled ? "ON" : "OFF")));
+            return;
+        }
         if ("status".equalsIgnoreCase(arguments[0])) {
             showStatus(sender);
             return;
@@ -1122,6 +1131,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (arguments.length == 1) {
             return getListOfStringsMatchingLastWord(
                 arguments,
+                "inspect",
                 "status",
                 "reload",
                 "actor",

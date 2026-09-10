@@ -13,6 +13,8 @@ import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
 public final class CanonicalSessionClientModel {
 
     private CanonicalSessionFrame frame;
+    private String visibleText = "";
+    private String visibleSpeaker = "";
 
     public synchronized boolean acceptFrame(CanonicalSessionFrame update) {
         if (update == null) return false;
@@ -21,6 +23,12 @@ public final class CanonicalSessionClientModel {
             || !frame.getSessionResourceId()
                 .equals(update.getSessionResourceId())))
             return false;
+        if (update.getKind() != CanonicalSessionFrame.Kind.CHOICE || !update.getText()
+            .trim()
+            .isEmpty()) {
+            visibleText = update.getText();
+            visibleSpeaker = update.getSpeaker();
+        }
         frame = copy(update);
         return true;
     }
@@ -36,6 +44,8 @@ public final class CanonicalSessionClientModel {
                 .equals(close.getStoryId()))
             return false;
         frame = null;
+        visibleText = "";
+        visibleSpeaker = "";
         return true;
     }
 
@@ -83,6 +93,15 @@ public final class CanonicalSessionClientModel {
     public synchronized String getText() {
         requireActive();
         return frame.getText();
+    }
+
+    /** Presentation context only; the authoritative frame and outgoing actions stay unchanged. */
+    public synchronized String getVisibleText() {
+        return visibleText;
+    }
+
+    public synchronized String getVisibleSpeaker() {
+        return visibleSpeaker;
     }
 
     public synchronized List<CanonicalSessionChoiceOption> getChoices() {

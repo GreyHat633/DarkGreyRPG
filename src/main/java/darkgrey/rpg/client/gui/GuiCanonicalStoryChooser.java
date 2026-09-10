@@ -40,7 +40,7 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
         rowHeight = 52;
         for (CanonicalStoryChooserFrame.Option option : options) rowHeight = Math.max(
             rowHeight,
-            22 + fontRendererObj.FONT_HEIGHT * fontRendererObj
+            34 + fontRendererObj.FONT_HEIGHT * fontRendererObj
                 .listFormattedStringToWidth("ID: " + option.getStoryId(), Math.max(40, panelWidth - 155))
                 .size());
         pageSize = Math.max(1, Math.min(6, (Math.min(430, height - 30) - 100) / rowHeight));
@@ -97,7 +97,8 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
         int panelHeight = Math.min(430, height - 30);
         int left = (width - panelWidth) / 2;
         int top = (height - panelHeight) / 2;
-        drawCenteredString(fontRendererObj, "故事选择", width / 2, top + 12, 0xFFFFFF);
+        drawRect(left, top, left + panelWidth, top + panelHeight, 0xEE303030);
+        drawCenteredString(fontRendererObj, "有多个故事可供选择", width / 2, top + 12, 0xFFFFFF);
         List<CanonicalStoryChooserFrame.Option> options = frame.getOptions();
         int first = page * pageSize;
         int visible = Math.min(pageSize, options.size() - first);
@@ -109,12 +110,18 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
                 left + 20,
                 y,
                 0xFFFFFF);
+            fontRendererObj.drawString(
+                option.getStatus()
+                    .toUpperCase(java.util.Locale.ROOT),
+                left + 20,
+                y + 12,
+                0xDDCCAA);
             List<String> idLines = fontRendererObj
                 .listFormattedStringToWidth("ID: " + option.getStoryId(), Math.max(40, panelWidth - 155));
             for (int line = 0; line < idLines.size(); line++) fontRendererObj
-                .drawString(idLines.get(line), left + 20, y + 14 + line * fontRendererObj.FONT_HEIGHT, 0xFFB8C0E8);
+                .drawString(idLines.get(line), left + 20, y + 24 + line * fontRendererObj.FONT_HEIGHT, 0xFFAAAAAA);
         }
-        drawCenteredString(fontRendererObj, "第 " + (page + 1) + " 页", width / 2, top + panelHeight - 18, 0xFFB8C0E8);
+        drawCenteredString(fontRendererObj, "第 " + (page + 1) + " 页", width / 2, top + panelHeight - 18, 0xFFAAAAAA);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 

@@ -48,6 +48,14 @@ public final class CanonicalSessionClientController {
         send(MODEL.continueAction());
     }
 
+    public static String getVisibleText() {
+        return MODEL.getVisibleText();
+    }
+
+    public static String getVisibleSpeaker() {
+        return MODEL.getVisibleSpeaker();
+    }
+
     public static void sendChoice(String optionId) {
         send(MODEL.choiceAction(optionId));
     }

@@ -16,6 +16,7 @@ public final class ModItems {
     public static Item copier;
     public static Item storageBox;
     public static Item body;
+    public static Item inspectorGoggles;
 
     private ModItems() {}
 
@@ -50,5 +51,10 @@ public final class ModItems {
             .setCreativeTab(ModCreativeTabs.DARKGREY_RPG)
             .setMaxStackSize(1);
         GameRegistry.registerItem(body, "body");
+        inspectorGoggles = new darkgrey.rpg.creator.ItemInspectorGoggles()
+            .setUnlocalizedName("darkgrey_rpg.inspector_goggles")
+            .setTextureName("darkgrey_rpg:inspector_goggles")
+            .setCreativeTab(ModCreativeTabs.DARKGREY_RPG);
+        GameRegistry.registerItem(inspectorGoggles, "inspector_goggles");
     }
 }

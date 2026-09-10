@@ -32,6 +32,30 @@ public final class CanonicalSessionClientModelProbe {
         require(!model.acceptFrame(line(12L, "story_a", "node_stale")), "transport fence");
         require(!model.acceptFrame(line(11L, "story_b", "node_other")), "Story fence");
 
+        CanonicalSessionFrame emptyChoice = new CanonicalSessionFrame(
+            11L,
+            "story_a",
+            "session_a",
+            "empty_choice",
+            CanonicalSessionFrame.Kind.CHOICE,
+            "",
+            "",
+            Arrays.asList(new CanonicalSessionChoiceOption("yes", "是")));
+        require(model.acceptFrame(emptyChoice), "promptless choice accepted");
+        require("Text".equals(model.getVisibleText()), "promptless choice preserves visible line");
+        require("Speaker".equals(model.getVisibleSpeaker()), "promptless choice preserves speaker");
+        require(
+            model.getText()
+                .isEmpty(),
+            "wire frame remains promptless");
+        require(
+            "empty_choice".equals(
+                model.choiceAction("yes")
+                    .getCurrentNodeId()),
+            "retained text cannot replace action identity");
+        require(!model.acceptFrame(line(12L, "story_a", "stale")), "reject foreign context");
+        require("Text".equals(model.getVisibleText()), "foreign frame cannot overwrite context");
+
         CanonicalSessionFrame choice = new CanonicalSessionFrame(
             11L,
             "story_a",
@@ -44,6 +68,11 @@ public final class CanonicalSessionClientModelProbe {
                 new CanonicalSessionChoiceOption("option_alpha", "Alpha"),
                 new CanonicalSessionChoiceOption("option_omega", "Omega")));
         require(model.acceptFrame(choice), "matching choice accepted");
+        require("Pick".equals(model.getVisibleText()), "explicit prompt replaces visible line");
+        require(
+            model.getVisibleSpeaker()
+                .isEmpty(),
+            "explicit prompt clears previous speaker");
         CanonicalSessionAction action = model.choiceAction("option_omega");
         require("option_omega".equals(action.getOptionId()), "stable option action");
         require("node_choice".equals(action.getCurrentNodeId()), "choice current node");
@@ -57,6 +86,42 @@ public final class CanonicalSessionClientModelProbe {
         require(!model.acceptClose(new CanonicalSessionClose(12L, "story_a")), "stale close rejected");
         require(model.acceptClose(new CanonicalSessionClose(11L, "story_a")), "matching close accepted");
         require(!model.isActive(), "close clears state");
+        require(
+            model.getVisibleText()
+                .isEmpty()
+                && model.getVisibleSpeaker()
+                    .isEmpty(),
+            "close clears presentation context");
+        require(
+            model.acceptFrame(
+                new CanonicalSessionFrame(
+                    7L,
+                    "story_new",
+                    "session_a",
+                    "choice",
+                    CanonicalSessionFrame.Kind.CHOICE,
+                    "",
+                    "",
+                    Arrays.asList(new CanonicalSessionChoiceOption("yes", "Yes")))),
+            "new choice accepted");
+        require(
+            model.getVisibleText()
+                .isEmpty(),
+            "new session cannot inherit old text");
+        require(model.acceptClose(new CanonicalSessionClose(7L, "story_new")), "new close");
+        for (int[] size : new int[][] { { 320, 240 }, { 427, 240 }, { 640, 360 }, { 960, 540 }, { 1920, 1080 } }) {
+            CanonicalDialogueLayout layout = new CanonicalDialogueLayout(size[0], size[1]);
+            require(layout.left == size[0] / 20, "five percent horizontal safe margin");
+            require(layout.top > size[1] / 2 && layout.bottom < size[1], "bottom dialogue");
+            require(layout.textWidth > 0, "positive text width");
+            require(
+                layout.choiceTop(layout.choicesPerPage) + layout.choicesPerPage * 24 + 20 < layout.top,
+                "choices and paging never overlap dialogue");
+            require(layout.containsDialogue(layout.left, layout.top), "dialogue edge clickable");
+            require(!layout.containsDialogue(layout.right, layout.top), "right outside excluded");
+            require(!layout.containsDialogue(size[0] / 2, layout.top - 1), "world click excluded");
+        }
+        System.out.println("CANONICAL_DIALOGUE_PRESENTATION_PROBE=PASS");
         require(model.acceptFrame(line(7L, "story_new", "new_line")), "new identity accepted");
         System.out.println("CANONICAL_SESSION_CLIENT_MODEL_PROBE=PASS");
     }

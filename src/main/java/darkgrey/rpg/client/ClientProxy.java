@@ -17,6 +17,13 @@ import darkgrey.rpg.proxy.CommonProxy;
 
 public final class ClientProxy extends CommonProxy {
 
+    @Override
+    public void acceptCreatorSnapshot(int kind, net.minecraft.nbt.NBTTagCompound data) {
+        if (kind == 0) CreatorInspectClient.accept(data);
+        else if (Minecraft.getMinecraft().currentScreen instanceof darkgrey.rpg.client.gui.GuiCanonicalTaskScreen)
+            ((darkgrey.rpg.client.gui.GuiCanonicalTaskScreen) Minecraft.getMinecraft().currentScreen).accept(data);
+    }
+
     private NominatorCatalog pendingInventoryCatalog;
     private long pendingInventoryRevision = -1L;
     private long pendingInventoryCatalogRevision = -1L;
@@ -28,6 +35,11 @@ public final class ClientProxy extends CommonProxy {
             .bus()
             .register(new ClientQuestKeyHandler());
         MinecraftForge.EVENT_BUS.register(new NominatorClientRuntime());
+        CreatorInspectClient inspect = new CreatorInspectClient();
+        MinecraftForge.EVENT_BUS.register(inspect);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(inspect);
     }
 
     @Override

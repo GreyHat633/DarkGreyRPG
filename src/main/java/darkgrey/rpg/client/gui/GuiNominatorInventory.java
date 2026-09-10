@@ -1,19 +1,15 @@
 package darkgrey.rpg.client.gui;
 
 import java.util.Collections;
-import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
 
 import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.network.message.nominator.C2SNominatorInventoryBind;
 import darkgrey.rpg.nominator.NominatorCatalog;
-import darkgrey.rpg.nominator.NominatorStorySearch;
 import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
 /** Inventory nominator view backed by the server-authoritative target container. */
@@ -22,15 +18,6 @@ public final class GuiNominatorInventory extends GuiContainer {
     private NominatorCatalog catalog;
     private long revision;
     private long catalogRevision = -1L;
-    private List<NominatorCatalog.PackageChoice> packages = Collections.emptyList();
-    private List<NominatorStorySearch.ItemChoice> resources = Collections.emptyList();
-    private int packageChoice;
-    private int resourceChoice;
-    private boolean browsingGroups;
-    private String selectedItem;
-    private String selectedGroup;
-    private String lastQuery = "";
-    private GuiTextField searchField;
     private GuiButton bindButton;
 
     public GuiNominatorInventory() {
@@ -57,10 +44,7 @@ public final class GuiNominatorInventory extends GuiContainer {
         this.catalog = catalog == null ? emptyCatalog() : catalog;
         this.revision = revision;
         this.catalogRevision = catalogRevision;
-        packages = this.catalog.getPackageChoices();
-        packageChoice = 0;
-        resourceChoice = 0;
-        refreshResources();
+        if (mc != null) initGui();
     }
 
     private static ContainerNominatorInventory newContainer() {
@@ -76,162 +60,121 @@ public final class GuiNominatorInventory extends GuiContainer {
             Collections.<NominatorCatalog.Item>emptyList());
     }
 
+    private NominatorBrowser browser;
+
     @Override
     public void initGui() {
-        xSize = 360;
-        ySize = 228;
+        xSize = Math.min(360, width - 12);
+        ySize = Math.min(330, height - 12);
         super.initGui();
         buttonList.clear();
-        packages = catalog.getPackageChoices();
-        packageChoice = 0;
-        resourceChoice = 0;
-
-        searchField = new GuiTextField(fontRendererObj, guiLeft + 8, guiTop + 42, 344, 18);
-        searchField.setMaxStringLength(128);
-        refreshResources();
-        buttonList.add(new GuiModernButton(1, guiLeft + 8, guiTop + 20, 110, 18, "上一个包"));
-        buttonList.add(new GuiModernButton(2, guiLeft + 124, guiTop + 20, 110, 18, "下一个包"));
-        buttonList.add(new GuiModernButton(3, guiLeft + 240, guiTop + 20, 112, 18, "浏览物品组"));
-        buttonList.add(new GuiModernButton(4, guiLeft + 8, guiTop + 64, 110, 18, "上一个条目"));
-        buttonList.add(new GuiModernButton(5, guiLeft + 124, guiTop + 64, 110, 18, "下一个条目"));
-        bindButton = new GuiModernButton(6, guiLeft + 240, guiTop + 64, 112, 18, "绑定目标");
+        for (int i = 0; i < inventorySlots.inventorySlots.size(); i++) {
+            net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) inventorySlots.inventorySlots.get(i);
+            slot.yDisplayPosition = (i == 0 || i >= 28 ? 177 : 119 + ((i - 1) / 9) * 18) + ySize - 228;
+        }
+        browser = new NominatorBrowser(
+            fontRendererObj,
+            catalog,
+            true,
+            guiLeft + 8,
+            guiTop + 24,
+            xSize - 16,
+            ySize - 144);
+        bindButton = new GuiButton(
+            6,
+            guiLeft + xSize - 88,
+            guiTop + ySize - 26,
+            80,
+            20,
+            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.bind"));
         buttonList.add(bindButton);
-        buttonList.add(new GuiModernButton(0, guiLeft + 270, guiTop + 204, 82, 18, "关闭"));
-        refreshButtonState();
+        buttonList.add(
+            new GuiButton(
+                0,
+                guiLeft + 8,
+                guiTop + ySize - 26,
+                80,
+                20,
+                net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.close")));
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
         if (button.id == 0) {
             mc.displayGuiScreen(null);
-        } else if (button.id == 1 || button.id == 2) {
-            cyclePackage(button.id == 1 ? -1 : 1);
-        } else if (button.id == 3) {
-            browsingGroups = !browsingGroups;
-            button.displayString = browsingGroups ? "浏览物品" : "浏览物品组";
-            resourceChoice = 0;
-            refreshResources();
-        } else if (button.id == 4 || button.id == 5) {
-            cycleResource(button.id == 4 ? -1 : 1);
-        } else if (button.id == 6 && isBindable()) {
-            NominatorCatalog.PackageChoice choice = packages.get(packageChoice);
-            DialogueNetwork.CHANNEL.sendToServer(
-                new C2SNominatorInventoryBind(
-                    choice.getPackageId(),
-                    selectedItem,
-                    selectedGroup,
-                    revision,
-                    catalogRevision));
-            // Main's server handler closes the live container after capture/bind.
-        }
-    }
-
-    private void cyclePackage(int direction) {
-        if (packages.isEmpty()) return;
-        packageChoice = (packageChoice + direction + packages.size()) % packages.size();
-        resourceChoice = 0;
-        refreshResources();
-    }
-
-    private void cycleResource(int direction) {
-        if (resources.isEmpty()) return;
-        resourceChoice = (resourceChoice + direction + resources.size()) % resources.size();
-        chooseResource();
-        refreshButtonState();
-    }
-
-    private void refreshResources() {
-        lastQuery = searchField == null ? "" : searchField.getText();
-        if (packages.isEmpty()) resources = Collections.emptyList();
-        else resources = NominatorStorySearch.items(catalog, packages.get(packageChoice), lastQuery, browsingGroups);
-        if (resourceChoice >= resources.size()) resourceChoice = 0;
-        chooseResource();
-        refreshButtonState();
-    }
-
-    private void chooseResource() {
-        if (resources.isEmpty()) {
-            if (browsingGroups) selectedGroup = null;
-            else selectedItem = null;
             return;
         }
-        NominatorStorySearch.ItemChoice choice = resources.get(resourceChoice);
-        if (browsingGroups) {
-            selectedGroup = choice.getId();
-            selectedItem = null;
-        } else {
-            selectedItem = choice.getId();
-            selectedGroup = null;
+        darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
+        if (button.id == 6 && row != null && hasTarget()) {
+            DialogueNetwork.CHANNEL.sendToServer(
+                new C2SNominatorInventoryBind(
+                    row.source.getPackageId(),
+                    "Item".equals(row.type) ? row.id : null,
+                    "Item Group".equals(row.type) ? row.id : null,
+                    revision,
+                    catalogRevision));
+            bindButton.enabled = false;
         }
     }
 
-    private boolean isBindable() {
-        ItemStack target = ((ContainerNominatorInventory) inventorySlots).getTargetInventory()
-            .getStackInSlot(0);
-        return target != null && !resources.isEmpty() && (selectedItem != null || selectedGroup != null);
-    }
-
-    private void refreshButtonState() {
-        if (bindButton != null) bindButton.enabled = isBindable();
-        for (GuiButton button : buttonList) if (button.id == 1 || button.id == 2) button.enabled = packages.size() > 1;
-        for (GuiButton button : buttonList) if (button.id == 4 || button.id == 5) button.enabled = resources.size() > 1;
+    private boolean hasTarget() {
+        return ((ContainerNominatorInventory) inventorySlots).getTargetInventory()
+            .getStackInSlot(0) != null;
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        if (searchField != null && !lastQuery.equals(searchField.getText())) refreshResources();
-        refreshButtonState();
-        super.drawScreen(mouseX, mouseY, partialTicks);
-        if (searchField != null) searchField.drawTextBox();
+    public void drawScreen(int mx, int my, float partial) {
+        bindButton.enabled = browser.selected() != null && hasTarget();
+        super.drawScreen(mx, my, partial);
     }
 
     @Override
-    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xF02B2F4A);
+    protected void drawGuiContainerBackgroundLayer(float partial, int mx, int my) {
+        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF383838);
+        browser.draw(mx, my);
+        for (Object obj : inventorySlots.inventorySlots) {
+            net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) obj;
+            int x = guiLeft + slot.xDisplayPosition, y = guiTop + slot.yDisplayPosition;
+            drawRect(x - 1, y - 1, x + 17, y + 17, 0xFFCCCCCC);
+            drawRect(x - 1, y - 1, x + 16, y + 16, 0xFF171717);
+            drawRect(x, y, x + 16, y + 16, 0xFF777777);
+        }
     }
 
     @Override
-    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
-        drawString(fontRendererObj, "Nominator · 物品指名", 8, 8, 0xFFEEF0FF);
-        drawString(fontRendererObj, "搜索 ID、名称或标签", 240, 8, 0xFFB8C0E8);
-        drawString(fontRendererObj, packageText(), 8, 86, 0xFFB8C0E8);
-        drawString(fontRendererObj, resourceText(), 8, 98, 0xFFEEF0FF);
-        drawString(fontRendererObj, "玩家背包", 178, 121, 0xFFB8C0E8);
-        drawString(fontRendererObj, "目标槽", 286, 165, 0xFFFFCC88);
-        drawString(
-            fontRendererObj,
-            resources.isEmpty() ? "服务器目录为空或无匹配条目" : "指名修订 " + revision + " · 包目录修订 " + catalogRevision,
+    protected void drawGuiContainerForegroundLayer(int mx, int my) {
+        fontRendererObj
+            .drawString(net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.item_nominator"), 8, 8, 0xFFFFFF);
+        fontRendererObj.drawString(
+            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.inventory"),
             8,
-            110,
-            0xFFFFCC88);
-    }
-
-    private String packageText() {
-        if (packages.isEmpty()) return "故事包：无可用包";
-        NominatorCatalog.PackageChoice choice = packages.get(packageChoice);
-        return fit("故事包：" + choice.getPackageId() + " / " + choice.getDisplayName(), 314);
-    }
-
-    private String resourceText() {
-        if (resources.isEmpty()) return browsingGroups ? "物品组：无匹配条目" : "物品：无匹配条目";
-        NominatorStorySearch.ItemChoice choice = resources.get(resourceChoice);
-        return fit((browsingGroups ? "物品组：" : "物品：") + choice.getId() + " / " + choice.getDisplayName(), 314);
-    }
-
-    private String fit(String text, int width) {
-        return fontRendererObj.trimStringToWidth(text, width);
+            ySize - 120,
+            0xCCCCCC);
+        fontRendererObj.drawString(
+            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.nominator_slot"),
+            xSize - 98,
+            ySize - 65,
+            0xDDCCAA);
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) {
-        if (searchField != null && searchField.textboxKeyTyped(typedChar, keyCode)) return;
-        super.keyTyped(typedChar, keyCode);
+    protected void keyTyped(char c, int key) {
+        if (!browser.search.textboxKeyTyped(c, key)) super.keyTyped(c, key);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int button) {
-        super.mouseClicked(mouseX, mouseY, button);
-        if (searchField != null) searchField.mouseClicked(mouseX, mouseY, button);
+    protected void mouseClicked(int x, int y, int b) {
+        browser.click(x, y, b);
+        super.mouseClicked(x, y, b);
+    }
+
+    @Override
+    public void handleMouseInput() {
+        super.handleMouseInput();
+        browser.scroll(
+            org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth,
+            height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1,
+            org.lwjgl.input.Mouse.getEventDWheel());
     }
 
     @Override

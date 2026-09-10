@@ -679,3 +679,17 @@ tasks.register<JavaExec>("offlineOriginProbe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.project.packages.OfflineOriginProbe")
 }
+
+tasks.register<JavaExec>("creatorUxProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.creator.CreatorUxProbe")
+}
+
+tasks.register<JavaExec>("creatorNetworkDiscriminatorProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.creator.CreatorNetworkDiscriminatorProbe")
+}

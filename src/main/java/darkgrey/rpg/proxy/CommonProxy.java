@@ -13,6 +13,8 @@ public class CommonProxy {
 
     public void registerClientDialogueNetwork() {}
 
+    public void acceptCreatorSnapshot(int kind, net.minecraft.nbt.NBTTagCompound data) {}
+
     public void openNominatorEntityGui(Entity entity) {}
 
     public void openNominatorEntityGui(int entityId, UUID entityUuid, String individual, List<String> groups,

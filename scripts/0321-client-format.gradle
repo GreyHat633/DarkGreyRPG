@@ -1,0 +1,5 @@
+gradle.projectsEvaluated {
+    rootProject.spotless.java {
+        target rootProject.fileTree(rootProject.file('src')) { include '**/client/**/*.java'; include '**/creator/**/*.java'; include '**/DarkGreyRpg.java'; include '**/content/ModItems.java'; include '**/proxy/CommonProxy.java'; include '**/command/CommandDarkGreyRpg.java'; include '**/command/CanonicalTaskStage4SurfaceProbe.java' }
+    }
+}

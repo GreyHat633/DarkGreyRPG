@@ -6,10 +6,12 @@ import java.util.Map;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.resources.I18n;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
+import darkgrey.rpg.client.session.CanonicalDialogueLayout;
 import darkgrey.rpg.client.session.CanonicalSessionClientController;
 import darkgrey.rpg.network.message.canonical.CanonicalSessionChoiceOption;
 import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
@@ -17,11 +19,9 @@ import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
 /** Separate canonical Session UI; legacy Dialogue screen behavior is unchanged. */
 public final class GuiCanonicalSessionScreen extends GuiScreen {
 
-    private static final int CONTINUE_BUTTON = 1000;
     private static final int PREVIOUS_CHOICES_BUTTON = 2000;
     private static final int NEXT_CHOICES_BUTTON = 2001;
     private static final int CHOICE_BUTTON_BASE = 3000;
-    private static final int CHOICES_PER_PAGE = 5;
 
     private CanonicalSessionFrame frame;
     private int scrollLine;
@@ -74,50 +74,27 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     public void initGui() {
         buttonList.clear();
         choiceButtons.clear();
-        int panelWidth = Math.min(620, width - 40);
-        int panelLeft = (width - panelWidth) / 2;
-        int panelBottom = Math.min(height - 20, (height + Math.min(420, height - 40)) / 2);
-
-        if (frame.canContinue()) {
-            buttonList.add(
-                new GuiModernButton(
-                    CONTINUE_BUTTON,
-                    panelLeft + panelWidth - 130,
-                    panelBottom - 34,
-                    110,
-                    20,
-                    "Continue"));
-        } else {
+        CanonicalDialogueLayout layout = new CanonicalDialogueLayout(width, height);
+        if (!frame.canContinue()) {
             List<CanonicalSessionChoiceOption> choices = frame.getChoices();
-            int visible = Math.min(CHOICES_PER_PAGE, choices.size() - choiceOffset);
-            int firstY = panelBottom - 34 - visible * 24;
+            choiceOffset = Math.min(choiceOffset, Math.max(0, choices.size() - 1));
+            int visible = Math.min(layout.choicesPerPage, choices.size() - choiceOffset);
+            int firstY = layout.choiceTop(visible);
+            int choiceLeft = (width - layout.choiceWidth) / 2;
             for (int index = 0; index < visible; index++) {
-                int actualIndex = choiceOffset + index;
+                CanonicalSessionChoiceOption option = choices.get(choiceOffset + index);
                 int id = CHOICE_BUTTON_BASE + index;
-                choiceButtons.put(
-                    id,
-                    choices.get(actualIndex)
-                        .getOptionId());
-                buttonList.add(
-                    new GuiModernButton(
-                        id,
-                        panelLeft + 20,
-                        firstY + index * 24,
-                        panelWidth - 40,
-                        20,
-                        choices.get(actualIndex)
-                            .getDisplayText()));
+                choiceButtons.put(id, option.getOptionId());
+                String label = option.getDisplayText();
+                if (fontRendererObj.getStringWidth(label) > layout.choiceWidth - 16)
+                    label = fontRendererObj.trimStringToWidth(label, layout.choiceWidth - 28) + "...";
+                buttonList.add(new GuiButton(id, choiceLeft, firstY + index * 24, layout.choiceWidth, 20, label));
             }
-            if (choiceOffset > 0) buttonList.add(
-                new GuiModernButton(PREVIOUS_CHOICES_BUTTON, panelLeft + 20, panelBottom - 34, 80, 20, "< Previous"));
-            if (choiceOffset + visible < choices.size()) buttonList.add(
-                new GuiModernButton(
-                    NEXT_CHOICES_BUTTON,
-                    panelLeft + panelWidth - 100,
-                    panelBottom - 34,
-                    80,
-                    20,
-                    "Next >"));
+            int pageY = firstY + visible * 24;
+            if (choiceOffset > 0)
+                buttonList.add(new GuiButton(PREVIOUS_CHOICES_BUTTON, choiceLeft, pageY, 60, 20, "<"));
+            if (choiceOffset + visible < choices.size()) buttonList
+                .add(new GuiButton(NEXT_CHOICES_BUTTON, choiceLeft + layout.choiceWidth - 60, pageY, 60, 20, ">"));
         }
         setButtonsEnabled(!awaitingServer);
     }
@@ -126,16 +103,15 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     protected void actionPerformed(GuiButton button) {
         if (awaitingServer) return;
         if (button.id == PREVIOUS_CHOICES_BUTTON) {
-            choiceOffset = Math.max(0, choiceOffset - CHOICES_PER_PAGE);
+            choiceOffset = Math.max(0, choiceOffset - new CanonicalDialogueLayout(width, height).choicesPerPage);
             initGui();
         } else if (button.id == NEXT_CHOICES_BUTTON) {
             choiceOffset = Math.min(
                 frame.getChoices()
                     .size() - 1,
-                choiceOffset + CHOICES_PER_PAGE);
+                choiceOffset + new CanonicalDialogueLayout(width, height).choicesPerPage);
             initGui();
-        } else if (button.id == CONTINUE_BUTTON) {
-            sendContinue();
+
         } else if (choiceButtons.containsKey(button.id)) {
             sendChoice(choiceButtons.get(button.id));
         }
@@ -169,49 +145,85 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     public void handleMouseInput() {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
-        if (wheel != 0) scrollLine = Math.max(0, scrollLine + (wheel < 0 ? 2 : -2));
+        int mouseX = Mouse.getEventX() * width / mc.displayWidth;
+        int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (wheel != 0 && new CanonicalDialogueLayout(width, height).containsDialogue(mouseX, mouseY))
+            scrollLine = Math.max(0, scrollLine + (wheel < 0 ? 2 : -2));
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        drawDefaultBackground();
-        int panelWidth = Math.min(620, width - 40);
-        int panelHeight = Math.min(420, height - 40);
-        int left = (width - panelWidth) / 2;
-        int top = (height - panelHeight) / 2;
-        int right = left + panelWidth;
-        int bottom = top + panelHeight;
-        drawRect(left, top, right, bottom, 0xF02B2F4A);
-        drawRect(left, top, right, top + 2, 0xFF7D8CFF);
-        drawCenteredString(fontRendererObj, frame.getStoryId(), width / 2, top + 12, 0xAAEEF0FF);
-
-        int textTop = top + 38;
-        if (!frame.getSpeaker()
-            .isEmpty()) {
-            fontRendererObj.drawString(frame.getSpeaker(), left + 24, textTop, 0xFF7D8CFF);
-            textTop += 18;
+        CanonicalDialogueLayout layout = new CanonicalDialogueLayout(width, height);
+        int left = layout.left;
+        int top = layout.top;
+        int right = layout.right;
+        int bottom = layout.bottom;
+        drawRect(left, top, right, bottom, 0xCC161616);
+        drawRect(left, top, right, top + 1, 0xFFC0C0C0);
+        drawRect(left, bottom - 1, right, bottom, 0xFF888888);
+        drawRect(left, top, left + 1, bottom, 0xFF888888);
+        drawRect(right - 1, top, right, bottom, 0xFF888888);
+        // Reserved empty portrait slot: no authored portrait data in this release.
+        drawRect(left + 8, top + 8, left + 8 + layout.portraitSize, top + 8 + layout.portraitSize, 0xFF777777);
+        drawRect(left + 9, top + 9, left + 7 + layout.portraitSize, top + 7 + layout.portraitSize, 0xFF202020);
+        String speaker = CanonicalSessionClientController.getVisibleSpeaker();
+        String text = CanonicalSessionClientController.getVisibleText();
+        int textTop = top + 7;
+        if (!speaker.isEmpty()) {
+            fontRendererObj.drawString(
+                fontRendererObj.trimStringToWidth(speaker, layout.textWidth),
+                layout.textLeft,
+                textTop,
+                0xFFE4D5AE);
+            textTop += fontRendererObj.FONT_HEIGHT + 3;
         }
-        int choicesHeight = frame.canContinue() ? 50
-            : Math.min(
-                CHOICES_PER_PAGE,
-                frame.getChoices()
-                    .size())
-                * 24 + 54;
-        int textBottom = bottom - choicesHeight;
-        List<String> lines = fontRendererObj.listFormattedStringToWidth(frame.getText(), panelWidth - 48);
+        int textBottom = bottom - 15;
+        List<String> lines = fontRendererObj.listFormattedStringToWidth(text, layout.textWidth);
         int visibleLines = Math.max(1, (textBottom - textTop) / fontRendererObj.FONT_HEIGHT);
         int maximumScroll = Math.max(0, lines.size() - visibleLines);
         scrollLine = Math.min(scrollLine, maximumScroll);
         for (int index = 0; index < visibleLines && index + scrollLine < lines.size(); index++) {
             fontRendererObj.drawString(
                 lines.get(index + scrollLine),
-                left + 24,
+                layout.textLeft,
                 textTop + index * fontRendererObj.FONT_HEIGHT,
-                0xFFEEF0FF);
+                0xFFEEEEEE);
         }
-        if (maximumScroll > 0)
-            fontRendererObj.drawString("Mouse wheel to scroll", right - 125, textBottom - 12, 0xAAEEF0FF);
+        String hint = awaitingServer ? I18n.format("gui.darkgrey_rpg.dialogue.waiting")
+            : maximumScroll > 0 ? I18n.format("gui.darkgrey_rpg.dialogue.scroll")
+                : frame.canContinue() ? I18n.format("gui.darkgrey_rpg.dialogue.continue") : "";
+        fontRendererObj.drawString(
+            fontRendererObj.trimStringToWidth(hint, layout.textWidth),
+            layout.textLeft,
+            bottom - 11,
+            0xFFAAAAAA);
         super.drawScreen(mouseX, mouseY, partialTicks);
+        for (Object object : buttonList) {
+            GuiButton button = (GuiButton) object;
+            if (!choiceButtons.containsKey(button.id) || mouseX < button.xPosition
+                || mouseX >= button.xPosition + button.width
+                || mouseY < button.yPosition
+                || mouseY >= button.yPosition + button.height) continue;
+            for (CanonicalSessionChoiceOption option : frame.getChoices()) {
+                if (option.getOptionId()
+                    .equals(choiceButtons.get(button.id))
+                    && !option.getDisplayText()
+                        .equals(button.displayString))
+                    drawHoveringText(
+                        fontRendererObj.listFormattedStringToWidth(option.getDisplayText(), Math.max(40, width / 2)),
+                        mouseX,
+                        mouseY,
+                        fontRendererObj);
+            }
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int button) {
+        super.mouseClicked(mouseX, mouseY, button);
+        if (button == 0 && !awaitingServer
+            && frame.canContinue()
+            && new CanonicalDialogueLayout(width, height).containsDialogue(mouseX, mouseY)) sendContinue();
     }
 
     @Override
