@@ -1,0 +1,10 @@
+{
+  "source": ".tooling\\0.3.2.2\\audit-trace\\original\\kill_slimes.dgrs",
+  "source_sha256": "82e289d8777c869631b0ba7f96985d2fe1cf0475c5396e1c11ae38c3c0928e03",
+  "corrected": "dist\\0.3.2.2\\story-packages\\kill_slimes.dgrs",
+  "corrected_sha256": "3a81cd6e4ca9c8805e9a88d81dd629a9a9d015098277a214162b149a96b76b25",
+  "changed_entries": [
+    "resources/canonical/tasks/x477265794861745f/x4b696c6c536c696d6573.json"
+  ],
+  "only_semantic_change": "interact_actor objective description: 消灭史莱姆 -> 与酒馆老板对话"
+}

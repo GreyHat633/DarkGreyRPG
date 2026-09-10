@@ -1,0 +1,134 @@
+{
+  "evidence/07-reconnected-choice.png": {
+    "bytes": 90143,
+    "sha256": "0DAB423F400B95D64FF333B4B591E5AC1196B0C831F850391EF0EAAF75E6CDC9"
+  },
+  "evidence/08-death-choice.png": {
+    "bytes": 94826,
+    "sha256": "3CD6A7103F5081FAC57F3260F6699577A33E485F5FEAC81314291F2AD071C9FF"
+  },
+  "evidence/09-respawn-choice.png": {
+    "bytes": 82722,
+    "sha256": "B530CBC8386801CDC9999BD807A8C5317E6C6FFBD27C7C8B224500BCE656E5F0"
+  },
+  "evidence/23-pause-fixed.png": {
+    "bytes": 108700,
+    "sha256": "CC2E0640B37A4B71DB48A40EFDA8D1C3C4E57FA56DCA72784A9B010E12AEC3CE"
+  },
+  "evidence/26-real-kill-3.png": {
+    "bytes": 23183,
+    "sha256": "F220BE1D4E28F12593DCC7EF5718D2A133C1916428D48CE937014CC9D56D5F79"
+  },
+  "evidence/27-task-settled-upper-gui-preserved.png": {
+    "bytes": 21129,
+    "sha256": "2994C854A6A7711902EA6885666E5E5FCC6538F6142B915BEFBD9C68668216E8"
+  },
+  "evidence/28-task-finish-dialogue.png": {
+    "bytes": 75012,
+    "sha256": "4F0AA98BFA19DBBDD42A8AD5E48FA73399B6B60BE8745BA79FD87F9510D9E519"
+  },
+  "evidence/29-reconnect-no-task-rollback.png": {
+    "bytes": 97675,
+    "sha256": "4624BB1CA7D1960610C17864E1A2BEC39D82D17841B7BBC84A7DFB041F1B9785"
+  },
+  "evidence/30-final-choice.png": {
+    "bytes": 80605,
+    "sha256": "69FBB0DCD6636BB7372CF6888349535ABAE7520B5F8114EEEC1FCFFD8EC8C419"
+  },
+  "evidence/31-final-remapped-chat-native-key.png": {
+    "bytes": 86907,
+    "sha256": "3A6090F16D875AA5EB4CCBB7DF6C638F37D4285FCF7D3EC4B16486159204B907"
+  },
+  "evidence/32-final-upper-choice-no-click.png": {
+    "bytes": 45684,
+    "sha256": "56C375EEA8C2844E9E9205137BA81EEF7C316CF6BB97D3C5FC8D9F6A2723F99F"
+  },
+  "evidence/33-final-pause.png": {
+    "bytes": 62544,
+    "sha256": "636EEA7741BE036BEF2794B5D91483EAC153EA0260712648077B41E10ED35053"
+  },
+  "evidence/34-final-parallel-tasks.png": {
+    "bytes": 40579,
+    "sha256": "DC98825AA9B1B8CE2FCD3C29825AA88E3CA7FC54EF53B0C64B10A71EAB0546B7"
+  },
+  "evidence/35-final-lowres-parallel-tasks.png": {
+    "bytes": 19912,
+    "sha256": "9F5FD5B1E6062A5246674C663AF1990607DC72EA1DBB41138EB6E7391137ECE5"
+  },
+  "evidence/39-final-copier-confirm.png": {
+    "bytes": 15359,
+    "sha256": "CBA50635A41D64153D916D761839E4DB0E2FCA00913C6C11A52E06B11921BFBC"
+  },
+  "evidence/40-final-copier-deleted.png": {
+    "bytes": 14883,
+    "sha256": "8293C4A2F1690A83C5D89B5ABCC980CEC414003EF180F282F640EFDE9F0BE148"
+  },
+  "evidence/41-final-nominator-layout.png": {
+    "bytes": 17644,
+    "sha256": "E4A0A6379E2E6393EFFBD82F34924220D4AB812731D25E864EECBBB9AB6BF668"
+  },
+  "evidence/42-final-nominator-bound.png": {
+    "bytes": 48965,
+    "sha256": "DCED83A73213B6BED1D1E32F86784C659CFC77BEBE7CF51FC6ADC8E83C19B931"
+  },
+  "evidence/44-final-narration-transport.png": {
+    "bytes": 74431,
+    "sha256": "8C98B379B902A3B4EDE2ECB90BB785339DC0C0E3268A3FD8E4132FE71FB972F4"
+  },
+  "evidence/46-final-item-multiple-labels-verified.png": {
+    "bytes": 118145,
+    "sha256": "225CB3FEB2DDE51BB55F15AE6E266E2CDDF87E0C25E6166DFD803C29879C9AD6"
+  },
+  "evidence/47-final-entity-labels.png": {
+    "bytes": 72030,
+    "sha256": "C0C235A340A7A2DB06CE33DA1E1DB45D658CE9B624F87243BC7B085F0E265076"
+  },
+  "evidence/baseline.log": {
+    "bytes": 24328,
+    "sha256": "CA9012E526447258A36C6E0B80A5C4D9DF0C6DB6AAD99E8798734E1157BF49BA"
+  },
+  "evidence/final-probe-supplement.log": {
+    "bytes": 2799,
+    "sha256": "5204E9A612FE819B0C8D1D50B31BB2E5605059C2FE03691DEA93B4408B1BE9FF"
+  },
+  "evidence/final-regression-1.log": {
+    "bytes": 24564,
+    "sha256": "39FF143AC5241F26AAA5A2494F3F187CD1BB396E773A1BF121AA43D829A19201"
+  },
+  "evidence/freeze-check.txt": {
+    "bytes": 89,
+    "sha256": "D77D560F27E7871B163689F79DC0E38ACBFE07B27083D1FA34042BC2BB0E7D86"
+  },
+  "evidence/live-actions.jsonl": {
+    "bytes": 10028,
+    "sha256": "204BC890B2AE9E66AB29ABF993EE6CE72452753D1BF630E7DD8F64232821E36F"
+  },
+  "evidence/live-run-2.log": {
+    "bytes": 59035,
+    "sha256": "3686445F9B4558608CB558A62A70A62C50942E549EA0CFE025E3FDFF59608AA3"
+  },
+  "evidence/live-run-3.log": {
+    "bytes": 59625,
+    "sha256": "37649E040EDB7DBD1844FA87E7CB1999B3F42A5F2A98209F8437E606D85BBFBB"
+  },
+  "evidence/live-run-4.log": {
+    "bytes": 57670,
+    "sha256": "95ACE8F0F82D3B218CC3AFB84D162DFFEE1EEDC86566664B7BA75B0E23E42A58"
+  },
+  "evidence/live-run-5.log": {
+    "bytes": 50071,
+    "sha256": "626F4C39DFE85359BF1BC9C251CF5019EE54DCB8B6CF53E12B346E3F44EA557D"
+  },
+  "evidence/live-verification.jsonl": {
+    "bytes": 814288,
+    "sha256": "2319A3C5AC01C9854427DFD4029D113A1F27446AF898FA73641F48BE712FD11B"
+  },
+  "evidence/original-kill_slimes.dgrs": {
+    "bytes": 6271,
+    "sha256": "82E289D8777C869631B0BA7F96985D2FE1CF0475C5396E1C11AE38C3C0928E03"
+  },
+  "evidence/PROBE_TASKS.txt": {
+    "bytes": 1608,
+    "sha256": "EDA19B46D0BBF077F76AF753F3A66072AF8A6D5FB34C67B3005F92E001C97D4C"
+  }
+}

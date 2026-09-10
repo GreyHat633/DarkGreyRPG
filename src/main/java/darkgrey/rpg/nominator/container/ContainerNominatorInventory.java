@@ -10,6 +10,9 @@ import net.minecraft.item.ItemStack;
 public final class ContainerNominatorInventory extends Container {
 
     public static final int TARGET_SLOT = 0;
+    /** Slot coordinates are presentation defaults; the client may re-layout them without changing indices. */
+    public static final int TARGET_DEFAULT_X = 286;
+    public static final int TARGET_DEFAULT_Y = 177;
     private static final int PLAYER_SLOT_START = 1;
     private static final int PLAYER_SLOT_END = 37;
 
@@ -19,7 +22,7 @@ public final class ContainerNominatorInventory extends Container {
 
     public ContainerNominatorInventory(InventoryPlayer inventory, EntityPlayer owner) {
         this.owner = owner;
-        addSlotToContainer(new TargetSlot(targetInventory, TARGET_SLOT, 286, 177));
+        addSlotToContainer(new TargetSlot(targetInventory, TARGET_SLOT, TARGET_DEFAULT_X, TARGET_DEFAULT_Y));
 
         // Keep the vanilla player-inventory ordering: main inventory, then hotbar.
         for (int row = 0; row < 3; row++) for (int column = 0; column < 9; column++)

@@ -124,6 +124,9 @@ public final class DarkGreyRpg {
         FMLCommonHandler.instance()
             .bus()
             .register(storyEventAdapter);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new darkgrey.rpg.creator.CanonicalTaskPresentationServer());
         DialogueNetwork.registerCommon();
         NominatorNetwork.registerCommon();
         EntityToolsNetwork.registerCommon();

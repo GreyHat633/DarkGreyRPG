@@ -693,3 +693,11 @@ tasks.register<JavaExec>("creatorNetworkDiscriminatorProbe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.creator.CreatorNetworkDiscriminatorProbe")
 }
+
+
+tasks.register<JavaExec>("presentation0322Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.Presentation0322Probe")
+}

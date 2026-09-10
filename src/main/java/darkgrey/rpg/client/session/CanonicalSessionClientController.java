@@ -15,16 +15,57 @@ public final class CanonicalSessionClientController {
 
     private CanonicalSessionClientController() {}
 
-    public static void acceptFrame(CanonicalSessionFrame frame) {
-        if (!MODEL.acceptFrame(frame)) return;
-        Minecraft minecraft = Minecraft.getMinecraft();
-        CanonicalSessionFrame accepted = MODEL.getFrame();
-        if (minecraft.currentScreen instanceof GuiCanonicalSessionScreen
-            && ((GuiCanonicalSessionScreen) minecraft.currentScreen).matches(accepted)) {
-            ((GuiCanonicalSessionScreen) minecraft.currentScreen).setFrame(accepted);
-        } else {
-            minecraft.displayGuiScreen(new GuiCanonicalSessionScreen(accepted));
+    private static net.minecraft.world.World world;
+    private static GuiCanonicalSessionScreen surface;
+
+    public static void synchronizeWorld() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (world != mc.theWorld) {
+            if (mc.currentScreen == surface && surface != null) mc.displayGuiScreen(null);
+            MODEL.clear();
+            surface = null;
+            world = mc.theWorld;
         }
+    }
+
+    public static void acceptFrame(CanonicalSessionFrame frame) {
+        synchronizeWorld();
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft.theWorld == null || minecraft.thePlayer == null || !MODEL.acceptFrame(frame)) return;
+        CanonicalSessionFrame accepted = MODEL.getFrame();
+        if (surface != null && surface.matches(accepted)) surface.setFrame(accepted);
+        else surface = new GuiCanonicalSessionScreen(accepted);
+        restoreForeground();
+    }
+
+    public static void restoreForeground() {
+        synchronizeWorld();
+        Minecraft mc = Minecraft.getMinecraft();
+        if (surface != null && mc.currentScreen == surface && mc.thePlayer != null && mc.thePlayer.getHealth() <= 0) {
+            mc.displayGuiScreen(null); // Vanilla resolves null to its usable death screen.
+            return;
+        }
+        if (surface != null && MODEL.isActive()
+            && mc.thePlayer != null
+            && !mc.thePlayer.isDead
+            && mc.thePlayer.getHealth() > 0
+            && mc.currentScreen == null) mc.displayGuiScreen(surface);
+    }
+
+    public static void drawUnderlay(float partialTicks) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (world != mc.theWorld || surface == null || !MODEL.isActive() || mc.currentScreen == surface) return;
+        net.minecraft.client.gui.ScaledResolution scaled = new net.minecraft.client.gui.ScaledResolution(
+            mc,
+            mc.displayWidth,
+            mc.displayHeight);
+        if (surface.width != scaled.getScaledWidth() || surface.height != scaled.getScaledHeight())
+            surface.setWorldAndResolution(mc, scaled.getScaledWidth(), scaled.getScaledHeight());
+        surface.drawUnderlay(partialTicks);
+    }
+
+    public static CanonicalSessionFrame getFrame() {
+        return MODEL.getFrame();
     }
 
     public static void showFrame(CanonicalSessionFrame frame) {
@@ -33,6 +74,7 @@ public final class CanonicalSessionClientController {
 
     public static void acceptClose(CanonicalSessionClose close) {
         if (!MODEL.acceptClose(close)) return;
+        surface = null;
         Minecraft minecraft = Minecraft.getMinecraft();
         if (minecraft.currentScreen instanceof GuiCanonicalSessionScreen
             && ((GuiCanonicalSessionScreen) minecraft.currentScreen)
@@ -61,6 +103,6 @@ public final class CanonicalSessionClientController {
     }
 
     private static void send(CanonicalSessionAction action) {
-        DialogueNetwork.CHANNEL.sendToServer(action);
+        if (Minecraft.getMinecraft().currentScreen == surface) DialogueNetwork.CHANNEL.sendToServer(action);
     }
 }

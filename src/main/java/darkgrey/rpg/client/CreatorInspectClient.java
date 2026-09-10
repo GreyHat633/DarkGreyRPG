@@ -89,14 +89,8 @@ public final class CreatorInspectClient {
             lines = new ArrayList<String>();
             List<String> items = catalog.matchingItemIds(event.itemStack),
                 groups = catalog.matchingGroupIds(event.itemStack);
-            if (!items.isEmpty()) {
-                lines.add("\u00a77DGR Item:");
-                for (String id : items) lines.add("\u00a77  " + id);
-            }
-            if (!groups.isEmpty()) {
-                lines.add("\u00a77DGR Group:");
-                for (String id : groups) lines.add("\u00a77  " + id);
-            }
+            for (String id : items) lines.add("\u00a7e[ItemID] " + id);
+            for (String id : groups) lines.add("\u00a7b[GroupID] " + id);
             if (cache.size() >= 256) cache.clear();
             cache.put(key, lines);
         }

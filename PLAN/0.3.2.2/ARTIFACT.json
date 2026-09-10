@@ -1,0 +1,22 @@
+{
+  "version": "0.3.2.2",
+  "artifact": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\darkgrey_rpg-0.3.2.2.jar",
+  "size_bytes": 939437,
+  "sha256": "4AD7A245BE0AB5218F214A80DEB0F878AE0E1E124B935EBF304AE00F312115AF",
+  "delivery": "LOCAL_ACCEPTANCE_CANDIDATE",
+  "agent_verification": "AGENT_REAL_MACHINE_VERIFIED",
+  "user_accepted": false,
+  "studio_changed": false,
+  "probe_tasks_passed": 54,
+  "build": "PASS_WITH_EXPLICIT_SCOPED_SPOTLESS_INIT",
+  "unrestricted_baseline_spotless": "PRE_EXISTING_FAILURE_REMAINS",
+  "test_harness_included": false,
+  "corrected_story_package": {
+    "path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\0.3.2.2\\story-packages\\kill_slimes.dgrs",
+    "size_bytes": 6262,
+    "sha256": "3A81CD6E4CA9C8805E9A88D81DD629A9A9D015098277A214162B149A96B76B25"
+  },
+  "original_user_package_unchanged": true,
+  "baseline_commit": "0f1f002aba10a7e1ae12564d6fdda093d5389ef4",
+  "branch": "codex/0.3.2.2"
+}

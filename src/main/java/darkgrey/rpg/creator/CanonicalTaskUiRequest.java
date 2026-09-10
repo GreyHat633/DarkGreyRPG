@@ -4,13 +4,10 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTTagCompound;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
-import darkgrey.rpg.DarkGreyRpg;
-import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.network.MainThreadScheduler;
 import io.netty.buffer.ByteBuf;
 
@@ -51,11 +48,7 @@ public final class CanonicalTaskUiRequest implements IMessage {
                     if (last != null && now - last < 250000000L) return;
                     LAST.put(player, now);
                     if (player.playerNetServerHandler == null || player.isDead) return;
-                    NBTTagCompound data = CanonicalTaskUiProjection.project(
-                        DarkGreyRpg.getCanonicalTaskManager()
-                            .getJournal(player));
-                    data.setInteger("request", message.request);
-                    DialogueNetwork.CHANNEL.sendTo(new CreatorSnapshot(1, data), player);
+                    CanonicalTaskPresentationServer.push(player, true);
                 }
             });
             return null;

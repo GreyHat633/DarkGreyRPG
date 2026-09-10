@@ -144,6 +144,20 @@ public final class CanonicalSessionForgeManager {
         }
     }
 
+    /** Reprojects an existing ACTIVE cursor; never starts/restarts a Session. */
+    public boolean reprojectActive(EntityPlayerMP player) {
+        ServiceContext context = context(player);
+        for (darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot snapshot : context.savedData.snapshots()) {
+            if (snapshot.getPlayerUuid()
+                .equals(player.getUniqueID())
+                && snapshot.getRuntimeSnapshot()
+                    .getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE) {
+                return resume(player, snapshot.getStoryId());
+            }
+        }
+        return false;
+    }
+
     /**
      * Package-private deterministic seam for Forge-bound probes. The UUID is already trusted by the caller; public
      * entry points above always derive it from EntityPlayerMP before reaching the service.

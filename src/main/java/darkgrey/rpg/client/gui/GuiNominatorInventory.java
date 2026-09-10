@@ -70,7 +70,17 @@ public final class GuiNominatorInventory extends GuiContainer {
         buttonList.clear();
         for (int i = 0; i < inventorySlots.inventorySlots.size(); i++) {
             net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) inventorySlots.inventorySlots.get(i);
-            slot.yDisplayPosition = (i == 0 || i >= 28 ? 177 : 119 + ((i - 1) / 9) * 18) + ySize - 228;
+            if (i == 0) {
+                // Keep the target slot at the centre of the dedicated right action block.
+                slot.xDisplayPosition = xSize - 58;
+                slot.yDisplayPosition = ySize - 92;
+            } else if (i >= 28) {
+                slot.xDisplayPosition = 8 + ((i - 28) % 9) * 18;
+                slot.yDisplayPosition = ySize - 51;
+            } else {
+                slot.xDisplayPosition = 8 + ((i - 1) % 9) * 18;
+                slot.yDisplayPosition = ySize - 109 + ((i - 1) / 9) * 18;
+            }
         }
         browser = new NominatorBrowser(
             fontRendererObj,
@@ -132,10 +142,18 @@ public final class GuiNominatorInventory extends GuiContainer {
     protected void drawGuiContainerBackgroundLayer(float partial, int mx, int my) {
         drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF383838);
         browser.draw(mx, my);
+        // The player's main inventory and hotbar share one framed block.
+        drawRect(guiLeft + 6, guiTop + ySize - 126, guiLeft + 174, guiTop + ySize - 34, 0xFF202020);
+        drawRect(guiLeft + 7, guiTop + ySize - 125, guiLeft + 173, guiTop + ySize - 35, 0xFF666666);
+        // The target slot and action button form a single, clearly-owned block.
+        drawRect(guiLeft + xSize - 94, guiTop + ySize - 126, guiLeft + xSize - 6, guiTop + ySize - 4, 0xFF806C4E);
+        drawRect(guiLeft + xSize - 93, guiTop + ySize - 125, guiLeft + xSize - 7, guiTop + ySize - 5, 0xFF292929);
+        int slotIndex = 0;
         for (Object obj : inventorySlots.inventorySlots) {
             net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) obj;
             int x = guiLeft + slot.xDisplayPosition, y = guiTop + slot.yDisplayPosition;
-            drawRect(x - 1, y - 1, x + 17, y + 17, 0xFFCCCCCC);
+            int border = slotIndex++ == ContainerNominatorInventory.TARGET_SLOT ? 0xFFFFD27A : 0xFFCCCCCC;
+            drawRect(x - 1, y - 1, x + 17, y + 17, border);
             drawRect(x - 1, y - 1, x + 16, y + 16, 0xFF171717);
             drawRect(x, y, x + 16, y + 16, 0xFF777777);
         }
@@ -152,9 +170,9 @@ public final class GuiNominatorInventory extends GuiContainer {
             0xCCCCCC);
         fontRendererObj.drawString(
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.nominator_slot"),
-            xSize - 98,
+            xSize - 86,
             ySize - 65,
-            0xDDCCAA);
+            0xFFFFD27A);
     }
 
     @Override

@@ -11,6 +11,10 @@ import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
 public class CommonProxy {
 
+    public boolean isCurrentClientConnection(Object connection) {
+        return false;
+    }
+
     public void registerClientDialogueNetwork() {}
 
     public void acceptCreatorSnapshot(int kind, net.minecraft.nbt.NBTTagCompound data) {}

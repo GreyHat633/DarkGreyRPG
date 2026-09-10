@@ -1,22 +1,28 @@
-item.darkgrey_rpg.editor_tool.name=DarkGrey RPG 编辑器
-item.darkgrey_rpg.nominator.name=DarkGrey RPG 指名器
-item.darkgrey_rpg.copier.name=DarkGrey RPG 复制器
-item.darkgrey_rpg.storage_box.name=DarkGrey RPG 收纳箱
-item.darkgrey_rpg.body.name=DarkGrey RPG 素体
+item.darkgrey_rpg.editor_tool.name=编辑器
+item.darkgrey_rpg.nominator.name=指名器
+item.darkgrey_rpg.copier.name=复制器
+item.darkgrey_rpg.storage_box.name=收纳箱
+item.darkgrey_rpg.body.name=素体
 itemGroup.darkgrey_rpg=DarkGrey RPG
 key.darkgrey_rpg.quest_journal=打开任务
 key.categories.darkgrey_rpg=DarkGrey RPG
 
-gui.darkgrey_rpg.dialogue.continue=点击对话框继续
+gui.darkgrey_rpg.dialogue.continue=点击继续
 gui.darkgrey_rpg.dialogue.scroll=鼠标滚轮：滚动正文
 gui.darkgrey_rpg.dialogue.waiting=等待服务器…
 
-item.darkgrey_rpg.inspector_goggles.name=DGR 身份检查护目镜
+item.darkgrey_rpg.inspector_goggles.name=检查器
 gui.darkgrey_rpg.entity_nominator=实体指名器
 gui.darkgrey_rpg.item_nominator=物品指名器
 gui.darkgrey_rpg.bind=指名
 gui.darkgrey_rpg.unbind=解除指名
 gui.darkgrey_rpg.close=关闭
+gui.darkgrey_rpg.delete=删除
+gui.darkgrey_rpg.copier=复制器
+gui.darkgrey_rpg.copier_delete_confirm=确认删除
+gui.darkgrey_rpg.copier_delete_warning=再次点击确认删除
+gui.darkgrey_rpg.copier_empty=暂无模板。右键生物可保存模板。
+gui.darkgrey_rpg.copier_scroll=滚轮浏览
 gui.darkgrey_rpg.binding=当前指名：
 gui.darkgrey_rpg.inventory=玩家背包
 gui.darkgrey_rpg.nominator_slot=指名槽

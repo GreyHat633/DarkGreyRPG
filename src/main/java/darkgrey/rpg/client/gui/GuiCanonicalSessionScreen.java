@@ -6,7 +6,6 @@ import java.util.Map;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.resources.I18n;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -32,6 +31,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     public GuiCanonicalSessionScreen(CanonicalSessionFrame frame) {
         if (frame == null) throw new IllegalArgumentException("Canonical Session frame is required.");
         this.frame = copy(frame);
+        allowUserInput = true;
     }
 
     public long getTransportId() {
@@ -88,20 +88,20 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
                 String label = option.getDisplayText();
                 if (fontRendererObj.getStringWidth(label) > layout.choiceWidth - 16)
                     label = fontRendererObj.trimStringToWidth(label, layout.choiceWidth - 28) + "...";
-                buttonList.add(new GuiButton(id, choiceLeft, firstY + index * 24, layout.choiceWidth, 20, label));
+                buttonList.add(new GuiRpgButton(id, choiceLeft, firstY + index * 24, layout.choiceWidth, 20, label));
             }
             int pageY = firstY + visible * 24;
             if (choiceOffset > 0)
-                buttonList.add(new GuiButton(PREVIOUS_CHOICES_BUTTON, choiceLeft, pageY, 60, 20, "<"));
+                buttonList.add(new GuiRpgButton(PREVIOUS_CHOICES_BUTTON, choiceLeft, pageY, 60, 20, "<"));
             if (choiceOffset + visible < choices.size()) buttonList
-                .add(new GuiButton(NEXT_CHOICES_BUTTON, choiceLeft + layout.choiceWidth - 60, pageY, 60, 20, ">"));
+                .add(new GuiRpgButton(NEXT_CHOICES_BUTTON, choiceLeft + layout.choiceWidth - 60, pageY, 60, 20, ">"));
         }
         setButtonsEnabled(!awaitingServer);
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (awaitingServer) return;
+        if (awaitingServer || mc.currentScreen != this) return;
         if (button.id == PREVIOUS_CHOICES_BUTTON) {
             choiceOffset = Math.max(0, choiceOffset - new CanonicalDialogueLayout(width, height).choicesPerPage);
             initGui();
@@ -133,12 +133,30 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         for (Object object : buttonList) ((GuiButton) object).enabled = enabled;
     }
 
+    /** Minecraft 1.7 normally consumes GUI input before its keybinding loop. */
+    @Override
+    public void handleInput() {
+        // Consume pointer input here so vanilla cannot also attack/use/scroll the hotbar.
+        // Leave keyboard events for Minecraft's configured bindings and FML input routing.
+        if (Mouse.isCreated()) while (Mouse.next()) {
+            if (mc.currentScreen == this) handleMouseInput();
+            else if (mc.currentScreen != null) mc.currentScreen.handleMouseInput();
+        }
+    }
+
     @Override
     protected void keyTyped(char typedCharacter, int keyCode) {
-        // Escape intentionally does nothing: a server-owned Session cannot be abandoned locally.
-        if (keyCode == Keyboard.KEY_ESCAPE) return;
-        if (!awaitingServer && frame.canContinue() && (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_SPACE))
-            sendContinue();
+        if (mc.currentScreen != this) return;
+        if (keyCode == Keyboard.KEY_ESCAPE) {
+            mc.displayGuiScreen(new net.minecraft.client.gui.GuiIngameMenu());
+            if (mc.isSingleplayer() && !mc.getIntegratedServer()
+                .getPublic()) mc.getSoundHandler()
+                    .pauseSounds();
+        } else if (keyCode == mc.gameSettings.keyBindCommand.getKeyCode()
+            && mc.gameSettings.chatVisibility != net.minecraft.entity.player.EntityPlayer.EnumChatVisibility.HIDDEN) {
+                // Vanilla's command binding requires currentScreen == null; use its configured key.
+                mc.displayGuiScreen(new net.minecraft.client.gui.GuiChat("/"));
+            }
     }
 
     @Override
@@ -153,50 +171,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        CanonicalDialogueLayout layout = new CanonicalDialogueLayout(width, height);
-        int left = layout.left;
-        int top = layout.top;
-        int right = layout.right;
-        int bottom = layout.bottom;
-        drawRect(left, top, right, bottom, 0xCC161616);
-        drawRect(left, top, right, top + 1, 0xFFC0C0C0);
-        drawRect(left, bottom - 1, right, bottom, 0xFF888888);
-        drawRect(left, top, left + 1, bottom, 0xFF888888);
-        drawRect(right - 1, top, right, bottom, 0xFF888888);
-        // Reserved empty portrait slot: no authored portrait data in this release.
-        drawRect(left + 8, top + 8, left + 8 + layout.portraitSize, top + 8 + layout.portraitSize, 0xFF777777);
-        drawRect(left + 9, top + 9, left + 7 + layout.portraitSize, top + 7 + layout.portraitSize, 0xFF202020);
-        String speaker = CanonicalSessionClientController.getVisibleSpeaker();
-        String text = CanonicalSessionClientController.getVisibleText();
-        int textTop = top + 7;
-        if (!speaker.isEmpty()) {
-            fontRendererObj.drawString(
-                fontRendererObj.trimStringToWidth(speaker, layout.textWidth),
-                layout.textLeft,
-                textTop,
-                0xFFE4D5AE);
-            textTop += fontRendererObj.FONT_HEIGHT + 3;
-        }
-        int textBottom = bottom - 15;
-        List<String> lines = fontRendererObj.listFormattedStringToWidth(text, layout.textWidth);
-        int visibleLines = Math.max(1, (textBottom - textTop) / fontRendererObj.FONT_HEIGHT);
-        int maximumScroll = Math.max(0, lines.size() - visibleLines);
-        scrollLine = Math.min(scrollLine, maximumScroll);
-        for (int index = 0; index < visibleLines && index + scrollLine < lines.size(); index++) {
-            fontRendererObj.drawString(
-                lines.get(index + scrollLine),
-                layout.textLeft,
-                textTop + index * fontRendererObj.FONT_HEIGHT,
-                0xFFEEEEEE);
-        }
-        String hint = awaitingServer ? I18n.format("gui.darkgrey_rpg.dialogue.waiting")
-            : maximumScroll > 0 ? I18n.format("gui.darkgrey_rpg.dialogue.scroll")
-                : frame.canContinue() ? I18n.format("gui.darkgrey_rpg.dialogue.continue") : "";
-        fontRendererObj.drawString(
-            fontRendererObj.trimStringToWidth(hint, layout.textWidth),
-            layout.textLeft,
-            bottom - 11,
-            0xFFAAAAAA);
+        scrollLine = CanonicalDialogueRenderer.draw(fontRendererObj, width, height, frame, scrollLine, awaitingServer);
         super.drawScreen(mouseX, mouseY, partialTicks);
         for (Object object : buttonList) {
             GuiButton button = (GuiButton) object;
@@ -218,12 +193,17 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         }
     }
 
+    /** Render-only view used beneath any higher-priority GUI; no hover or input. */
+    public void drawUnderlay(float partialTicks) {
+        CanonicalDialogueRenderer.draw(fontRendererObj, width, height, frame, scrollLine, awaitingServer);
+        for (Object object : buttonList) ((GuiButton) object).drawButton(mc, -10000, -10000);
+    }
+
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int button) {
+        if (mc.currentScreen != this) return;
         super.mouseClicked(mouseX, mouseY, button);
-        if (button == 0 && !awaitingServer
-            && frame.canContinue()
-            && new CanonicalDialogueLayout(width, height).containsDialogue(mouseX, mouseY)) sendContinue();
+        if (button == 0 && !awaitingServer && frame.canContinue()) sendContinue();
     }
 
     @Override

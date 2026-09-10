@@ -16,6 +16,12 @@ public final class CanonicalSessionClientModel {
     private String visibleText = "";
     private String visibleSpeaker = "";
 
+    public synchronized void clear() {
+        frame = null;
+        visibleText = "";
+        visibleSpeaker = "";
+    }
+
     public synchronized boolean acceptFrame(CanonicalSessionFrame update) {
         if (update == null) return false;
         if (frame != null && (frame.getTransportId() != update.getTransportId() || !frame.getStoryId()

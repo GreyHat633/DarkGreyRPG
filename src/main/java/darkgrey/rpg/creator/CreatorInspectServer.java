@@ -50,8 +50,9 @@ public final class CreatorInspectServer {
                 int index = 0;
                 for (String id : identity.getActorIds()) {
                     if (index > 0) text.append('\n');
-                    if (index > 0 || identity.getSource() == EntityDgrIdentityResolver.Source.NOMINATOR_GROUP)
-                        text.append("Group: ");
+                    boolean group = index > 0
+                        || identity.getSource() == EntityDgrIdentityResolver.Source.NOMINATOR_GROUP;
+                    text.append(group ? "[GroupID] " : "[NPCID] ");
                     text.append(id);
                     index++;
                 }

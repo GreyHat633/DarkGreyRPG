@@ -28,6 +28,18 @@ import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 /** Forge WorldSavedData boundary for canonical Task instances and indexed events. */
 public final class CanonicalTaskSavedData extends WorldSavedData {
 
+    private long presentationGeneration;
+
+    public synchronized long getPresentationGeneration() {
+        return presentationGeneration;
+    }
+
+    @Override
+    public synchronized void markDirty() {
+        super.markDirty();
+        presentationGeneration++;
+    }
+
     public static final String DATA_NAME = "darkgrey_rpg_canonical_tasks";
 
     private CanonicalTaskInstanceStore store = new CanonicalTaskInstanceStore();
@@ -379,6 +391,7 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Task NBT is required.");
         CanonicalTaskInstanceNbtCodecBridge.decode(root); // validate before replacing pending fence
         pendingRaw = copy(root);
+        presentationGeneration++;
         bound = false;
     }
 

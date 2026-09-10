@@ -12,10 +12,12 @@ public final class CanonicalSessionCloseHandler implements IMessageHandler<Canon
 
     @Override
     public IMessage onMessage(final CanonicalSessionClose message, MessageContext context) {
+        final Object connection = context.netHandler;
         MainThreadScheduler.scheduleClient(new Runnable() {
 
             @Override
             public void run() {
+                if (!darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;
                 CanonicalSessionClientController.acceptClose(message);
             }
         });
