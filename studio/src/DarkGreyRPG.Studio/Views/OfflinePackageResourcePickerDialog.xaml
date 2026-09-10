@@ -1,0 +1,134 @@
+<Window x:Class="DarkGreyRPG.Studio.Views.OfflinePackageResourcePickerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}" Width="720" Height="610" MinWidth="620" MinHeight="500"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="14" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding Title}" />
+        <TextBlock Grid.Row="1" Margin="0,6,0,0" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Text="{Binding Explanation}" />
+        <TextBox Grid.Row="3" Padding="9,6" AutomationProperties.Name="搜索离线资源"
+                 ToolTip="搜索名称、资源 ID、资源类型或故事包"
+                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+        <TabControl Grid.Row="5" AutomationProperties.Name="离线资源来源" SelectionChanged="SourceTabs_OnSelectionChanged">
+            <TabItem Header="{Binding NativeTabHeader}">
+                <Grid Margin="0,12,0,0">
+                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{Binding NativeEmptyText}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasFilteredNative}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <ListBox ItemsSource="{Binding FilteredNative}" SelectedItem="{Binding SelectedChoice, Mode=OneWay}"
+                             BorderThickness="0" HorizontalContentAlignment="Stretch"
+                             SelectionChanged="ResourceList_OnSelectionChanged"
+                             MouseDoubleClick="ResourceList_OnMouseDoubleClick"
+                             AutomationProperties.Name="项目内引用资源列表">
+                        <ListBox.ItemTemplate>
+    <DataTemplate>
+        <Border Margin="0,0,0,8" Padding="14" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="4">
+            <StackPanel>
+                <WrapPanel Margin="0,0,0,12">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DisplayName}" TextWrapping="Wrap" MaxWidth="430"/>
+                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" Text="{Binding Kind}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </WrapPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding ResourceIdLabel}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Id}" TextWrapping="Wrap"/>
+                </Grid>
+                <Grid Margin="0,6,0,0">
+                    <Grid.Style><Style TargetType="Grid"><Style.Triggers><DataTrigger Binding="{Binding SourcePackageName}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Grid.Style>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="6"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <TextBlock Text="故事包" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding SourcePackageName}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="2" Text="Story ID" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SourceStoryId}" TextWrapping="Wrap"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+</ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{Binding ExternalTabHeader}">
+                <Grid Margin="0,12,0,0">
+                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{Binding ExternalEmptyText}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasFilteredExternal}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <ListBox ItemsSource="{Binding FilteredExternal}" SelectedItem="{Binding SelectedChoice, Mode=OneWay}"
+                             BorderThickness="0" HorizontalContentAlignment="Stretch"
+                             SelectionChanged="ResourceList_OnSelectionChanged"
+                             MouseDoubleClick="ResourceList_OnMouseDoubleClick"
+                             AutomationProperties.Name="项目外引用资源列表">
+                        <ListBox.ItemTemplate>
+    <DataTemplate>
+        <Border Margin="0,0,0,8" Padding="14" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="4">
+            <StackPanel>
+                <WrapPanel Margin="0,0,0,12">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DisplayName}" TextWrapping="Wrap" MaxWidth="430"/>
+                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" Text="{Binding Kind}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </WrapPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding ResourceIdLabel}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Id}" TextWrapping="Wrap"/>
+                </Grid>
+                <Grid Margin="0,6,0,0">
+                    <Grid.Style><Style TargetType="Grid"><Style.Triggers><DataTrigger Binding="{Binding SourcePackageName}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Grid.Style>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="6"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <TextBlock Text="故事包" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding SourcePackageName}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="2" Text="Story ID" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SourceStoryId}" TextWrapping="Wrap"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+</ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Width="88" Height="32" Margin="0,0,8,0" IsCancel="True" Content="取消" />
+            <Button Width="88" Height="32" IsDefault="True" IsEnabled="{Binding CanConfirm}"
+                    Style="{DynamicResource AccentButtonStyle}" Click="ConfirmButton_OnClick" Content="选择" />
+        </StackPanel>
+    </Grid>
+</Window>

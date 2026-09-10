@@ -56,6 +56,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
     public static void main(String[] args) {
         sessionActionTransferTermination();
         bartenderVerticalSlice();
+        repeatableRuns();
         activeChildrenCleanup();
         failedActionMarksErrorAndCleans();
         crossStoryPublicLogicAndDynamicResume();
@@ -229,6 +230,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
                 .getStatus() == CanonicalStoryStatus.TERMINATED,
             "Bartender Story did not terminate");
         check(data.getSnapshot(PLAYER, "bartender_story") == null, "Terminated Story retained an active Session");
+        check(!stories.isStartEligible(PLAYER, "bartender_story"), "Once terminal Story retained Start eligibility");
+        System.out.println("STORY_ONCE_TERMINAL_START_NOT_ELIGIBLE=PASS");
         check(
             !gateway.tasks.get(PLAYER, "bartender_story", "slime_task_place")
                 .isActive(),
@@ -393,6 +396,11 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         public void cleanup(String storyId) {
             cleaned.add(storyId);
         }
+
+        @Override
+        public void resetPreviousRun(String storyId) {
+            throw new AssertionError("Repeat reset was not expected");
+        }
     }
 
     private static final class BartenderGateway implements CanonicalStoryForgeManager.AggregateGateway {
@@ -459,6 +467,11 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         public void cleanup(String storyId) {
             cleaned.add(storyId);
             tasks.cancelByStory(PLAYER, storyId);
+        }
+
+        @Override
+        public void resetPreviousRun(String storyId) {
+            tasks.discardByPlayerStory(PLAYER, storyId);
         }
     }
 
@@ -567,9 +580,164 @@ public final class CanonicalStoryForgeCoordinatorProbe {
                 edge("start", "logic_start", "end", "flow_in")));
     }
 
+    private static void repeatableRuns() {
+        ProjectSnapshot project = bartenderProject(true);
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        CanonicalStoryServerService stories = new CanonicalStoryServerService(project, data);
+        BartenderGateway gateway = new BartenderGateway(project, data);
+        UUID otherPlayer = UUID.fromString("40000000-0000-0000-0000-000000000007");
+        long otherPlayerSession = data
+            .start(otherPlayer, "bartender_story", "offer_place", project.getCanonicalSession("offer"))
+            .getTransportId();
+        long otherStorySession = data.start(PLAYER, "other_story", "offer_place", project.getCanonicalSession("offer"))
+            .getTransportId();
+        for (int run = 1; run <= 3; run++) {
+            darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot previousSession = data
+                .getSnapshot(PLAYER, "bartender_story");
+            CanonicalStoryForgeManager.routeTrusted(
+                PLAYER,
+                stories,
+                data,
+                stories.startByActor(PLAYER, "bartender_story", "bartender", run * 1000L),
+                gateway);
+            check(
+                previousSession == null
+                    || previousSession.getTransportId() != data.getSnapshot(PLAYER, "bartender_story")
+                        .getTransportId(),
+                "Repeat reused previous-run Session transport");
+            check(
+                data.getSnapshot(otherPlayer, "bartender_story")
+                    .getTransportId() == otherPlayerSession,
+                "Repeat reset altered another player's Session");
+            check(
+                data.getSnapshot(PLAYER, "other_story")
+                    .getTransportId() == otherStorySession,
+                "Repeat reset altered another Story's Session");
+            check(
+                data.getPendingContinuation(PLAYER, "bartender_story") == null,
+                "Repeat reset retained previous-run continuation");
+            check(!stories.isStartEligible(PLAYER, "bartender_story"), "ACTIVE Start remained eligible");
+            check(
+                darkgrey.rpg.story.canonical.runtime.CanonicalStoryTriggerIndex.build(project)
+                    .matchActor("bartender", stories.eligibleStartStoryIds(PLAYER))
+                    .isEmpty(),
+                "ACTIVE Start entered actor candidates");
+            int sessionStartsBefore = gateway.sessionStarts;
+            check(
+                !CanonicalStoryForgeManager.routeTrusted(
+                    PLAYER,
+                    stories,
+                    data,
+                    stories.startByActor(PLAYER, "bartender_story", "bartender", run * 1000L + 1),
+                    gateway),
+                "ACTIVE Start consumed event");
+            check(gateway.sessionStarts == sessionStartsBefore, "ACTIVE Start rerouted Session");
+            completeSession(project, data, gateway, "bartender_story", "line");
+            CanonicalStoryForgeManager.routeTrusted(
+                PLAYER,
+                stories,
+                data,
+                stories.resumeSession(PLAYER, "bartender_story", run * 1000L + 1),
+                gateway);
+            CanonicalTaskInstanceSnapshot task = gateway.tasks.get(PLAYER, "bartender_story", "slime_task_place")
+                .snapshot();
+            check(
+                task.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE
+                    && task.getRuntimeSnapshot()
+                        .getProgress()
+                        .get("kill")
+                        .intValue() == 0,
+                "Repeat Run " + run + " must start at zero with an ACTIVE Task");
+            if (run == 3) break;
+            for (int kill = 0; kill < 2; kill++) gateway.tasks.acceptEvent(
+                PLAYER,
+                "bartender_story",
+                "slime_task_place",
+                CanonicalTaskEvent.killEntity("slime"),
+                run * 1000L + 10 + kill);
+            int taskStartsBefore = gateway.taskStarts;
+            CanonicalStoryForgeManager.routeTrusted(
+                PLAYER,
+                stories,
+                data,
+                stories.startByActor(PLAYER, "bartender_story", "bartender", run * 1000L + 12),
+                gateway);
+            check(
+                gateway.taskStarts == taskStartsBefore && gateway.sessionStarts == sessionStartsBefore,
+                "ACTIVE Start rerouted an aggregate");
+            check(
+                gateway.tasks.get(PLAYER, "bartender_story", "slime_task_place")
+                    .snapshot()
+                    .getRuntimeSnapshot()
+                    .getProgress()
+                    .get("kill")
+                    .intValue() == 2,
+                "ACTIVE Start reset progress");
+            for (int kill = 2; kill < 10; kill++) gateway.tasks.acceptEvent(
+                PLAYER,
+                "bartender_story",
+                "slime_task_place",
+                CanonicalTaskEvent.killEntity("slime"),
+                run * 1000L + 10 + kill);
+            task = gateway.tasks.get(PLAYER, "bartender_story", "slime_task_place")
+                .snapshot();
+            CanonicalStoryForgeManager.routeTrusted(
+                PLAYER,
+                stories,
+                data,
+                stories.resumeTask(PLAYER, "bartender_story", task, run * 1000L + 30),
+                gateway);
+            completeSession(project, data, gateway, "bartender_story", "line");
+            CanonicalStoryForgeManager.routeTrusted(
+                PLAYER,
+                stories,
+                data,
+                stories.resumeSession(PLAYER, "bartender_story", run * 1000L + 40),
+                gateway);
+            check(
+                data.getStorySnapshot(PLAYER, "bartender_story")
+                    .getRuntimeSnapshot()
+                    .getStatus() == CanonicalStoryStatus.TERMINATED,
+                "Repeat run did not terminate");
+            check(
+                gateway.tasks.get(PLAYER, "bartender_story", "slime_task_place")
+                    .snapshot()
+                    .getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED,
+                "Terminal Task result was lost");
+            // A previous-run child must survive a rejected trigger, then be removed on a valid new run.
+            gateway.frame = gateway.sessions.start(PLAYER, "bartender_story", "offer_place", false);
+            if (run == 2) completeSession(project, data, gateway, "bartender_story", "line");
+            NBTTagCompound beforeRejected = new NBTTagCompound();
+            data.writeToNBT(beforeRejected);
+            try {
+                stories.startByActor(PLAYER, "bartender_story", "wrong_actor", run * 1000L + 41);
+                throw new AssertionError("Invalid repeat Start was accepted");
+            } catch (darkgrey.rpg.graph.canonical.CanonicalGraphResourceException expected) {
+                NBTTagCompound afterRejected = new NBTTagCompound();
+                data.writeToNBT(afterRejected);
+                check(beforeRejected.equals(afterRejected), "Invalid repeat Start changed previous-run state");
+            }
+        }
+        System.out.println("STORY_REPEAT_RUN1_TASK_SETTLES=PASS");
+        System.out.println("STORY_REPEAT_TERMINAL_RESULT_RETAINED=PASS");
+        System.out.println("STORY_REPEAT_RUN2_RESETS_OLD_TASK=PASS");
+        System.out.println("STORY_REPEAT_RUN2_STARTS_ZERO=PASS");
+        System.out.println("STORY_REPEAT_RUN2_SETTLES_NORMALLY=PASS");
+        System.out.println("STORY_REPEAT_RUN3_STARTS_ZERO=PASS");
+        System.out.println("STORY_REPEAT_SESSION_CONTINUATION_RESET=PASS");
+        System.out.println("STORY_REPEAT_REJECTED_START_PRESERVES_STATE=PASS");
+        System.out.println("STORY_ACTIVE_START_NOT_ELIGIBLE=PASS");
+        System.out.println("STORY_ACTIVE_START_DOES_NOT_REROUTE_TASK=PASS");
+        System.out.println("STORY_ACTIVE_START_DOES_NOT_RESTART_SESSION=PASS");
+    }
+
     private static ProjectSnapshot bartenderProject() {
+        return bartenderProject(false);
+    }
+
+    private static ProjectSnapshot bartenderProject(boolean repeatable) {
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("bartender_story", bartenderStory());
+        stories.put("bartender_story", bartenderStory(repeatable));
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
         sessions.put("offer", session("offer", "offer_done", "酒馆老板说明史莱姆泛滥"));
         sessions.put("thanks", session("thanks", "thanks_done", "酒馆老板表示感谢"));
@@ -595,9 +763,9 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             new CanonicalProjectContent(stories, sessions, tasks, memberships));
     }
 
-    private static CanonicalGraphResource bartenderStory() {
+    private static CanonicalGraphResource bartenderStory(boolean repeatable) {
         Map<String, JsonElement> startProperties = new LinkedHashMap<String, JsonElement>();
-        startProperties.put("repeat_policy", json("\"once\""));
+        startProperties.put("repeat_policy", json(repeatable ? "\"repeatable\"" : "\"once\""));
         startProperties.put(
             "triggers",
             json(

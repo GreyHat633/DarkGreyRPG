@@ -7,6 +7,8 @@ using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Stories.Definitions;
 using DarkGreyRPG.Studio.Core.Dialogues;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Packaging;
 using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Core.Validation;
 
@@ -76,6 +78,7 @@ public sealed class ProjectService
         {
             Id = id,
             DisplayName = displayName.Trim(),
+            ProjectOriginCode = Guid.NewGuid().ToString("N"),
         };
         WriteProjectFile(projectPath, resource);
         return SetCurrent(root, resource);
@@ -172,6 +175,62 @@ public sealed class ProjectService
         catch (Exception exception) when (exception is ActorRepositoryException or ActorDataException or ActorValidationException)
         {
             issues.Add(new("project.actors.invalid", exception.Message));
+        }
+
+        // Canonical membership is validated against native content plus the
+        // project-local, read-only provider catalog. Provider diagnostics are
+        // surfaced once, while each Story retains consumer/kind/full-ID detail
+        // from the workspace loader.
+        try
+        {
+            var providers = OfflineProviderCatalog.Load(current.ProjectDirectory);
+            issues.AddRange(providers.Diagnostics.Select(diagnostic => new ValidationIssue(
+                diagnostic.Code,
+                diagnostic.Message,
+                Field: "references",
+                Severity: ValidationSeverity.Error,
+                NodeId: diagnostic.PackagePath)));
+
+            var canonical = new CanonicalProjectGraphStore(current.ProjectDirectory);
+            foreach (var story in canonical.Stories.List())
+            {
+                try
+                {
+                    var snapshot = new CanonicalStoryWorkspaceLoader(
+                        canonical,
+                        providers: providers).Load(story.Id);
+                    issues.AddRange(snapshot.ValidationIssues);
+                }
+                catch (Exception exception) when (exception is GraphResourceRepositoryException
+                    or CanonicalStoryMembershipRepositoryException)
+                {
+                    var code = exception switch
+                    {
+                        GraphResourceRepositoryException graph => graph.Code,
+                        CanonicalStoryMembershipRepositoryException membership => membership.Code,
+                        _ => "project.canonical.invalid",
+                    };
+                    issues.Add(new(
+                        code,
+                        $"Canonical Story '{story.Id}' could not be validated: {exception.Message}",
+                        Field: "canonical",
+                        Severity: ValidationSeverity.Error,
+                        NodeId: story.Id));
+                }
+            }
+        }
+        catch (Exception exception) when (exception is GraphResourceRepositoryException
+            or CanonicalStoryMembershipRepositoryException
+            or IOException
+            or UnauthorizedAccessException)
+        {
+            var code = exception switch
+            {
+                GraphResourceRepositoryException graph => graph.Code,
+                CanonicalStoryMembershipRepositoryException membership => membership.Code,
+                _ => "project.canonical.invalid",
+            };
+            issues.Add(new(code, $"Canonical project content could not be validated: {exception.Message}", "canonical"));
         }
 
         return issues;
@@ -919,11 +978,9 @@ public sealed class ProjectService
 
     private static void ValidateProjectIdentity(string id, string displayName, ActorIdPolicy idPolicy)
     {
-        var idIssues = ActorValidator.ValidateId(id, idPolicy);
-        var errors = idIssues.Where(issue => issue.Severity == ValidationSeverity.Error).ToArray();
-        if (errors.Length > 0)
+        if (!ProjectIdentity.IsValid(id))
         {
-            throw new ProjectException(string.Join(" ", errors.Select(issue => issue.Message)));
+            throw new ProjectException("项目 ID 必须以英文字母或数字开头，只能包含英文字母、数字、下划线、点或连字符；大小写敏感。");
         }
 
         if (string.IsNullOrWhiteSpace(displayName))

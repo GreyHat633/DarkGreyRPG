@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Validation;
 
@@ -19,6 +20,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
         Title = title;
         ActionText = actionText;
         Description = description;
+        NamespacePrefix = DgrResourceId.IsFullId(id) ? DgrResourceId.Namespace(id) + ":" : string.Empty;
         _id = id;
         _displayName = displayName;
         IsDisplayNameVisible = isDisplayNameVisible;
@@ -34,6 +36,16 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
     public bool IsDisplayNameVisible { get; }
 
     public RelayCommand ApplySuggestionCommand { get; }
+
+    public string NamespacePrefix { get; }
+    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
+    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
+    public string EditableId
+    {
+        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
+            ? Id[NamespacePrefix.Length..] : Id;
+        set => Id = NamespacePrefix + (value ?? string.Empty);
+    }
 
     public string Id
     {
@@ -63,7 +75,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
         }
     }
 
-    public string NormalizedSuggestion => ActorValidator.NormalizeId(Id);
+    public string NormalizedSuggestion => DgrResourceId.IsFullId(Id) || Id.Contains(':') ? Id : ActorValidator.NormalizeId(Id);
 
     public bool HasSuggestion =>
         NormalizedSuggestion.Length > 0 &&
@@ -77,6 +89,8 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
                 .Where(issue => issue.Severity == ValidationSeverity.Error)
                 .Select(issue => issue.Message)
                 .ToList();
+            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
+                messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
             if (IsDisplayNameVisible && string.IsNullOrWhiteSpace(DisplayName))
             {
                 messages.Add("显示名称不能为空。");
@@ -109,6 +123,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
 
     private void RaiseValidationProperties()
     {
+        OnPropertyChanged(nameof(EditableId));
         OnPropertyChanged(nameof(NormalizedSuggestion));
         OnPropertyChanged(nameof(HasSuggestion));
         OnPropertyChanged(nameof(ValidationText));

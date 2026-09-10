@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.ViewModels;
@@ -8,6 +8,13 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class CanonicalStoryResourceDialogs(Func<Window?> ownerProvider) : ICanonicalStoryResourceDialogs
 {
+    public ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string>? tags = null)
+    {
+        var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName, allowIdentityEdit: true, tags: tags);
+        var dialog = new DisplayNameDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true ? new(viewModel.NewId, viewModel.DisplayName.Trim(), viewModel.Tags) : null;
+    }
+
     public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
     {
         var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName);
@@ -21,7 +28,7 @@ public sealed class CanonicalStoryResourceDialogs(Func<Window?> ownerProvider) :
         var viewModel = CanonicalResourceIdentityDialogViewModel.ForCreate(resourceKind, suggestedId);
         var dialog = new CanonicalResourceIdentityDialog(viewModel) { Owner = ownerProvider() };
         return dialog.ShowDialog() == true
-            ? new CanonicalGraphResourceIdentityRequest(viewModel.Id, viewModel.DisplayName.Trim())
+            ? new CanonicalGraphResourceIdentityRequest(viewModel.Id, viewModel.DisplayName.Trim(), viewModel.Tags)
             : null;
     }
 

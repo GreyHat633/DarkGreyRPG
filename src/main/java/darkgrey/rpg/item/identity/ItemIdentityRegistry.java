@@ -6,14 +6,14 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import net.minecraft.item.ItemStack;
+
+import darkgrey.rpg.identity.DgrResourceId;
 
 /** World-shared server-authoritative bindings for DGR Item IDs and Groups. */
 public final class ItemIdentityRegistry {
 
-    private static final Pattern ID = Pattern.compile("[a-z0-9][a-z0-9_-]*");
     private final Map<String, ItemStackDefinition> items = new LinkedHashMap<String, ItemStackDefinition>();
     private final Map<String, List<ItemGroupMember>> groups = new LinkedHashMap<String, List<ItemGroupMember>>();
 
@@ -157,8 +157,8 @@ public final class ItemIdentityRegistry {
     }
 
     private static String requireId(String value, String label) {
-        if (value == null || !ID.matcher(value)
-            .matches()) throw new IllegalArgumentException(label + " must match [a-z0-9][a-z0-9_-]*.");
+        if (!DgrResourceId.isCompatibleId(value))
+            throw new IllegalArgumentException(label + " must be a valid DGR resource ID.");
         return value;
     }
 

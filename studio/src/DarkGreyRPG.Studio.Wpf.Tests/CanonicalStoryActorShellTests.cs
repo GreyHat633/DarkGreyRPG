@@ -1,4 +1,4 @@
-using DarkGreyRPG.Studio.Core.Actors;
+﻿using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -48,7 +48,7 @@ public sealed class CanonicalStoryActorShellTests
             project.Store.Memberships.Load("opening").ReferencedResources.Actors,
             "shared_actor");
         Assert.AreEqual("shared_actor", project.Actors.LoadActor("shared_actor").Id);
-        Assert.AreEqual(1, dialogs.RemoveReferenceConfirmationCount);
+        Assert.AreEqual(0, dialogs.RemoveReferenceConfirmationCount); // Reversible membership removal needs no extra confirmation.
     }
 
     [TestMethod]

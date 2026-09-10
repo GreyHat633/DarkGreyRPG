@@ -46,8 +46,7 @@ public sealed class CanonicalProjectGraphStore
     public bool IsInitialized => Directories.All(Directory.Exists);
 
     public bool HasCanonicalData => Directories.Any(directory =>
-        Directory.Exists(directory)
-        && Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly).Any());
+        CanonicalResourceFileSystem.EnumerateJsonFiles(directory).Count != 0);
 
     /// <summary>Explicit initialization; constructing or inspecting a store is read-only.</summary>
     public void EnsureDirectories()

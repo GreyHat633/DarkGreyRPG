@@ -17,7 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,13 +25,14 @@ import com.google.gson.JsonParser;
 import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.dialogue.DialogueNode;
 import darkgrey.rpg.dialogue.EndNode;
+import darkgrey.rpg.identity.DgrResourceId;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.quest.QuestDefinition;
 
 public final class StoryLoader {
 
-    private static final Pattern RESOURCE_ID = Pattern.compile("[a-z0-9][a-z0-9_.-]*");
+    private static final String NODE_ID_PATTERN = "[a-z0-9][a-z0-9_.-]*";
     private static final Set<String> TOP_FIELDS = set(
         "schema_version",
         "id",
@@ -118,13 +118,13 @@ public final class StoryLoader {
         if (schema != 1 && schema != 2) {
             throw new ProjectLoadException("Unsupported schema_version " + schema + " in " + file);
         }
-        String id = requiredId(file, json, "id");
-        if (!file.getName()
+        String id = requiredResourceId(file, json, "id");
+        if (!DgrResourceId.isFullId(id) && !file.getName()
             .equals(id + ".json")) {
             throw new ProjectLoadException("Story file name must match its id: " + file);
         }
         String title = requiredString(file, json, "title");
-        String entry = requiredId(file, json, "entry");
+        String entry = requiredNodeId(file, json, "entry");
         List<StoryNode> nodes = loadNodes(file, json.get("nodes"), actors, dialogues, quests);
         Map<String, StoryNode> byId = new LinkedHashMap<String, StoryNode>();
         for (StoryNode node : nodes) {
@@ -164,7 +164,7 @@ public final class StoryLoader {
             }
             JsonObject json = element.getAsJsonObject();
             rejectUnknown(file, json, NODE_FIELDS);
-            String id = requiredId(file, json, "id");
+            String id = requiredNodeId(file, json, "id");
             StoryNodeType type;
             try {
                 type = parseType(requiredString(file, json, "type"));
@@ -210,9 +210,9 @@ public final class StoryLoader {
             }
             JsonObject json = element.getAsJsonObject();
             rejectUnknown(file, json, CONNECTION_FIELDS);
-            String from = requiredId(file, json, "from");
+            String from = requiredNodeId(file, json, "from");
             String output = requiredString(file, json, "output");
-            String to = requiredId(file, json, "to");
+            String to = requiredNodeId(file, json, "to");
             if (!nodes.containsKey(from) || !nodes.containsKey(to)) {
                 throw new ProjectLoadException("Story connection references a missing node in " + file);
             }
@@ -508,11 +508,18 @@ public final class StoryLoader {
         }
     }
 
-    private static String requiredId(File file, JsonObject json, String field) throws ProjectLoadException {
-        String value = requiredString(file, json, field);
-        if (!RESOURCE_ID.matcher(value)
-            .matches()) {
+    private static String requiredResourceId(File file, JsonObject json, String field) throws ProjectLoadException {
+        String value = optionalString(file, json, field, null);
+        if (value == null || value.isEmpty() || !DgrResourceId.isCompatibleId(value)) {
             throw new ProjectLoadException("Invalid resource id '" + value + "' for '" + field + "' in " + file);
+        }
+        return value;
+    }
+
+    private static String requiredNodeId(File file, JsonObject json, String field) throws ProjectLoadException {
+        String value = requiredString(file, json, field);
+        if (!value.matches(NODE_ID_PATTERN)) {
+            throw new ProjectLoadException("Invalid node id '" + value + "' for '" + field + "' in " + file);
         }
         return value;
     }

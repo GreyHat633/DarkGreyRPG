@@ -16,8 +16,10 @@ import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
 import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
 import darkgrey.rpg.story.canonical.instance.CanonicalStoryResourceResolver;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryActionConfiguration;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
@@ -49,63 +51,197 @@ public final class CanonicalStoryServerService {
     }
 
     public CanonicalStoryDispatch startByEntry(UUID playerUuid, String storyId, long activationTime) {
+        CanonicalStoryDispatch blocked = blockedStart(playerUuid, storyId);
+        if (blocked != null) return blocked;
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
-        return dispatch(
-            data.startStory(
-                requirePlayer(playerUuid),
-                story,
-                start.selectEnterStory()
-                    .getPortId(),
-                start.getRepeatPolicy(),
-                activationTime));
+        return startDispatch(
+            requirePlayer(playerUuid),
+            story,
+            start.selectEnterStory()
+                .getPortId(),
+            start.getRepeatPolicy(),
+            Collections.<String, Boolean>emptyMap(),
+            activationTime);
     }
 
     public CanonicalStoryDispatch startByActor(UUID playerUuid, String storyId, String actorId, long activationTime) {
+        CanonicalStoryDispatch blocked = blockedStart(playerUuid, storyId);
+        if (blocked != null) return blocked;
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
-        return dispatch(
-            data.startStory(
-                requirePlayer(playerUuid),
-                story,
-                start.selectActor(actorId)
-                    .getPortId(),
-                start.getRepeatPolicy(),
-                activationTime));
+        return startDispatch(
+            requirePlayer(playerUuid),
+            story,
+            start.selectActor(actorId)
+                .getPortId(),
+            start.getRepeatPolicy(),
+            Collections.<String, Boolean>emptyMap(),
+            activationTime);
     }
 
     public CanonicalStoryDispatch startByRegion(UUID playerUuid, String storyId, int dimension, double x, double y,
         double z, long activationTime) {
+        CanonicalStoryDispatch blocked = blockedStart(playerUuid, storyId);
+        if (blocked != null) return blocked;
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
-        return dispatch(
-            data.startStory(
-                requirePlayer(playerUuid),
-                story,
-                start.selectRegion(dimension, x, y, z)
-                    .getPortId(),
-                start.getRepeatPolicy(),
-                activationTime));
+        return startDispatch(
+            requirePlayer(playerUuid),
+            story,
+            start.selectRegion(dimension, x, y, z)
+                .getPortId(),
+            start.getRepeatPolicy(),
+            Collections.<String, Boolean>emptyMap(),
+            activationTime);
     }
 
     /** Starts a Story through the first authored Logic trigger whose condition is satisfied by the supplied inputs. */
     public CanonicalStoryDispatch startByLogic(UUID playerUuid, String storyId, Map<String, Boolean> logicInputs,
         long activationTime) {
+        if (!isStartEligible(playerUuid, storyId)) return null;
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
         for (CanonicalStoryStartConfiguration.Trigger trigger : start.getLogicTriggers()) try {
-            return dispatch(
-                data.startStory(
-                    requirePlayer(playerUuid),
-                    story,
-                    trigger.getPortId(),
-                    start.getRepeatPolicy(),
-                    logicInputs,
-                    activationTime));
+            return startDispatch(
+                requirePlayer(playerUuid),
+                story,
+                trigger.getPortId(),
+                start.getRepeatPolicy(),
+                logicInputs,
+                activationTime);
         } catch (CanonicalGraphResourceException exception) {
             if (!"story.start.trigger.condition".equals(exception.getCode())) throw exception;
         }
         return null;
+    }
+
+    public CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId) {
+        return data.startDisposition(requirePlayer(playerUuid), requireText(storyId, "Story ID"));
+    }
+
+    public boolean isStartEligible(UUID playerUuid, String storyId) {
+        return startDisposition(playerUuid, storyId).isEligible();
+    }
+
+    public java.util.Set<String> eligibleStartStoryIds(UUID playerUuid) {
+        java.util.Set<String> eligible = new java.util.LinkedHashSet<String>();
+        for (String storyId : project.getCanonicalStories()
+            .keySet()) if (isStartEligible(playerUuid, storyId)) eligible.add(storyId);
+        return Collections.unmodifiableSet(eligible);
+    }
+
+    private CanonicalStoryDispatch blockedStart(UUID playerUuid, String storyId) {
+        CanonicalStoryStartDisposition disposition = startDisposition(playerUuid, storyId);
+        return disposition.isEligible() ? null : snapshot(playerUuid, storyId).withStartDisposition(disposition);
+    }
+
+    /** Collects one choice per Story without changing runtime, including every identity on the interacted entity. */
+    public java.util.List<CanonicalActorCandidate> actorCandidates(UUID playerUuid,
+        java.util.Collection<String> actorIds) {
+        requirePlayer(playerUuid);
+        if (actorIds == null) throw new IllegalArgumentException("Actor identities are required.");
+        java.util.List<CanonicalActorCandidate> result = new java.util.ArrayList<CanonicalActorCandidate>();
+        for (String storyId : project.getCanonicalStories()
+            .keySet()) {
+            CanonicalStoryInstanceSnapshot previous = data.getStorySnapshot(playerUuid, storyId);
+            CanonicalStoryStartDisposition disposition = startDisposition(playerUuid, storyId);
+            if (disposition == CanonicalStoryStartDisposition.ALREADY_ACTIVE) {
+                CanonicalStorySnapshot runtime = previous.getRuntimeSnapshot();
+                if (runtime.getWaitKind()
+                    .isActorInteraction() && actorIds.contains(runtime.getWaitActorId()))
+                    result.add(
+                        new CanonicalActorCandidate(
+                            playerUuid,
+                            project,
+                            storyId,
+                            runtime.getWaitActorId(),
+                            runtime.getCurrentNodeId(),
+                            "continue",
+                            previous));
+                continue;
+            }
+            if (!disposition.isEligible()) continue;
+            CanonicalGraphResource resource = story(storyId);
+            CanonicalStoryStartConfiguration configuration = CanonicalStoryStartConfiguration.parse(resource);
+            for (CanonicalStoryStartConfiguration.Trigger trigger : configuration.getTriggers()) {
+                if (!"interact_actor".equals(trigger.getType()) || !actorIds.contains(trigger.getString("actor_id")))
+                    continue;
+                try {
+                    // Pure runtime preview validates Start Logic and graph routing, without committing any state.
+                    darkgrey.rpg.story.canonical.runtime.CanonicalStoryRuntime.start(
+                        resource,
+                        trigger.getPortId(),
+                        configuration.getRepeatPolicy(),
+                        actorStartInputs(playerUuid, storyId, previous));
+                } catch (CanonicalGraphResourceException invalid) {
+                    if ("story.start.trigger.condition".equals(invalid.getCode())) continue;
+                    throw invalid;
+                }
+                result.add(
+                    new CanonicalActorCandidate(
+                        playerUuid,
+                        project,
+                        storyId,
+                        trigger.getString("actor_id"),
+                        trigger.getPortId(),
+                        disposition == CanonicalStoryStartDisposition.NEW ? "start" : "restart",
+                        previous));
+                break;
+            }
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    /** Rechecks the selected Story only and returns null for stale, foreign or no-longer-eligible choices. */
+    public CanonicalStoryDispatch executeActorCandidate(UUID playerUuid, java.util.Collection<String> actorIds,
+        CanonicalActorCandidate selected, long eventTime) {
+        if (selected == null) return null;
+        for (CanonicalActorCandidate current : actorCandidates(playerUuid, actorIds)) {
+            if (!selected.matches(playerUuid, project, current)) continue;
+            if ("continue".equals(current.getStatus()))
+                return resumeActor(playerUuid, current.getStoryId(), current.getActorId(), eventTime);
+            CanonicalGraphResource resource = story(current.getStoryId());
+            CanonicalStoryStartConfiguration configuration = CanonicalStoryStartConfiguration.parse(resource);
+            return startDispatch(
+                playerUuid,
+                resource,
+                current.getPortId(),
+                configuration.getRepeatPolicy(),
+                actorStartInputs(
+                    playerUuid,
+                    current.getStoryId(),
+                    data.getStorySnapshot(playerUuid, current.getStoryId())),
+                eventTime);
+        }
+        return null;
+    }
+
+    private Map<String, Boolean> actorStartInputs(UUID playerUuid, String storyId,
+        CanonicalStoryInstanceSnapshot previous) {
+        Map<String, Boolean> inputs = new java.util.LinkedHashMap<String, Boolean>();
+        if (previous != null) inputs.putAll(
+            previous.getRuntimeSnapshot()
+                .getExternalLogicInputs());
+        for (darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection connection : project
+            .getCanonicalStoryLogicConnections()) {
+            if (!storyId.equals(connection.getTargetStoryId())) continue;
+            CanonicalStoryInstanceSnapshot source = data.getStorySnapshot(playerUuid, connection.getSourceStoryId());
+            Boolean value = source == null ? null
+                : darkgrey.rpg.story.canonical.runtime.CanonicalStoryRuntime
+                    .restore(story(connection.getSourceStoryId()), source.getRuntimeSnapshot())
+                    .getPublicLogicOutputs()
+                    .get(connection.getSourcePortId());
+            inputs.put(connection.getTargetPortId(), Boolean.valueOf(Boolean.TRUE.equals(value)));
+        }
+        return inputs;
+    }
+
+    private CanonicalStoryDispatch startDispatch(UUID playerUuid, CanonicalGraphResource resource, String portId,
+        CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs, long activationTime) {
+        CanonicalStoryStartDisposition disposition = startDisposition(playerUuid, resource.getId());
+        return dispatch(data.startStory(playerUuid, resource, portId, repeatPolicy, logicInputs, activationTime))
+            .withStartDisposition(disposition);
     }
 
     public CanonicalStoryDispatch setLogicInput(UUID playerUuid, String storyId, String portId, boolean value,

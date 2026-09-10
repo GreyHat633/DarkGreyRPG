@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using DarkGreyRPG.Studio.Core.Validation;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Actors;
 
@@ -130,7 +131,7 @@ public static partial class ActorValidator
                     $"Actor schema_version {resource.SchemaVersion} requires home_story_id.",
                     nameof(ActorResource.HomeStoryId)));
             }
-            else if (!RuntimeIdRegex().IsMatch(resource.HomeStoryId))
+            else if (!DgrResourceId.IsFullId(resource.HomeStoryId) && !RuntimeIdRegex().IsMatch(resource.HomeStoryId))
             {
                 issues.Add(new(
                     "actor.home_story_id.invalid",
@@ -224,7 +225,7 @@ public static partial class ActorValidator
             return;
         }
 
-        if (!RuntimeIdRegex().IsMatch(id))
+        if (!DgrResourceId.IsFullId(id) && !RuntimeIdRegex().IsMatch(id))
         {
             issues.Add(new(
                 $"actor.{field}.invalid",
@@ -233,14 +234,14 @@ public static partial class ActorValidator
             return;
         }
 
-        if (idPolicy == ActorIdPolicy.NewResource && !NewResourceIdRegex().IsMatch(id))
+        if (idPolicy == ActorIdPolicy.NewResource && !DgrResourceId.IsFullId(id) && !NewResourceIdRegex().IsMatch(id))
         {
             issues.Add(new(
                 $"actor.{field}.new_resource_invalid",
                 $"New Actor {field} '{id}' must match {NewResourceIdPattern}.",
                 field));
         }
-        else if (idPolicy == ActorIdPolicy.ExistingResource && !NewResourceIdRegex().IsMatch(id))
+        else if (idPolicy == ActorIdPolicy.ExistingResource && !DgrResourceId.IsFullId(id) && !NewResourceIdRegex().IsMatch(id))
         {
             issues.Add(new(
                 $"actor.{field}.legacy_compatible",

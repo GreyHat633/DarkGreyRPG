@@ -459,7 +459,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         var actor = workspace.ActorItems.Single();
 
         Assert.AreEqual(CollectiveActorResource.ResourceType, actor.Actor.Type);
-        Assert.AreEqual("Group_ID: guards", actor.IdentityText);
+        Assert.AreEqual("[Group_ID] guards", actor.IdentityText);
         Assert.IsTrue(workspace.SelectTreeItem(actor));
         Assert.AreEqual("角色组", workspace.InspectorKindText);
         Assert.AreEqual("Group_ID", workspace.InspectorIdentityLabel);

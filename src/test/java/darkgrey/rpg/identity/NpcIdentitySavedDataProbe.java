@@ -10,6 +10,8 @@ public final class NpcIdentitySavedDataProbe {
 
     private static final UUID FIRST = UUID.fromString("00000000-0000-0000-0000-000000000101");
     private static final UUID SECOND = UUID.fromString("00000000-0000-0000-0000-000000000102");
+    private static final UUID THIRD = UUID.fromString("00000000-0000-0000-0000-000000000103");
+    private static final UUID FOURTH = UUID.fromString("00000000-0000-0000-0000-000000000104");
 
     private NpcIdentitySavedDataProbe() {}
 
@@ -39,6 +41,13 @@ public final class NpcIdentitySavedDataProbe {
         }, "duplicate host");
         require(!data.isDirty(), "conflicts clean");
 
+        require(
+            data.bind("Team:Guard", new NpcHostIdentity(THIRD, "minecraft:wolf", 0)),
+            "uppercase local NPC ID bind");
+        require(data.bind("Team:guard", new NpcHostIdentity(FOURTH, "minecraft:wolf", 0)), "case-distinct NPC ID bind");
+        require(data.getHost("Team:Guard") != null, "uppercase local NPC lookup");
+        require(data.getHost("Team:guard") != null, "case-distinct NPC lookup");
+
         NBTTagCompound checkpoint = new NBTTagCompound();
         data.writeToNBT(checkpoint);
         require(
@@ -56,6 +65,11 @@ public final class NpcIdentitySavedDataProbe {
                 .equals(FIRST),
             "restart lookup by ID");
         require("tavern_boss".equals(restarted.getNpcId(FIRST)), "restart lookup by host");
+        require(restarted.getHost("Team:Guard") != null, "uppercase local NPC restart");
+        require(restarted.getHost("Team:guard") != null, "case-distinct NPC restart");
+        require(
+            restarted.getHost("Team:Guard") != restarted.getHost("Team:guard"),
+            "case-distinct NPC bindings collapsed");
 
         NpcHostIdentity revived = new NpcHostIdentity(SECOND, "customnpcs:customnpc", 0, "cnpc:owner");
         require(restarted.transfer("tavern_boss", revived), "explicit revival transfer");
@@ -80,6 +94,7 @@ public final class NpcIdentitySavedDataProbe {
         System.out.println("NPC_IDENTITY_EXTERNAL_REGISTRY=PASS");
         System.out.println("NPC_IDENTITY_UNIQUE_CONFLICT=PASS");
         System.out.println("NPC_IDENTITY_TRANSFER_RESTART=PASS");
+        System.out.println("NPC_IDENTITY_CASE_SENSITIVE_RESTART=PASS");
     }
 
     private static void rejectRead(final NBTTagCompound value, String label) {

@@ -7,6 +7,23 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class SettingsServiceTests
 {
     [TestMethod]
+    public void NamespaceRoundTripsExactlyAndInvalidChangePreservesSavedSettings()
+    {
+        var path = CreateTempSettingsPath();
+        try
+        {
+            var service = new SettingsService(path);
+            service.Save(new StudioSettings { GlobalNamespace = "MixedCase_1", Theme = ThemePreference.Dark });
+            var bytes = File.ReadAllBytes(path);
+            Assert.AreEqual("MixedCase_1", service.Load().GlobalNamespace);
+            Assert.Throws<ArgumentException>(() => service.Save(service.Load() with { GlobalNamespace = " MixedCase_1 " }));
+            CollectionAssert.AreEqual(bytes, File.ReadAllBytes(path));
+            Assert.AreEqual(ThemePreference.Dark, service.Load().Theme);
+        }
+        finally { DeleteTempDirectory(path); }
+    }
+
+    [TestMethod]
     public void DefaultSettingsPath_ResolvesToAppDataDarkGreyRpgStudioSettingsJson()
     {
         var service = new SettingsService();

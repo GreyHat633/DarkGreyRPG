@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Services;
@@ -62,6 +63,7 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     {
         EnsureSupportedKind(kind);
         Kind = kind;
+        NamespacePrefix = DgrResourceId.IsFullId(suggestedId) ? DgrResourceId.Namespace(suggestedId) + ":" : string.Empty;
         _id = suggestedId ?? string.Empty;
         _displayName = displayName ?? DefaultDisplayName(kind);
         _tagsText = string.Join(", ", tags ?? []);
@@ -72,12 +74,23 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     public CanonicalStoryItemKind ItemKind => Kind;
     public string ChineseTypeLabel => Kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组";
     public string TypeLabel => Kind == CanonicalStoryItemKind.Individual ? "Item" : "Item Group";
+    public string IdentityLabel => Kind == CanonicalStoryItemKind.Individual ? "Item ID" : "Group ID";
     public string Title => $"新建 {ChineseTypeLabel}";
     public string Description => Kind == CanonicalStoryItemKind.Individual
         ? "创建精确匹配一个物品身份的 Item ID，并归入当前故事。"
         : "创建可包含多个物品身份的 Group ID，并归入当前故事。";
     public string ActionText => "创建";
     public RelayCommand ApplySuggestionCommand { get; }
+
+    public string NamespacePrefix { get; }
+    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
+    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
+    public string EditableId
+    {
+        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
+            ? Id[NamespacePrefix.Length..] : Id;
+        set => Id = NamespacePrefix + (value ?? string.Empty);
+    }
 
     public string Id
     {
@@ -98,7 +111,7 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     }
 
     public IReadOnlyList<string> Tags => ParseTags(TagsText);
-    public string NormalizedSuggestion => ItemValidator.NormalizeId(Id);
+    public string NormalizedSuggestion => NormalizeSuggestion(Id);
     public bool HasSuggestion => NormalizedSuggestion.Length > 0
         && !string.Equals(Id, NormalizedSuggestion, StringComparison.Ordinal);
 
@@ -110,6 +123,8 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
                 .Where(issue => issue.Severity == ValidationSeverity.Error)
                 .Select(issue => issue.Message)
                 .ToList();
+            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
+                messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
             if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("显示名称不能为空。");
             if (Tags.Any(string.IsNullOrWhiteSpace)) messages.Add("标签不能为空。");
             if (Tags.Count != Tags.Distinct(StringComparer.Ordinal).Count()) messages.Add("标签不能重复。");
@@ -118,6 +133,11 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     }
 
     public bool CanConfirm => ValidationText.Length == 0;
+
+    private static string NormalizeSuggestion(string id)
+        => DgrResourceId.IsFullId(id) || id.Contains(':')
+            ? id
+            : ItemValidator.NormalizeId(id);
 
     public static CanonicalItemIdentityDialogViewModel ForCreate(
         CanonicalStoryItemKind kind,
@@ -141,6 +161,7 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
 
     private void RaiseValidationProperties()
     {
+        OnPropertyChanged(nameof(EditableId));
         OnPropertyChanged(nameof(NormalizedSuggestion));
         OnPropertyChanged(nameof(HasSuggestion));
         OnPropertyChanged(nameof(Tags));

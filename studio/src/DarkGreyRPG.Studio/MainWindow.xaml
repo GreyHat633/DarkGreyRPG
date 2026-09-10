@@ -1,4 +1,4 @@
-<Window x:Class="DarkGreyRPG.Studio.MainWindow"
+﻿<Window x:Class="DarkGreyRPG.Studio.MainWindow"
         x:Name="RootWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -15,6 +15,47 @@
         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
         PreviewKeyDown="MainWindow_OnPreviewKeyDown">
     <Window.Resources>
+        <Style x:Key="ReferenceFolderExpanderStyle" TargetType="{x:Type Expander}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Expander}">
+                        <StackPanel>
+                            <ToggleButton x:Name="HeaderToggle" HorizontalContentAlignment="Stretch"
+                                          FocusVisualStyle="{x:Null}"
+                                          Content="{TemplateBinding Header}"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Border Padding="3,4" Background="Transparent">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="14" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <Path x:Name="Arrow" Width="6" Height="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Data="M 0,0 L 6,5 L 0,10 Z" Fill="{TemplateBinding Foreground}"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.RenderTransform><RotateTransform Angle="0" /></Path.RenderTransform>
+                                                </Path>
+                                                <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}"
+                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                  VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90" /></Setter.Value></Setter></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True"><Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" /></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <DataTemplate x:Key="ActorEditorTemplate">
             <Grid Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                 <Grid.RowDefinitions>
@@ -141,6 +182,8 @@
                 <MenuItem Header="保存" Command="{Binding SaveCurrentResourceCommand}" InputGestureText="Ctrl+S" />
                 <MenuItem Header="保存全部" Command="{Binding SaveAllCommand}" InputGestureText="Ctrl+Shift+S" />
                 <MenuItem Header="项目文件夹" Command="{Binding OpenProjectDirectoryCommand}" />
+
+
                 <Separator />
                 <MenuItem Header="退出" Command="{x:Static ApplicationCommands.Close}" />
             </MenuItem>
@@ -161,14 +204,12 @@
                 <MenuItem Header="底部面板" IsCheckable="True" IsChecked="{Binding BottomPanel.IsExpanded, Mode=OneWay}" Command="{Binding ToggleBottomPanelCommand}" />
             </MenuItem>
             <MenuItem Header="项目(_P)">
+                <MenuItem Header="NameSpace 设置…" Command="{Binding ChangeGlobalNamespaceCommand}" />
                 <MenuItem Header="新建故事…" Command="{Binding CreateStoryCommand}" />
-                <MenuItem Header="导出所选故事包" Command="{Binding ExportSelectedStoryPackageCommand}"
-                          AutomationProperties.Name="导出所选故事包"
-                          AutomationProperties.AutomationId="ExportSelectedStoryPackage" />
-                <MenuItem Header="迁移到 Canonical…" Command="{Binding MigrateCanonicalProjectCommand}"
-                          AutomationProperties.Name="迁移项目到 Canonical"
-                          AutomationProperties.AutomationId="MigrateCanonicalProject" />
-                <Separator />
+                <MenuItem Header="引用故事包…" Command="{Binding ReferencePackageCommand}" AutomationProperties.AutomationId="ReferencePackage" />
+                <MenuItem Header="导入故事包…" Command="{Binding ImportPackageCommand}" AutomationProperties.AutomationId="ImportPackage" />
+                <MenuItem Header="导出故事包…" Command="{Binding ExportSelectedStoryPackageCommand}"
+                          AutomationProperties.Name="导出故事包" AutomationProperties.AutomationId="ExportSelectedStoryPackage" />
                 <MenuItem Header="准备 Runtime 重载" Command="{Binding PrepareRuntimeReloadCommand}" />
                 <MenuItem Header="验证项目" Command="{Binding ValidateProjectCommand}" />
             </MenuItem>
@@ -360,6 +401,29 @@
                             </Button>
                             <TextBlock VerticalAlignment="Center" FontSize="17" FontWeight="SemiBold" Text="项目首页" />
                         </DockPanel>
+                        <views:AnimatedPackageExpander DockPanel.Dock="Bottom" Header="引用故事包" Margin="0,12,0,0">
+                            <views:AnimatedPackageExpander.Template>
+                                <ControlTemplate TargetType="{x:Type views:AnimatedPackageExpander}">
+                                    <StackPanel>
+                                        <ToggleButton Padding="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="引用故事包" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                            <DockPanel><TextBlock DockPanel.Dock="Right"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="⌄"/><Style.Triggers><DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True"><Setter Property="Text" Value="⌃"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><TextBlock Text="{TemplateBinding Header}" /></DockPanel>
+                                        </ToggleButton>
+                                        <Border x:Name="PART_Reveal" Height="0" ClipToBounds="True">
+                                            <ContentPresenter x:Name="PART_Content" Content="{TemplateBinding Content}" VerticalAlignment="Top" />
+                                        </Border>
+                                    </StackPanel>
+                                </ControlTemplate>
+                            </views:AnimatedPackageExpander.Template>
+                            <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding ReferencedPackages}" AutomationProperties.Name="引用故事包区域">
+                                    <ItemsControl.ItemTemplate><DataTemplate>
+                                        <Button Command="{Binding SelectCommand}" HorizontalContentAlignment="Left" Margin="0,4" Padding="10" Content="{Binding Label}">
+                                            <Button.ContextMenu><ContextMenu><MenuItem Header="移除引用故事包" Command="{Binding RemoveCommand}" /></ContextMenu></Button.ContextMenu>
+                                        </Button>
+                                    </DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </views:AnimatedPackageExpander>
                         <TextBox x:Name="StorySearchBox" DockPanel.Dock="Top" Margin="0,0,0,8" Padding="8,5"
                                  AutomationProperties.Name="搜索故事" ToolTip="按 ID、显示名称或标签搜索"
                                  Text="{Binding ProjectHome.SearchText, UpdateSourceTrigger=PropertyChanged}" />
@@ -380,6 +444,7 @@
                         </TextBlock>
                         <ListBox x:Name="StoryList" ItemsSource="{Binding ProjectHome.FilteredStories}" SelectedItem="{Binding ProjectHome.SelectedStory}"
                                  BorderThickness="0" HorizontalContentAlignment="Stretch" MouseDoubleClick="StoryList_OnMouseDoubleClick"
+                                 PreviewMouseLeftButtonDown="StoryList_OnPreviewMouseLeftButtonDown"
                                  PreviewMouseRightButtonDown="StoryList_OnPreviewMouseRightButtonDown"
                                  AutomationProperties.Name="故事导航列表"
                                  Background="{DynamicResource ControlFillColorDefaultBrush}">
@@ -450,18 +515,65 @@
                             <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
                             <Border Grid.Column="2" Padding="16" Background="{DynamicResource LayerFillColorAltBrush}"
                                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
-                                <StackPanel DataContext="{Binding ProjectHome.SelectedStory.Overview}">
+                                <Grid><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel DataContext="{Binding ProjectHome.SelectedStory.Overview}">
+                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.SelectedReferencedPackage, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                                     <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="故事详情" />
                                     <TextBlock Margin="0,4,0,0" FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}"
-                                               AutomationProperties.Name="选中故事完整概览" />
-                                    <TextBlock Margin="0,4,0,18" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" />
-                                    <TextBlock FontWeight="SemiBold" Text="描述" />
-                                    <TextBlock Margin="0,6,0,18" TextWrapping="Wrap" Text="{Binding Description}" />
-                                    <TextBlock FontWeight="SemiBold" Text="资源归属" />
-                                    <TextBlock Margin="0,6,0,18" TextWrapping="Wrap" Text="{Binding MembershipSummary}" />
-                                    <TextBlock FontWeight="SemiBold" Text="Flow" />
-                                    <TextBlock Margin="0,6,0,0" Text="{Binding FlowNodeCount, StringFormat={}{0} 个节点}" />
-                                </StackPanel>
+                                               TextWrapping="Wrap" AutomationProperties.Name="选中故事完整概览" />
+                                    <TextBlock Margin="0,4,0,18" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" TextWrapping="Wrap" />
+                                    <ItemsControl ItemsSource="{Binding DataContext.HomeResourceFolders, RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <ItemsControl.ItemTemplate><DataTemplate>
+                                            <Expander Header="{Binding DisplayName}" IsExpanded="False" IsEnabled="{Binding HasResources}"
+                                                      Style="{StaticResource ReferenceFolderExpanderStyle}" Margin="0,2">
+                                                <ListBox ItemsSource="{Binding Items}" Margin="10,2,0,6" BorderThickness="0"
+                                                         Background="Transparent" HorizontalContentAlignment="Stretch"
+                                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                    <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
+                                                        <Setter Property="Padding" Value="6,4"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                                        <EventSetter Event="MouseDoubleClick" Handler="HomeResource_OnMouseDoubleClick"/>
+                                                    </Style></ListBox.ItemContainerStyle>
+                                                    <ListBox.ItemTemplate><DataTemplate>
+                                                        <TextBlock ToolTip="{Binding ToolTip}" TextAlignment="Left" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                                            <Run Text="{Binding Label, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  "/><Run Text="{Binding IdentityText, Mode=OneWay}" FontSize="11"/>
+                                                        </TextBlock>
+                                                    </DataTemplate></ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </Expander>
+                                        </DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel></ScrollViewer>
+                                <ScrollViewer Background="{DynamicResource LayerFillColorAltBrush}" VerticalScrollBarVisibility="Auto">
+                                    <ScrollViewer.Style><Style TargetType="ScrollViewer"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding SelectedReferencedPackage}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></ScrollViewer.Style>
+                                    <StackPanel DataContext="{Binding SelectedReferencedPackage}">
+                                        <TextBlock Text="引用故事包" FontSize="12" />
+                                        <TextBlock Text="{Binding Label}" FontSize="22" FontWeight="SemiBold" Margin="0,4,0,12" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Margin="0,0,0,16" />
+                                        <Button Content="故事流程图" Command="{Binding StoryGraphCommand}" Margin="0,0,0,12" Padding="10,6" />
+                                        <TextBlock Text="资源（只读）" FontWeight="SemiBold" Margin="0,4,0,8" />
+                                        <ItemsControl ItemsSource="{Binding Folders}">
+                                            <ItemsControl.ItemTemplate><DataTemplate>
+                                                <Expander Margin="0,2" Header="{Binding DisplayName}" IsExpanded="False"
+                                                          IsEnabled="{Binding HasResources}" Style="{StaticResource ReferenceFolderExpanderStyle}"
+                                                          AutomationProperties.Name="{Binding DisplayName}">
+                                                    <ItemsControl Margin="10,2,0,6" ItemsSource="{Binding Items}">
+                                                        <ItemsControl.ItemTemplate><DataTemplate>
+                                                            <Button Margin="0,1" Padding="6,4" HorizontalContentAlignment="Stretch"
+                                                                    Background="Transparent" BorderThickness="0"
+                                                                    ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}"
+                                                                    MouseDoubleClick="ReferencedResource_OnMouseDoubleClick">
+                                                                <TextBlock TextAlignment="Left" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                                                    <Run Text="{Binding Resource.DisplayName, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  "/><Run Text="{Binding Resource.Id, Mode=OneWay}" FontSize="11"/>
+                                                                </TextBlock>
+                                                            </Button>
+                                                        </DataTemplate></ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
+                                            </DataTemplate></ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                    </StackPanel>
+                                </ScrollViewer></Grid>
                             </Border>
                         </Grid>
                     </Grid>

@@ -105,14 +105,24 @@ final class StoryPackageSnapshotReader {
             required.getCanonicalMemberships());
         CanonicalProjectContent canonical;
         try {
-            canonical = new CanonicalProjectContentLoader().loadPackageContent(
-                canonicalStories,
-                sessions,
-                tasks,
-                memberships,
-                actors.keySet(),
-                items.keySet(),
-                itemGroups.keySet());
+            CanonicalProjectContentLoader loader = new CanonicalProjectContentLoader();
+            canonical = manifest.isDgrsV1()
+                ? loader.loadPackageContentPartial(
+                    canonicalStories,
+                    sessions,
+                    tasks,
+                    memberships,
+                    actors.keySet(),
+                    items.keySet(),
+                    itemGroups.keySet())
+                : loader.loadPackageContent(
+                    canonicalStories,
+                    sessions,
+                    tasks,
+                    memberships,
+                    actors.keySet(),
+                    items.keySet(),
+                    itemGroups.keySet());
         } catch (CanonicalProjectContentException exception) {
             throw new ProjectLoadException(
                 "Could not load canonical DGRS content: " + exception.getMessage(),

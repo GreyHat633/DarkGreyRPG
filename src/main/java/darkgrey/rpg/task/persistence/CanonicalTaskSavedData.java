@@ -235,6 +235,45 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         return removed;
     }
 
+    /** Permanently discards every persisted Task for one exact player/Story identity. */
+    public synchronized int discardByPlayerStory(UUID playerUuid, String storyId) {
+        if (playerUuid == null || storyId == null
+            || storyId.trim()
+                .isEmpty())
+            throw new IllegalArgumentException("Player and Story identity are required.");
+        if (pendingRaw != null) {
+            List<CanonicalTaskInstanceSnapshot> snapshots = CanonicalTaskInstanceNbtCodecBridge.decode(pendingRaw);
+            List<CanonicalTaskInstanceSnapshot> retained = new ArrayList<CanonicalTaskInstanceSnapshot>();
+            int removed = 0;
+            for (CanonicalTaskInstanceSnapshot snapshot : snapshots) {
+                if (playerUuid.equals(snapshot.getPlayerUuid()) && storyId.equals(snapshot.getStoryInstanceId())) {
+                    index.remove(
+                        new CanonicalTaskInstanceIdentity(
+                            snapshot.getPlayerUuid(),
+                            snapshot.getStoryInstanceId(),
+                            snapshot.getTaskNodePlacementId()));
+                    removed++;
+                } else retained.add(snapshot);
+            }
+            if (removed > 0) {
+                pendingRaw = CanonicalTaskInstanceNbtCodecBridge.encode(retained);
+                markDirty();
+            }
+            return removed;
+        }
+        NBTTagCompound before = persistedState();
+        for (CanonicalTaskInstanceSnapshot snapshot : store.snapshots())
+            if (playerUuid.equals(snapshot.getPlayerUuid()) && storyId.equals(snapshot.getStoryInstanceId()))
+                index.remove(
+                    new CanonicalTaskInstanceIdentity(
+                        snapshot.getPlayerUuid(),
+                        snapshot.getStoryInstanceId(),
+                        snapshot.getTaskNodePlacementId()));
+        int removed = store.discardByPlayerStory(playerUuid, storyId);
+        markIfChanged(before);
+        return removed;
+    }
+
     public synchronized CanonicalTaskSubscriptionIndex getSubscriptionIndex() {
         return index;
     }

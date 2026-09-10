@@ -13,6 +13,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
 
 /** Synchronized owner of at most one canonical Story instance per player and Story ID. */
@@ -42,12 +43,7 @@ public final class CanonicalStoryInstanceStore {
             throw new IllegalArgumentException("Canonical Story start inputs are required.");
         Key key = new Key(playerUuid, resource.getId());
         CanonicalStoryInstance existing = instances.get(key);
-        if (existing != null) {
-            if (existing.isActive()) return existing;
-            if (existing.snapshot()
-                .getRuntimeSnapshot()
-                .getRepeatPolicy() == CanonicalStoryRepeatPolicy.ONCE) return existing;
-        }
+        if (!startDisposition(playerUuid, resource.getId()).isEligible()) return existing;
         CanonicalStoryInstance created = CanonicalStoryInstance
             .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime);
         instances.put(key, created);
@@ -57,6 +53,16 @@ public final class CanonicalStoryInstanceStore {
     public synchronized CanonicalStoryInstance get(UUID playerUuid, String storyId) {
         if (playerUuid == null || blank(storyId)) return null;
         return instances.get(new Key(playerUuid, storyId));
+    }
+
+    public synchronized CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId) {
+        CanonicalStoryInstance existing = get(playerUuid, storyId);
+        if (existing == null) return CanonicalStoryStartDisposition.NEW;
+        if (existing.isActive()) return CanonicalStoryStartDisposition.ALREADY_ACTIVE;
+        return existing.snapshot()
+            .getRuntimeSnapshot()
+            .getRepeatPolicy() == CanonicalStoryRepeatPolicy.ONCE ? CanonicalStoryStartDisposition.ONCE_TERMINAL
+                : CanonicalStoryStartDisposition.REPEATABLE_RESTART;
     }
 
     public synchronized CanonicalStoryInstanceSnapshot getSnapshot(UUID playerUuid, String storyId) {
@@ -85,6 +91,11 @@ public final class CanonicalStoryInstanceStore {
 
     public synchronized int size() {
         return instances.size();
+    }
+
+    public synchronized boolean discardByPlayerStory(UUID playerUuid, String storyId) {
+        if (playerUuid == null || blank(storyId)) throw new IllegalArgumentException("Player and Story are required.");
+        return instances.remove(new Key(playerUuid, storyId)) != null;
     }
 
     /** Permanently discards active and terminal instances for every player of the selected Stories. */

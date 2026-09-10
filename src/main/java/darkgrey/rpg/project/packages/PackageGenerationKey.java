@@ -52,7 +52,7 @@ public final class PackageGenerationKey {
     }
 
     private static String requireId(String value, String label) {
-        if (value == null || !value.matches("[a-z0-9][a-z0-9_.-]*"))
+        if (!darkgrey.rpg.identity.DgrResourceId.isCompatibleId(value))
             throw new IllegalArgumentException(label + " is invalid.");
         return value;
     }

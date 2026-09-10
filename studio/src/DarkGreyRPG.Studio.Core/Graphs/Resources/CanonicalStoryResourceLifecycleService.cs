@@ -1,5 +1,6 @@
-using DarkGreyRPG.Studio.Core.Graphs;
+﻿using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.IO;
 using System.Text;
 
@@ -54,7 +55,7 @@ public sealed class CanonicalStoryResourceLifecycleService
         string storyId,
         GraphResourceKind resourceKind,
         string resourceId,
-        string displayName)
+        string displayName, IReadOnlyList<string>? tags = null)
     {
         var scope = ScopeFor(resourceKind);
         lock (_lifecycleGate)
@@ -69,7 +70,7 @@ public sealed class CanonicalStoryResourceLifecycleService
                     $"Resource '{resourceId}' is already present in Story '{storyId}' membership.");
 
             var graph = BlankGraph(scope);
-            var envelope = new GraphResourceEnvelope(resourceKind, resourceId, displayName, graph);
+            var envelope = new GraphResourceEnvelope(resourceKind, resourceId, displayName, graph) { Tags = tags?.ToArray() ?? [] };
             var repository = Repository(resourceKind);
             GraphResourceEnvelope created;
             try
@@ -480,7 +481,7 @@ public sealed class CanonicalStoryResourceLifecycleService
             || removedIds.Contains(connection.ToNodeId));
         return new GraphResourceEnvelope(GraphResourceKind.Story, story.Id, story.DisplayName, graph)
         {
-            SchemaVersion = story.SchemaVersion,
+            SchemaVersion = story.SchemaVersion, Tags = story.Tags.ToArray(),
         };
     }
 
@@ -597,10 +598,11 @@ public sealed class CanonicalStoryResourceLifecycleService
 
     private static void EnsureResourceId(string id)
     {
-        if (string.IsNullOrWhiteSpace(id))
-            throw Failure("story.resource.id.invalid", "Canonical resource ID is required.");
-        if (id.Any(character => !(char.IsLower(character) || char.IsDigit(character) || character is '_' or '-') ))
-            throw Failure("story.resource.id.invalid", $"Canonical resource ID '{id}' is invalid.");
+        var validLegacy = !string.IsNullOrWhiteSpace(id)
+            && id[0] is >= 'a' and <= 'z' or >= '0' and <= '9'
+            && id.All(character => character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-');
+        if (!DgrResourceId.IsFullId(id) && !validLegacy)
+            throw Failure("story.resource.id.invalid", $"Canonical resource ID '{id}' must be a valid full DGR ID or a compatible legacy ID.");
     }
 
     private static void EnsureDisplayName(string displayName)

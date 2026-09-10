@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.ViewModels;
@@ -8,6 +8,13 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class ItemWorkspaceDialogs(Func<Window?> ownerProvider) : IItemWorkspaceDialogs
 {
+    public ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string>? tags = null)
+    {
+        var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName, allowIdentityEdit: true, tags: tags);
+        var dialog = new DisplayNameDialog(viewModel) { Owner = ownerProvider() };
+        return dialog.ShowDialog() == true ? new(viewModel.NewId, viewModel.DisplayName.Trim(), viewModel.Tags) : null;
+    }
+
     public string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName)
     {
         var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName);

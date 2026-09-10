@@ -123,6 +123,16 @@ public partial class CanonicalGraphEditorView : UserControl
         nameof(Host), typeof(GraphEditorHostViewModel), typeof(CanonicalGraphEditorView),
         new PropertyMetadata(null, OnHostChanged));
 
+    public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
+        nameof(IsReadOnly), typeof(bool), typeof(CanonicalGraphEditorView), new PropertyMetadata(false, (d, _) =>
+        {
+            var view = (CanonicalGraphEditorView)d;
+            view.CancelPointerGesture();
+            view.SetScissorsMode(false);
+            foreach (var visual in view._nodeVisuals.Values) visual.IsEnabled = !view.IsReadOnly;
+        }));
+    public bool IsReadOnly { get => (bool)GetValue(IsReadOnlyProperty); set => SetValue(IsReadOnlyProperty, value); }
+
     public static readonly DependencyProperty ViewportStateProperty = DependencyProperty.Register(
         nameof(ViewportState), typeof(GraphViewportState), typeof(CanonicalGraphEditorView),
         new PropertyMetadata(null, OnViewportStateChanged));
@@ -207,6 +217,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     public void SetScissorsMode(bool enabled)
     {
+        enabled &= !IsReadOnly;
         _scissorsMode = enabled;
         CanvasViewport.Cursor = enabled ? ScissorsCursorFactory.Cursor : Cursors.Arrow;
     }
@@ -320,6 +331,7 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Creates and explicitly commits one safe candidate through Host.</summary>
     public bool AddNodeAt(string? nodeType, double x, double y)
     {
+        if (IsReadOnly) return false;
         var result = CreateNodeAt(nodeType, x, y);
         if (!result.IsSuccess || result.Candidate is not { } candidate || Host is not { } host)
             return false;
@@ -605,7 +617,7 @@ public partial class CanonicalGraphEditorView : UserControl
         var inlineEditor = InlineEditorFactory?.Invoke(node)
             ?? (_host is null ? null : new CanonicalNodeInspectorViewModel(
                 _host, node, subscribeToHostChanges: false));
-        var visual = new CanonicalGraphNodeControl(node, inlineEditor);
+        var visual = new CanonicalGraphNodeControl(node, inlineEditor) { IsEnabled = !IsReadOnly };
         _nodeVisuals[node] = visual;
         GraphCanvas.Children.Add(visual);
         Canvas.SetLeft(visual, Safe(node.X));
@@ -736,6 +748,20 @@ public partial class CanonicalGraphEditorView : UserControl
             return;
         }
         if (e.ChangedButton != MouseButton.Left) return;
+        if (IsReadOnly)
+        {
+            FocusGraphCanvas();
+            if (e.ClickCount >= 2)
+            {
+                var point = e.GetPosition(GraphCanvas);
+                var hit = _nodeVisuals.FirstOrDefault(pair => new Rect(
+                    Canvas.GetLeft(pair.Value), Canvas.GetTop(pair.Value),
+                    pair.Value.ActualWidth, pair.Value.ActualHeight).Contains(point));
+                if (hit.Key is { } selected) RequestNodeEdit(selected);
+            }
+            e.Handled = true;
+            return;
+        }
         if (FindAncestor<FlowPortControl>(source) is { } port && port.IsAnchorHitTarget(source))
         {
             FocusGraphCanvas();
@@ -790,6 +816,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void CanvasViewport_OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (IsReadOnly) { e.Handled = true; return; }
         var source = e.OriginalSource as DependencyObject;
         // A blank-canvas menu must never be inherited by a node, port, or wire
         // hit target. Clear the previous transient menu before this boundary
@@ -869,6 +896,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void Root_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (IsReadOnly) { e.Handled = e.Key != Key.Escape; return; }
         if (e.Key is Key.LeftShift or Key.RightShift && _pointerState.Is(GraphPointerMode.NodeDrag))
         {
             UpdateSplicePreview(_lastGraphPointer, IsSpliceModifierActive());
@@ -910,6 +938,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private bool BeginWirePress(FlowPortControl port, Point point, bool reconnectIncidentBundle)
     {
+        if (IsReadOnly) return false;
         if (_host is null || !TryEndpoint(port, out _) || !_pointerState.Begin(GraphPointerMode.PortPressed))
             return false;
         _pendingWirePort = port;
@@ -1294,6 +1323,7 @@ public partial class CanonicalGraphEditorView : UserControl
     /// </summary>
     public bool HandleKeyboardCommand(Key key, DependencyObject? source)
     {
+        if (IsReadOnly) return false;
         if (key == Key.Escape)
         {
             CancelPointerGesture();
@@ -1327,6 +1357,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     public bool DisconnectSelectedConnection()
     {
+        if (IsReadOnly) return false;
         if (_host is null || _selectedConnection is null) return false;
         var result = _host.Disconnect(_selectedConnection);
         if (result) _selectedConnection = null;
@@ -1358,6 +1389,7 @@ public partial class CanonicalGraphEditorView : UserControl
     /// </summary>
     public bool DeleteCurrentSelection(bool confirmReferencedRemoval = false)
     {
+        if (IsReadOnly) return false;
         if (_host is null || _selectedNodes.Count == 0) return false;
         var selectedIds = _selectedNodes.Select(node => node.NodeId)
             .Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToArray();
@@ -1664,6 +1696,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private bool BeginNodeDrag(GraphEditorNodeViewModel node, Point start, bool collapseSelectionOnClick)
     {
+        if (IsReadOnly) return false;
         if (!_selectedNodes.Contains(node) || !_pointerState.Begin(GraphPointerMode.NodeDrag)) return false;
         if (_selectedNodes.Count > 1
             && (_host is null || !_host.BeginLayoutMove(_selectedNodes.Select(selected => selected.NodeId))))

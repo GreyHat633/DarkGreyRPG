@@ -21,6 +21,7 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 import darkgrey.rpg.task.event.CanonicalTaskDispatchResult;
 import darkgrey.rpg.task.event.CanonicalTaskInstanceIdentity;
+import darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus;
 import darkgrey.rpg.task.instance.CanonicalTaskResourceResolver;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
@@ -54,6 +55,7 @@ public final class CanonicalTaskEventPersistenceProbe {
         persistenceAndAtomicBind(parallel);
         playerAndRetainedResourceIsolation(parallel);
         packageGenerationRetirement(parallel);
+        playerStoryDiscardBoundAndPending(parallel, settled);
         candidateBoundScale(many);
         System.out.println("TASK_EVENT_PERSISTENCE_PROBE_PASS");
         System.out.println("CANONICAL_TASK_GENERATION_RETIREMENT=PASS");
@@ -297,6 +299,98 @@ public final class CanonicalTaskEventPersistenceProbe {
             "Generation retirement left a stale Task subscription");
     }
 
+    private static void playerStoryDiscardBoundAndPending(CanonicalGraphResource parallel,
+        CanonicalGraphResource settled) {
+        CanonicalGraphResource active = resource(
+            "purge-active",
+            specs(spec("kill", CanonicalTaskEvent.KILL_ENTITY, "slime", null, 2)));
+
+        CanonicalTaskSavedData bound = new CanonicalTaskSavedData();
+        bound.start(PLAYER, "purge", "cancelled", active, 1L);
+        bound.cancelByStory(PLAYER, "purge");
+        bound.start(PLAYER, "purge", "error", active, 1L);
+        bound.markError(PLAYER, "purge", "error");
+        bound.start(PLAYER, "purge", "active", active, 1L);
+        bound.start(PLAYER, "purge", "terminal", settled, 1L);
+        bound.start(PLAYER, "keep", "placement", active, 1L);
+        bound.start(OTHER, "purge", "placement", parallel, 1L);
+        bound.dispatch(PLAYER, CanonicalTaskEvent.killEntity("slime"), 2L);
+        require(
+            bound.getSnapshot(PLAYER, "purge", "terminal")
+                .getStatus() == CanonicalTaskInstanceStatus.SETTLED,
+            "purge fixture terminal status");
+        require(
+            bound.getSnapshot(PLAYER, "purge", "terminal")
+                .getRuntimeSnapshot()
+                .getProgress()
+                .get("kill")
+                .intValue() == 1
+                && bound.getSnapshot(PLAYER, "purge", "terminal")
+                    .getResultPortId() != null,
+            "purge fixture progress/result");
+        require(
+            bound.getSubscriptionIndex()
+                .candidateCount(PLAYER, CanonicalTaskEvent.killEntity("slime")) == 2,
+            "purge fixture indexed active Tasks");
+        bound.setDirty(false);
+        require(bound.discardByPlayerStory(PLAYER, "purge") == 4, "bound player/story purge count");
+        require(bound.getSnapshot(PLAYER, "purge", "cancelled") == null, "bound cancelled Task remained");
+        require(bound.getSnapshot(PLAYER, "purge", "error") == null, "bound error Task remained");
+        require(bound.isDirty(), "bound player/story purge dirty");
+        require(bound.getSnapshot(PLAYER, "purge", "active") == null, "bound active Task remained");
+        require(bound.getSnapshot(PLAYER, "purge", "terminal") == null, "bound terminal Task remained");
+        require(bound.getSnapshot(PLAYER, "keep", "placement") != null, "bound other Story was removed");
+        require(bound.getSnapshot(OTHER, "purge", "placement") != null, "bound other player was removed");
+        require(
+            bound.getSubscriptionIndex()
+                .candidateCount(PLAYER, CanonicalTaskEvent.killEntity("slime")) == 1,
+            "bound purge left stale selected-player subscription");
+        require(
+            bound.getSubscriptionIndex()
+                .candidateCount(OTHER, CanonicalTaskEvent.killEntity("slime")) == 1,
+            "bound purge removed other-player subscription");
+
+        CanonicalTaskSavedData source = new CanonicalTaskSavedData();
+        source.start(PLAYER, "purge", "cancelled", active, 1L);
+        source.cancelByStory(PLAYER, "purge");
+        source.start(PLAYER, "purge", "error", active, 1L);
+        source.markError(PLAYER, "purge", "error");
+        source.start(PLAYER, "purge", "active", active, 1L);
+        source.start(PLAYER, "purge", "terminal", settled, 1L);
+        source.start(PLAYER, "keep", "placement", active, 1L);
+        source.start(OTHER, "purge", "placement", parallel, 1L);
+        source.dispatch(PLAYER, CanonicalTaskEvent.killEntity("slime"), 2L);
+        net.minecraft.nbt.NBTTagCompound raw = new net.minecraft.nbt.NBTTagCompound();
+        source.writeToNBT(raw);
+        CanonicalTaskSavedData pending = new CanonicalTaskSavedData("purge-pending");
+        pending.readFromNBT(raw);
+        pending.setDirty(false);
+        require(pending.discardByPlayerStory(PLAYER, "purge") == 4, "pending player/story purge count");
+        require(pending.isDirty(), "pending player/story purge dirty");
+        Map<String, CanonicalGraphResource> resources = new LinkedHashMap<String, CanonicalGraphResource>();
+        resources.put(active.getId(), active);
+        resources.put(settled.getId(), settled);
+        resources.put(parallel.getId(), parallel);
+        pending.bind(resolver(resources));
+        require(pending.getSnapshot(PLAYER, "purge", "cancelled") == null, "pending cancelled Task remained");
+        require(pending.getSnapshot(PLAYER, "purge", "error") == null, "pending error Task remained");
+        require(pending.getSnapshot(PLAYER, "purge", "active") == null, "pending active Task remained");
+        require(pending.getSnapshot(PLAYER, "purge", "terminal") == null, "pending terminal Task remained");
+        require(pending.getSnapshot(PLAYER, "keep", "placement") != null, "pending other Story was removed");
+        require(pending.getSnapshot(OTHER, "purge", "placement") != null, "pending other player was removed");
+        require(
+            pending.getSubscriptionIndex()
+                .candidateCount(PLAYER, CanonicalTaskEvent.killEntity("slime")) == 1,
+            "pending purge rebuilt stale selected-player subscription");
+        require(
+            pending.getSubscriptionIndex()
+                .candidateCount(OTHER, CanonicalTaskEvent.killEntity("slime")) == 1,
+            "pending purge removed other-player subscription");
+        System.out.println("STORY_REPEAT_PLAYER_ISOLATION=PASS");
+        System.out.println("STORY_REPEAT_OTHER_STORY_ISOLATION=PASS");
+        System.out.println("STORY_REPEAT_ALL_TASK_STATUSES_PURGED=PASS");
+    }
+
     private static void playerAndRetainedResourceIsolation(CanonicalGraphResource original) {
         CanonicalTaskSavedData isolated = new CanonicalTaskSavedData();
         isolated.start(PLAYER, "story", "placement", original, 1L);
@@ -461,6 +555,16 @@ public final class CanonicalTaskEventPersistenceProbe {
             public CanonicalGraphResource resolve(String id) {
                 return resource.getId()
                     .equals(id) ? resource : null;
+            }
+        };
+    }
+
+    private static CanonicalTaskResourceResolver resolver(final Map<String, CanonicalGraphResource> resources) {
+        return new CanonicalTaskResourceResolver() {
+
+            @Override
+            public CanonicalGraphResource resolve(String id) {
+                return resources.get(id);
             }
         };
     }

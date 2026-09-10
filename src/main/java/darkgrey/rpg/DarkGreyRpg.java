@@ -19,12 +19,10 @@ import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import darkgrey.rpg.command.CommandDarkGreyRpg;
 import darkgrey.rpg.config.RpgConfiguration;
 import darkgrey.rpg.content.ModItems;
-import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
 import darkgrey.rpg.entitytools.forge.EntityToolsRuntime;
 import darkgrey.rpg.live.LiveBridgeController;
 import darkgrey.rpg.live.LiveBridgeServer;
 import darkgrey.rpg.live.LivePickService;
-import darkgrey.rpg.live.PlayTestManager;
 import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.network.EntityToolsNetwork;
 import darkgrey.rpg.network.MainThreadScheduler;
@@ -35,16 +33,10 @@ import darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
 import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
 import darkgrey.rpg.proxy.CommonProxy;
-import darkgrey.rpg.quest.runtime.QuestEventAdapter;
-import darkgrey.rpg.quest.runtime.QuestRuntimeService;
 import darkgrey.rpg.runtime.EditorSessionManager;
 import darkgrey.rpg.runtime.EditorToolEventHandler;
 import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
 import darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeManager;
-import darkgrey.rpg.story.runtime.StoryEventAdapter;
-import darkgrey.rpg.story.runtime.StoryEventBridge;
-import darkgrey.rpg.story.runtime.StoryEventBus;
-import darkgrey.rpg.story.runtime.StoryRuntimeService;
 import darkgrey.rpg.task.forge.CanonicalTaskEventAdapter;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 
@@ -63,13 +55,9 @@ public final class DarkGreyRpg {
 
     private static ProjectRepository projectRepository;
     private static EditorSessionManager editorSessions;
-    private static DialogueSessionManager dialogueSessions;
-    private static QuestRuntimeService questRuntime;
-    private static StoryRuntimeService storyRuntime;
     private static RpgConfiguration configuration;
     private static LiveBridgeServer liveBridge;
     private static LivePickService livePicks;
-    private static PlayTestManager playTests;
     private static CanonicalSessionForgeManager canonicalSessionManager;
     private static CanonicalTaskForgeManager canonicalTaskManager;
     private static CanonicalStoryForgeManager canonicalStoryManager;
@@ -92,14 +80,7 @@ public final class DarkGreyRpg {
             canonicalTaskManager);
         canonicalStoryManager.bindAggregateListeners();
         editorSessions = new EditorSessionManager();
-        dialogueSessions = new DialogueSessionManager(projectRepository);
-        questRuntime = new QuestRuntimeService(projectRepository, canonicalTaskManager);
-        storyRuntime = new StoryRuntimeService(projectRepository, dialogueSessions, questRuntime);
         livePicks = new LivePickService();
-        StoryEventBus storyEvents = new StoryEventBus(storyRuntime);
-        StoryEventBridge storyBridge = new StoryEventBridge(storyEvents);
-        dialogueSessions.addResultListener(storyBridge);
-        questRuntime.addCompletionListener(storyBridge);
 
         StoryPackageRuntimeReloader.Result startup = StoryPackageRuntimeReloader
             .startup(projectRepository, storyPackageLoader);
@@ -129,9 +110,8 @@ public final class DarkGreyRpg {
         cpw.mods.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(this, new NominatorGuiHandler());
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
         MinecraftForge.EVENT_BUS.register(new EntityToolsRuntime());
-        QuestEventAdapter questEvents = new QuestEventAdapter(questRuntime);
-        MinecraftForge.EVENT_BUS.register(questEvents);
-        StoryEventAdapter storyEventAdapter = new StoryEventAdapter(storyEvents, canonicalStoryManager);
+        darkgrey.rpg.story.canonical.forge.CanonicalStoryEventAdapter storyEventAdapter = new darkgrey.rpg.story.canonical.forge.CanonicalStoryEventAdapter(
+            canonicalStoryManager);
         MinecraftForge.EVENT_BUS.register(storyEventAdapter);
         CanonicalTaskEventAdapter canonicalTaskEvents = new CanonicalTaskEventAdapter(canonicalTaskManager);
         MinecraftForge.EVENT_BUS.register(canonicalTaskEvents);
@@ -141,9 +121,6 @@ public final class DarkGreyRpg {
         FMLCommonHandler.instance()
             .bus()
             .register(new MainThreadScheduler());
-        FMLCommonHandler.instance()
-            .bus()
-            .register(questEvents);
         FMLCommonHandler.instance()
             .bus()
             .register(storyEventAdapter);
@@ -168,18 +145,17 @@ public final class DarkGreyRpg {
             new CommandDarkGreyRpg(
                 projectRepository,
                 editorSessions,
-                dialogueSessions,
-                questRuntime,
-                storyRuntime,
+                null,
+                null,
+                null,
                 canonicalSessionManager,
                 canonicalTaskManager,
                 canonicalStoryManager,
                 storyPackageLoader));
         if (configuration.isLiveBridgeEnabled()) {
-            playTests = new PlayTestManager(projectRepository, storyRuntime);
             liveBridge = new LiveBridgeServer(
                 configuration.getLiveBridgePort(),
-                new LiveBridgeController(projectRepository, dialogueSessions, storyRuntime, livePicks, playTests));
+                new LiveBridgeController(projectRepository, livePicks, storyPackageLoader));
             try {
                 liveBridge.start();
             } catch (java.io.IOException exception) {
@@ -191,10 +167,6 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
-        if (playTests != null) {
-            playTests.restoreAllOnlinePlayers();
-            playTests = null;
-        }
         if (liveBridge != null) {
             liveBridge.stop();
             liveBridge = null;
@@ -207,18 +179,6 @@ public final class DarkGreyRpg {
 
     public static StoryPackageLoader getStoryPackageLoader() {
         return storyPackageLoader;
-    }
-
-    public static DialogueSessionManager getDialogueSessions() {
-        return dialogueSessions;
-    }
-
-    public static QuestRuntimeService getQuestRuntime() {
-        return questRuntime;
-    }
-
-    public static StoryRuntimeService getStoryRuntime() {
-        return storyRuntime;
     }
 
     public static CanonicalSessionForgeManager getCanonicalSessionManager() {

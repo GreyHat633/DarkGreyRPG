@@ -20,11 +20,13 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.EntityInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import cpw.mods.fml.common.Loader;
 import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.dialogue.DialogueDefinition;
-import darkgrey.rpg.dialogue.runtime.DialogueResult;
 import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
 import darkgrey.rpg.entitytools.StorageBoxState;
 import darkgrey.rpg.entitytools.StoragePayload;
@@ -44,8 +46,6 @@ import darkgrey.rpg.project.packages.StoryPackageGenerationDelta;
 import darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
 import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
-import darkgrey.rpg.quest.QuestDefinition;
-import darkgrey.rpg.quest.QuestObjective;
 import darkgrey.rpg.quest.runtime.QuestJournalEntry;
 import darkgrey.rpg.quest.runtime.QuestRuntimeService;
 import darkgrey.rpg.runtime.ActorBindingActions;
@@ -53,29 +53,27 @@ import darkgrey.rpg.runtime.ChatMessages;
 import darkgrey.rpg.runtime.EditorSessionManager;
 import darkgrey.rpg.runtime.EntityTargeting;
 import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
-import darkgrey.rpg.story.StoryDefinition;
 import darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeManager;
 import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
-import darkgrey.rpg.story.runtime.StoryInstance;
 import darkgrey.rpg.story.runtime.StoryRuntimeService;
 import darkgrey.rpg.task.event.CanonicalTaskDispatchResult;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
+import darkgrey.rpg.task.journal.CanonicalJournalService;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 
 public final class CommandDarkGreyRpg extends CommandBase {
 
+    private static final Logger LOG = LogManager.getLogger(CommandDarkGreyRpg.class);
     private static final double TARGET_DISTANCE = 8.0D;
 
     private final ProjectRepository repository;
     private final EditorSessionManager sessions;
-    private final DialogueSessionManager dialogueSessions;
-    private final QuestRuntimeService questRuntime;
-    private final StoryRuntimeService storyRuntime;
     private final CanonicalSessionForgeManager canonicalSessionManager;
     private final CanonicalTaskForgeManager canonicalTaskManager;
     private final CanonicalStoryForgeManager canonicalStoryManager;
+    private final CanonicalJournalService canonicalJournalService;
     private final StoryPackageLoader storyPackageLoader;
 
     /** Original constructor retained for legacy registrations and probes. */
@@ -163,12 +161,11 @@ public final class CommandDarkGreyRpg extends CommandBase {
             throw new IllegalArgumentException("Canonical Session manager is required.");
         this.repository = repository;
         this.sessions = sessions;
-        this.dialogueSessions = dialogueSessions;
-        this.questRuntime = questRuntime;
-        this.storyRuntime = storyRuntime;
         this.canonicalSessionManager = canonicalSessionManager;
         this.canonicalTaskManager = canonicalTaskManager;
         this.canonicalStoryManager = canonicalStoryManager;
+        this.canonicalJournalService = canonicalTaskManager == null ? null
+            : new CanonicalJournalService(canonicalTaskManager);
         this.storyPackageLoader = storyPackageLoader;
     }
 
@@ -713,7 +710,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
         } else if ("reset".equals(action)) {
             requireLength(arguments, 3, "/dgr story reset <id>");
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
-            if (storyRuntime.resetInstance(player, arguments[2])) {
+            if (canonicalStoryManager != null && canonicalStoryManager.reset(player, arguments[2])) {
                 ChatMessages.success(player, "已重置故事实例：" + arguments[2]);
             } else {
                 ChatMessages.error(player, "未知故事 ID：" + arguments[2]);
@@ -721,8 +718,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
         } else if ("start".equals(action)) {
             requireLength(arguments, 3, "/dgr story start <id>");
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
-            boolean started = canonicalStoryManager == null ? storyRuntime.start(player, arguments[2])
-                : canonicalStoryManager.startByEntry(player, arguments[2]);
+            boolean started = canonicalStoryManager != null && canonicalStoryManager.startByEntry(player, arguments[2]);
             if (started) {
                 ChatMessages.success(player, "已启动故事：" + arguments[2]);
             } else {
@@ -736,10 +732,8 @@ public final class CommandDarkGreyRpg extends CommandBase {
     private void listStories(ICommandSender sender) {
         ProjectSnapshot snapshot = repository.getSnapshot();
         List<String> ids = new ArrayList<String>(
-            snapshot.getStories()
+            snapshot.getCanonicalStories()
                 .keySet());
-        for (String id : snapshot.getCanonicalStories()
-            .keySet()) if (!ids.contains(id)) ids.add(id);
         Collections.sort(ids);
         if (ids.isEmpty()) {
             ChatMessages.info(sender, "当前没有已加载的故事。");
@@ -747,60 +741,53 @@ public final class CommandDarkGreyRpg extends CommandBase {
         }
         ChatMessages.info(sender, "故事（" + ids.size() + "）：");
         for (String id : ids) {
-            StoryDefinition legacy = snapshot.getStory(id);
             CanonicalGraphResource canonical = snapshot.getCanonicalStory(id);
-            ChatMessages
-                .info(sender, "- " + id + " — " + (canonical == null ? legacy.getTitle() : canonical.getDisplayName()));
+            ChatMessages.info(sender, "- " + id + " — " + canonical.getDisplayName());
         }
     }
 
     private void showStory(ICommandSender sender, String id) {
-        StoryDefinition story = repository.getSnapshot()
-            .getStory(id);
         CanonicalGraphResource canonical = repository.getSnapshot()
             .getCanonicalStory(id);
-        if (story == null && canonical == null) {
+        if (canonical == null) {
             ChatMessages.error(sender, "未知故事 ID：" + id);
             return;
         }
-        if (canonical != null) {
-            ChatMessages.info(sender, "故事：" + canonical.getId() + " — " + canonical.getDisplayName());
-            ChatMessages.info(
-                sender,
-                "节点：" + canonical.getGraph()
-                    .getNodes()
-                    .size()
-                    + "，连接："
-                    + canonical.getGraph()
-                        .getConnections()
-                        .size());
-            return;
-        }
-        ChatMessages.info(sender, "故事：" + story.getId() + " — " + story.getTitle());
+        ChatMessages.info(sender, "故事：" + canonical.getId() + " — " + canonical.getDisplayName());
         ChatMessages.info(
             sender,
-            "入口：" + story.getEntry()
-                + "，节点："
-                + story.getNodes()
-                    .size()
+            "节点：" + canonical.getGraph()
+                .getNodes()
+                .size()
                 + "，连接："
-                + story.getConnections()
+                + canonical.getGraph()
+                    .getConnections()
                     .size());
     }
 
     private void showStoryState(EntityPlayerMP player, String id) {
-        StoryDefinition story = repository.getSnapshot()
-            .getStory(id);
-        if (story == null) {
-            ChatMessages.error(player, "未知 legacy 故事 ID：" + id);
+        if (canonicalStoryManager == null || repository.getSnapshot()
+            .getCanonicalStory(id) == null) {
+            ChatMessages.error(player, "未知故事 ID：" + id);
             return;
         }
-        StoryInstance instance = storyRuntime.getInstance(player, story);
-        ChatMessages.info(player, "故事 " + id + "：" + instance.getState() + "，当前节点 " + instance.getCurrentNodeId());
-        if (!instance.getError()
-            .isEmpty()) {
-            ChatMessages.error(player, instance.getError());
+        CanonicalStoryInstanceSnapshot instance = canonicalStoryManager.snapshot(player, id);
+        if (instance == null) {
+            ChatMessages.info(player, "故事 " + id + "：未开始");
+            return;
         }
+        CanonicalStorySnapshot runtime = instance.getRuntimeSnapshot();
+        ChatMessages.info(
+            player,
+            "故事 " + id
+                + "："
+                + runtime.getStatus()
+                + "，等待="
+                + runtime.getWaitKind()
+                + "，当前节点="
+                + runtime.getCurrentNodeId()
+                + "，逻辑="
+                + runtime.getExternalLogicInputs());
     }
 
     private void processQuest(ICommandSender sender, String[] arguments) {
@@ -809,13 +796,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
         }
         String action = arguments[1].toLowerCase();
         if ("list".equals(action)) {
-            listQuests(sender);
+            listTasks(sender);
         } else if ("info".equals(action)) {
             requireLength(arguments, 3, "/dgr quest info <id>");
-            showQuest(sender, arguments[2]);
+            showTask(sender, arguments[2]);
         } else if ("start".equals(action)) {
             requireLength(arguments, 3, "/dgr quest start <id>");
-            questRuntime.start(requireMultiplayerPlayer(sender), arguments[2]);
+            ChatMessages
+                .error(sender, "旧版任务启动已停用，请使用规范任务：/dgr task start <task_id> <story_instance_id> <placement_id>");
         } else if ("journal".equals(action)) {
             requireLength(arguments, 2, "/dgr quest journal");
             openQuestJournal(requireMultiplayerPlayer(sender));
@@ -824,53 +812,26 @@ public final class CommandDarkGreyRpg extends CommandBase {
             showQuestProgress(requireMultiplayerPlayer(sender));
         } else if ("reset".equals(action)) {
             requireLength(arguments, 3, "/dgr quest reset <id>");
-            questRuntime.reset(requireMultiplayerPlayer(sender), arguments[2]);
+            ChatMessages.error(sender, "旧版任务重置已停用，请使用规范任务：/dgr task progress 或 /dgr story reset <story_id>");
         } else {
             throw new WrongUsageException("/dgr quest <list|info|start|journal|progress|reset>");
         }
     }
 
-    private void listQuests(ICommandSender sender) {
-        if (repository.getSnapshot()
-            .getQuests()
-            .isEmpty()) {
-            ChatMessages.info(sender, "当前没有已加载的旧版任务。");
-            return;
-        }
-        ChatMessages.info(
-            sender,
-            "旧版任务（" + repository.getSnapshot()
-                .getQuests()
-                .size() + "）：");
-        for (QuestDefinition quest : repository.getSnapshot()
-            .getQuests()
-            .values()) {
-            ChatMessages.info(sender, "- " + quest.getId() + " — " + quest.getTitle());
-        }
-    }
-
-    private void showQuest(ICommandSender sender, String id) {
-        QuestDefinition quest = repository.getSnapshot()
-            .getQuest(id);
-        if (quest == null) {
-            ChatMessages.error(sender, "未知旧版任务 ID：" + id);
-            return;
-        }
-        ChatMessages.info(sender, "旧版任务：" + quest.getId() + " — " + quest.getTitle());
-        ChatMessages.info(sender, quest.getDescription());
-        for (QuestObjective objective : quest.getObjectives()) {
-            ChatMessages.info(
-                sender,
-                "- [" + objective.getType() + "] " + objective.getDescription() + " ×" + objective.getRequiredAmount());
-        }
-    }
-
     private void openQuestJournal(EntityPlayerMP player) {
-        questRuntime.openJournal(player);
+        if (canonicalJournalService == null) {
+            ChatMessages.error(player, "规范任务日志服务当前不可用。");
+            return;
+        }
+        canonicalJournalService.openJournal(player);
     }
 
     private void showQuestProgress(EntityPlayerMP player) {
-        List<QuestJournalEntry> entries = questRuntime.getJournal(player);
+        if (canonicalJournalService == null) {
+            ChatMessages.error(player, "规范任务日志服务当前不可用。");
+            return;
+        }
+        List<QuestJournalEntry> entries = canonicalJournalService.getJournal(player);
         if (entries.isEmpty()) {
             ChatMessages.info(player, "任务日志为空。");
             return;
@@ -925,7 +886,8 @@ public final class CommandDarkGreyRpg extends CommandBase {
                         + reload.getProjectReload()
                             .getSummary());
             } else {
-                ChatMessages.error(sender, "重新加载未完全成功；已保留通过校验的定义，已卸载已删除的定义。");
+                ChatMessages.error(sender, "重新加载未完全成功；无效候选未生效，请查看服务器日志。");
+                for (String error : reload.getErrors()) LOG.warn("Story Package reload rejected: {}", error);
                 if (!reload.getErrors()
                     .isEmpty()) ChatMessages.error(sender, "故事包校验失败；详细原因已写入服务器日志。");
             }
@@ -968,7 +930,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     private void processDialogue(ICommandSender sender, String[] arguments) {
         if (arguments.length < 2) {
-            throw new WrongUsageException("/dgr dialogue <list|info|play|last-result>");
+            throw new WrongUsageException("/dgr dialogue <list|info|play|start|last-result>");
         }
         String action = arguments[1].toLowerCase();
         if ("list".equals(action)) {
@@ -978,12 +940,15 @@ public final class CommandDarkGreyRpg extends CommandBase {
             showDialogue(sender, arguments[2]);
         } else if ("play".equals(action)) {
             requireLength(arguments, 3, "/dgr dialogue play <id>");
-            dialogueSessions.start(requireMultiplayerPlayer(sender), arguments[2]);
+            ChatMessages.error(sender, "独立对话启动已停用，请使用规范 Session：/dgr session play <story_id> <aggregate_node_id>");
+        } else if ("start".equals(action)) {
+            requireLength(arguments, 3, "/dgr dialogue start <id>");
+            ChatMessages.error(sender, "独立对话启动已停用，请使用规范 Session：/dgr session play <story_id> <aggregate_node_id>");
         } else if ("last-result".equals(action)) {
             requireLength(arguments, 2, "/dgr dialogue last-result");
             showLastResult(requirePlayer(sender));
         } else {
-            throw new WrongUsageException("/dgr dialogue <list|info|play|last-result>");
+            throw new WrongUsageException("/dgr dialogue <list|info|play|start|last-result>");
         }
     }
 
@@ -1024,12 +989,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
     }
 
     private void showLastResult(EntityPlayer player) {
-        DialogueResult result = dialogueSessions.getLastResult(player.getUniqueID());
-        if (result == null) {
-            ChatMessages.info(player, "本次服务器会话尚未返回对话结果。");
-            return;
-        }
-        ChatMessages.info(player, "最近对话结果：" + result.getDialogueId() + " → " + result.getResult());
+        ChatMessages.info(player, "独立旧版对话结果已停用，请通过规范 Session 查看当前流程：/dgr session resume <story_id>");
     }
 
     private void processActor(ICommandSender sender, String[] arguments) {
@@ -1184,7 +1144,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
             return getListOfStringsFromIterableMatchingLastWord(arguments, actorIds);
         }
         if (arguments.length == 2 && "dialogue".equalsIgnoreCase(arguments[0])) {
-            return getListOfStringsMatchingLastWord(arguments, "list", "info", "play", "last-result");
+            return getListOfStringsMatchingLastWord(arguments, "list", "info", "play", "start", "last-result");
         }
         if (arguments.length == 3 && "dialogue".equalsIgnoreCase(arguments[0])
             && Arrays.asList("info", "play")
@@ -1203,7 +1163,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
                 .contains(arguments[1].toLowerCase())) {
             List<String> questIds = new ArrayList<String>(
                 repository.getSnapshot()
-                    .getQuests()
+                    .getCanonicalTasks()
                     .keySet());
             return getListOfStringsFromIterableMatchingLastWord(arguments, questIds);
         }
@@ -1213,7 +1173,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (arguments.length == 3 && "story".equalsIgnoreCase(arguments[0])) {
             List<String> storyIds = new ArrayList<String>(
                 repository.getSnapshot()
-                    .getStories()
+                    .getCanonicalStories()
                     .keySet());
             return getListOfStringsFromIterableMatchingLastWord(arguments, storyIds);
         }

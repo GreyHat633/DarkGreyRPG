@@ -1,4 +1,4 @@
-using System.Text.Encodings.Web;
+﻿using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -59,6 +59,9 @@ public sealed class GraphResourceEnvelope
     [JsonPropertyOrder(3)]
     public string DisplayName { get; set; } = string.Empty;
 
+    [JsonPropertyName("tags")]
+    public IReadOnlyList<string> Tags { get; set; } = [];
+
     /// <summary>
     /// Gets or sets a detached graph snapshot.  The boundary owns its own
     /// nodes, ports, connections, and JSON property values.
@@ -105,7 +108,7 @@ public sealed class GraphResourceKindJsonConverter : JsonConverter<GraphResource
 public static class GraphResourceEnvelopeSerializer
 {
     private static readonly HashSet<string> RootMembers =
-        ["schema_version", "resource_kind", "id", "display_name", "graph"];
+        ["schema_version", "resource_kind", "id", "display_name", "tags", "graph"];
 
     public static string Serialize(GraphResourceEnvelope envelope, bool indented = true)
     {
@@ -122,6 +125,11 @@ public static class GraphResourceEnvelopeSerializer
             writer.WriteString("resource_kind", FormatResourceKind(envelope.ResourceKind));
             writer.WriteString("id", envelope.Id);
             writer.WriteString("display_name", envelope.DisplayName);
+            if (envelope.Tags.Count > 0)
+            {
+                writer.WritePropertyName("tags");
+                JsonSerializer.Serialize(writer, envelope.Tags);
+            }
             writer.WritePropertyName("graph");
             var graph = envelope.SnapshotGraph()!;
             JsonSerializer.Serialize(writer, graph, GraphSerializer.Options);
@@ -168,7 +176,9 @@ public static class GraphResourceEnvelopeSerializer
 
             var graph = JsonSerializer.Deserialize<GraphDocument>(graphElement.GetRawText(), GraphSerializer.Options)
                 ?? throw Failure("graph.resource.graph.required", "Canonical graph resource graph cannot be null.");
-            return new GraphResourceEnvelope(kind, id, displayName, graph) { SchemaVersion = version };
+            var tags = root.TryGetProperty("tags", out var tagsValue)
+                ? tagsValue.EnumerateArray().Select(tag => tag.ValueKind == JsonValueKind.String ? tag.GetString()! : throw new JsonException("Tags must be strings.")).ToArray() : [];
+            return new GraphResourceEnvelope(kind, id, displayName, graph) { SchemaVersion = version, Tags = tags };
         }
         catch (GraphResourceEnvelopeException)
         {
@@ -244,6 +254,8 @@ public static class GraphResourceEnvelopeSerializer
             throw Failure("graph.resource.id.required", "Canonical graph resource id cannot be blank.");
         if (string.IsNullOrWhiteSpace(envelope.DisplayName))
             throw Failure("graph.resource.display_name.required", "Canonical graph resource display_name cannot be blank.");
+        if (envelope.Tags is null || envelope.Tags.Any(tag => tag is null))
+            throw Failure("graph.resource.tags.invalid", "Resource tags must be a string array.");
         if (envelope.SnapshotGraph() is null)
             throw Failure("graph.resource.graph.required", "Canonical graph resource graph cannot be null.");
     }
@@ -260,7 +272,7 @@ public static class GraphResourceEnvelopeSerializer
         }
 
         foreach (var member in RootMembers)
-            if (!seen.Contains(member))
+            if (member != "tags" && !seen.Contains(member))
                 throw Failure("graph.resource.root.member.required", $"Canonical graph resource root field '{member}' is required.");
     }
 
@@ -358,6 +370,7 @@ public sealed class GraphResourceDocument
         Scope = scope;
         Id = envelope.Id;
         DisplayName = envelope.DisplayName;
+        Tags = envelope.Tags.ToArray();
         _graph = GraphResourceEnvelopeSerializer.CloneGraph(graph);
     }
 
@@ -365,6 +378,8 @@ public sealed class GraphResourceDocument
     public GraphScope Scope { get; }
     public string Id { get; }
     public string DisplayName { get; private set; }
+    public IReadOnlyList<string> Tags { get; private set; } = [];
+    public void SetTags(IEnumerable<string> tags) => Tags = tags.ToArray();
     /// <summary>
     /// The document-owned mutable graph used by an editor host. It is detached
     /// from the source envelope when the document is opened.
@@ -385,7 +400,7 @@ public sealed class GraphResourceDocument
 
     /// <summary>Creates a detached persistence snapshot of the current edit state.</summary>
     public GraphResourceEnvelope ToEnvelope()
-        => new(ResourceKind, Id, DisplayName, _graph);
+        => new(ResourceKind, Id, DisplayName, _graph) { Tags = Tags.ToArray() };
 
     public GraphResourceEnvelope CreateSnapshot() => ToEnvelope();
 }

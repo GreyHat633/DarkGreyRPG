@@ -26,7 +26,8 @@ public final class StoryEventAdapter {
     }
 
     public StoryEventAdapter(StoryEventBus eventBus, CanonicalStoryForgeManager canonicalStories) {
-        if (eventBus == null) throw new IllegalArgumentException("Story event bus is required.");
+        if (eventBus == null && canonicalStories == null)
+            throw new IllegalArgumentException("Story runtime is required.");
         this.eventBus = eventBus;
         this.canonicalStories = canonicalStories;
     }
@@ -41,6 +42,11 @@ public final class StoryEventAdapter {
             return;
         }
         List<String> actorIds = EntityDgrIdentityResolver.resolveActorIds(event.target);
+        if (canonicalStories != null) {
+            if (canonicalStories.handleActorInteraction((EntityPlayerMP) event.entityPlayer, event.target))
+                event.setCanceled(true);
+            return;
+        }
         if (!actorIds.isEmpty()) {
             event.setCanceled(true);
             EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
@@ -58,12 +64,16 @@ public final class StoryEventAdapter {
             return;
         }
         EntityPlayerMP player = (EntityPlayerMP) event.player;
-        eventBus.post(
+        if (canonicalStories == null) eventBus.post(
             player,
             StoryEvent.position(player.worldObj.provider.dimensionId, player.posX, player.posY, player.posZ));
         if (canonicalStories == null) return;
-        List<CanonicalStoryTriggerIndex.Match> matches = canonicalStories
-            .matchingRegionTriggers(player.worldObj.provider.dimensionId, player.posX, player.posY, player.posZ);
+        List<CanonicalStoryTriggerIndex.Match> matches = canonicalStories.matchingRegionTriggers(
+            player,
+            player.worldObj.provider.dimensionId,
+            player.posX,
+            player.posY,
+            player.posZ);
         canonicalStories.handleRegionPosition(
             player,
             player.worldObj.provider.dimensionId,
@@ -75,6 +85,9 @@ public final class StoryEventAdapter {
 
     @SubscribeEvent
     public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.player != null) regionEntries.forget(event.player.getUniqueID());
+        if (event.player != null) {
+            regionEntries.forget(event.player.getUniqueID());
+            if (canonicalStories != null) canonicalStories.forgetActorChoices(event.player.getUniqueID());
+        }
     }
 }

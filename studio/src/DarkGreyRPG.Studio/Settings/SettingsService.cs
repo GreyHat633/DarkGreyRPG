@@ -64,6 +64,10 @@ public sealed class SettingsService : ISettingsService
     {
         ArgumentNullException.ThrowIfNull(settings);
 
+        if (settings.GlobalNamespace is not null
+            && !DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsValidNamespace(settings.GlobalNamespace))
+            throw new ArgumentException("Global Namespace is invalid; it must be preserved exactly without normalization.", nameof(settings));
+
         if (!IsSupportedTheme(settings.Theme))
         {
             throw new ArgumentOutOfRangeException(nameof(settings), settings.Theme, "The theme preference is not supported.");

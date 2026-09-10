@@ -1,7 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text;
+using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -58,7 +61,9 @@ public sealed class CanonicalStoryDeletionPlan
         IEnumerable<string> referencedSessionIds,
         IEnumerable<string> referencedTaskIds,
         IEnumerable<CanonicalStoryDeletionIncomingTransition> incomingTransitions,
-        IEnumerable<CanonicalStoryDeletionBlocker> blockers)
+        IEnumerable<CanonicalStoryDeletionBlocker> blockers,
+        IEnumerable<string>? itemIds = null,
+        IEnumerable<string>? itemGroupIds = null)
     {
         StoryId = storyId;
         Story = CloneEnvelope(story);
@@ -66,6 +71,8 @@ public sealed class CanonicalStoryDeletionPlan
         ActorIds = Sorted(actorIds);
         SessionIds = Sorted(sessionIds);
         TaskIds = Sorted(taskIds);
+        ItemIds = Sorted(itemIds);
+        ItemGroupIds = Sorted(itemGroupIds);
         ReferencedActorIds = Sorted(referencedActorIds);
         ReferencedSessionIds = Sorted(referencedSessionIds);
         ReferencedTaskIds = Sorted(referencedTaskIds);
@@ -92,9 +99,13 @@ public sealed class CanonicalStoryDeletionPlan
     public IReadOnlyList<string> ActorIds { get; }
     public IReadOnlyList<string> SessionIds { get; }
     public IReadOnlyList<string> TaskIds { get; }
+    public IReadOnlyList<string> ItemIds { get; }
+    public IReadOnlyList<string> ItemGroupIds { get; }
     public IReadOnlyList<string> OwnedActorIds => ActorIds;
     public IReadOnlyList<string> OwnedSessionIds => SessionIds;
     public IReadOnlyList<string> OwnedTaskIds => TaskIds;
+    public IReadOnlyList<string> OwnedItemIds => ItemIds;
+    public IReadOnlyList<string> OwnedItemGroupIds => ItemGroupIds;
     public IReadOnlyList<string> ReferencedActorIds { get; }
     public IReadOnlyList<string> ReferencedSessionIds { get; }
     public IReadOnlyList<string> ReferencedTaskIds { get; }
@@ -110,7 +121,7 @@ public sealed class CanonicalStoryDeletionPlan
             .ToArray());
 
     private static GraphResourceEnvelope CloneEnvelope(GraphResourceEnvelope value)
-        => new(value.ResourceKind, value.Id, value.DisplayName, value.Graph!) { SchemaVersion = value.SchemaVersion };
+        => new(value.ResourceKind, value.Id, value.DisplayName, value.Graph!) { SchemaVersion = value.SchemaVersion, Tags = value.Tags.ToArray() };
 
     private static CanonicalStoryMembershipManifest CloneMembership(CanonicalStoryMembershipManifest value)
         => new(value.StoryId, value.OwnedResources, value.ReferencedResources) { SchemaVersion = value.SchemaVersion };
@@ -124,6 +135,7 @@ public sealed class CanonicalStoryLifecycleService
 {
     private readonly CanonicalProjectGraphStore _store;
     private readonly ActorRepository _actors;
+    private readonly ItemRepository _items;
     private readonly StoryRepository _legacyStories;
     private readonly Action<string> _deleteFile;
     private readonly object _lifecycleGate = new();
@@ -132,10 +144,12 @@ public sealed class CanonicalStoryLifecycleService
         CanonicalProjectGraphStore store,
         ActorRepository? actors = null,
         StoryRepository? legacyStories = null,
-        Action<string>? deleteFile = null)
+        Action<string>? deleteFile = null,
+        ItemRepository? items = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _actors = actors ?? new ActorRepository(store.ProjectDirectory);
+        _items = items ?? new ItemRepository(store.ProjectDirectory);
         _legacyStories = legacyStories ?? new StoryRepository(store.ProjectDirectory);
         _deleteFile = deleteFile ?? File.Delete;
     }
@@ -223,6 +237,7 @@ public sealed class CanonicalStoryLifecycleService
             ValidateOwnedFiles(storyId, owned, blockers);
             ValidateOtherCanonicalMemberships(storyId, owned, blockers);
             ValidateLegacyActorMemberships(storyId, owned.Actors, blockers);
+            ValidateNamespacePolicy(storyId, blockers);
 
             var transitions = new List<CanonicalStoryDeletionIncomingTransition>();
             ValidateCanonicalStoryGraphs(storyId, transitions, blockers);
@@ -240,7 +255,9 @@ public sealed class CanonicalStoryLifecycleService
                 referenced.Sessions,
                 referenced.Tasks,
                 transitions,
-                blockers);
+                blockers,
+                owned.Items,
+                owned.ItemGroups);
         }
     }
 
@@ -265,28 +282,35 @@ public sealed class CanonicalStoryLifecycleService
                     $"Canonical Story '{storyId}' cannot be deleted while blockers remain.");
 
             var snapshots = SnapshotFiles(plan);
-            var removed = new List<FileSnapshot>();
+            var changes = snapshots
+                .Select(snapshot => new NamespaceFileChange(
+                    Path.GetRelativePath(_store.ProjectDirectory, snapshot.Path),
+                    snapshot.Bytes,
+                    null))
+                .ToList();
+            var policyChange = BuildNamespacePolicyChange(plan);
+            if (policyChange is not null) changes.Add(policyChange);
             try
             {
-                foreach (var snapshot in snapshots)
-                {
-                    _deleteFile(snapshot.Path);
-                    removed.Add(snapshot);
-                }
-
-                foreach (var snapshot in snapshots)
-                    if (File.Exists(snapshot.Path))
-                        throw new IOException($"File '{snapshot.Path}' remained after deletion.");
+                new NamespaceFileTransaction(deleteFile: path =>
+                    {
+                        _deleteFile(path);
+                        if (File.Exists(path)) throw new IOException($"File '{path}' remained after deletion.");
+                    })
+                    .Apply(_store.ProjectDirectory, changes, () => { });
+            }
+            catch (NamespaceFileTransactionException exception) when (IsOrdinaryFailure(exception))
+            {
+                if (exception.RollbackFailures.Count != 0)
+                    throw Failure("story.lifecycle.rollback_failed",
+                        $"Canonical Story '{storyId}' deletion failed and rollback was incomplete.", exception);
+                throw Failure("story.lifecycle.delete_failed",
+                    $"Canonical Story '{storyId}' deletion failed; all resources and policy bytes were restored.", exception);
             }
             catch (Exception exception) when (IsOrdinaryFailure(exception))
             {
-                var rollbackFailures = RestoreSnapshots(snapshots);
-                if (rollbackFailures.Count != 0)
-                    throw Failure("story.lifecycle.rollback_failed",
-                        $"Canonical Story '{storyId}' deletion failed and rollback was incomplete.",
-                        new AggregateException(new[] { exception }.Concat(rollbackFailures)));
                 throw Failure("story.lifecycle.delete_failed",
-                    $"Canonical Story '{storyId}' deletion failed; all removed files were restored.", exception);
+                    $"Canonical Story '{storyId}' deletion failed; all resources and policy bytes were restored.", exception);
             }
         }
     }
@@ -327,6 +351,42 @@ public sealed class CanonicalStoryLifecycleService
         }
         ValidateOwnedGraphFiles(storyId, owned.Sessions, _store.Sessions, "session", blockers);
         ValidateOwnedGraphFiles(storyId, owned.Tasks, _store.Tasks, "task", blockers);
+        ValidateOwnedItemFiles(storyId, owned.Items, item => _items.LoadItem(item), "item", blockers);
+        ValidateOwnedItemFiles(storyId, owned.ItemGroups, group => _items.LoadGroup(group), "item_group", blockers);
+    }
+
+    private void ValidateNamespacePolicy(
+        string storyId,
+        ICollection<CanonicalStoryDeletionBlocker> blockers)
+    {
+        var path = Path.Combine(_store.ProjectDirectory, NamespacePolicyStore.RelativePath);
+        if (!File.Exists(path)) return;
+        try
+        {
+            _ = NamespacePolicyStore.Decode(File.ReadAllBytes(path));
+        }
+        catch (Exception exception) when (exception is InvalidDataException or JsonException
+            or IOException or UnauthorizedAccessException)
+        {
+            AddBlocker(blockers, "story.lifecycle.namespace_policy.invalid",
+                $"Namespace policy for canonical Story '{storyId}' is malformed and cannot be updated safely.",
+                storyId, inner: exception);
+        }
+    }
+
+    private static void ValidateOwnedItemFiles<T>(
+        string storyId,
+        IEnumerable<string> ids,
+        Func<string, T> load,
+        string kind,
+        ICollection<CanonicalStoryDeletionBlocker> blockers)
+    {
+        foreach (var id in ids.Order(StringComparer.Ordinal))
+        {
+            try { _ = load(id); }
+            catch (Exception exception) when (exception is ItemRepositoryException or ItemValidationException or ItemDataException)
+            { AddBlocker(blockers, "story.lifecycle.owned_file.invalid", $"Owned {kind} '{id}' is missing or invalid.", storyId, kind, id); }
+        }
     }
 
     private static void ValidateOwnedGraphFiles(
@@ -351,7 +411,7 @@ public sealed class CanonicalStoryLifecycleService
     {
         foreach (var path in EnumerateJsonPaths(_store.MembershipsDirectory, "story.lifecycle.membership.enumerate_failed"))
         {
-            var id = Path.GetFileNameWithoutExtension(path);
+            var id = LogicalId(path, membership: true);
             if (string.Equals(id, ownerId, StringComparison.Ordinal)) continue;
             CanonicalStoryMembershipManifest manifest;
             try { manifest = _store.Memberships.Load(id); }
@@ -362,6 +422,8 @@ public sealed class CanonicalStoryLifecycleService
                 continue;
             }
             AddMembershipConflicts(ownerId, owned.Actors, manifest.OwnedResources.Actors, manifest.ReferencedResources.Actors, "actor", id, blockers);
+            AddMembershipConflicts(ownerId, owned.Items, manifest.OwnedResources.Items, manifest.ReferencedResources.Items, "item", id, blockers);
+            AddMembershipConflicts(ownerId, owned.ItemGroups, manifest.OwnedResources.ItemGroups, manifest.ReferencedResources.ItemGroups, "item_group", id, blockers);
             AddMembershipConflicts(ownerId, owned.Sessions, manifest.OwnedResources.Sessions, manifest.ReferencedResources.Sessions, "session", id, blockers);
             AddMembershipConflicts(ownerId, owned.Tasks, manifest.OwnedResources.Tasks, manifest.ReferencedResources.Tasks, "task", id, blockers);
         }
@@ -425,8 +487,8 @@ public sealed class CanonicalStoryLifecycleService
     {
         var storyPaths = EnumerateJsonPaths(_store.StoriesDirectory, "story.lifecycle.story.enumerate_failed");
         var membershipPaths = EnumerateJsonPaths(_store.MembershipsDirectory, "story.lifecycle.membership.enumerate_failed");
-        var ids = storyPaths.Select(path => Path.GetFileNameWithoutExtension(path)!)
-            .Concat(membershipPaths.Select(path => Path.GetFileNameWithoutExtension(path)!))
+        var ids = storyPaths.Select(path => LogicalId(path, membership: false))
+            .Concat(membershipPaths.Select(path => LogicalId(path, membership: true)))
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 
         foreach (var id in ids)
@@ -494,12 +556,46 @@ public sealed class CanonicalStoryLifecycleService
         AddSnapshot(snapshots, _store.Stories.GetPath(plan.StoryId), id => _store.Stories.Load(id), plan.StoryId);
         AddSnapshot(snapshots, _store.Memberships.GetPath(plan.StoryId), id => _store.Memberships.Load(id), plan.StoryId);
         foreach (var id in plan.ActorIds)
-            AddSnapshot(snapshots, Path.Combine(_actors.ActorsDirectory, id + ".json"), id => _actors.LoadActor(id), id);
+            AddSnapshot(snapshots, _actors.GetActorPath(id), id => _actors.LoadActor(id), id);
+        foreach (var id in plan.ItemIds)
+            AddSnapshot(snapshots, _items.GetItemPath(id), id => _items.LoadItem(id), id);
+        foreach (var id in plan.ItemGroupIds)
+            AddSnapshot(snapshots, _items.GetGroupPath(id), id => _items.LoadGroup(id), id);
         foreach (var id in plan.SessionIds)
             AddSnapshot(snapshots, _store.Sessions.GetPath(id), id => _store.Sessions.Load(id), id);
         foreach (var id in plan.TaskIds)
             AddSnapshot(snapshots, _store.Tasks.GetPath(id), id => _store.Tasks.Load(id), id);
         return snapshots;
+    }
+
+    private NamespaceFileChange? BuildNamespacePolicyChange(CanonicalStoryDeletionPlan plan)
+    {
+        if (!DgrResourceId.IsFullId(plan.StoryId)) return null;
+        var path = Path.Combine(_store.ProjectDirectory, NamespacePolicyStore.RelativePath);
+        if (!File.Exists(path)) return null;
+
+        byte[] original;
+        NamespacePolicy current;
+        try
+        {
+            original = File.ReadAllBytes(path);
+            current = NamespacePolicyStore.Decode(original);
+        }
+        catch (Exception exception) when (exception is InvalidDataException or JsonException
+            or IOException or UnauthorizedAccessException)
+        {
+            throw Failure("story.lifecycle.namespace_policy.snapshot_failed",
+                $"Could not snapshot namespace policy before deleting Story '{plan.StoryId}'.", exception);
+        }
+
+        if (!current.StoryOverrides.ContainsKey(plan.StoryId)) return null;
+        var overrides = current.StoryOverrides
+            .Where(pair => !string.Equals(pair.Key, plan.StoryId, StringComparison.Ordinal))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        return new NamespaceFileChange(
+            Path.GetRelativePath(_store.ProjectDirectory, path),
+            original,
+            NamespacePolicyStore.Encode(new NamespacePolicy(current.GlobalNamespace, overrides)));
     }
 
     private static void AddSnapshot<T>(ICollection<FileSnapshot> snapshots, string path, Func<string, T> validate, string id)
@@ -534,7 +630,7 @@ public sealed class CanonicalStoryLifecycleService
     private static IReadOnlyList<string> EnumerateJsonPaths(string directory, string code)
     {
         if (!Directory.Exists(directory)) return [];
-        try { return Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly).OrderBy(path => Path.GetFileName(path), StringComparer.Ordinal).ToArray(); }
+        try { return CanonicalResourceFileSystem.EnumerateJsonFiles(directory); }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         { throw Failure(code, $"Could not enumerate canonical directory '{directory}'.", exception); }
     }
@@ -552,10 +648,27 @@ public sealed class CanonicalStoryLifecycleService
 
     private static void EnsureId(string id)
     {
-        if (string.IsNullOrWhiteSpace(id) || id.Any(character => !(character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-')))
-            throw Failure("story.lifecycle.id.invalid", $"Story ID '{id}' must match [a-z0-9][a-z0-9_-]*.");
-        if (id[0] is '_' or '-')
-            throw Failure("story.lifecycle.id.invalid", $"Story ID '{id}' must start with a lowercase letter or digit.");
+        var validLegacy = !string.IsNullOrWhiteSpace(id)
+            && id[0] is >= 'a' and <= 'z' or >= '0' and <= '9'
+            && id.All(character => character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-');
+        if (!DgrResourceId.IsFullId(id) && !validLegacy)
+            throw Failure("story.lifecycle.id.invalid", $"Story ID '{id}' must be a valid full DGR ID or a compatible legacy ID.");
+    }
+
+    private static string LogicalId(string path, bool membership)
+    {
+        try
+        {
+            return membership
+                ? CanonicalStoryMembershipSerializer.Deserialize(File.ReadAllText(path)).StoryId
+                : GraphResourceEnvelopeSerializer.Deserialize(File.ReadAllText(path)).Id;
+        }
+        catch (Exception exception) when (exception is GraphResourceEnvelopeException
+            or CanonicalStoryMembershipException
+            or IOException or UnauthorizedAccessException)
+        {
+            return Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+        }
     }
 
     private static void EnsureDisplayName(string displayName)

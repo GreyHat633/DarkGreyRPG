@@ -104,7 +104,7 @@ public sealed class StoryPackageManifest
 
     private static void RequireId(string value, string field)
     {
-        if (string.IsNullOrWhiteSpace(value) || value.Any(ch => !(char.IsLetterOrDigit(ch) || ch is '_' or '-' or '.')) || !char.IsLetterOrDigit(value[0]))
+        if (!DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsCompatibleId(value))
             throw new StoryPackageException($"{field} must be a stable resource ID.");
     }
 }

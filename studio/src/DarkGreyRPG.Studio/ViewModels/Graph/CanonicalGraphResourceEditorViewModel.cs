@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Validation;
@@ -41,6 +41,7 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public GraphViewportState ViewportState { get; } = new();
     public string Id => Document.Id;
     public string DisplayName => Document.DisplayName;
+    public IReadOnlyList<string> Tags => Document.Tags;
     public GraphResourceKind ResourceKind => Document.ResourceKind;
     public GraphScope Scope => Document.Scope;
     public long GraphRevision => Host.GraphRevision;
@@ -120,6 +121,17 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     /// contents differ from this editor's saved baseline. Unrelated membership
     /// refreshes therefore preserve current graph edits and undo history.
     /// </summary>
+    public void ApplyPersistedTags(IReadOnlyList<string> tags)
+    {
+        ThrowIfDisposed();
+        var savedEnvelope = GraphResourceEnvelopeSerializer.Deserialize(_savedJson);
+        savedEnvelope.Tags = tags.ToArray();
+        _savedJson = GraphResourceEnvelopeSerializer.Serialize(savedEnvelope, indented: false);
+        Document.SetTags(tags);
+        OnPropertyChanged(nameof(Tags));
+        NotifyWorkspaceState();
+    }
+
     public bool ApplyPersistedSnapshot(GraphResourceEnvelope envelope)
     {
         ThrowIfDisposed();
@@ -136,6 +148,8 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         if (Scope == GraphScope.Task)
             CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(graph);
         Document.SetDisplayName(envelope.DisplayName);
+        Document.SetTags(envelope.Tags);
+        OnPropertyChanged(nameof(Tags));
         Host.ApplyPersistedSnapshot(graph);
         _savedJson = SerializeCurrent();
         OnPropertyChanged(nameof(DisplayName));

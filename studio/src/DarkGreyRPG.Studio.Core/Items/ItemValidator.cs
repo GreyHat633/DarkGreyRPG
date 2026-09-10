@@ -103,7 +103,7 @@ public static partial class ItemValidator
         {
             issues.Add(new($"item.{field}.required", $"Item {field} is required.", field));
         }
-        else if (!IdRegex().IsMatch(id))
+        else if (!DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsFullId(id) && !IdRegex().IsMatch(id))
         {
             issues.Add(new($"item.{field}.invalid", $"Item {field} '{id}' is not valid. Expected {IdPattern}.", field));
         }

@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,10 +31,12 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
+import darkgrey.rpg.identity.DgrResourceId;
+
 /** Strict, read-only loader for the schema-version-1 canonical graph roots. */
 public final class CanonicalGraphResourceLoader {
 
-    private static final Set<String> ROOT = set("schema_version", "resource_kind", "id", "display_name", "graph");
+    private static final Set<String> ROOT = set("schema_version", "resource_kind", "id", "display_name", "tags", "graph");
     private static final Set<String> GRAPH = set("nodes", "connections");
     private static final Set<String> NODE = set("id", "type", "display_name", "ports", "properties");
     private static final Set<String> PORT = set("port_id", "display_name", "direction", "kind", "order");
@@ -59,7 +64,7 @@ public final class CanonicalGraphResourceLoader {
         throws CanonicalGraphResourceException {
         if (file == null) throw CanonicalGraphResourceException
             .failure("graph.resource.file.required", "Canonical graph resource file is required.");
-        if (!Files.isRegularFile(file)) throw CanonicalGraphResourceException
+        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) throw CanonicalGraphResourceException
             .failure("graph.resource.file.missing", "Canonical graph resource file does not exist: " + file);
         try {
             return parse(
@@ -91,13 +96,31 @@ public final class CanonicalGraphResourceLoader {
         throws CanonicalGraphResourceException {
         if (directory == null) throw CanonicalGraphResourceException
             .failure("graph.resource.directory.required", "Canonical graph resource directory is required.");
-        if (!Files.isDirectory(directory)) throw CanonicalGraphResourceException.failure(
+        if (!Files.isDirectory(directory) || unsafePath(directory)) throw CanonicalGraphResourceException.failure(
             "graph.resource.directory.missing",
             "Canonical graph resource directory does not exist: " + directory);
 
-        List<Path> files = new ArrayList<Path>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*.json")) {
-            for (Path path : stream) if (Files.isRegularFile(path)) files.add(path);
+        final List<Path> files = new ArrayList<Path>();
+        try {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attributes) {
+                    return unsafePath(path) || attributes.isOther() ? FileVisitResult.SKIP_SUBTREE
+                        : FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path path, BasicFileAttributes attributes) {
+                    if (!unsafePath(path) && attributes.isRegularFile()
+                        && path.getFileName()
+                            .toString()
+                            .toLowerCase()
+                            .endsWith(".json"))
+                        files.add(path);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         } catch (IOException exception) {
             throw new CanonicalGraphResourceException(
                 "graph.resource.directory.read",
@@ -108,10 +131,10 @@ public final class CanonicalGraphResourceLoader {
 
             @Override
             public int compare(Path left, Path right) {
-                return left.getFileName()
+                return directory.relativize(left)
                     .toString()
                     .compareTo(
-                        right.getFileName()
+                        directory.relativize(right)
                             .toString());
             }
         });
@@ -140,6 +163,16 @@ public final class CanonicalGraphResourceLoader {
 
     public List<CanonicalGraphResource> loadTasks(Path directory) throws CanonicalGraphResourceException {
         return loadDirectory(directory, CanonicalGraphResourceKind.TASK);
+    }
+
+    private static boolean unsafePath(Path path) {
+        if (Files.isSymbolicLink(path)) return true;
+        try {
+            Object reparse = Files.getAttribute(path, "dos:reparsePoint", LinkOption.NOFOLLOW_LINKS);
+            return Boolean.TRUE.equals(reparse);
+        } catch (IOException | UnsupportedOperationException | IllegalArgumentException ignored) {
+            return false;
+        }
     }
 
     private static CanonicalGraphResource parse(byte[] bytes, String fileName, CanonicalGraphResourceKind expectedKind)
@@ -176,14 +209,24 @@ public final class CanonicalGraphResourceLoader {
             .isEmpty())
             throw CanonicalGraphResourceException
                 .failure("graph.resource.id.required", "Canonical graph resource id cannot be blank.");
+        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalGraphResourceException
+            .failure("graph.resource.id.invalid", "Canonical graph resource id is invalid: " + id);
         if (displayName.trim()
             .isEmpty())
             throw CanonicalGraphResourceException.failure(
                 "graph.resource.display_name.required",
                 "Canonical graph resource display_name cannot be blank.");
-        if (!fileName.equals(id + ".json")) throw CanonicalGraphResourceException.failure(
-            "graph.resource.filename.mismatch",
-            "Canonical graph resource filename must equal id + '.json': " + fileName);
+        if (!DgrResourceId.isFullId(id) && !fileName.equals(id + ".json"))
+            throw CanonicalGraphResourceException.failure(
+                "graph.resource.filename.mismatch",
+                "Canonical graph resource filename must equal id + '.json': " + fileName);
+        if (root.has("tags")) {
+            for (JsonElement tag : array(root, "tags", "graph.resource")) {
+                if (!tag.isJsonPrimitive() || !tag.getAsJsonPrimitive().isString()) {
+                    throw CanonicalGraphResourceException.failure("graph.resource.tags.invalid", "Resource tags must be strings.");
+                }
+            }
+        }
         CanonicalGraph graph = graph(object(root, "graph", "graph.resource"), kind);
         return new CanonicalGraphResource(version, kind, id, displayName, graph);
     }
@@ -457,7 +500,7 @@ public final class CanonicalGraphResourceLoader {
         for (Map.Entry<String, JsonElement> entry : object.entrySet())
             if (!allowed.contains(entry.getKey())) throw CanonicalGraphResourceException
                 .failure(prefix + ".member.unsupported", "Unsupported field '" + entry.getKey() + "'.");
-        for (String name : allowed) if (!object.has(name)) throw CanonicalGraphResourceException
+        for (String name : allowed) if (!(allowed == ROOT && name.equals("tags")) && !object.has(name)) throw CanonicalGraphResourceException
             .failure(prefix + ".member.required", "Required field '" + name + "' is missing.");
     }
 

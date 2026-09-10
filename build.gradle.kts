@@ -2,6 +2,63 @@ plugins {
     id("com.gtnewhorizons.gtnhconvention")
 }
 
+tasks.register<JavaExec>("namespacedResourceLoadingProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.identity.NamespacedResourceLoadingProbe")
+    args("E:/Java/MinecraftMod/DarkGrey_RPG/.tooling/0.3.2.0_B4/resource-loader")
+}
+
+tasks.register<JavaExec>("dgrResourceIdProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.identity.DgrResourceIdProbe")
+}
+
+tasks.register<JavaExec>("b4ExternalPackageReferencesProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.B4ExternalPackageReferencesProbe")
+}
+
+tasks.register<JavaExec>("b4ExternalArchiveSetProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.B4ExternalArchiveSetProbe")
+    args(layout.projectDirectory.dir(".tooling/0.3.2.0_B4/external-packages").asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("canonicalStoryCommandProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.command.CanonicalStoryCommandProbe")
+}
+
+tasks.register<JavaExec>("canonicalActorArbitrationProbe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.server.CanonicalActorArbitrationProbe")
+}
+
+tasks.register<JavaExec>("canonicalStoryChooserCodecProbe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.network.message.canonical.CanonicalStoryChooserCodecProbe")
+}
+
+tasks.register<JavaExec>("b4NetworkDiscriminatorProbe") {
+    group = "verification"
+    description = "Validates the shared FML packet discriminator registry across all B4 network modules."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.network.B4NetworkDiscriminatorProbe")
+    args(layout.projectDirectory.asFile.absolutePath)
+}
+
 val releaseVersion = providers.gradleProperty("modVersion").get()
 version = releaseVersion
 
@@ -613,4 +670,12 @@ tasks.register<JavaExec>("storyPackageGenerationProbe") {
     dependsOn(tasks.named("testClasses"))
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.project.packages.StoryPackageGenerationProbe")
+}
+
+
+tasks.register<JavaExec>("offlineOriginProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.OfflineOriginProbe")
 }

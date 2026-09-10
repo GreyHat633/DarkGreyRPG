@@ -19,6 +19,9 @@ public sealed record StudioSettings
     [JsonPropertyName("theme")]
     public ThemePreference Theme { get; init; } = ThemePreference.System;
 
+    [JsonPropertyName("global_namespace")]
+    public string? GlobalNamespace { get; init; }
+
     [JsonPropertyName("window_width")]
     public double WindowWidth { get; init; } = DefaultWindowWidth;
 

@@ -5,6 +5,7 @@ using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Packaging;
 
@@ -21,10 +22,10 @@ public sealed class StoryPackageExporter
         if (string.IsNullOrWhiteSpace(packageVersion)) throw new StoryPackageException("packageVersion is required.");
 
         var stories = new StoryRepository(_projectDirectory);
-        var legacyPath = Path.Combine(stories.StoriesDirectory, storyId + ".json");
+        var legacyPath = stories.GetStoryPath(storyId);
         var legacyStory = File.Exists(legacyPath) ? stories.LoadStory(storyId) : null;
         var canonicalStore = new CanonicalProjectGraphStore(_projectDirectory);
-        var canonicalPath = Path.Combine(canonicalStore.StoriesDirectory, storyId + ".json");
+        var canonicalPath = canonicalStore.Stories.GetPath(storyId);
         var canonicalStory = File.Exists(canonicalPath) ? canonicalStore.Stories.Load(storyId) : null;
         if (legacyStory is null && canonicalStory is null)
             throw new StoryPackageException($"Story '{storyId}' was not found in either the legacy or canonical Story repository.");
@@ -53,12 +54,12 @@ public sealed class StoryPackageExporter
         var required = new StoryPackageRequiredResources
         {
             Story = legacyStory is not null
-                ? $"stories/{storyId}.json"
-                : $"resources/canonical/stories/{storyId}.json",
+                ? $"stories/{DgrResourceId.RelativeJsonPath(storyId)}"
+                : $"resources/canonical/stories/{DgrResourceId.RelativeJsonPath(storyId)}",
         };
         if (legacyStory is not null)
         {
-            Copy(root, "stories", legacyStory.Id + ".json");
+            CopyFile(legacyPath, Path.Combine(root, "stories", DgrResourceId.RelativeJsonPath(legacyStory.Id)));
             var membership = legacyStory.OwnedResources.Clone();
             membership.Actors.AddRange(legacyStory.ReferencedResources.Actors);
             membership.Dialogues.AddRange(legacyStory.ReferencedResources.Dialogues);
@@ -68,7 +69,15 @@ public sealed class StoryPackageExporter
         AddCanonicalResources(root, required, storyId);
         required = AddStoryLogicGraph(root, required, storyId);
         var projectPath = Path.Combine(_projectDirectory, "project.json");
-        if (File.Exists(projectPath)) CopyFile(projectPath, Path.Combine(root, "project.json"));
+        if (File.Exists(projectPath))
+        {
+            var project = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(projectPath))!.AsObject();
+            // Older projects use their persisted project id as the compatibility origin.
+            // Imported provider project.json is never installed in authoring storage.
+            if (string.IsNullOrWhiteSpace(project["project_origin_code"]?.GetValue<string>()))
+                project["project_origin_code"] = project["id"]!.GetValue<string>();
+            File.WriteAllText(Path.Combine(root, "project.json"), project.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        }
         else
         {
             var fallbackProject = new Dictionary<string, object?>
@@ -76,6 +85,7 @@ public sealed class StoryPackageExporter
                 ["schema_version"] = 2,
                 ["id"] = storyId,
                 ["display_name"] = canonicalStory?.DisplayName ?? legacyStory!.DisplayName,
+                ["project_origin_code"] = storyId,
             };
             File.WriteAllText(
                 Path.Combine(root, "project.json"),
@@ -137,26 +147,47 @@ public sealed class StoryPackageExporter
     private void AddCanonicalResources(string root, StoryPackageRequiredResources required, string storyId)
     {
         var store = new CanonicalProjectGraphStore(_projectDirectory);
-        var membershipPath = Path.Combine(store.MembershipsDirectory, storyId + ".json");
+        var membershipPath = store.Memberships.GetPath(storyId);
         if (!File.Exists(membershipPath)) return;
         // A selected membership is the canonical package boundary. Read it
         // before creating any package canonical roots so unrelated canonical
         // project data cannot produce partial output roots.
         var manifest = store.Memberships.Load(storyId);
-        var storyPath = Path.Combine(store.StoriesDirectory, storyId + ".json");
+        var storyPath = store.Stories.GetPath(storyId);
         if (!File.Exists(storyPath))
             throw new StoryPackageException($"Required canonical resource is missing: {storyPath}");
 
         foreach (var directory in new[] { "stories", "memberships", "sessions", "tasks" })
             Directory.CreateDirectory(Path.Combine(root, "resources", "canonical", directory));
 
-        CopyCanonical(root, store.StoriesDirectory, storyId, "resources/canonical/stories", required.CanonicalStories);
-        CopyCanonical(root, store.MembershipsDirectory, storyId, "resources/canonical/memberships", required.CanonicalMemberships);
-        foreach (var id in manifest.OwnedResources.Actors.Concat(manifest.ReferencedResources.Actors).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) { Copy(root, "actors", id + ".json"); AddUnique(required.Actors, $"actors/{id}.json"); }
-        foreach (var id in manifest.OwnedResources.Sessions.Concat(manifest.ReferencedResources.Sessions).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) CopyCanonical(root, store.SessionsDirectory, id, "resources/canonical/sessions", required.Sessions);
-        foreach (var id in manifest.OwnedResources.Tasks.Concat(manifest.ReferencedResources.Tasks).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) CopyCanonical(root, store.TasksDirectory, id, "resources/canonical/tasks", required.Tasks);
-        foreach (var id in manifest.OwnedResources.Items.Concat(manifest.ReferencedResources.Items).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) { Copy(root, "items", id + ".json"); AddUnique(required.Items, $"items/{id}.json"); }
-        foreach (var id in manifest.OwnedResources.ItemGroups.Concat(manifest.ReferencedResources.ItemGroups).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) { Copy(root, "item_groups", id + ".json"); AddUnique(required.ItemGroups, $"item_groups/{id}.json"); }
+        CopyCanonical(root, storyPath, storyId, "resources/canonical/stories", required.CanonicalStories);
+        CopyCanonical(root, membershipPath, storyId, "resources/canonical/memberships", required.CanonicalMemberships);
+        var actors = new ActorRepository(_projectDirectory).ListActors().ToDictionary(actor => actor.Id, StringComparer.Ordinal);
+        var items = new ItemRepository(_projectDirectory);
+        foreach (var id in manifest.OwnedResources.Actors.Concat(manifest.ReferencedResources.Actors).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+        {
+            if (!actors.TryGetValue(id, out var actor))
+            {
+                if (!manifest.OwnedResources.Actors.Contains(id, StringComparer.Ordinal) && DgrResourceId.IsFullId(id)) continue;
+                throw new StoryPackageException($"Required Actor is missing: {id}");
+            }
+            CopyCanonical(root, actor.SourcePath, id, "actors", required.Actors);
+        }
+        CopyMembers(manifest.OwnedResources.Sessions, manifest.ReferencedResources.Sessions, store.Sessions.GetPath, "resources/canonical/sessions", required.Sessions);
+        CopyMembers(manifest.OwnedResources.Tasks, manifest.ReferencedResources.Tasks, store.Tasks.GetPath, "resources/canonical/tasks", required.Tasks);
+        CopyMembers(manifest.OwnedResources.Items, manifest.ReferencedResources.Items, items.GetItemPath, "items", required.Items);
+        CopyMembers(manifest.OwnedResources.ItemGroups, manifest.ReferencedResources.ItemGroups, items.GetGroupPath, "item_groups", required.ItemGroups);
+
+        void CopyMembers(IEnumerable<string> owned, IEnumerable<string> referenced, Func<string, string> sourcePath, string destination, List<string> paths)
+        {
+            var requiredIds = owned.ToHashSet(StringComparer.Ordinal);
+            foreach (var id in requiredIds.Concat(referenced).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+            {
+                var source = sourcePath(id);
+                if (!File.Exists(source) && !requiredIds.Contains(id) && DgrResourceId.IsFullId(id)) continue;
+                CopyCanonical(root, source, id, destination, paths);
+            }
+        }
     }
 
     private StoryPackageRequiredResources AddStoryLogicGraph(
@@ -195,11 +226,10 @@ public sealed class StoryPackageExporter
         };
     }
 
-    private void CopyCanonical(string root, string sourceDirectory, string id, string packageDirectory, List<string> paths)
+    private void CopyCanonical(string root, string source, string id, string packageDirectory, List<string> paths)
     {
-        var source = Path.Combine(sourceDirectory, id + ".json");
         if (!File.Exists(source)) throw new StoryPackageException($"Required canonical resource is missing: {source}");
-        var relative = packageDirectory + "/" + id + ".json";
+        var relative = packageDirectory + "/" + DgrResourceId.RelativeJsonPath(id);
         CopyFile(source, Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar)));
         AddUnique(paths, relative);
     }

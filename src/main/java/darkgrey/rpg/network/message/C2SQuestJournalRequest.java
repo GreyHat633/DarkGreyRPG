@@ -7,6 +7,7 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.network.MainThreadScheduler;
+import darkgrey.rpg.task.journal.CanonicalJournalService;
 import io.netty.buffer.ByteBuf;
 
 public final class C2SQuestJournalRequest implements IMessage {
@@ -26,8 +27,7 @@ public final class C2SQuestJournalRequest implements IMessage {
 
                 @Override
                 public void run() {
-                    DarkGreyRpg.getQuestRuntime()
-                        .openJournal(player);
+                    new CanonicalJournalService(DarkGreyRpg.getCanonicalTaskManager()).openJournal(player);
                 }
             });
             return null;

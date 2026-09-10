@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -246,7 +246,10 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     private Dictionary<string, GraphEditorNodePosition>? _activeLayoutMoveBefore;
     private bool _suppressLayoutChanged;
 
-    private abstract record HostHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo);
+    private abstract record HostHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
+    {
+        public long Sequence { get; } = EditHistoryClock.Next();
+    }
 
     private sealed record GraphHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
         : HostHistoryEntry(DisplacedRedo);
@@ -308,6 +311,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public GraphEditorCommandBridge CommandBridge => _commandBridge;
     public ObservableCollection<GraphEditorNodeViewModel> Nodes { get; }
     public ObservableCollection<GraphEditorConnectionViewModel> Connections { get; }
+    public long UndoSequence => _undoHistory.TryPeek(out var entry) ? entry.Sequence : 0;
+    public long RedoSequence => _redoHistory.TryPeek(out var entry) ? entry.Sequence : long.MaxValue;
     public bool CanUndo => _undoHistory.Count != 0;
     public bool CanRedo => _redoHistory.Count != 0;
     public IReadOnlyList<ValidationIssue> LastValidationIssues => _lastValidationIssues;

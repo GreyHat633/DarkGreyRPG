@@ -5,6 +5,7 @@ using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Validation;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Packaging;
 
@@ -196,10 +197,12 @@ public static class DgrsPackageValidator
         IReadOnlyDictionary<string, ZipArchiveEntry> entries,
         StoryPackageManifest manifest)
     {
+        var membershipIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var path in manifest.RequiredResources.CanonicalMemberships)
         {
             var membership = CanonicalStoryMembershipSerializer.Deserialize(ReadText(entries[path]));
-            if (!string.Equals(Path.GetFileNameWithoutExtension(path), membership.StoryId, StringComparison.Ordinal))
+            if (!membershipIds.Add(membership.StoryId)) throw new StoryPackageException($"Duplicate Story membership ID '{membership.StoryId}'.");
+            if (!DgrResourceId.IsFullId(membership.StoryId) && !string.Equals(Path.GetFileNameWithoutExtension(path), membership.StoryId, StringComparison.Ordinal))
                 throw new StoryPackageException($"Canonical membership identity does not match DGRS path '{path}'.");
         }
 
@@ -208,9 +211,13 @@ public static class DgrsPackageValidator
         ValidateGraphs(entries, manifest.RequiredResources.Tasks, GraphResourceKind.Task);
 
         var selectedCanonical = manifest.RequiredResources.CanonicalStories
-            .Any(path => string.Equals(Path.GetFileNameWithoutExtension(path), manifest.StoryId, StringComparison.Ordinal));
+            .Any(path => string.Equals(GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[path])).Id, manifest.StoryId, StringComparison.Ordinal));
         if (!selectedCanonical && manifest.RequiredResources.Story.StartsWith("resources/canonical/", StringComparison.Ordinal))
             throw new StoryPackageException("Manifest story_id is not present in canonical_stories.");
+        if (manifest.RequiredResources.Story.StartsWith("resources/canonical/", StringComparison.Ordinal)
+            && (!membershipIds.Contains(manifest.StoryId)
+                || GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[manifest.RequiredResources.Story])).Id != manifest.StoryId))
+            throw new StoryPackageException("Primary canonical Story and membership must match manifest story_id.");
 
         if (manifest.RequiredResources.Story.StartsWith("stories/", StringComparison.Ordinal))
         {
@@ -231,12 +238,14 @@ public static class DgrsPackageValidator
         GraphResourceKind expectedKind)
     {
         var scope = GraphResourceScopeAdapter.GetScope(expectedKind);
+        var identities = new HashSet<string>(StringComparer.Ordinal);
         foreach (var path in paths)
         {
             var envelope = GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[path]));
             if (envelope.ResourceKind != expectedKind
-                || !string.Equals(Path.GetFileNameWithoutExtension(path), envelope.Id, StringComparison.Ordinal))
+                || !DgrResourceId.IsFullId(envelope.Id) && !string.Equals(Path.GetFileNameWithoutExtension(path), envelope.Id, StringComparison.Ordinal))
                 throw new StoryPackageException($"Canonical resource identity does not match DGRS path '{path}'.");
+            if (!identities.Add(envelope.Id)) throw new StoryPackageException($"Duplicate canonical resource ID '{envelope.Id}'.");
             var graph = GraphResourceScopeAdapter.Open(envelope, scope);
             var issues = GraphScopePolicy.Validate(graph, scope)
                 .Concat(ValidatePackageNodeShapes(graph, scope))

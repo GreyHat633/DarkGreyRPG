@@ -34,6 +34,10 @@ public final class CanonicalGraphResourceLoaderProbe {
 
             CanonicalGraphResourceLoader loader = new CanonicalGraphResourceLoader();
             verifyValidResources(loader, stories, sessions, tasks);
+            Path tagged = stories.resolve("story_a.json");
+            write(tagged, storyJson("story_a").replace("\"graph\":", "\"tags\":[\"metadata\"],\"graph\":"));
+            require(loader.load(tagged, CanonicalGraphResourceKind.STORY).getSchemaVersion() == 1, "Tags changed schema");
+            write(tagged, storyJson("story_a"));
             verifyEnvelopeFailures(loader, stories);
             verifyGraphFailures(loader, stories, sessions, tasks);
             verifyDirectoryBehavior(loader, root, stories);

@@ -19,6 +19,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.storage.MapStorage;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
@@ -55,7 +57,7 @@ public final class DgrsPackageRuntimeProbe {
             File installedArchive = new File(install, source.getName());
             Files.copy(source.toPath(), installedArchive.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(source.toPath(), replacementSource.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            makeRepeatableGeneration(replacementSource);
+            changeRepeatPolicyGeneration(replacementSource);
             File residue = new File(install, ".dgrs-runtime");
             require(residue.mkdir(), "Cannot create legacy runtime residue directory");
             Files.write(new File(residue, "stale.bin").toPath(), new byte[] { 1, 2, 3 });
@@ -261,12 +263,18 @@ public final class DgrsPackageRuntimeProbe {
                 .next();
             taskData.start(progressPlayer, replacement.getStoryId(), "generation-probe", taskResource, 1L);
             String partialObjectiveId = requiredThreeObjectiveId(taskResource);
+            String partialTarget = null;
+            for (CanonicalGraphNode node : taskResource.getGraph()
+                .getNodes())
+                if (partialObjectiveId.equals(node.getId())) partialTarget = node.getProperties()
+                    .get("entity")
+                    .getAsString();
             require(
-                taskData.dispatch(progressPlayer, CanonicalTaskEvent.killEntity("slimes"), 2L)
+                taskData.dispatch(progressPlayer, CanonicalTaskEvent.killEntity(partialTarget), 2L)
                     .getChangedInstanceCount() == 1,
                 "Generation probe Task did not accept first progress event");
             require(
-                taskData.dispatch(progressPlayer, CanonicalTaskEvent.killEntity("slimes"), 3L)
+                taskData.dispatch(progressPlayer, CanonicalTaskEvent.killEntity(partialTarget), 3L)
                     .getChangedInstanceCount() == 1,
                 "Generation probe Task did not accept second progress event");
             require(
@@ -590,7 +598,7 @@ public final class DgrsPackageRuntimeProbe {
         }
     }
 
-    private static void makeRepeatableGeneration(File archive) throws Exception {
+    private static void changeRepeatPolicyGeneration(File archive) throws Exception {
         File rewritten = new File(archive.getParentFile(), archive.getName() + ".rewrite");
         ZipFile input = new ZipFile(archive);
         ZipOutputStream output = new ZipOutputStream(new FileOutputStream(rewritten));
@@ -611,13 +619,36 @@ public final class DgrsPackageRuntimeProbe {
                     stream.close();
                 }
                 byte[] bytes = content.toByteArray();
-                if ("resources/canonical/stories/kill_slimes.json".equals(original.getName())) {
-                    String once = new String(bytes, StandardCharsets.UTF_8);
-                    String repeatable = once
-                        .replace("\"repeat_policy\": \"once\"", "\"repeat_policy\": \"repeatable\"");
-                    require(!once.equals(repeatable), "DGRS replacement fixture is not authored once");
-                    bytes = repeatable.getBytes(StandardCharsets.UTF_8);
-                    found = true;
+                if (original.getName()
+                    .startsWith("resources/canonical/stories/")
+                    && original.getName()
+                        .endsWith(".json")) {
+                    JsonObject story = new JsonParser().parse(new String(bytes, StandardCharsets.UTF_8))
+                        .getAsJsonObject();
+                    if ("kill_slimes".equals(
+                        darkgrey.rpg.identity.DgrResourceId.localId(
+                            story.get("id")
+                                .getAsString()))) {
+                        for (JsonElement element : story.getAsJsonObject("graph")
+                            .getAsJsonArray("nodes")) {
+                            JsonObject node = element.getAsJsonObject();
+                            if ("start".equals(
+                                node.get("type")
+                                    .getAsString())) {
+                                JsonObject properties = node.getAsJsonObject("properties");
+                                String previous = properties.get("repeat_policy")
+                                    .getAsString();
+                                require(
+                                    "once".equals(previous) || "repeatable".equals(previous),
+                                    "Unsupported fixture repeat policy");
+                                properties
+                                    .addProperty("repeat_policy", "once".equals(previous) ? "repeatable" : "once");
+                                found = true;
+                            }
+                        }
+                        bytes = story.toString()
+                            .getBytes(StandardCharsets.UTF_8);
+                    }
                 }
                 output.write(bytes);
                 output.closeEntry();

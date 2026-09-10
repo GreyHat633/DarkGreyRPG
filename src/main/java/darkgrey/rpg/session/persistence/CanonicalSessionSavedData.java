@@ -247,13 +247,26 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         long activationTime) {
         requireStoryBound();
         NBTTagCompound before = persistedState();
+        boolean restart = storyStore.startDisposition(playerUuid, resource.getId())
+            == darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition.REPEATABLE_RESTART;
         CanonicalStoryInstanceStore candidate = cloneStoryStore();
         CanonicalStoryInstanceSnapshot result = candidate
             .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime)
             .snapshot();
+        // Candidate creation validates the trigger first. Failed starts must retain previous-run children.
+        if (restart) {
+            store.cancelByStory(playerUuid, resource.getId());
+            continuations = withoutContinuation(playerUuid, resource.getId());
+        }
         storyStore = candidate;
         markWorldIfChanged(before);
         return result;
+    }
+
+    public synchronized darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition startDisposition(
+        UUID playerUuid, String storyId) {
+        requireStoryBound();
+        return storyStore.startDisposition(playerUuid, storyId);
     }
 
     public synchronized CanonicalStoryInstanceSnapshot setStoryLogicInput(UUID playerUuid, String storyId,
@@ -380,7 +393,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         long eventTime) {
         List<CanonicalStoryInstanceSnapshot> matches = matchingStoryActorWaits(playerUuid, actorId);
         if (matches.isEmpty()) return null;
-        if (matches.size() > 1) throw new IllegalStateException("Ambiguous canonical Story ActorInteract waits.");
+        if (matches.size() > 1) return null;
         return resumeStoryActor(
             playerUuid,
             matches.get(0)
@@ -397,7 +410,10 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized CanonicalStoryInstanceSnapshot resumeStoryActor(UUID playerUuid, String storyId, String actorId,
         long eventTime) {
         requireStoryBound();
-        if (matchingStoryActorWaits(playerUuid, actorId).isEmpty()) return null;
+        boolean matchesSelectedStory = false;
+        for (CanonicalStoryInstanceSnapshot waiting : matchingStoryActorWaits(playerUuid, actorId))
+            if (storyId.equals(waiting.getStoryId())) matchesSelectedStory = true;
+        if (!matchesSelectedStory) return null;
         NBTTagCompound before = persistedState();
         CanonicalStoryInstanceStore candidate = cloneStoryStore();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
@@ -412,7 +428,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         double y, double z, long eventTime) {
         List<CanonicalStoryInstanceSnapshot> matches = matchingStoryRegionWaits(playerUuid, dimension, x, y, z);
         if (matches.isEmpty()) return null;
-        if (matches.size() > 1) throw new IllegalStateException("Ambiguous canonical Story EnterRegion waits.");
+        if (matches.size() > 1) return null;
         requireStoryBound();
         NBTTagCompound before = persistedState();
         CanonicalStoryInstanceStore candidate = cloneStoryStore();
@@ -473,6 +489,19 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (removedContinuation) continuations = remaining;
         if (removedSession || removedContinuation) markWorldIfChanged(before);
         return removedSession || removedContinuation;
+    }
+
+    /** Administrative reset of exactly one player's Story and all Session-side children. */
+    public synchronized boolean discardByPlayerStory(UUID playerUuid, String storyId) {
+        requireStoryBound();
+        NBTTagCompound before = persistedState();
+        boolean removed = storyStore.discardByPlayerStory(playerUuid, storyId);
+        removed = store.cancelByStory(playerUuid, storyId) || removed;
+        List<CanonicalStoryPendingContinuation> remaining = withoutContinuation(playerUuid, storyId);
+        removed = remaining.size() != continuations.size() || removed;
+        continuations = remaining;
+        markWorldIfChanged(before);
+        return removed;
     }
 
     /** Atomically persists one routed completion and consumes its completed Session. */

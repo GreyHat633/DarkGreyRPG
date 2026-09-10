@@ -1,10 +1,10 @@
-using DarkGreyRPG.Studio.Core.Graphs;
+﻿using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
 namespace DarkGreyRPG.Studio.Services;
 
 /// <summary>The identity entered when a canonical Session or Task is created.</summary>
-public sealed record CanonicalGraphResourceIdentityRequest(string Id, string DisplayName);
+public sealed record CanonicalGraphResourceIdentityRequest(string Id, string DisplayName, IReadOnlyList<string>? Tags = null);
 
 /// <summary>A canonical graph resource selected by a Story reference picker.</summary>
 public sealed record CanonicalGraphResourceChoice(
@@ -42,6 +42,10 @@ public sealed record CanonicalGraphResourceChoice(
 /// </summary>
 public interface ICanonicalStoryResourceDialogs
 {
+    ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string> tags)
+        => RequestResourceRename(resourceLabel, id, currentDisplayName);
+    ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName)
+        => RequestDisplayName(resourceLabel, id, currentDisplayName) is { } name ? new(id, name) : null;
     string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName) => null;
 
     CanonicalGraphResourceIdentityRequest? RequestCreate(

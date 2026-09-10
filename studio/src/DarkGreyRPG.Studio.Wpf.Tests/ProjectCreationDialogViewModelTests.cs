@@ -6,6 +6,17 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class ProjectCreationDialogViewModelTests
 {
     [TestMethod]
+    public void UppercaseProjectIdIsAcceptedWithoutNormalization()
+    {
+        var viewModel = ProjectCreationDialogViewModel.ForCreate(AppContext.BaseDirectory);
+        viewModel.ProjectFolderName = Guid.NewGuid().ToString("N");
+        viewModel.Id = "TestProject2";
+        Assert.IsTrue(viewModel.CanConfirm, viewModel.ValidationText);
+        Assert.IsFalse(viewModel.HasSuggestion);
+        Assert.AreEqual("TestProject2", viewModel.Id);
+    }
+
+    [TestMethod]
     public void RequiresDestinationIdentityAndDisplayName()
     {
         var viewModel = ProjectCreationDialogViewModel.ForCreate(string.Empty);

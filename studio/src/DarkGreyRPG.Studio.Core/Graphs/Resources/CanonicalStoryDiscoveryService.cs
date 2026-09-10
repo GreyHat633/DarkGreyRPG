@@ -56,16 +56,10 @@ public sealed class CanonicalStoryDiscoveryService
 
     public CanonicalStoryDiscoverySnapshot Discover()
     {
-        var storyFiles = EnumerateJsonFiles(_store.StoriesDirectory);
-        var membershipFiles = EnumerateJsonFiles(_store.MembershipsDirectory);
-        var storyIds = storyFiles
-            .Select(Path.GetFileName)
-            .Where(name => name is not null)
-            .Select(name => Path.GetFileNameWithoutExtension(name!));
-        var membershipIds = membershipFiles
-            .Select(Path.GetFileName)
-            .Where(name => name is not null)
-            .Select(name => Path.GetFileNameWithoutExtension(name!));
+        var storyIds = ReadLogicalIds(_store.StoriesDirectory, path =>
+            GraphResourceEnvelopeSerializer.Deserialize(File.ReadAllText(path)).Id);
+        var membershipIds = ReadLogicalIds(_store.MembershipsDirectory, path =>
+            CanonicalStoryMembershipSerializer.Deserialize(File.ReadAllText(path)).StoryId);
 
         var ids = storyIds
             .Concat(membershipIds)
@@ -82,8 +76,8 @@ public sealed class CanonicalStoryDiscoveryService
         // Do not route presence checks through repository.GetPath: an invalid
         // filename is itself a discoverable identity and strict path helpers
         // intentionally reject it before a root can be diagnosed.
-        var hasStoryRoot = File.Exists(Path.Combine(_store.StoriesDirectory, id + ".json"));
-        var hasMembershipRoot = File.Exists(Path.Combine(_store.MembershipsDirectory, id + ".json"));
+        var hasStoryRoot = HasRoot(_store.Stories, id);
+        var hasMembershipRoot = HasRoot(_store.Memberships, id);
         var issues = new List<CanonicalStoryDiscoveryIssue>(2);
         GraphResourceEnvelope? story = null;
         CanonicalStoryMembershipManifest? membership = null;
@@ -144,23 +138,42 @@ public sealed class CanonicalStoryDiscoveryService
             issues.ToArray());
     }
 
-    private static IReadOnlyList<string> EnumerateJsonFiles(string directory)
+    private static IReadOnlyList<string> ReadLogicalIds(string directory, Func<string, string> readId)
     {
-        if (!Directory.Exists(directory)) return [];
+        var ids = new List<string>();
+        foreach (var path in CanonicalResourceFileSystem.EnumerateJsonFiles(directory))
+        {
+            try
+            {
+                var id = readId(path);
+                // Bare B3 resources retain their filename identity, including
+                // the diagnostic for a payload/filename mismatch.
+                ids.Add(DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsFullId(id)
+                    ? id : Path.GetFileNameWithoutExtension(path));
+            }
+            catch (Exception exception) when (exception is GraphResourceEnvelopeException
+                or CanonicalStoryMembershipException
+                or IOException or UnauthorizedAccessException)
+            {
+                // Preserve the old diagnostic identity for malformed files;
+                // valid files are always keyed by their parsed content ID.
+                var fallback = Path.GetFileNameWithoutExtension(path);
+                if (!string.IsNullOrWhiteSpace(fallback)) ids.Add(fallback);
+            }
+        }
+        return ids;
+    }
 
-        try
-        {
-            return Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly)
-                .OrderBy(path => Path.GetFileName(path), StringComparer.Ordinal)
-                .ToArray();
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            // A root that cannot be listed contributes no identities. The
-            // other root is still independently discoverable and no write is
-            // attempted as part of recovery.
-            return [];
-        }
+    private static bool HasRoot(GraphResourceRepository repository, string id)
+    {
+        try { return File.Exists(repository.GetPath(id)); }
+        catch (GraphResourceRepositoryException) { return true; }
+    }
+
+    private static bool HasRoot(CanonicalStoryMembershipRepository repository, string id)
+    {
+        try { return File.Exists(repository.GetPath(id)); }
+        catch (CanonicalStoryMembershipRepositoryException) { return true; }
     }
 
     private static CanonicalStoryDiscoveryIssue MissingRoot(string id, string root)

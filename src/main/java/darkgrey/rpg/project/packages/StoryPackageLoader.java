@@ -201,8 +201,9 @@ public final class StoryPackageLoader {
         throws ProjectLoadException {
         StoryPackageManifest manifest = StoryPackageManifest.read(new File(directory, "manifest.json"));
         if (requireDgrs && !manifest.isDgrsV1()) throw new ProjectLoadException("Archive manifest is not DGRS v1");
-        if (expectedPackageId != null && !manifest.getPackageId()
-            .equals(expectedPackageId))
+        if (expectedPackageId != null && !darkgrey.rpg.identity.DgrResourceId.isFullId(manifest.getPackageId())
+            && !manifest.getPackageId()
+                .equals(expectedPackageId))
             throw new ProjectLoadException("Package source must be named '" + manifest.getPackageId() + "'");
         validateRequiredFiles(directory, manifest);
         ProjectRepository repository = new ProjectRepository(directory);

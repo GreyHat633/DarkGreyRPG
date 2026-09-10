@@ -46,7 +46,7 @@ public sealed class CanonicalResourceInspectorHierarchyTests
             view.UpdateLayout();
 
             Assert.AreEqual(kind, workspace.InspectorKindText);
-            Assert.AreEqual($"{identityLabel}：{id}", Field(view, "ResourceInspectorIdentityLine").Text);
+            Assert.AreEqual($"[{identityLabel}] {id}", Field(view, "ResourceInspectorIdentityLine").Text);
             Assert.AreEqual("标签：", Field(view, "ResourceInspectorTagsLabel").Text);
             Assert.AreEqual(14d, Field(view, "ResourceInspectorTagsLabel").FontSize);
             Assert.AreEqual(14d, Field(view, "ResourceInspectorTagsValue").FontSize);

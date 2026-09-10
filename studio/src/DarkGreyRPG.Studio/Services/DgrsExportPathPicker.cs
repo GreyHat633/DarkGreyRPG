@@ -21,7 +21,7 @@ public sealed class DgrsExportPathPicker(Func<Window?> ownerProvider) : IDgrsExp
             Filter = "DarkGrey RPG 故事包 (*.dgrs)|*.dgrs",
             DefaultExt = ".dgrs",
             AddExtension = true,
-            FileName = storyId + ".dgrs",
+            FileName = DarkGreyRPG.Studio.Core.Identity.DgrResourceId.PackageFileName(storyId),
             InitialDirectory = FindExistingDirectory(fullSuggestedDirectory),
             OverwritePrompt = true,
             CheckPathExists = true,

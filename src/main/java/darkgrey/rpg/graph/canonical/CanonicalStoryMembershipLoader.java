@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -16,7 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -27,10 +29,11 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
+import darkgrey.rpg.identity.DgrResourceId;
+
 /** Strict, read-only loader for schema-version-1/2/3 Story membership manifests. */
 public final class CanonicalStoryMembershipLoader {
 
-    private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9_-]*$");
     private static final Set<String> LEGACY_ROOT = set(
         "schema_version",
         "story_id",
@@ -53,7 +56,7 @@ public final class CanonicalStoryMembershipLoader {
     public CanonicalStoryMembership load(Path file) throws CanonicalStoryMembershipException {
         if (file == null) throw CanonicalStoryMembershipException
             .failure("story.membership.file.required", "Canonical Story membership file is required.");
-        if (!Files.isRegularFile(file)) throw CanonicalStoryMembershipException
+        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) throw CanonicalStoryMembershipException
             .failure("story.membership.file.missing", "Canonical Story membership file does not exist: " + file);
         try {
             return parse(
@@ -86,12 +89,30 @@ public final class CanonicalStoryMembershipLoader {
     public List<CanonicalStoryMembership> loadDirectory(Path directory) throws CanonicalStoryMembershipException {
         if (directory == null) throw CanonicalStoryMembershipException
             .failure("story.membership.directory.required", "Canonical Story membership directory is required.");
-        if (!Files.isDirectory(directory)) throw CanonicalStoryMembershipException.failure(
+        if (!Files.isDirectory(directory) || unsafePath(directory)) throw CanonicalStoryMembershipException.failure(
             "story.membership.directory.missing",
             "Canonical Story membership directory does not exist: " + directory);
-        List<Path> files = new ArrayList<Path>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*.json")) {
-            for (Path path : stream) if (Files.isRegularFile(path)) files.add(path);
+        final List<Path> files = new ArrayList<Path>();
+        try {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attributes) {
+                    return unsafePath(path) || attributes.isOther() ? FileVisitResult.SKIP_SUBTREE
+                        : FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path path, BasicFileAttributes attributes) {
+                    if (!unsafePath(path) && attributes.isRegularFile()
+                        && path.getFileName()
+                            .toString()
+                            .toLowerCase()
+                            .endsWith(".json"))
+                        files.add(path);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         } catch (IOException exception) {
             throw new CanonicalStoryMembershipException(
                 "story.membership.directory.read",
@@ -102,10 +123,10 @@ public final class CanonicalStoryMembershipLoader {
 
             @Override
             public int compare(Path left, Path right) {
-                return left.getFileName()
+                return directory.relativize(left)
                     .toString()
                     .compareTo(
-                        right.getFileName()
+                        directory.relativize(right)
                             .toString());
             }
         });
@@ -119,6 +140,16 @@ public final class CanonicalStoryMembershipLoader {
             result.add(membership);
         }
         return Collections.unmodifiableList(new ArrayList<CanonicalStoryMembership>(result));
+    }
+
+    private static boolean unsafePath(Path path) {
+        if (Files.isSymbolicLink(path)) return true;
+        try {
+            Object reparse = Files.getAttribute(path, "dos:reparsePoint", LinkOption.NOFOLLOW_LINKS);
+            return Boolean.TRUE.equals(reparse);
+        } catch (IOException | UnsupportedOperationException | IllegalArgumentException ignored) {
+            return false;
+        }
     }
 
     private static CanonicalStoryMembership parse(byte[] bytes, String fileName)
@@ -166,9 +197,10 @@ public final class CanonicalStoryMembershipLoader {
         CanonicalStoryMembership result = new CanonicalStoryMembership(version, storyId, owned, referenced);
         validate(result);
         String expectedFile = storyId + ".json";
-        if (!fileName.equals(expectedFile)) throw CanonicalStoryMembershipException.failure(
-            "story.membership.filename.mismatch",
-            "Canonical Story membership filename must equal story_id + '.json': " + fileName);
+        if (!DgrResourceId.isFullId(storyId) && !fileName.equals(expectedFile))
+            throw CanonicalStoryMembershipException.failure(
+                "story.membership.filename.mismatch",
+                "Canonical Story membership filename must equal story_id + '.json': " + fileName);
         return result;
     }
 
@@ -206,9 +238,7 @@ public final class CanonicalStoryMembershipLoader {
         List<String> handles = ids(element, path);
         Set<String> seen = new HashSet<String>();
         for (String handle : handles) {
-            boolean valid = itemHandle ? validItemOrderHandle(handle)
-                : ID_PATTERN.matcher(handle)
-                    .matches();
+            boolean valid = itemHandle ? validItemOrderHandle(handle) : DgrResourceId.isCompatibleId(handle);
             if (!valid) throw CanonicalStoryMembershipException.failure(
                 "story.membership." + kind + ".order.invalid",
                 "Display-order handle '" + handle + "' is invalid.");
@@ -220,11 +250,10 @@ public final class CanonicalStoryMembershipLoader {
 
     private static boolean validItemOrderHandle(String handle) {
         int separator = handle == null ? -1 : handle.indexOf(':');
-        if (separator <= 0 || separator == handle.length() - 1 || separator != handle.lastIndexOf(':')) return false;
+        if (separator <= 0 || separator == handle.length() - 1) return false;
         String prefix = handle.substring(0, separator);
         return ("item".equals(prefix) || "item_group".equals(prefix))
-            && ID_PATTERN.matcher(handle.substring(separator + 1))
-                .matches();
+            && DgrResourceId.isCompatibleId(handle.substring(separator + 1));
     }
 
     private static List<String> ids(JsonElement element, String path) throws CanonicalStoryMembershipException {
@@ -353,10 +382,8 @@ public final class CanonicalStoryMembershipLoader {
     }
 
     private static void validateId(String id, String code, String label) throws CanonicalStoryMembershipException {
-        if (id == null || !ID_PATTERN.matcher(id)
-            .matches())
-            throw CanonicalStoryMembershipException
-                .failure(code, label + " '" + id + "' must match [a-z0-9][a-z0-9_-]*.");
+        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalStoryMembershipException
+            .failure(code, label + " '" + id + "' must be a valid DGR resource ID.");
     }
 
     private static JsonElement readTree(JsonReader reader, String context) throws IOException {

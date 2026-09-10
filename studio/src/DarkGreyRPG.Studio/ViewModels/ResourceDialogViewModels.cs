@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Services;
@@ -23,6 +24,8 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
         Title = title;
         ActionText = actionText;
         Description = description;
+        NamespacePrefix = DgrResourceId.IsFullId(id)
+            ? DgrResourceId.Namespace(id) + ":" : string.Empty;
         _id = id;
         _displayName = displayName;
         ApplySuggestionCommand = new RelayCommand(ApplySuggestion, () => HasSuggestion);
@@ -35,12 +38,23 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
     public string Description { get; }
     public RelayCommand ApplySuggestionCommand { get; }
 
+    public string NamespacePrefix { get; }
+    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
+    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
+    public string EditableId
+    {
+        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
+            ? Id[NamespacePrefix.Length..] : Id;
+        set => Id = NamespacePrefix + (value ?? string.Empty);
+    }
+
     public string Id
     {
         get => _id;
         set
         {
             if (!SetProperty(ref _id, value ?? string.Empty)) return;
+            OnPropertyChanged(nameof(EditableId));
             RaiseValidationProperties();
         }
     }
@@ -55,7 +69,9 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
         }
     }
 
-    public string NormalizedSuggestion => ActorValidator.NormalizeId(Id);
+    public string NormalizedSuggestion => HasLockedNamespace
+        ? DgrResourceId.IsFullId(Id) || EditableId.Contains(':') ? Id : NamespacePrefix + NormalizeSuggestion(EditableId)
+        : NormalizeSuggestion(Id);
     public bool HasSuggestion => NormalizedSuggestion.Length > 0 &&
                                  !string.Equals(Id, NormalizedSuggestion, StringComparison.Ordinal);
     public string ValidationText
@@ -66,11 +82,18 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
                 .Where(issue => issue.Severity == ValidationSeverity.Error)
                 .Select(issue => issue.Message)
                 .ToList();
+            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
+                messages.Add("这里只填写资源 ID；NameSpace 请在故事右键菜单中修改。");
             if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("显示名称不能为空。");
             return string.Join(Environment.NewLine, messages);
         }
     }
     public bool CanConfirm => ValidationText.Length == 0;
+
+    private static string NormalizeSuggestion(string id)
+        => DgrResourceId.IsFullId(id) || id.Contains(':')
+            ? id
+            : ActorValidator.NormalizeId(id);
 
     public static ResourceIdentityDialogViewModel ForCreate(ProjectResourceType type, string suggestedId) =>
         new(

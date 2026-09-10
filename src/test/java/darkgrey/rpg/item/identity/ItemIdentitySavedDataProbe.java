@@ -15,6 +15,8 @@ public final class ItemIdentitySavedDataProbe {
         ItemStackDefinition key = new ItemStackDefinition("minecraft:tripwire_hook", 0, named);
         require(data.bindItem("royal_key", key), "bind exact Item ID");
         require(!data.bindItem("royal_key", key), "idempotent Item ID bind");
+        require(data.bindItem("Team:Token", key), "bind uppercase local Item ID");
+        require(data.bindItem("Team:token", key), "bind case-distinct Item ID");
         reject(new Runnable() {
 
             @Override
@@ -33,6 +35,8 @@ public final class ItemIdentitySavedDataProbe {
         require(data.addGroupMember("sword", gold), "second fuzzy Group member");
         require(!data.addGroupMember("sword", iron), "duplicate Group member rejected");
         require(data.addGroupMember("weapon", iron), "same item in multiple Groups");
+        require(data.addGroupMember("Team:Tokens", iron), "bind uppercase local Item Group ID");
+        require(data.addGroupMember("Team:tokens", iron), "bind case-distinct Item Group ID");
 
         NBTTagCompound checkpoint = new NBTTagCompound();
         data.writeToNBT(checkpoint);
@@ -46,6 +50,14 @@ public final class ItemIdentitySavedDataProbe {
                 .equals(key),
             "exact Item ID restart");
         require(
+            restarted.getItem("Team:Token")
+                .equals(key),
+            "uppercase local Item ID restart");
+        require(
+            restarted.getItem("Team:token")
+                .equals(key),
+            "case-distinct Item ID restart");
+        require(
             restarted.getGroup("sword")
                 .size() == 2,
             "multi-member Group restart");
@@ -53,6 +65,14 @@ public final class ItemIdentitySavedDataProbe {
             restarted.getGroup("weapon")
                 .size() == 1,
             "multi-Group restart");
+        require(
+            restarted.getGroup("Team:Tokens")
+                .size() == 1,
+            "uppercase local Item Group restart");
+        require(
+            restarted.getGroup("Team:tokens")
+                .size() == 1,
+            "case-distinct Item Group restart");
 
         NBTTagCompound unknown = (NBTTagCompound) checkpoint.copy();
         unknown.setString("unknown", "reject");
@@ -60,6 +80,7 @@ public final class ItemIdentitySavedDataProbe {
         System.out.println("ITEM_IDENTITY_EXACT_ROUNDTRIP=PASS");
         System.out.println("ITEM_GROUP_EXACT_FUZZY_MODEL=PASS");
         System.out.println("ITEM_MULTI_GROUP_RESTART=PASS");
+        System.out.println("ITEM_GROUP_CASE_SENSITIVE_RESTART=PASS");
     }
 
     private static void rejectRead(final NBTTagCompound value, String label) {

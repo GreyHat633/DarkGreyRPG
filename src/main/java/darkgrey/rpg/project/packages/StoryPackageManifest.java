@@ -307,7 +307,9 @@ public final class StoryPackageManifest {
     }
 
     private static String requiredPath(File file, JsonObject json, String field) throws ProjectLoadException {
-        String value = requiredString(file, json, field);
+        requiredString(file, json, field);
+        String value = json.get(field)
+            .getAsString();
         validatePath(file, value);
         return value;
     }
@@ -371,7 +373,8 @@ public final class StoryPackageManifest {
 
     private static String requiredId(File file, JsonObject json, String field) throws ProjectLoadException {
         String value = requiredString(file, json, field);
-        if (!value.matches("[a-z0-9][a-z0-9_.-]*")) throw failure(file, "Invalid " + field + " '" + value + "'");
+        if (!darkgrey.rpg.identity.DgrResourceId.isCompatibleId(value))
+            throw failure(file, "Invalid " + field + " '" + value + "'");
         return value;
     }
 

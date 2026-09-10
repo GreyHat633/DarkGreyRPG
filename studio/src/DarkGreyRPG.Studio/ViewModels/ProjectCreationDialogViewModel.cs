@@ -1,6 +1,7 @@
 using System.IO;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Validation;
+using DarkGreyRPG.Studio.Core.Projects;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
@@ -122,7 +123,7 @@ public sealed class ProjectCreationDialogViewModel : ObservableObject
         }
     }
 
-    public string NormalizedSuggestion => ActorValidator.NormalizeId(Id);
+    public string NormalizedSuggestion => ProjectIdentity.IsValid(Id) ? Id : ActorValidator.NormalizeId(Id);
 
     public bool HasSuggestion =>
         NormalizedSuggestion.Length > 0 &&
@@ -132,12 +133,9 @@ public sealed class ProjectCreationDialogViewModel : ObservableObject
     {
         get
         {
-            var messages = string.IsNullOrWhiteSpace(Id)
+            List<string> messages = string.IsNullOrWhiteSpace(Id)
                 ? ["项目 ID 不能为空。"]
-                : ActorValidator.ValidateId(Id, ActorIdPolicy.NewResource)
-                    .Where(issue => issue.Severity == ValidationSeverity.Error)
-                    .Select(issue => issue.Message)
-                    .ToList();
+                : ProjectIdentity.IsValid(Id) ? [] : ["项目 ID 只能包含英文字母、数字、下划线、点或连字符，且以字母或数字开头；大小写敏感。"];
 
             if (string.IsNullOrWhiteSpace(DisplayName))
             {

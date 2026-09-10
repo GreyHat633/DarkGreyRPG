@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -344,14 +345,14 @@ public static class CanonicalStoryMembershipSerializer
         }
     }
 
-    private static bool ValidateSimpleOrderHandle(string handle) => IdPattern.IsMatch(handle ?? string.Empty);
+    private static bool ValidateSimpleOrderHandle(string handle) => ValidResourceId(handle);
 
     private static bool ValidateItemOrderHandle(string handle)
     {
         var separator = handle?.IndexOf(':') ?? -1;
         if (separator <= 0 || separator == handle!.Length - 1) return false;
         var prefix = handle[..separator];
-        return prefix is "item" or "item_group" && IdPattern.IsMatch(handle[(separator + 1)..]);
+        return prefix is "item" or "item_group" && ValidResourceId(handle[(separator + 1)..]);
     }
 
     private static bool IsSupportedVersion(int version)
@@ -373,9 +374,12 @@ public static class CanonicalStoryMembershipSerializer
 
     private static void ValidateId(string? id, string code, string label)
     {
-        if (string.IsNullOrWhiteSpace(id) || !IdPattern.IsMatch(id))
-            throw Failure(code, $"{label} '{id}' must match [a-z0-9][a-z0-9_-]*.");
+        if (!ValidResourceId(id))
+            throw Failure(code, $"{label} '{id}' must be a valid full DGR ID or a compatible legacy ID.");
     }
+
+    private static bool ValidResourceId(string? id)
+        => DgrResourceId.IsFullId(id) || id is not null && IdPattern.IsMatch(id);
 
     private static readonly string[] LegacyMembershipMembers = ["actors", "sessions", "tasks"];
     private static readonly string[] CurrentMembershipMembers = ["actors", "items", "item_groups", "sessions", "tasks"];

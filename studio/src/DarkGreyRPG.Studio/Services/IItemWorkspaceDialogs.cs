@@ -1,4 +1,4 @@
-using DarkGreyRPG.Studio.Core.Graphs.Resources;
+﻿using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
 
 namespace DarkGreyRPG.Studio.Services;
@@ -52,6 +52,10 @@ public sealed record ItemWorkspaceChoice(
 /// <summary>UI boundary for canonical Story Item and Item Group actions.</summary>
 public interface IItemWorkspaceDialogs
 {
+    ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string> tags)
+        => RequestResourceRename(resourceLabel, id, currentDisplayName);
+    ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName)
+        => RequestDisplayName(resourceLabel, id, currentDisplayName) is { } name ? new(id, name) : null;
     string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName) => null;
 
     ItemCreationMode? RequestCreationMode(string storyDisplayName);

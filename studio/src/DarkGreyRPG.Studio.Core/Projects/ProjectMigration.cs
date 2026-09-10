@@ -121,7 +121,7 @@ internal static class ProjectMigration
                     temporaryPath => StorySerializer.Deserialize(File.ReadAllText(temporaryPath)));
             }
 
-            var upgradedProject = new ProjectResource { SchemaVersion = ProjectResource.CurrentSchemaVersion, Id = project.Id, DisplayName = project.DisplayName };
+            var upgradedProject = new ProjectResource { SchemaVersion = ProjectResource.CurrentSchemaVersion, Id = project.Id, DisplayName = project.DisplayName, ProjectOriginCode = project.ProjectOriginCode };
             writer.Write(projectPath, SerializeProject(upgradedProject), temporaryPath => ReadProject(temporaryPath));
             TryAppendLog(root, $"{DateTime.UtcNow:O} migration 2.0-to-2.1 succeeded; actors={actors.Length}; dialogues={dialogues.Length}; quests={quests.Length}; backup={backupPath}");
         }

@@ -1,4 +1,6 @@
 using DarkGreyRPG.Studio.Core.IO;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.Core.Actors;
@@ -22,12 +24,14 @@ public sealed class ActorRepository
     public IReadOnlyList<ActorResourceInfo> ListActors()
     {
         EnsureActorsDirectoryExists();
-        return Directory
-            .EnumerateFiles(ActorsDirectory, "*.json", SearchOption.TopDirectoryOnly)
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        return CanonicalResourceFileSystem.EnumerateJsonFiles(ActorsDirectory)
             .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
             .Select(path =>
             {
-                var resource = ActorSerializer.Read(path);
+                var resource = ReadResource(path);
+                if (!seen.Add(resource.Id))
+                    throw new ActorRepositoryException($"Actor ID '{resource.Id}' is present in multiple files, including '{path}'.");
                 return new ActorResourceInfo(resource.Id, resource.DisplayName, path, [.. resource.Tags], resource.Type ?? ActorResource.LegacyResourceType);
             })
             .ToArray();
@@ -36,13 +40,13 @@ public sealed class ActorRepository
     public ActorDocument LoadActor(string id)
     {
         ValidateExistingId(id);
-        var path = GetActorPath(id);
-        if (!File.Exists(path))
+        var path = FindActorPath(id);
+        if (path is null)
         {
             throw new ActorNotFoundException(id);
         }
 
-        return ActorDocument.FromResource(ActorSerializer.Read(path), path);
+        return ActorDocument.FromResource(ReadResource(path), path);
     }
 
     public ActorDocument CreateActor() => CreateActor(GetAvailableId("new_actor"), "新角色");
@@ -150,8 +154,8 @@ public sealed class ActorRepository
             return LoadActor(sourceId);
         }
 
-        var sourcePath = GetActorPath(sourceId);
-        if (!File.Exists(sourcePath))
+        var sourcePath = FindActorPath(sourceId);
+        if (sourcePath is null)
         {
             throw new ActorNotFoundException(sourceId);
         }
@@ -161,7 +165,7 @@ public sealed class ActorRepository
             throw new ActorCollisionException(targetId);
         }
 
-        var sourceResource = ActorSerializer.Read(sourcePath);
+        var sourceResource = ReadResource(sourcePath);
         var renamedResource = sourceResource.WithId(targetId);
         var serialized = ActorSerializer.Serialize(renamedResource, ActorIdPolicy.NewResource);
         var targetPath = GetActorPath(targetId);
@@ -222,8 +226,8 @@ public sealed class ActorRepository
     public void DeleteActor(string id)
     {
         ValidateExistingId(id);
-        var path = GetActorPath(id);
-        if (!File.Exists(path))
+        var path = FindActorPath(id);
+        if (path is null)
         {
             throw new ActorNotFoundException(id);
         }
@@ -258,7 +262,7 @@ public sealed class ActorRepository
         throw new ActorRepositoryException($"Could not allocate an available Actor ID based on '{baseId}'.");
     }
 
-    private bool ActorExists(string id) => File.Exists(GetActorPath(id));
+    private bool ActorExists(string id) => FindActorPath(id) is not null;
 
     private ActorDocument CreateTyped(string id, string displayName, bool individual)
     {
@@ -278,7 +282,49 @@ public sealed class ActorRepository
         return document;
     }
 
-    private string GetActorPath(string id) => Path.GetFullPath(Path.Combine(ActorsDirectory, id + ".json"));
+    public string GetActorPath(string id)
+    {
+        ValidateExistingId(id);
+        return FindActorPath(id) ?? CanonicalActorPath(id);
+    }
+
+    private string? FindActorPath(string id)
+    {
+        if (!DgrResourceId.IsFullId(id))
+        {
+            var legacyPath = Path.Combine(ActorsDirectory, id + ".json");
+            return File.Exists(legacyPath) ? legacyPath : null;
+        }
+        return CanonicalResourceFileSystem.FindUniquePath(
+            ActorsDirectory,
+            id,
+            path => ReadResource(path).Id,
+            (logicalId, paths) => new ActorRepositoryException(
+                $"Actor ID '{logicalId}' is present in multiple files: {string.Join(", ", paths)}."),
+            exception => exception is ActorValidationException or ActorDataException);
+    }
+
+    private string CanonicalActorPath(string id)
+        => Path.Combine(ActorsDirectory, DarkGreyRPG.Studio.Core.Identity.DgrResourceId.RelativeJsonPath(id));
+
+    private static ActorResource ReadResource(string path)
+    {
+        try
+        {
+            var resource = ActorSerializer.Deserialize(File.ReadAllText(path));
+            if (!DgrResourceId.IsFullId(resource.Id)
+                && !string.Equals(Path.GetFileName(path), resource.Id + ".json", StringComparison.Ordinal))
+                throw new ActorValidationException([new(
+                    "actor.filename.mismatch",
+                    $"Actor file name must match its ID: expected '{resource.Id}.json', got '{Path.GetFileName(path)}'.",
+                    nameof(ActorResource.Id))]);
+            return resource;
+        }
+        catch (ActorValidationException) { throw; }
+        catch (ActorDataException) { throw; }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        { throw new ActorDataException($"Could not read Actor file '{path}'.", exception); }
+    }
 
     private void EnsureActorsDirectoryExists(bool createIfMissing = false)
     {

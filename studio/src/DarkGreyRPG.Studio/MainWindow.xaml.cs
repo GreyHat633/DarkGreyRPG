@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,6 +15,21 @@ namespace DarkGreyRPG.Studio;
 
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
+    private void HomeResource_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left || sender is not FrameworkElement { DataContext: HomeStoryResourceRow row }) return;
+        _shell.OpenHomeResource(row);
+        e.Handled = true;
+    }
+
+    private void ReferencedResource_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left || sender is not FrameworkElement
+            { DataContext: ReferencedResourceRow { Resource.Kind: "Session" or "Task" } row }) return;
+        if (row.GraphCommand?.CanExecute(null) == true) row.GraphCommand.Execute(null);
+        e.Handled = true;
+    }
+
     private readonly DispatcherTimer _toastTimer = new();
     private readonly ISettingsService _settingsService;
     private readonly ShellViewModel _shell;
@@ -39,13 +54,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             crashLogService ?? new CrashLogService(settingsService.SettingsPath),
             new CanonicalStoryResourceDialogs(() => this),
             itemWorkspaceDialogs: new ItemWorkspaceDialogs(() => this),
-            dgrsExportPathPicker: new DgrsExportPathPicker(() => this));
+            dgrsExportPathPicker: new DgrsExportPathPicker(() => this),
+            namespaceSettings: settingsService,
+            namespaceDialogs: new NamespaceDialogs(() => this),
+            offlinePackageDialogs: new OfflinePackageDialogs(() => this));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
         _toastTimer.Tick += ToastTimer_OnTick;
         Closing += MainWindow_OnClosing;
         ApplyPersistedSettings(themeSettings.CurrentSettings);
+        Loaded += InitializeNamespaceOnLoaded;
+    }
+
+    private void InitializeNamespaceOnLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= InitializeNamespaceOnLoaded;
+        _shell.InitializeNamespaceWorkspace(ThemeSettings.CurrentSettings.LastProject);
     }
 
     public ThemeSettingsViewModel ThemeSettings { get; }
@@ -110,7 +135,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void HelpCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e) =>
         MessageBox.Show(
             this,
-            "DarkGrey RPG Studio 0.3.2.0_A RC\nDGRS packages, finalized authoring flows, and server-authoritative RPG runtime",
+            "DarkGrey RPG Studio 0.3.2.0_B4\nDGRS packages, finalized authoring flows, and server-authoritative RPG runtime",
             "关于",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -145,6 +170,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         StorySearchBox.Focus();
         StorySearchBox.SelectAll();
+    }
+
+    private void StoryList_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is ShellViewModel shell) shell.SelectedReferencedPackage = null;
     }
 
     private void StoryList_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -191,6 +221,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(openItem);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "修改 NameSpace…",
+            () => shell.ChangeStoryNamespace(story.Id, returnToGlobal: false),
+            enabled: story.HasCanonicalStory));
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "使用全局 NameSpace",
+            () => shell.ChangeStoryNamespace(story.Id, returnToGlobal: true),
+            enabled: story.HasCanonicalStory));
+        menu.Items.Add(FluentContextMenuFactory.CreateItem(
+            "添加外部资源引用…",
+            () => shell.AddExternalReference(story.Id),
+            enabled: story.HasCanonicalStory));
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(deleteItem);
         item.ContextMenu = menu;
@@ -282,7 +324,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var browserWidth = ResourceBrowserColumn.ActualWidth >= 200
                 ? ResourceBrowserColumn.ActualWidth
                 : _resourceBrowserWidth.Value;
-            _settingsService.Save(ThemeSettings.CurrentSettings with
+            _settingsService.Save(_settingsService.Load() with
             {
                 WindowWidth = bounds.Width,
                 WindowHeight = bounds.Height,
@@ -320,7 +362,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         _shell.SetRecentProjects(settings.RecentProjects);
-        _shell.RestoreLastProject(settings.LastProject);
         ApplyResourceBrowserVisibility(_shell.EffectiveResourceBrowserVisible);
     }
 

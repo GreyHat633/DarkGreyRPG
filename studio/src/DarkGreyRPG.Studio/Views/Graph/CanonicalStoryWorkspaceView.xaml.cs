@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -434,16 +434,17 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             CanonicalStoryFolderKind.Tasks => "任务",
             _ => throw new ArgumentOutOfRangeException(nameof(folderKind), folderKind, null),
         };
+        var isReadOnly = item is CanonicalStoryActorItem { IsReadOnly: true }
+            or CanonicalStoryItemItem { IsReadOnly: true } or CanonicalStoryGraphItem { IsReadOnly: true };
         var menu = FluentContextMenuFactory.Create(target);
+        if (item is CanonicalStoryGraphItem)
+            menu.Items.Add(FluentContextMenuFactory.CreateItem(
+                ((CanonicalStoryGraphItem)item).ResourceKind == GraphResourceKind.Session ? "会话图" : "任务图",
+                () => _ = ActivateResourceItem(item)));
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
             "编辑",
-            () => _ = item is CanonicalStoryGraphItem
-                ? ActivateResourceItem(item)
-                : SelectResourceItem(item)));
-        menu.Items.Add(FluentContextMenuFactory.CreateItem(
-            "重命名",
             () => _ = Workspace.RequestRename(item),
-            item is not CanonicalStoryMissingItem));
+            item is not CanonicalStoryMissingItem && !isReadOnly));
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
             $"新建{label}",
@@ -459,6 +460,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             () => RequestDeleteResource(item),
             Workspace.DeleteSelectedResourceCommand.CanExecute(null),
             critical: !referenced));
+        target.ContextMenu = menu;
         menu.IsOpen = true;
         args.Handled = true;
     }

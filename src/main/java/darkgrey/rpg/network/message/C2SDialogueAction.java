@@ -3,7 +3,6 @@ package darkgrey.rpg.network.message;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
-import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.network.MainThreadScheduler;
 import io.netty.buffer.ByteBuf;
 
@@ -66,12 +65,9 @@ public final class C2SDialogueAction implements IMessage {
 
                 @Override
                 public void run() {
-                    DarkGreyRpg.getDialogueSessions()
-                        .handleAction(
-                            context.getServerHandler().playerEntity,
-                            message.sessionId,
-                            message.nodeId,
-                            message.choiceIndex);
+                    darkgrey.rpg.runtime.ChatMessages.error(
+                        context.getServerHandler().playerEntity,
+                        "Legacy Dialogue execution is retired. Use a canonical Session.");
                 }
             });
             return null;

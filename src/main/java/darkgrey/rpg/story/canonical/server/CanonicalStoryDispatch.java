@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition;
 
 /** Detached instruction for the Forge coordinator after a Story cursor advances. */
 public final class CanonicalStoryDispatch {
@@ -24,6 +25,28 @@ public final class CanonicalStoryDispatch {
     private final Double waitY;
     private final Double waitZ;
     private final Double waitRadius;
+    private final CanonicalStoryStartDisposition startDisposition;
+
+    CanonicalStoryDispatch withStartDisposition(CanonicalStoryStartDisposition disposition) {
+        return new CanonicalStoryDispatch(
+            kind,
+            snapshot,
+            placementId,
+            resourceId,
+            activationLogic,
+            actionProperties,
+            targetStoryId,
+            waitDimension,
+            waitX,
+            waitY,
+            waitZ,
+            waitRadius,
+            disposition);
+    }
+
+    public CanonicalStoryStartDisposition getStartDisposition() {
+        return startDisposition;
+    }
 
     CanonicalStoryDispatch(CanonicalStoryDispatchKind kind, CanonicalStoryInstanceSnapshot snapshot, String placementId,
         String resourceId, boolean activationLogic, Map<String, JsonElement> actionProperties, String targetStoryId) {
@@ -45,6 +68,26 @@ public final class CanonicalStoryDispatch {
     CanonicalStoryDispatch(CanonicalStoryDispatchKind kind, CanonicalStoryInstanceSnapshot snapshot, String placementId,
         String resourceId, boolean activationLogic, Map<String, JsonElement> actionProperties, String targetStoryId,
         Integer waitDimension, Double waitX, Double waitY, Double waitZ, Double waitRadius) {
+        this(
+            kind,
+            snapshot,
+            placementId,
+            resourceId,
+            activationLogic,
+            actionProperties,
+            targetStoryId,
+            waitDimension,
+            waitX,
+            waitY,
+            waitZ,
+            waitRadius,
+            null);
+    }
+
+    private CanonicalStoryDispatch(CanonicalStoryDispatchKind kind, CanonicalStoryInstanceSnapshot snapshot,
+        String placementId, String resourceId, boolean activationLogic, Map<String, JsonElement> actionProperties,
+        String targetStoryId, Integer waitDimension, Double waitX, Double waitY, Double waitZ, Double waitRadius,
+        CanonicalStoryStartDisposition startDisposition) {
         if (kind == null || snapshot == null)
             throw new IllegalArgumentException("Canonical Story dispatch is required.");
         this.kind = kind;
@@ -66,6 +109,7 @@ public final class CanonicalStoryDispatch {
         this.waitY = waitY;
         this.waitZ = waitZ;
         this.waitRadius = waitRadius;
+        this.startDisposition = startDisposition;
     }
 
     public CanonicalStoryDispatchKind getKind() {

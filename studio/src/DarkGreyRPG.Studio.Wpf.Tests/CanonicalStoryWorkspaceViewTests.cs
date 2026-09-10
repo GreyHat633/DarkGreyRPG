@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -447,11 +447,14 @@ public sealed class CanonicalStoryWorkspaceViewTests
         view.Resources["TextOnAccentFillColorPrimaryBrush"] = Brushes.White;
         var item = workspace.ItemItems.Single();
         var itemButton = Descendants<Button>(view).Single(button => ReferenceEquals(button.Tag, item));
-        var itemTitle = Descendants<TextBlock>(itemButton).Single(text => text.Text == "Item");
-        var itemIdentity = Descendants<TextBlock>(itemButton).Single(text => text.Text == "Item_ID: item");
+        var itemTitle = Descendants<TextBlock>(itemButton).Single();
+        var runs = itemTitle.Inlines.OfType<System.Windows.Documents.Run>().Select(run => run.Text).ToArray();
+        CollectionAssert.Contains(runs, "Item");
+        CollectionAssert.Contains(runs, "[Item_ID] item");
+        Assert.AreEqual(TextTrimming.CharacterEllipsis, itemTitle.TextTrimming);
+        Assert.AreEqual(TextAlignment.Left, itemTitle.TextAlignment);
 
         Assert.AreEqual(Brushes.Black, itemTitle.Foreground);
-        Assert.AreEqual(Brushes.Gray, itemIdentity.Foreground);
 
         Assert.IsTrue(view.SelectResourceItem(item));
         view.UpdateLayout();
@@ -461,14 +464,12 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.AreNotEqual(Brushes.Transparent, itemButton.Background);
         Assert.AreNotEqual(Brushes.Transparent, itemButton.BorderBrush);
         Assert.AreEqual(Brushes.White, itemTitle.Foreground);
-        Assert.AreEqual(Brushes.White, itemIdentity.Foreground);
 
         Assert.IsTrue(view.SelectResourceItem(workspace.SessionItems.Single()));
         view.UpdateLayout();
         Assert.AreEqual(Brushes.Transparent, itemButton.Background);
         Assert.AreEqual(Brushes.Transparent, itemButton.BorderBrush);
         Assert.AreEqual(Brushes.Black, itemTitle.Foreground);
-        Assert.AreEqual(Brushes.Gray, itemIdentity.Foreground);
     }
 
     [STATestMethod]

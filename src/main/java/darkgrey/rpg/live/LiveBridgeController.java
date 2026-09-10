@@ -8,7 +8,6 @@ import net.minecraft.world.WorldServer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
 import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.project.ProjectRepository;
@@ -22,6 +21,14 @@ public final class LiveBridgeController {
     private final LivePickService picks;
     private final PlayTestManager playTests;
     private final LiveStateSnapshotBuilder snapshots;
+    private darkgrey.rpg.project.packages.StoryPackageLoader packages;
+
+    public LiveBridgeController(ProjectRepository repository, LivePickService picks,
+        darkgrey.rpg.project.packages.StoryPackageLoader packages) {
+        this(repository, null, null, picks, null);
+        if (packages == null) throw new IllegalArgumentException("Package loader is required.");
+        this.packages = packages;
+    }
 
     public LiveBridgeController(ProjectRepository repository, DialogueSessionManager dialogues,
         StoryRuntimeService stories, LivePickService picks, PlayTestManager playTests) {
@@ -53,6 +60,22 @@ public final class LiveBridgeController {
             return;
         }
         if ("project.reload".equals(type)) {
+            if (packages != null) {
+                darkgrey.rpg.project.packages.StoryPackageRuntimeReloader.Result result = darkgrey.rpg.project.packages.StoryPackageRuntimeReloader
+                    .reload(repository, packages);
+                if (result.isPackageSetCommitted())
+                    darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle.reconcile(
+                        MinecraftServer.getServer()
+                            .worldServerForDimension(0).mapStorage,
+                        packages.getPackages());
+                sink.send(
+                    response(
+                        requestId,
+                        result.isSuccessful(),
+                        result.getProjectReload()
+                            .getSummary()));
+                return;
+            }
             ProjectRepository.ReloadResult result = repository.reload();
             if (result.isSuccessful()) {
                 dialogues.clearSessions();
@@ -82,6 +105,14 @@ public final class LiveBridgeController {
             return;
         }
         if ("test.start".equals(type)) {
+            if (playTests == null) {
+                sink.send(
+                    response(
+                        requestId,
+                        false,
+                        "Legacy node Play Test is retired; use /dgr story start for canonical Story execution."));
+                return;
+            }
             String storyId = string(message, "story_id");
             String nodeId = string(message, "node_id");
             boolean started = playTests.start(player, storyId, nodeId);
@@ -89,6 +120,14 @@ public final class LiveBridgeController {
             return;
         }
         if ("test.stop".equals(type)) {
+            if (playTests == null) {
+                sink.send(
+                    response(
+                        requestId,
+                        false,
+                        "No legacy Play Test exists; use /dgr story reset for canonical state."));
+                return;
+            }
             boolean stopped = playTests.stop(player);
             sink.send(response(requestId, stopped, stopped ? "RPG state restored" : "No active play test"));
             return;
@@ -127,11 +166,12 @@ public final class LiveBridgeController {
                 continue;
             }
             for (Object value : world.loadedEntityList) {
-                if (!(value instanceof Entity) || !CustomNpcActorBinding.isCustomNpc((Entity) value)) {
+                if (!(value instanceof Entity)) {
                     continue;
                 }
                 Entity entity = (Entity) value;
-                if (!actorId.equals(CustomNpcActorBinding.getActorId(entity))) {
+                if (!darkgrey.rpg.identity.EntityDgrIdentityResolver.resolveActorIds(entity)
+                    .contains(actorId)) {
                     continue;
                 }
                 world.func_147487_a(

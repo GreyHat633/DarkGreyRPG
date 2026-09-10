@@ -1,4 +1,4 @@
-using DarkGreyRPG.Studio.Core.Actors;
+﻿using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -27,6 +27,10 @@ public enum UnsavedChangesChoice
 
 public interface IActorWorkspaceDialogs
 {
+    ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string> tags)
+        => RequestResourceRename(resourceLabel, id, currentDisplayName);
+    ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName)
+        => RequestDisplayName(resourceLabel, id, currentDisplayName) is { } name ? new(id, name) : null;
     string? RequestDisplayName(string resourceLabel, string id, string currentDisplayName) => null;
 
     bool SupportsCanonicalActorKinds => false;

@@ -34,10 +34,15 @@ public final class CanonicalStoryTriggerIndex {
     }
 
     public List<Match> matchActor(String actorId) {
+        return matchActor(actorId, null);
+    }
+
+    public List<Match> matchActor(String actorId, java.util.Set<String> eligibleStoryIds) {
         if (actorId == null || actorId.trim()
             .isEmpty()) throw new IllegalArgumentException("Actor ID is required.");
         List<Match> result = new ArrayList<Match>();
         for (Map.Entry<String, CanonicalStoryStartConfiguration> entry : configurations.entrySet()) {
+            if (eligibleStoryIds != null && !eligibleStoryIds.contains(entry.getKey())) continue;
             CanonicalStoryStartConfiguration.Trigger trigger = entry.getValue()
                 .findActor(actorId);
             if (trigger != null) result.add(new Match(entry.getKey(), trigger.getPortId()));
@@ -46,11 +51,17 @@ public final class CanonicalStoryTriggerIndex {
     }
 
     public List<Match> matchRegion(int dimension, double x, double y, double z) {
+        return matchRegion(dimension, x, y, z, null);
+    }
+
+    public List<Match> matchRegion(int dimension, double x, double y, double z,
+        java.util.Set<String> eligibleStoryIds) {
         if (Double.isNaN(x) || Double
             .isInfinite(x) || Double.isNaN(y) || Double.isInfinite(y) || Double.isNaN(z) || Double.isInfinite(z))
             throw new IllegalArgumentException("Finite region coordinates are required.");
         List<Match> result = new ArrayList<Match>();
         for (Map.Entry<String, CanonicalStoryStartConfiguration> entry : configurations.entrySet()) {
+            if (eligibleStoryIds != null && !eligibleStoryIds.contains(entry.getKey())) continue;
             CanonicalStoryStartConfiguration.Trigger trigger = entry.getValue()
                 .findRegion(dimension, x, y, z);
             if (trigger != null) result.add(new Match(entry.getKey(), trigger.getPortId()));

@@ -1,4 +1,6 @@
 using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Validation;
 
@@ -18,25 +20,35 @@ public sealed class StoryRepository
     public string ProjectDirectory { get; }
     public string StoriesDirectory { get; }
 
-    public IReadOnlyList<StoryResource> ListStories() => Directory.Exists(StoriesDirectory)
-        ? Directory.EnumerateFiles(StoriesDirectory, "*.json")
+    public IReadOnlyList<StoryResource> ListStories()
+    {
+        if (!Directory.Exists(StoriesDirectory)) return [];
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        return CanonicalResourceFileSystem.EnumerateJsonFiles(StoriesDirectory)
             .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
-            .Select(StorySerializer.Read)
+            .Select(path =>
+            {
+                var story = ReadResource(path);
+                if (!seen.Add(story.Id))
+                    throw new StoryRepositoryException($"Story ID '{story.Id}' is present in multiple files, including '{path}'.");
+                return story;
+            })
             .ToArray()
-        : [];
+            ;
+    }
 
     public StoryResource LoadStory(string id)
     {
-        var path = GetStoryPath(id);
-        if (!File.Exists(path)) throw new StoryNotFoundException(id);
-        return StorySerializer.Read(path);
+        var path = FindStoryPath(id);
+        if (path is null) throw new StoryNotFoundException(id);
+        return ReadResource(path);
     }
 
     public StoryDocument LoadStoryDocument(string id)
     {
-        var path = GetStoryPath(id);
-        if (!File.Exists(path)) throw new StoryNotFoundException(id);
-        return StoryDocument.FromResource(StorySerializer.Read(path), path);
+        var path = FindStoryPath(id);
+        if (path is null) throw new StoryNotFoundException(id);
+        return StoryDocument.FromResource(ReadResource(path), path);
     }
 
     public StoryDocument LoadDocument(string id) => LoadStoryDocument(id);
@@ -94,7 +106,7 @@ public sealed class StoryRepository
     {
         ThrowIfInvalidNewId(id);
         var path = GetStoryPath(id);
-        if (File.Exists(path)) throw new StoryRepositoryException($"Story '{id}' already exists.");
+        if (FindStoryPath(id) is not null) throw new StoryRepositoryException($"Story '{id}' already exists.");
         var story = new StoryResource
         {
             Id = id, DisplayName = displayName, Title = displayName, Entry = "end",
@@ -108,7 +120,7 @@ public sealed class StoryRepository
     public string GetAvailableId(string baseId)
     {
         ThrowIfInvalidNewId(baseId);
-        if (!File.Exists(GetStoryPath(baseId))) return baseId;
+        if (FindStoryPath(baseId) is null) return baseId;
 
         for (var suffix = 2; suffix < int.MaxValue; suffix++)
         {
@@ -119,7 +131,42 @@ public sealed class StoryRepository
         throw new StoryRepositoryException($"Could not allocate an available Story ID based on '{baseId}'.");
     }
 
-    private string GetStoryPath(string id) => Path.Combine(StoriesDirectory, id + ".json");
+    public string GetStoryPath(string id)
+    {
+        ValidateExistingId(id);
+        return FindStoryPath(id) ?? Path.Combine(StoriesDirectory, DgrResourceId.RelativeJsonPath(id));
+    }
+
+    private string? FindStoryPath(string id)
+    {
+        if (!DgrResourceId.IsFullId(id))
+        {
+            var legacyPath = Path.Combine(StoriesDirectory, id + ".json");
+            return File.Exists(legacyPath) ? legacyPath : null;
+        }
+        return CanonicalResourceFileSystem.FindUniquePath(
+            StoriesDirectory,
+            id,
+            path => ReadResource(path).Id,
+            (logicalId, paths) => new StoryRepositoryException(
+                $"Story ID '{logicalId}' is present in multiple files: {string.Join(", ", paths)}."),
+            exception => exception is StoryDataException);
+    }
+
+    private static StoryResource ReadResource(string path)
+    {
+        try
+        {
+            var resource = StorySerializer.Deserialize(File.ReadAllText(path));
+            if (!DgrResourceId.IsFullId(resource.Id)
+                && !string.Equals(Path.GetFileName(path), resource.Id + ".json", StringComparison.Ordinal))
+                throw new StoryDataException($"Story file name must match its ID '{resource.Id}'.");
+            return resource;
+        }
+        catch (StoryDataException) { throw; }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        { throw new StoryDataException($"Could not read Story file '{path}'.", exception); }
+    }
 
     private static void ValidateExistingId(string id)
     {

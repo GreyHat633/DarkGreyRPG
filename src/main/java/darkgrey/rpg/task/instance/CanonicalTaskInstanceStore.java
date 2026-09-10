@@ -103,6 +103,24 @@ public final class CanonicalTaskInstanceStore {
         return removed;
     }
 
+    /** Permanently discards every Task instance for one exact player/Story identity. */
+    public synchronized int discardByPlayerStory(UUID playerUuid, String storyInstanceId) {
+        if (playerUuid == null || blank(storyInstanceId))
+            throw new IllegalArgumentException("Player and Story identity are required.");
+        int removed = 0;
+        java.util.Iterator<Map.Entry<Key, CanonicalTaskInstance>> iterator = instances.entrySet()
+            .iterator();
+        while (iterator.hasNext()) {
+            Key key = iterator.next()
+                .getKey();
+            if (playerUuid.equals(key.player) && storyInstanceId.equals(key.story)) {
+                iterator.remove();
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     public synchronized boolean acceptEvent(UUID playerUuid, String storyInstanceId, String taskNodePlacementId,
         CanonicalTaskEvent event) {
         return acceptEvent(playerUuid, storyInstanceId, taskNodePlacementId, event, now());

@@ -420,6 +420,14 @@ public partial class ProjectGraphView : UserControl
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(ActionMenuItem("聚焦此节点", () => FocusNode(node)));
         menu.Items.Add(ActionMenuItem("复制 Story ID", () => Clipboard.SetText(node.Id)));
+        if (Window.GetWindow(this)?.DataContext is DarkGreyRPG.Studio.ViewModels.ShellViewModel shell)
+        {
+            var isCanonicalStory = shell.ProjectHome.Stories
+                .FirstOrDefault(story => story.Id == node.Id)?.HasCanonicalStory == true;
+            menu.Items.Add(ActionMenuItem("修改 NameSpace…", () => shell.ChangeStoryNamespace(node.Id, false), isCanonicalStory));
+            menu.Items.Add(ActionMenuItem("使用全局 NameSpace", () => shell.ChangeStoryNamespace(node.Id, true), isCanonicalStory));
+            menu.Items.Add(ActionMenuItem("添加外部资源引用…", () => shell.AddExternalReference(node.Id), isCanonicalStory));
+        }
         menu.Items.Add(ActionMenuItem("查看该 Story 诊断", FocusProblems, node.HasWarning));
         return menu;
     }

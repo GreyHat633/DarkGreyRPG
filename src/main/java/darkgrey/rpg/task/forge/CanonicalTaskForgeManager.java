@@ -191,6 +191,12 @@ public final class CanonicalTaskForgeManager {
         return context.data.cancelByStory(requirePlayerUuid(player), requireText(storyId, "Story ID"));
     }
 
+    /** Permanently discards every Task placement for this exact player/Story identity. */
+    public int discardByPlayerStory(EntityPlayerMP player, String storyId) {
+        Context context = context(player);
+        return context.data.discardByPlayerStory(requirePlayerUuid(player), requireText(storyId, "Story ID"));
+    }
+
     /** Package-private seam for focused probes that cannot construct a live EntityPlayerMP. */
     CanonicalTaskInstanceSnapshot startTrustedForProbe(UUID trustedPlayerUuid, ProjectSnapshot project,
         CanonicalTaskSavedData data, String storyInstanceId, String taskNodePlacementId, String taskResourceId) {

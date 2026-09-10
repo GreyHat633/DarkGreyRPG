@@ -1,5 +1,7 @@
-using DarkGreyRPG.Studio.Core.Actors;
+﻿using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Items;
+using DarkGreyRPG.Studio.Core.Packaging;
 using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -17,6 +19,8 @@ public sealed record CanonicalStoryWorkspaceEntry<T>(
     CanonicalStoryWorkspaceMembershipKind MembershipKind,
     T? Resource)
 {
+    /// <summary>Provider metadata when a referenced member was resolved from references/*.dgrs.</summary>
+    public OfflineProviderResource? Provider { get; init; }
     public CanonicalStoryWorkspaceMembershipKind Kind => MembershipKind;
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced;
@@ -72,7 +76,7 @@ public sealed class CanonicalStoryWorkspaceSnapshot
     private static GraphResourceEnvelope CloneEnvelope(GraphResourceEnvelope envelope)
         => new(envelope.ResourceKind, envelope.Id, envelope.DisplayName, envelope.Graph!)
         {
-            SchemaVersion = envelope.SchemaVersion,
+            SchemaVersion = envelope.SchemaVersion, Tags = envelope.Tags.ToArray(),
         };
 
     private static CanonicalStoryMembershipManifest CloneMembership(CanonicalStoryMembershipManifest manifest)
@@ -89,15 +93,18 @@ public sealed class CanonicalStoryWorkspaceLoader
     private readonly CanonicalProjectGraphStore _store;
     private readonly ActorRepository _actors;
     private readonly ItemRepository _items;
+    private readonly OfflineProviderCatalog? _providers;
 
     public CanonicalStoryWorkspaceLoader(
         CanonicalProjectGraphStore store,
         ActorRepository? actors = null,
-        ItemRepository? items = null)
+        ItemRepository? items = null,
+        OfflineProviderCatalog? providers = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _actors = actors ?? new ActorRepository(store.ProjectDirectory);
         _items = items ?? new ItemRepository(store.ProjectDirectory);
+        _providers = providers ?? OfflineProviderCatalog.Load(store.ProjectDirectory);
     }
 
     /// <summary>
@@ -114,26 +121,30 @@ public sealed class CanonicalStoryWorkspaceLoader
         var membership = _store.Memberships.Load(storyId);
 
         var issues = new List<ValidationIssue>();
-        var actors = ResolveActors(membership, issues);
+        var actors = ResolveActors(membership, storyId, issues);
         var items = ResolveItems(
             membership.OwnedResources.Items,
             membership.ReferencedResources.Items,
+            storyId,
             issues);
         var itemGroups = ResolveItemGroups(
             membership.OwnedResources.ItemGroups,
             membership.ReferencedResources.ItemGroups,
+            storyId,
             issues);
         var sessions = ResolveGraphResources(
             membership.OwnedResources.Sessions,
             membership.ReferencedResources.Sessions,
             _store.Sessions,
             "Session",
+            storyId,
             issues);
         var tasks = ResolveGraphResources(
             membership.OwnedResources.Tasks,
             membership.ReferencedResources.Tasks,
             _store.Tasks,
             "Task",
+            storyId,
             issues);
 
         return new CanonicalStoryWorkspaceSnapshot(story, membership, actors, items, itemGroups, sessions, tasks, issues);
@@ -142,48 +153,58 @@ public sealed class CanonicalStoryWorkspaceLoader
     private IReadOnlyList<CanonicalStoryWorkspaceEntry<IndividualItemResource>> ResolveItems(
         IEnumerable<string> ownedIds,
         IEnumerable<string> referencedIds,
+        string storyId,
         ICollection<ValidationIssue> issues)
     {
         var result = new List<CanonicalStoryWorkspaceEntry<IndividualItemResource>>();
-        ResolveItemList(ownedIds, CanonicalStoryWorkspaceMembershipKind.Owned, result, issues);
-        ResolveItemList(referencedIds, CanonicalStoryWorkspaceMembershipKind.Referenced, result, issues);
+        ResolveItemList(ownedIds, CanonicalStoryWorkspaceMembershipKind.Owned, storyId, result, issues);
+        ResolveItemList(referencedIds, CanonicalStoryWorkspaceMembershipKind.Referenced, storyId, result, issues);
         return result;
     }
 
     private IReadOnlyList<CanonicalStoryWorkspaceEntry<CollectiveItemResource>> ResolveItemGroups(
         IEnumerable<string> ownedIds,
         IEnumerable<string> referencedIds,
+        string storyId,
         ICollection<ValidationIssue> issues)
     {
         var result = new List<CanonicalStoryWorkspaceEntry<CollectiveItemResource>>();
-        ResolveItemGroupList(ownedIds, CanonicalStoryWorkspaceMembershipKind.Owned, result, issues);
-        ResolveItemGroupList(referencedIds, CanonicalStoryWorkspaceMembershipKind.Referenced, result, issues);
+        ResolveItemGroupList(ownedIds, CanonicalStoryWorkspaceMembershipKind.Owned, storyId, result, issues);
+        ResolveItemGroupList(referencedIds, CanonicalStoryWorkspaceMembershipKind.Referenced, storyId, result, issues);
         return result;
     }
 
     private void ResolveItemList(
         IEnumerable<string> ids,
         CanonicalStoryWorkspaceMembershipKind membershipKind,
+        string storyId,
         ICollection<CanonicalStoryWorkspaceEntry<IndividualItemResource>> result,
         ICollection<ValidationIssue> issues)
     {
-        foreach (var id in ids) result.Add(ResolveItem(id, membershipKind, issues));
+        foreach (var id in ids) result.Add(ResolveItem(id, membershipKind, storyId, issues));
     }
 
     private CanonicalStoryWorkspaceEntry<IndividualItemResource> ResolveItem(
         string id,
         CanonicalStoryWorkspaceMembershipKind membershipKind,
+        string storyId,
         ICollection<ValidationIssue> issues)
     {
         IndividualItemResource? resource = null;
         try { resource = _items.LoadItem(id); }
-        catch (ItemNotFoundException) { issues.Add(MissingIssue("Item", id, "items")); }
+        catch (ItemNotFoundException) { }
+        if (resource is not null) return new(id, membershipKind, resource);
+        if (membershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced
+            && TryResolveItemProvider(DgrResourceKind.Item, id, out var provider, out resource))
+            return new(id, membershipKind, resource) { Provider = provider };
+        issues.Add(MissingIssue(storyId, "Item", id, "items"));
         return new(id, membershipKind, resource);
     }
 
     private void ResolveItemGroupList(
         IEnumerable<string> ids,
         CanonicalStoryWorkspaceMembershipKind membershipKind,
+        string storyId,
         ICollection<CanonicalStoryWorkspaceEntry<CollectiveItemResource>> result,
         ICollection<ValidationIssue> issues)
     {
@@ -191,26 +212,40 @@ public sealed class CanonicalStoryWorkspaceLoader
         {
             CollectiveItemResource? resource = null;
             try { resource = _items.LoadGroup(id); }
-            catch (ItemNotFoundException) { issues.Add(MissingIssue("ItemGroup", id, "item_groups")); }
+            catch (ItemNotFoundException) { }
+            if (resource is not null)
+            {
+                result.Add(new(id, membershipKind, resource));
+                continue;
+            }
+            if (membershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced
+                && TryResolveItemProvider(DgrResourceKind.ItemGroup, id, out var provider, out resource))
+            {
+                result.Add(new(id, membershipKind, resource) { Provider = provider });
+                continue;
+            }
+            issues.Add(MissingIssue(storyId, "ItemGroup", id, "item_groups"));
             result.Add(new(id, membershipKind, resource));
         }
     }
 
     private IReadOnlyList<CanonicalStoryWorkspaceEntry<ActorDocument>> ResolveActors(
         CanonicalStoryMembershipManifest membership,
+        string storyId,
         ICollection<ValidationIssue> issues)
     {
         var owned = membership.OwnedResources.Actors;
         var referenced = membership.ReferencedResources.Actors;
         var result = new List<CanonicalStoryWorkspaceEntry<ActorDocument>>(owned.Count + referenced.Count);
-        ResolveActorList(owned, CanonicalStoryWorkspaceMembershipKind.Owned, result, issues);
-        ResolveActorList(referenced, CanonicalStoryWorkspaceMembershipKind.Referenced, result, issues);
+        ResolveActorList(owned, CanonicalStoryWorkspaceMembershipKind.Owned, storyId, result, issues);
+        ResolveActorList(referenced, CanonicalStoryWorkspaceMembershipKind.Referenced, storyId, result, issues);
         return result;
     }
 
     private void ResolveActorList(
         IEnumerable<string> ids,
         CanonicalStoryWorkspaceMembershipKind membershipKind,
+        string storyId,
         ICollection<CanonicalStoryWorkspaceEntry<ActorDocument>> result,
         ICollection<ValidationIssue> issues)
     {
@@ -223,35 +258,45 @@ public sealed class CanonicalStoryWorkspaceLoader
                 // or scan unrelated Actor files.
                 actor = _actors.LoadActor(id);
             }
-            catch (ActorNotFoundException)
+            catch (ActorNotFoundException) { }
+            if (actor is not null)
             {
-                issues.Add(MissingIssue("Actor", id, "actors"));
+                result.Add(new CanonicalStoryWorkspaceEntry<ActorDocument>(id, membershipKind, actor));
+                continue;
             }
-
+            if (membershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced
+                && TryResolveActorProvider(id, out var provider, out actor))
+            {
+                result.Add(new CanonicalStoryWorkspaceEntry<ActorDocument>(id, membershipKind, actor) { Provider = provider });
+                continue;
+            }
+            issues.Add(MissingIssue(storyId, "Actor", id, "actors"));
             result.Add(new CanonicalStoryWorkspaceEntry<ActorDocument>(id, membershipKind, actor));
         }
     }
 
-    private static IReadOnlyList<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> ResolveGraphResources(
+    private IReadOnlyList<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> ResolveGraphResources(
         IEnumerable<string> ownedIds,
         IEnumerable<string> referencedIds,
         GraphResourceRepository repository,
         string kind,
+        string storyId,
         ICollection<ValidationIssue> issues)
     {
         var owned = ownedIds.ToArray();
         var referenced = referencedIds.ToArray();
         var result = new List<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>>(owned.Length + referenced.Length);
-        ResolveGraphList(owned, CanonicalStoryWorkspaceMembershipKind.Owned, repository, kind, result, issues);
-        ResolveGraphList(referenced, CanonicalStoryWorkspaceMembershipKind.Referenced, repository, kind, result, issues);
+        ResolveGraphList(owned, CanonicalStoryWorkspaceMembershipKind.Owned, repository, kind, storyId, result, issues);
+        ResolveGraphList(referenced, CanonicalStoryWorkspaceMembershipKind.Referenced, repository, kind, storyId, result, issues);
         return result;
     }
 
-    private static void ResolveGraphList(
+    private void ResolveGraphList(
         IEnumerable<string> ids,
         CanonicalStoryWorkspaceMembershipKind membershipKind,
         GraphResourceRepository repository,
         string kind,
+        string storyId,
         ICollection<CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>> result,
         ICollection<ValidationIssue> issues)
     {
@@ -265,17 +310,87 @@ public sealed class CanonicalStoryWorkspaceLoader
             catch (GraphResourceRepositoryException exception)
                 when (exception.Code == "graph.resource.repository.not_found")
             {
-                issues.Add(MissingIssue(kind, id, kind.ToLowerInvariant() + "s"));
+                resource = null;
             }
-
+            if (resource is null && membershipKind == CanonicalStoryWorkspaceMembershipKind.Referenced
+                && TryResolveGraphProvider(kind, id, out var provider, out resource))
+            {
+                result.Add(new CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>(id, membershipKind, resource) { Provider = provider });
+                continue;
+            }
+            if (resource is null) issues.Add(MissingIssue(storyId, kind, id, kind.ToLowerInvariant() + "s"));
             result.Add(new CanonicalStoryWorkspaceEntry<GraphResourceEnvelope>(id, membershipKind, resource));
         }
     }
 
-    private static ValidationIssue MissingIssue(string kind, string id, string field)
+    private bool TryResolveActorProvider(
+        string id,
+        out OfflineProviderResource? provider,
+        out ActorDocument? actor)
+    {
+        provider = _providers?.Resolve(DgrResourceKind.Actor, id);
+        actor = null;
+        if (provider is null) return false;
+        try
+        {
+            actor = ActorDocument.FromResource(
+                ActorSerializer.Deserialize(provider.DefinitionJson),
+                provider.PackagePath);
+            return true;
+        }
+        catch (Exception exception) when (exception is ActorValidationException or ActorDataException)
+        { return false; }
+    }
+
+    private bool TryResolveItemProvider<T>(
+        DgrResourceKind kind,
+        string id,
+        out OfflineProviderResource? provider,
+        out T? resource)
+        where T : ItemResource
+    {
+        provider = _providers?.Resolve(kind, id);
+        resource = null;
+        if (provider is null) return false;
+        try
+        {
+            var parsed = ItemSerializer.Deserialize(provider.DefinitionJson);
+            resource = parsed as T;
+            return resource is not null;
+        }
+        catch (Exception exception) when (exception is ItemValidationException or ItemDataException)
+        { return false; }
+    }
+
+    private bool TryResolveGraphProvider(
+        string kind,
+        string id,
+        out OfflineProviderResource? provider,
+        out GraphResourceEnvelope? resource)
+    {
+        var resourceKind = kind switch
+        {
+            "Session" => DgrResourceKind.Session,
+            "Task" => DgrResourceKind.Task,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        };
+        provider = _providers?.Resolve(resourceKind, id);
+        resource = null;
+        if (provider is null) return false;
+        try
+        {
+            resource = GraphResourceEnvelope.FromJson(provider.DefinitionJson);
+            return resource.ResourceKind == (resourceKind == DgrResourceKind.Session
+                ? GraphResourceKind.Session : GraphResourceKind.Task)
+                && string.Equals(resource.Id, id, StringComparison.Ordinal);
+        }
+        catch (GraphResourceEnvelopeException) { return false; }
+    }
+
+    private static ValidationIssue MissingIssue(string storyId, string kind, string id, string field)
         => new(
             "story.workspace.member.missing",
-            $"Canonical Story {kind} member '{id}' was not found.",
+            $"Consumer Story '{storyId}' has unresolved {kind} '{id}' (full ID).",
             field,
             ValidationSeverity.Error,
             id);

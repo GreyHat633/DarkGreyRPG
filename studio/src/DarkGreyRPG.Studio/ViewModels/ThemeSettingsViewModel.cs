@@ -86,7 +86,7 @@ public sealed class ThemeSettingsViewModel : ObservableObject
     {
         try
         {
-            _settings = _settings with { Theme = preference };
+            _settings = _settingsService.Load() with { Theme = preference };
             _settingsService.Save(_settings);
             PersistenceError = null;
         }

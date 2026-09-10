@@ -18,4 +18,8 @@ public sealed class ProjectResource
     [JsonPropertyName("display_name")]
     [JsonPropertyOrder(2)]
     public string DisplayName { get; init; } = string.Empty;
+    [JsonPropertyName("project_origin_code")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyOrder(3)]
+    public string? ProjectOriginCode { get; init; }
 }

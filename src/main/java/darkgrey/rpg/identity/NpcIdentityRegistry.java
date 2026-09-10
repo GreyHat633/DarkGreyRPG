@@ -7,12 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /** Server-authoritative one-to-one mapping between DGR NPC IDs and real hosts. */
 public final class NpcIdentityRegistry {
 
-    private static final Pattern ID = Pattern.compile("[a-z0-9][a-z0-9_-]*");
     private final Map<String, NpcHostIdentity> byNpcId = new LinkedHashMap<String, NpcHostIdentity>();
     private final Map<UUID, String> byHostUuid = new LinkedHashMap<UUID, String>();
 
@@ -128,8 +126,8 @@ public final class NpcIdentityRegistry {
     }
 
     public static String requireId(String npcId) {
-        if (npcId == null || !ID.matcher(npcId)
-            .matches()) throw new IllegalArgumentException("NPC ID must match [a-z0-9][a-z0-9_-]*.");
+        if (!DgrResourceId.isCompatibleId(npcId))
+            throw new IllegalArgumentException("NPC ID must be a valid DGR resource ID.");
         return npcId;
     }
 

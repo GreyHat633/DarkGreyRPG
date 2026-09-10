@@ -7,6 +7,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,6 +42,7 @@ import darkgrey.rpg.dialogue.LineNode;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContentException;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContentLoader;
+import darkgrey.rpg.identity.DgrResourceId;
 import darkgrey.rpg.quest.CollectItemObjective;
 import darkgrey.rpg.quest.InteractActorObjective;
 import darkgrey.rpg.quest.KillEntityObjective;
@@ -50,9 +57,9 @@ import darkgrey.rpg.story.StoryLoader;
 public final class ProjectRepository {
 
     private static final Logger LOG = LogManager.getLogger(ProjectRepository.class);
-    private static final Pattern RESOURCE_ID = Pattern.compile("[a-z0-9][a-z0-9_.-]*");
-    private static final Set<String> PROJECT_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("schema_version", "id", "display_name")));
+    private static final Pattern NODE_ID = Pattern.compile("[a-z0-9][a-z0-9_.-]*");
+    private static final Set<String> PROJECT_FIELDS = Collections.unmodifiableSet(
+        new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "project_origin_code")));
     private static final Set<String> LEGACY_ACTOR_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "notes", "tags", "home_story_id")));
     private static final Set<String> ACTOR_V3_FIELDS = Collections.unmodifiableSet(
@@ -125,10 +132,13 @@ public final class ProjectRepository {
         rejectUnknownFields(file, json, PROJECT_FIELDS);
         int schema = requiredInt(file, json, "schema_version");
         validateSchema(file, schema, 1, 2);
+        String projectId = requiredProjectId(file, json);
+        String projectOriginCode = optionalNonEmptyString(file, json, "project_origin_code");
         return new ProjectDefinition(
             schema,
-            requiredResourceId(file, json, "id"),
-            requiredString(file, json, "display_name"));
+            projectId,
+            requiredString(file, json, "display_name"),
+            projectOriginCode == null ? projectId : projectOriginCode);
     }
 
     /** Reuses the strict Actor parser for one detached DGRS entry. */
@@ -229,35 +239,22 @@ public final class ProjectRepository {
 
         int projectSchema = requiredInt(projectFile, projectJson, "schema_version");
         validateSchema(projectFile, projectSchema, 1, 2);
-        String projectId = requiredResourceId(projectFile, projectJson, "id");
+        String projectId = requiredProjectId(projectFile, projectJson);
         String projectName = requiredString(projectFile, projectJson, "display_name");
-        ProjectDefinition project = new ProjectDefinition(projectSchema, projectId, projectName);
+        String projectOriginCode = optionalNonEmptyString(projectFile, projectJson, "project_origin_code");
+        ProjectDefinition project = new ProjectDefinition(
+            projectSchema,
+            projectId,
+            projectName,
+            projectOriginCode == null ? projectId : projectOriginCode);
 
         File actorsDirectory = new File(projectDirectory, "actors");
-        if (!actorsDirectory.isDirectory()) {
+        if (!actorsDirectory.isDirectory() || unsafePath(actorsDirectory.toPath())) {
             throw new ProjectLoadException("Missing actors directory: " + actorsDirectory.getAbsolutePath());
         }
 
-        File[] actorFiles = actorsDirectory.listFiles();
-        if (actorFiles == null) {
-            throw new ProjectLoadException("Cannot list actors directory: " + actorsDirectory.getAbsolutePath());
-        }
-        Arrays.sort(actorFiles, new Comparator<File>() {
-
-            @Override
-            public int compare(File left, File right) {
-                return left.getName()
-                    .compareToIgnoreCase(right.getName());
-            }
-        });
-
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
-        for (File actorFile : actorFiles) {
-            if (!actorFile.isFile() || !actorFile.getName()
-                .toLowerCase()
-                .endsWith(".json")) {
-                continue;
-            }
+        for (File actorFile : jsonFiles(actorsDirectory, "actors")) {
             ActorDefinition actor = loadActor(actorFile);
             if (actors.put(actor.getId(), actor) != null) {
                 throw new ProjectLoadException("Duplicate actor id '" + actor.getId() + "'");
@@ -286,23 +283,10 @@ public final class ProjectRepository {
         throws ProjectLoadException {
         File directory = new File(projectDirectory, directoryName);
         if (!directory.exists()) return Collections.emptyMap();
-        if (!directory.isDirectory())
+        if (!directory.isDirectory() || unsafePath(directory.toPath()))
             throw new ProjectLoadException("Item resource path is not a directory: " + directory.getAbsolutePath());
-        File[] files = directory.listFiles();
-        if (files == null) throw new ProjectLoadException("Cannot list item resource directory: " + directory);
-        Arrays.sort(files, new Comparator<File>() {
-
-            @Override
-            public int compare(File left, File right) {
-                return left.getName()
-                    .compareToIgnoreCase(right.getName());
-            }
-        });
         Map<String, ItemResourceDefinition> result = new LinkedHashMap<String, ItemResourceDefinition>();
-        for (File file : files) {
-            if (!file.isFile() || !file.getName()
-                .toLowerCase()
-                .endsWith(".json")) continue;
+        for (File file : jsonFiles(directory, directoryName)) {
             ItemResourceDefinition definition = loadItem(file, expectedType);
             if (result.put(definition.getId(), definition) != null)
                 throw new ProjectLoadException("Duplicate item resource id '" + definition.getId() + "'");
@@ -325,7 +309,7 @@ public final class ProjectRepository {
             throw new ProjectLoadException("Item resource type must be '" + expectedType + "' in " + file);
         String id = requiredResourceId(file, json, individual ? "item_id" : "group_id");
         String expectedName = id + ".json";
-        if (!expectedName.equals(file.getName()))
+        if (!DgrResourceId.isFullId(id) && !expectedName.equals(file.getName()))
             throw new ProjectLoadException("Item resource filename must be '" + expectedName + "': " + file);
         return new ItemResourceDefinition(
             version,
@@ -376,7 +360,7 @@ public final class ProjectRepository {
         int schemaVersion = requiredInt(file, json, "schema_version");
         validateSchema(file, schemaVersion, 1, 2);
         String id = requiredResourceId(file, json, "id");
-        if (!file.getName()
+        if (!DgrResourceId.isFullId(id) && !file.getName()
             .equals(id + ".json")) {
             throw new ProjectLoadException("Quest file name must match its id: " + file.getAbsolutePath());
         }
@@ -560,7 +544,7 @@ public final class ProjectRepository {
         int schemaVersion = requiredInt(file, json, "schema_version");
         validateSchema(file, schemaVersion, 1, 2);
         String id = requiredResourceId(file, json, "id");
-        if (!file.getName()
+        if (!DgrResourceId.isFullId(id) && !file.getName()
             .equals(id + ".json")) {
             throw new ProjectLoadException("Dialogue file name must match its id: " + file.getAbsolutePath());
         }
@@ -575,7 +559,7 @@ public final class ProjectRepository {
                     "Missing Actor '" + speaker + "' referenced by " + file.getAbsolutePath());
             }
         }
-        String entry = requiredResourceId(file, json, "entry");
+        String entry = requiredNodeId(file, json, "entry");
         List<DialogueNode> nodes = loadNodes(file, json.get("nodes"), speakers);
         Map<String, DialogueNode> nodesById = new LinkedHashMap<String, DialogueNode>();
         for (DialogueNode node : nodes) {
@@ -610,7 +594,7 @@ public final class ProjectRepository {
             }
             JsonObject node = element.getAsJsonObject();
             String type = requiredString(file, node, "type").toLowerCase();
-            String nodeId = requiredResourceId(file, node, "id");
+            String nodeId = requiredNodeId(file, node, "id");
             if ("line".equals(type)) {
                 rejectUnknownFields(file, node, LINE_FIELDS);
                 String speaker = requiredResourceId(file, node, "speaker");
@@ -623,7 +607,7 @@ public final class ProjectRepository {
                         nodeId,
                         speaker,
                         requiredString(file, node, "text"),
-                        requiredResourceId(file, node, "next")));
+                        requiredNodeId(file, node, "next")));
             } else if ("choice".equals(type)) {
                 rejectUnknownFields(file, node, CHOICE_FIELDS);
                 JsonElement choicesValue = node.get("choices");
@@ -640,17 +624,15 @@ public final class ProjectRepository {
                     JsonObject choice = choiceElement.getAsJsonObject();
                     rejectUnknownFields(file, choice, CHOICE_OPTION_FIELDS);
                     choices.add(
-                        new ChoiceOption(
-                            requiredString(file, choice, "text"),
-                            requiredResourceId(file, choice, "next")));
+                        new ChoiceOption(requiredString(file, choice, "text"), requiredNodeId(file, choice, "next")));
                 }
                 nodes.add(new ChoiceNode(nodeId, optionalString(file, node, "prompt", ""), choices));
             } else if ("jump".equals(type)) {
                 rejectUnknownFields(file, node, JUMP_FIELDS);
-                nodes.add(new JumpNode(nodeId, requiredResourceId(file, node, "target")));
+                nodes.add(new JumpNode(nodeId, requiredNodeId(file, node, "target")));
             } else if ("end".equals(type)) {
                 rejectUnknownFields(file, node, END_FIELDS);
-                nodes.add(new EndNode(nodeId, requiredResourceId(file, node, "result")));
+                nodes.add(new EndNode(nodeId, requiredNodeId(file, node, "result")));
             } else {
                 throw new ProjectLoadException(
                     "Unsupported Dialogue node type '" + type + "' in " + file.getAbsolutePath());
@@ -728,8 +710,7 @@ public final class ProjectRepository {
         String notes = optionalString(actorFile, json, "notes", "");
         List<String> tags = optionalStringList(actorFile, json, "tags");
         String homeStoryId = optionalString(actorFile, json, "home_story_id", null);
-        if (schemaVersion >= 2 && (homeStoryId == null || !RESOURCE_ID.matcher(homeStoryId)
-            .matches())) {
+        if (schemaVersion >= 2 && (homeStoryId == null || !DgrResourceId.isCompatibleId(homeStoryId))) {
             throw new ProjectLoadException(
                 "Actor schema_version 2 requires a valid home_story_id in " + actorFile.getAbsolutePath());
         }
@@ -737,11 +718,65 @@ public final class ProjectRepository {
     }
 
     private static void validateActorFileName(File actorFile, String id) throws ProjectLoadException {
+        if (DgrResourceId.isFullId(id)) return;
         String expectedFileName = id + ".json";
         if (!actorFile.getName()
             .equals(expectedFileName)) {
             throw new ProjectLoadException(
                 "Actor file name must match its id: expected " + expectedFileName + ", got " + actorFile.getName());
+        }
+    }
+
+    /** Lists JSON resources recursively without following links or reparse points. */
+    private static List<File> jsonFiles(File directory, final String label) throws ProjectLoadException {
+        final Path root = directory.toPath();
+        final List<Path> paths = new ArrayList<Path>();
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attributes) {
+                    return unsafePath(path) || attributes.isOther() ? FileVisitResult.SKIP_SUBTREE
+                        : FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path path, BasicFileAttributes attributes) {
+                    if (!unsafePath(path) && attributes.isRegularFile()
+                        && path.getFileName()
+                            .toString()
+                            .toLowerCase()
+                            .endsWith(".json"))
+                        paths.add(path);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException exception) {
+            throw new ProjectLoadException("Cannot recursively list " + label + " directory: " + directory, exception);
+        }
+        Collections.sort(paths, new Comparator<Path>() {
+
+            @Override
+            public int compare(Path left, Path right) {
+                return root.relativize(left)
+                    .toString()
+                    .compareTo(
+                        root.relativize(right)
+                            .toString());
+            }
+        });
+        List<File> result = new ArrayList<File>();
+        for (Path path : paths) result.add(path.toFile());
+        return result;
+    }
+
+    private static boolean unsafePath(Path path) {
+        if (Files.isSymbolicLink(path)) return true;
+        try {
+            Object reparse = Files.getAttribute(path, "dos:reparsePoint", LinkOption.NOFOLLOW_LINKS);
+            return Boolean.TRUE.equals(reparse);
+        } catch (IOException | UnsupportedOperationException | IllegalArgumentException ignored) {
+            return false;
         }
     }
 
@@ -855,12 +890,28 @@ public final class ProjectRepository {
         }
     }
 
+    private static String requiredProjectId(File file, JsonObject json) throws ProjectLoadException {
+        String value = requiredString(file, json, "id");
+        if (!value.matches("[A-Za-z0-9][A-Za-z0-9_.-]*"))
+            throw new ProjectLoadException("Invalid project id '" + value + "' in " + file);
+        return value;
+    }
+
     private static String requiredResourceId(File file, JsonObject json, String field) throws ProjectLoadException {
-        String value = requiredString(file, json, field);
-        if (!RESOURCE_ID.matcher(value)
-            .matches()) {
+        String value = optionalString(file, json, field, null);
+        if (value == null || value.isEmpty() || !DgrResourceId.isCompatibleId(value)) {
             throw new ProjectLoadException(
                 "Field '" + field + "' has invalid resource id '" + value + "' in " + file.getAbsolutePath());
+        }
+        return value;
+    }
+
+    private static String requiredNodeId(File file, JsonObject json, String field) throws ProjectLoadException {
+        String value = requiredString(file, json, field);
+        if (!NODE_ID.matcher(value)
+            .matches()) {
+            throw new ProjectLoadException(
+                "Field '" + field + "' has invalid node id '" + value + "' in " + file.getAbsolutePath());
         }
         return value;
     }
@@ -873,6 +924,14 @@ public final class ProjectRepository {
                 "Field '" + field + "' must be a non-empty string in " + file.getAbsolutePath());
         }
         return value.trim();
+    }
+
+    /** Optional field with the same strict non-empty string contract as requiredString. */
+    private static String optionalNonEmptyString(File file, JsonObject json, String field) throws ProjectLoadException {
+        if (!json.has(field)) return null;
+        requiredString(file, json, field);
+        return json.get(field)
+            .getAsString();
     }
 
     private static String optionalString(File file, JsonObject json, String field, String fallback)
@@ -938,13 +997,22 @@ public final class ProjectRepository {
 
     private static List<String> optionalResourceIdList(File file, JsonObject json, String field)
         throws ProjectLoadException {
-        List<String> values = optionalStringList(file, json, field);
-        for (String value : values) {
-            if (!RESOURCE_ID.matcher(value)
-                .matches()) {
+        JsonElement value = json.get(field);
+        if (value == null || value.isJsonNull()) return Collections.emptyList();
+        if (!value.isJsonArray()) {
+            throw new ProjectLoadException("Field '" + field + "' must be an array in " + file.getAbsolutePath());
+        }
+        List<String> values = new ArrayList<String>();
+        for (JsonElement entry : value.getAsJsonArray()) {
+            if (!entry.isJsonPrimitive() || !entry.getAsJsonPrimitive()
+                .isString()) {
                 throw new ProjectLoadException(
-                    "Field '" + field + "' contains invalid resource ID '" + value + "' in " + file);
+                    "Field '" + field + "' must contain only strings in " + file.getAbsolutePath());
             }
+            String id = entry.getAsString();
+            if (!DgrResourceId.isCompatibleId(id)) throw new ProjectLoadException(
+                "Field '" + field + "' contains invalid resource ID '" + id + "' in " + file);
+            values.add(id);
         }
         return values;
     }

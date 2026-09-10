@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using DarkGreyRPG.Studio.Core.IO;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -27,10 +28,9 @@ public class GraphResourceRepositoryException : Exception
 /// </summary>
 public sealed class GraphResourceRepository
 {
-    private static readonly Regex IdPattern = new(
+    private static readonly Regex LegacyIdPattern = new(
         "^[a-z0-9][a-z0-9_-]*$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
     private readonly IAtomicFileWriter _writer;
     private readonly object _writeGate = new();
 
@@ -54,11 +54,13 @@ public sealed class GraphResourceRepository
     public IReadOnlyList<GraphResourceInfo> List()
     {
         if (!Directory.Exists(ResourceDirectory)) return [];
-        return Directory.EnumerateFiles(ResourceDirectory, "*.json", SearchOption.TopDirectoryOnly)
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        return CanonicalResourceFileSystem.EnumerateJsonFiles(ResourceDirectory)
             .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
             .Select(path =>
             {
                 var envelope = ReadAndValidate(path);
+                EnsureUnique(seen, envelope.Id, path);
                 return new GraphResourceInfo(
                     envelope.Id,
                     envelope.DisplayName,
@@ -70,8 +72,9 @@ public sealed class GraphResourceRepository
 
     public GraphResourceEnvelope Load(string id)
     {
-        var path = PathFor(id);
-        if (!File.Exists(path))
+        ValidateId(id);
+        var path = FindExistingPath(id);
+        if (path is null)
             throw Failure("graph.resource.repository.not_found",
                 $"Canonical {KindText()} resource '{id}' was not found.");
         return ReadAndValidate(path);
@@ -82,13 +85,13 @@ public sealed class GraphResourceRepository
     {
         ArgumentNullException.ThrowIfNull(envelope);
         ValidateEnvelope(envelope);
-        var path = PathFor(envelope.Id);
         lock (_writeGate)
         {
             EnsureDirectory();
-            if (File.Exists(path))
+            if (FindExistingPath(envelope.Id) is not null)
                 throw Failure("graph.resource.repository.collision",
                     $"Canonical {KindText()} resource '{envelope.Id}' already exists.");
+            var path = CanonicalPath(envelope.Id);
             Write(path, envelope);
         }
         return Load(envelope.Id);
@@ -99,10 +102,10 @@ public sealed class GraphResourceRepository
     {
         ArgumentNullException.ThrowIfNull(envelope);
         ValidateEnvelope(envelope);
-        var path = PathFor(envelope.Id);
         lock (_writeGate)
         {
-            if (!File.Exists(path))
+            var path = FindExistingPath(envelope.Id);
+            if (path is null)
                 throw Failure("graph.resource.repository.not_found",
                     $"Canonical {KindText()} resource '{envelope.Id}' was not found.");
             Write(path, envelope);
@@ -112,10 +115,11 @@ public sealed class GraphResourceRepository
 
     public void Delete(string id)
     {
-        var path = PathFor(id);
+        ValidateId(id);
         lock (_writeGate)
         {
-            if (!File.Exists(path))
+            var path = FindExistingPath(id);
+            if (path is null)
                 throw Failure("graph.resource.repository.not_found",
                     $"Canonical {KindText()} resource '{id}' was not found.");
             try
@@ -134,17 +138,21 @@ public sealed class GraphResourceRepository
     {
         ValidateId(baseId);
         EnsureDirectory();
-        if (!File.Exists(PathFor(baseId))) return baseId;
+        if (FindExistingPath(baseId) is null) return baseId;
         for (var suffix = 2; suffix < int.MaxValue; suffix++)
         {
             var candidate = $"{baseId}_{suffix}";
-            if (!File.Exists(PathFor(candidate))) return candidate;
+            if (FindExistingPath(candidate) is null) return candidate;
         }
         throw Failure("graph.resource.repository.id.unavailable",
             $"Could not allocate a canonical resource ID based on '{baseId}'.");
     }
 
-    public string GetPath(string id) => PathFor(id);
+    public string GetPath(string id)
+    {
+        ValidateId(id);
+        return FindExistingPath(id) ?? CanonicalPath(id);
+    }
 
     private GraphResourceEnvelope ReadAndValidate(string path)
     {
@@ -152,10 +160,10 @@ public sealed class GraphResourceRepository
         {
             var envelope = GraphResourceEnvelopeSerializer.Deserialize(File.ReadAllText(path));
             ValidateEnvelope(envelope);
-            var fileId = Path.GetFileNameWithoutExtension(path);
-            if (!string.Equals(fileId, envelope.Id, StringComparison.Ordinal))
+            if (!DgrResourceId.IsFullId(envelope.Id)
+                && !string.Equals(Path.GetFileName(path), envelope.Id + ".json", StringComparison.Ordinal))
                 throw Failure("graph.resource.repository.filename.mismatch",
-                    $"Canonical resource file name '{fileId}' does not match ID '{envelope.Id}'.");
+                    $"Canonical resource file name '{Path.GetFileNameWithoutExtension(path)}' does not match ID '{envelope.Id}'.");
             return envelope;
         }
         catch (GraphResourceRepositoryException)
@@ -178,6 +186,7 @@ public sealed class GraphResourceRepository
     {
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var json = GraphResourceEnvelopeSerializer.Serialize(envelope);
             _writer.Write(path, json, temporaryPath =>
             {
@@ -227,15 +236,50 @@ public sealed class GraphResourceRepository
     private string PathFor(string id)
     {
         ValidateId(id);
-        return Path.Combine(ResourceDirectory, id + ".json");
+        return FindExistingPath(id) ?? CanonicalPath(id);
     }
 
     private static void ValidateId(string? id)
     {
-        if (string.IsNullOrWhiteSpace(id) || !IdPattern.IsMatch(id))
+        if (!DgrResourceId.IsFullId(id) && !LegacyIdPattern.IsMatch(id ?? string.Empty))
             throw Failure("graph.resource.repository.id.invalid",
-                $"Canonical resource ID '{id}' must match [a-z0-9][a-z0-9_-]*.");
+                $"Canonical resource ID '{id}' must be a valid full DGR ID or a compatible legacy ID.");
     }
+
+    private string? FindExistingPath(string id)
+    {
+        if (!DgrResourceId.IsFullId(id))
+        {
+            var legacyPath = Path.Combine(ResourceDirectory, id + ".json");
+            return File.Exists(legacyPath) ? legacyPath : null;
+        }
+        var found = CanonicalResourceFileSystem.FindUniquePath(
+            ResourceDirectory,
+            id,
+            path => ReadAndValidate(path).Id,
+            (logicalId, paths) => Failure("graph.resource.repository.duplicate_id",
+                $"Canonical {KindText()} resource ID '{logicalId}' is present in multiple files: {string.Join(", ", paths)}."),
+            exception => exception is GraphResourceRepositoryException);
+        if (found is null)
+        {
+            var canonical = CanonicalPath(id);
+            if (File.Exists(canonical))
+            {
+                _ = ReadAndValidate(canonical);
+                return canonical;
+            }
+        }
+        return found;
+    }
+
+    private static void EnsureUnique(HashSet<string> seen, string id, string path)
+    {
+        if (!seen.Add(id))
+            throw Failure("graph.resource.repository.duplicate_id",
+                $"Canonical resource ID '{id}' is present in multiple files, including '{path}'.");
+    }
+
+    private string CanonicalPath(string id) => Path.Combine(ResourceDirectory, DgrResourceId.RelativeJsonPath(id));
 
     private void EnsureDirectory()
     {
@@ -257,4 +301,62 @@ public sealed class GraphResourceRepository
         string message,
         Exception? innerException = null)
         => new(code, message, innerException);
+}
+
+/// <summary>Safe recursive discovery for resource files; reparse points are never traversed.</summary>
+internal static class CanonicalResourceFileSystem
+{
+    public static IReadOnlyList<string> EnumerateJsonFiles(string root)
+    {
+        if (!Directory.Exists(root)) return [];
+        var pending = new Stack<string>([Path.GetFullPath(root)]);
+        var files = new List<string>();
+        while (pending.Count != 0)
+        {
+            var directory = pending.Pop();
+            var directoryInfo = new DirectoryInfo(directory);
+            if (directoryInfo.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+            foreach (var file in directoryInfo.EnumerateFiles("*.json", SearchOption.TopDirectoryOnly))
+            {
+                if (!file.Attributes.HasFlag(FileAttributes.ReparsePoint)) files.Add(file.FullName);
+            }
+            foreach (var child in directoryInfo.EnumerateDirectories("*", SearchOption.TopDirectoryOnly)
+                         .OrderBy(item => item.FullName, StringComparer.OrdinalIgnoreCase).Reverse())
+            {
+                if (!child.Attributes.HasFlag(FileAttributes.ReparsePoint)) pending.Push(child.FullName);
+            }
+        }
+        return files.OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    public static string? FindUniquePath<T>(
+        string root,
+        string id,
+        Func<string, T> read,
+        Func<T, string> logicalId,
+        Func<string, IReadOnlyList<string>, Exception> duplicate,
+        Func<Exception, bool>? ignoreReadException = null)
+    {
+        var matches = new List<string>();
+        foreach (var path in EnumerateJsonFiles(root))
+        {
+            try
+            {
+                if (string.Equals(logicalId(read(path)), id, StringComparison.Ordinal)) matches.Add(path);
+            }
+            catch (Exception exception) when (ignoreReadException?.Invoke(exception) == true)
+            {
+            }
+        }
+        if (matches.Count > 1) throw duplicate(id, matches);
+        return matches.Count == 0 ? null : matches[0];
+    }
+
+    public static string? FindUniquePath(
+        string root,
+        string id,
+        Func<string, string> readId,
+        Func<string, IReadOnlyList<string>, Exception> duplicate,
+        Func<Exception, bool>? ignoreReadException = null)
+        => FindUniquePath(root, id, readId, value => value, duplicate, ignoreReadException);
 }

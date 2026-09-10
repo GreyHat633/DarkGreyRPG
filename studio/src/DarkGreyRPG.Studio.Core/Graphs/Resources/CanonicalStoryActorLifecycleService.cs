@@ -1,5 +1,6 @@
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -289,7 +290,7 @@ public sealed class CanonicalStoryActorLifecycleService
             var (_, membership) = RequireCanonicalStory(ownerStoryId);
             EnsureActorId(actorId);
             EnsureOwned(membership, ownerStoryId, actorId);
-            var actorPath = Path.Combine(_actors.ActorsDirectory, actorId + ".json");
+            var actorPath = _actors.GetActorPath(actorId);
             var membershipPath = _store.Memberships.GetPath(ownerStoryId);
             byte[] actorBytes;
             byte[] membershipBytes;
@@ -500,11 +501,11 @@ public sealed class CanonicalStoryActorLifecycleService
 
     private static void EnsureActorId(string actorId)
     {
-        if (string.IsNullOrWhiteSpace(actorId)
-            || actorId.Any(character => !(char.IsLower(character) || char.IsDigit(character) || character is '_' or '-')))
-        {
-            throw Failure("story.actor.id.invalid", $"Actor ID '{actorId}' is invalid.");
-        }
+        var validLegacy = !string.IsNullOrWhiteSpace(actorId)
+            && actorId[0] is >= 'a' and <= 'z' or >= '0' and <= '9'
+            && actorId.All(character => character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-');
+        if (!DgrResourceId.IsFullId(actorId) && !validLegacy)
+            throw Failure("story.actor.id.invalid", $"Actor ID '{actorId}' must be a valid full DGR ID or a compatible legacy ID.");
     }
 
     private static void EnsureDisplayName(string displayName)
@@ -541,7 +542,7 @@ public sealed class CanonicalStoryActorLifecycleService
         var json = System.Text.Encoding.UTF8.GetString(bytes);
         new AtomicFileWriter().Write(path, json, temporaryPath =>
         {
-            var restored = ActorSerializer.Deserialize(File.ReadAllText(temporaryPath), path);
+            var restored = ActorSerializer.Deserialize(File.ReadAllText(temporaryPath));
             if (!string.Equals(restored.Id, actorId, StringComparison.Ordinal))
                 throw new ActorRepositoryException("The restored Actor ID changed during rollback.");
         });

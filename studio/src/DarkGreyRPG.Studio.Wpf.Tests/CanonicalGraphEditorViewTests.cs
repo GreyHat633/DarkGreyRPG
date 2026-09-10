@@ -17,6 +17,28 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalGraphEditorViewTests
 {
     [STATestMethod]
+    public void ReadOnlyGraphAllowsViewportAndNavigationButRejectsMutation()
+    {
+        var host = new GraphEditorHostViewModel(Graph(GraphScope.StoryFlow), GraphScope.StoryFlow);
+        var view = Arrange(host);
+        view.IsReadOnly = true;
+        var before = host.Session.UndoCount;
+        Assert.IsTrue(view.SelectNode("target"));
+        Assert.IsFalse(view.DeleteCurrentSelection(true));
+        Assert.IsFalse(view.AddNodeAt("action", 100, 100));
+        Assert.IsFalse(view.HandleKeyboardCommand(Key.Delete));
+        Assert.IsTrue(view.NodeVisuals.All(node => !node.IsEnabled));
+        view.ViewportController.PanBy(31, 17);
+        view.ViewportController.SetZoomAt(1.3, new Point(50, 50));
+        Assert.AreEqual(1.3, view.ViewportController.Zoom, .001);
+        var navigated = false;
+        view.NodeEditRequested += _ => navigated = true;
+        view.RequestNodeEdit(host.Nodes.Single(node => node.NodeId == "target"));
+        Assert.IsTrue(navigated);
+        Assert.AreEqual(before, host.Session.UndoCount);
+    }
+
+    [STATestMethod]
     public void DynamicPortRefreshRebuildsOnlyAffectedNodeAndPreservesSelectionViewport()
     {
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "target", "Target");

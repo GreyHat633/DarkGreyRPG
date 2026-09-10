@@ -1,6 +1,5 @@
 using System.IO;
 using System.Windows;
-using DarkGreyRPG.Studio.Core.Graphs.Migration;
 using DarkGreyRPG.Studio.ViewModels;
 using DarkGreyRPG.Studio.Views;
 
@@ -54,13 +53,6 @@ public sealed class ProjectWorkspaceDialogs(Func<Window?> ownerProvider) : IProj
             displayName,
             $"resources/canonical/stories/{storyId}.json 与 resources/canonical/memberships/{storyId}.json",
             resourcesToDelete);
-
-    public bool ConfirmCanonicalProjectMigration(CanonicalProjectMigrationPreviewResult preview)
-    {
-        var viewModel = new CanonicalProjectMigrationDialogViewModel(preview);
-        var dialog = new CanonicalProjectMigrationDialog(viewModel) { Owner = ownerProvider() };
-        return dialog.ShowDialog() == true && viewModel.CanApply;
-    }
 
     private bool ConfirmDeleteStoryCore(
         string storyId,
