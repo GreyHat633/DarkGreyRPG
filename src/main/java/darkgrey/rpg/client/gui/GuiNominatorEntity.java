@@ -8,8 +8,6 @@ import java.util.UUID;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 
-import darkgrey.rpg.network.DialogueNetwork;
-import darkgrey.rpg.network.message.nominator.C2SNominatorEntityBind;
 import darkgrey.rpg.nominator.NominatorCatalog;
 
 /** Entity nominator: choose an accepted package, then an actor in its closure. */
@@ -59,13 +57,22 @@ public final class GuiNominatorEntity extends GuiScreen {
 
     private NominatorBrowser browser;
 
-    @Override
-    public void initGui() {
-        buttonList.clear();
-        panelWidth = Math.min(540, width - 12);
-        int panelHeight = Math.min(340, height - 12);
-        panelLeft = (width - panelWidth) / 2;
-        panelTop = (height - panelHeight) / 2;
+    private final NominatorControls controls = new NominatorControls();
+    private String currentGroups = "";
+    private int panelHeight;
+
+    public void acceptResult(net.minecraft.nbt.NBTTagCompound data, NominatorCatalog catalog) {
+        if (!controls.accept(data)) return;
+        this.catalog = catalog;
+        individual = data.getString("individual");
+        currentGroups = data.getString("groups");
+        revision = controls.revision;
+        catalogRevision = controls.catalogRevision;
+        rebuildBrowser();
+    }
+
+    private void rebuildBrowser() {
+        NominatorBrowser old = browser;
         browser = new NominatorBrowser(
             fontRendererObj,
             catalog,
@@ -73,89 +80,106 @@ public final class GuiNominatorEntity extends GuiScreen {
             panelLeft + 8,
             panelTop + 24,
             panelWidth - 16,
-            panelHeight - 80);
-        bindButton = new GuiButton(
-            1,
-            panelLeft + panelWidth - 168,
-            panelTop + panelHeight - 26,
-            76,
-            20,
-            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.bind"));
+            panelHeight - 108);
+        browser.restore(old);
+    }
+
+    @Override
+    public void initGui() {
+        buttonList.clear();
+        panelWidth = Math.min(540, width - 12);
+        panelHeight = Math.min(340, height - 12);
+        panelLeft = (width - panelWidth) / 2;
+        panelTop = (height - panelHeight) / 2;
+        rebuildBrowser();
+        buttonList.add(new GuiRpgButton(3, panelLeft + 8, panelTop + panelHeight - 78, 76, 20, "ID释放"));
+        bindButton = new GuiRpgButton(1, panelLeft + panelWidth - 90, panelTop + panelHeight - 78, 82, 20, "实体指名");
         buttonList.add(bindButton);
-        buttonList.add(
-            new GuiButton(
-                2,
-                panelLeft + 8,
-                panelTop + panelHeight - 26,
-                76,
-                20,
-                net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.unbind")));
-        buttonList.add(
-            new GuiButton(
-                0,
-                panelLeft + panelWidth - 84,
-                panelTop + panelHeight - 26,
-                76,
-                20,
-                net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.close")));
+        buttonList.add(new GuiRpgButton(2, panelLeft + 8, panelTop + panelHeight - 26, 76, 20, "实体解绑"));
+        buttonList.add(new GuiRpgButton(0, panelLeft + panelWidth - 84, panelTop + panelHeight - 26, 76, 20, "关闭"));
+    }
+
+    @Override
+    public void updateScreen() {
+        super.updateScreen();
+        if (!controls.initialized && !controls.pending) send("sync");
+    }
+
+    private void send(String op) {
+        net.minecraft.nbt.NBTTagCompound q = new net.minecraft.nbt.NBTTagCompound();
+        q.setString("op", op);
+        q.setInteger("entity", entityId);
+        q.setString("entityUuid", entityUuid.toString());
+        darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
+        if (row != null) {
+            q.setString("resource", row.id);
+            q.setString("type", row.type);
+            q.setString("package", row.source.getPackageId());
+        }
+        controls.begin(q, "release".equals(op) ? "release" : "");
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
+        if (controls.modal() || controls.pending) return;
         if (button.id == 0) {
             mc.displayGuiScreen(null);
             return;
         }
-        darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
-        if (button.id == 1 && row == null) return;
-        DialogueNetwork.CHANNEL.sendToServer(
-            new C2SNominatorEntityBind(
-                entityId,
-                entityUuid,
-                button.id == 1 && "NPC".equals(row.type) ? row.id : null,
-                button.id == 1 && "Group".equals(row.type) ? Collections.singletonList(row.id)
-                    : Collections.<String>emptyList(),
-                button.id == 1 ? row.source.getStoryId() : null,
-                revision,
-                false,
-                button.id == 1 ? row.source.getPackageId() : null,
-                catalogRevision));
-        mc.displayGuiScreen(null);
+        if (!controls.initialized) return;
+        if (button.id == 2) send("unbind");
+        if (browser.selected() != null) {
+            if (button.id == 1) send("bind");
+            if (button.id == 3) send("release");
+        }
     }
 
     @Override
     public void drawScreen(int mx, int my, float partial) {
         drawDefaultBackground();
-        int h = Math.min(340, height - 12);
-        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + h, 0xEE303030);
-        drawCenteredString(
-            fontRendererObj,
-            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.entity_nominator"),
-            width / 2,
-            panelTop + 8,
-            0xFFFFFF);
+        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, DgrUiPalette.PANEL);
+        drawCenteredString(fontRendererObj, "实体指名器", width / 2, panelTop + 8, DgrUiPalette.TEXT);
         browser.draw(mx, my);
-        bindButton.enabled = browser.selected() != null;
-        String binding = net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.binding")
-            + (individual == null ? "" : individual)
-            + " "
-            + groups;
+        String binding = "当前实体：" + (individual == null ? "" : individual) + " " + currentGroups;
         drawString(
             fontRendererObj,
             fontRendererObj.trimStringToWidth(binding, panelWidth - 16),
             panelLeft + 8,
-            panelTop + h - 42,
-            0xCCCCCC);
+            panelTop + panelHeight - 51,
+            DgrUiPalette.SECONDARY);
+        drawString(
+            fontRendererObj,
+            fontRendererObj.trimStringToWidth(controls.message, panelWidth - 16),
+            panelLeft + 8,
+            panelTop + panelHeight - 40,
+            DgrUiPalette.SECONDARY);
+        for (Object obj : buttonList) {
+            GuiButton b = (GuiButton) obj;
+            b.enabled = !controls.pending && !controls.modal()
+                && (b.id == 0 || controls.initialized)
+                && (b.id != 1 && b.id != 3 || browser.selected() != null);
+        }
         super.drawScreen(mx, my, partial);
+        controls.draw(width, height, mx, my);
     }
 
     @Override
     protected void keyTyped(char c, int key) {
-        if (!browser.search.textboxKeyTyped(c, key)) super.keyTyped(c, key);
+        if (controls.modal()) {
+            if (key == 1) controls.cancel();
+            return;
+        }
+        if (controls.pending && key != 1) return;
+        if (key == 1 || !browser.search.textboxKeyTyped(c, key)) super.keyTyped(c, key);
     }
 
     @Override
     protected void mouseClicked(int x, int y, int b) {
+        if (controls.modal()) {
+            controls.click(x, y, b);
+            return;
+        }
+        if (controls.pending) return;
         browser.click(x, y, b);
         super.mouseClicked(x, y, b);
     }
@@ -163,7 +187,7 @@ public final class GuiNominatorEntity extends GuiScreen {
     @Override
     public void handleMouseInput() {
         super.handleMouseInput();
-        browser.scroll(
+        if (!controls.modal() && !controls.pending) browser.scroll(
             org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth,
             height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1,
             org.lwjgl.input.Mouse.getEventDWheel());

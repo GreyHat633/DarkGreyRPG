@@ -59,11 +59,15 @@ public final class CanonicalTaskStage4SurfaceProbe {
         String nominatorSource = new String(
             Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/client/gui/GuiNominatorEntity.java")),
             Charset.forName("UTF-8"));
+        String bindingSource = new String(
+            Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/nominator/NominatorActions.java")),
+            Charset.forName("UTF-8"));
         require(
-            nominatorSource.contains("\"Group\".equals(row.type)")
-                && nominatorSource.contains("Collections.singletonList(row.id)")
-                && nominatorSource.contains("\"NPC\".equals(row.type) ? row.id : null"),
-            "Nominator preserves separate Group and NPC bind fields in the unified resource list");
+            nominatorSource.contains("q.setString(\"type\", row.type)")
+                && bindingSource.contains("actor.isIndividual()")
+                && bindingSource.contains("groups.add(id)")
+                && bindingSource.contains("individual = id"),
+            "Nominator preserves distinct Group/NPC semantics through the typed operation service");
         System.out.println("CANONICAL_TASK_COMMAND_SURFACE=PASS");
         System.out.println("CANONICAL_TASK_GUI_TABS=PASS");
         System.out.println("DGR_B2_NOMINATOR_IDENTITY_LABELS=PASS");

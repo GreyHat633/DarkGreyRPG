@@ -43,8 +43,8 @@ public final class CreatorNetworkDiscriminatorProbe {
                     throw new AssertionError("Unknown or duplicate discriminator: " + m.group());
             }
         }
-        if (ids.size() != 16) throw new AssertionError("Expected 16 registrations, found " + ids);
-        for (int i = 3; i <= 18; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
+        if (ids.size() != 18) throw new AssertionError("Expected 18 registrations, found " + ids);
+        for (int i = 3; i <= 20; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
         if (!"CLIENT".equals(ids.get(17)) || !"SERVER".equals(ids.get(18)))
             throw new AssertionError("Creator packet side mismatch");
         System.out.println("CREATOR_NETWORK_DISCRIMINATOR_PROBE=PASS");

@@ -29,6 +29,28 @@ public final class ItemIdentityRegistry {
         return true;
     }
 
+    public synchronized boolean transferItem(String itemId, ItemStackDefinition definition) {
+        String id = requireId(itemId, "Item ID");
+        if (definition == null) throw new IllegalArgumentException("Definition required.");
+        if (definition.equals(items.get(id))) return false;
+        items.put(id, definition);
+        return true;
+    }
+
+    public synchronized boolean releaseGroup(String groupId) {
+        return groups.remove(requireId(groupId, "Group ID")) != null;
+    }
+
+    public synchronized boolean unbindDefinition(ItemStack stack) {
+        boolean changed = false;
+        for (String id : matchingItemIds(stack)) changed |= unbindItem(id);
+        for (GroupBinding binding : groupBindings()) {
+            if (binding.getMember()
+                .matches(stack)) changed |= removeGroupMember(binding.getGroupId(), binding.getMember());
+        }
+        return changed;
+    }
+
     public synchronized boolean unbindItem(String itemId) {
         return items.remove(requireId(itemId, "Item ID")) != null;
     }

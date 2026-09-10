@@ -115,7 +115,7 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
                     .toUpperCase(java.util.Locale.ROOT),
                 left + 20,
                 y + 12,
-                0xDDCCAA);
+                DgrUiPalette.SECONDARY);
             List<String> idLines = fontRendererObj
                 .listFormattedStringToWidth("ID: " + option.getStoryId(), Math.max(40, panelWidth - 155));
             for (int line = 0; line < idLines.size(); line++) fontRendererObj

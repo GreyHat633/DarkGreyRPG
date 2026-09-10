@@ -9,12 +9,14 @@ import net.minecraft.item.ItemStack;
 /** Server-authoritative nominator target plus the complete player inventory. */
 public final class ContainerNominatorInventory extends Container {
 
-    public static final int TARGET_SLOT = 0;
+    public static final int NOMINATE_SLOT = 0;
+    public static final int UNBIND_SLOT = 1;
+    public static final int TARGET_SLOT = NOMINATE_SLOT;
     /** Slot coordinates are presentation defaults; the client may re-layout them without changing indices. */
     public static final int TARGET_DEFAULT_X = 286;
     public static final int TARGET_DEFAULT_Y = 177;
-    private static final int PLAYER_SLOT_START = 1;
-    private static final int PLAYER_SLOT_END = 37;
+    public static final int PLAYER_SLOT_START = 2;
+    public static final int PLAYER_SLOT_END = 38;
 
     private final InventoryNominatorTarget targetInventory = new InventoryNominatorTarget();
     private final EntityPlayer owner;
@@ -22,7 +24,8 @@ public final class ContainerNominatorInventory extends Container {
 
     public ContainerNominatorInventory(InventoryPlayer inventory, EntityPlayer owner) {
         this.owner = owner;
-        addSlotToContainer(new TargetSlot(targetInventory, TARGET_SLOT, TARGET_DEFAULT_X, TARGET_DEFAULT_Y));
+        addSlotToContainer(new TargetSlot(targetInventory, NOMINATE_SLOT, TARGET_DEFAULT_X, TARGET_DEFAULT_Y));
+        addSlotToContainer(new TargetSlot(targetInventory, UNBIND_SLOT, TARGET_DEFAULT_X, TARGET_DEFAULT_Y + 56));
 
         // Keep the vanilla player-inventory ordering: main inventory, then hotbar.
         for (int row = 0; row < 3; row++) for (int column = 0; column < 9; column++)
@@ -52,7 +55,7 @@ public final class ContainerNominatorInventory extends Container {
 
         ItemStack original = slot.getStack();
         ItemStack result = original.copy();
-        if (slotIndex == TARGET_SLOT) {
+        if (slotIndex < PLAYER_SLOT_START) {
             if (!mergeItemStack(original, PLAYER_SLOT_START, PLAYER_SLOT_END, false)) return null;
         } else {
             Slot target = (Slot) inventorySlots.get(TARGET_SLOT);
@@ -82,7 +85,13 @@ public final class ContainerNominatorInventory extends Container {
     }
 
     void returnTargetToOwner(EntityPlayer player) {
-        ItemStack target = targetInventory.takeStack();
+        returnSlotToOwner(player, NOMINATE_SLOT);
+        returnSlotToOwner(player, UNBIND_SLOT);
+    }
+
+    public void returnSlotToOwner(EntityPlayer player, int slot) {
+        if (player != owner) return;
+        ItemStack target = targetInventory.getStackInSlotOnClosing(slot);
         if (target == null || target.stackSize <= 0) return;
         player.inventory.addItemStackToInventory(target);
         if (target.stackSize > 0) {

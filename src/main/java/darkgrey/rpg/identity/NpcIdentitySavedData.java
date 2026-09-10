@@ -18,6 +18,12 @@ public final class NpcIdentitySavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_npc_identities";
     private static final int SCHEMA_VERSION = 1;
+    private long revision;
+
+    public synchronized long getRevision() {
+        return revision;
+    }
+
     private NpcIdentityRegistry registry = new NpcIdentityRegistry();
 
     public NpcIdentitySavedData() {
@@ -47,31 +53,46 @@ public final class NpcIdentitySavedData extends WorldSavedData {
 
     public synchronized boolean bind(String npcId, NpcHostIdentity host) {
         boolean changed = registry.bind(npcId, host);
-        if (changed) markDirty();
+        if (changed) {
+            revision++;
+            markDirty();
+        }
         return changed;
     }
 
     public synchronized boolean transfer(String npcId, NpcHostIdentity replacement) {
         boolean changed = registry.transfer(npcId, replacement);
-        if (changed) markDirty();
+        if (changed) {
+            revision++;
+            markDirty();
+        }
         return changed;
     }
 
     public synchronized boolean observe(NpcHostIdentity observed) {
         boolean changed = registry.observe(observed);
-        if (changed) markDirty();
+        if (changed) {
+            revision++;
+            markDirty();
+        }
         return changed;
     }
 
     public synchronized boolean unbindNpcId(String npcId) {
         boolean changed = registry.unbindNpcId(npcId);
-        if (changed) markDirty();
+        if (changed) {
+            revision++;
+            markDirty();
+        }
         return changed;
     }
 
     public synchronized boolean unbindHost(UUID hostUuid) {
         boolean changed = registry.unbindHost(hostUuid);
-        if (changed) markDirty();
+        if (changed) {
+            revision++;
+            markDirty();
+        }
         return changed;
     }
 

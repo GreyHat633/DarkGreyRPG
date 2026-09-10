@@ -132,13 +132,13 @@ public final class GuiCopierTemplates extends GuiScreen {
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier"),
             width / 2,
             panelTop + 10,
-            0xFFF0E6D2);
+            DgrUiPalette.TEXT);
         if (pendingDelete >= 0) drawCenteredString(
             fontRendererObj,
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier_delete_warning"),
             width / 2,
             panelTop + 21,
-            0xFFFFC46B);
+            DgrUiPalette.TEXT);
         if (templates.isEmpty()) drawCenteredString(
             fontRendererObj,
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier_empty"),

@@ -6,31 +6,31 @@ import net.minecraft.item.ItemStack;
 
 import darkgrey.rpg.content.ModItems;
 
-/** The transient, one-stack target inventory used by the nominator container. */
+/** The transient two-slot inventory used by the nominator container. */
 public final class InventoryNominatorTarget implements IInventory {
 
-    private ItemStack stack;
+    private final ItemStack[] stacks = new ItemStack[2];
 
     @Override
     public int getSizeInventory() {
-        return 1;
+        return 2;
     }
 
     @Override
     public ItemStack getStackInSlot(int slot) {
-        return slot == 0 ? stack : null;
+        return slot >= 0 && slot < stacks.length ? stacks[slot] : null;
     }
 
     @Override
     public ItemStack decrStackSize(int slot, int amount) {
-        if (slot != 0 || stack == null || amount <= 0) return null;
+        if (slot < 0 || slot >= stacks.length || stacks[slot] == null || amount <= 0) return null;
         ItemStack result;
-        if (stack.stackSize <= amount) {
-            result = stack;
-            stack = null;
+        if (stacks[slot].stackSize <= amount) {
+            result = stacks[slot];
+            stacks[slot] = null;
         } else {
-            result = stack.splitStack(amount);
-            if (stack.stackSize <= 0) stack = null;
+            result = stacks[slot].splitStack(amount);
+            if (stacks[slot].stackSize <= 0) stacks[slot] = null;
         }
         markDirty();
         return result;
@@ -38,9 +38,9 @@ public final class InventoryNominatorTarget implements IInventory {
 
     @Override
     public ItemStack getStackInSlotOnClosing(int slot) {
-        if (slot != 0) return null;
-        ItemStack result = stack;
-        stack = null;
+        if (slot < 0 || slot >= stacks.length) return null;
+        ItemStack result = stacks[slot];
+        stacks[slot] = null;
         return result;
     }
 
@@ -51,13 +51,13 @@ public final class InventoryNominatorTarget implements IInventory {
 
     @Override
     public void setInventorySlotContents(int slot, ItemStack value) {
-        if (slot != 0) return;
+        if (slot < 0 || slot >= stacks.length) return;
         if (value == null) {
-            stack = null;
-        } else if (isItemValidForSlot(0, value)) {
-            stack = value;
-            if (stack.stackSize > getInventoryStackLimit()) stack.stackSize = getInventoryStackLimit();
-            if (stack.stackSize <= 0) stack = null;
+            stacks[slot] = null;
+        } else if (isItemValidForSlot(slot, value)) {
+            stacks[slot] = value;
+            if (stacks[slot].stackSize > getInventoryStackLimit()) stacks[slot].stackSize = getInventoryStackLimit();
+            if (stacks[slot].stackSize <= 0) stacks[slot] = null;
         }
         markDirty();
     }
@@ -93,6 +93,9 @@ public final class InventoryNominatorTarget implements IInventory {
 
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack value) {
-        return slot == 0 && value != null && value.getItem() != null && value.getItem() != ModItems.nominator;
+        return slot >= 0 && slot < stacks.length
+            && value != null
+            && value.getItem() != null
+            && value.getItem() != ModItems.nominator;
     }
 }

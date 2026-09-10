@@ -73,10 +73,12 @@ public final class GuiQuestJournal extends GuiScreen {
         int panelHeight = panelHeight();
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - panelHeight) / 2;
-        drawRect(left, top, left + PANEL_WIDTH, top + panelHeight, 0xF02B2F4A); // Deep Space
-        drawRect(left, top, left + PANEL_WIDTH, top + 2, 0xFF7D8CFF); // Deep Space Accent
-        drawRect(left + 8, top + 58, left + PANEL_WIDTH - 8, top + panelHeight - 38, 0xCC1E213A); // Inner dark panel
-        drawCenteredString(fontRendererObj, "任务追踪", width / 2, top + 10, 0xFFEEF0FF); // Light title
+        drawRect(left, top, left + PANEL_WIDTH, top + panelHeight, DgrUiPalette.PANEL); // Deep Space
+        drawRect(left, top, left + PANEL_WIDTH, top + 2, DgrUiPalette.BORDER); // Deep Space Accent
+        drawRect(left + 8, top + 58, left + PANEL_WIDTH - 8, top + panelHeight - 38, DgrUiPalette.SUB_PANEL); // Inner
+                                                                                                              // dark
+                                                                                                              // panel
+        drawCenteredString(fontRendererObj, "任务追踪", width / 2, top + 10, DgrUiPalette.TEXT); // Light title
 
         List<String> lines = buildLines();
         int y = top + 66 - scrollOffset;
@@ -84,10 +86,11 @@ public final class GuiQuestJournal extends GuiScreen {
         int clipBottom = top + panelHeight - 42;
         for (String line : lines) {
             if (y >= clipTop && y <= clipBottom) {
-                fontRendererObj.drawString(line, left + 18, y, line.startsWith("  ") ? 0xAAEEF0FF : 0xFFEEF0FF); // Secondary
-                                                                                                                 // /
-                                                                                                                 // Primary
-                                                                                                                 // text
+                fontRendererObj
+                    .drawString(line, left + 18, y, line.startsWith("  ") ? DgrUiPalette.SECONDARY : DgrUiPalette.TEXT); // Secondary
+                // /
+                // Primary
+                // text
             }
             y += 12;
         }

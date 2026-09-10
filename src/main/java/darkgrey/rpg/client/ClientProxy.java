@@ -29,6 +29,13 @@ public final class ClientProxy extends CommonProxy {
         else CanonicalTaskClientStore.accept(data);
     }
 
+    @Override
+    public void acceptNominatorResult(net.minecraft.nbt.NBTTagCompound data, NominatorCatalog catalog) {
+        net.minecraft.client.gui.GuiScreen screen = Minecraft.getMinecraft().currentScreen;
+        if (screen instanceof GuiNominatorInventory) ((GuiNominatorInventory) screen).acceptResult(data, catalog);
+        if (screen instanceof GuiNominatorEntity) ((GuiNominatorEntity) screen).acceptResult(data, catalog);
+    }
+
     private NominatorCatalog pendingInventoryCatalog;
     private long pendingInventoryRevision = -1L;
     private long pendingInventoryCatalogRevision = -1L;

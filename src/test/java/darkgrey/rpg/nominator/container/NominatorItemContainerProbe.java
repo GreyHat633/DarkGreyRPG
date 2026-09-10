@@ -30,10 +30,10 @@ public final class NominatorItemContainerProbe {
 
             ProbePlayer player = player();
             ContainerNominatorInventory container = new ContainerNominatorInventory(player);
-            require(container.inventorySlots.size() == 37, "one target plus 36 player slots");
+            require(container.inventorySlots.size() == 38, "two targets plus 36 player slots");
             player.inventory.mainInventory[0] = new ItemStack(ordinary, 5);
             require(total(player, ordinary) == 5, "source count");
-            require(container.transferStackInSlot(player, 28) != null, "shift into target");
+            require(container.transferStackInSlot(player, 29) != null, "shift into target");
             require(
                 container.getTargetInventory()
                     .getStackInSlot(0) != null
@@ -53,7 +53,7 @@ public final class NominatorItemContainerProbe {
                 "target return preserves count");
 
             player.inventory.mainInventory[1] = new ItemStack(nominator, 1);
-            require(container.transferStackInSlot(player, 29) == null, "nominator rejected by target");
+            require(container.transferStackInSlot(player, 30) == null, "nominator rejected by target");
             require(player.inventory.mainInventory[1].stackSize == 1, "rejected tool retained");
 
             container.getTargetInventory()
@@ -76,6 +76,17 @@ public final class NominatorItemContainerProbe {
                 container.getTargetInventory()
                     .getStackInSlot(0) == null,
                 "drop fallback clears target once");
+
+            player.inventory.mainInventory[0] = null;
+            container.getTargetInventory()
+                .setInventorySlotContents(ContainerNominatorInventory.UNBIND_SLOT, new ItemStack(ordinary, 1));
+            int beforeSecond = total(player, ordinary);
+            container.returnSlotToOwner(player, ContainerNominatorInventory.UNBIND_SLOT);
+            container.returnSlotToOwner(player, ContainerNominatorInventory.UNBIND_SLOT);
+            require(
+                total(player, ordinary) == beforeSecond + 1 && container.getTargetInventory()
+                    .getStackInSlot(ContainerNominatorInventory.UNBIND_SLOT) == null,
+                "unbind return exactly once");
 
             System.out.println("NOMINATOR_ITEM_CONTAINER=PASS target-slot move return drop no-dup no-loss");
         } finally {

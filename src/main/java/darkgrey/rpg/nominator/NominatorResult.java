@@ -17,6 +17,10 @@ public final class NominatorResult {
         return new NominatorResult(true, "accepted", explanation);
     }
 
+    public static NominatorResult noop(String explanation) {
+        return new NominatorResult(true, "noop", explanation);
+    }
+
     public static NominatorResult rejected(String code, String explanation) {
         return new NominatorResult(false, code, explanation);
     }

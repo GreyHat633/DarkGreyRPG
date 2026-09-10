@@ -119,7 +119,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         CanonicalTaskLayout layout = layout();
         drawDefaultBackground();
         drawPanel(layout);
-        drawCenteredString(fontRendererObj, "任务", width / 2, layout.panelTop + 9, 0xFFE4D5AE);
+        drawCenteredString(fontRendererObj, "任务", width / 2, layout.panelTop + 9, DgrUiPalette.SELECTED_BORDER);
         drawList(layout, mouseX, mouseY);
         drawDetails(layout);
         drawCenteredString(fontRendererObj, "Esc 返回", width / 2, layout.panelBottom - 14, 0xFFAAAAAA);
@@ -128,10 +128,15 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     private void drawPanel(CanonicalTaskLayout layout) {
         drawRect(layout.panelLeft, layout.panelTop, layout.panelRight, layout.panelBottom, 0xEE161616);
-        drawRect(layout.panelLeft, layout.panelTop, layout.panelRight, layout.panelTop + 1, 0xFFE4D5AE);
-        drawRect(layout.panelLeft, layout.panelBottom - 1, layout.panelRight, layout.panelBottom, 0xFF766D58);
-        drawRect(layout.panelLeft, layout.panelTop, layout.panelLeft + 1, layout.panelBottom, 0xFF766D58);
-        drawRect(layout.panelRight - 1, layout.panelTop, layout.panelRight, layout.panelBottom, 0xFF766D58);
+        drawRect(
+            layout.panelLeft,
+            layout.panelTop,
+            layout.panelRight,
+            layout.panelTop + 1,
+            DgrUiPalette.SELECTED_BORDER);
+        drawRect(layout.panelLeft, layout.panelBottom - 1, layout.panelRight, layout.panelBottom, DgrUiPalette.BORDER);
+        drawRect(layout.panelLeft, layout.panelTop, layout.panelLeft + 1, layout.panelBottom, DgrUiPalette.BORDER);
+        drawRect(layout.panelRight - 1, layout.panelTop, layout.panelRight, layout.panelBottom, DgrUiPalette.BORDER);
         drawRect(layout.listLeft, layout.listTop - 4, layout.listRight, layout.listBottom, 0xCC202020);
         drawRect(layout.detailLeft, layout.detailTop - 4, layout.detailRight, layout.detailBottom, 0xCC202020);
         if (!layout.stacked) drawRect(
@@ -139,7 +144,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             layout.detailTop - 4,
             layout.detailLeft - 4,
             layout.detailBottom,
-            0xFF514A3B);
+            DgrUiPalette.BORDER);
     }
 
     private void drawList(CanonicalTaskLayout layout, int mouseX, int mouseY) {
@@ -158,9 +163,11 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             String id = taskId(task);
             boolean selected = id.equals(selectedTaskId);
             boolean hovered = layout.containsList(mouseX, mouseY) && mouseY >= top && mouseY < top + rowHeight;
-            if (selected) drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, 0xFF574C32);
-            else if (hovered) drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, 0xFF343126);
-            int color = selected ? 0xFFFFE8A8 : 0xFFE4E0D5;
+            if (selected)
+                drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
+            else if (hovered)
+                drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
+            int color = selected ? DgrUiPalette.TEXT : DgrUiPalette.TEXT;
             String title = task.getString("title");
             if (title.length() == 0) title = "未命名任务";
             title = fontRendererObj.trimStringToWidth(title, layout.listRight - layout.listLeft - 22);
@@ -199,7 +206,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         detailScroll = Math.min(detailScroll, Math.max(0, lines.size() - visible));
         for (int index = 0; index < visible && index + detailScroll < lines.size(); index++) {
             int lineIndex = index + detailScroll;
-            int color = lineIndex == 0 ? 0xFFFFE8A8 : lineIndex == 1 ? 0xFFBDB4A0 : 0xFFE4E0D5;
+            int color = lineIndex == 0 ? DgrUiPalette.TEXT
+                : lineIndex == 1 ? DgrUiPalette.SECONDARY : DgrUiPalette.TEXT;
             fontRendererObj
                 .drawString(lines.get(lineIndex), layout.detailLeft + 8, layout.detailTop + index * lineHeight, color);
         }

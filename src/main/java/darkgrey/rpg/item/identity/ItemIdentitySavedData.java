@@ -55,6 +55,34 @@ public final class ItemIdentitySavedData extends WorldSavedData {
         return changed;
     }
 
+    public synchronized boolean transferItem(String id, ItemStackDefinition definition) {
+        boolean changed = registry.transferItem(id, definition);
+        if (changed) {
+            revision++;
+            markDirty();
+        }
+        return changed;
+    }
+
+    public synchronized boolean releaseGroup(String id) {
+        boolean changed = registry.releaseGroup(id);
+        if (changed) {
+            revision++;
+            markDirty();
+        }
+        return changed;
+    }
+
+    public synchronized boolean unbindDefinition(ItemStack stack) {
+        if (stack == null) throw new IllegalArgumentException("Stack required.");
+        boolean changed = registry.unbindDefinition(stack);
+        if (changed) {
+            revision++;
+            markDirty();
+        }
+        return changed;
+    }
+
     public synchronized boolean unbindItem(String itemId) {
         boolean changed = registry.unbindItem(itemId);
         if (changed) {

@@ -52,8 +52,41 @@ public final class NominatorBrowser extends Gui {
         return selected;
     }
 
+    public void restore(NominatorBrowser old) {
+        if (old == null) return;
+        query = old.search.getText();
+        search.setText(query);
+        if (catalog.getPackageChoice(old.selectedPackage) != null) selectedPackage = old.selectedPackage;
+        refresh();
+        packageScroll = Math.max(
+            0,
+            Math.min(
+                old.packageScroll,
+                Math.max(
+                    0,
+                    catalog.getPackageChoices()
+                        .size() - count())));
+        resourceScroll = Math.max(0, Math.min(old.resourceScroll, Math.max(0, rows.size() - count())));
+        if (old.selected != null) for (NominatorGlobalSearch.Row row : rows)
+            if (row.id.equals(old.selected.id) && row.type.equals(old.selected.type)
+                && row.source.getPackageId()
+                    .equals(old.selected.source.getPackageId()))
+                selected = row;
+    }
+
+    public static String resourceLabel(darkgrey.rpg.client.NominatorGlobalSearch.Row row, boolean global) {
+        String type = "NPC".equals(row.type) ? "NPCID" : "Item".equals(row.type) ? "ItemID" : "GroupID";
+        return (global ? "[" + row.source.getDisplayName() + "] " : "") + row.name
+            + "  "
+            + net.minecraft.util.EnumChatFormatting.GRAY
+            + "["
+            + type
+            + "] "
+            + row.id;
+    }
+
     private int count() {
-        return Math.max(1, (height - 34) / 32);
+        return Math.max(1, (height - 34) / 20);
     }
 
     public void draw(int mx, int my) {
@@ -78,21 +111,32 @@ public final class NominatorBrowser extends Gui {
             0xAAAAAA);
         List<NominatorCatalog.PackageChoice> packages = catalog.getPackageChoices();
         for (int i = 0; i < count(); i++) {
-            int top = y + 34 + i * 32;
+            int top = y + 34 + i * 20;
             if (i + packageScroll < packages.size()) {
                 NominatorCatalog.PackageChoice p = packages.get(i + packageScroll);
                 if (p.getPackageId()
-                    .equals(selectedPackage)) drawRect(x, top, x + split, top + 30, 0xFF505050);
-                font.drawString(font.trimStringToWidth(p.getDisplayName(), split - 8), x + 4, top + 3, 0xFFFFFF);
-                font.drawString(font.trimStringToWidth(p.getPackageId(), split - 8), x + 4, top + 15, 0xAAAAAA);
+                    .equals(selectedPackage)) drawRect(x, top, x + split, top + 18, 0xFF505050);
+                font.drawString(
+                    font.trimStringToWidth(p.getDisplayName(), split - 8),
+                    x + 4,
+                    top + 5,
+                    DgrUiPalette.TEXT);
+
             }
             if (i + resourceScroll < rows.size()) {
                 NominatorGlobalSearch.Row r = rows.get(i + resourceScroll);
-                if (r == selected) drawRect(x + split + 1, top, x + width, top + 30, 0xFF505050);
+                if (r == selected) drawRect(x + split + 1, top, x + width, top + 18, 0xFF505050);
                 int rx = x + split + 5, rw = width - split - 10;
-                font.drawString(font.trimStringToWidth("[" + r.type + "] " + r.name, rw), rx, top, 0xFFFFFF);
-                font.drawString(font.trimStringToWidth(r.id, rw), rx, top + 10, 0xDDCCAA);
-                font.drawString(font.trimStringToWidth(r.source.getPackageId(), rw), rx, top + 20, 0xAAAAAA);
+                font.drawString(
+                    font.trimStringToWidth(
+                        resourceLabel(
+                            r,
+                            !query.trim()
+                                .isEmpty()),
+                        rw),
+                    rx,
+                    top + 5,
+                    DgrUiPalette.TEXT);
             }
         }
         if (rows.isEmpty()) font.drawString(
@@ -104,8 +148,8 @@ public final class NominatorBrowser extends Gui {
 
     public void click(int mx, int my, int button) {
         search.mouseClicked(mx, my, button);
-        if (button != 0 || mx < x || mx >= x + width || my < y + 34 || my >= y + 34 + count() * 32) return;
-        int row = (my - y - 34) / 32;
+        if (button != 0 || mx < x || mx >= x + width || my < y + 34 || my >= y + 34 + count() * 20) return;
+        int row = (my - y - 34) / 20;
         if (mx < x + split) {
             int i = packageScroll + row;
             if (i < catalog.getPackageChoices()

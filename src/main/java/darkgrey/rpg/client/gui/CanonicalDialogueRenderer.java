@@ -34,7 +34,11 @@ public final class CanonicalDialogueRenderer {
         String text = CanonicalSessionClientController.getVisibleText();
         int textTop = top + 7;
         if (!speaker.isEmpty()) {
-            font.drawString(font.trimStringToWidth(speaker, layout.textWidth), layout.textLeft, textTop, 0xFFE4D5AE);
+            font.drawString(
+                font.trimStringToWidth(speaker, layout.textWidth),
+                layout.textLeft,
+                textTop,
+                DgrUiPalette.TEXT);
             textTop += font.FONT_HEIGHT + 3;
         }
         int textBottom = bottom - 15;

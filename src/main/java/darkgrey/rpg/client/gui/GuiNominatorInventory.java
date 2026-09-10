@@ -7,8 +7,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
 
-import darkgrey.rpg.network.DialogueNetwork;
-import darkgrey.rpg.network.message.nominator.C2SNominatorInventoryBind;
 import darkgrey.rpg.nominator.NominatorCatalog;
 import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
@@ -44,7 +42,7 @@ public final class GuiNominatorInventory extends GuiContainer {
         this.catalog = catalog == null ? emptyCatalog() : catalog;
         this.revision = revision;
         this.catalogRevision = catalogRevision;
-        if (mc != null) initGui();
+        if (mc != null) rebuildBrowser();
     }
 
     private static ContainerNominatorInventory newContainer() {
@@ -62,26 +60,19 @@ public final class GuiNominatorInventory extends GuiContainer {
 
     private NominatorBrowser browser;
 
-    @Override
-    public void initGui() {
-        xSize = Math.min(360, width - 12);
-        ySize = Math.min(330, height - 12);
-        super.initGui();
-        buttonList.clear();
-        for (int i = 0; i < inventorySlots.inventorySlots.size(); i++) {
-            net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) inventorySlots.inventorySlots.get(i);
-            if (i == 0) {
-                // Keep the target slot at the centre of the dedicated right action block.
-                slot.xDisplayPosition = xSize - 58;
-                slot.yDisplayPosition = ySize - 92;
-            } else if (i >= 28) {
-                slot.xDisplayPosition = 8 + ((i - 28) % 9) * 18;
-                slot.yDisplayPosition = ySize - 51;
-            } else {
-                slot.xDisplayPosition = 8 + ((i - 1) % 9) * 18;
-                slot.yDisplayPosition = ySize - 109 + ((i - 1) / 9) * 18;
-            }
-        }
+    private final NominatorControls controls = new NominatorControls();
+    private int inventoryLeft;
+
+    public void acceptResult(net.minecraft.nbt.NBTTagCompound data, NominatorCatalog catalog) {
+        if (!controls.accept(data)) return;
+        this.catalog = catalog;
+        revision = controls.revision;
+        catalogRevision = controls.catalogRevision;
+        rebuildBrowser();
+    }
+
+    private void rebuildBrowser() {
+        NominatorBrowser old = browser;
         browser = new NominatorBrowser(
             fontRendererObj,
             catalog,
@@ -89,107 +80,173 @@ public final class GuiNominatorInventory extends GuiContainer {
             guiLeft + 8,
             guiTop + 24,
             xSize - 16,
-            ySize - 144);
-        bindButton = new GuiButton(
-            6,
-            guiLeft + xSize - 88,
-            guiTop + ySize - 26,
-            80,
-            20,
-            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.bind"));
+            ySize - 160);
+        browser.restore(old);
+    }
+
+    @Override
+    public void initGui() {
+        xSize = Math.min(420, width - 12);
+        ySize = Math.min(350, height - 12);
+        super.initGui();
+        buttonList.clear();
+        inventoryLeft = Math.max(8, (xSize - 104 - 162) / 2);
+        for (int i = 0; i < inventorySlots.inventorySlots.size(); i++) {
+            net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) inventorySlots.inventorySlots.get(i);
+            if (i < ContainerNominatorInventory.PLAYER_SLOT_START) {
+                slot.xDisplayPosition = xSize - 54;
+                slot.yDisplayPosition = ySize - 114 + i * 58;
+            } else {
+                int j = i - ContainerNominatorInventory.PLAYER_SLOT_START;
+                slot.xDisplayPosition = inventoryLeft + (j % 9) * 18;
+                slot.yDisplayPosition = ySize - 109 + (j < 27 ? (j / 9) * 18 : 58);
+            }
+        }
+        rebuildBrowser();
+        buttonList.add(new GuiRpgButton(7, guiLeft + 8, guiTop + ySize - 132, 76, 20, "ID释放"));
+        bindButton = new GuiRpgButton(6, guiLeft + xSize - 90, guiTop + ySize - 94, 82, 18, "指名");
         buttonList.add(bindButton);
-        buttonList.add(
-            new GuiButton(
-                0,
-                guiLeft + 8,
-                guiTop + ySize - 26,
-                80,
-                20,
-                net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.close")));
+        buttonList.add(new GuiRpgButton(8, guiLeft + xSize - 90, guiTop + ySize - 36, 82, 18, "物品解绑"));
+    }
+
+    @Override
+    public void updateScreen() {
+        super.updateScreen();
+        if (!controls.initialized && !controls.pending) send("sync");
+    }
+
+    private void send(String op) {
+        net.minecraft.nbt.NBTTagCompound q = new net.minecraft.nbt.NBTTagCompound();
+        q.setBoolean("items", true);
+        q.setInteger("window", inventorySlots.windowId);
+        q.setString("op", op);
+        darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
+        if (row != null) {
+            q.setString("resource", row.id);
+            q.setString("type", row.type);
+            q.setString("package", row.source.getPackageId());
+        }
+        controls.begin(
+            q,
+            "release".equals(op) ? "release"
+                : "bind".equals(op) && row != null && "Item Group".equals(row.type) ? "group" : "");
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button.id == 0) {
-            mc.displayGuiScreen(null);
-            return;
-        }
-        darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
-        if (button.id == 6 && row != null && hasTarget()) {
-            DialogueNetwork.CHANNEL.sendToServer(
-                new C2SNominatorInventoryBind(
-                    row.source.getPackageId(),
-                    "Item".equals(row.type) ? row.id : null,
-                    "Item Group".equals(row.type) ? row.id : null,
-                    revision,
-                    catalogRevision));
-            bindButton.enabled = false;
-        }
+        if (controls.pending || controls.modal() || !controls.initialized) return;
+        if (button.id == 6 && browser.selected() != null && hasTarget(ContainerNominatorInventory.NOMINATE_SLOT))
+            send("bind");
+        if (button.id == 7 && browser.selected() != null) send("release");
+        if (button.id == 8 && hasTarget(ContainerNominatorInventory.UNBIND_SLOT)) send("unbind");
     }
 
-    private boolean hasTarget() {
+    private boolean hasTarget(int slot) {
         return ((ContainerNominatorInventory) inventorySlots).getTargetInventory()
-            .getStackInSlot(0) != null;
+            .getStackInSlot(slot) != null;
     }
 
     @Override
     public void drawScreen(int mx, int my, float partial) {
-        bindButton.enabled = browser.selected() != null && hasTarget();
+        for (Object obj : buttonList) {
+            GuiButton button = (GuiButton) obj;
+            button.enabled = controls.initialized && !controls.pending
+                && !controls.modal()
+                && (button.id == 8 ? hasTarget(ContainerNominatorInventory.UNBIND_SLOT) : browser.selected() != null);
+            if (button.id == 6) button.enabled &= hasTarget(ContainerNominatorInventory.NOMINATE_SLOT);
+        }
         super.drawScreen(mx, my, partial);
+        // GuiContainer leaves item lighting enabled; modal chrome uses the same unlit palette as entity modals.
+        net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_LIGHTING);
+        org.lwjgl.opengl.GL11.glColor4f(1F, 1F, 1F, 1F);
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
+        controls.draw(width, height, mx, my);
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
     }
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partial, int mx, int my) {
-        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF383838);
+        drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, DgrUiPalette.PANEL);
         browser.draw(mx, my);
-        // The player's main inventory and hotbar share one framed block.
-        drawRect(guiLeft + 6, guiTop + ySize - 126, guiLeft + 174, guiTop + ySize - 34, 0xFF202020);
-        drawRect(guiLeft + 7, guiTop + ySize - 125, guiLeft + 173, guiTop + ySize - 35, 0xFF666666);
-        // The target slot and action button form a single, clearly-owned block.
-        drawRect(guiLeft + xSize - 94, guiTop + ySize - 126, guiLeft + xSize - 6, guiTop + ySize - 4, 0xFF806C4E);
-        drawRect(guiLeft + xSize - 93, guiTop + ySize - 125, guiLeft + xSize - 7, guiTop + ySize - 5, 0xFF292929);
-        int slotIndex = 0;
+        drawRect(
+            guiLeft + inventoryLeft - 3,
+            guiTop + ySize - 112,
+            guiLeft + inventoryLeft + 165,
+            guiTop + ySize - 31,
+            DgrUiPalette.SUB_PANEL);
+        drawRect(
+            guiLeft + xSize - 96,
+            guiTop + ySize - 130,
+            guiLeft + xSize - 5,
+            guiTop + ySize - 15,
+            DgrUiPalette.BORDER);
+        drawRect(
+            guiLeft + xSize - 95,
+            guiTop + ySize - 129,
+            guiLeft + xSize - 6,
+            guiTop + ySize - 16,
+            DgrUiPalette.SUB_PANEL);
         for (Object obj : inventorySlots.inventorySlots) {
             net.minecraft.inventory.Slot slot = (net.minecraft.inventory.Slot) obj;
             int x = guiLeft + slot.xDisplayPosition, y = guiTop + slot.yDisplayPosition;
-            int border = slotIndex++ == ContainerNominatorInventory.TARGET_SLOT ? 0xFFFFD27A : 0xFFCCCCCC;
-            drawRect(x - 1, y - 1, x + 17, y + 17, border);
-            drawRect(x - 1, y - 1, x + 16, y + 16, 0xFF171717);
-            drawRect(x, y, x + 16, y + 16, 0xFF777777);
+            drawRect(x - 1, y - 1, x + 17, y + 17, DgrUiPalette.SLOT_BORDER);
+            drawRect(x, y, x + 16, y + 16, 0xFF666666);
         }
     }
 
     @Override
     protected void drawGuiContainerForegroundLayer(int mx, int my) {
-        fontRendererObj
-            .drawString(net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.item_nominator"), 8, 8, 0xFFFFFF);
+        fontRendererObj.drawString("物品指名器", 8, 8, DgrUiPalette.TEXT);
+        fontRendererObj.drawString("玩家背包", Math.max(inventoryLeft, 96), ySize - 123, DgrUiPalette.SECONDARY);
+        fontRendererObj.drawString("物品指名", xSize - 86, ySize - 126, DgrUiPalette.TEXT);
+        fontRendererObj.drawString("物品解绑", xSize - 86, ySize - 68, DgrUiPalette.TEXT);
         fontRendererObj.drawString(
-            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.inventory"),
+            fontRendererObj.trimStringToWidth(controls.message, xSize - 16),
             8,
-            ySize - 120,
-            0xCCCCCC);
-        fontRendererObj.drawString(
-            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.nominator_slot"),
-            xSize - 86,
-            ySize - 65,
-            0xFFFFD27A);
+            ySize - 12,
+            DgrUiPalette.SECONDARY);
     }
 
     @Override
     protected void keyTyped(char c, int key) {
+        if (controls.modal()) {
+            if (key == 1) controls.cancel();
+            return;
+        }
+        if (controls.pending && key != 1) return;
+        if (key == 1 || key == mc.gameSettings.keyBindInventory.getKeyCode() && !browser.search.isFocused()) {
+            super.keyTyped(c, key);
+            return;
+        }
         if (!browser.search.textboxKeyTyped(c, key)) super.keyTyped(c, key);
     }
 
     @Override
     protected void mouseClicked(int x, int y, int b) {
+        if (controls.modal()) {
+            controls.click(x, y, b);
+            return;
+        }
+        if (controls.pending) return;
         browser.click(x, y, b);
         super.mouseClicked(x, y, b);
     }
 
     @Override
+    protected void mouseClickMove(int x, int y, int b, long elapsed) {
+        if (!controls.modal() && !controls.pending) super.mouseClickMove(x, y, b, elapsed);
+    }
+
+    @Override
+    protected void mouseMovedOrUp(int x, int y, int b) {
+        if (!controls.modal() && !controls.pending) super.mouseMovedOrUp(x, y, b);
+    }
+
+    @Override
     public void handleMouseInput() {
         super.handleMouseInput();
-        browser.scroll(
+        if (!controls.modal() && !controls.pending) browser.scroll(
             org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth,
             height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1,
             org.lwjgl.input.Mouse.getEventDWheel());

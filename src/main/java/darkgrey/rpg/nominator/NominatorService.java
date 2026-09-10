@@ -148,6 +148,44 @@ public final class NominatorService {
         }
     }
 
+    public static NominatorResult releaseEntityResource(boolean authorized, String id, ProjectSnapshot project,
+        NpcIdentitySavedData identities, NominatorSavedData selections) {
+        if (!authorized) return NominatorResult.rejected("permission_denied", "没有使用指名器的权限。");
+        ActorDefinition actor = project == null ? null : project.getActor(id);
+        if (actor == null) return NominatorResult.rejected("invalid_resource", "角色资源不可用。");
+        boolean changed = false;
+        synchronized (identities) {
+            synchronized (selections) {
+                if (actor.isIndividual()) {
+                    changed = identities.unbindNpcId(id);
+                    for (NominatorEntityBinding b : selections.bindings()) {
+                        if (id.equals(b.getIndividualId())) {
+                            clearTransferredHostSelection(b.getEntityUuid(), selections);
+                            changed = true;
+                        }
+                    }
+                } else {
+                    for (NominatorEntityBinding b : selections.bindings()) {
+                        List<String> groups = new ArrayList<String>(b.getGroupIds());
+                        if (groups.remove(id)) {
+                            if (groups.isEmpty() && b.getIndividualId() == null) selections.remove(b.getEntityUuid());
+                            else selections.put(
+                                new NominatorEntityBinding(
+                                    b.getEntityUuid(),
+                                    b.getIndividualId(),
+                                    groups,
+                                    b.getStoryId()));
+                            changed = true;
+                        }
+                    }
+                    for (String type : selections.typeGroups()
+                        .keySet()) changed |= selections.removeTypeGroup(type, id);
+                }
+            }
+        }
+        return changed ? NominatorResult.accepted("ID已释放，资源保留。") : NominatorResult.noop("ID已经空闲。");
+    }
+
     private static void clearTransferredHostSelection(UUID hostUuid, NominatorSavedData selections) {
         NominatorEntityBinding previous = selections.get(hostUuid);
         if (previous == null || previous.getIndividualId() == null) return;
