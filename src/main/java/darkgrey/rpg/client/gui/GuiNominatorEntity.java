@@ -24,6 +24,8 @@ public final class GuiNominatorEntity extends GuiScreen {
     private int panelLeft;
     private int panelTop;
     private int panelWidth;
+    private final UtilityWindowGeometry windowGeometry = new UtilityWindowGeometry(300, 200, 540, 340);
+    private boolean geometryInitialized;
 
     public GuiNominatorEntity(int entityId, UUID entityUuid) {
         this.entityId = entityId;
@@ -78,25 +80,38 @@ public final class GuiNominatorEntity extends GuiScreen {
             catalog,
             false,
             panelLeft + 8,
-            panelTop + 24,
+            panelTop + 28,
             panelWidth - 16,
-            panelHeight - 108);
+            panelHeight - 112);
         browser.restore(old);
     }
 
     @Override
     public void initGui() {
         buttonList.clear();
-        panelWidth = Math.min(540, width - 12);
-        panelHeight = Math.min(340, height - 12);
-        panelLeft = (width - panelWidth) / 2;
-        panelTop = (height - panelHeight) / 2;
+        UtilityWindowChrome.open("entity", windowGeometry, width, height, geometryInitialized);
+        geometryInitialized = true;
+        updateWindowGeometry();
         rebuildBrowser();
-        buttonList.add(new GuiRpgButton(3, panelLeft + 8, panelTop + panelHeight - 78, 76, 20, "ID释放"));
-        bindButton = new GuiRpgButton(1, panelLeft + panelWidth - 90, panelTop + panelHeight - 78, 82, 20, "实体指名");
+        // Reserve the title right edge for release, clear of the corner grip.
+        buttonList.add(new GuiRpgButton(3, panelLeft + panelWidth - 92, panelTop + 3, 76, 20, "ID释放"));
+        bindButton = new GuiRpgButton(1, panelLeft + 8, panelTop + panelHeight - 26, 82, 20, "实体指名");
         buttonList.add(bindButton);
-        buttonList.add(new GuiRpgButton(2, panelLeft + 8, panelTop + panelHeight - 26, 76, 20, "实体解绑"));
-        buttonList.add(new GuiRpgButton(0, panelLeft + panelWidth - 84, panelTop + panelHeight - 26, 76, 20, "关闭"));
+        buttonList.add(new GuiRpgButton(2, panelLeft + panelWidth - 84, panelTop + panelHeight - 26, 76, 20, "实体解绑"));
+    }
+
+    private void updateWindowGeometry() {
+        panelLeft = windowGeometry.x;
+        panelTop = windowGeometry.y;
+        panelWidth = windowGeometry.width;
+        panelHeight = windowGeometry.height;
+        if (browser != null) browser.layout(panelLeft + 8, panelTop + 28, panelWidth - 16, panelHeight - 112);
+        for (Object value : buttonList) {
+            GuiButton button = (GuiButton) value;
+            button.xPosition = button.id == 1 ? panelLeft + 8 : panelLeft + panelWidth - 84;
+            button.yPosition = button.id == 3 ? panelTop + 3 : panelTop + panelHeight - 26;
+            if (button.id == 3) button.xPosition = panelLeft + panelWidth - 92;
+        }
     }
 
     @Override
@@ -122,10 +137,6 @@ public final class GuiNominatorEntity extends GuiScreen {
     @Override
     protected void actionPerformed(GuiButton button) {
         if (controls.modal() || controls.pending) return;
-        if (button.id == 0) {
-            mc.displayGuiScreen(null);
-            return;
-        }
         if (!controls.initialized) return;
         if (button.id == 2) send("unbind");
         if (browser.selected() != null) {
@@ -138,14 +149,14 @@ public final class GuiNominatorEntity extends GuiScreen {
     public void drawScreen(int mx, int my, float partial) {
         drawDefaultBackground();
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, DgrUiPalette.PANEL);
-        drawCenteredString(fontRendererObj, "实体指名器", width / 2, panelTop + 8, DgrUiPalette.TEXT);
+        drawCenteredString(fontRendererObj, "实体指名器", panelLeft + panelWidth / 2, panelTop + 8, DgrUiPalette.TEXT);
         browser.draw(mx, my);
         String binding = "当前实体：" + (individual == null ? "" : individual) + " " + currentGroups;
         drawString(
             fontRendererObj,
-            fontRendererObj.trimStringToWidth(binding, panelWidth - 16),
+            fontRendererObj.trimStringToWidth(binding, panelWidth - 108),
             panelLeft + 8,
-            panelTop + panelHeight - 51,
+            panelTop + panelHeight - 71,
             DgrUiPalette.SECONDARY);
         drawString(
             fontRendererObj,
@@ -156,9 +167,10 @@ public final class GuiNominatorEntity extends GuiScreen {
         for (Object obj : buttonList) {
             GuiButton b = (GuiButton) obj;
             b.enabled = !controls.pending && !controls.modal()
-                && (b.id == 0 || controls.initialized)
+                && controls.initialized
                 && (b.id != 1 && b.id != 3 || browser.selected() != null);
         }
+        UtilityWindowChrome.drawGrip(windowGeometry);
         super.drawScreen(mx, my, partial);
         controls.draw(width, height, mx, my);
     }
@@ -170,7 +182,16 @@ public final class GuiNominatorEntity extends GuiScreen {
             return;
         }
         if (controls.pending && key != 1) return;
-        if (key == 1 || !browser.search.textboxKeyTyped(c, key)) super.keyTyped(c, key);
+        if (key == 1) {
+            super.keyTyped(c, key);
+            return;
+        }
+        // The configured inventory key closes only when search does not own the input.
+        if (key == mc.gameSettings.keyBindInventory.getKeyCode() && !browser.search.isFocused()) {
+            mc.displayGuiScreen(null);
+            return;
+        }
+        if (!browser.search.textboxKeyTyped(c, key)) super.keyTyped(c, key);
     }
 
     @Override
@@ -180,6 +201,7 @@ public final class GuiNominatorEntity extends GuiScreen {
             return;
         }
         if (controls.pending) return;
+        if (!UtilityWindowChrome.overButton(buttonList, x, y) && windowGeometry.begin(x, y, b)) return;
         browser.click(x, y, b);
         super.mouseClicked(x, y, b);
     }
@@ -187,10 +209,41 @@ public final class GuiNominatorEntity extends GuiScreen {
     @Override
     public void handleMouseInput() {
         super.handleMouseInput();
-        if (!controls.modal() && !controls.pending) browser.scroll(
+        if (!controls.modal() && !controls.pending && !windowGeometry.active()) browser.scroll(
             org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth,
             height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1,
             org.lwjgl.input.Mouse.getEventDWheel());
+    }
+
+    @Override
+    protected void mouseClickMove(int x, int y, int button, long elapsed) {
+        if (windowGeometry.active()) {
+            if (controls.modal() || controls.pending) {
+                windowGeometry.end();
+                return;
+            }
+            windowGeometry.move(x, y);
+            updateWindowGeometry();
+            return;
+        }
+        super.mouseClickMove(x, y, button, elapsed);
+    }
+
+    @Override
+    protected void mouseMovedOrUp(int x, int y, int button) {
+        if (button == 0 && windowGeometry.active()) {
+            windowGeometry.end();
+            UtilityWindowChrome.save("entity", windowGeometry, width, height);
+            return;
+        }
+        super.mouseMovedOrUp(x, y, button);
+    }
+
+    @Override
+    public void onGuiClosed() {
+        windowGeometry.end();
+        if (geometryInitialized) UtilityWindowChrome.save("entity", windowGeometry, width, height);
+        super.onGuiClosed();
     }
 
     @Override

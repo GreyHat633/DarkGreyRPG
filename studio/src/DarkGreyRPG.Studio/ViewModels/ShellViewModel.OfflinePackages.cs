@@ -67,7 +67,7 @@ public sealed partial class ShellViewModel
     private void ReferencePackage()
     {
         if (!HasProject) return;
-        if (_offlinePackageDialogs.PickPackageFile() is { } path) ReferencePackageFromFile(path);
+        if (_offlinePackageDialogs.PickPackageFile(OfflinePackageDialogKind.Reference) is { } path) ReferencePackageFromFile(path);
     }
 
     public void ReferencePackageFromFile(string path)
@@ -87,7 +87,7 @@ public sealed partial class ShellViewModel
     private void ImportPackage()
     {
         if (!CanChangePackages()) return;
-        if (_offlinePackageDialogs.PickPackageFile() is { } path) ImportPackageFromFile(path);
+        if (_offlinePackageDialogs.PickPackageFile(OfflinePackageDialogKind.Import) is { } path) ImportPackageFromFile(path);
     }
 
     public void ImportPackageFromFile(string path)

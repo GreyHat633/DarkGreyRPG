@@ -708,3 +708,25 @@ tasks.register<JavaExec>("presentation0322Probe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.nominator.Nominator0323Probe")
 }
+
+tasks.register<JavaExec>("smoothScroll0324Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.SmoothScroll0324Probe")
+}
+
+tasks.register<JavaExec>("utilityWindow0324Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.UtilityWindow0324Probe")
+}
+
+tasks.register<JavaExec>("objective0324Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.Objective0324Probe")
+    args(layout.projectDirectory.dir("PLAN/0.3.2.4/evidence").asFile.absolutePath)
+}

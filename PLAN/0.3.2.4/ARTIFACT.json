@@ -1,0 +1,25 @@
+{
+  "status": "LOCAL_ACCEPTANCE_CANDIDATE_DELIVERED",
+  "technicallyComplete": false,
+  "userAccepted": false,
+  "java": {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\darkgrey_rpg-0.3.2.4.jar",
+    "Bytes": 977078,
+    "SHA256": "024F8A29A694668C157FF7B7E348ACE1E459EFBE6CFD1DB98880913DDE839F81",
+    "BuildSHA256": "024F8A29A694668C157FF7B7E348ACE1E459EFBE6CFD1DB98880913DDE839F81"
+  },
+  "studio": {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+    "ProductVersion": "0.3.2.4",
+    "Bytes": 141729500,
+    "SHA256": "0B96B95401DA6820CCF4F98295C548EB998DF6813218554EA39841AD474CB660",
+    "CandidateSHA256": "0B96B95401DA6820CCF4F98295C548EB998DF6813218554EA39841AD474CB660"
+  },
+  "remainingGate": "Studio real file dialog F/G",
+  "reviewFixes": {
+    "status": "IMPLEMENTED_AND_VERIFIED",
+    "report": "USER_REVIEW_FIXES.md",
+    "actualProjectPackageAndSave": "APPLIED_VERIFIED",
+    "userAccepted": false
+  }
+}

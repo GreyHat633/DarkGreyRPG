@@ -54,10 +54,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             crashLogService ?? new CrashLogService(settingsService.SettingsPath),
             new CanonicalStoryResourceDialogs(() => this),
             itemWorkspaceDialogs: new ItemWorkspaceDialogs(() => this),
-            dgrsExportPathPicker: new DgrsExportPathPicker(() => this),
+            dgrsExportPathPicker: new DgrsExportPathPicker(() => this, settingsService),
             namespaceSettings: settingsService,
             namespaceDialogs: new NamespaceDialogs(() => this),
-            offlinePackageDialogs: new OfflinePackageDialogs(() => this));
+            offlinePackageDialogs: new OfflinePackageDialogs(() => this, settingsService));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;

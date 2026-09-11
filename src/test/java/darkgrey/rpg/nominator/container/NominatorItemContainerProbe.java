@@ -2,6 +2,7 @@ package darkgrey.rpg.nominator.container;
 
 import java.util.UUID;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -26,11 +27,39 @@ public final class NominatorItemContainerProbe {
             Item nominator = new Item().setMaxStackSize(1);
             Item ordinary = new Item().setMaxStackSize(64);
             Item filler = new Item().setMaxStackSize(64);
+            Item armor = new Item() {
+
+                @Override
+                public boolean isValidArmor(ItemStack stack, int armorType, Entity entity) {
+                    return armorType >= 0 && armorType < 4;
+                }
+            }.setMaxStackSize(1);
             ModItems.nominator = nominator;
 
             ProbePlayer player = player();
             ContainerNominatorInventory container = new ContainerNominatorInventory(player);
-            require(container.inventorySlots.size() == 38, "two targets plus 36 player slots");
+            require(container.inventorySlots.size() == 42, "two targets plus 27 main, 9 hotbar, 4 armor slots");
+            require(ContainerNominatorInventory.NOMINATE_SLOT == 0, "nominate slot index");
+            require(ContainerNominatorInventory.UNBIND_SLOT == 1, "unbind slot index");
+            require(
+                ContainerNominatorInventory.PLAYER_MAIN_SLOT_START == 2
+                    && ContainerNominatorInventory.PLAYER_MAIN_SLOT_END == 29,
+                "main inventory range");
+            require(
+                ContainerNominatorInventory.HOTBAR_SLOT_START == 29
+                    && ContainerNominatorInventory.HOTBAR_SLOT_END == 38,
+                "hotbar range");
+            require(
+                ContainerNominatorInventory.ARMOR_SLOT_START == 38 && ContainerNominatorInventory.ARMOR_SLOT_END == 42,
+                "armor container range");
+            for (int i = 0; i < 4; i++) {
+                net.minecraft.inventory.Slot armorSlot = (net.minecraft.inventory.Slot) container.inventorySlots
+                    .get(ContainerNominatorInventory.ARMOR_SLOT_START + i);
+                require(armorSlot.getSlotIndex() == 39 - i, "vanilla armor inventory index " + (39 - i));
+                require(armorSlot.getSlotStackLimit() == 1, "armor stack limit");
+                require(armorSlot.isItemValid(new ItemStack(armor, 1)), "mod armor validity " + i);
+                require(!armorSlot.isItemValid(new ItemStack(ordinary, 1)), "ordinary item rejected by armor " + i);
+            }
             player.inventory.mainInventory[0] = new ItemStack(ordinary, 5);
             require(total(player, ordinary) == 5, "source count");
             require(container.transferStackInSlot(player, 29) != null, "shift into target");
@@ -55,6 +84,20 @@ public final class NominatorItemContainerProbe {
             player.inventory.mainInventory[1] = new ItemStack(nominator, 1);
             require(container.transferStackInSlot(player, 30) == null, "nominator rejected by target");
             require(player.inventory.mainInventory[1].stackSize == 1, "rejected tool retained");
+
+            player.inventory.armorInventory[3] = new ItemStack(armor, 1);
+            require(
+                container.transferStackInSlot(player, ContainerNominatorInventory.ARMOR_SLOT_START) != null,
+                "shift armor into target");
+            require(
+                container.getTargetInventory()
+                    .getStackInSlot(ContainerNominatorInventory.NOMINATE_SLOT) != null
+                    && player.inventory.armorInventory[3] == null,
+                "armor move preserves source");
+            require(
+                container.transferStackInSlot(player, ContainerNominatorInventory.NOMINATE_SLOT) != null,
+                "shift armor target back");
+            require(totalIncludingArmor(player, armor) == 1, "armor return preserves item");
 
             container.getTargetInventory()
                 .setInventorySlotContents(0, new ItemStack(ordinary, 1));
@@ -97,6 +140,13 @@ public final class NominatorItemContainerProbe {
     private static int total(ProbePlayer player, Item item) {
         int total = 0;
         for (ItemStack stack : player.inventory.mainInventory)
+            if (stack != null && stack.getItem() == item) total += stack.stackSize;
+        return total;
+    }
+
+    private static int totalIncludingArmor(ProbePlayer player, Item item) {
+        int total = total(player, item);
+        for (ItemStack stack : player.inventory.armorInventory)
             if (stack != null && stack.getItem() == item) total += stack.stackSize;
         return total;
     }

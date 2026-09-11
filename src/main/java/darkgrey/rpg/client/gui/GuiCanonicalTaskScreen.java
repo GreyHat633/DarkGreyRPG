@@ -30,10 +30,24 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private String selectedTaskId;
     private int taskScroll;
     private int detailScroll;
+    private final UtilityWindowGeometry windowGeometry = new UtilityWindowGeometry(280, 180, 620, 300);
+    private boolean geometryInitialized;
+    private CanonicalTaskLayout currentLayout;
 
     @Override
     public void initGui() {
+        UtilityWindowChrome.open("task", windowGeometry, width, height, geometryInitialized);
+        geometryInitialized = true;
+        updateWindowGeometry();
         refreshCache();
+    }
+
+    private void updateWindowGeometry() {
+        currentLayout = new CanonicalTaskLayout(
+            windowGeometry.x,
+            windowGeometry.y,
+            windowGeometry.width,
+            windowGeometry.height);
     }
 
     @Override
@@ -57,12 +71,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     }
 
     private CanonicalTaskLayout layout() {
-        NBTTagCompound selected = findTask(tasks(), selectedTaskId);
-        int objectives = selected == null ? 0
-            : selected.getTagList("objectives", 10)
-                .tagCount();
-        int preferred = Math.min(300, Math.max(180, 80 + Math.max(tasks().tagCount() * 24, objectives * 32)));
-        return new CanonicalTaskLayout(width, height, preferred);
+        return currentLayout;
     }
 
     private NBTTagList tasks() {
@@ -86,6 +95,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     @Override
     public void handleMouseInput() {
         super.handleMouseInput();
+        if (windowGeometry.active()) return;
         int wheel = Mouse.getEventDWheel();
         if (wheel == 0) return;
         CanonicalTaskLayout layout = layout();
@@ -98,6 +108,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int button) {
+        if (windowGeometry.begin(mouseX, mouseY, button)) return;
         super.mouseClicked(mouseX, mouseY, button);
         if (button != 0) return;
         CanonicalTaskLayout layout = layout();
@@ -119,10 +130,15 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         CanonicalTaskLayout layout = layout();
         drawDefaultBackground();
         drawPanel(layout);
-        drawCenteredString(fontRendererObj, "任务", width / 2, layout.panelTop + 9, DgrUiPalette.SELECTED_BORDER);
+        drawCenteredString(
+            fontRendererObj,
+            "任务",
+            (layout.panelLeft + layout.panelRight) / 2,
+            layout.panelTop + 9,
+            DgrUiPalette.SELECTED_BORDER);
         drawList(layout, mouseX, mouseY);
         drawDetails(layout);
-        drawCenteredString(fontRendererObj, "Esc 返回", width / 2, layout.panelBottom - 14, 0xFFAAAAAA);
+        UtilityWindowChrome.drawGrip(windowGeometry);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
@@ -216,6 +232,42 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private static String value(NBTTagCompound tag, String key, String fallback) {
         String value = tag.getString(key);
         return value.length() == 0 ? fallback : value;
+    }
+
+    @Override
+    protected void keyTyped(char character, int key) {
+        if (key == mc.gameSettings.keyBindInventory.getKeyCode()) {
+            mc.displayGuiScreen(null);
+            return;
+        }
+        super.keyTyped(character, key);
+    }
+
+    @Override
+    protected void mouseClickMove(int x, int y, int button, long elapsed) {
+        if (windowGeometry.active()) {
+            windowGeometry.move(x, y);
+            updateWindowGeometry();
+            return;
+        }
+        super.mouseClickMove(x, y, button, elapsed);
+    }
+
+    @Override
+    protected void mouseMovedOrUp(int x, int y, int button) {
+        if (button == 0 && windowGeometry.active()) {
+            windowGeometry.end();
+            UtilityWindowChrome.save("task", windowGeometry, width, height);
+            return;
+        }
+        super.mouseMovedOrUp(x, y, button);
+    }
+
+    @Override
+    public void onGuiClosed() {
+        windowGeometry.end();
+        if (geometryInitialized) UtilityWindowChrome.save("task", windowGeometry, width, height);
+        super.onGuiClosed();
     }
 
     @Override

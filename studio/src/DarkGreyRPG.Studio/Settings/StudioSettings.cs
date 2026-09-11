@@ -45,4 +45,13 @@ public sealed record StudioSettings
 
     [JsonPropertyName("recent_projects")]
     public IReadOnlyList<string> RecentProjects { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("last_export_directory")]
+    public string? LastExportDirectory { get; init; }
+
+    [JsonPropertyName("last_import_directory")]
+    public string? LastImportDirectory { get; init; }
+
+    [JsonPropertyName("last_reference_directory")]
+    public string? LastReferenceDirectory { get; init; }
 }

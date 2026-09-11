@@ -202,6 +202,74 @@ public sealed class SettingsServiceTests
     }
 
     [TestMethod]
+    public void SaveAndLoad_RoundTripsIndependentFileDialogDirectories()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            var exportDirectory = Path.Combine(Path.GetDirectoryName(settingsPath)!, "export");
+            var importDirectory = Path.Combine(Path.GetDirectoryName(settingsPath)!, "import");
+            var referenceDirectory = Path.Combine(Path.GetDirectoryName(settingsPath)!, "reference");
+            var service = new SettingsService(settingsPath);
+
+            service.Save(new StudioSettings
+            {
+                LastExportDirectory = exportDirectory,
+                LastImportDirectory = importDirectory,
+                LastReferenceDirectory = referenceDirectory,
+            });
+
+            var loaded = service.Load();
+
+            Assert.AreEqual(Path.GetFullPath(exportDirectory), loaded.LastExportDirectory);
+            Assert.AreEqual(Path.GetFullPath(importDirectory), loaded.LastImportDirectory);
+            Assert.AreEqual(Path.GetFullPath(referenceDirectory), loaded.LastReferenceDirectory);
+        }
+        finally { DeleteTempDirectory(settingsPath); }
+    }
+
+    [TestMethod]
+    public void Load_SchemaV1WithoutFileDialogDirectoriesPreservesExistingSettings()
+    {
+        var settingsPath = CreateTempSettingsPath();
+        try
+        {
+            var project = Path.Combine(Path.GetDirectoryName(settingsPath)!, "project");
+            var recent = Path.Combine(Path.GetDirectoryName(settingsPath)!, "recent");
+            File.WriteAllText(settingsPath, $$"""
+                {
+                  "schema_version": 1,
+                  "theme": "Dark",
+                  "global_namespace": "GreyHat_",
+                  "window_width": 1440,
+                  "window_height": 900,
+                  "window_maximized": true,
+                  "resource_browser_width": 320,
+                  "bottom_panel_height": 240,
+                  "last_project": "{{project.Replace("\\", "\\\\")}}",
+                  "recent_projects": ["{{recent.Replace("\\", "\\\\")}}"]
+                }
+                """);
+
+            var loaded = new SettingsService(settingsPath).Load();
+
+            Assert.AreEqual(ThemePreference.Dark, loaded.Theme);
+            Assert.AreEqual("GreyHat_", loaded.GlobalNamespace);
+            Assert.AreEqual(1440, loaded.WindowWidth);
+            Assert.AreEqual(900, loaded.WindowHeight);
+            Assert.IsTrue(loaded.WindowMaximized);
+            Assert.AreEqual(320, loaded.ResourceBrowserWidth);
+            Assert.AreEqual(240, loaded.BottomPanelHeight);
+            Assert.AreEqual(Path.GetFullPath(project), loaded.LastProject);
+            CollectionAssert.AreEqual(new[] { Path.GetFullPath(recent) }, loaded.RecentProjects.ToArray());
+            Assert.IsNull(loaded.LastExportDirectory);
+            Assert.IsNull(loaded.LastImportDirectory);
+            Assert.IsNull(loaded.LastReferenceDirectory);
+        }
+        finally { DeleteTempDirectory(settingsPath); }
+    }
+
+    [TestMethod]
     public void Load_SchemaV1WithoutRecentProjectsUsesEmptyHistory()
     {
         var settingsPath = CreateTempSettingsPath();

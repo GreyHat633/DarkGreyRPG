@@ -22,13 +22,24 @@ final class CanonicalTaskLayout {
     }
 
     CanonicalTaskLayout(int screenWidth, int screenHeight, int preferredHeight) {
-        int panelWidth = Math.max(1, Math.min(620, screenWidth - 24));
-        int panelHeight = Math.max(1, Math.min(preferredHeight, screenHeight - 24));
-        panelLeft = Math.max(8, (screenWidth - panelWidth) / 2);
-        panelTop = Math.max(8, (screenHeight - panelHeight) / 2);
+        this(
+            Math.max(8, (screenWidth - Math.max(1, Math.min(620, screenWidth - 24))) / 2),
+            Math.max(8, (screenHeight - Math.max(1, Math.min(preferredHeight, screenHeight - 24))) / 2),
+            Math.max(1, Math.min(620, screenWidth - 24)),
+            Math.max(1, Math.min(preferredHeight, screenHeight - 24)),
+            screenHeight < 280);
+    }
+
+    CanonicalTaskLayout(int left, int top, int panelWidth, int panelHeight) {
+        this(left, top, panelWidth, panelHeight, panelHeight < 180);
+    }
+
+    private CanonicalTaskLayout(int left, int top, int panelWidth, int panelHeight, boolean compact) {
+        panelLeft = left;
+        panelTop = top;
         panelRight = panelLeft + panelWidth;
         panelBottom = panelTop + panelHeight;
-        stacked = panelWidth < 470 || screenHeight < 280;
+        stacked = panelWidth < 470 || compact;
 
         int contentTop = Math.min(panelBottom - 1, panelTop + 28);
         int contentBottom = Math.max(contentTop, panelBottom - 20);

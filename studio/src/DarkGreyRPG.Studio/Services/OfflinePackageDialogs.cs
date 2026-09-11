@@ -1,4 +1,6 @@
+using System.IO;
 using System.Windows;
+using DarkGreyRPG.Studio.Settings;
 using DarkGreyRPG.Studio.ViewModels;
 using DarkGreyRPG.Studio.Views;
 using Microsoft.Win32;
@@ -9,6 +11,8 @@ public interface IOfflinePackageDialogs
 {
     string? PickPackageFile();
 
+    string? PickPackageFile(OfflinePackageDialogKind kind) => PickPackageFile();
+
     OfflineResourceChoice? PickResource(
         IReadOnlyList<OfflineResourceChoice> native,
         IReadOnlyList<OfflineResourceChoice> external,
@@ -17,6 +21,12 @@ public interface IOfflinePackageDialogs
     void ShowReadOnlyResource(OfflineResourceChoice choice);
 
     bool ConfirmRemoval(string package, IReadOnlyList<string> consumers);
+}
+
+public enum OfflinePackageDialogKind
+{
+    Import,
+    Reference,
 }
 
 /// <summary>Safe default for hosts and tests that do not have a visible window.</summary>
@@ -51,14 +61,22 @@ public sealed class NullOfflinePackageDialogs : IOfflinePackageDialogs
 public sealed class OfflinePackageDialogs : IOfflinePackageDialogs
 {
     private readonly Func<Window?> _ownerProvider;
+    private readonly ISettingsService? _settingsService;
 
-    public OfflinePackageDialogs(Func<Window?> ownerProvider)
+    public OfflinePackageDialogs(Func<Window?> ownerProvider, ISettingsService? settingsService = null)
     {
         _ownerProvider = ownerProvider ?? throw new ArgumentNullException(nameof(ownerProvider));
+        _settingsService = settingsService;
     }
 
     /// <summary>Shows a file picker for a DGRS package and returns the selected path.</summary>
     public string? PickPackageFile()
+        => PickPackageFileCore(null);
+
+    public string? PickPackageFile(OfflinePackageDialogKind kind)
+        => PickPackageFileCore(kind);
+
+    private string? PickPackageFileCore(OfflinePackageDialogKind? kind)
     {
         var picker = new OpenFileDialog
         {
@@ -67,11 +85,44 @@ public sealed class OfflinePackageDialogs : IOfflinePackageDialogs
             DefaultExt = ".dgrs",
             CheckFileExists = true,
             Multiselect = false,
+            InitialDirectory = ResolveInitialDirectory(kind),
         };
 
         var owner = _ownerProvider();
         var accepted = owner is null ? picker.ShowDialog() : picker.ShowDialog(owner);
-        return accepted == true ? picker.FileName : null;
+        if (accepted != true) return null;
+
+        RememberDirectory(kind, picker.FileName);
+        return picker.FileName;
+    }
+
+    private string ResolveInitialDirectory(OfflinePackageDialogKind? kind)
+    {
+        var remembered = kind switch
+        {
+            OfflinePackageDialogKind.Import => _settingsService?.Load().LastImportDirectory,
+            OfflinePackageDialogKind.Reference => _settingsService?.Load().LastReferenceDirectory,
+            _ => null,
+        };
+        return DgrsExportPathPicker.ResolveInitialDirectory(remembered, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+    }
+
+    private void RememberDirectory(OfflinePackageDialogKind? kind, string selectedPath)
+    {
+        if (_settingsService is null || kind is null) return;
+        var directory = Path.GetDirectoryName(Path.GetFullPath(selectedPath));
+        if (string.IsNullOrWhiteSpace(directory)) return;
+
+        try
+        {
+            var latest = _settingsService.Load();
+            _settingsService.Save(kind == OfflinePackageDialogKind.Import
+                ? latest with { LastImportDirectory = directory }
+                : latest with { LastReferenceDirectory = directory });
+        }
+        catch (SettingsPersistenceException) { }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>

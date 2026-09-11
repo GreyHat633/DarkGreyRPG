@@ -1,0 +1,5 @@
+gradle.projectsEvaluated {
+    rootProject.spotless.java {
+        target rootProject.fileTree('src/main/java/darkgrey/rpg/client/gui') { include 'GuiNominatorEntity.java', 'GuiNominatorInventory.java', 'NominatorBrowser.java', 'SmoothScroll.java', 'UtilityWindow*.java', 'GuiCanonicalTaskScreen.java', 'CanonicalTaskLayout.java', 'GuiCopierTemplates.java' }, rootProject.file('src/main/java/darkgrey/rpg/nominator/container/ContainerNominatorInventory.java'), rootProject.file('src/test/java/darkgrey/rpg/nominator/container/NominatorItemContainerProbe.java'), rootProject.fileTree('src/test/java/darkgrey/rpg/client/gui') { include '*0324Probe.java' }
+    }
+}
