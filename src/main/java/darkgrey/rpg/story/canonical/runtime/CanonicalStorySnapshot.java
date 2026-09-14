@@ -99,29 +99,17 @@ public final class CanonicalStorySnapshot {
             throw new IllegalArgumentException("Terminal canonical Story cannot wait on a child boundary.");
         if ((waitKind == CanonicalStoryWaitKind.CONDITION) != (waitingConditionValue != null))
             throw new IllegalArgumentException("Story Condition wait state and value must be supplied together.");
-        if (waitKind == CanonicalStoryWaitKind.SESSION || waitKind == CanonicalStoryWaitKind.TASK
-            || waitKind.isActorInteraction()) {
+        if (waitKind == CanonicalStoryWaitKind.SESSION || waitKind == CanonicalStoryWaitKind.TASK) {
             if (blank(waitResourceId)) throw new IllegalArgumentException("Aggregate wait requires a resource ID.");
-            if (waitDimension != null || waitX != null || waitY != null || waitZ != null || waitRadius != null)
-                throw new IllegalArgumentException("Actor wait cannot retain a region descriptor.");
-        } else if (waitKind == CanonicalStoryWaitKind.ENTER_REGION) {
-            if (waitDimension == null || waitX == null
-                || waitY == null
-                || waitZ == null
-                || waitRadius == null
-                || waitRadius.doubleValue() <= 0D
-                || !finite(waitX)
-                || !finite(waitY)
-                || !finite(waitZ)
-                || !finite(waitRadius)) throw new IllegalArgumentException("Region wait requires a finite sphere.");
-            if (waitResourceId != null) throw new IllegalArgumentException("Region wait cannot retain a resource ID.");
-        } else if (waitResourceId != null || waitDimension != null
-            || waitX != null
+        } else if (waitResourceId != null)
+            throw new IllegalArgumentException("Only aggregate waits retain a resource ID.");
+        // Existing active-save wire slots stay empty. Retired node payloads are never restored.
+        if (waitDimension != null || waitX != null
             || waitY != null
             || waitZ != null
-            || waitRadius != null) throw new IllegalArgumentException("Only aggregate waits retain a resource ID.");
-        if ((status == CanonicalStoryStatus.TRANSFERRED) != !blank(targetStoryId))
-            throw new IllegalArgumentException("Only transferred canonical Stories retain a target Story ID.");
+            || waitRadius != null
+            || targetStoryId != null)
+            throw new IllegalArgumentException("Retired standalone Story node payload is unsupported.");
         LinkedHashMap<String, Boolean> detached = new LinkedHashMap<String, Boolean>();
         for (Map.Entry<String, Boolean> entry : logicValues.entrySet()) {
             if (blank(entry.getKey()) || entry.getValue() == null)
@@ -231,14 +219,6 @@ public final class CanonicalStorySnapshot {
         return waitResourceId;
     }
 
-    public String getWaitActorId() {
-        return waitKind.isActorInteraction() ? waitResourceId : null;
-    }
-
-    public String getWaitInteractActorId() {
-        return getWaitActorId();
-    }
-
     public Integer getWaitDimension() {
         return waitDimension;
     }
@@ -312,7 +292,4 @@ public final class CanonicalStorySnapshot {
             .isEmpty();
     }
 
-    private static boolean finite(Double value) {
-        return value != null && !Double.isNaN(value.doubleValue()) && !Double.isInfinite(value.doubleValue());
-    }
 }

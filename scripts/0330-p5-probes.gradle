@@ -1,0 +1,8 @@
+gradle.projectsEvaluated {
+    rootProject.tasks.named('objective0324Probe') {
+        args = [rootProject.file('.tooling/0.3.3.0/p5/fixtures/objective0324').absolutePath]
+    }
+    rootProject.tasks.named('b4ExternalArchiveSetProbe') {
+        args = [rootProject.file('.tooling/0.3.3.0/p5/fixtures/external-packages').absolutePath]
+    }
+}

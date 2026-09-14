@@ -53,14 +53,11 @@ public sealed class StoryPackageTests
         new StoryRepository(project.Root).CreateStory("canonical_flow", "Canonical Flow");
 
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new GraphResourceEnvelope(
-            GraphResourceKind.Story,
-            "canonical_flow",
-            "Canonical Flow",
-            new GraphDocument([
-                new GraphNode("start", "start", "Start"),
-                new GraphNode("next_story", "enter_story", "Enter Story"),
-            ])));
+        Directory.CreateDirectory(Path.GetDirectoryName(store.Stories.GetPath("canonical_flow"))!);
+        File.WriteAllText(store.Stories.GetPath("canonical_flow"), """
+            {"schema_version":1,"resource_kind":"story","id":"canonical_flow","display_name":"Old",
+             "graph":{"nodes":[{"id":"old","type":"enter_story","display_name":"Old","ports":[],"properties":{}}],"connections":[]}}
+            """);
 
         var output = Path.Combine(project.Root, "existing-output");
         Directory.CreateDirectory(output);
@@ -68,12 +65,10 @@ public sealed class StoryPackageTests
         var existingBytes = new byte[] { 9, 8, 7, 6 };
         File.WriteAllBytes(existingPath, existingBytes);
 
-        var exception = Assert.ThrowsExactly<StoryPackageException>(
+        var exception = Assert.ThrowsExactly<GraphResourceRepositoryException>(
             () => new StoryPackageExporter(project.Root).Build("canonical_flow", output));
-
-        StringAssert.Contains(exception.Message, "Selected Story 'canonical_flow'");
-        StringAssert.Contains(exception.Message, "canonical enter_story");
-        Assert.IsTrue(exception.Message.Contains("project-level cross-Story migration is required", StringComparison.OrdinalIgnoreCase));
+        Assert.IsInstanceOfType<GraphResourceEnvelopeException>(exception.InnerException);
+        Assert.AreEqual("graph.resource.story.standalone_node.removed", ((GraphResourceEnvelopeException)exception.InnerException!).Code);
         CollectionAssert.AreEqual(existingBytes, File.ReadAllBytes(existingPath));
         CollectionAssert.AreEqual(new[] { "sentinel.bin" },
             Directory.EnumerateFiles(output, "*", SearchOption.AllDirectories)

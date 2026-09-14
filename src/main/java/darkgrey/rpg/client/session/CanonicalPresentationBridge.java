@@ -19,6 +19,20 @@ public final class CanonicalPresentationBridge {
         if (event.phase != TickEvent.Phase.END) return;
         CanonicalTaskClientStore.synchronizeWorld(Minecraft.getMinecraft().theWorld);
         CanonicalSessionClientController.restoreForeground();
+        darkgrey.rpg.title.CanonicalTitleClient.tick();
+    }
+
+    @SubscribeEvent
+    public void hud(net.minecraftforge.client.event.RenderGameOverlayEvent.Post event) {
+        if (event.type != net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType.ALL) return;
+        if (Minecraft.getMinecraft().currentScreen == null)
+            CanonicalSessionClientController.drawUnderlay(event.partialTicks);
+        darkgrey.rpg.title.CanonicalTitleClient.draw();
+    }
+
+    @SubscribeEvent
+    public void afterGui(GuiScreenEvent.DrawScreenEvent.Post event) {
+        darkgrey.rpg.title.CanonicalTitleClient.draw();
     }
 
     @SubscribeEvent

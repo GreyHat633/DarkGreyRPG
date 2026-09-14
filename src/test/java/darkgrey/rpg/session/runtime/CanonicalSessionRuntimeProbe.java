@@ -631,7 +631,7 @@ public final class CanonicalSessionRuntimeProbe {
 
         CanonicalGraphResource malformedLine = session(
             node("start", "start", startPorts(), empty()),
-            node("line", "line", ports(in("flow_in"), out("flow_out")), props("text", "Missing speaker")),
+            node("line", "line", ports(in("flow_in"), out("flow_out")), props("speaker_actor_id", "actor")),
             edge("start", "flow_out", "line", "flow_in"));
         expectFailure(new Runnable() {
 
@@ -640,6 +640,16 @@ public final class CanonicalSessionRuntimeProbe {
                 CanonicalSessionRuntime.start(malformedLine);
             }
         }, "session.line.property.required");
+
+        CanonicalGraphResource speakerless = session(
+            node("start", "start", startPorts(), empty()),
+            node("line", "line", ports(in("flow_in"), out("flow_out")), props("text", "Wind")),
+            edge("start", "flow_out", "line", "flow_in"));
+        require(
+            CanonicalSessionRuntime.start(speakerless)
+                .getCurrentStep()
+                .getSpeakerActorId() == null,
+            "line speaker is optional");
 
         CanonicalGraphResource unsupported = session(
             node("start", "start", startPorts(), empty()),

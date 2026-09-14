@@ -163,14 +163,18 @@ public final class CanonicalTaskSubscriptionIndex {
         String type = string(node, "objective_type");
         String target = null;
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) target = string(node, "entity");
-        else if (CanonicalTaskEvent.COLLECT_ITEM.equals(type)) target = string(node, "item");
+        else if (CanonicalTaskEvent.COLLECT_ITEM.equals(type) || CanonicalTaskEvent.SUBMIT_ITEM.equals(type))
+            target = string(node, "item");
+        else if (CanonicalTaskEvent.REACH_REGION.equals(type)) target = "position";
         else if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) target = string(node, "actor_id");
         return target == null ? null : new CanonicalTaskSubscriptionKey(player, type, target);
     }
 
     private static String primaryTarget(CanonicalTaskEvent event) {
         if (CanonicalTaskEvent.KILL_ENTITY.equals(event.getType())) return event.get("entity");
-        if (CanonicalTaskEvent.COLLECT_ITEM.equals(event.getType())) return event.get("item");
+        if (CanonicalTaskEvent.COLLECT_ITEM.equals(event.getType())
+            || CanonicalTaskEvent.SUBMIT_ITEM.equals(event.getType())) return event.get("item");
+        if (CanonicalTaskEvent.REACH_REGION.equals(event.getType())) return "position";
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(event.getType())) return event.get("actor_id");
         return null;
     }

@@ -27,6 +27,7 @@ public enum UnsavedChangesChoice
 
 public interface IActorWorkspaceDialogs
 {
+    bool EditPortraits(ActorDocument document, string projectDirectory) => false;
     ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string> tags)
         => RequestResourceRename(resourceLabel, id, currentDisplayName);
     ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName)

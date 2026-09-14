@@ -1,0 +1,7 @@
+// Isolate the historical Objective probe from screenshots and migration evidence.
+// Prepare the fixture copy as documented in PLAN/0.3.3.0/BASELINE.md.
+gradle.projectsEvaluated {
+    rootProject.tasks.named('objective0324Probe') {
+        args = [rootProject.file('.tooling/0.3.3.0/fixtures/objective0324').absolutePath]
+    }
+}

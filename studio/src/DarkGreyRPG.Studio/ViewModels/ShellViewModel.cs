@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -271,8 +271,8 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.2.0_B4"
-        : "DarkGrey RPG Studio 0.3.2.0_B4";
+        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.3.0"
+        : "DarkGrey RPG Studio 0.3.3.0";
 
     public string ProjectDirectory
     {
@@ -626,7 +626,22 @@ public sealed partial class ShellViewModel : ObservableObject
         if (!PrepareProjectNamespace(projectDirectory)) return false;
         try
         {
+            var firstProject = _projectService.CurrentProject is null;
             var project = _projectService.OpenProject(projectDirectory);
+            if (firstProject)
+            {
+                try
+                {
+                    if (System.Diagnostics.Process.GetProcessesByName("DarkGreyRPGStudio").Length <= 1)
+                        DarkGreyRPG.Studio.Core.Media.ProjectMediaGarbageCollector.CollectAtStartup(project.ProjectDirectory);
+                }
+                catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException
+                    or System.Text.Json.JsonException or InvalidOperationException or KeyNotFoundException or DarkGreyRPG.Studio.Core.Packaging.StoryPackageException
+                    or DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelopeException)
+                {
+                    Output.Append("已保留媒体孤立文件：" + exception.Message, source: "Project/Media");
+                }
+            }
             _dialogueDrafts.Clear();
             _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
@@ -902,6 +917,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void ConfigureCanonicalResourceActions(CanonicalStoryWorkspaceViewModel workspace)
     {
+        workspace.MediaProjectDirectory = ProjectDirectory;
         if (_projectService.CurrentProject?.Project is { } project)
             workspace.ConfigureProjectBreadcrumb(project.Id, project.DisplayName, ShowProjectHome);
         workspace.ReadOnlyResourceRequested = item =>
@@ -917,6 +933,24 @@ public sealed partial class ShellViewModel : ObservableObject
         workspace.CreateResourceRequested = CreateCanonicalStoryResource;
         workspace.ReferenceResourceRequested = ReferenceCanonicalStoryResource;
         workspace.CreateActorRequested = CreateCanonicalStoryActor;
+        workspace.EditActorPortraitRequested = actor =>
+        {
+            var project = _projectService.CurrentProject;
+            if (project is null || actor.IsReadOnly) return;
+            try
+            {
+                var document = project.Actors.LoadActor(actor.Id);
+                if (!document.SupportsPortraits || !_actorWorkspaceDialogs.EditPortraits(document, project.ProjectDirectory)) return;
+                project.Actors.SaveActor(document);
+                LoadActorList();
+                ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, actor.Id);
+                ReportSuccess("角色头像与表情已保存。", $"actor/{actor.Id}");
+            }
+            catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
+            {
+                ReportFailure("保存角色头像", exception);
+            }
+        };
         workspace.ReferenceActorRequested = ReferenceCanonicalStoryActor;
         workspace.CreateItemRequested = CreateCanonicalStoryItem;
         workspace.ReferenceItemRequested = ReferenceCanonicalStoryItem;

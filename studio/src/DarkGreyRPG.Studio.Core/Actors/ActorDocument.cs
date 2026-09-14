@@ -6,6 +6,8 @@ namespace DarkGreyRPG.Studio.Core.Actors;
 
 public sealed class ActorDocument : INotifyPropertyChanged
 {
+    private string? _defaultPortraitRef;
+    private IReadOnlyList<ActorPortraitVariant> _portraitVariants;
     private string _id;
     private string _displayName;
     private string _notes;
@@ -23,6 +25,8 @@ public sealed class ActorDocument : INotifyPropertyChanged
         _id = resource.SchemaVersion == ActorResource.CurrentSchemaVersion
             ? resource.NpcId ?? resource.GroupId ?? string.Empty
             : resource.Id;
+        _defaultPortraitRef = resource.DefaultPortraitRef;
+        _portraitVariants = resource.PortraitVariants.Select(value => value with { }).ToArray();
         _displayName = resource.DisplayName;
         _notes = resource.Notes;
         _homeStoryId = resource.HomeStoryId ?? "uncategorized";
@@ -37,10 +41,29 @@ public sealed class ActorDocument : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public bool SupportsPortraits => _schemaVersion == ActorResource.CurrentSchemaVersion;
+
     public string Id
     {
         get => _id;
         set => SetField(ref _id, value ?? string.Empty);
+    }
+
+    public string? DefaultPortraitRef
+    {
+        get => _defaultPortraitRef;
+        set => SetField(ref _defaultPortraitRef, value);
+    }
+
+    public IReadOnlyList<ActorPortraitVariant> PortraitVariants => _portraitVariants;
+
+    public void SetPortraitVariants(IEnumerable<ActorPortraitVariant> values)
+    {
+        var next = values.Select(value => value with { }).ToArray();
+        if (_portraitVariants.SequenceEqual(next)) return;
+        _portraitVariants = next;
+        OnPropertyChanged(nameof(PortraitVariants));
+        RefreshState();
     }
 
     public string DisplayName
@@ -143,6 +166,8 @@ public sealed class ActorDocument : INotifyPropertyChanged
                     Notes = Notes,
                     Tags = [.. Tags],
                     HomeStoryId = HomeStoryId,
+                    DefaultPortraitRef = DefaultPortraitRef,
+                    PortraitVariants = PortraitVariants.Select(value => value with { }).ToList(),
                 }
                 : new CollectiveActorResource
                 {
@@ -151,6 +176,8 @@ public sealed class ActorDocument : INotifyPropertyChanged
                     Notes = Notes,
                     Tags = [.. Tags],
                     HomeStoryId = HomeStoryId,
+                    DefaultPortraitRef = DefaultPortraitRef,
+                    PortraitVariants = PortraitVariants.Select(value => value with { }).ToList(),
                 };
         }
 
@@ -204,10 +231,10 @@ public sealed class ActorDocument : INotifyPropertyChanged
         }
     }
 
-    private ActorSnapshot CaptureSnapshot() => new(Id, DisplayName, Notes, HomeStoryId, string.Join("\u001f", Tags));
+    private ActorSnapshot CaptureSnapshot() => new(Id, DisplayName, Notes, HomeStoryId, string.Join("\u001f", Tags), DefaultPortraitRef, System.Text.Json.JsonSerializer.Serialize(PortraitVariants));
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-    private sealed record ActorSnapshot(string Id, string DisplayName, string Notes, string HomeStoryId, string Tags);
+    private sealed record ActorSnapshot(string Id, string DisplayName, string Notes, string HomeStoryId, string Tags, string? DefaultPortraitRef, string PortraitVariants);
 }

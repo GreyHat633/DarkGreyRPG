@@ -28,6 +28,7 @@ public final class LoadedStoryPackage {
     LoadedStoryPackage(StoryPackageManifest manifest, File directory, File sourceArchive, ProjectSnapshot snapshot,
         CanonicalStoryLogicGraph storyLogicGraph, Map<String, byte[]> declaredResourceBytes)
         throws darkgrey.rpg.project.ProjectLoadException {
+        StoryPackageMediaValidation.validate(manifest, declaredResourceBytes);
         this.manifest = manifest;
         this.directory = directory;
         this.sourceArchive = sourceArchive;
@@ -72,6 +73,21 @@ public final class LoadedStoryPackage {
 
     public CanonicalStoryLogicGraph getStoryLogicGraph() {
         return storyLogicGraph;
+    }
+
+    public darkgrey.rpg.network.message.canonical.CanonicalMediaChunk readMediaChunk(long requestId, String ref,
+        int offset) {
+        if (!manifest.getRequiredResources()
+            .getMedia()
+            .contains(ref)) return null;
+        byte[] bytes = declaredResourceBytes.get(ref);
+        if (bytes == null || offset < 0 || offset >= bytes.length || offset % 32768 != 0) return null;
+        return new darkgrey.rpg.network.message.canonical.CanonicalMediaChunk(
+            requestId,
+            ref,
+            bytes.length,
+            offset,
+            java.util.Arrays.copyOfRange(bytes, offset, Math.min(bytes.length, offset + 32768)));
     }
 
     byte[] getDeclaredResourceBytes(String path) {

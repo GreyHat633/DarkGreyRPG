@@ -1,4 +1,4 @@
-﻿using System.Text.Encodings.Web;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -15,15 +15,15 @@ public enum GraphResourceKind
 }
 
 /// <summary>
-/// The schema-version-1 canonical graph resource envelope.  The graph core is
-/// deliberately the only nested model; semantic resource-specific containers
-/// belong to a later schema.
+/// Canonical graph envelope with an optional, Task-only author metadata extension.
 /// </summary>
 public sealed class GraphResourceEnvelope
 {
     public const int CurrentSchemaVersion = 1;
 
     private GraphDocument? _graph;
+
+    public CanonicalTaskMetadata? TaskMetadata { get; set; }
 
     public GraphResourceEnvelope() { }
 
@@ -108,7 +108,7 @@ public sealed class GraphResourceKindJsonConverter : JsonConverter<GraphResource
 public static class GraphResourceEnvelopeSerializer
 {
     private static readonly HashSet<string> RootMembers =
-        ["schema_version", "resource_kind", "id", "display_name", "tags", "graph"];
+        ["schema_version", "resource_kind", "id", "display_name", "tags", "task_metadata", "graph"];
 
     public static string Serialize(GraphResourceEnvelope envelope, bool indented = true)
     {
@@ -129,6 +129,13 @@ public static class GraphResourceEnvelopeSerializer
             {
                 writer.WritePropertyName("tags");
                 JsonSerializer.Serialize(writer, envelope.Tags);
+            }
+            if (envelope.TaskMetadata is { } metadata)
+            {
+                writer.WritePropertyName("task_metadata");
+                writer.WriteStartObject();
+                writer.WriteString("description", metadata.Description);
+                writer.WriteEndObject();
             }
             writer.WritePropertyName("graph");
             var graph = envelope.SnapshotGraph()!;
@@ -176,9 +183,10 @@ public static class GraphResourceEnvelopeSerializer
 
             var graph = JsonSerializer.Deserialize<GraphDocument>(graphElement.GetRawText(), GraphSerializer.Options)
                 ?? throw Failure("graph.resource.graph.required", "Canonical graph resource graph cannot be null.");
+            RejectRetiredStandaloneNodes(kind, graph);
             var tags = root.TryGetProperty("tags", out var tagsValue)
                 ? tagsValue.EnumerateArray().Select(tag => tag.ValueKind == JsonValueKind.String ? tag.GetString()! : throw new JsonException("Tags must be strings.")).ToArray() : [];
-            return new GraphResourceEnvelope(kind, id, displayName, graph) { SchemaVersion = version, Tags = tags };
+            return new GraphResourceEnvelope(kind, id, displayName, graph) { SchemaVersion = version, Tags = tags, TaskMetadata = CanonicalTaskMetadata.Read(root, kind) };
         }
         catch (GraphResourceEnvelopeException)
         {
@@ -258,6 +266,19 @@ public static class GraphResourceEnvelopeSerializer
             throw Failure("graph.resource.tags.invalid", "Resource tags must be a string array.");
         if (envelope.SnapshotGraph() is null)
             throw Failure("graph.resource.graph.required", "Canonical graph resource graph cannot be null.");
+        if (envelope.TaskMetadata is not null && envelope.ResourceKind != GraphResourceKind.Task)
+            throw Failure("graph.resource.task_metadata.scope", "任务说明只能用于 Task 资源。");
+        RejectRetiredStandaloneNodes(envelope.ResourceKind, envelope.SnapshotGraph()!);
+    }
+
+    private static void RejectRetiredStandaloneNodes(GraphResourceKind kind, GraphDocument graph)
+    {
+        if (kind != GraphResourceKind.Story) return;
+        var retired = graph.Nodes?.FirstOrDefault(node => node is not null
+            && node.Type is "interact_actor" or "enter_region" or "enter_story");
+        if (retired is not null)
+            throw Failure("graph.resource.story.standalone_node.removed",
+                $"旧独立触发器节点 '{retired.Type}' 已删除，请先手工转换节点 '{retired.Id}'；开始配置不受影响。");
     }
 
     private static void EnsureRootMembers(JsonElement root)
@@ -272,7 +293,7 @@ public static class GraphResourceEnvelopeSerializer
         }
 
         foreach (var member in RootMembers)
-            if (member != "tags" && !seen.Contains(member))
+            if (member is not ("tags" or "task_metadata") && !seen.Contains(member))
                 throw Failure("graph.resource.root.member.required", $"Canonical graph resource root field '{member}' is required.");
     }
 
@@ -371,6 +392,7 @@ public sealed class GraphResourceDocument
         Id = envelope.Id;
         DisplayName = envelope.DisplayName;
         Tags = envelope.Tags.ToArray();
+        TaskMetadata = envelope.TaskMetadata;
         _graph = GraphResourceEnvelopeSerializer.CloneGraph(graph);
     }
 
@@ -380,6 +402,13 @@ public sealed class GraphResourceDocument
     public string DisplayName { get; private set; }
     public IReadOnlyList<string> Tags { get; private set; } = [];
     public void SetTags(IEnumerable<string> tags) => Tags = tags.ToArray();
+    public CanonicalTaskMetadata? TaskMetadata { get; private set; }
+    public void SetTaskMetadata(CanonicalTaskMetadata? metadata)
+    {
+        if (ResourceKind != GraphResourceKind.Task && metadata is not null)
+            throw new ArgumentException("任务说明只能用于 Task 资源。");
+        TaskMetadata = metadata;
+    }
     /// <summary>
     /// The document-owned mutable graph used by an editor host. It is detached
     /// from the source envelope when the document is opened.
@@ -400,7 +429,7 @@ public sealed class GraphResourceDocument
 
     /// <summary>Creates a detached persistence snapshot of the current edit state.</summary>
     public GraphResourceEnvelope ToEnvelope()
-        => new(ResourceKind, Id, DisplayName, _graph) { Tags = Tags.ToArray() };
+        => new(ResourceKind, Id, DisplayName, _graph) { Tags = Tags.ToArray(), TaskMetadata = TaskMetadata };
 
     public GraphResourceEnvelope CreateSnapshot() => ToEnvelope();
 }

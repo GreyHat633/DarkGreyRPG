@@ -390,7 +390,7 @@ public final class CanonicalTaskForgeProbe {
                     || type.equals("cpw.mods.fml.common.gameevent.TickEvent$PlayerTickEvent"),
                 "event handler type");
         }
-        require(handlers == 4, "exactly four task handlers");
+        require(handlers == 3, "exactly three task handlers; inventory is sampled after pickup");
     }
 
     private static void worldLogicLifecycle() {

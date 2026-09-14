@@ -15,6 +15,10 @@ public final class CanonicalStoryActionConfiguration {
     public static final String GIVE_ITEM = "give_item";
     public static final String GIVE_XP = "give_xp";
     public static final String SEND_MESSAGE = "send_message";
+    public static final String GIVE_HEALTH = "give_health";
+    public static final String TELEPORT = "teleport_player";
+    public static final String GIVE_BUFF = "give_buff";
+    public static final String EXECUTE_COMMAND = "execute_command";
 
     private final String type;
     private final String itemId;
@@ -22,6 +26,7 @@ public final class CanonicalStoryActionConfiguration {
     private final int amount;
     private final String message;
     private final boolean legacyRegistryItem;
+    private Map<String, JsonElement> extended = Collections.emptyMap();
 
     private CanonicalStoryActionConfiguration(String type, String itemId, int metadata, int amount, String message,
         boolean legacyRegistryItem) {
@@ -38,7 +43,6 @@ public final class CanonicalStoryActionConfiguration {
         String type = string(properties, "action_type");
         if (GIVE_ITEM.equals(type)) {
             int amount = integer(properties, "amount");
-            if (amount <= 0) throw failure("story.action.amount", "Action amount must be positive.");
             if (properties.keySet()
                 .equals(set("action_type", "item_id", "amount")))
                 return new CanonicalStoryActionConfiguration(
@@ -63,14 +67,110 @@ public final class CanonicalStoryActionConfiguration {
         if (GIVE_XP.equals(type)) {
             requireExactKeys(properties, set("action_type", "amount"));
             int amount = integer(properties, "amount");
-            if (amount <= 0) throw failure("story.action.amount", "Action amount must be positive.");
             return new CanonicalStoryActionConfiguration(type, null, 0, amount, null, false);
         }
         if (SEND_MESSAGE.equals(type)) {
             requireExactKeys(properties, set("action_type", "message"));
             return new CanonicalStoryActionConfiguration(type, null, 0, 0, string(properties, "message"), false);
         }
-        throw failure("story.action.type", "Unsupported canonical Story action type: " + type);
+        if (GIVE_HEALTH.equals(type)) {
+            requireExactKeys(properties, set("action_type", "amount"));
+            finite(properties, "amount");
+        } else if (TELEPORT.equals(type)) {
+            requireExactKeys(properties, set("action_type", "dimension_id", "x", "y", "z"));
+            integer(properties, "dimension_id");
+            finite(properties, "x");
+            finite(properties, "y");
+            finite(properties, "z");
+            if (Math.abs(finite(properties, "x")) > 29999984 || Math.abs(finite(properties, "z")) > 29999984
+                || Math.abs(finite(properties, "y")) > 30000000)
+                throw failure("story.action.teleport.bounds", "Teleport coordinates exceed Minecraft world bounds.");
+        } else if (GIVE_BUFF.equals(type)) {
+            JsonElement extension = properties.get("mod_extension");
+            if (extension == null || !extension.isJsonPrimitive()
+                || !extension.getAsJsonPrimitive()
+                    .isBoolean())
+                throw failure("story.action.buff", "mod_extension must be boolean.");
+            if (extension.getAsBoolean()) {
+                requireExactKeys(
+                    properties,
+                    set("action_type", "mod_extension", "mod_id", "buff_name", "duration_delta", "level_delta"));
+                string(properties, "mod_id");
+                string(properties, "buff_name");
+            } else {
+                requireExactKeys(
+                    properties,
+                    set("action_type", "mod_extension", "buff", "duration_delta", "level_delta"));
+                String buff = string(properties, "buff");
+                if (!VANILLA_BUFFS.contains(buff)) throw failure("story.action.buff", "Unknown Vanilla buff: " + buff);
+            }
+            integer(properties, "duration_delta");
+            integer(properties, "level_delta");
+        } else if (EXECUTE_COMMAND.equals(type)) {
+            requireExactKeys(properties, set("action_type", "command"));
+            String command = string(properties, "command");
+            if (command.length() > 2048 || command.indexOf('\n') >= 0
+                || command.indexOf('\r') >= 0
+                || command.indexOf('\0') >= 0)
+                throw failure("story.action.command", "Command must be one line of at most 2048 characters.");
+        } else throw failure("story.action.type", "Unsupported canonical Story action type: " + type);
+        CanonicalStoryActionConfiguration result = new CanonicalStoryActionConfiguration(type, null, 0, 0, null, false);
+        result.extended = Collections.unmodifiableMap(new java.util.LinkedHashMap<String, JsonElement>(properties));
+        return result;
+    }
+
+    public static final Set<String> VANILLA_BUFFS = Collections.unmodifiableSet(
+        set(
+            "speed",
+            "slowness",
+            "haste",
+            "mining_fatigue",
+            "strength",
+            "instant_health",
+            "instant_damage",
+            "jump_boost",
+            "nausea",
+            "regeneration",
+            "resistance",
+            "fire_resistance",
+            "water_breathing",
+            "invisibility",
+            "blindness",
+            "night_vision",
+            "hunger",
+            "weakness",
+            "poison",
+            "wither",
+            "health_boost",
+            "absorption",
+            "saturation"));
+
+    public String getText(String key) {
+        return string(extended, key);
+    }
+
+    public int getInteger(String key) {
+        return integer(extended, key);
+    }
+
+    public double getNumber(String key) {
+        return finite(extended, key);
+    }
+
+    public boolean isModBuff() {
+        return extended.containsKey("mod_extension") && extended.get("mod_extension")
+            .getAsBoolean();
+    }
+
+    private static double finite(Map<String, JsonElement> properties, String key) {
+        JsonElement value = properties.get(key);
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isNumber()
+            || Double.isNaN(value.getAsDouble())
+            || Double.isInfinite(value.getAsDouble()))
+            throw failure("story.action.property", "Finite numeric action property required: " + key);
+        return value.getAsDouble();
     }
 
     public String getType() {

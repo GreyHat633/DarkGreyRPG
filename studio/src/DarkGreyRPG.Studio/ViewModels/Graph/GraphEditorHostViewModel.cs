@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -794,6 +794,15 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
     public bool SetNodeProperty(string nodeId, string property, JsonElement value)
         => ExecuteSession(() => _session.SetNodeProperty(nodeId, property, value));
+
+    public bool SetSessionMusic(string nodeId, string? mediaRef)
+        => ExecuteSession(() => _session.SetSessionMusic(nodeId, mediaRef));
+
+    public bool ChangeSessionSpeaker(string nodeId, string? actorId)
+        => ExecuteSession(() => _session.ChangeSessionSpeaker(nodeId, actorId));
+
+    public bool ChangeStoryBuffMode(string nodeId, bool modExtension)
+        => ExecuteSession(() => _session.ChangeStoryBuffMode(nodeId, modExtension));
 
     public bool SetNodeProperty<T>(string nodeId, string property, T value)
         => ExecuteSession(() => _session.SetNodeProperty(nodeId, property, value));

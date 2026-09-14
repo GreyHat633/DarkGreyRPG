@@ -39,9 +39,7 @@ public final class CanonicalStoryRuntime {
         "condition",
         "flow_judgment",
         "action",
-        "enter_story",
-        "interact_actor",
-        "enter_region");
+        "title");
     private static final Set<String> LOGIC_TYPES = set("and", "or", "not", "logic_input", "logic_output");
 
     private final CanonicalGraphResource resource;
@@ -191,15 +189,6 @@ public final class CanonicalStoryRuntime {
         return waitResourceId;
     }
 
-    public String getWaitActorId() {
-        ensureInitialized();
-        return waitKind.isActorInteraction() ? waitResourceId : null;
-    }
-
-    public String getWaitInteractActorId() {
-        return getWaitActorId();
-    }
-
     public Integer getWaitDimension() {
         ensureInitialized();
         return waitDimension;
@@ -223,68 +212,6 @@ public final class CanonicalStoryRuntime {
     public Double getWaitRadius() {
         ensureInitialized();
         return waitRadius;
-    }
-
-    public boolean matchesActor(String actorId) {
-        ensureInitialized();
-        return status == CanonicalStoryStatus.ACTIVE && waitKind.isActorInteraction()
-            && actorId != null
-            && actorId.equals(waitResourceId);
-    }
-
-    public boolean matchesActorEvent(String actorId) {
-        return matchesActor(actorId);
-    }
-
-    public boolean matchesRegion(int dimension, double x, double y, double z) {
-        ensureInitialized();
-        if (status != CanonicalStoryStatus.ACTIVE || waitKind != CanonicalStoryWaitKind.ENTER_REGION
-            || waitDimension == null
-            || waitDimension.intValue() != dimension
-            || !finite(x)
-            || !finite(y)
-            || !finite(z)) return false;
-        double dx = x - waitX.doubleValue();
-        double dy = y - waitY.doubleValue();
-        double dz = z - waitZ.doubleValue();
-        double radius = waitRadius.doubleValue();
-        return dx * dx + dy * dy + dz * dz <= radius * radius;
-    }
-
-    public boolean matchesRegionEvent(int dimension, double x, double y, double z) {
-        return matchesRegion(dimension, x, y, z);
-    }
-
-    public boolean resumeActor(String actorId) {
-        ensureInitialized();
-        if (status != CanonicalStoryStatus.ACTIVE || !waitKind.isActorInteraction())
-            throw failure("story.wait.state", "Story cursor is not waiting for ActorInteract.");
-        if (!matchesActor(actorId))
-            throw failure("story.actor.identity", "Actor interaction does not match the waiting Story cursor.");
-        CanonicalGraphNode placement = currentNode();
-        clearWait();
-        transitionFrom(placement, "flow_out");
-        resolveAutomatic();
-        return true;
-    }
-
-    public boolean resumeActorInteract(String actorId) {
-        return resumeActor(actorId);
-    }
-
-    public boolean resumeRegion(int dimension, double x, double y, double z) {
-        requireWait(CanonicalStoryWaitKind.ENTER_REGION);
-        if (!matchesRegion(dimension, x, y, z))
-            throw failure("story.region.identity", "Region position does not match the waiting Story cursor.");
-        CanonicalGraphNode placement = currentNode();
-        clearWait();
-        transitionFrom(placement, "flow_out");
-        resolveAutomatic();
-        return true;
-    }
-
-    public boolean resumeEnterRegion(int dimension, double x, double y, double z) {
-        return resumeRegion(dimension, x, y, z);
     }
 
     public String getTargetStoryId() {
@@ -421,6 +348,17 @@ public final class CanonicalStoryRuntime {
     }
 
     /** A server action owner calls this only after the current action was durably applied or idempotently replayed. */
+    public boolean completeTitle(String nodeId) {
+        requireWait(CanonicalStoryWaitKind.TITLE);
+        if (!currentNodeId.equals(requireId(nodeId, "Title node ID")))
+            throw failure("story.title.identity", "Title acknowledgement is stale.");
+        CanonicalGraphNode title = currentNode();
+        clearWait();
+        transitionFrom(title, "flow_out");
+        resolveAutomatic();
+        return true;
+    }
+
     public boolean completeAction(String actionNodeId) {
         requireWait(CanonicalStoryWaitKind.ACTION);
         if (!currentNodeId.equals(requireId(actionNodeId, "Action node ID")))
@@ -477,27 +415,12 @@ public final class CanonicalStoryRuntime {
                 waitResourceId = requiredString(node, "resource_id", "story.task.resource");
                 return;
             }
+            if ("title".equals(type)) {
+                waitKind = CanonicalStoryWaitKind.TITLE;
+                return;
+            }
             if ("action".equals(type)) {
                 waitKind = CanonicalStoryWaitKind.ACTION;
-                return;
-            }
-            if ("interact_actor".equals(type)) {
-                waitKind = CanonicalStoryWaitKind.ACTOR_INTERACT;
-                waitResourceId = requiredString(node, "actor_id", "story.actor.actor_id");
-                return;
-            }
-            if ("enter_region".equals(type)) {
-                waitKind = CanonicalStoryWaitKind.ENTER_REGION;
-                waitDimension = Integer.valueOf(requiredInteger(node, "dimension", "story.region.dimension"));
-                waitX = Double.valueOf(requiredFinite(node, "x", "story.region.x"));
-                waitY = Double.valueOf(requiredFinite(node, "y", "story.region.y"));
-                waitZ = Double.valueOf(requiredFinite(node, "z", "story.region.z"));
-                waitRadius = Double.valueOf(requiredPositiveFinite(node, "radius", "story.region.radius"));
-                return;
-            }
-            if ("enter_story".equals(type)) {
-                targetStoryId = requiredString(node, "target_story_id", "story.enter.target");
-                status = CanonicalStoryStatus.TRANSFERRED;
                 return;
             }
             throw failure("story.flow.node", "Node type '" + type + "' cannot own the Story Flow cursor.");
@@ -690,9 +613,8 @@ public final class CanonicalStoryRuntime {
             }
             if (outputs < 1)
                 throw failure("story.start.trigger.required", "Start requires at least one trigger output.");
-        } else if ("terminate".equals(type) || "enter_story".equals(type)) {
+        } else if ("terminate".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
-            if ("enter_story".equals(type)) requiredString(node, "target_story_id", "story.enter.target");
         } else if ("condition".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
@@ -710,21 +632,19 @@ public final class CanonicalStoryRuntime {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requiredString(node, "resource_id", "story.task.resource");
             validateAggregatePorts(node);
+        } else if ("title".equals(type)) {
+            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
+            if (node.getPorts()
+                .size() != 2) throw failure("story.title.ports", "Title requires one Flow input and output.");
+            try {
+                CanonicalTitleConfiguration.parse(node.getProperties());
+            } catch (IllegalArgumentException exception) {
+                throw failure("story.title.invalid", exception.getMessage());
+            }
         } else if ("action".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
-        } else if ("interact_actor".equals(type)) {
-            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
-            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
-            requiredString(node, "actor_id", "story.actor.actor_id");
-        } else if ("enter_region".equals(type)) {
-            requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
-            requirePort(node, "flow_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.FLOW);
-            requiredInteger(node, "dimension", "story.region.dimension");
-            requiredFinite(node, "x", "story.region.x");
-            requiredFinite(node, "y", "story.region.y");
-            requiredFinite(node, "z", "story.region.z");
-            requiredPositiveFinite(node, "radius", "story.region.radius");
         } else if ("not".equals(type)) {
             requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);
             requirePort(node, "logic_out", CanonicalGraphPortDirection.OUTPUT, CanonicalGraphInterfaceKind.LOGIC);
@@ -825,28 +745,10 @@ public final class CanonicalStoryRuntime {
                 throw failure("story.restore.wait", "Restored Session wait is not on a Session placement.");
             if (waitKind == CanonicalStoryWaitKind.TASK && !"task".equals(current.getType()))
                 throw failure("story.restore.wait", "Restored Task wait is not on a Task placement.");
+            if (waitKind == CanonicalStoryWaitKind.TITLE && !"title".equals(current.getType()))
+                throw failure("story.restore.wait", "Restored Title wait is not on a Title node.");
             if (waitKind == CanonicalStoryWaitKind.ACTION && !"action".equals(current.getType()))
                 throw failure("story.restore.wait", "Restored Action wait is not on an Action node.");
-            if (waitKind.isActorInteraction()) {
-                if (!"interact_actor".equals(current.getType())
-                    || !requiredString(current, "actor_id", "story.actor.actor_id").equals(waitResourceId))
-                    throw failure("story.restore.wait", "Restored Actor wait is invalid.");
-            }
-            if (waitKind == CanonicalStoryWaitKind.ENTER_REGION) {
-                if (!"enter_region".equals(current.getType()) || waitDimension == null
-                    || waitX == null
-                    || waitY == null
-                    || waitZ == null
-                    || waitRadius == null
-                    || waitDimension.intValue() != requiredInteger(current, "dimension", "story.region.dimension")
-                    || Double.compare(waitX.doubleValue(), requiredFinite(current, "x", "story.region.x")) != 0
-                    || Double.compare(waitY.doubleValue(), requiredFinite(current, "y", "story.region.y")) != 0
-                    || Double.compare(waitZ.doubleValue(), requiredFinite(current, "z", "story.region.z")) != 0
-                    || Double.compare(
-                        waitRadius.doubleValue(),
-                        requiredPositiveFinite(current, "radius", "story.region.radius")) != 0)
-                    throw failure("story.restore.wait", "Restored Region wait is invalid.");
-            }
             if (waitKind == CanonicalStoryWaitKind.CONDITION) {
                 if (!"condition".equals(current.getType()) || waitingConditionValue == null)
                     throw failure("story.restore.wait", "Restored Condition wait is invalid.");

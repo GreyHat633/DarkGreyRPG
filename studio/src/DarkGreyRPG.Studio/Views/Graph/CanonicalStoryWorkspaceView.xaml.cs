@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -13,6 +13,35 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 /// <summary>Reusable visual projection of the parallel Story-first workspace state.</summary>
 public partial class CanonicalStoryWorkspaceView : UserControl
 {
+    private void EditActorPortrait_OnClick(object sender, RoutedEventArgs e) => Workspace?.EditActorPortrait();
+    private async void ImportLineAudio_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.DataContext is not CanonicalNodeInspectorViewModel inspector
+            || Workspace?.MediaProjectDirectory is not { } projectRoot || !Workspace.IsWritableEditor(Workspace.ActiveEditor)) return;
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "音频文件|*.mp3;*.wav;*.ogg", CheckFileExists = true, Multiselect = false };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+        button.IsEnabled = false;
+        try
+        {
+            var tools = System.IO.Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+            var store = new DarkGreyRPG.Studio.Core.Media.ProjectMediaStore(projectRoot,
+                System.IO.Path.Combine(tools, "ffmpeg.exe"), System.IO.Path.Combine(tools, "ffprobe.exe"));
+            var result = await store.ImportAudioAsync(dialog.FileName);
+            if (inspector.IsMusic) inspector.SetMusic(result.MediaRef);
+            else inspector.SetLineVoice(result.MediaRef);
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or System.ComponentModel.Win32Exception or UnauthorizedAccessException)
+        {
+            MessageBox.Show(Window.GetWindow(this), exception.Message, "音频导入失败", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally { button.IsEnabled = true; }
+    }
+
+    private void RemoveLineAudio_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: CanonicalNodeInspectorViewModel inspector }) { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
+    }
+
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";
     private static readonly Vector ResourceNodePointerAnchor = new(116d, 46d);
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;

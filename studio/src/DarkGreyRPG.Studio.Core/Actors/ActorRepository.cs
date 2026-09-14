@@ -32,7 +32,7 @@ public sealed class ActorRepository
                 var resource = ReadResource(path);
                 if (!seen.Add(resource.Id))
                     throw new ActorRepositoryException($"Actor ID '{resource.Id}' is present in multiple files, including '{path}'.");
-                return new ActorResourceInfo(resource.Id, resource.DisplayName, path, [.. resource.Tags], resource.Type ?? ActorResource.LegacyResourceType);
+                return new ActorResourceInfo(resource.Id, resource.DisplayName, path, [.. resource.Tags], resource.Type ?? ActorResource.LegacyResourceType, resource.DefaultPortraitRef, resource.PortraitVariants.ToArray());
             })
             .ToArray();
     }
@@ -141,6 +141,8 @@ public sealed class ActorRepository
         duplicate.Notes = source.Notes;
         duplicate.SetTags(source.Tags);
         duplicate.HomeStoryId = source.HomeStoryId;
+        duplicate.DefaultPortraitRef = source.DefaultPortraitRef;
+        duplicate.SetPortraitVariants(source.PortraitVariants);
         return SaveActor(duplicate);
     }
 

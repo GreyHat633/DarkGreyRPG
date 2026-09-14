@@ -182,7 +182,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/dgr <status|reload|actor|dialogue|quest|story|session|task|inspect|debug>";
+        return "/dgr <status|reload|actor|dialogue|quest|story|session|task|dimension|inspect|debug>";
     }
 
     @Override
@@ -196,6 +196,38 @@ public final class CommandDarkGreyRpg extends CommandBase {
             throw new WrongUsageException(getCommandUsage(sender));
         }
 
+        if ("buff".equalsIgnoreCase(arguments[0])) {
+            if (arguments.length != 2
+                || !("list".equalsIgnoreCase(arguments[1]) || "export".equalsIgnoreCase(arguments[1])))
+                throw new WrongUsageException("/dgr buff <list|export>");
+            java.util.List<String> lines = new java.util.ArrayList<String>();
+            for (darkgrey.rpg.story.canonical.forge.CanonicalBuffCatalog.Entry entry : darkgrey.rpg.story.canonical.forge.CanonicalBuffCatalog
+                .get()
+                .entries()) lines.add(entry.displayLine());
+            if ("list".equalsIgnoreCase(arguments[1])) for (String line : lines) ChatMessages.info(sender, line);
+            else try {
+                java.nio.file.Path directory = sender.getEntityWorld()
+                    .getSaveHandler()
+                    .getWorldDirectory()
+                    .toPath()
+                    .resolve("data")
+                    .resolve("dgr_exports");
+                java.nio.file.Files.createDirectories(directory);
+                java.nio.file.Path destination = directory.resolve("buffs.txt");
+                java.nio.file.Files.write(destination, lines, java.nio.charset.StandardCharsets.UTF_8);
+                ChatMessages.info(sender, "BUFF导出：" + destination.toAbsolutePath());
+            } catch (java.io.IOException failure) {
+                throw new CommandException("BUFF export failed: " + failure.getMessage());
+            }
+            return;
+        }
+        if ("dimension".equalsIgnoreCase(arguments[0])) {
+            if (arguments.length != 2 || !"id".equalsIgnoreCase(arguments[1]))
+                throw new WrongUsageException("/dgr dimension id");
+            EntityPlayerMP player = getCommandSenderAsPlayer(sender);
+            ChatMessages.info(sender, "当前维度 ID：" + player.dimension);
+            return;
+        }
         if ("inspect".equalsIgnoreCase(arguments[0])) {
             if (arguments.length != 1) throw new WrongUsageException("/dgr inspect");
             EntityPlayerMP player = getCommandSenderAsPlayer(sender);
@@ -1139,8 +1171,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
                 "quest",
                 "story",
                 "session",
-                "task");
+                "task",
+                "dimension",
+                "buff");
         }
+        if (arguments.length == 2 && "buff".equalsIgnoreCase(arguments[0]))
+            return getListOfStringsMatchingLastWord(arguments, "list", "export");
+        if (arguments.length == 2 && "dimension".equalsIgnoreCase(arguments[0]))
+            return getListOfStringsMatchingLastWord(arguments, "id");
         if (arguments.length == 2 && "actor".equalsIgnoreCase(arguments[0])) {
             return getListOfStringsMatchingLastWord(arguments, "list", "info", "select", "bind", "unbind");
         }

@@ -61,11 +61,13 @@ public final class CanonicalSessionForgeManager {
 
             @Override
             public void sendFrame(EntityPlayerMP player, CanonicalSessionFrame frame) {
+                darkgrey.rpg.media.CanonicalMediaServer.present(player, frame);
                 DialogueNetwork.CHANNEL.sendTo(frame, player);
             }
 
             @Override
             public void sendClose(EntityPlayerMP player, CanonicalSessionClose close) {
+                darkgrey.rpg.media.CanonicalMediaServer.close(player, close.getTransportId());
                 DialogueNetwork.CHANNEL.sendTo(close, player);
             }
         });
@@ -146,16 +148,22 @@ public final class CanonicalSessionForgeManager {
 
     /** Reprojects an existing ACTIVE cursor; never starts/restarts a Session. */
     public boolean reprojectActive(EntityPlayerMP player) {
-        ServiceContext context = context(player);
-        for (darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot snapshot : context.savedData.snapshots()) {
-            if (snapshot.getPlayerUuid()
-                .equals(player.getUniqueID())
-                && snapshot.getRuntimeSnapshot()
-                    .getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE) {
-                return resume(player, snapshot.getStoryId());
+        try {
+            ServiceContext context = context(player);
+            for (darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot snapshot : context.savedData
+                .snapshots()) {
+                if (snapshot.getPlayerUuid()
+                    .equals(player.getUniqueID())
+                    && snapshot.getRuntimeSnapshot()
+                        .getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE) {
+                    return resume(player, snapshot.getStoryId());
+                }
             }
+            return false;
+        } catch (RuntimeException exception) {
+            LOG.warn("Canonical Session resume projection rejected: {}", exception.getMessage());
+            return false;
         }
-        return false;
     }
 
     /**

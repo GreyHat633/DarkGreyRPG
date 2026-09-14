@@ -146,21 +146,7 @@ public final class CanonicalStoryServerService {
             .keySet()) {
             CanonicalStoryInstanceSnapshot previous = data.getStorySnapshot(playerUuid, storyId);
             CanonicalStoryStartDisposition disposition = startDisposition(playerUuid, storyId);
-            if (disposition == CanonicalStoryStartDisposition.ALREADY_ACTIVE) {
-                CanonicalStorySnapshot runtime = previous.getRuntimeSnapshot();
-                if (runtime.getWaitKind()
-                    .isActorInteraction() && actorIds.contains(runtime.getWaitActorId()))
-                    result.add(
-                        new CanonicalActorCandidate(
-                            playerUuid,
-                            project,
-                            storyId,
-                            runtime.getWaitActorId(),
-                            runtime.getCurrentNodeId(),
-                            "continue",
-                            previous));
-                continue;
-            }
+
             if (!disposition.isEligible()) continue;
             CanonicalGraphResource resource = story(storyId);
             CanonicalStoryStartConfiguration configuration = CanonicalStoryStartConfiguration.parse(resource);
@@ -199,8 +185,6 @@ public final class CanonicalStoryServerService {
         if (selected == null) return null;
         for (CanonicalActorCandidate current : actorCandidates(playerUuid, actorIds)) {
             if (!selected.matches(playerUuid, project, current)) continue;
-            if ("continue".equals(current.getStatus()))
-                return resumeActor(playerUuid, current.getStoryId(), current.getActorId(), eventTime);
             CanonicalGraphResource resource = story(current.getStoryId());
             CanonicalStoryStartConfiguration configuration = CanonicalStoryStartConfiguration.parse(resource);
             return startDispatch(
@@ -270,6 +254,11 @@ public final class CanonicalStoryServerService {
             data.resumeStoryTask(requirePlayer(playerUuid), requireText(storyId, "Story ID"), task, eventTime));
     }
 
+    public CanonicalStoryDispatch completeTitle(UUID playerUuid, String storyId, String nodeId, long eventTime) {
+        return dispatch(
+            data.completeStoryTitle(requirePlayer(playerUuid), requireText(storyId, "Story ID"), nodeId, eventTime));
+    }
+
     public CanonicalStoryDispatch completeAction(UUID playerUuid, String storyId, String actionNodeId, long eventTime) {
         return dispatch(
             data.completeStoryAction(
@@ -277,39 +266,6 @@ public final class CanonicalStoryServerService {
                 requireText(storyId, "Story ID"),
                 requireText(actionNodeId, "Action placement ID"),
                 eventTime));
-    }
-
-    /** Attempts to continue the sole active Story waiting for this actor. Null means Start matching may proceed. */
-    public CanonicalStoryDispatch resumeActor(UUID playerUuid, String actorId, long eventTime) {
-        CanonicalStoryInstanceSnapshot snapshot = data
-            .resumeStoryActor(requirePlayer(playerUuid), requireText(actorId, "Actor ID"), eventTime);
-        return snapshot == null ? null : dispatch(snapshot);
-    }
-
-    public CanonicalStoryDispatch resumeActorInteraction(UUID playerUuid, String actorId, long eventTime) {
-        return resumeActor(playerUuid, actorId, eventTime);
-    }
-
-    public CanonicalStoryDispatch resumeActor(UUID playerUuid, String storyId, String actorId, long eventTime) {
-        CanonicalStoryInstanceSnapshot snapshot = data.resumeStoryActor(
-            requirePlayer(playerUuid),
-            requireText(storyId, "Story ID"),
-            requireText(actorId, "Actor ID"),
-            eventTime);
-        return snapshot == null ? null : dispatch(snapshot);
-    }
-
-    /** Attempts to continue the sole active Story whose EnterRegion sphere contains this position. */
-    public CanonicalStoryDispatch resumeRegion(UUID playerUuid, int dimension, double x, double y, double z,
-        long eventTime) {
-        CanonicalStoryInstanceSnapshot snapshot = data
-            .resumeStoryRegion(requirePlayer(playerUuid), dimension, x, y, z, eventTime);
-        return snapshot == null ? null : dispatch(snapshot);
-    }
-
-    public CanonicalStoryDispatch resumeEnterRegion(UUID playerUuid, int dimension, double x, double y, double z,
-        long eventTime) {
-        return resumeRegion(playerUuid, dimension, x, y, z, eventTime);
     }
 
     public CanonicalStoryDispatch snapshot(UUID playerUuid, String storyId) {
@@ -322,8 +278,6 @@ public final class CanonicalStoryServerService {
         CanonicalStorySnapshot snapshot = instance.getRuntimeSnapshot();
         if (snapshot.getStatus() == CanonicalStoryStatus.TERMINATED)
             return terminal(CanonicalStoryDispatchKind.TERMINATED, instance, null);
-        if (snapshot.getStatus() == CanonicalStoryStatus.TRANSFERRED)
-            return terminal(CanonicalStoryDispatchKind.TRANSFERRED, instance, snapshot.getTargetStoryId());
         if (snapshot.getStatus() == CanonicalStoryStatus.ERROR)
             return terminal(CanonicalStoryDispatchKind.ERROR, instance, null);
         if (snapshot.getWaitKind() == CanonicalStoryWaitKind.SESSION) return new CanonicalStoryDispatch(
@@ -342,6 +296,19 @@ public final class CanonicalStoryServerService {
             false,
             Collections.<String, JsonElement>emptyMap(),
             null);
+        if (snapshot.getWaitKind() == CanonicalStoryWaitKind.TITLE) {
+            Map<String, JsonElement> properties = node(story(snapshot.getResourceId()), snapshot.getCurrentNodeId())
+                .getProperties();
+            darkgrey.rpg.story.canonical.runtime.CanonicalTitleConfiguration.parse(properties);
+            return new CanonicalStoryDispatch(
+                CanonicalStoryDispatchKind.TITLE,
+                instance,
+                snapshot.getCurrentNodeId(),
+                null,
+                false,
+                properties,
+                null);
+        }
         if (snapshot.getWaitKind() == CanonicalStoryWaitKind.ACTION) {
             Map<String, JsonElement> properties = node(story(snapshot.getResourceId()), snapshot.getCurrentNodeId())
                 .getProperties();
@@ -363,29 +330,6 @@ public final class CanonicalStoryServerService {
             false,
             Collections.<String, JsonElement>emptyMap(),
             null);
-        if (snapshot.getWaitKind()
-            .isActorInteraction())
-            return new CanonicalStoryDispatch(
-                CanonicalStoryDispatchKind.ACTOR_INTERACT,
-                instance,
-                snapshot.getCurrentNodeId(),
-                snapshot.getWaitActorId(),
-                false,
-                Collections.<String, JsonElement>emptyMap(),
-                null);
-        if (snapshot.getWaitKind() == CanonicalStoryWaitKind.ENTER_REGION) return new CanonicalStoryDispatch(
-            CanonicalStoryDispatchKind.ENTER_REGION,
-            instance,
-            snapshot.getCurrentNodeId(),
-            null,
-            false,
-            Collections.<String, JsonElement>emptyMap(),
-            null,
-            snapshot.getWaitDimension(),
-            snapshot.getWaitX(),
-            snapshot.getWaitY(),
-            snapshot.getWaitZ(),
-            snapshot.getWaitRadius());
         throw new IllegalStateException("Active canonical Story did not stop at an external boundary.");
     }
 

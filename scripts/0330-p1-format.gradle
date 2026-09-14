@@ -1,0 +1,22 @@
+// Format only the audited P0/P1 Java source changes.
+gradle.projectsEvaluated {
+    rootProject.spotless.java {
+        target rootProject.file('src/test/java/darkgrey/rpg/project/packages/B4ExternalPackageReferencesProbe.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoader.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/graph/canonical/CanonicalProjectContentLoader.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/session/persistence/CanonicalSessionSavedData.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryForgeManager.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstance.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRuntime.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStorySnapshot.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryStatus.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryWaitKind.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryDispatch.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryDispatchKind.java'),
+            rootProject.file('src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryServerService.java'),
+            rootProject.file('src/test/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoaderProbe.java'),
+            rootProject.file('src/test/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryForgeCoordinatorProbe.java'),
+            rootProject.file('src/test/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRuntimeProbe.java'),
+            rootProject.file('src/test/java/darkgrey/rpg/story/canonical/server/CanonicalActorArbitrationProbe.java')
+    }
+}

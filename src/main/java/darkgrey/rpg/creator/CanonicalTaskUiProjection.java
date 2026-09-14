@@ -23,6 +23,10 @@ public final class CanonicalTaskUiProjection {
             NBTTagCompound task = new NBTTagCompound();
             task.setString("id", entry.getIdentity());
             task.setString("title", entry.getTitle());
+            task.setString("description", entry.getDescription());
+            task.setString("story", entry.getStoryInstanceId());
+            task.setString("placement", entry.getTaskNodePlacementId());
+            task.setLong("activation", entry.getActivationTime());
             NBTTagList objectives = new NBTTagList();
             boolean completed = false;
             for (CanonicalTaskJournalObjectiveRow row : entry.getObjectives()) {
@@ -30,12 +34,15 @@ public final class CanonicalTaskUiProjection {
                 if (row.getStatus() != CanonicalTaskObjectiveStatus.ACTIVE) continue;
                 NBTTagCompound objective = new NBTTagCompound();
                 objective.setString("text", row.getDescription());
+                objective.setString("id", row.getObjectiveId());
+                objective.setBoolean("submit", "submit_item".equals(row.getObjectiveType()));
                 objective.setInteger("current", row.getCurrent());
                 objective.setInteger("required", row.getRequired());
                 objectives.appendTag(objective);
             }
             task.setTag("objectives", objectives);
-            task.setBoolean("complete", objectives.tagCount() == 0 && completed);
+            task.setBoolean("complete", objectives.tagCount() == 0 && completed && !entry.hasPendingRewards());
+            task.setBoolean("pending_rewards", entry.hasPendingRewards());
             tasks.appendTag(task);
         }
         root.setTag("tasks", tasks);

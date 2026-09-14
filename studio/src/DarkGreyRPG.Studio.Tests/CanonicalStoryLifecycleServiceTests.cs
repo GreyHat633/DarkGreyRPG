@@ -40,30 +40,19 @@ public sealed class CanonicalStoryLifecycleServiceTests
     }
 
     [TestMethod]
-    public void PlanReportsIncomingTransitionAndKeepsSelfTransitionNonBlocking()
+    public void RetiredTransitionCannotBeSavedOrBlockUnrelatedDeletion()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
         var service = new CanonicalStoryLifecycleService(store);
         service.Create("target", "Target");
         service.Create("source", "Source");
-        store.Stories.Replace(new GraphResourceEnvelope(
-            GraphResourceKind.Story,
-            "source",
-            "Source",
-            new GraphDocument([
-                new GraphNode("start", "start", "Start"),
-                new GraphNode("enter", "enter_story", "Enter", properties: new Dictionary<string, JsonElement>
-                {
-                    ["target_story_id"] = JsonSerializer.SerializeToElement("target"),
-                }),
-            ], [new GraphConnection("start", "next", "enter", "in", GraphInterfaceKind.Flow)])));
-
-        var plan = service.GetDeletionPlan("target");
-
-        Assert.IsFalse(plan.CanDelete);
-        Assert.IsTrue(plan.IncomingTransitions.Any(item => item.SourceStoryId == "source" && item.TargetStoryId == "target"));
-        Assert.IsTrue(plan.Blockers.Any(item => item.Code == "story.lifecycle.incoming_transition"));
+        var before = File.ReadAllBytes(store.Stories.GetPath("source"));
+        Assert.ThrowsExactly<GraphResourceRepositoryException>(() => store.Stories.Replace(new GraphResourceEnvelope(
+            GraphResourceKind.Story, "source", "Source",
+            new GraphDocument([new GraphNode("old", "enter_story", "Old")]))));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(store.Stories.GetPath("source")));
+        Assert.IsTrue(service.GetDeletionPlan("target").CanDelete);
     }
 
     [TestMethod]

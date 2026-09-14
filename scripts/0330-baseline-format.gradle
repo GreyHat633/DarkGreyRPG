@@ -1,0 +1,7 @@
+// P0 only: repair the two format violations reproduced at the exact 0.3.2.4 base.
+gradle.projectsEvaluated {
+    rootProject.spotless.java {
+        target rootProject.file('src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoader.java'),
+            rootProject.file('src/test/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoaderProbe.java')
+    }
+}

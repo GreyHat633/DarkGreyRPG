@@ -91,6 +91,11 @@ public static partial class ActorValidator
             }
         }
 
+        if (isV3)
+            issues.AddRange(ActorPortraitSchema.Validate(resource));
+        else if (resource.DefaultPortraitRef is not null || resource.PortraitVariants is null || resource.PortraitVariants.Count != 0)
+            issues.Add(new("actor.portrait.legacy", "旧 Actor 结构不能携带头像字段。", "portrait_variants"));
+
         if (string.IsNullOrWhiteSpace(resource.DisplayName))
         {
             issues.Add(new(

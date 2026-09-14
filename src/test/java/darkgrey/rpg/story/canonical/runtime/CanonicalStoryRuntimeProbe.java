@@ -20,8 +20,6 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceException;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 import darkgrey.rpg.story.canonical.CanonicalStoryPendingContinuation;
-import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec;
-import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus;
 import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
@@ -38,12 +36,12 @@ public final class CanonicalStoryRuntimeProbe {
     public static void main(String[] args) {
         fullSingleCursorPathAndRestore();
         flowJudgmentPathAndRestore();
-        eventWaitPathAndRestore();
+        retiredStandaloneNodesRejected();
         terminalAndFailurePaths();
         strictGraphValidation();
         System.out.println("CANONICAL_STORY_RUNTIME_SINGLE_CURSOR=PASS");
         System.out.println("CANONICAL_STORY_FLOW_JUDGMENT=PASS");
-        System.out.println("CANONICAL_STORY_EVENT_WAITS=PASS");
+        System.out.println("CANONICAL_STORY_RETIRED_STANDALONE_NODES_REJECTED=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_AGGREGATE_HANDOFF=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_STRICT_VALIDATION=PASS");
     }
@@ -89,56 +87,20 @@ public final class CanonicalStoryRuntimeProbe {
             "Restored executed Logic was not true");
     }
 
-    private static void eventWaitPathAndRestore() {
-        CanonicalGraphResource story = eventStory();
-        CanonicalStoryRuntime runtime = CanonicalStoryRuntime
-            .start(story, "trigger_accept", CanonicalStoryRepeatPolicy.ONCE);
-        check(runtime.getWaitKind() == CanonicalStoryWaitKind.ACTOR_INTERACT, "Actor wait was not reached");
-        check("guard".equals(runtime.getWaitActorId()), "Actor wait identity was not retained");
-        CanonicalStoryInstanceSnapshot encoded = new CanonicalStoryInstanceSnapshot(
-            PLAYER,
-            "event_story",
-            1L,
-            null,
-            runtime.snapshot());
-        check(
-            CanonicalStoryInstanceNbtCodec
-                .decode(CanonicalStoryInstanceNbtCodec.encode(Collections.singletonList(encoded)))
-                .get(0)
-                .getRuntimeSnapshot()
-                .getWaitKind() == CanonicalStoryWaitKind.ACTOR_INTERACT,
-            "Actor wait did not survive NBT round trip");
-        expectFailure("story.actor.identity", new Runnable() {
+    private static void retiredStandaloneNodesRejected() {
+        for (final String type : Arrays.asList("interact_actor", "enter_region", "enter_story")) {
+            final CanonicalGraphResource retired = story(
+                "retired",
+                Arrays.asList(start(), node("old", type, ports(flowIn("flow_in"), flowOut("flow_out", 1)), empty())),
+                Collections.singletonList(flow("start", "trigger_accept", "old", "flow_in")));
+            expectFailure("story.node.unsupported", new Runnable() {
 
-            @Override
-            public void run() {
-                runtime.resumeActor("wrong");
-            }
-        });
-        CanonicalStoryRuntime restored = CanonicalStoryRuntime.restore(story, runtime.snapshot());
-        restored.resumeActor("guard");
-        check(restored.getWaitKind() == CanonicalStoryWaitKind.ENTER_REGION, "Region wait was not reached");
-        CanonicalStoryRuntime restoredRegion = CanonicalStoryRuntime.restore(story, restored.snapshot());
-        check(
-            restoredRegion.getWaitDimension()
-                .intValue() == 0,
-            "Region dimension was not retained");
-        expectFailure("story.region.identity", new Runnable() {
-
-            @Override
-            public void run() {
-                restoredRegion.resumeRegion(1, 10D, 64D, 10D);
-            }
-        });
-        expectFailure("story.region.identity", new Runnable() {
-
-            @Override
-            public void run() {
-                restoredRegion.resumeRegion(0, 50D, 64D, 50D);
-            }
-        });
-        restoredRegion.resumeRegion(0, 10D, 64D, 10D);
-        check(restoredRegion.getStatus() == CanonicalStoryStatus.TERMINATED, "Region wait did not resume once");
+                @Override
+                public void run() {
+                    CanonicalStoryRuntime.start(retired, "trigger_accept", CanonicalStoryRepeatPolicy.ONCE);
+                }
+            });
+        }
     }
 
     private static void fullSingleCursorPathAndRestore() {
@@ -179,9 +141,8 @@ public final class CanonicalStoryRuntimeProbe {
 
         CanonicalStoryRuntime restoredAction = CanonicalStoryRuntime.restore(story, restoredTask.snapshot());
         restoredAction.completeAction("reward");
-        check(restoredAction.getStatus() == CanonicalStoryStatus.TRANSFERRED, "EnterStory was not reached");
-        check(restoredAction.getWaitKind() == CanonicalStoryWaitKind.NONE, "Transferred Story retained a wait");
-        check("epilogue".equals(restoredAction.getTargetStoryId()), "Wrong EnterStory target");
+        check(restoredAction.getStatus() == CanonicalStoryStatus.TERMINATED, "Terminal node was not reached");
+        check(restoredAction.getWaitKind() == CanonicalStoryWaitKind.NONE, "Terminal Story retained a wait");
         CanonicalStoryRuntime.restore(story, restoredAction.snapshot());
 
         expectFailure("story.wait.state", new Runnable() {
@@ -375,11 +336,7 @@ public final class CanonicalStoryRuntimeProbe {
                     "action",
                     ports(flowIn("flow_in"), flowOut("flow_out", 1)),
                     props("action_type", "give_currency", "amount", 10)),
-                node(
-                    "epilogue_transfer",
-                    "enter_story",
-                    ports(flowIn("flow_in")),
-                    props("target_story_id", "epilogue")),
+                node("epilogue_transfer", "terminate", ports(flowIn("flow_in")), empty()),
                 node("rejected_end", "terminate", ports(flowIn("flow_in")), empty())),
             Arrays.asList(
                 flow("start", "trigger_accept", "offer", "flow_in"),
@@ -390,28 +347,6 @@ public final class CanonicalStoryRuntimeProbe {
                 flow("accepted_condition", "flow_false", "rejected_end", "flow_in"),
                 flow("slime_task", "complete", "reward", "flow_in"),
                 flow("reward", "flow_out", "epilogue_transfer", "flow_in")));
-    }
-
-    private static CanonicalGraphResource eventStory() {
-        return story(
-            "event_story",
-            Arrays.asList(
-                start(),
-                node(
-                    "actor_wait",
-                    "interact_actor",
-                    ports(flowIn("flow_in"), flowOut("flow_out", 1)),
-                    props("actor_id", "guard")),
-                node(
-                    "region_wait",
-                    "enter_region",
-                    ports(flowIn("flow_in"), flowOut("flow_out", 1)),
-                    props("dimension", 0, "x", 10, "y", 64, "z", 10, "radius", 2)),
-                node("end", "terminate", ports(flowIn("flow_in")), empty())),
-            Arrays.asList(
-                flow("start", "trigger_accept", "actor_wait", "flow_in"),
-                flow("actor_wait", "flow_out", "region_wait", "flow_in"),
-                flow("region_wait", "flow_out", "end", "flow_in")));
     }
 
     private static CanonicalGraphResource flowJudgmentStory() {

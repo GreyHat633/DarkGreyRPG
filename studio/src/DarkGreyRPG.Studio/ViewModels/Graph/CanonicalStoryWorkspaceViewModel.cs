@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
@@ -429,6 +429,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         {
             if (!SetProperty(ref _activeEditor, value)) return;
             OnPropertyChanged(nameof(ActiveGraphHost));
+            OnPropertyChanged(nameof(CanEditActivePresentation));
             OnPropertyChanged(nameof(IsStoryFlowActive));
             OnPropertyChanged(nameof(IsLocalGraphOpen));
             OnPropertyChanged(nameof(Breadcrumbs));
@@ -436,6 +437,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         }
     }
 
+    public bool CanEditActivePresentation => IsWritableEditor(ActiveEditor);
     public GraphEditorHostViewModel ActiveGraphHost => ActiveEditor.Host;
     public bool IsStoryFlowActive => ReferenceEquals(ActiveEditor, StoryEditor);
     public bool IsLocalGraphOpen => !IsStoryFlowActive;
@@ -451,9 +453,13 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             OnPropertyChanged(nameof(InspectorSaveStateText));
             OnPropertyChanged(nameof(InspectorValidationText));
             OnPropertyChanged(nameof(HasResourceInspectorDetails));
+            OnPropertyChanged(nameof(CanEditActorPortrait));
             OnPropertyChanged(nameof(InspectorIdentityLabel));
             OnPropertyChanged(nameof(InspectorIdentityText));
             OnPropertyChanged(nameof(InspectorTagsText));
+            OnPropertyChanged(nameof(InspectorTaskEditor));
+            OnPropertyChanged(nameof(HasTaskDescription));
+            OnPropertyChanged(nameof(IsTaskDescriptionReadOnly));
             OnPropertyChanged(nameof(InspectorOwnershipText));
             OnPropertyChanged(nameof(InspectorReferenceBadge));
             OnPropertyChanged(nameof(InspectorSourceDetailsText));
@@ -461,7 +467,15 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     }
 
     /// <summary>Node Inspector projection for the currently selected graph node.</summary>
+    public string? MediaProjectDirectory { get; set; }
     public CanonicalNodeInspectorViewModel? NodeInspector => _nodeInspector;
+    public Action<CanonicalStoryActorItem>? EditActorPortraitRequested { get; set; }
+    public bool CanEditActorPortrait => InspectorSelection is CanonicalStoryActorItem { IsReadOnly: false, Actor.Type: not null };
+    public void EditActorPortrait()
+    {
+        if (CanEditActorPortrait && InspectorSelection is CanonicalStoryActorItem actor)
+            EditActorPortraitRequested?.Invoke(actor);
+    }
     public CanonicalNodeInspectorViewModel? Inspector => _nodeInspector;
 
     public string InspectorTitle => InspectorSelection switch
@@ -517,6 +531,15 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     };
 
     public string InspectorIdentityText => ResourceIdentityPresentation.Format(InspectorIdentityLabel, InspectorId);
+
+    public CanonicalGraphResourceEditorViewModel? InspectorTaskEditor => InspectorSelection switch
+    {
+        CanonicalGraphResourceEditorViewModel { ResourceKind: GraphResourceKind.Task } editor => editor,
+        CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Task } item => item.Editor,
+        _ => null,
+    };
+    public bool HasTaskDescription => InspectorTaskEditor is not null;
+    public bool IsTaskDescriptionReadOnly => InspectorTaskEditor is not { } editor || !IsWritableEditor(editor);
 
     public string InspectorTagsText => InspectorSelection switch
     {
@@ -1331,7 +1354,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
                 entry.Resource.DisplayName,
                 entry.Resource.SourcePath ?? string.Empty,
                 entry.Resource.Tags.ToArray(),
-                entry.Resource.ToResource().Type ?? ActorResource.LegacyResourceType));
+                entry.Resource.ToResource().Type ?? ActorResource.LegacyResourceType, entry.Resource.DefaultPortraitRef, entry.Resource.PortraitVariants.ToArray()));
 
     private static IEnumerable<GraphResourceEnvelope> SnapshotGraphs(
         CanonicalStoryWorkspaceSnapshot? snapshot,
@@ -1485,6 +1508,9 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
         if (args.PropertyName is nameof(CanonicalGraphResourceEditorViewModel.IsDirty)
             or nameof(CanonicalGraphResourceEditorViewModel.CanSave))
             OnPropertyChanged(nameof(HasDirtyEditors));
+        if (ReferenceEquals(sender, ActiveEditor) && InspectorSelection is CanonicalNodeInspectorViewModel
+            && args.PropertyName == nameof(CanonicalGraphResourceEditorViewModel.SaveStateText))
+            OnPropertyChanged(nameof(InspectorSaveStateText));
         if (!ReferenceEquals(sender, InspectorSelection)) return;
         if (args.PropertyName == nameof(CanonicalGraphResourceEditorViewModel.Tags)) OnPropertyChanged(nameof(InspectorTagsText));
         if (args.PropertyName == nameof(CanonicalGraphResourceEditorViewModel.DisplayName)) OnPropertyChanged(nameof(InspectorTitle));

@@ -114,15 +114,8 @@ public final class CanonicalTaskJournalProjectionProbe {
         require(
             entries.get(4)
                 .getObjectiveRows()
-                .get(1)
-                .getRuntimeStatus() == CanonicalTaskObjectiveStatus.INACTIVE,
-            "sequential second objective inactive");
-        require(
-            entries.get(4)
-                .getObjectiveRows()
-                .get(2)
-                .getCurrentProgress() == 0,
-            "sequential third objective inactive");
+                .size() == 1,
+            "prerequisite-inactive objective must not be sent to the client");
         require(
             "kill_entity".equals(
                 entries.get(2)
@@ -151,6 +144,17 @@ public final class CanonicalTaskJournalProjectionProbe {
                 .getDisplayLine()
                 .contains("1/3"),
             "display line");
+
+        require(
+            "任务整体说明\n背景".equals(
+                entries.get(2)
+                    .getDescription()),
+            "Task metadata did not reach journal");
+        require(
+            "任务整体说明\n背景".equals(
+                darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter.adapt(entries.get(2))
+                    .getDescription()),
+            "Task author description did not reach client transport");
 
         // Results are detached and immutable, including the source list and every exposed collection.
         List<CanonicalTaskJournalEntry> beforeSourceMutation = entries;
@@ -381,7 +385,8 @@ public final class CanonicalTaskJournalProjectionProbe {
             CanonicalGraphResourceKind.TASK,
             id,
             title,
-            new CanonicalGraph(nodes, edges));
+            new CanonicalGraph(nodes, edges),
+            new darkgrey.rpg.graph.canonical.CanonicalTaskMetadata("任务整体说明\n背景"));
     }
 
     private static CanonicalGraphResource resourceWithObjectives(String id, int count) {
@@ -403,7 +408,8 @@ public final class CanonicalTaskJournalProjectionProbe {
             CanonicalGraphResourceKind.TASK,
             id,
             "Many Objectives",
-            new CanonicalGraph(nodes, edges));
+            new CanonicalGraph(nodes, edges),
+            new darkgrey.rpg.graph.canonical.CanonicalTaskMetadata("任务整体说明\n背景"));
     }
 
     private static CanonicalGraphResource malformedResource(CanonicalGraphResource source, String mode) {

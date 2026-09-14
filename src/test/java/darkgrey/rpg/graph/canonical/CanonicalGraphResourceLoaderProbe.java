@@ -36,8 +36,19 @@ public final class CanonicalGraphResourceLoaderProbe {
             verifyValidResources(loader, stories, sessions, tasks);
             Path tagged = stories.resolve("story_a.json");
             write(tagged, storyJson("story_a").replace("\"graph\":", "\"tags\":[\"metadata\"],\"graph\":"));
-            require(loader.load(tagged, CanonicalGraphResourceKind.STORY).getSchemaVersion() == 1, "Tags changed schema");
+            require(
+                loader.load(tagged, CanonicalGraphResourceKind.STORY)
+                    .getSchemaVersion() == 1,
+                "Tags changed schema");
             write(tagged, storyJson("story_a"));
+            for (String retired : new String[] { "interact_actor", "enter_region", "enter_story" }) {
+                expect(
+                    loader,
+                    stories.resolve("bad.json"),
+                    storyJson("bad").replace("\"type\":\"terminate\"", "\"type\":\"" + retired + "\""),
+                    "graph.node.type.scope");
+            }
+            System.out.println("CANONICAL_LOADER_RETIRED_STANDALONE_NODES_REJECTED=PASS");
             verifyEnvelopeFailures(loader, stories);
             verifyGraphFailures(loader, stories, sessions, tasks);
             verifyDirectoryBehavior(loader, root, stories);

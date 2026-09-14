@@ -43,10 +43,15 @@ public final class CreatorNetworkDiscriminatorProbe {
                     throw new AssertionError("Unknown or duplicate discriminator: " + m.group());
             }
         }
-        if (ids.size() != 18) throw new AssertionError("Expected 18 registrations, found " + ids);
-        for (int i = 3; i <= 20; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
+        if (ids.size() != 23) throw new AssertionError("Expected 23 registrations, found " + ids);
+        for (int i = 3; i <= 25; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
         if (!"CLIENT".equals(ids.get(17)) || !"SERVER".equals(ids.get(18)))
             throw new AssertionError("Creator packet side mismatch");
+        if (!"CLIENT".equals(ids.get(24)) || !"SERVER".equals(ids.get(25)))
+            throw new AssertionError("Title packet side mismatch");
+        if (!"SERVER".equals(ids.get(21))) throw new AssertionError("Task submit packet side mismatch");
+        if (!"SERVER".equals(ids.get(22)) || !"CLIENT".equals(ids.get(23)))
+            throw new AssertionError("Media packet side mismatch");
         System.out.println("CREATOR_NETWORK_DISCRIMINATOR_PROBE=PASS");
     }
 }

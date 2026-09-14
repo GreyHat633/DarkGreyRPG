@@ -39,6 +39,15 @@ public static class StoryFlowMigrationPreview
         ArgumentNullException.ThrowIfNull(canonicalChildren);
 
         var issues = new List<ValidationIssue>();
+        foreach (var node in source.Nodes ?? [])
+        {
+            if (node is not null && StoryNodeDefinitionRegistry.CanonicalizeType(node.Type) is "ActorInteract" or "EnterRegion" or "EnterStory")
+                issues.Add(Issue("migration.story.standalone_event.removed",
+                    "旧独立触发器节点已删除，请先手工转换该节点；现用开始配置不受影响。", "type", node.Id));
+        }
+        if (issues.Count != 0)
+            return Failure(source, issues);
+
         issues.AddRange(StoryValidator.Validate(source));
         if (string.IsNullOrWhiteSpace(source.DisplayName) && string.IsNullOrWhiteSpace(source.Title))
             issues.Add(Issue("migration.story.display_name.required", "Story display name is required.", "display_name"));
@@ -94,15 +103,6 @@ public static class StoryFlowMigrationPreview
                 continue;
             }
 
-            if (type is "ActorInteract" or "EnterRegion")
-            {
-                var outgoing = Outgoing(edges, node.Id);
-                if (outgoing.Count != 1 || !string.Equals(outgoing[0].Output, "next", StringComparison.Ordinal))
-                {
-                    issues.Add(Issue("migration.story.topology.mid_flow_trigger",
-                        $"Mid-flow {type} must have exactly one next edge.", "next", node.Id));
-                }
-            }
             if (type is "DialogueExitBranch" or "WaitQuestComplete")
             {
                 issues.Add(Issue("migration.story.topology.unpaired",
@@ -156,7 +156,7 @@ public static class StoryFlowMigrationPreview
                     $"StoryStart output '{edge.Output}' is not in the safe migration pattern.", "output", edge.From));
                 continue;
             }
-            if (from.Type is "terminate" or "enter_story")
+            if (from.Type is "terminate")
             {
                 issues.Add(Issue("migration.story.topology.terminal_source",
                     $"Terminal node '{edge.From}' cannot have an outgoing edge.", "output", edge.From));
@@ -169,9 +169,8 @@ public static class StoryFlowMigrationPreview
             return Failure(source, issues);
 
         var graph = new GraphDocument(graphNodes, graphConnections);
-        var containsLegacyEnterStory = graphNodes.Any(node => node.Type == "enter_story");
-        issues.AddRange(GraphScopePolicy.Validate(graph, GraphScope.StoryFlow, compatibilityMode: containsLegacyEnterStory));
-        issues.AddRange(GraphNodeShapeValidator.Validate(graph, GraphScope.StoryFlow, compatibilityMode: containsLegacyEnterStory));
+        issues.AddRange(GraphScopePolicy.Validate(graph, GraphScope.StoryFlow));
+        issues.AddRange(GraphNodeShapeValidator.Validate(graph, GraphScope.StoryFlow));
         if (issues.Count != 0)
             return Failure(source, issues);
 
@@ -229,15 +228,6 @@ public static class StoryFlowMigrationPreview
             case "End":
             case "EndStory":
                 return GraphNodeFactory.Create(GraphScope.StoryFlow, "terminate", node.Id, node.Id);
-            case "EnterStory":
-                // Inter-story rewiring needs project-wide context. Preserve old
-                // EnterStory explicitly as compatibility data; new authoring
-                // cannot create it and a later project migration may replace it.
-                var enter = GraphNodeFactory.Create(GraphScope.StoryFlow, "enter_story", node.Id, node.Id, compatibilityMode: true);
-                if (!TryRead(node, ["target_story_id", "story_id", "story", "target"], out var target))
-                    issues.Add(Issue("migration.story.enter_story.target.required", "EnterStory target is required.", "target_story_id", node.Id));
-                else enter.Properties["target_story_id"] = target;
-                return enter;
             case "GiveItem":
                 var item = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", node.Id, node.Id);
                 item.Properties.Clear();
@@ -251,82 +241,8 @@ public static class StoryFlowMigrationPreview
                 message.Properties[CanonicalStoryActionSchema.TypeProperty] = JsonSerializer.SerializeToElement(CanonicalStoryActionSchema.SendMessage);
                 CopyRequired(node, message, "message", ["message", "text"], issues);
                 return message;
-            case "ActorInteract":
-                var interact = GraphNodeFactory.Create(GraphScope.StoryFlow, StoryStartSchema.ActorInteraction, node.Id, node.Id);
-                CopyEventProperties(node, interact, [StoryStartSchema.ActorIdProperty, "actor", "actorId"], issues,
-                    (name, value) => name == StoryStartSchema.ActorIdProperty
-                        && value.ValueKind == JsonValueKind.String
-                        && !string.IsNullOrWhiteSpace(value.GetString()));
-                return interact;
-            case "EnterRegion":
-                var region = GraphNodeFactory.Create(GraphScope.StoryFlow, StoryStartSchema.RegionEntry, node.Id, node.Id);
-                CopyEventProperties(node, region,
-                    [StoryStartSchema.DimensionProperty, StoryStartSchema.XProperty, StoryStartSchema.YProperty,
-                        StoryStartSchema.ZProperty, StoryStartSchema.RadiusProperty], issues,
-                    (name, value) => value.ValueKind == JsonValueKind.Number
-                        && value.TryGetDouble(out var number)
-                        && double.IsFinite(number)
-                        && (name != StoryStartSchema.DimensionProperty || value.TryGetInt32(out _))
-                        && (name != StoryStartSchema.RadiusProperty || number > 0));
-                return region;
             default:
                 return null;
-        }
-    }
-
-    /// <summary>
-    /// Copies a legacy event payload without coercion.  Aliases are accepted
-    /// for the actor reference because they are part of the legacy Story
-    /// vocabulary, but conflicting aliases and unknown fields fail closed.
-    /// </summary>
-    private static void CopyEventProperties(
-        StoryNodeResource source,
-        GraphNode destination,
-        IReadOnlyList<string> allowedNames,
-        ICollection<ValidationIssue> issues,
-        Func<string, JsonElement, bool> isValid)
-    {
-        var properties = source.Properties ?? [];
-        foreach (var name in properties.Keys.Where(key => !allowedNames.Contains(key, StringComparer.Ordinal)))
-            issues.Add(Issue("migration.story.node.property.unsupported",
-                $"Property '{name}' is not supported on {source.Type}.", $"properties.{name}", source.Id));
-
-        // The first name in each group is the canonical persisted key.  The
-        // region payload has no aliases, while actor interaction supports the
-        // historical actor/actorId spellings.
-        var groups = source.Type is not null
-            && StoryNodeDefinitionRegistry.CanonicalizeType(source.Type) == "ActorInteract"
-            ? new[] { new[] { StoryStartSchema.ActorIdProperty, "actor", "actorId" } }
-            : allowedNames.Select(name => new[] { name }).ToArray();
-        foreach (var group in groups)
-        {
-            var matches = properties.Where(pair => group.Contains(pair.Key, StringComparer.Ordinal)).ToArray();
-            if (matches.Length == 0)
-            {
-                issues.Add(Issue("migration.story.node.property.required",
-                    $"Property '{group[0]}' is required on {source.Type}.", $"properties.{group[0]}", source.Id));
-                continue;
-            }
-
-            if (matches.Skip(1).Any(match => !string.Equals(
-                    RawValue(match.Value), RawValue(matches[0].Value), StringComparison.Ordinal)))
-            {
-                issues.Add(Issue("migration.story.node.property.ambiguous",
-                    $"Legacy aliases for property '{group[0]}' disagree on {source.Id}.",
-                    $"properties.{group[0]}", source.Id));
-                continue;
-            }
-
-            var value = matches[0].Value;
-            if (!isValid(group[0], value))
-            {
-                issues.Add(Issue("migration.story.node.property.invalid",
-                    $"Property '{group[0]}' has an invalid scalar value on {source.Id}.",
-                    $"properties.{group[0]}", source.Id));
-                continue;
-            }
-
-            destination.Properties[group[0]] = value.Clone();
         }
     }
 

@@ -1,0 +1,282 @@
+[
+  {
+    "Path": "PLAN/0.3.3.0/BASELINE.md",
+    "Bytes": 8093,
+    "SHA256": "9FCA1C8CBF373CA2A1546F81C1AC83967035D942B3F14C45EAD856F28F91421C"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/baseline-format.log",
+    "Bytes": 614,
+    "SHA256": "CC6467856806BD6C159B89C564C69A251BBA01E96A08C30AF65A020B21778A5A"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/baseline-probes.txt",
+    "Bytes": 1695,
+    "SHA256": "B1CA0537E45526F44AFE78A3E686D24C3A07A84EAF8BCA2745B08F827AFFEF79"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/core-baseline.log",
+    "Bytes": 12885,
+    "SHA256": "006E9BB2B9D1CA9B25EC27282725A03B05F32D514CC9767CBCDF6A75779AEE8B"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/core-baseline.trx",
+    "Bytes": 574551,
+    "SHA256": "00433FE82A5788094F0D0366B2F0B3C7DD09614768A54D4750F3CD46DD881042"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/initial-worktree.txt",
+    "Bytes": 282816,
+    "SHA256": "4A1E45E4DC5CFA9AB58E9AD3482D729EBEC21E198C03211173F345696816E5D2"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/inventory-summary.txt",
+    "Bytes": 308,
+    "SHA256": "3A685D4B2D7A59D73125C1EDA979CF0029130E677CF82E1F134E687488712C44"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/legacy-package-inventory.csv",
+    "Bytes": 2219,
+    "SHA256": "032BBD979521EFB4D89D8F251391B27B30AA083C8BE5961747CBE9A55BF744E3"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/legacy-project-inventory.csv",
+    "Bytes": 5006,
+    "SHA256": "AAA38907D5D3A228A5D60DABB11572EF0946F15117D4D3CCA0D5B5B7696DA593"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/legacy-source-inventory.csv",
+    "Bytes": 22856,
+    "SHA256": "8B2C2E3D5DB37F6ABDA0A981EE6B6CA8A96C04D01F5BD11BB5420E42A997E1CB"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/legacy-trigger-candidate-files.txt",
+    "Bytes": 5944,
+    "SHA256": "D42A83F079001ACB380A5D683867DBBFF561355510E654D207944EE71FCE942F"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/artifacts.json",
+    "Bytes": 990,
+    "SHA256": "A98BE520751BC1EF15251F8BFCBC0DAD654E9E6D6194D63069372601614F43C6"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/core-final.log",
+    "Bytes": 931,
+    "SHA256": "B96DF09229D41A8806D86ADDA527FE945C41874A7898AEEDC3F5B5E285B21B89"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/current-project-diff.json",
+    "Bytes": 4,
+    "SHA256": "A5338D955B09046EC0B16F3A9625B7955C763AAE07DC722E474E6078745F932F"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/format-final.log",
+    "Bytes": 614,
+    "SHA256": "CC6467856806BD6C159B89C564C69A251BBA01E96A08C30AF65A020B21778A5A"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/inventory-summary.txt",
+    "Bytes": 308,
+    "SHA256": "8C393CAD45CB7E685ACEA0B6674035B235AE8781DC8A9C920A95D8C140232278"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/java-build-probes-before-package-fix.log",
+    "Bytes": 25987,
+    "SHA256": "BE7E717BD063771548831947E2F4DC47903A7E68DCDE74E752168AB5A608D845"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/java-build-probes.log",
+    "Bytes": 24998,
+    "SHA256": "0ACD10795EA7537B8AD6C148CE049A296E7355CD863CCEE17A55F446912A0B99"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/java-result.json",
+    "Bytes": 110,
+    "SHA256": "51C7FA8839F46799C30D2DFDAB23984DC5AA1A437EED84C31BACBC7DEF658F17"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/legacy-package-inventory.csv",
+    "Bytes": 2219,
+    "SHA256": "032BBD979521EFB4D89D8F251391B27B30AA083C8BE5961747CBE9A55BF744E3"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/legacy-project-inventory.csv",
+    "Bytes": 5006,
+    "SHA256": "AAA38907D5D3A228A5D60DABB11572EF0946F15117D4D3CCA0D5B5B7696DA593"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/legacy-source-inventory.csv",
+    "Bytes": 21839,
+    "SHA256": "439500D6BF8196200C14E9176B744B3600BF68CD31D1B4D529EEF5CD08C5601A"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/p1-core.trx",
+    "Bytes": 571740,
+    "SHA256": "598CBFDACA6BD1F1107351E08F485133A49CEB37E7FF9BC949858C50DC9846AA"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/p1-wpf.trx",
+    "Bytes": 670898,
+    "SHA256": "2572A3A14C53CE31D846B59BF714FAB49032BD38DBBF6E3B8D2EBC83C6485B17"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/preserved-start-and-freeze.json",
+    "Bytes": 1144,
+    "SHA256": "9E2C4563B9C81AA540A7DE965D64994CF38B921FCAFD56D1375AB639205130E3"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/scope-p1.log",
+    "Bytes": 807,
+    "SHA256": "0A21F2388755BD0C2E25B644F09D69A7E463C7A08C81C3E047D2FA1FF4D58C79"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/scope-selftest.log",
+    "Bytes": 28,
+    "SHA256": "1C72454F0CA2F2A2784FB1181974E2B4C881ACF9F6C2C93F40E8FB4CE24CD6D9"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/source-whitelist.txt",
+    "Bytes": 2618,
+    "SHA256": "FF8178DADD17886C914FBB89FF22CFBB7AAB5B446F01E7B2E9FF22B5C2643B3C"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/studio-package.log",
+    "Bytes": 721,
+    "SHA256": "883492E1B3EF8BFBE54E1ACC3546D184052BA6E71332933B2CA1998F0A82E006"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/p1/wpf-final.log",
+    "Bytes": 6343,
+    "SHA256": "A6778FED5B3104F9943CECC32D61243BACDD39D87EAEAFB511866D1C0FAD72EE"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/probe-fixture-hashes.json",
+    "Bytes": 437,
+    "SHA256": "A96CA8073A8DF50496270B6FD270ACE1B08969EFF7F8CC01322031C439EF3DBF"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/probe-summary.json",
+    "Bytes": 212,
+    "SHA256": "3C9AC6EA3E39078E2BE513C173E1F6EA9264557C0D92A6E770C0A5F25DE05DBF"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/probes-baseline.log",
+    "Bytes": 22691,
+    "SHA256": "CC0298512E2A95BE2011A53885EC809F6EF7F21E7F94C88BB458BB0E15ABA538"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/probes-fixture-retry.log",
+    "Bytes": 5002,
+    "SHA256": "755212EC9F32E664211C720A85EF9C5A485AECA99413A83B46CCEAE6E3C07E25"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/runtime-after-format.log",
+    "Bytes": 3015,
+    "SHA256": "8E529FCBE8C3EB87BDD353AFCC86F6D2F1E5A7F4DECC3FBF242CE8B3010BC835"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/runtime-baseline.log",
+    "Bytes": 9639,
+    "SHA256": "46CCCB536C69A5A7BF4ED7AB28AD0401B3573A944D2804A486D597F797F1F1A2"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/scope-final-negative.txt",
+    "Bytes": 6707,
+    "SHA256": "D298209162A7084D8534BBD45E39D3F7204C782F8E516A0918ED10144C5D6996"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/scope-negative-test.txt",
+    "Bytes": 35,
+    "SHA256": "EFB738C54F06DB853500176F294501E94ACFB48B9866C90766296D6127F20CBB"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/scope-p0.txt",
+    "Bytes": 755,
+    "SHA256": "459BD4F3F13DC9C0976C4C19208421481B14BBD390C22BD1C94747810BAA5C4A"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/scope-self-test.txt",
+    "Bytes": 28,
+    "SHA256": "1C72454F0CA2F2A2784FB1181974E2B4C881ACF9F6C2C93F40E8FB4CE24CD6D9"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/studio-delivery-baseline.json",
+    "Bytes": 318,
+    "SHA256": "C7E3A8AABCF082211F1FE2E03D1924DA6900738383DEDCB55E0924E721935393"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/studio-package-baseline.log",
+    "Bytes": 934,
+    "SHA256": "0AF88C0EE78D646F3C07CA72B67051F8AD08B8B9E98492B7BFCAF280F305A8AB"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/studio-package-version-fixed.log",
+    "Bytes": 854,
+    "SHA256": "690F080EE3576E73E2EF850F344A7BAE9D18A7535C3ECEB91ECDD5547FE4F3CB"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/worktree-preservation.txt",
+    "Bytes": 75,
+    "SHA256": "D306EEC8D46AAA57EB5225A4D69D1AD5FB233F9B94712406D19AAF3A321EF5AC"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/wpf-baseline.log",
+    "Bytes": 6711,
+    "SHA256": "9CC0C96141D067F6820FBDAB16BA20E7FD6F038CF9AAC71F99D22CE892B933D7"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/wpf-baseline.trx",
+    "Bytes": 670925,
+    "SHA256": "BCC8065A3DD51E3AC9D6DABF05BE79E1D2C0073F51D9A683B82DE825E00DEA1A"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/wpf-version-fixed.log",
+    "Bytes": 6796,
+    "SHA256": "63829B484FCDCFEC08EE0DF40C1C7C9CFD684E4ADEBADF7767F6271C26FDA5BE"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/evidence/wpf-version-fixed.trx",
+    "Bytes": 670925,
+    "SHA256": "83F309AB9171B9BA9E4C696C7616B8FA389B59B85600F78998B0ABEB3505FE14"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/LEGACY_TRIGGER_INVENTORY.md",
+    "Bytes": 6018,
+    "SHA256": "7BEC8E46D9281FA6952C909B72EC82AA2707D84E2725ABD1E044168F1A5BF64E"
+  },
+  {
+    "Path": "PLAN/0.3.3.0/P1.md",
+    "Bytes": 3698,
+    "SHA256": "43F78751C9481D87EC5129FC8D3776C50ECACB713F575C2B7F901133B98A88C0"
+  },
+  {
+    "Path": "PLAN/DarkGrey_RPG_0.3.3.0_Construction_PLAN.md",
+    "Bytes": 39594,
+    "SHA256": "3EB00C7BD691AFB8F9B40C40D782B520502DB4F5DBA2FC5437F5975F6E6ED9D8"
+  },
+  {
+    "Path": "scripts/0330-baseline-format.gradle",
+    "Bytes": 377,
+    "SHA256": "ED49F4CA61C50A9E43C1E27388C24A304707CBF6A7D06C9132D5EF35094CBF76"
+  },
+  {
+    "Path": "scripts/0330-baseline-probes.gradle",
+    "Bytes": 331,
+    "SHA256": "A1A68CD2A9C9FEAA8D72651978823DD9569F404CE268CF1C51B0C932593B03BA"
+  },
+  {
+    "Path": "scripts/0330-p1-format.gradle",
+    "Bytes": 2079,
+    "SHA256": "93A8FF99C3D5DE56FEE36FCF798857E0AAAA2111E4FD6FD29E1E5BC215ECADB0"
+  },
+  {
+    "Path": "scripts/inventory-0330-legacy.ps1",
+    "Bytes": 6317,
+    "SHA256": "103CA09DFB8CC64509F22F21C24FA20F828E63CA6FF814FD561B9D9E94FECEE4"
+  },
+  {
+    "Path": "scripts/verify-0330-scope.ps1",
+    "Bytes": 12701,
+    "SHA256": "6D0E783636AEFD72FC7F760E430BC9D56D83BB553F7B0A9EBA7EC928D7E9992A"
+  }
+]

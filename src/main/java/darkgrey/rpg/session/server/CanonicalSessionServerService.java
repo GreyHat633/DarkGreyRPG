@@ -56,7 +56,7 @@ public final class CanonicalSessionServerService {
         validateActors(binding);
         CanonicalSessionInstanceSnapshot snapshot = savedData
             .start(playerUuid, storyId, aggregatePlacementId, binding.session, activationLogic);
-        return projectSnapshot(snapshot, binding);
+        return projectSnapshot(snapshot, binding, true);
     }
 
     public CanonicalSessionDispatch begin(UUID playerUuid, String storyId, String aggregatePlacementId) {
@@ -73,7 +73,7 @@ public final class CanonicalSessionServerService {
         Binding binding = resolveBinding(snapshot.getStoryId(), snapshot.getAggregatePlacementId());
         requireResourceBinding(snapshot, binding);
         validateActors(binding);
-        return projectSnapshot(snapshot, binding);
+        return projectSnapshot(snapshot, binding, false);
     }
 
     public CanonicalSessionDispatch resume(UUID playerUuid, String storyId, String aggregatePlacementId) {
@@ -103,9 +103,8 @@ public final class CanonicalSessionServerService {
             .getStatus() != CanonicalSessionStatus.ACTIVE) throw new IllegalStateException("Session is not active.");
         CanonicalSessionStep next;
         if (action.getKind() == CanonicalSessionAction.Kind.CONTINUE) {
-            if (current.getKind() != CanonicalSessionStep.Kind.LINE
-                && current.getKind() != CanonicalSessionStep.Kind.NARRATION)
-                throw new IllegalStateException("Continue requires a Session Line or Narration.");
+            if (current.getKind() != CanonicalSessionStep.Kind.LINE)
+                throw new IllegalStateException("Continue requires a Session Line.");
             next = savedData
                 .continueLine(playerUuid, expectedStoryId, action.getTransportId(), action.getCurrentNodeId());
         } else if (action.getKind() == CanonicalSessionAction.Kind.CHOICE) {
@@ -121,8 +120,8 @@ public final class CanonicalSessionServerService {
         CanonicalSessionInstanceSnapshot after = savedData.getSnapshot(playerUuid, expectedStoryId);
         if (after == null) throw new IllegalStateException("Session instance disappeared after action.");
         // The returned step is intentionally not used as authority; SavedData is re-read for projection.
-        if (next == null) throw new IllegalStateException("Session transition did not produce a step.");
-        return projectSnapshot(after, binding);
+
+        return projectSnapshot(after, binding, true);
     }
 
     public CanonicalSessionDispatch handleAction(UUID playerUuid, CanonicalSessionAction action) {
@@ -159,7 +158,8 @@ public final class CanonicalSessionServerService {
                 optionId));
     }
 
-    private CanonicalSessionDispatch projectSnapshot(CanonicalSessionInstanceSnapshot snapshot, Binding binding) {
+    private CanonicalSessionDispatch projectSnapshot(CanonicalSessionInstanceSnapshot snapshot, Binding binding,
+        boolean playVoice) {
         if (snapshot == null || binding == null)
             throw new IllegalArgumentException("Session projection input required.");
         validateActors(binding);
@@ -167,6 +167,19 @@ public final class CanonicalSessionServerService {
         CanonicalSessionStatus status = runtime.getStatus();
         if (status == CanonicalSessionStatus.FAILED)
             throw new IllegalStateException("FAILED Session snapshots cannot be projected.");
+        if (status == CanonicalSessionStatus.ACTIVE && runtime.isWaitingCondition()) {
+            return CanonicalSessionDispatch.frame(
+                new CanonicalSessionFrame(
+                    snapshot.getTransportId(),
+                    snapshot.getStoryId(),
+                    snapshot.getSessionResourceId(),
+                    runtime.getCurrentNodeId(),
+                    CanonicalSessionFrame.Kind.PRESENTATION,
+                    "",
+                    "",
+                    java.util.Collections.<CanonicalSessionChoiceOption>emptyList())
+                        .withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), false));
+        }
         CanonicalSessionStep step = savedData.getCurrentStep(snapshot.getPlayerUuid(), snapshot.getStoryId());
         if (step == null || blank(
             snapshot.getRuntimeSnapshot()
@@ -176,11 +189,10 @@ public final class CanonicalSessionServerService {
                 .equals(step.getNodeId()))
             throw new IllegalStateException("Session snapshot has no coherent current step.");
         if (status == CanonicalSessionStatus.ACTIVE) {
-            if (step.getKind() != CanonicalSessionStep.Kind.LINE
-                && step.getKind() != CanonicalSessionStep.Kind.NARRATION
-                && step.getKind() != CanonicalSessionStep.Kind.CHOICE)
+            if (step.getKind() != CanonicalSessionStep.Kind.LINE && step.getKind() != CanonicalSessionStep.Kind.CHOICE)
                 throw new IllegalStateException("Active Session snapshot has an incoherent step.");
-            return CanonicalSessionDispatch.frame(frame(snapshot, step));
+            return CanonicalSessionDispatch.frame(
+                frame(snapshot, step).withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), playVoice));
         }
         if (status != CanonicalSessionStatus.COMPLETED || step.getKind() != CanonicalSessionStep.Kind.END
             || blank(step.getEndPortId())
@@ -201,8 +213,8 @@ public final class CanonicalSessionServerService {
 
     private CanonicalSessionFrame frame(CanonicalSessionInstanceSnapshot snapshot, CanonicalSessionStep step) {
         if (step.getKind() == CanonicalSessionStep.Kind.LINE) {
-            ActorDefinition actor = project.getActor(step.getSpeakerActorId());
-            if (actor == null || blank(actor.getDisplayName()))
+            ActorDefinition actor = blank(step.getSpeakerActorId()) ? null : project.getActor(step.getSpeakerActorId());
+            if (!blank(step.getSpeakerActorId()) && (actor == null || blank(actor.getDisplayName())))
                 throw new IllegalStateException("Session Line actor is missing or has a blank display name.");
             return new CanonicalSessionFrame(
                 snapshot.getTransportId(),
@@ -210,19 +222,14 @@ public final class CanonicalSessionServerService {
                 snapshot.getSessionResourceId(),
                 step.getNodeId(),
                 CanonicalSessionFrame.Kind.LINE,
-                actor.getDisplayName(),
+                actor == null ? "" : actor.getDisplayName(),
                 step.getText(),
-                java.util.Collections.<CanonicalSessionChoiceOption>emptyList());
+                java.util.Collections.<CanonicalSessionChoiceOption>emptyList(),
+                actor == null ? null
+                    : actor.getPortraits()
+                        .resolve(step.getPortraitVariant()),
+                step.getVoiceRef());
         }
-        if (step.getKind() == CanonicalSessionStep.Kind.NARRATION) return new CanonicalSessionFrame(
-            snapshot.getTransportId(),
-            snapshot.getStoryId(),
-            snapshot.getSessionResourceId(),
-            step.getNodeId(),
-            CanonicalSessionFrame.Kind.NARRATION,
-            "",
-            step.getText(),
-            java.util.Collections.<CanonicalSessionChoiceOption>emptyList());
         java.util.ArrayList<CanonicalSessionChoiceOption> choices = new java.util.ArrayList<CanonicalSessionChoiceOption>();
         for (darkgrey.rpg.session.runtime.CanonicalSessionChoiceOption option : step.getOptions())
             choices.add(new CanonicalSessionChoiceOption(option.getOptionId(), option.getDisplayText()));
@@ -274,8 +281,13 @@ public final class CanonicalSessionServerService {
         CanonicalGraph graph = binding.session.getGraph();
         if (graph == null) throw new IllegalStateException("Session graph is missing.");
         for (CanonicalGraphNode node : graph.getNodes()) if (node != null && "line".equals(node.getType())) {
-            String actorId = requiredString(node, "speaker_actor_id");
+            String actorId = darkgrey.rpg.session.runtime.CanonicalSessionRuntime
+                .optionalLineString(node, "speaker_actor_id");
+            if (actorId == null) continue;
             ActorDefinition actor = project.getActor(actorId);
+            if (actor != null) actor.getPortraits()
+                .resolve(
+                    darkgrey.rpg.session.runtime.CanonicalSessionRuntime.optionalLineString(node, "portrait_variant"));
             boolean owned = binding.membership.getOwnedResources()
                 .getActorIds()
                 .contains(actorId);

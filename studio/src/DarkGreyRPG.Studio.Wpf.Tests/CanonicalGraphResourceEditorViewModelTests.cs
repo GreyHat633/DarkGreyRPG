@@ -10,6 +10,24 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalGraphResourceEditorViewModelTests
 {
     [TestMethod]
+    public void TaskDescriptionParticipatesInDirtySaveAndReopenWithoutChangingGraph()
+    {
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "task", "任务", new GraphDocument());
+        using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
+        editor.TaskDescription = "背景\n第二段";
+        Assert.IsTrue(editor.IsDirty);
+        Assert.IsEmpty(editor.Host.Graph.Nodes);
+        var snapshot = editor.CreatePersistenceSnapshot();
+        editor.MarkSaved();
+        Assert.IsFalse(editor.IsDirty);
+        using var reopened = new CanonicalGraphResourceEditorViewModel(GraphResourceEnvelope.FromJson(snapshot.ToJson()));
+        Assert.AreEqual("背景\n第二段", reopened.TaskDescription);
+        reopened.TaskDescription = "";
+        Assert.IsTrue(reopened.IsDirty);
+        Assert.IsNull(reopened.CreatePersistenceSnapshot().TaskMetadata);
+    }
+
+    [TestMethod]
     public void AllResourceKindsOpenAtTheirCanonicalScopeWithoutAliasingSource()
     {
         foreach (var (kind, scope) in new[]

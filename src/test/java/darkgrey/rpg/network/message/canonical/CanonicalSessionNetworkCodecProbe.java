@@ -69,7 +69,7 @@ public final class CanonicalSessionNetworkCodecProbe {
             "故事-1",
             "session-资源",
             "旁白",
-            CanonicalSessionFrame.Kind.NARRATION,
+            CanonicalSessionFrame.Kind.LINE,
             "",
             "风穿过没有说话人的走廊。",
             Collections.<CanonicalSessionChoiceOption>emptyList());
@@ -92,7 +92,7 @@ public final class CanonicalSessionNetworkCodecProbe {
             "CHOICE blank prompt round-trip");
         CanonicalSessionFrame narrationDecoded = roundTrip(narration);
         require(
-            narrationDecoded.getKind() == CanonicalSessionFrame.Kind.NARRATION && narrationDecoded.canContinue()
+            narrationDecoded.getKind() == CanonicalSessionFrame.Kind.LINE && narrationDecoded.canContinue()
                 && narrationDecoded.getSpeaker()
                     .isEmpty()
                 && narrationDecoded.getChoices()
@@ -105,6 +105,39 @@ public final class CanonicalSessionNetworkCodecProbe {
                     .getOptionId()),
             "stable ordered option ID");
         require("故事-1".equals(roundTrip(close).getStoryId()), "close round-trip");
+        String image = "media/" + String.join("", Collections.nCopies(64, "a")) + ".png";
+        String voice = "media/" + String.join("", Collections.nCopies(64, "b")) + ".ogg";
+        CanonicalSessionFrame media = roundTrip(
+            new CanonicalSessionFrame(
+                20L,
+                "story",
+                "session",
+                "line",
+                CanonicalSessionFrame.Kind.LINE,
+                "Actor",
+                "Text",
+                Collections.<CanonicalSessionChoiceOption>emptyList(),
+                image,
+                voice));
+        require(
+            image.equals(media.getPortraitRef()) && voice.equals(media.getVoiceRef()),
+            "media references survive packet round-trip");
+        CanonicalSessionFrame speakerlessVoice = roundTrip(
+            new CanonicalSessionFrame(
+                21L,
+                "story",
+                "session",
+                "line",
+                CanonicalSessionFrame.Kind.LINE,
+                "",
+                "Text",
+                Collections.<CanonicalSessionChoiceOption>emptyList(),
+                null,
+                voice));
+        require(
+            speakerlessVoice.getPortraitRef() == null && voice.equals(speakerlessVoice.getVoiceRef()),
+            "speakerless line carries voice without portrait");
+        System.out.println("SESSION_LINE_MEDIA_PACKET_ROUNDTRIP=PASS");
     }
 
     private static void detachedCollections() {

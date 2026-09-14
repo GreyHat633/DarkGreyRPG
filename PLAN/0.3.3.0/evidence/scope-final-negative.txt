@@ -1,0 +1,77 @@
+BASELINE=82c6443238e41ce820f076e09d65d3cb26bb2236
+PHASE=Final
+UNEXPECTED_IDENTITY_DIFF=0
+UNEXPECTED_NOMINATOR_DIFF=0
+UNEXPECTED_UTILITY_WINDOW_FOUNDATION_DIFF=0
+UNEXPECTED_AGGREGATE_BOUNDARY_DIFF=0
+UNEXPECTED_HISTORICAL_FREEZE_GUARD_DIFF=0
+UNEXPECTED_EXISTING_NETWORK_ROUTE_DIFF=0
+TASK_FLOW_CHECK=static registry definitions including allowed kinds; Runtime requires graph probe
+TASK_FLOW_DEFINITION_VIOLATIONS=0
+TASK_FLOW_PORT_COUNT=0
+FORBIDDEN_MEDIA_ID_TERMS=0
+UNEXPECTED_LEGACY_COMPAT_ADDITION=0
+LEGACY_TRIGGER_RUNTIME_PATHS=21
+LEGACY_TRIGGER_AUTHORING_PATHS=37
+NARRATION_RUNTIME_PATHS=1
+RESIDUAL_COUNT_UNIT=matching production files; inspect inventory and run semantic probes
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoader.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/graph/canonical/CanonicalProjectContentLoader.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/session/persistence/CanonicalSessionSavedData.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryEventAdapter.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryForgeManager.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstanceNbtCodec.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRegionEntryTracker.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRuntime.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStorySnapshot.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryStartConfiguration.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryTriggerIndex.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryWaitKind.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryDispatchKind.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryServerService.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/runtime/BuiltinStoryExecutors.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/runtime/NodeExecutionResult.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/runtime/StoryDebugExplainer.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/runtime/StoryEventAdapter.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/runtime/StoryRuntimeService.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/StoryLoader.java
+FAIL: Legacy Trigger residue: src/main/java/darkgrey/rpg/story/StoryNodeType.java
+FAIL: Legacy Trigger residue: schema/story.schema.json
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/GraphNodeDefinitionRegistry.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/StoryStartSchema.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Graphs/Editing/GraphEditSession.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Graphs/Migration/StoryFlowMigrationPreview.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Graphs/Resources/CanonicalProjectStoryGraphService.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Graphs/Resources/CanonicalStoryLifecycleService.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Identity/NamespaceProjectValidator.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Identity/ResourceRenameMap.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Packaging/StoryPackageExporter.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Stories/Definitions/StoryNodeDefinitionRegistry.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio.Core/Stories/StoryValidator.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/MainWindow.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalNodeParameterSummary.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/ViewModels/ProjectHomeViewModel.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/ViewModels/ShellViewModel.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/ViewModels/StoryFlowEditorViewModel.cs
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ActorIdentityDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ActorResourcePickerDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/CanonicalItemPickerDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/CanonicalResourceIdentityDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/CanonicalResourcePickerDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/DialogueEditorView.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/DisplayNameDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalGraphEditorView.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalGraphNodeControl.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalInlineNodeEditorControl.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalStoryWorkspaceView.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/OfflinePackageResourcePickerDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/OfflineReadOnlyResourceDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ProjectCreationDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ProjectGraphView.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/QuestEditorView.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ResourceIdentityDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ResourceIdInput.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/ResourcePickerDialog.xaml
+FAIL: Legacy Trigger residue: studio/src/DarkGreyRPG.Studio/Views/StoryFlowNodeControl.xaml
+FAIL: Narration Runtime residue: src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionRuntime.java
+SCOPE_GUARD=FAIL

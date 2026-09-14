@@ -14,9 +14,47 @@ public final class CanonicalSessionFrame implements IMessage {
     public enum Kind {
         LINE,
         CHOICE,
-        NARRATION
+        PRESENTATION
     }
 
+    private darkgrey.rpg.session.runtime.CanonicalSessionPresentation presentation = darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY;
+    private long lineEpoch;
+    private boolean playVoice;
+
+    public darkgrey.rpg.session.runtime.CanonicalSessionPresentation getPresentation() {
+        return presentation;
+    }
+
+    public long getLineEpoch() {
+        return lineEpoch;
+    }
+
+    public boolean shouldPlayVoice() {
+        return playVoice;
+    }
+
+    public CanonicalSessionFrame withPresentation(darkgrey.rpg.session.runtime.CanonicalSessionPresentation state,
+        long epoch, boolean voice) {
+        if (state == null || epoch < 0) throw CanonicalSessionNetworkCodec.invalid("presentation state");
+        CanonicalSessionFrame copy = new CanonicalSessionFrame(
+            transportId,
+            storyId,
+            sessionResourceId,
+            currentNodeId,
+            kind,
+            speaker,
+            text,
+            choices,
+            portraitRef,
+            voiceRef);
+        copy.presentation = state;
+        copy.lineEpoch = epoch;
+        copy.playVoice = voice && kind == Kind.LINE && voiceRef != null;
+        return copy;
+    }
+
+    private String portraitRef;
+    private String voiceRef;
     private long transportId;
     private String storyId;
     private String sessionResourceId;
@@ -30,7 +68,16 @@ public final class CanonicalSessionFrame implements IMessage {
 
     public CanonicalSessionFrame(long transportId, String storyId, String sessionResourceId, String currentNodeId,
         Kind kind, String speaker, String text, List<CanonicalSessionChoiceOption> choices) {
+        this(transportId, storyId, sessionResourceId, currentNodeId, kind, speaker, text, choices, null, null);
+    }
+
+    public CanonicalSessionFrame(long transportId, String storyId, String sessionResourceId, String currentNodeId,
+        Kind kind, String speaker, String text, List<CanonicalSessionChoiceOption> choices, String portraitRef,
+        String voiceRef) {
         validate(transportId, storyId, sessionResourceId, currentNodeId, kind, speaker, text, choices);
+        validateMedia(kind, speaker, portraitRef, voiceRef);
+        this.portraitRef = portraitRef;
+        this.voiceRef = voiceRef;
         this.transportId = transportId;
         this.storyId = storyId;
         this.sessionResourceId = sessionResourceId;
@@ -53,11 +100,9 @@ public final class CanonicalSessionFrame implements IMessage {
             .readField(buffer, "current_node_id", CanonicalSessionNetworkCodec.MAX_ID_BYTES);
         Kind decodedKind = Kind.values()[CanonicalSessionNetworkCodec
             .readEnum(buffer, Kind.values().length, "frame kind")];
-        String decodedSpeaker = decodedKind == Kind.CHOICE || decodedKind == Kind.NARRATION
-            ? CanonicalSessionNetworkCodec
-                .readOptionalField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES)
-            : CanonicalSessionNetworkCodec.readField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
-        String decodedText = decodedKind == Kind.CHOICE
+        String decodedSpeaker = CanonicalSessionNetworkCodec
+            .readOptionalField(buffer, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
+        String decodedText = decodedKind != Kind.LINE
             ? CanonicalSessionNetworkCodec
                 .readOptionalField(buffer, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES)
             : CanonicalSessionNetworkCodec.readField(buffer, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
@@ -75,7 +120,23 @@ public final class CanonicalSessionFrame implements IMessage {
             CanonicalSessionNetworkCodec.requireUnique(id, ids);
             decodedChoices.add(new CanonicalSessionChoiceOption(id, display));
         }
+        String decodedPortrait = CanonicalSessionNetworkCodec.readOptionalField(buffer, "portrait_ref", 80);
+        String decodedVoice = CanonicalSessionNetworkCodec.readOptionalField(buffer, "voice_ref", 80);
+        decodedPortrait = decodedPortrait.isEmpty() ? null : decodedPortrait;
+        decodedVoice = decodedVoice.isEmpty() ? null : decodedVoice;
+        validateMedia(decodedKind, decodedSpeaker, decodedPortrait, decodedVoice);
+        darkgrey.rpg.session.runtime.CanonicalSessionPresentation decodedPresentation = darkgrey.rpg.session.runtime.CanonicalSessionPresentation
+            .fromJson(CanonicalSessionNetworkCodec.readField(buffer, "presentation", 16384));
+        if (buffer.readableBytes() < 9) throw CanonicalSessionNetworkCodec.invalid("truncated presentation state");
+        long decodedEpoch = buffer.readLong();
+        int decodedPlay = buffer.readUnsignedByte();
+        if (decodedEpoch < 0 || decodedPlay > 1
+            || (decodedPlay == 1 && (decodedKind != Kind.LINE || decodedVoice == null)))
+            throw CanonicalSessionNetworkCodec.invalid("invalid voice state");
         CanonicalSessionNetworkCodec.requireNoTrailingBytes(buffer);
+        presentation = decodedPresentation;
+        lineEpoch = decodedEpoch;
+        playVoice = decodedPlay == 1;
         validate(
             decodedTransportId,
             decodedStoryId,
@@ -85,6 +146,8 @@ public final class CanonicalSessionFrame implements IMessage {
             decodedSpeaker,
             decodedText,
             decodedChoices);
+        portraitRef = decodedPortrait;
+        voiceRef = decodedVoice;
         transportId = decodedTransportId;
         storyId = decodedStoryId;
         sessionResourceId = decodedResourceId;
@@ -105,14 +168,9 @@ public final class CanonicalSessionFrame implements IMessage {
         CanonicalSessionNetworkCodec
             .writeField(buffer, currentNodeId, "current_node_id", CanonicalSessionNetworkCodec.MAX_ID_BYTES);
         buffer.writeByte(kind.ordinal());
-        if (kind == Kind.CHOICE || kind == Kind.NARRATION) {
-            CanonicalSessionNetworkCodec
-                .writeOptionalEmptyField(buffer, speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
-        } else {
-            CanonicalSessionNetworkCodec
-                .writeField(buffer, speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
-        }
-        if (kind == Kind.CHOICE) {
+        CanonicalSessionNetworkCodec
+            .writeOptionalField(buffer, speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
+        if (kind != Kind.LINE) {
             CanonicalSessionNetworkCodec
                 .writeOptionalField(buffer, text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
         } else {
@@ -128,6 +186,31 @@ public final class CanonicalSessionFrame implements IMessage {
                 "display_text",
                 CanonicalSessionNetworkCodec.MAX_OPTION_TEXT_BYTES);
         }
+        validateMedia(kind, speaker, portraitRef, voiceRef);
+        CanonicalSessionNetworkCodec
+            .writeOptionalField(buffer, portraitRef == null ? "" : portraitRef, "portrait_ref", 80);
+        CanonicalSessionNetworkCodec.writeOptionalField(buffer, voiceRef == null ? "" : voiceRef, "voice_ref", 80);
+        CanonicalSessionNetworkCodec.writeField(buffer, presentation.toJson(), "presentation", 16384);
+        buffer.writeLong(lineEpoch);
+        buffer.writeBoolean(playVoice);
+    }
+
+    public String getPortraitRef() {
+        return portraitRef;
+    }
+
+    public String getVoiceRef() {
+        return voiceRef;
+    }
+
+    private static void validateMedia(Kind kind, String speaker, String portrait, String voice) {
+        if (kind != Kind.LINE && (portrait != null || voice != null))
+            throw CanonicalSessionNetworkCodec.invalid("Only LINE can carry portrait or voice media");
+        if (portrait != null && (speaker == null || speaker.isEmpty()
+            || !darkgrey.rpg.graph.canonical.CanonicalMediaReference.isImage(portrait)))
+            throw CanonicalSessionNetworkCodec.invalid("Invalid line portrait");
+        if (voice != null && !darkgrey.rpg.graph.canonical.CanonicalMediaReference.isAudio(voice))
+            throw CanonicalSessionNetworkCodec.invalid("Invalid line voice");
     }
 
     public long getTransportId() {
@@ -175,7 +258,7 @@ public final class CanonicalSessionFrame implements IMessage {
     }
 
     public boolean canContinue() {
-        return kind == Kind.LINE || kind == Kind.NARRATION;
+        return kind == Kind.LINE;
     }
 
     private static List<CanonicalSessionChoiceOption> detached(List<CanonicalSessionChoiceOption> values) {
@@ -192,16 +275,18 @@ public final class CanonicalSessionFrame implements IMessage {
         if (kind == null) throw CanonicalSessionNetworkCodec.invalid("frame kind is required");
         if (kind == Kind.LINE) {
             CanonicalSessionNetworkCodec
-                .requireField(speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
+                .requireOptionalField(speaker, "speaker", CanonicalSessionNetworkCodec.MAX_SPEAKER_BYTES);
         } else if (speaker == null || !speaker.isEmpty()) {
             throw CanonicalSessionNetworkCodec.invalid(kind.name() + " speaker must be explicitly empty");
         }
-        if (kind == Kind.CHOICE) {
+        if (kind != Kind.LINE) {
             CanonicalSessionNetworkCodec
                 .requireOptionalField(text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
         } else {
             CanonicalSessionNetworkCodec.requireField(text, "text", CanonicalSessionNetworkCodec.MAX_TEXT_BYTES);
         }
+        if (kind == Kind.PRESENTATION && !text.isEmpty())
+            throw CanonicalSessionNetworkCodec.invalid("presentation text must be empty");
         if (choices == null || choices.size() > CanonicalSessionNetworkCodec.MAX_OPTIONS)
             throw CanonicalSessionNetworkCodec.invalid("invalid choice count");
         Set<String> ids = CanonicalSessionNetworkCodec.newIdSet();
@@ -209,7 +294,7 @@ public final class CanonicalSessionFrame implements IMessage {
             if (choice == null) throw CanonicalSessionNetworkCodec.invalid("null choice");
             CanonicalSessionNetworkCodec.requireUnique(choice.getOptionId(), ids);
         }
-        if ((kind == Kind.LINE || kind == Kind.NARRATION) && !choices.isEmpty())
+        if (kind != Kind.CHOICE && !choices.isEmpty())
             throw CanonicalSessionNetworkCodec.invalid(kind.name() + " cannot carry choices");
         if (kind == Kind.CHOICE && choices.isEmpty())
             throw CanonicalSessionNetworkCodec.invalid("CHOICE requires choices");

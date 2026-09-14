@@ -133,6 +133,9 @@ public final class CanonicalTaskJournalProjector {
         for (CanonicalGraphNode node : resource.getGraph()
             .getNodes()) {
             if (!"objective".equals(node.getType())) continue;
+            // Inactive prerequisites must not reveal author text to the client.
+            if (runtimeSnapshot.getObjectiveStatuses()
+                .get(node.getId()) == CanonicalTaskObjectiveStatus.INACTIVE) continue;
             rows.add(row(node, runtimeSnapshot));
         }
         String resultSlot = snapshot.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED
@@ -149,7 +152,12 @@ public final class CanonicalTaskJournalProjector {
             snapshot.getSettlementTime(),
             resultSlot,
             runtimeSnapshot.getPublicLogicOutputs(),
-            rows);
+            rows,
+            resource.getTaskMetadata() == null ? ""
+                : resource.getTaskMetadata()
+                    .getDescription(),
+            runtimeSnapshot.getRewardStates()
+                .containsValue(Boolean.FALSE));
     }
 
     private static CanonicalTaskJournalObjectiveRow row(CanonicalGraphNode node,
@@ -159,18 +167,21 @@ public final class CanonicalTaskJournalProjector {
         Map<String, JsonElement> properties = node.getProperties();
         String type = string(properties, "objective_type");
         String description = string(properties, "description");
-        int required = "interact_actor".equals(type) && !properties.containsKey("required") ? 1
-            : integer(properties, "required");
+        int required = ("interact_actor".equals(type) || "reach_region".equals(type))
+            && !properties.containsKey("required") ? 1 : integer(properties, "required");
         if (required <= 0) throw new IllegalArgumentException("Task objective required progress must be positive.");
-        if (!"kill_entity".equals(type) && !"collect_item".equals(type) && !"interact_actor".equals(type))
+        if (!"kill_entity".equals(type) && !"collect_item".equals(type)
+            && !"interact_actor".equals(type)
+            && !"submit_item".equals(type)
+            && !"reach_region".equals(type))
             throw new IllegalArgumentException("Unsupported canonical Task objective type.");
         if ("kill_entity".equals(type)) string(properties, "entity");
-        else if ("collect_item".equals(type)) {
+        else if ("collect_item".equals(type) || "submit_item".equals(type)) {
             string(properties, "item");
             JsonElement metadata = properties.get("metadata");
             if (metadata == null || !metadata.isJsonObject())
                 throw new IllegalArgumentException("Collect objective metadata must be an object.");
-        } else string(properties, "actor_id");
+        } else if ("interact_actor".equals(type)) string(properties, "actor_id");
         Integer currentValue = runtimeSnapshot.getProgress()
             .get(node.getId());
         CanonicalTaskObjectiveStatus status = runtimeSnapshot.getObjectiveStatuses()

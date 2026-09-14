@@ -133,38 +133,15 @@ public sealed class CanonicalProjectMigrationPreviewTests
     }
 
     [TestMethod]
-    public void PreviewAppliesTrackedAcceptanceProjectDeterministicallyWithoutWriting()
+    public void TrackedAcceptanceProjectRequiresManualConversionOfRetiredNodes()
     {
-        var root = FindRepositoryRoot();
-        var project = Path.Combine(root, ".tooling", "2.1-acceptance", "DarkGrey-2.1-Acceptance");
+        var project = Path.Combine(FindRepositoryRoot(), ".tooling", "2.1-acceptance", "DarkGrey-2.1-Acceptance");
         var before = Snapshot(project);
         var result = CanonicalProjectMigrationPreview.Preview(project);
-
-        Assert.IsTrue(result.CanApply, string.Join("; ", result.Issues.Select(x => x.Code)));
-        Assert.IsNotEmpty(result.StoryPreviews);
-        Assert.IsNotEmpty(result.MembershipCandidates);
-        Assert.IsTrue(result.StoryPreviews.Single(x => x.Id == "royal_mystery").CanApply);
-        Assert.HasCount(10, result.ProposedWrites);
-        CollectionAssert.AreEqual(new[]
-        {
-            "resources/canonical/memberships/empire_route.json",
-            "resources/canonical/memberships/kingdom_route.json",
-            "resources/canonical/memberships/royal_mystery.json",
-            "resources/canonical/memberships/uncategorized.json",
-            "resources/canonical/sessions/final_confrontation.json",
-            "resources/canonical/stories/empire_route.json",
-            "resources/canonical/stories/kingdom_route.json",
-            "resources/canonical/stories/royal_mystery.json",
-            "resources/canonical/stories/uncategorized.json",
-            "resources/canonical/tasks/evidence.json",
-        }, result.ProposedWrites.Select(x => x.RelativePath).ToArray());
-        Assert.AreEqual(result.ProposedWrites.Select(x => x.RelativePath).ToArray().Length,
-            result.ProposedWrites.Select(x => x.RelativePath).Distinct(StringComparer.Ordinal).Count());
         var repeated = CanonicalProjectMigrationPreview.Preview(project);
-        CollectionAssert.AreEqual(result.ProposedWrites.Select(x => x.RelativePath).ToArray(),
-            repeated.ProposedWrites.Select(x => x.RelativePath).ToArray());
-        CollectionAssert.AreEqual(result.ProposedWrites.Select(x => x.Sha256).ToArray(),
-            repeated.ProposedWrites.Select(x => x.Sha256).ToArray());
+        Assert.IsFalse(result.CanApply);
+        Assert.IsTrue(result.Issues.Any(issue => issue.Code == "migration.story.standalone_event.removed"));
+        CollectionAssert.AreEqual(result.Issues.Select(issue => issue.Code).ToArray(), repeated.Issues.Select(issue => issue.Code).ToArray());
         Assert.AreEqual(before, Snapshot(project));
     }
 

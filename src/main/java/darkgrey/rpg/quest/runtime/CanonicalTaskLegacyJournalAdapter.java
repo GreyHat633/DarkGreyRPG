@@ -15,7 +15,7 @@ import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 /**
  * Pure compatibility adapter from the canonical Task Journal projection to
  * the existing Quest Journal transport DTO. The wire schema deliberately
- * stays unchanged while canonical identity is retained in the description.
+ * stays unchanged; the description carries author text and identity stays in the transport key.
  */
 public final class CanonicalTaskLegacyJournalAdapter {
 
@@ -123,19 +123,10 @@ public final class CanonicalTaskLegacyJournalAdapter {
     }
 
     private static String description(CanonicalTaskJournalEntry entry, QuestStatus status) {
-        StringBuilder result = new StringBuilder();
-        result.append("规范任务 [")
-            .append(statusLabel(status))
-            .append("]");
-        result.append(" 故事实例=")
-            .append(safe(entry.getStoryInstanceId()));
-        result.append(" 任务节点=")
-            .append(safe(entry.getTaskNodePlacementId()));
-        result.append(" 任务资源=")
-            .append(safe(entry.getTaskResourceId()));
-        result.append(" 结算出口=")
-            .append(entry.getSettledResultSlot() == null ? "无" : safe(entry.getSettledResultSlot()));
-        return result.toString();
+        StringBuilder text = new StringBuilder();
+        for (char c : entry.getDescription()
+            .toCharArray()) text.append((c < 0x20 && c != '\n' && c != '\r' && c != '\t') || c == 0x7f ? '?' : c);
+        return text.toString();
     }
 
     private static String statusLabel(QuestStatus status) {

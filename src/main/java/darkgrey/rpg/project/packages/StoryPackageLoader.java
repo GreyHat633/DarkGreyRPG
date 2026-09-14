@@ -343,19 +343,43 @@ public final class StoryPackageLoader {
         Map<String, byte[]> result = new LinkedHashMap<String, byte[]>();
         File project = new File(directory, "project.json");
         try {
-            result.put("project.json", java.nio.file.Files.readAllBytes(project.toPath()));
+            result.put("project.json", readBounded(project.toPath()));
         } catch (java.io.IOException exception) {
             throw new ProjectLoadException("Cannot read declared package resource: project.json", exception);
         }
+        long mediaTotal = 0;
         for (String path : requiredPaths(manifest)) {
             File file = new File(directory, path.replace('/', File.separatorChar));
             try {
-                result.put(path, java.nio.file.Files.readAllBytes(file.toPath()));
+                long size = java.nio.file.Files.size(file.toPath());
+                if (size > 64L * 1024 * 1024 || size > 256L * 1024 * 1024 - mediaTotal)
+                    throw new java.io.IOException("Package resources exceed byte bounds");
+                byte[] content = readBounded(file.toPath());
+                mediaTotal += content.length;
+                if (mediaTotal > 256L * 1024 * 1024)
+                    throw new java.io.IOException("Package resources exceed total byte bound");
+                result.put(path, content);
             } catch (java.io.IOException exception) {
                 throw new ProjectLoadException("Cannot read declared package resource: " + path, exception);
             }
         }
         return result;
+    }
+
+    private static byte[] readBounded(java.nio.file.Path path) throws java.io.IOException {
+        long maximum = 64L * 1024 * 1024;
+        if (java.nio.file.Files.size(path) > maximum) throw new java.io.IOException("Package entry exceeds byte bound");
+        try (java.io.InputStream input = java.nio.file.Files.newInputStream(path);
+            java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                if ((long) output.size() + count > maximum)
+                    throw new java.io.IOException("Package entry grew beyond byte bound");
+                output.write(buffer, 0, count);
+            }
+            return output.toByteArray();
+        }
     }
 
     private static List<String> requiredPaths(StoryPackageManifest manifest) {
@@ -371,6 +395,7 @@ public final class StoryPackageLoader {
         paths.addAll(required.getCanonicalMemberships());
         paths.addAll(required.getSessions());
         paths.addAll(required.getTasks());
+        paths.addAll(required.getMedia());
         if (required.getStoryLogicGraph() != null) paths.add(required.getStoryLogicGraph());
         return paths;
     }

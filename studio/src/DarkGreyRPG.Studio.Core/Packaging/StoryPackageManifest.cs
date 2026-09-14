@@ -121,6 +121,7 @@ public sealed class StoryPackageRequiredResources
     [JsonPropertyName("canonical_memberships")] public List<string> CanonicalMemberships { get; init; } = [];
     [JsonPropertyName("sessions")] public List<string> Sessions { get; init; } = [];
     [JsonPropertyName("tasks")] public List<string> Tasks { get; init; } = [];
+    [JsonPropertyName("media")] public List<string> Media { get; init; } = [];
     [JsonPropertyName("story_logic_graph")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? StoryLogicGraph { get; init; }
@@ -128,12 +129,13 @@ public sealed class StoryPackageRequiredResources
     internal void Validate()
     {
         ValidatePath(Story, "required_resources.story");
-        foreach (var list in new[] { Actors, Items, ItemGroups, Dialogues, Quests, CanonicalStories, CanonicalMemberships, Sessions, Tasks })
+        foreach (var list in new[] { Actors, Items, ItemGroups, Dialogues, Quests, CanonicalStories, CanonicalMemberships, Sessions, Tasks, Media })
         {
             if (list is null || list.Any(string.IsNullOrWhiteSpace) || list.Count != list.Distinct(StringComparer.Ordinal).Count())
                 throw new StoryPackageException("required_resources contains a null or duplicate resource path.");
             foreach (var path in list) ValidatePath(path, "required_resources");
         }
+        if (Media.Any(path => !DarkGreyRPG.Studio.Core.Graphs.Resources.MediaReference.IsValid(path))) throw new StoryPackageException("Invalid media reference path.");
         if (StoryLogicGraph is not null && string.IsNullOrWhiteSpace(StoryLogicGraph))
             throw new StoryPackageException("required_resources.story_logic_graph must be a nonblank path when present.");
         if (StoryLogicGraph is not null) ValidatePath(StoryLogicGraph, "required_resources.story_logic_graph");

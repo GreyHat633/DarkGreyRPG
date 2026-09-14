@@ -9,11 +9,12 @@ public final class CanonicalSessionStep {
 
     public enum Kind {
         LINE,
-        NARRATION,
         CHOICE,
         END
     }
 
+    private final String portraitVariant;
+    private final String voiceRef;
     private final Kind kind;
     private final String nodeId;
     private final String speakerActorId;
@@ -25,6 +26,14 @@ public final class CanonicalSessionStep {
 
     private CanonicalSessionStep(Kind kind, String nodeId, String speakerActorId, String text, String prompt,
         List<CanonicalSessionChoiceOption> options, String endPortId, String endDisplayName) {
+        this(kind, nodeId, speakerActorId, text, prompt, options, endPortId, endDisplayName, null, null);
+    }
+
+    private CanonicalSessionStep(Kind kind, String nodeId, String speakerActorId, String text, String prompt,
+        List<CanonicalSessionChoiceOption> options, String endPortId, String endDisplayName, String portraitVariant,
+        String voiceRef) {
+        this.portraitVariant = portraitVariant;
+        this.voiceRef = voiceRef;
         this.kind = kind;
         this.nodeId = nodeId;
         this.speakerActorId = speakerActorId;
@@ -47,16 +56,27 @@ public final class CanonicalSessionStep {
             null);
     }
 
-    public static CanonicalSessionStep narration(String nodeId, String text) {
+    public static CanonicalSessionStep line(String nodeId, String speakerActorId, String text, String portraitVariant,
+        String voiceRef) {
         return new CanonicalSessionStep(
-            Kind.NARRATION,
+            Kind.LINE,
             nodeId,
-            null,
+            speakerActorId,
             text,
             null,
             Collections.<CanonicalSessionChoiceOption>emptyList(),
             null,
-            null);
+            null,
+            portraitVariant,
+            voiceRef);
+    }
+
+    public String getPortraitVariant() {
+        return portraitVariant;
+    }
+
+    public String getVoiceRef() {
+        return voiceRef;
     }
 
     public static CanonicalSessionStep choice(String nodeId, String prompt,

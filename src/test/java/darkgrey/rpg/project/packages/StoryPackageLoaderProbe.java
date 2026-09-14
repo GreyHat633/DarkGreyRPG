@@ -145,7 +145,7 @@ public final class StoryPackageLoaderProbe {
     private static void addSharedActor(File directory, String displayName) throws Exception {
         write(
             new File(directory, "actors/shared_actor.json"),
-            "{\"schema_version\":3,\"type\":\"individual\",\"npc_id\":\"shared_actor\"," + "\"display_name\":\""
+            "{\"schema_version\":4,\"type\":\"individual\",\"npc_id\":\"shared_actor\"," + "\"display_name\":\""
                 + displayName
                 + "\",\"tags\":[],\"home_story_id\":\"story\"}");
         File manifest = new File(directory, "manifest.json");

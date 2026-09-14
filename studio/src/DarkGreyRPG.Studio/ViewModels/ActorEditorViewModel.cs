@@ -24,6 +24,8 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
 
     public ActorDocument Document { get; }
 
+    public bool SupportsPortraits => Document.SupportsPortraits;
+
     public string Id => Document.Id;
 
     public string DisplayName
@@ -40,6 +42,20 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
             ApplyEdit(() => Document.DisplayName = next);
         }
     }
+
+    public string? DefaultPortraitRef
+    {
+        get => Document.DefaultPortraitRef;
+        set { if (SupportsPortraits) ApplyEdit(() => Document.DefaultPortraitRef = value); }
+    }
+
+    private string _portraitVariantName = string.Empty;
+    private ActorPortraitVariant? _selectedPortraitVariant;
+    public string PortraitVariantName { get => _portraitVariantName; set => SetProperty(ref _portraitVariantName, value); }
+    public ActorPortraitVariant? SelectedPortraitVariant { get => _selectedPortraitVariant; set => SetProperty(ref _selectedPortraitVariant, value); }
+    public string DefaultPortraitStatus => DefaultPortraitRef is null ? "未配置默认头像" : "已配置默认头像";
+    public IReadOnlyList<ActorPortraitVariant> PortraitVariants => Document.PortraitVariants;
+    public void SetPortraitVariants(IEnumerable<ActorPortraitVariant> values) { if (SupportsPortraits) ApplyEdit(() => Document.SetPortraitVariants(values)); }
 
     public string Notes
     {
@@ -153,6 +169,8 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
             Document.DisplayName = snapshot.DisplayName;
             Document.Notes = snapshot.Notes;
             Document.SetTags(snapshot.Tags);
+            Document.DefaultPortraitRef = snapshot.DefaultPortraitRef;
+            Document.SetPortraitVariants(snapshot.PortraitVariants);
 
             if (!string.Equals(_tagsText, snapshot.TagsText, StringComparison.Ordinal))
             {
@@ -172,13 +190,14 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
         Document.DisplayName,
         Document.Notes,
         _tagsText,
-        [.. Document.Tags]);
+        [.. Document.Tags], Document.DefaultPortraitRef, [.. Document.PortraitVariants]);
 
     private static bool SnapshotsEqual(EditorSnapshot left, EditorSnapshot right) =>
         string.Equals(left.DisplayName, right.DisplayName, StringComparison.Ordinal) &&
         string.Equals(left.Notes, right.Notes, StringComparison.Ordinal) &&
         string.Equals(left.TagsText, right.TagsText, StringComparison.Ordinal) &&
-        left.Tags.SequenceEqual(right.Tags, StringComparer.Ordinal);
+        left.Tags.SequenceEqual(right.Tags, StringComparer.Ordinal) &&
+        left.DefaultPortraitRef == right.DefaultPortraitRef && left.PortraitVariants.SequenceEqual(right.PortraitVariants);
 
     private void NotifyHistoryChanged()
     {
@@ -222,6 +241,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
             OnPropertyChanged(eventArgs.PropertyName);
         }
 
+        OnPropertyChanged(nameof(DefaultPortraitStatus));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(SaveStateText));
         OnPropertyChanged(nameof(ValidationText));
@@ -231,5 +251,5 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
         string DisplayName,
         string Notes,
         string TagsText,
-        IReadOnlyList<string> Tags);
+        IReadOnlyList<string> Tags, string? DefaultPortraitRef, IReadOnlyList<ActorPortraitVariant> PortraitVariants);
 }

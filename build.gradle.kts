@@ -730,3 +730,55 @@ tasks.register<JavaExec>("objective0324Probe") {
     mainClass.set("darkgrey.rpg.client.gui.Objective0324Probe")
     args(layout.projectDirectory.dir("PLAN/0.3.2.4/evidence").asFile.absolutePath)
 }
+
+
+tasks.register<JavaExec>("task0330Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.task.forge.Task0330Probe")
+}
+
+tasks.register<JavaExec>("taskReward0330Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.task.forge.TaskReward0330Probe")
+    args(layout.projectDirectory.dir(".tooling/0.3.3.0/p3/journal-vectors").asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("storyAction0330Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.forge.StoryAction0330Probe")
+}
+
+tasks.register<JavaExec>("mediaPackage0330Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.MediaPackage0330Probe")
+    args(layout.projectDirectory.dir(".tooling/0.3.3.0/p9/fixtures").asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("mediaTransfer0330Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.MediaTransfer0330Probe")
+}
+
+tasks.register<JavaExec>("sessionPresentation0330Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.SessionPresentation0330Probe")
+}
+
+tasks.register<JavaExec>("title0330Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.runtime.Title0330Probe")
+}

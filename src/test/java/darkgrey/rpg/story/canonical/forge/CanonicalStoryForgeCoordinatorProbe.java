@@ -54,7 +54,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
     private CanonicalStoryForgeCoordinatorProbe() {}
 
     public static void main(String[] args) {
-        sessionActionTransferTermination();
+        sessionActionTermination();
         bartenderVerticalSlice();
         repeatableRuns();
         activeChildrenCleanup();
@@ -292,7 +292,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         check(data.acceptAndConsume(completion.getCompletionResult(), route), "Session completion was not accepted");
     }
 
-    private static void sessionActionTransferTermination() {
+    private static void sessionActionTermination() {
         ProjectSnapshot project = project();
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         CanonicalStoryServerService stories = new CanonicalStoryServerService(project, data);
@@ -317,17 +317,13 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             CanonicalStoryForgeManager.routeTrusted(PLAYER, stories, data, resumed, gateway),
             "Action/transfer chain was not routed");
         check(gateway.actions == 1, "Action was not executed exactly once");
-        check(gateway.cleaned.equals(Arrays.asList("story_a", "story_b")), "Transferred Stories were not cleaned");
+        check(gateway.cleaned.equals(Collections.singletonList("story_a")), "Terminated Story was not cleaned");
         check(
             data.getStorySnapshot(PLAYER, "story_a")
                 .getRuntimeSnapshot()
-                .getStatus() == CanonicalStoryStatus.TRANSFERRED,
-            "Source Story did not retain TRANSFERRED terminal state");
-        check(
-            data.getStorySnapshot(PLAYER, "story_b")
-                .getRuntimeSnapshot()
                 .getStatus() == CanonicalStoryStatus.TERMINATED,
-            "Target Story did not terminate");
+            "Source Story did not retain terminal state");
+        check(data.getStorySnapshot(PLAYER, "story_b") == null, "Unrelated Story was started by termination");
     }
 
     private static void failedActionMarksErrorAndCleans() {
@@ -881,11 +877,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             "action",
             ports(in("flow_in", 0), out("flow_out", 1)),
             props("action_type", "send_message", "message", "Reward"));
-        CanonicalGraphNode enter = node(
-            "enter_b",
-            "enter_story",
-            ports(in("flow_in", 0)),
-            props("target_story_id", "story_b"));
+        CanonicalGraphNode enter = node("enter_b", "terminate", ports(in("flow_in", 0)), empty());
         return resource(
             "story_a",
             CanonicalGraphResourceKind.STORY,

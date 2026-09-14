@@ -65,33 +65,19 @@ public sealed class CanonicalStoryDiscoveryShellTests
     }
 
     [TestMethod]
-    public void ProjectGraphUsesCanonicalOnlyStoryFlowsAndPublishesPreciseProblems()
+    public void ProjectGraphCannotReintroduceRetiredStandaloneTransitions()
     {
         using var project = new DiscoveryProjectFixture();
-        project.CreateCanonicalStory("source", "Source",
-        [
-            Enter("to_target", "target"),
-            Enter("to_missing", "missing"),
-        ]);
+        project.CreateCanonicalStory("source", "Source");
         project.CreateCanonicalStory("target", "Target");
-
+        Assert.ThrowsExactly<GraphResourceRepositoryException>(() => project.Store.Stories.Replace(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "source", "Source",
+                new GraphDocument([Enter("old", "target")]))));
         var shell = project.OpenShell();
-
-        CollectionAssert.AreEquivalent(
-            new[] { "source", "target" },
-            shell.ProjectHome.Graph.Nodes.Select(node => node.Id).ToArray());
-        var edge = shell.ProjectHome.Graph.Edges.Single();
-        Assert.AreEqual("source", edge.SourceStoryId);
-        Assert.AreEqual("target", edge.TargetStoryId);
-        Assert.AreEqual("to_target", edge.Transitions.Single().NodeId);
-        var problem = shell.Problems.Problems.Single(item =>
-            item.Code == "project_graph.target.missing"
-            && item.Source == "project-graph/source/to_missing");
-        Assert.AreEqual(ValidationSeverity.Error, problem.Severity);
-        shell.OpenProblem(problem);
-        Assert.AreEqual("source", shell.CanonicalStoryWorkspace?.StoryEditor.Id);
-        Assert.AreEqual("to_missing", shell.CanonicalStoryWorkspace?.StoryNodeFocusRequest?.NodeId);
-        Assert.AreEqual("target_story_id", shell.CanonicalStoryWorkspace?.StoryNodeFocusRequest?.Field);
+        CollectionAssert.AreEquivalent(new[] { "source", "target" }, shell.ProjectHome.Graph.Nodes.Select(node => node.Id).ToArray());
+        Assert.IsEmpty(shell.ProjectHome.Graph.Edges);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "source"));
+        Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
     }
 
     private static GraphResourceEnvelope Envelope(

@@ -39,8 +39,8 @@ public final class CanonicalTaskJournalIntegrationProbe {
             "concise public identity context");
         require(
             settledLegacy.getDescription()
-                .contains("结算出口=result"),
-            "result context");
+                .isEmpty(),
+            "missing author description stays empty without exposing internal context");
         require(
             activeLegacy.getObjectiveLines()
                 .equals(Arrays.asList("objective")),

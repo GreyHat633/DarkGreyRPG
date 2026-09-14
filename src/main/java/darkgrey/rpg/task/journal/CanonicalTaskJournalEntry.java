@@ -17,6 +17,8 @@ public final class CanonicalTaskJournalEntry {
     private final String taskNodePlacementId;
     private final String taskResourceId;
     private final String title;
+    private final String description;
+    private final boolean pendingRewards;
     private final CanonicalTaskInstanceStatus status;
     private final long activationTime;
     private final Long settlementTime;
@@ -28,6 +30,48 @@ public final class CanonicalTaskJournalEntry {
         String taskResourceId, String title, CanonicalTaskInstanceStatus status, long activationTime,
         Long settlementTime, String settledResultSlot, Map<String, Boolean> publicLogicState,
         List<CanonicalTaskJournalObjectiveRow> objectiveRows) {
+        this(
+            playerUuid,
+            storyInstanceId,
+            taskNodePlacementId,
+            taskResourceId,
+            title,
+            status,
+            activationTime,
+            settlementTime,
+            settledResultSlot,
+            publicLogicState,
+            objectiveRows,
+            "");
+    }
+
+    public CanonicalTaskJournalEntry(UUID playerUuid, String storyInstanceId, String taskNodePlacementId,
+        String taskResourceId, String title, CanonicalTaskInstanceStatus status, long activationTime,
+        Long settlementTime, String settledResultSlot, Map<String, Boolean> publicLogicState,
+        List<CanonicalTaskJournalObjectiveRow> objectiveRows, String description) {
+        this(
+            playerUuid,
+            storyInstanceId,
+            taskNodePlacementId,
+            taskResourceId,
+            title,
+            status,
+            activationTime,
+            settlementTime,
+            settledResultSlot,
+            publicLogicState,
+            objectiveRows,
+            description,
+            false);
+    }
+
+    public CanonicalTaskJournalEntry(UUID playerUuid, String storyInstanceId, String taskNodePlacementId,
+        String taskResourceId, String title, CanonicalTaskInstanceStatus status, long activationTime,
+        Long settlementTime, String settledResultSlot, Map<String, Boolean> publicLogicState,
+        List<CanonicalTaskJournalObjectiveRow> objectiveRows, String description, boolean pendingRewards) {
+        this.pendingRewards = pendingRewards;
+        if (description == null) throw new IllegalArgumentException("Task description is required.");
+        this.description = description;
         if (playerUuid == null || blank(storyInstanceId)
             || blank(taskNodePlacementId)
             || blank(taskResourceId)
@@ -58,6 +102,10 @@ public final class CanonicalTaskJournalEntry {
         this.publicLogicState = Collections.unmodifiableMap(new LinkedHashMap<String, Boolean>(publicLogicState));
         this.objectiveRows = Collections
             .unmodifiableList(new ArrayList<CanonicalTaskJournalObjectiveRow>(objectiveRows));
+    }
+
+    public boolean hasPendingRewards() {
+        return pendingRewards;
     }
 
     public UUID getPlayerUuid() {
@@ -94,6 +142,10 @@ public final class CanonicalTaskJournalEntry {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public String getDisplayName() {
@@ -199,6 +251,8 @@ public final class CanonicalTaskJournalEntry {
             && taskNodePlacementId.equals(that.taskNodePlacementId)
             && taskResourceId.equals(that.taskResourceId)
             && title.equals(that.title)
+            && description.equals(that.description)
+            && pendingRewards == that.pendingRewards
             && status == that.status
             && activationTime == that.activationTime
             && (settlementTime == null ? that.settlementTime == null : settlementTime.equals(that.settlementTime))
@@ -215,6 +269,8 @@ public final class CanonicalTaskJournalEntry {
         result = 31 * result + taskNodePlacementId.hashCode();
         result = 31 * result + taskResourceId.hashCode();
         result = 31 * result + title.hashCode();
+        result = 31 * result + description.hashCode();
+        result = 31 * result + (pendingRewards ? 1 : 0);
         result = 31 * result + status.hashCode();
         result = 31 * result + (int) (activationTime ^ (activationTime >>> 32));
         result = 31 * result + (settlementTime == null ? 0 : settlementTime.hashCode());

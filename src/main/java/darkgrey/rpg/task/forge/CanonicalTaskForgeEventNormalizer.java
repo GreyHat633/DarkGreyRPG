@@ -57,6 +57,18 @@ public final class CanonicalTaskForgeEventNormalizer {
 
     private CanonicalTaskForgeEventNormalizer() {}
 
+    /** Credits only the actual lethal hit: direct real-player melee or owned projectile. */
+    public static net.minecraft.entity.player.EntityPlayerMP creditedKiller(net.minecraft.util.DamageSource source) {
+        if (source == null) return null;
+        Entity owner = source.getEntity();
+        if (!(owner instanceof net.minecraft.entity.player.EntityPlayerMP)
+            || owner instanceof net.minecraftforge.common.util.FakePlayer) return null;
+        Entity direct = source.getSourceOfDamage();
+        boolean melee = direct == owner && "player".equals(source.getDamageType()) && !source.isProjectile();
+        boolean projectile = source.isProjectile() && direct != null && direct != owner;
+        return melee || projectile ? (net.minecraft.entity.player.EntityPlayerMP) owner : null;
+    }
+
     public static CanonicalTaskEvent kill(Entity entity) {
         String id = normalizeEntityId(entity);
         return id == null ? null : CanonicalTaskEvent.killEntity(id);

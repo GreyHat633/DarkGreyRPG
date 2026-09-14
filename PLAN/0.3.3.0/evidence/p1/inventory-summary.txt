@@ -1,0 +1,13 @@
+SOURCE_CANDIDATE_FILES=134
+Documentation/tool=10
+Example=1
+Historical archive=5
+Runtime=33
+Runtime probe=14
+Schema=2
+Studio Core=16
+Studio test=25
+Studio UI=28
+PROJECT_INVENTORY_ROWS=19
+PACKAGE_MATCHING_ENTRIES=8
+INVENTORY=READ_ONLY; keyword candidates require domain review, not blind deletion

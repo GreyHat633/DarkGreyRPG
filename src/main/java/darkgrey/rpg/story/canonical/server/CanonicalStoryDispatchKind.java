@@ -5,12 +5,8 @@ public enum CanonicalStoryDispatchKind {
     SESSION,
     TASK,
     ACTION,
-    ACTOR_INTERACT,
-    ENTER_REGION,
     CONDITION,
-    /** Compatibility spelling for callers using the old node naming. */
-    INTERACT_ACTOR,
     TERMINATED,
-    TRANSFERRED,
-    ERROR
+    ERROR,
+    TITLE
 }

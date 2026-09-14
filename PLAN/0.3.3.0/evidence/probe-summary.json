@@ -1,0 +1,11 @@
+{
+  "Registered": 58,
+  "ObservedUnique": 58,
+  "InitialPassed": 56,
+  "InitialFailed": [
+    "dgrsPackageRuntimeProbe",
+    "objective0324Probe"
+  ],
+  "IsolatedRetryPassed": 2,
+  "FinalPassed": 58
+}

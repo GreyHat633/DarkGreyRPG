@@ -65,7 +65,10 @@ public final class CanonicalStoryActionConfigurationProbe {
         expect(
             "story.action.metadata",
             properties("action_type", "\"give_item\"", "item", "\"stone\"", "metadata", "-1", "amount", "1"));
-        expect("story.action.amount", properties("action_type", "\"give_xp\"", "amount", "0"));
+        check(
+            CanonicalStoryActionConfiguration.parse(properties("action_type", "\"give_xp\"", "amount", "0"))
+                .getAmount() == 0,
+            "Zero XP must be a no-op");
         expect("story.action.property", properties("action_type", "\"send_message\"", "message", "\"\t\""));
     }
 

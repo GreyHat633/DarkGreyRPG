@@ -14,7 +14,7 @@ namespace DarkGreyRPG.Studio.ViewModels.Graph;
 /// exposes only author-facing Session fields; node and port identity stays with
 /// the canonical graph and is never edited by this view model.
 /// </summary>
-public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposable
+public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, IDisposable
 {
     private readonly GraphEditorHostViewModel _host;
     private readonly IReadOnlyList<CanonicalStoryActorItem> _actorItems;
@@ -69,6 +69,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         AddChoiceOptionCommand = new RelayCommand(() => AddChoiceOption(), () => IsChoice);
         AddTaskResultSlotCommand = new RelayCommand(() => AddTaskResultSlot(), () => IsTaskSettle);
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
+        AddRewardEntryCommand = new RelayCommand(AddRewardEntry, () => IsTaskReward);
         RefreshFromHost();
         if (_subscribeToHostChanges) _host.NodesChanged += HostOnNodesChanged;
         _host.PropertyChanged += HostOnPropertyChanged;
@@ -98,17 +99,12 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public bool IsObjective => IsTaskNode && string.Equals(NodeType, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal);
     public bool IsKillEntityObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.KillEntity;
     public bool IsCollectItemObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.CollectItem;
+    public bool IsItemObjective => IsObjective && _objectiveType is CanonicalTaskObjectiveSchema.CollectItem or CanonicalTaskObjectiveSchema.SubmitItem;
+    public bool IsReachRegionObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.ReachRegion;
     public bool IsInteractActorObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.InteractActor;
     public bool HasEditableFields => IsLine || IsChoice || IsEnd || IsLogicOutput || IsTaskSettle || IsObjective
-        || IsStoryStart || IsStoryAction;
+        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle;
     public bool HasInlineFields => IsLine || IsObjective || IsStoryStart || IsStoryAction;
-
-    public IReadOnlyList<CanonicalStoryActionTypeOption> StoryActionTypeOptions { get; } =
-    [
-        new(CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.AuthoringDisplayNameFor(CanonicalStoryActionSchema.GiveItem)),
-        new(CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.AuthoringDisplayNameFor(CanonicalStoryActionSchema.GiveXp)),
-        new(CanonicalStoryActionSchema.SendMessage, CanonicalStoryActionSchema.AuthoringDisplayNameFor(CanonicalStoryActionSchema.SendMessage)),
-    ];
 
     public CanonicalStoryActionTypeOption? SelectedStoryActionType
     {
@@ -147,7 +143,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     public string StoryActionAmountText
     {
         get => _actionAmountText;
-        set => SetActionInteger(CanonicalStoryActionSchema.AmountProperty, value, 1, ref _actionAmountText,
+        set => SetActionInteger(CanonicalStoryActionSchema.AmountProperty, value, int.MinValue, ref _actionAmountText,
             nameof(StoryActionAmountText));
     }
     public string StoryActionAmountError => _actionAmountError;
@@ -196,11 +192,59 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         set => RepeatPolicy = value ? StoryStartSchema.Repeatable : StoryStartSchema.Once;
     }
 
+    private readonly Dictionary<string, string> _invalidRegionValues = new();
+    public string RegionDimension { get => ReadRegion("dimension_id"); set => SetRegion("dimension_id", value, nameof(RegionDimension)); }
+    public string RegionX { get => ReadRegion("center_x"); set => SetRegion("center_x", value, nameof(RegionX)); }
+    public string RegionY { get => ReadRegion("center_y"); set => SetRegion("center_y", value, nameof(RegionY)); }
+    public string RegionZ { get => ReadRegion("center_z"); set => SetRegion("center_z", value, nameof(RegionZ)); }
+    public string RegionRadius { get => ReadRegion("radius"); set => SetRegion("radius", value, nameof(RegionRadius)); }
+    public string RegionNote { get => ReadRegion("dimension_note"); set => SetRegion("dimension_note", value, nameof(RegionNote)); }
+    private string ReadRegion(string key)
+    {
+        if (_invalidRegionValues.TryGetValue(key, out var pending)) return pending;
+        var node = _host.Nodes.FirstOrDefault(item => item.NodeId == NodeId);
+        return node?.Properties.TryGetValue(key, out var value) == true ? value.ToString() : "";
+    }
+    private void SetRegion(string key, string value, string propertyName)
+    {
+        if (!IsReachRegionObjective || _isProjectingCanonicalChange) return;
+        JsonElement json;
+        if (key == "dimension_note") json = JsonSerializer.SerializeToElement(value ?? "");
+        else
+        {
+            if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number)
+                || !double.IsFinite(number) || (key == "radius" && number < 0)
+                || (key == "dimension_id" && (number != Math.Truncate(number) || number < int.MinValue || number > int.MaxValue)))
+            {
+                _invalidRegionValues[key] = value ?? "";
+                _host.SetAuthoringIssue($"{NodeId}:region:{key}", new ValidationIssue("graph.objective.region.authoring", "维度需为整数，坐标需为有限数值，半径不得小于 0。", key, ValidationSeverity.Error, NodeId));
+                OnPropertyChanged(propertyName);
+                return;
+            }
+            json = key == "dimension_id" ? JsonSerializer.SerializeToElement((int)number) : JsonSerializer.SerializeToElement(number);
+        }
+        _invalidRegionValues.Remove(key);
+        _host.SetAuthoringIssue($"{NodeId}:region:{key}", null);
+        _host.SetNodeProperty(NodeId, key, json);
+        OnPropertyChanged(propertyName);
+    }
+    private void NotifyRegionFields()
+    {
+        OnPropertyChanged(nameof(RegionDimension));
+        OnPropertyChanged(nameof(RegionX));
+        OnPropertyChanged(nameof(RegionY));
+        OnPropertyChanged(nameof(RegionZ));
+        OnPropertyChanged(nameof(RegionRadius));
+        OnPropertyChanged(nameof(RegionNote));
+    }
+
     public IReadOnlyList<CanonicalObjectiveTypeOption> ObjectiveTypeOptions { get; } =
     [
         new(CanonicalTaskObjectiveSchema.KillEntity, "实体击杀"),
         new(CanonicalTaskObjectiveSchema.CollectItem, "物品收集"),
         new(CanonicalTaskObjectiveSchema.InteractActor, "角色交互"),
+        new(CanonicalTaskObjectiveSchema.SubmitItem, "物品提交"),
+        new(CanonicalTaskObjectiveSchema.ReachRegion, "区域到达"),
     ];
 
     public CanonicalObjectiveTypeOption? SelectedObjectiveType
@@ -281,7 +325,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         set
         {
             var next = value ?? string.Empty;
-            if (!IsKillEntityObjective && !IsCollectItemObjective) return;
+            if (!IsKillEntityObjective && !IsItemObjective) return;
             var property = IsKillEntityObjective ? CanonicalTaskObjectiveSchema.EntityProperty : CanonicalTaskObjectiveSchema.ItemProperty;
             if (_host.SetNodeProperty(NodeId, property, JsonSerializer.SerializeToElement(next))) _objectiveTarget = next;
             else RefreshFromHost();
@@ -664,7 +708,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             && (_host.SetNodeProperty(NodeId, property, JsonSerializer.SerializeToElement(parsed))
                 || HasPersistedInteger(property, parsed)))
             SetActionAmountError(string.Empty);
-        else SetActionAmountError($"请输入不小于 {minimum} 的整数。");
+        else SetActionAmountError(minimum == int.MinValue ? "请输入整数：正数增加、负数减少、零不变。" : $"请输入不小于 {minimum} 的整数。");
         OnPropertyChanged(propertyName);
     }
 
@@ -714,7 +758,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private void SetSelectedObjectiveItemId(string? id)
     {
         var next = id ?? string.Empty;
-        if (!IsCollectItemObjective || string.IsNullOrWhiteSpace(next)
+        if (!IsItemObjective || string.IsNullOrWhiteSpace(next)
             || string.Equals(next, _objectiveTarget, StringComparison.Ordinal)) return;
         if (!_host.ChangeObjectiveTarget(NodeId, next)) RefreshFromHost();
     }
@@ -735,7 +779,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         var next = id ?? string.Empty;
         if (string.Equals(_speakerActorId, next, StringComparison.Ordinal)) return;
 
-        if (!_host.SetNodeProperty(NodeId, "speaker_actor_id", JsonSerializer.SerializeToElement(next)))
+        if (!_host.ChangeSessionSpeaker(NodeId, next))
             RefreshFromHost();
     }
 
@@ -833,6 +877,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
     private void RefreshFromHostCore(GraphEditorNodeViewModel current)
     {
         RefreshCount++;
+        RefreshRewardEntries(current);
 
         _repeatPolicy = current.Properties.TryGetValue(StoryStartSchema.RepeatPolicyProperty, out var repeat)
             && repeat.ValueKind == JsonValueKind.String ? repeat.GetString() ?? StoryStartSchema.Once : StoryStartSchema.Once;
@@ -853,6 +898,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             ? speaker.GetString() ?? string.Empty
             : string.Empty;
         _actionType = ReadString(current, CanonicalStoryActionSchema.TypeProperty);
+        RefreshActionExtras();
         _actionItem = ReadString(current, CanonicalStoryActionSchema.ItemProperty);
         if (string.IsNullOrEmpty(_actionAmountError))
             _actionAmountText = current.Properties.TryGetValue(CanonicalStoryActionSchema.AmountProperty, out var actionAmount)
@@ -891,7 +937,7 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             && prerequisiteEnabled.GetBoolean();
         _objectiveTarget = IsKillEntityObjective
             ? ReadString(current, CanonicalTaskObjectiveSchema.EntityProperty)
-            : IsCollectItemObjective ? ReadString(current, CanonicalTaskObjectiveSchema.ItemProperty) : string.Empty;
+            : IsItemObjective ? ReadString(current, CanonicalTaskObjectiveSchema.ItemProperty) : string.Empty;
         _objectiveActorId = IsKillEntityObjective
             ? ReadString(current, CanonicalTaskObjectiveSchema.EntityProperty)
             : ReadString(current, CanonicalTaskObjectiveSchema.ActorIdProperty);
@@ -933,6 +979,13 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
             }
         }
 
+        OnPropertyChanged(nameof(PortraitVariantOptions));
+        OnPropertyChanged(nameof(SelectedPortraitVariant));
+        OnPropertyChanged(nameof(HasLineSpeaker));
+        OnPropertyChanged(nameof(LineVoiceRef));
+        OnPropertyChanged(nameof(LineVoiceStatus));
+        NotifyPresentation();
+        NotifyTitle();
         OnPropertyChanged(nameof(LineText));
         OnPropertyChanged(nameof(LineTextError));
         OnPropertyChanged(nameof(Text));
@@ -960,7 +1013,10 @@ public sealed class CanonicalNodeInspectorViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(ObjectivePrerequisiteHelpText));
         OnPropertyChanged(nameof(ObjectiveTarget));
         OnPropertyChanged(nameof(IsKillEntityObjective));
+        OnPropertyChanged(nameof(IsItemObjective));
         OnPropertyChanged(nameof(IsCollectItemObjective));
+        OnPropertyChanged(nameof(IsReachRegionObjective));
+        NotifyRegionFields();
         OnPropertyChanged(nameof(IsInteractActorObjective));
         OnPropertyChanged(nameof(ObjectiveActorOptions));
         OnPropertyChanged(nameof(SelectedObjectiveActor));

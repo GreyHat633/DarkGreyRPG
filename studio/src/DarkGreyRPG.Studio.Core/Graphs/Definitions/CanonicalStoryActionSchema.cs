@@ -16,23 +16,36 @@ public static class CanonicalStoryActionSchema
     public const string GiveItem = "give_item";
     public const string GiveXp = "give_xp";
     public const string SendMessage = "send_message";
+    public const string GiveHealth = "give_health";
+    public const string Teleport = "teleport_player";
+    public const string GiveBuff = "give_buff";
+    public const string ExecuteCommand = "execute_command";
 
-    public static IReadOnlyList<string> ActionTypes { get; } = [GiveItem, GiveXp, SendMessage];
+    public static IReadOnlyList<string> ActionTypes { get; } = [GiveItem, GiveXp, GiveBuff, GiveHealth, Teleport, SendMessage, ExecuteCommand];
 
     public static string AuthoringDisplayNameFor(string? type) => type switch
     {
         GiveItem => "物品给予",
         GiveXp => "经验给予",
         SendMessage => "消息发送",
-        _ => "动作",
+        GiveBuff => "BUFF给予",
+        GiveHealth => "生命给予",
+        Teleport => "玩家传送",
+        ExecuteCommand => "命令执行（高级）",
+        _ => "执行",
     };
 
     public static IReadOnlySet<string> AllProperties { get; } = new HashSet<string>(
-        [TypeProperty, ItemIdProperty, AmountProperty, MessageProperty], StringComparer.Ordinal);
+        [TypeProperty, ItemIdProperty, AmountProperty, MessageProperty, "dimension_id", "x", "y", "z",
+         "mod_extension", "buff", "mod_id", "buff_name", "duration_delta", "level_delta", "command"], StringComparer.Ordinal);
 
     public static IReadOnlySet<string> PropertiesFor(string type) => type switch
     {
         GiveItem => new HashSet<string>([TypeProperty, ItemIdProperty, AmountProperty], StringComparer.Ordinal),
+        GiveHealth => new HashSet<string>([TypeProperty, AmountProperty], StringComparer.Ordinal),
+        Teleport => new HashSet<string>([TypeProperty, "dimension_id", "x", "y", "z"], StringComparer.Ordinal),
+        GiveBuff => new HashSet<string>([TypeProperty, "mod_extension", "buff", "duration_delta", "level_delta"], StringComparer.Ordinal),
+        ExecuteCommand => new HashSet<string>([TypeProperty, "command"], StringComparer.Ordinal),
         GiveXp => new HashSet<string>([TypeProperty, AmountProperty], StringComparer.Ordinal),
         SendMessage => new HashSet<string>([TypeProperty, MessageProperty], StringComparer.Ordinal),
         _ => new HashSet<string>(StringComparer.Ordinal),
@@ -59,7 +72,9 @@ public static class CanonicalStoryActionSchema
         issues.AddRange(ValidateType(type, node.Id));
         if (issues.Count != 0) return issues;
 
-        var expected = PropertiesFor(type!);
+        var expected = type == GiveBuff && properties.TryGetValue("mod_extension", out var extension) && extension.ValueKind == JsonValueKind.True
+            ? new HashSet<string>([TypeProperty, "mod_extension", "mod_id", "buff_name", "duration_delta", "level_delta"], StringComparer.Ordinal)
+            : PropertiesFor(type!);
         foreach (var key in properties.Keys)
             if (!expected.Contains(key))
                 issues.Add(Issue("graph.story.action.property.unsupported",
@@ -73,10 +88,38 @@ public static class CanonicalStoryActionSchema
         {
             case GiveItem:
                 ValidateString(properties, ItemIdProperty, issues, node.Id);
-                ValidateInteger(properties, AmountProperty, 1, issues, node.Id);
+                ValidateInteger(properties, AmountProperty, int.MinValue, issues, node.Id);
                 break;
             case GiveXp:
-                ValidateInteger(properties, AmountProperty, 1, issues, node.Id);
+                ValidateInteger(properties, AmountProperty, int.MinValue, issues, node.Id);
+                break;
+            case GiveHealth:
+                ValidateFinite(properties, AmountProperty, issues, node.Id); break;
+            case Teleport:
+                ValidateInteger(properties, "dimension_id", int.MinValue, issues, node.Id);
+                foreach (var field in new[] { "x", "y", "z" }) ValidateFinite(properties, field, issues, node.Id);
+                foreach (var field in new[] { "x", "y", "z" })
+                    if (properties.TryGetValue(field, out var coordinate) && coordinate.ValueKind == JsonValueKind.Number
+                        && coordinate.TryGetDouble(out var number) && Math.Abs(number) > (field == "y" ? 30000000 : 29999984))
+                        issues.Add(Issue("graph.story.action.teleport.bounds", "传送坐标超出 Minecraft 世界范围。", field, node.Id));
+                break;
+            case GiveBuff:
+                if (!properties.TryGetValue("mod_extension", out var mod) || mod.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    issues.Add(Issue("graph.story.action.buff", "MOD扩展必须为开关值。", "mod_extension", node.Id));
+                if (mod.ValueKind == JsonValueKind.True)
+                {
+                    ValidateString(properties, "mod_id", issues, node.Id); ValidateString(properties, "buff_name", issues, node.Id);
+                }
+                else if (!VanillaBuffs.Any(buff => buff.Value == ReadString(properties, "buff")))
+                    issues.Add(Issue("graph.story.action.buff", "请选择 Vanilla BUFF。", "buff", node.Id));
+                ValidateInteger(properties, "duration_delta", int.MinValue, issues, node.Id);
+                ValidateInteger(properties, "level_delta", int.MinValue, issues, node.Id);
+                break;
+            case ExecuteCommand:
+                ValidateString(properties, "command", issues, node.Id);
+                var command = ReadString(properties, "command") ?? "";
+                if (command.Length > 2048 || command.IndexOfAny(['\r', '\n', '\0']) >= 0)
+                    issues.Add(Issue("graph.story.action.command", "命令只能为单行，最多 2048 字符。", "command", node.Id));
                 break;
             case SendMessage:
                 ValidateString(properties, MessageProperty, issues, node.Id);
@@ -101,6 +144,18 @@ public static class CanonicalStoryActionSchema
             case GiveXp:
                 properties[AmountProperty] = JsonSerializer.SerializeToElement(10);
                 break;
+            case GiveHealth:
+                properties[AmountProperty] = JsonSerializer.SerializeToElement(0); break;
+            case Teleport:
+                foreach (var field in new[] { "dimension_id", "x", "y", "z" }) properties[field] = JsonSerializer.SerializeToElement(0);
+                break;
+            case GiveBuff:
+                properties["mod_extension"] = JsonSerializer.SerializeToElement(false);
+                properties["buff"] = JsonSerializer.SerializeToElement("speed");
+                properties["duration_delta"] = JsonSerializer.SerializeToElement(30);
+                properties["level_delta"] = JsonSerializer.SerializeToElement(1); break;
+            case ExecuteCommand:
+                properties["command"] = JsonSerializer.SerializeToElement("say 任务事件"); break;
             case SendMessage:
                 properties[MessageProperty] = JsonSerializer.SerializeToElement("任务完成");
                 break;
@@ -111,7 +166,24 @@ public static class CanonicalStoryActionSchema
         => ActionTypes.Contains(type ?? string.Empty, StringComparer.Ordinal)
             ? []
             : [Issue("graph.story.action.type.invalid",
-                "Action type must be give_item, give_xp, or send_message.", $"properties.{TypeProperty}", nodeId)];
+                "请选择支持的执行类型。", $"properties.{TypeProperty}", nodeId)];
+
+    public sealed record VanillaBuffOption(string Value, string DisplayName);
+    public static IReadOnlyList<VanillaBuffOption> VanillaBuffs { get; } =
+    [new("speed", "速度"), new("slowness", "缓慢"), new("haste", "急迫"), new("mining_fatigue", "挖掘疲劳"),
+     new("strength", "力量"), new("instant_health", "瞬间治疗"), new("instant_damage", "瞬间伤害"),
+     new("jump_boost", "跳跃提升"), new("nausea", "反胃"), new("regeneration", "生命恢复"), new("resistance", "抗性提升"),
+     new("fire_resistance", "防火"), new("water_breathing", "水下呼吸"), new("invisibility", "隐身"), new("blindness", "失明"),
+     new("night_vision", "夜视"), new("hunger", "饥饿"), new("weakness", "虚弱"), new("poison", "中毒"), new("wither", "凋零"),
+     new("health_boost", "生命提升"), new("absorption", "伤害吸收"), new("saturation", "饱和")];
+
+    private static void ValidateFinite(IReadOnlyDictionary<string, JsonElement> properties, string name,
+        ICollection<ValidationIssue> issues, string? nodeId)
+    {
+        if (!properties.TryGetValue(name, out var value) || value.ValueKind != JsonValueKind.Number
+            || !value.TryGetDouble(out var number) || !double.IsFinite(number))
+            issues.Add(Issue("graph.story.action.number", "请输入有限数值。", name, nodeId));
+    }
 
     private static void ValidateString(IReadOnlyDictionary<string, JsonElement> properties, string name,
         ICollection<ValidationIssue> issues, string? nodeId)

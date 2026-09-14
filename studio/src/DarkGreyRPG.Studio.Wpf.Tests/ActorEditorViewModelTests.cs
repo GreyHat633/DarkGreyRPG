@@ -7,6 +7,26 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class ActorEditorViewModelTests
 {
     [TestMethod]
+    public void PortraitEditingIsTypedOnlyAndUndoPreservesTheOwnedReference()
+    {
+        var legacy = CreateEditor();
+        Assert.IsFalse(legacy.SupportsPortraits);
+        string image = "media/" + new string('a', 64) + ".png";
+        legacy.DefaultPortraitRef = image;
+        legacy.SetPortraitVariants([new("开心", image)]);
+        Assert.IsNull(legacy.DefaultPortraitRef);
+        Assert.AreEqual(0, legacy.PortraitVariants.Count);
+        var typed = new ActorEditorViewModel(ActorDocument.FromResource(new IndividualActorResource { NpcId = "hero", DisplayName = "Hero" }, Path.Combine(Path.GetTempPath(), "hero.json")));
+        Assert.IsTrue(typed.SupportsPortraits);
+        typed.DefaultPortraitRef = image;
+        typed.SetPortraitVariants([new("开心", image)]);
+        Assert.IsTrue(typed.UndoCommand.CanExecute(null));
+        typed.UndoCommand.Execute(null);
+        Assert.AreEqual(image, typed.DefaultPortraitRef);
+        Assert.AreEqual(0, typed.PortraitVariants.Count);
+    }
+
+    [TestMethod]
     public void UndoAndRedoRestoreDisplayNameNotesAndTags()
     {
         var viewModel = CreateEditor();

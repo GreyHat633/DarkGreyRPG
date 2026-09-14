@@ -189,7 +189,9 @@ public static class GraphNodeShapeValidator
                 continue;
             }
 
-            if (value.ValueKind != property.Kind)
+            if (value.ValueKind != property.Kind
+                && !(property.Kind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False && value.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False)
+                && !(property.AllowNull && value.ValueKind == System.Text.Json.JsonValueKind.Null))
             {
                 issues.Add(new(
                     "graph.node.shape.property.kind",
@@ -202,8 +204,19 @@ public static class GraphNodeShapeValidator
         if (scope == GraphScope.Task && string.Equals(node.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
             issues.AddRange(CanonicalTaskObjectiveSchema.Validate(node));
 
+        if (scope == GraphScope.Task && string.Equals(node.Type, CanonicalTaskRewardSchema.NodeType, StringComparison.Ordinal))
+            issues.AddRange(CanonicalTaskRewardSchema.Validate(node));
+
         if (scope == GraphScope.StoryFlow && string.Equals(node.Type, CanonicalStoryActionSchema.NodeType, StringComparison.Ordinal))
             issues.AddRange(CanonicalStoryActionSchema.Validate(node));
+
+        if (scope == GraphScope.StoryFlow && node.Type == "title") issues.AddRange(CanonicalTitleSchema.Validate(node));
+
+        if (scope == GraphScope.Session && node.Type is "music" or "screen")
+            issues.AddRange(CanonicalSessionPresentationSchema.Validate(node));
+
+        if (scope == GraphScope.Session && node.Type == "line")
+            issues.AddRange(CanonicalSessionLineSchema.Validate(node));
 
         if (scope == GraphScope.Session && string.Equals(node.Type, "choice", StringComparison.Ordinal))
             issues.AddRange(SessionChoiceSchema.Validate(node));

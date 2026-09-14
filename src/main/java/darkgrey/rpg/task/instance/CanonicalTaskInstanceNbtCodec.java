@@ -121,6 +121,8 @@ public final class CanonicalTaskInstanceNbtCodec {
         tag.setTag("internal_logic_values", booleans(runtime.getInternalLogicValues()));
         tag.setTag("public_logic_outputs", booleans(runtime.getPublicLogicOutputs()));
         tag.setBoolean("activation_logic", runtime.getActivationLogic());
+        if (!runtime.getRewardStates()
+            .isEmpty()) tag.setTag("reward_states", booleans(runtime.getRewardStates()));
         if (runtime.getResultPortId() != null) tag.setString("result_port_id", runtime.getResultPortId());
         return tag;
     }
@@ -144,7 +146,8 @@ public final class CanonicalTaskInstanceNbtCodec {
                 "activation_logic"),
             "instance",
             "settlement_time",
-            "result_port_id");
+            "result_port_id",
+            "reward_states");
         String player = string(tag, "player_uuid");
         if (player.length() != 36) throw malformed("invalid player_uuid");
         UUID uuid;
@@ -207,7 +210,8 @@ public final class CanonicalTaskInstanceNbtCodec {
             internal,
             publicLogic,
             activationByte == 1,
-            result);
+            result,
+            tag.hasKey("reward_states") ? booleans(tag, "reward_states") : Collections.<String, Boolean>emptyMap());
         try {
             return new CanonicalTaskInstanceSnapshot(
                 uuid,

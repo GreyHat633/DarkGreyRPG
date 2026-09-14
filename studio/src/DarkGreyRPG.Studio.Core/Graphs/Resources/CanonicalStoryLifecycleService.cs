@@ -35,7 +35,7 @@ public sealed record CanonicalStoryDeletionBlocker(
     public string? Id => ResourceId;
 }
 
-/// <summary>A valid canonical enter_story transition observed while planning.</summary>
+/// <summary>A detached incoming Story relation observed while planning.</summary>
 public sealed record CanonicalStoryDeletionIncomingTransition(
     string SourceStoryId,
     string TargetStoryId,
@@ -519,34 +519,6 @@ public sealed class CanonicalStoryLifecycleService
                     $"Canonical Story '{id}' has an invalid graph and could hide an incoming transition.", id);
             }
 
-            var nodes = graph.Nodes ?? [];
-            var duplicateIds = nodes.GroupBy(node => node.Id, StringComparer.Ordinal)
-                .Where(group => string.IsNullOrWhiteSpace(group.Key) || group.Count() > 1)
-                .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
-            foreach (var node in nodes.Where(node => string.Equals(node.Type, "enter_story", StringComparison.Ordinal)))
-            {
-                if (string.IsNullOrWhiteSpace(node.Id) || duplicateIds.Contains(node.Id))
-                {
-                    AddBlocker(blockers, "story.lifecycle.incoming_graph.ambiguous",
-                        $"Canonical Story '{id}' has an ambiguous enter_story node.", id, nodeId: node.Id);
-                    continue;
-                }
-                if (!node.Properties.TryGetValue("target_story_id", out var value)
-                    || value.ValueKind != System.Text.Json.JsonValueKind.String
-                    || string.IsNullOrWhiteSpace(value.GetString()))
-                {
-                    AddBlocker(blockers, "story.lifecycle.incoming_graph.malformed",
-                        $"Canonical Story '{id}' has an enter_story node without a valid target_story_id.", id, nodeId: node.Id);
-                    continue;
-                }
-                var target = value.GetString()!;
-                var transition = new CanonicalStoryDeletionIncomingTransition(id, target, node.Id);
-                transitions.Add(transition);
-                if (string.Equals(target, targetId, StringComparison.Ordinal)
-                    && !string.Equals(id, targetId, StringComparison.Ordinal))
-                    AddBlocker(blockers, "story.lifecycle.incoming_transition",
-                        $"Canonical Story '{id}' enters Story '{target}'.", id, nodeId: node.Id);
-            }
         }
     }
 

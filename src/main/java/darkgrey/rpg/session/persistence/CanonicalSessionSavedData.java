@@ -300,59 +300,6 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         return storyStore.snapshots();
     }
 
-    /** Returns active Story cursors waiting for this actor event, in stable Story order. */
-    public synchronized List<CanonicalStoryInstanceSnapshot> matchingStoryActorWaits(UUID playerUuid, String actorId) {
-        requireBound();
-        if (playerUuid == null || actorId == null
-            || actorId.trim()
-                .isEmpty())
-            throw new IllegalArgumentException("Player UUID and Actor ID are required.");
-        List<CanonicalStoryInstanceSnapshot> result = new java.util.ArrayList<CanonicalStoryInstanceSnapshot>();
-        for (CanonicalStoryInstanceSnapshot snapshot : storyStore.snapshots()) {
-            darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot runtime = snapshot.getRuntimeSnapshot();
-            if (playerUuid.equals(snapshot.getPlayerUuid()) && runtime.getWaitKind()
-                .isActorInteraction() && actorId.equals(runtime.getWaitActorId())) result.add(snapshot);
-        }
-        return java.util.Collections.unmodifiableList(result);
-    }
-
-    public synchronized List<CanonicalStoryInstanceSnapshot> matchingActorWaits(UUID playerUuid, String actorId) {
-        return matchingStoryActorWaits(playerUuid, actorId);
-    }
-
-    /** Returns active Story cursors whose persisted region sphere contains this position. */
-    public synchronized List<CanonicalStoryInstanceSnapshot> matchingStoryRegionWaits(UUID playerUuid, int dimension,
-        double x, double y, double z) {
-        requireBound();
-        if (playerUuid == null || !finite(x) || !finite(y) || !finite(z))
-            throw new IllegalArgumentException("Finite player region position is required.");
-        List<CanonicalStoryInstanceSnapshot> result = new java.util.ArrayList<CanonicalStoryInstanceSnapshot>();
-        for (CanonicalStoryInstanceSnapshot snapshot : storyStore.snapshots()) {
-            darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot runtime = snapshot.getRuntimeSnapshot();
-            if (!playerUuid.equals(snapshot.getPlayerUuid())
-                || runtime.getWaitKind() != darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.ENTER_REGION
-                || runtime.getWaitDimension() == null
-                || runtime.getWaitDimension()
-                    .intValue() != dimension)
-                continue;
-            double dx = x - runtime.getWaitX()
-                .doubleValue();
-            double dy = y - runtime.getWaitY()
-                .doubleValue();
-            double dz = z - runtime.getWaitZ()
-                .doubleValue();
-            double radius = runtime.getWaitRadius()
-                .doubleValue();
-            if (dx * dx + dy * dy + dz * dz <= radius * radius) result.add(snapshot);
-        }
-        return java.util.Collections.unmodifiableList(result);
-    }
-
-    public synchronized List<CanonicalStoryInstanceSnapshot> matchingRegionWaits(UUID playerUuid, int dimension,
-        double x, double y, double z) {
-        return matchingStoryRegionWaits(playerUuid, dimension, x, y, z);
-    }
-
     public synchronized boolean getStorySessionActivationLogic(UUID playerUuid, String storyId) {
         requireStoryBound();
         return requireStoryInstance(storyStore, playerUuid, storyId).getRuntime()
@@ -388,64 +335,16 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         return instance.snapshot();
     }
 
-    /** Resumes the sole matching ActorInteract wait, consuming the event exactly once. */
-    public synchronized CanonicalStoryInstanceSnapshot resumeStoryActor(UUID playerUuid, String actorId,
-        long eventTime) {
-        List<CanonicalStoryInstanceSnapshot> matches = matchingStoryActorWaits(playerUuid, actorId);
-        if (matches.isEmpty()) return null;
-        if (matches.size() > 1) return null;
-        return resumeStoryActor(
-            playerUuid,
-            matches.get(0)
-                .getStoryId(),
-            actorId,
-            eventTime);
-    }
-
-    public synchronized CanonicalStoryInstanceSnapshot resumeStoryActorInteract(UUID playerUuid, String actorId,
-        long eventTime) {
-        return resumeStoryActor(playerUuid, actorId, eventTime);
-    }
-
-    public synchronized CanonicalStoryInstanceSnapshot resumeStoryActor(UUID playerUuid, String storyId, String actorId,
-        long eventTime) {
+    public synchronized CanonicalStoryInstanceSnapshot completeStoryTitle(UUID playerUuid, String storyId,
+        String nodeId, long eventTime) {
         requireStoryBound();
-        boolean matchesSelectedStory = false;
-        for (CanonicalStoryInstanceSnapshot waiting : matchingStoryActorWaits(playerUuid, actorId))
-            if (storyId.equals(waiting.getStoryId())) matchesSelectedStory = true;
-        if (!matchesSelectedStory) return null;
         NBTTagCompound before = persistedState();
         CanonicalStoryInstanceStore candidate = cloneStoryStore();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
-        instance.resumeActor(actorId, eventTime);
+        instance.completeTitle(nodeId, eventTime);
         storyStore = candidate;
         markWorldIfChanged(before);
         return instance.snapshot();
-    }
-
-    /** Resumes the sole matching EnterRegion wait; being inside the sphere is sufficient. */
-    public synchronized CanonicalStoryInstanceSnapshot resumeStoryRegion(UUID playerUuid, int dimension, double x,
-        double y, double z, long eventTime) {
-        List<CanonicalStoryInstanceSnapshot> matches = matchingStoryRegionWaits(playerUuid, dimension, x, y, z);
-        if (matches.isEmpty()) return null;
-        if (matches.size() > 1) return null;
-        requireStoryBound();
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
-        CanonicalStoryInstance instance = requireStoryInstance(
-            candidate,
-            playerUuid,
-            matches.get(0)
-                .getStoryId());
-        instance.resumeRegion(dimension, x, y, z, eventTime);
-        storyStore = candidate;
-        markWorldIfChanged(before);
-        return instance.snapshot();
-    }
-
-    public synchronized CanonicalStoryInstanceSnapshot resumeStoryEnterRegion(UUID playerUuid, int dimension, double x,
-        double y, double z, long eventTime) {
-        return resumeStoryRegion(playerUuid, dimension, x, y, z, eventTime);
     }
 
     public synchronized CanonicalStoryInstanceSnapshot completeStoryAction(UUID playerUuid, String storyId,

@@ -1,0 +1,28 @@
+{
+  "StudioPath": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "ProductVersion": "0.3.3.0-P10",
+  "Bytes": 141837534,
+  "SHA256": "5AD862117BE288ACE552B1CEBB5CA3DB646A7C14AC1280A3F2B1212C71E1D9B9",
+  "JarPath": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\build\\libs\\darkgrey_rpg-0.3.3.0-P10.jar",
+  "JarBytes": 1108644,
+  "JarSHA256": "AE208306AC8090D0820436CDA423E8D3DBCE8ED2308BCC639DEEFF88FB8FF437",
+  "CorePass": 442,
+  "CoreExistingSkip": 1,
+  "WpfPass": 497,
+  "JavaFullProbesPass": 65,
+  "FinalRelevantProbesPass": 65,
+  "ScopeGuard": "PASS",
+  "CasOwner": "MAIN",
+  "CasWorkerDispatched": false,
+  "DesktopVerified": true,
+  "UserAccepted": false,
+  "ReleaseReady": false,
+  "DesktopStatus": "PASS_OBJECTIVE_SCOPE",
+  "DesktopReport": "PLAN/0.3.3.0/P10_REMAINING.md",
+  "EngineeringComplete": true,
+  "MultiDpi": "EXCLUDED_BY_USER",
+  "RemainingUserReview": [
+    "visual preference",
+    "subjective audio quality"
+  ]
+}

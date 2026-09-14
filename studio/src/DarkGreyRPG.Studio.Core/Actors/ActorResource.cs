@@ -4,13 +4,13 @@ namespace DarkGreyRPG.Studio.Core.Actors;
 
 /// <summary>
 /// The legacy Actor shape and common in-memory fields for all Actor resources.
-/// Schema 3 resources should normally use one of the typed resource classes.
+/// Schema 4 resources should normally use one of the typed resource classes.
 /// </summary>
 public class ActorResource
 {
     public const int LegacySchemaVersion = 1;
     public const int StorySchemaVersion = 2;
-    public const int CurrentSchemaVersion = 3;
+    public const int CurrentSchemaVersion = 4;
     public const string LegacyResourceType = "legacy";
 
     [JsonPropertyName("schema_version")]
@@ -63,6 +63,12 @@ public class ActorResource
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? GroupId { get; set; }
 
+    [JsonPropertyName("default_portrait_ref")]
+    public string? DefaultPortraitRef { get; set; }
+
+    [JsonPropertyName("portrait_variants")]
+    public List<ActorPortraitVariant> PortraitVariants { get; set; } = [];
+
     public virtual ActorResource WithId(string id) => new()
     {
         SchemaVersion = SchemaVersion,
@@ -72,6 +78,8 @@ public class ActorResource
         Notes = Notes,
         Tags = [.. Tags],
         HomeStoryId = HomeStoryId,
+        DefaultPortraitRef = DefaultPortraitRef,
+        PortraitVariants = PortraitVariants.Select(value => value with { }).ToList(),
         NpcId = NpcId,
         GroupId = GroupId,
     };
@@ -93,6 +101,8 @@ public sealed class IndividualActorResource : ActorResource
         DisplayName = DisplayName,
         Tags = Tags is null ? [] : [.. Tags],
         HomeStoryId = HomeStoryId,
+        DefaultPortraitRef = DefaultPortraitRef,
+        PortraitVariants = PortraitVariants.Select(value => value with { }).ToList(),
     };
 }
 
@@ -112,5 +122,11 @@ public sealed class CollectiveActorResource : ActorResource
         DisplayName = DisplayName,
         Tags = Tags is null ? [] : [.. Tags],
         HomeStoryId = HomeStoryId,
+        DefaultPortraitRef = DefaultPortraitRef,
+        PortraitVariants = PortraitVariants.Select(value => value with { }).ToList(),
     };
 }
+
+public sealed record ActorPortraitVariant(
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("media_ref")] string MediaRef);

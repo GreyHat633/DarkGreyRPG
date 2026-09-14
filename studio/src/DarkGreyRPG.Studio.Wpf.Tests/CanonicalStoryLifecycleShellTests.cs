@@ -54,40 +54,22 @@ public sealed class CanonicalStoryLifecycleShellTests
     }
 
     [TestMethod]
-    public void IncomingCanonicalTransitionBlocksDeleteBeforeConfirmation()
+    public void RejectedStandaloneTransitionLeavesNormalDeletionAvailable()
     {
         using var project = new LifecycleProjectFixture();
         project.CreateCanonicalStory("target", "Target");
         project.CreateCanonicalStory("source", "Source");
-        project.Store.Stories.Replace(new GraphResourceEnvelope(
-            GraphResourceKind.Story,
-            "source",
-            "Source",
-            new GraphDocument(
-            [
-                GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start"),
-                new GraphNode(
-                    "enter",
-                    "enter_story",
-                    "Enter Target",
-                    properties: new Dictionary<string, JsonElement>
-                    {
-                        ["target_story_id"] = JsonSerializer.SerializeToElement("target"),
-                    }),
-            ],
-            [
-                new GraphConnection("start", "next", "enter", "in", GraphInterfaceKind.Flow),
-            ])));
-
+        var before = File.ReadAllBytes(project.Store.Stories.GetPath("source"));
+        Assert.ThrowsExactly<GraphResourceRepositoryException>(() => project.Store.Stories.Replace(
+            new GraphResourceEnvelope(GraphResourceKind.Story, "source", "Source",
+                new GraphDocument([new GraphNode("old", "enter_story", "Old")]))));
         var dialogs = new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = true };
         var shell = project.OpenShell(dialogs);
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "target");
-
         shell.DeleteSelectedStoryCommand.Execute(null);
-
-        Assert.AreEqual(0, dialogs.CanonicalDeleteConfirmationCount);
-        Assert.IsTrue(File.Exists(project.Store.Stories.GetPath("target")));
-        StringAssert.Contains(shell.StatusMessage, "source");
+        Assert.AreEqual(1, dialogs.CanonicalDeleteConfirmationCount);
+        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("target")));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(project.Store.Stories.GetPath("source")));
     }
 
     [TestMethod]

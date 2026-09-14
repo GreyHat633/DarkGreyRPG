@@ -15,7 +15,7 @@ public sealed record CanonicalProjectStoryGraphDiagnostic(
 }
 
 /// <summary>
-/// One valid cross-Story enter_story node. Incoming connection identities are
+/// One detached cross-Story relation. Incoming connection identities are
 /// retained so a consumer can explain where a transition came from without
 /// reopening the source document.
 /// </summary>
@@ -145,10 +145,6 @@ public sealed class CanonicalProjectStoryGraphSnapshot
 /// </summary>
 public sealed class CanonicalProjectStoryGraphService
 {
-    private const string MissingTargetCode = "project_graph.target.missing";
-    private const string InvalidTargetCode = "project_graph.target.invalid";
-    private const string MalformedEnterStoryCode = "project_graph.enter_story.malformed";
-    private const string AmbiguousEnterStoryCode = "project_graph.enter_story.ambiguous";
     private const string IsolatedStoryCode = "project_graph.story.isolated";
     private const string CycleStoryCode = "project_graph.story.cycle";
 
@@ -182,85 +178,6 @@ public sealed class CanonicalProjectStoryGraphService
                 continue;
             }
 
-            var graph = item.Story.Graph;
-            if (graph is null)
-            {
-                invalidStoryIds.Add(item.Id);
-                diagnostics.Add(new(MalformedEnterStoryCode,
-                    $"Story '{item.Id}' has no graph document.", item.Id));
-                continue;
-            }
-
-            var nodes = graph.Nodes ?? [];
-            var enterNodes = nodes.Where(node => node is not null
-                    && string.Equals(node.Type, "enter_story", StringComparison.Ordinal))
-                .ToArray();
-            var ambiguousIds = enterNodes.Where(node => !string.IsNullOrWhiteSpace(node!.Id))
-                .Select(node => node!.Id)
-                .Where(id => nodes.Count(other => other is not null
-                    && string.Equals(other.Id, id, StringComparison.Ordinal)) > 1)
-                .ToHashSet(StringComparer.Ordinal);
-            var reportedAmbiguousIds = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (var node in enterNodes)
-            {
-                if (string.IsNullOrWhiteSpace(node!.Id))
-                {
-                    invalidStoryIds.Add(item.Id);
-                    diagnostics.Add(new(MalformedEnterStoryCode,
-                        $"Story '{item.Id}' has an enter_story node without a node ID.", item.Id));
-                    continue;
-                }
-                if (ambiguousIds.Contains(node.Id))
-                {
-                    invalidStoryIds.Add(item.Id);
-                    if (reportedAmbiguousIds.Add(node.Id))
-                        diagnostics.Add(new(AmbiguousEnterStoryCode,
-                            $"Story '{item.Id}' enter_story node ID '{node.Id}' is shared with another graph node and is ambiguous.", item.Id, node.Id));
-                    continue;
-                }
-
-                var properties = node.Properties ?? [];
-                if (!properties.TryGetValue("target_story_id", out var targetValue))
-                {
-                    invalidStoryIds.Add(item.Id);
-                    diagnostics.Add(new(MissingTargetCode,
-                        $"{item.Id}.{node.Id} points to a missing Story target.", item.Id, node.Id));
-                    continue;
-                }
-                if (targetValue.ValueKind != JsonValueKind.String)
-                {
-                    invalidStoryIds.Add(item.Id);
-                    diagnostics.Add(new(InvalidTargetCode,
-                        $"{item.Id}.{node.Id} target_story_id must be a string.", item.Id, node.Id));
-                    continue;
-                }
-
-                var target = targetValue.GetString() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(target) || !storyIds.Contains(target))
-                {
-                    invalidStoryIds.Add(item.Id);
-                    var label = string.IsNullOrWhiteSpace(target) ? "<empty>" : target;
-                    diagnostics.Add(new(MissingTargetCode,
-                        $"{item.Id}.{node.Id} points to a missing Story '{label}'.", item.Id, node.Id));
-                    continue;
-                }
-
-                var incoming = (graph.Connections ?? [])
-                    .Where(connection => connection is not null
-                        && string.Equals(connection.ToNodeId, node.Id, StringComparison.Ordinal))
-                    .OrderBy(connection => connection!.FromNodeId, StringComparer.Ordinal)
-                    .ThenBy(connection => connection!.FromPortId, StringComparer.Ordinal)
-                    .ThenBy(connection => connection!.ToPortId, StringComparer.Ordinal)
-                    .Select(connection => connection!)
-                    .ToArray();
-                transitions.Add(new CanonicalProjectStoryGraphTransition(
-                    item.Id,
-                    target,
-                    node.Id,
-                    incoming.Select(connection => connection.FromNodeId),
-                    incoming.Select(connection => connection.FromPortId)));
-            }
         }
 
         var edges = transitions

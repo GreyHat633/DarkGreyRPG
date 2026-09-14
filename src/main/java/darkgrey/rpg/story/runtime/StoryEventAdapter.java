@@ -86,6 +86,7 @@ public final class StoryEventAdapter {
     @SubscribeEvent
     public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.player != null) {
+            darkgrey.rpg.title.CanonicalTitleServer.clear(event.player.getUniqueID());
             regionEntries.forget(event.player.getUniqueID());
             if (canonicalStories != null) canonicalStories.forgetActorChoices(event.player.getUniqueID());
         }

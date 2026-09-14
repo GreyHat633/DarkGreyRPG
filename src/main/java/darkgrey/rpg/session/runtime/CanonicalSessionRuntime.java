@@ -36,6 +36,8 @@ public final class CanonicalSessionRuntime {
     private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
     private final List<String> executedFlowJudgmentNodeIds = new ArrayList<String>();
+    private CanonicalSessionPresentation presentation = CanonicalSessionPresentation.EMPTY;
+    private long lineEpoch;
     private CanonicalSessionStatus status;
     private String currentNodeId;
     private String finalEndPortId;
@@ -204,8 +206,8 @@ public final class CanonicalSessionRuntime {
     public CanonicalSessionStep continueLine() {
         requireActive();
         CanonicalGraphNode node = currentNode();
-        if (!"line".equals(node.getType()) && !"narration".equals(node.getType()))
-            throw fail("session.line.expected", "Session is not paused at a line or narration node.");
+        if (!"line".equals(node.getType()))
+            throw fail("session.line.expected", "Session is not paused at a line node.");
         transitionFrom(node, "flow_out");
         resolveAutomatic();
         return currentStep;
@@ -256,7 +258,9 @@ public final class CanonicalSessionRuntime {
             externalLogicInputs,
             waitingCondition,
             waitingConditionValue,
-            executedFlowJudgmentNodeIds);
+            executedFlowJudgmentNodeIds,
+            presentation,
+            lineEpoch);
     }
 
     public CanonicalSessionSnapshot createSnapshot() {
@@ -277,13 +281,15 @@ public final class CanonicalSessionRuntime {
         for (int i = 0; i < MAX_AUTOMATIC_TRANSITIONS; i++) {
             CanonicalGraphNode node = currentNode();
             String type = node.getType();
-            if ("line".equals(type)) {
-                currentStep = lineStep(node);
-                return;
+            if ("music".equals(type) || "screen".equals(type)) {
+                presentation = presentation.apply(node);
+                transitionFrom(node, "flow_out");
+                continue;
             }
-            if ("narration".equals(type)) {
-                currentStep = CanonicalSessionStep
-                    .narration(node.getId(), requiredString(node, "text", "session.narration"));
+            if ("line".equals(type)) {
+                if (lineEpoch == Long.MAX_VALUE) throw fail("session.line.epoch", "Line epoch exhausted.");
+                lineEpoch++;
+                currentStep = lineStep(node);
                 return;
             }
             if ("choice".equals(type)) {
@@ -292,6 +298,7 @@ public final class CanonicalSessionRuntime {
                 return;
             }
             if ("end".equals(type)) {
+                presentation = CanonicalSessionPresentation.EMPTY;
                 finalEndPortId = requiredString(node, "port_id", "session.end");
                 status = CanonicalSessionStatus.COMPLETED;
                 currentStep = CanonicalSessionStep
@@ -405,21 +412,26 @@ public final class CanonicalSessionRuntime {
         for (CanonicalGraphNode node : nodes.values()) {
             String type = node.getType();
             if ("start".equals(type)) validateStartPorts(node);
-            else if ("line".equals(type)) {
+            else if ("music".equals(type) || "screen".equals(type)) {
+                validateFixedPorts(
+                    node,
+                    type,
+                    spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW),
+                    spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW));
+                try {
+                    CanonicalSessionPresentation.EMPTY.apply(node);
+                } catch (IllegalArgumentException exception) {
+                    throw failure("session.presentation.invalid", exception.getMessage());
+                }
+            } else if ("line".equals(type)) {
                 validateFixedPorts(
                     node,
                     "line",
                     spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW),
                     spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW));
-                requiredString(node, "speaker_actor_id", "session.line");
+                validateLine(node);
                 requiredString(node, "text", "session.line");
-            } else if ("narration".equals(type)) {
-                validateFixedPorts(
-                    node,
-                    "narration",
-                    spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW),
-                    spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW));
-                requiredString(node, "text", "session.narration");
+
             } else if ("end".equals(type)) {
                 validateFixedPorts(node, "end", spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW));
                 requiredString(node, "port_id", "session.end");
@@ -762,6 +774,8 @@ public final class CanonicalSessionRuntime {
             requireInputPort(entry.getKey());
         }
         externalLogicInputs.putAll(snapshot.getExternalLogicInputs());
+        presentation = snapshot.getPresentation();
+        lineEpoch = snapshot.getLineEpoch();
         currentNodeId = snapshot.getCurrentNodeId();
         status = snapshot.getStatus();
         finalEndPortId = snapshot.getFinalEndPortId();
@@ -785,9 +799,6 @@ public final class CanonicalSessionRuntime {
             currentStep = null;
         } else
             if (status == CanonicalSessionStatus.ACTIVE && "line".equals(node.getType())) currentStep = lineStep(node);
-            else if (status == CanonicalSessionStatus.ACTIVE && "narration".equals(node.getType()))
-                currentStep = CanonicalSessionStep
-                    .narration(node.getId(), requiredString(node, "text", "session.narration"));
             else if (status == CanonicalSessionStatus.ACTIVE && "choice".equals(node.getType()))
                 currentStep = CanonicalSessionStep
                     .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
@@ -815,8 +826,10 @@ public final class CanonicalSessionRuntime {
     private CanonicalSessionStep lineStep(CanonicalGraphNode node) {
         return CanonicalSessionStep.line(
             node.getId(),
-            requiredString(node, "speaker_actor_id", "session.line"),
-            requiredString(node, "text", "session.line"));
+            optionalLineString(node, "speaker_actor_id"),
+            requiredString(node, "text", "session.line"),
+            optionalLineString(node, "portrait_variant"),
+            optionalLineString(node, "voice_ref"));
     }
 
     private void setInitialLogicInputs(Map<String, Boolean> values) {
@@ -874,6 +887,35 @@ public final class CanonicalSessionRuntime {
             .isString() || blank(value.getAsString()))
             throw failure(prefix + ".property.required", "Required non-blank string property is missing: " + name);
         return value.getAsString();
+    }
+
+    private static void validateLine(CanonicalGraphNode node) {
+        for (String key : node.getProperties()
+            .keySet())
+            if (!"speaker_actor_id".equals(key) && !"text".equals(key)
+                && !"portrait_variant".equals(key)
+                && !"voice_ref".equals(key))
+                throw failure("session.line.property.unsupported", "Unsupported line property: " + key);
+        optionalLineString(node, "speaker_actor_id");
+        for (String name : new String[] { "portrait_variant", "voice_ref" }) {
+            JsonElement value = node.getProperties()
+                .get(name);
+            String parsed = optionalLineString(node, name);
+            if (value != null && !value.isJsonNull() && parsed == null)
+                throw failure("session.line.property.blank", "Optional line reference must not be blank: " + name);
+            if ("voice_ref".equals(name) && parsed != null
+                && !darkgrey.rpg.graph.canonical.CanonicalMediaReference.isAudio(parsed))
+                throw failure("session.line.voice.invalid", "Line voice must reference project OGG media.");
+        }
+    }
+
+    public static String optionalLineString(CanonicalGraphNode node, String name) {
+        JsonElement value = node.getProperties()
+            .get(name);
+        if (value == null || value.isJsonNull()) return null;
+        if (!(value instanceof JsonPrimitive) || !value.getAsJsonPrimitive()
+            .isString()) throw failure("session.line.property.type", "Line property must be a string or null: " + name);
+        return blank(value.getAsString()) ? null : value.getAsString();
     }
 
     private static String optionalString(CanonicalGraphNode node, String name) {

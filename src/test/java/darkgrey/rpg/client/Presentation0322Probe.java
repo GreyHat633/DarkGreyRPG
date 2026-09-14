@@ -87,7 +87,7 @@ public final class Presentation0322Probe {
             "story",
             "session",
             "narration",
-            darkgrey.rpg.network.message.canonical.CanonicalSessionFrame.Kind.NARRATION,
+            darkgrey.rpg.network.message.canonical.CanonicalSessionFrame.Kind.LINE,
             "",
             "Narration text",
             java.util.Collections.<darkgrey.rpg.network.message.canonical.CanonicalSessionChoiceOption>emptyList());

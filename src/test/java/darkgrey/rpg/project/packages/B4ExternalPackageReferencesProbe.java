@@ -151,6 +151,36 @@ public final class B4ExternalPackageReferencesProbe {
             }
         }, "project.content.graph.reference.undeclared", "undeclared typed graph Actor was accepted");
 
+        for (final String type : Arrays.asList("interact_actor", "enter_region", "enter_story")) {
+            expectCanonicalFailure(new RunnableWithCanonicalFailure() {
+
+                @Override
+                public void run() {
+                    CanonicalGraphNode node = new CanonicalGraphNode(
+                        "old",
+                        type,
+                        "Old",
+                        Collections.emptyList(),
+                        Collections.<String, JsonElement>emptyMap());
+                    CanonicalGraphResource retired = new CanonicalGraphResource(
+                        1,
+                        CanonicalGraphResourceKind.STORY,
+                        consumerStory,
+                        "Old",
+                        new CanonicalGraph(Collections.singletonList(node), Collections.emptyList()));
+                    new darkgrey.rpg.graph.canonical.CanonicalProjectContentLoader().loadPackageContentPartial(
+                        singleton(consumerStory, retired),
+                        Collections.<String, CanonicalGraphResource>emptyMap(),
+                        Collections.<String, CanonicalGraphResource>emptyMap(),
+                        memberships,
+                        Collections.<String>emptySet(),
+                        Collections.<String>emptySet(),
+                        Collections.<String>emptySet());
+                }
+            }, "project.content.story.standalone_node.removed", "in-memory retired standalone node accepted: " + type);
+        }
+        System.out.println("DGRS_IN_MEMORY_RETIRED_STANDALONE_NODES_REJECTED=PASS");
+
         Map<String, CanonicalGraphResource> wrongKind = singleton(
             "consumer:wrong",
             new CanonicalGraphResource(1, CanonicalGraphResourceKind.STORY, "consumer:wrong", "Wrong", null));
@@ -172,23 +202,29 @@ public final class B4ExternalPackageReferencesProbe {
 
     private static CanonicalGraphResource story(String id, String actorId) {
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
-        if (actorId != null) properties.put("actor_id", json(actorId));
+        if (actorId != null) {
+            com.google.gson.JsonObject actorProperties = new com.google.gson.JsonObject();
+            actorProperties.addProperty("actor_id", actorId);
+            com.google.gson.JsonObject trigger = new com.google.gson.JsonObject();
+            trigger.addProperty("trigger_type", "interact_actor");
+            trigger.addProperty("port_id", "actor_start");
+            trigger.add("trigger_properties", actorProperties);
+            com.google.gson.JsonArray triggers = new com.google.gson.JsonArray();
+            triggers.add(trigger);
+            properties.put("triggers", triggers);
+        }
         CanonicalGraphNode start = new CanonicalGraphNode(
             "start",
             "start",
             "Start",
             Collections.emptyList(),
-            Collections.<String, JsonElement>emptyMap());
-        CanonicalGraphNode actor = actorId == null ? null
-            : new CanonicalGraphNode("actor", "interact_actor", "Actor", Collections.emptyList(), properties);
+            properties);
         return new CanonicalGraphResource(
             1,
             CanonicalGraphResourceKind.STORY,
             id,
             "Story",
-            new CanonicalGraph(
-                actor == null ? Collections.singletonList(start) : Arrays.asList(start, actor),
-                Collections.emptyList()));
+            new CanonicalGraph(Collections.singletonList(start), Collections.emptyList()));
     }
 
     private static CanonicalStoryMembership membership(String storyId, CanonicalStoryMembershipSet owned,

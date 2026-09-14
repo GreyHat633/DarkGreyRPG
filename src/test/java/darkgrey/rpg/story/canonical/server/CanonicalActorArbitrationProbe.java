@@ -30,7 +30,6 @@ import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
 import darkgrey.rpg.story.StoryDefinition;
-import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
 
 /** Executes actual candidate collection/revalidation and durable cursor transitions. */
 public final class CanonicalActorArbitrationProbe {
@@ -66,51 +65,40 @@ public final class CanonicalActorArbitrationProbe {
         check(service.executeActorCandidate(PLAYER, ACTORS, a, 200L) != null, "selected start executes");
         check(data.getStorySnapshot(PLAYER, b.getStoryId()) == null, "unselected absent Story unchanged");
         check(service.executeActorCandidate(PLAYER, ACTORS, a, 201L) == null, "old start stale after activation");
-        List<CanonicalActorCandidate> mixed = service.actorCandidates(PLAYER, ACTORS);
+        List<CanonicalActorCandidate> remaining = service.actorCandidates(PLAYER, ACTORS);
         check(
-            mixed.size() == 2 && "continue".equals(
-                mixed.get(0)
-                    .getStatus()),
-            "active own start excluded");
+            remaining.size() == 1 && "b".equals(
+                remaining.get(0)
+                    .getStoryId()),
+            "active Story is not restarted");
         check(service.executeActorCandidate(PLAYER, ACTORS, b, 202L) != null, "other new start executes");
-        check(data.resumeStoryActor(PLAYER, "actor", 203L) == null, "multiple waits non destructive");
         check(
-            data.getStorySnapshot(PLAYER, "a")
-                .getRuntimeSnapshot()
-                .getStatus() == CanonicalStoryStatus.ACTIVE,
-            "ambiguity did not mark error");
-        List<CanonicalActorCandidate> both = service.actorCandidates(PLAYER, ACTORS);
+            service.actorCandidates(PLAYER, ACTORS)
+                .isEmpty(),
+            "active starts are excluded");
         NBTTagCompound beforeB = darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
             .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")));
-        check(service.executeActorCandidate(PLAYER, ACTORS, both.get(0), 204L) != null, "continue selected A");
+        service.completeAction(PLAYER, "a", "wait", 203L);
         check(
             beforeB.equals(
                 darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
                     .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")))),
-            "unselected active B unchanged");
-        check(service.executeActorCandidate(PLAYER, ACTORS, both.get(0), 205L) == null, "advanced wait stale");
-        List<CanonicalActorCandidate> one = service.actorCandidates(PLAYER, ACTORS);
+            "other active Story unchanged");
+        remaining = service.actorCandidates(PLAYER, ACTORS);
         check(
-            one.size() == 1 && "b".equals(
-                one.get(0)
-                    .getStoryId()),
-            "one continuation");
-        service.executeActorCandidate(PLAYER, ACTORS, one.get(0), 206L);
-        check(data.resumeStoryRegion(PLAYER, 0, 0, 0, 0, 207L) == null, "region ambiguity non destructive");
-        data.markStoryError(PLAYER, "b", 208L);
-        service.resumeRegion(PLAYER, 0, 0, 0, 0, 209L);
-        one = service.actorCandidates(PLAYER, ACTORS);
-        check(
-            one.size() == 1 && "restart".equals(
-                one.get(0)
+            remaining.size() == 1 && "restart".equals(
+                remaining.get(0)
                     .getStatus()),
-            "one repeat start");
-        check(service.executeActorCandidate(PLAYER, ACTORS, one.get(0), 210L) != null, "repeat executes");
+            "repeatable Start preserved");
+        CanonicalActorCandidate repeat = remaining.get(0);
+        check(service.executeActorCandidate(PLAYER, ACTORS, repeat, 204L) != null, "repeat executes");
+        check(service.executeActorCandidate(PLAYER, ACTORS, repeat, 205L) == null, "replayed repeat rejected");
+        service.completeAction(PLAYER, "a", "wait", 206L);
         CanonicalActorCandidate staleGeneration = service.actorCandidates(PLAYER, ACTORS)
             .get(0);
         check(
             new CanonicalStoryServerService(project(), data)
-                .executeActorCandidate(PLAYER, ACTORS, staleGeneration, 211L) == null,
+                .executeActorCandidate(PLAYER, ACTORS, staleGeneration, 207L) == null,
             "different project generation rejected");
         NBTTagCompound retainedB = darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
             .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")));
@@ -124,7 +112,7 @@ public final class CanonicalActorArbitrationProbe {
         System.out.println("DGR_STORY_RESET_CANONICAL_STORE=PASS");
         for (String gate : Arrays.asList(
             "ACTOR_NO_CANDIDATE_DOES_NOT_CONSUME",
-            "ACTOR_ONE_CONTINUATION_DIRECT",
+            "ACTOR_ACTIVE_START_EXCLUDED",
             "ACTOR_ONE_NEW_START_DIRECT",
             "ACTOR_ONE_REPEAT_START_DIRECT",
             "ACTOR_ACTIVE_STORY_OWN_START_EXCLUDED",
@@ -183,18 +171,15 @@ public final class CanonicalActorArbitrationProbe {
             new CanonicalGraph(
                 Arrays.asList(
                     node("start", "start", start, out("entry", 0)),
-                    node(
-                        "wait",
-                        "interact_actor",
-                        Collections.singletonMap("actor_id", json("\"actor\"")),
-                        in(),
-                        out("flow_out", 1)),
-                    node("region", "enter_region", region, in(), out("flow_out", 1)),
+                    node("wait", "action", new LinkedHashMap<String, JsonElement>() {
+
+                        {
+                            put("action_type", json("\"send_message\""));
+                            put("message", json("\"hello\""));
+                        }
+                    }, in(), out("flow_out", 1)),
                     node("end", "terminate", Collections.<String, JsonElement>emptyMap(), in())),
-                Arrays.asList(
-                    edge("start", "entry", "wait"),
-                    edge("wait", "flow_out", "region"),
-                    edge("region", "flow_out", "end"))));
+                Arrays.asList(edge("start", "entry", "wait"), edge("wait", "flow_out", "end"))));
     }
 
     private static CanonicalGraphNode node(String id, String type, Map<String, JsonElement> properties,

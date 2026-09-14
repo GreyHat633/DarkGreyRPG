@@ -4,6 +4,5 @@ package darkgrey.rpg.story.canonical.runtime;
 public enum CanonicalStoryStatus {
     ACTIVE,
     TERMINATED,
-    TRANSFERRED,
     ERROR
 }

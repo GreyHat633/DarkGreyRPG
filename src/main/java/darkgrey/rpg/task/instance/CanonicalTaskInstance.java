@@ -60,7 +60,8 @@ public final class CanonicalTaskInstance {
             runtime);
     }
 
-    static CanonicalTaskInstance restore(CanonicalTaskInstanceSnapshot snapshot, CanonicalGraphResource resource) {
+    public static CanonicalTaskInstance restore(CanonicalTaskInstanceSnapshot snapshot,
+        CanonicalGraphResource resource) {
         if (snapshot == null || resource == null) throw new IllegalArgumentException("Restore input is required.");
         CanonicalTaskRuntime runtime = CanonicalTaskRuntime.restore(resource, snapshot.getRuntimeSnapshot());
         return new CanonicalTaskInstance(
@@ -190,6 +191,18 @@ public final class CanonicalTaskInstance {
         validateTime(eventTime);
         if (eventTime < activationTime) throw new IllegalArgumentException("Event timestamp precedes activation.");
         boolean changed = runtime.setLogicInput(portId, value);
+        if (runtime.isSettled()) {
+            status = CanonicalTaskInstanceStatus.SETTLED;
+            settlementTime = Long.valueOf(eventTime);
+        }
+        return changed;
+    }
+
+    public boolean grantReward(String nodeId, long eventTime) {
+        if (!isActive()) return false;
+        validateTime(eventTime);
+        if (eventTime < activationTime) throw new IllegalArgumentException("Event timestamp precedes activation.");
+        boolean changed = runtime.grantReward(nodeId);
         if (runtime.isSettled()) {
             status = CanonicalTaskInstanceStatus.SETTLED;
             settlementTime = Long.valueOf(eventTime);

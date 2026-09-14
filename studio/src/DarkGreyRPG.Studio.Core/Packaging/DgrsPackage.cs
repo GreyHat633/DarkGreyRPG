@@ -130,6 +130,22 @@ public static class DgrsPackageValidator
             RequireEntry(entries, "project.json");
             foreach (var required in RequiredPaths(manifest.RequiredResources)) RequireEntry(entries, required);
             ValidateCanonicalPayload(entries, manifest);
+            var reachable = StoryPackageMedia.Collect(manifest.RequiredResources, name => ReadText(entries[name]));
+            if (!reachable.SetEquals(manifest.RequiredResources.Media)) throw new StoryPackageException("媒体清单必须与资源实际引用一致。");
+            if (entries.Keys.Any(name => name.StartsWith("media/", StringComparison.Ordinal) && !reachable.Contains(name))) throw new StoryPackageException("包中包含未声明或不可达的媒体。");
+            foreach (var mediaRef in manifest.RequiredResources.Media)
+            {
+                using var input = entries[mediaRef].Open();
+                using var bytes = new MemoryStream();
+                if (entries[mediaRef].Length > 64L * 1024 * 1024) throw new StoryPackageException("运行时媒体过大。");
+                byte[] buffer = new byte[81920]; int count;
+                while ((count = input.Read(buffer, 0, buffer.Length)) != 0) {
+                    if (bytes.Length + count > 64L * 1024 * 1024) throw new StoryPackageException("运行时媒体解压后过大。");
+                    bytes.Write(buffer, 0, count);
+                }
+                bytes.Position = 0;
+                StoryPackageMedia.Validate(mediaRef, bytes);
+            }
             return new DgrsValidationResult(
                 path,
                 manifest,
@@ -190,6 +206,7 @@ public static class DgrsPackageValidator
         foreach (var path in required.CanonicalMemberships) yield return path;
         foreach (var path in required.Sessions) yield return path;
         foreach (var path in required.Tasks) yield return path;
+        foreach (var path in required.Media) yield return path;
         if (required.StoryLogicGraph is not null) yield return required.StoryLogicGraph;
     }
 

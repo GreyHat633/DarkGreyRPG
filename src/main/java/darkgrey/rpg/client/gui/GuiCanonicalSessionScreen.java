@@ -171,6 +171,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        darkgrey.rpg.media.CanonicalSessionScene.draw(width, height);
         scrollLine = CanonicalDialogueRenderer.draw(fontRendererObj, width, height, frame, scrollLine, awaitingServer);
         super.drawScreen(mouseX, mouseY, partialTicks);
         for (Object object : buttonList) {
@@ -220,6 +221,9 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             source.getKind(),
             source.getSpeaker(),
             source.getText(),
-            source.getChoices());
+            source.getChoices(),
+            source.getPortraitRef(),
+            source.getVoiceRef())
+                .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice());
     }
 }

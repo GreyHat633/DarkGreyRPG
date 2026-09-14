@@ -140,16 +140,6 @@ public final class CanonicalStoryDispatch {
         return targetStoryId;
     }
 
-    public String getActorId() {
-        return kind == CanonicalStoryDispatchKind.ACTOR_INTERACT || kind == CanonicalStoryDispatchKind.INTERACT_ACTOR
-            ? resourceId
-            : null;
-    }
-
-    public String getWaitActorId() {
-        return getActorId();
-    }
-
     public Integer getDimension() {
         return waitDimension;
     }

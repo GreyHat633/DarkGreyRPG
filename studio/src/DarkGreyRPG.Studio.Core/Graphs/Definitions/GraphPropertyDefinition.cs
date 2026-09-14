@@ -12,13 +12,14 @@ public sealed class GraphPropertyDefinition
         string name,
         JsonValueKind kind,
         bool required = false,
-        JsonElement? defaultValue = null)
+        JsonElement? defaultValue = null,
+        bool allowNull = false)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("A property name is required.", nameof(name));
         if (kind == JsonValueKind.Undefined)
             throw new ArgumentOutOfRangeException(nameof(kind), "A property must declare an explicit JSON top-level kind.");
-        if (defaultValue is { } value && value.ValueKind != kind)
+        if (defaultValue is { } value && value.ValueKind != kind && !(allowNull && value.ValueKind == JsonValueKind.Null))
             throw new ArgumentException(
                 $"Default JSON value for '{name}' has kind '{value.ValueKind}', expected '{kind}'.",
                 nameof(defaultValue));
@@ -26,6 +27,7 @@ public sealed class GraphPropertyDefinition
         Name = name;
         Kind = kind;
         Required = required;
+        AllowNull = allowNull;
         _defaultValue = defaultValue?.Clone();
     }
 
@@ -41,6 +43,7 @@ public sealed class GraphPropertyDefinition
     public JsonValueKind Kind { get; }
     public JsonValueKind ValueKind => Kind;
     public JsonValueKind JsonKind => Kind;
+    public bool AllowNull { get; }
     public bool Required { get; }
     public bool IsRequired => Required;
     public bool HasDefault => _defaultValue.HasValue;

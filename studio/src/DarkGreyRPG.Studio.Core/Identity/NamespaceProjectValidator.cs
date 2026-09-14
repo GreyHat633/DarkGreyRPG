@@ -48,6 +48,7 @@ public static class NamespaceProjectValidator
                 if (!graphs.TryGetValue(graphKey, out var graph)) continue;
                 foreach (var node in graph.Graph!.Nodes)
                 {
+                    CanonicalTaskRewardReferences.Validate(node, graph.ResourceKind, declared);
                     void Require(string field, DgrResourceKind kind, bool legacyTarget = false, bool allowItemGroup = false)
                     {
                         if (!node.Properties.TryGetValue(field, out var value) || value.ValueKind != JsonValueKind.String) return;
@@ -85,6 +86,7 @@ public static class NamespaceProjectValidator
                         switch (Text(node, "objective_type"))
                         {
                             case "kill_entity": Require("entity", DgrResourceKind.Actor, legacyTarget: true); break;
+                            case "submit_item":
                             case "collect_item": Require("item", DgrResourceKind.Item, legacyTarget: true, allowItemGroup: true); break;
                             case "interact_actor": Require("actor_id", DgrResourceKind.Actor); break;
                         }

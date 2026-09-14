@@ -70,6 +70,7 @@ public final class StoryPackageContentFingerprint {
         addAll(result, "canonical_membership", required.getCanonicalMemberships(), bytes);
         addAll(result, "session", required.getSessions(), bytes);
         addAll(result, "task", required.getTasks(), bytes);
+        addAll(result, "media", required.getMedia(), bytes);
         if (required.getStoryLogicGraph() != null)
             add(result, "story_logic_graph", required.getStoryLogicGraph(), bytes);
         return result;

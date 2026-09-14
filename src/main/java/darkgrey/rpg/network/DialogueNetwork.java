@@ -46,6 +46,31 @@ public final class DialogueNetwork {
             CanonicalStoryChooserSelection.class,
             STORY_CHOOSER_SELECTION_DISCRIMINATOR,
             Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalTaskSubmit.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalTaskSubmit.class,
+            21,
+            Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalMediaRequest.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalMediaRequest.class,
+            22,
+            Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalMediaChunk.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalMediaChunk.class,
+            23,
+            Side.CLIENT);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalTitleFrame.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalTitleFrame.class,
+            24,
+            Side.CLIENT);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalTitleComplete.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalTitleComplete.class,
+            25,
+            Side.SERVER);
         registered = true;
     }
 }

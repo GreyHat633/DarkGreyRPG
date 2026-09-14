@@ -41,30 +41,30 @@ public final class CanonicalStoryForgeActionExecutor implements CanonicalStoryFo
         if (CanonicalStoryActionConfiguration.GIVE_ITEM.equals(configuration.getType()))
             return giveItem(player, configuration);
         if (CanonicalStoryActionConfiguration.GIVE_XP.equals(configuration.getType())) {
-            player.addExperience(configuration.getAmount());
+            darkgrey.rpg.task.forge.CanonicalTaskPlayerTransactions.applyXpDelta(player, configuration.getAmount());
             return true;
         }
         if (CanonicalStoryActionConfiguration.SEND_MESSAGE.equals(configuration.getType())) {
             ChatMessages.info(player, configuration.getMessage());
             return true;
         }
-        return false;
+        return CanonicalStoryInstantActions.apply(player, configuration);
     }
 
     private static boolean giveItem(EntityPlayerMP player, CanonicalStoryActionConfiguration configuration) {
+        if (configuration.getAmount() == 0) return true;
         if (configuration.isLegacyRegistryItem()) return giveLegacyItem(player, configuration);
         ItemStackDefinition definition = ItemIdentitySavedData.get()
             .getItem(configuration.getItemId());
         if (definition == null) return false;
-        int remaining = configuration.getAmount();
-        while (remaining > 0) {
-            ItemStack prototype = definition.createStack(1);
-            int chunk = Math.min(remaining, prototype.getMaxStackSize());
-            ItemStack stack = definition.createStack(chunk);
-            if (!player.inventory.addItemStackToInventory(stack) && stack.stackSize > 0)
-                player.dropPlayerItemWithRandomChoice(stack, false);
-            remaining -= chunk;
-        }
+        return applyItem(player, definition.createStack(1), configuration.getAmount());
+    }
+
+    private static boolean applyItem(EntityPlayerMP player, ItemStack prototype, int amount) {
+        ItemStack[] staged = darkgrey.rpg.task.forge.CanonicalTaskInventory.copy(player.inventory.mainInventory);
+        if (!darkgrey.rpg.task.forge.CanonicalTaskPlayerTransactions.applyItem(staged, prototype, amount)) return false;
+        System.arraycopy(staged, 0, player.inventory.mainInventory, 0, staged.length);
+        player.inventory.markDirty();
         player.inventoryContainer.detectAndSendChanges();
         return true;
     }
@@ -72,10 +72,9 @@ public final class CanonicalStoryForgeActionExecutor implements CanonicalStoryFo
     private static boolean giveLegacyItem(EntityPlayerMP player, CanonicalStoryActionConfiguration configuration) {
         Object registered = Item.itemRegistry.getObject(configuration.getItemId());
         if (!(registered instanceof Item)) return false;
-        ItemStack stack = new ItemStack((Item) registered, configuration.getAmount(), configuration.getMetadata());
-        if (!player.inventory.addItemStackToInventory(stack) && stack.stackSize > 0)
-            player.dropPlayerItemWithRandomChoice(stack, false);
-        player.inventoryContainer.detectAndSendChanges();
-        return true;
+        return applyItem(
+            player,
+            new ItemStack((Item) registered, 1, configuration.getMetadata()),
+            configuration.getAmount());
     }
 }

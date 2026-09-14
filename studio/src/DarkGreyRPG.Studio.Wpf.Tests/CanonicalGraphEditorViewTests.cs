@@ -877,7 +877,7 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host);
 
         CollectionAssert.AreEqual(
-            new[] { "line", "choice", "narration", "and", "or", "not", "logic_input", "logic_output", "condition", "flow_judgment", "end" },
+            new[] { "line", "music", "screen", "choice", "and", "or", "not", "logic_input", "logic_output", "condition", "flow_judgment", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
         CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },

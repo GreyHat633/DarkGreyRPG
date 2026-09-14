@@ -9,6 +9,41 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class CanonicalStoryActionSchemaTests
 {
     [TestMethod]
+    public void AllSevenTypesAndAtomicBuffModeHaveStrictRoundtrips()
+    {
+        Assert.AreEqual(7, CanonicalStoryActionSchema.ActionTypes.Count);
+        foreach (var type in CanonicalStoryActionSchema.ActionTypes)
+        {
+            var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action");
+            var graph = new GraphDocument([node]); var session = new GraphEditSession(graph, GraphScope.StoryFlow);
+            Assert.IsTrue(session.ChangeStoryActionType("action", type));
+            Assert.IsEmpty(CanonicalStoryActionSchema.Validate(node), type);
+            if (type is "give_item" or "give_xp" or "give_health")
+            {
+                Assert.IsTrue(session.SetNodeProperty("action", "amount", -5));
+                Assert.IsTrue(session.SetNodeProperty("action", "amount", 0));
+            }
+            if (type == "give_buff")
+            {
+                var before = session.UndoCount;
+                Assert.IsTrue(session.ChangeStoryBuffMode("action", true));
+                Assert.AreEqual(before + 1, session.UndoCount);
+                Assert.IsFalse(node.Properties.ContainsKey("buff"));
+                Assert.IsTrue(node.Properties.ContainsKey("mod_id"));
+                Assert.IsTrue(session.Undo());
+                Assert.IsFalse(graph.Nodes.Single().Properties["mod_extension"].GetBoolean());
+            }
+            if (type == "execute_command")
+            {
+                Assert.IsFalse(session.SetNodeProperty("action", "command", "say one\nsay two"));
+                Assert.IsTrue(session.SetNodeProperty("action", "command", "say one"));
+            }
+            var roundtrip = GraphSerializer.Deserialize(GraphSerializer.Serialize(graph));
+            Assert.IsEmpty(CanonicalStoryActionSchema.Validate(roundtrip.Nodes.Single()));
+        }
+    }
+
+    [TestMethod]
     public void FactoryCreatesStrictMessageDefault()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");

@@ -9,6 +9,8 @@ namespace DarkGreyRPG.Studio.Services;
 
 public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorWorkspaceDialogs
 {
+    public bool EditPortraits(ActorDocument document, string projectDirectory)
+        => new ActorPortraitDialog(document, projectDirectory) { Owner = ownerProvider() }.ShowDialog() == true;
     public ResourceRenameRequest? RequestResourceRename(string resourceLabel, string id, string currentDisplayName, IReadOnlyList<string>? tags = null)
     {
         var viewModel = new DisplayNameDialogViewModel(resourceLabel, id, currentDisplayName, allowIdentityEdit: true, tags: tags);

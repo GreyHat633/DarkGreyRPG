@@ -1,0 +1,27 @@
+[
+  {
+    "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/StoryStartSchema.cs",
+    "NormalizedSourceEqualToBaseline": true,
+    "SHA256": "75145796e0f8eef10e0ab6a2e5dba4fbf50be06f3e51e34a3096e1cd2c980d7b"
+  },
+  {
+    "Path": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryStartConfiguration.java",
+    "NormalizedSourceEqualToBaseline": true,
+    "SHA256": "9840fcae503d819e23ba8bc2fe5a107113418cf5a81799d7b97797839e9c9534"
+  },
+  {
+    "Path": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryTriggerIndex.java",
+    "NormalizedSourceEqualToBaseline": true,
+    "SHA256": "533bbd9723b53b72668d4fcc29fe0937851d61580e7424eba0adebba81717689"
+  },
+  {
+    "Path": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRegionEntryTracker.java",
+    "NormalizedSourceEqualToBaseline": true,
+    "SHA256": "12a8e6d7cc389ed61f8b4d477608ab8cb43711c36dbd49057fa30c0d246a1229"
+  },
+  {
+    "Path": "scripts/verify-0324-freeze.ps1",
+    "NormalizedSourceEqualToBaseline": true,
+    "SHA256": "53549bead5180c8ebc4cc09368a5141fd220b1f239484648deb2b1315f348eb7"
+  }
+]

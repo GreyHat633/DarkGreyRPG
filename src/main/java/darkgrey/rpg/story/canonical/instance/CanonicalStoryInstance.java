@@ -78,20 +78,14 @@ public final class CanonicalStoryInstance {
         return true;
     }
 
+    public boolean completeTitle(String nodeId, long eventTime) {
+        runtime.completeTitle(nodeId);
+        captureTerminalTime(eventTime);
+        return true;
+    }
+
     public boolean completeAction(String actionNodeId, long eventTime) {
         runtime.completeAction(actionNodeId);
-        captureTerminalTime(eventTime);
-        return true;
-    }
-
-    public boolean resumeActor(String actorId, long eventTime) {
-        runtime.resumeActor(actorId);
-        captureTerminalTime(eventTime);
-        return true;
-    }
-
-    public boolean resumeRegion(int dimension, double x, double y, double z, long eventTime) {
-        runtime.resumeRegion(dimension, x, y, z);
         captureTerminalTime(eventTime);
         return true;
     }

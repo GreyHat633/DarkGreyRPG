@@ -40,6 +40,10 @@ final class StoryPackageSnapshotReader {
         if (archive == null || manifest == null)
             throw new IllegalArgumentException("archive and manifest are required");
         StoryPackageManifest.RequiredResources required = manifest.getRequiredResources();
+        for (String path : archive.getEntryNames()) if (path.startsWith("media/") && !path.endsWith("/")
+            && !required.getMedia()
+                .contains(path))
+            throw new ProjectLoadException("Unreachable media entry: " + path);
         Map<String, byte[]> declaredBytes = requiredBytes(archive, required);
         declaredBytes.put("project.json", archive.readBytes("project.json"));
         ProjectDefinition project = ProjectRepository
@@ -211,10 +215,12 @@ final class StoryPackageSnapshotReader {
         add(paths, required.getCanonicalMemberships());
         add(paths, required.getSessions());
         add(paths, required.getTasks());
+        add(paths, required.getMedia());
         if (required.getStoryLogicGraph() != null) add(paths, required.getStoryLogicGraph());
         Map<String, byte[]> result = new LinkedHashMap<String, byte[]>();
         for (String path : paths) {
-            archive.readUtf8(path);
+            if (!required.getMedia()
+                .contains(path)) archive.readUtf8(path);
             result.put(path, archive.readBytes(path));
         }
         return result;

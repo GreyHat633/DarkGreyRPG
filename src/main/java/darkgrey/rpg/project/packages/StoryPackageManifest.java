@@ -49,7 +49,8 @@ public final class StoryPackageManifest {
         "canonical_memberships",
         "sessions",
         "tasks",
-        "story_logic_graph");
+        "story_logic_graph",
+        "media");
 
     private final int schemaVersion;
     private final String format;
@@ -149,7 +150,8 @@ public final class StoryPackageManifest {
             paths(file, resources, "canonical_memberships"),
             paths(file, resources, "sessions"),
             paths(file, resources, "tasks"),
-            optionalPath(file, resources, "story_logic_graph"));
+            optionalPath(file, resources, "story_logic_graph"),
+            paths(file, resources, "media"));
         return new StoryPackageManifest(
             format,
             formatVersion,
@@ -220,12 +222,16 @@ public final class StoryPackageManifest {
 
         private final String story;
         private final List<String> actors, items, itemGroups, dialogues, quests, canonicalStories, canonicalMemberships,
-            sessions, tasks;
+            sessions, tasks, media;
         private final String storyLogicGraph;
 
         private RequiredResources(String story, List<String> actors, List<String> items, List<String> itemGroups,
             List<String> dialogues, List<String> quests, List<String> canonicalStories,
-            List<String> canonicalMemberships, List<String> sessions, List<String> tasks, String storyLogicGraph) {
+            List<String> canonicalMemberships, List<String> sessions, List<String> tasks, String storyLogicGraph,
+            List<String> media) {
+            this.media = freeze(media);
+            for (String path : media) if (!darkgrey.rpg.graph.canonical.CanonicalMediaReference.isValid(path))
+                throw new IllegalArgumentException("Invalid media reference: " + path);
             this.story = story;
             this.actors = freeze(actors);
             this.items = freeze(items);
@@ -237,6 +243,10 @@ public final class StoryPackageManifest {
             this.sessions = freeze(sessions);
             this.tasks = freeze(tasks);
             this.storyLogicGraph = storyLogicGraph;
+        }
+
+        public List<String> getMedia() {
+            return media;
         }
 
         public String getStory() {

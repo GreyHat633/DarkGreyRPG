@@ -42,6 +42,7 @@ public sealed class ResourceRenameMap
         var graph = source.Graph ?? throw new InvalidOperationException("Resource graph is missing.");
         foreach (var node in graph.Nodes)
         {
+            CanonicalTaskRewardReferences.Rewrite(node, source.ResourceKind, Resolve);
             if (source.ResourceKind == GraphResourceKind.Story)
             {
                 switch (node.Type)
@@ -63,6 +64,7 @@ public sealed class ResourceRenameMap
                 {
                     case "kill_entity": RewriteProperty(node, "entity", DgrResourceKind.Actor); break;
                     case "interact_actor": RewriteProperty(node, "actor_id", DgrResourceKind.Actor); break;
+                    case "submit_item":
                     case "collect_item":
                         var id = StringProperty(node, "item");
                         if (id is null) break;
@@ -76,7 +78,7 @@ public sealed class ResourceRenameMap
             }
         }
         return new(source.ResourceKind, Resolve(Kind(source.ResourceKind), source.Id), source.DisplayName, graph)
-            { SchemaVersion = source.SchemaVersion, Tags = source.Tags.ToArray() };
+            { SchemaVersion = source.SchemaVersion, Tags = source.Tags.ToArray(), TaskMetadata = source.TaskMetadata };
     }
 
     public CanonicalStoryMembershipManifest Rewrite(CanonicalStoryMembershipManifest source)

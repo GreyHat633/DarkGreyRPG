@@ -9,6 +9,17 @@ import java.util.Map;
 /** Detached, immutable persistence shape for one canonical Session instance. */
 public final class CanonicalSessionSnapshot {
 
+    private final CanonicalSessionPresentation presentation;
+    private final long lineEpoch;
+
+    public CanonicalSessionPresentation getPresentation() {
+        return presentation;
+    }
+
+    public long getLineEpoch() {
+        return lineEpoch;
+    }
+
     private final String sessionResourceId;
     private final String currentNodeId;
     private final CanonicalSessionStatus status;
@@ -113,6 +124,35 @@ public final class CanonicalSessionSnapshot {
         Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
         List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
         Boolean waitingConditionValue, List<String> executedFlowJudgmentNodeIds) {
+        this(
+            sessionResourceId,
+            currentNodeId,
+            status,
+            selectedOptionIds,
+            internalLogicValues,
+            finalEndPortId,
+            publicLogicOutputs,
+            activationLogic,
+            latestChoiceSelections,
+            selectedChoiceNodeIds,
+            externalLogicInputs,
+            waitingCondition,
+            waitingConditionValue,
+            executedFlowJudgmentNodeIds,
+            CanonicalSessionPresentation.EMPTY,
+            0);
+    }
+
+    public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
+        List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
+        Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
+        List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
+        Boolean waitingConditionValue, List<String> executedFlowJudgmentNodeIds,
+        CanonicalSessionPresentation presentation, long lineEpoch) {
+        if (presentation == null || lineEpoch < 0)
+            throw new IllegalArgumentException("Invalid Session presentation state");
+        this.presentation = presentation;
+        this.lineEpoch = lineEpoch;
         this.sessionResourceId = sessionResourceId;
         this.currentNodeId = currentNodeId;
         this.status = status;

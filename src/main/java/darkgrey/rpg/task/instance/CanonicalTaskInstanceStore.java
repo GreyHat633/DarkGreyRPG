@@ -74,6 +74,14 @@ public final class CanonicalTaskInstanceStore {
         return instances.get(new Key(playerUuid, storyInstanceId, taskNodePlacementId));
     }
 
+    /** Replaces only an existing identity after its staged snapshot has been validated. */
+    public synchronized void replaceExisting(CanonicalTaskInstance instance) {
+        if (instance == null) throw new IllegalArgumentException("Task instance is required.");
+        Key key = new Key(instance.getPlayerUuid(), instance.getStoryInstanceId(), instance.getTaskNodePlacementId());
+        if (!instances.containsKey(key)) throw new IllegalStateException("Task instance is missing.");
+        instances.put(key, instance);
+    }
+
     public synchronized CanonicalTaskInstance getInstance(UUID playerUuid, String storyInstanceId,
         String taskNodePlacementId) {
         return get(playerUuid, storyInstanceId, taskNodePlacementId);

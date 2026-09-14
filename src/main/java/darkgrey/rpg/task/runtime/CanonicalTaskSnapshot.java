@@ -16,11 +16,30 @@ public final class CanonicalTaskSnapshot {
     private final Map<String, Boolean> publicLogicOutputs;
     private final boolean activationLogic;
     private final String resultPortId;
+    private final Map<String, Boolean> rewardStates;
 
     public CanonicalTaskSnapshot(String resourceId, String resourceFingerprint, CanonicalTaskStatus status,
         Map<String, Integer> progress, Map<String, CanonicalTaskObjectiveStatus> objectiveStatuses,
         Map<String, Boolean> logicValues, Map<String, Boolean> publicLogicOutputs, boolean activationLogic,
         String resultPortId) {
+        this(
+            resourceId,
+            resourceFingerprint,
+            status,
+            progress,
+            objectiveStatuses,
+            logicValues,
+            publicLogicOutputs,
+            activationLogic,
+            resultPortId,
+            Collections.<String, Boolean>emptyMap());
+    }
+
+    public CanonicalTaskSnapshot(String resourceId, String resourceFingerprint, CanonicalTaskStatus status,
+        Map<String, Integer> progress, Map<String, CanonicalTaskObjectiveStatus> objectiveStatuses,
+        Map<String, Boolean> logicValues, Map<String, Boolean> publicLogicOutputs, boolean activationLogic,
+        String resultPortId, Map<String, Boolean> rewardStates) {
+        this.rewardStates = immutable(rewardStates);
         this.resourceId = resourceId;
         this.resourceFingerprint = resourceFingerprint;
         this.status = status;
@@ -30,6 +49,11 @@ public final class CanonicalTaskSnapshot {
         this.publicLogicOutputs = immutable(publicLogicOutputs);
         this.activationLogic = activationLogic;
         this.resultPortId = resultPortId;
+    }
+
+    /** Absent = not eligible yet, false = pending, true = granted. */
+    public Map<String, Boolean> getRewardStates() {
+        return rewardStates;
     }
 
     public String getResourceId() {

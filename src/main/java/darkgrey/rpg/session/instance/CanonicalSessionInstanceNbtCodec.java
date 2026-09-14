@@ -135,6 +135,11 @@ public final class CanonicalSessionInstanceNbtCodec {
         CanonicalSessionSnapshot runtime = instance.getRuntimeSnapshot();
         tag.setString("current_node_id", runtime.getCurrentNodeId());
         tag.setString(
+            "presentation",
+            runtime.getPresentation()
+                .toJson());
+        tag.setLong("line_epoch", runtime.getLineEpoch());
+        tag.setString(
             "status",
             runtime.getStatus()
                 .name());
@@ -177,7 +182,9 @@ public final class CanonicalSessionInstanceNbtCodec {
             "external_logic_inputs",
             "executed_flow_judgment_node_ids",
             "waiting_condition",
-            "waiting_condition_value");
+            "waiting_condition_value",
+            "presentation",
+            "line_epoch");
         String player = string(tag, "player_uuid");
         UUID uuid;
         if (player.length() != 36) throw malformed("invalid player_uuid");
@@ -236,6 +243,7 @@ public final class CanonicalSessionInstanceNbtCodec {
         if (waiting != (waitingValue != null)) throw malformed("incomplete Condition wait state");
         if (status == CanonicalSessionStatus.COMPLETED && end == null) throw malformed("completed end is required");
         if (status != CanonicalSessionStatus.COMPLETED && end != null) throw malformed("only completed has end");
+        if (tag.hasKey("line_epoch")) requireType(tag, "line_epoch", LONG);
         CanonicalSessionSnapshot runtime = new CanonicalSessionSnapshot(
             resource,
             current,
@@ -250,7 +258,11 @@ public final class CanonicalSessionInstanceNbtCodec {
             externalInputs,
             waiting,
             waitingValue,
-            executedFlowJudgments);
+            executedFlowJudgments,
+            tag.hasKey("presentation")
+                ? darkgrey.rpg.session.runtime.CanonicalSessionPresentation.fromJson(string(tag, "presentation"))
+                : darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY,
+            tag.hasKey("line_epoch") ? tag.getLong("line_epoch") : 0);
         return new CanonicalSessionInstanceSnapshot(uuid, story, placement, resource, transport, runtime);
     }
 

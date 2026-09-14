@@ -17,6 +17,7 @@ public final class ActorDefinition {
     private final List<String> tags;
     private final String homeStoryId;
     private final String type;
+    private final ActorPortraits portraits;
 
     public ActorDefinition(int schemaVersion, String id, String displayName, String notes, List<String> tags,
         String homeStoryId) {
@@ -25,6 +26,12 @@ public final class ActorDefinition {
 
     public ActorDefinition(int schemaVersion, String type, String id, String displayName, String notes,
         List<String> tags, String homeStoryId) {
+        this(schemaVersion, type, id, displayName, notes, tags, homeStoryId, ActorPortraits.empty());
+    }
+
+    public ActorDefinition(int schemaVersion, String type, String id, String displayName, String notes,
+        List<String> tags, String homeStoryId, ActorPortraits portraits) {
+        this.portraits = portraits;
         this.schemaVersion = schemaVersion;
         this.type = type;
         this.id = id;
@@ -32,6 +39,10 @@ public final class ActorDefinition {
         this.notes = notes;
         this.tags = Collections.unmodifiableList(new ArrayList<String>(tags));
         this.homeStoryId = homeStoryId;
+    }
+
+    public ActorPortraits getPortraits() {
+        return portraits;
     }
 
     public int getSchemaVersion() {

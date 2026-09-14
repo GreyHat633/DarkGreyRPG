@@ -36,7 +36,14 @@ import darkgrey.rpg.identity.DgrResourceId;
 /** Strict, read-only loader for the schema-version-1 canonical graph roots. */
 public final class CanonicalGraphResourceLoader {
 
-    private static final Set<String> ROOT = set("schema_version", "resource_kind", "id", "display_name", "tags", "graph");
+    private static final Set<String> ROOT = set(
+        "schema_version",
+        "resource_kind",
+        "id",
+        "display_name",
+        "tags",
+        "task_metadata",
+        "graph");
     private static final Set<String> GRAPH = set("nodes", "connections");
     private static final Set<String> NODE = set("id", "type", "display_name", "ports", "properties");
     private static final Set<String> PORT = set("port_id", "display_name", "direction", "kind", "order");
@@ -222,13 +229,29 @@ public final class CanonicalGraphResourceLoader {
                 "Canonical graph resource filename must equal id + '.json': " + fileName);
         if (root.has("tags")) {
             for (JsonElement tag : array(root, "tags", "graph.resource")) {
-                if (!tag.isJsonPrimitive() || !tag.getAsJsonPrimitive().isString()) {
-                    throw CanonicalGraphResourceException.failure("graph.resource.tags.invalid", "Resource tags must be strings.");
+                if (!tag.isJsonPrimitive() || !tag.getAsJsonPrimitive()
+                    .isString()) {
+                    throw CanonicalGraphResourceException
+                        .failure("graph.resource.tags.invalid", "Resource tags must be strings.");
                 }
             }
         }
         CanonicalGraph graph = graph(object(root, "graph", "graph.resource"), kind);
-        return new CanonicalGraphResource(version, kind, id, displayName, graph);
+        CanonicalTaskMetadata metadata = null;
+        if (root.has("task_metadata")) {
+            if (kind != CanonicalGraphResourceKind.TASK) throw CanonicalGraphResourceException
+                .failure("graph.resource.task_metadata.scope", "Task metadata is only valid for Task resources.");
+            JsonObject value = object(root, "task_metadata", "graph.resource");
+            exact(value, set("description"), "graph.resource.task_metadata");
+            JsonElement description = value.get("description");
+            if (description == null || !description.isJsonPrimitive()
+                || !description.getAsJsonPrimitive()
+                    .isString())
+                throw CanonicalGraphResourceException
+                    .failure("graph.resource.task_metadata.invalid", "Task description must be text.");
+            metadata = new CanonicalTaskMetadata(description.getAsString());
+        }
+        return new CanonicalGraphResource(version, kind, id, displayName, graph, metadata);
     }
 
     private static CanonicalGraph graph(JsonObject value, CanonicalGraphResourceKind kind)
@@ -423,9 +446,7 @@ public final class CanonicalGraphResourceLoader {
                 "or",
                 "not",
                 "action",
-                "interact_actor",
-                "enter_region",
-                "enter_story",
+                "title",
                 "logic_input",
                 "logic_output")
             .contains(type);
@@ -433,6 +454,8 @@ public final class CanonicalGraphResourceLoader {
             .asList(
                 "start",
                 "line",
+                "music",
+                "screen",
                 "choice",
                 "condition",
                 "and",
@@ -446,7 +469,7 @@ public final class CanonicalGraphResourceLoader {
         // Task activation is owned by the parent Story Flow. A legacy Task
         // containing activate is rejected deterministically below by the
         // scope policy rather than becoming part of the new schema.
-        return Arrays.asList("objective", "logic_input", "and", "or", "not", "logic_output", "settle")
+        return Arrays.asList("objective", "logic_input", "and", "or", "not", "logic_output", "reward", "settle")
             .contains(type);
     }
 
@@ -500,8 +523,10 @@ public final class CanonicalGraphResourceLoader {
         for (Map.Entry<String, JsonElement> entry : object.entrySet())
             if (!allowed.contains(entry.getKey())) throw CanonicalGraphResourceException
                 .failure(prefix + ".member.unsupported", "Unsupported field '" + entry.getKey() + "'.");
-        for (String name : allowed) if (!(allowed == ROOT && name.equals("tags")) && !object.has(name)) throw CanonicalGraphResourceException
-            .failure(prefix + ".member.required", "Required field '" + name + "' is missing.");
+        for (String name : allowed)
+            if (!(allowed == ROOT && (name.equals("tags") || name.equals("task_metadata"))) && !object.has(name))
+                throw CanonicalGraphResourceException
+                    .failure(prefix + ".member.required", "Required field '" + name + "' is missing.");
     }
 
     private static String string(JsonObject object, String name, String prefix) throws CanonicalGraphResourceException {

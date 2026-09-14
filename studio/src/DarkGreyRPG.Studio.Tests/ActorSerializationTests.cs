@@ -110,7 +110,7 @@ public sealed class ActorSerializationTests
             HomeStoryId = "intro",
         }, ActorIdPolicy.NewResource);
 
-        StringAssert.Contains(json, "\"schema_version\": 3");
+        StringAssert.Contains(json, "\"schema_version\": 4");
         StringAssert.Contains(json, "\"type\": \"individual\"");
         StringAssert.Contains(json, "\"npc_id\": \"tavern_boss\"");
         Assert.IsFalse(json.Contains("\"id\"", StringComparison.Ordinal));
@@ -161,10 +161,10 @@ public sealed class ActorSerializationTests
     public void Schema3RejectsBothIdentitiesAndLegacyFields()
     {
         const string both = """
-            { "schema_version": 3, "type": "individual", "npc_id": "hero", "group_id": "heroes", "display_name": "Hero", "tags": [], "home_story_id": "intro" }
+            { "schema_version": 4, "type": "individual", "npc_id": "hero", "group_id": "heroes", "display_name": "Hero", "tags": [], "home_story_id": "intro" }
             """;
         const string notes = """
-            { "schema_version": 3, "type": "individual", "npc_id": "hero", "display_name": "Hero", "tags": [], "home_story_id": "intro", "notes": "legacy" }
+            { "schema_version": 4, "type": "individual", "npc_id": "hero", "display_name": "Hero", "tags": [], "home_story_id": "intro", "notes": "legacy" }
             """;
 
         Assert.ThrowsExactly<ActorValidationException>(() => ActorSerializer.Deserialize(both));

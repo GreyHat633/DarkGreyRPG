@@ -62,6 +62,10 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
         boolean executeAction(CanonicalStoryDispatch action);
 
+        default boolean showTitle(CanonicalStoryDispatch title) {
+            return false;
+        }
+
         void cleanup(String storyId);
 
         void resetPreviousRun(String storyId);
@@ -233,22 +237,18 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         return handleActorInteraction(player, actorId);
     }
 
-    /** Routes a periodic PlayerPosition event to a waiting region cursor before Start edge matches. */
+    /** Routes a periodic PlayerPosition event to the existing Start edge matches. */
     public boolean handleRegionPosition(EntityPlayerMP player, int dimension, double x, double y, double z,
         List<CanonicalStoryTriggerIndex.Match> enteredStarts) {
         try {
             Context context = context(player);
-            if (context.data.matchingStoryRegionWaits(requirePlayerUuid(player), dimension, x, y, z)
-                .size() > 1) return false;
-            CanonicalStoryDispatch continuation = context.service
-                .resumeRegion(requirePlayerUuid(player), dimension, x, y, z, now());
-            if (continuation != null) return route(player, context, continuation);
             boolean started = false;
             if (enteredStarts != null) for (CanonicalStoryTriggerIndex.Match match : enteredStarts)
                 started = startByRegion(player, match.getStoryId(), dimension, x, y, z) || started;
             return started;
         } catch (RuntimeException exception) {
-            return failAndCleanupEvent(player, null, false, dimension, x, y, z, exception);
+            reportTriggerQueryFailure("region routing", exception);
+            return false;
         }
     }
 
@@ -281,10 +281,32 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
     public List<CanonicalStoryTriggerIndex.Match> matchingRegionTriggers(EntityPlayerMP player, int dimension, double x,
         double y, double z) {
-        Context context = context(player);
-        CanonicalStoryTriggerIndex index = triggerIndex();
-        return index == null ? Collections.<CanonicalStoryTriggerIndex.Match>emptyList()
-            : index.matchRegion(dimension, x, y, z, context.service.eligibleStartStoryIds(requirePlayerUuid(player)));
+        try {
+            Context context = context(player);
+            CanonicalStoryTriggerIndex index = triggerIndex();
+            return index == null ? Collections.<CanonicalStoryTriggerIndex.Match>emptyList()
+                : index
+                    .matchRegion(dimension, x, y, z, context.service.eligibleStartStoryIds(requirePlayerUuid(player)));
+        } catch (RuntimeException exception) {
+            // A rejected saved cursor must not escape the player tick and crash the world.
+            reportTriggerQueryFailure("region", exception);
+            return Collections.emptyList();
+        }
+    }
+
+    public void reprojectTitles(EntityPlayerMP player) {
+        try {
+            Context context = context(player);
+            for (darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot snapshot : context.data
+                .storySnapshots())
+                if (snapshot.getPlayerUuid()
+                    .equals(player.getUniqueID())
+                    && snapshot.getRuntimeSnapshot()
+                        .getWaitKind() == darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.TITLE)
+                    resume(player, snapshot.getStoryId());
+        } catch (RuntimeException exception) {
+            reportTriggerQueryFailure("title resume", exception);
+        }
     }
 
     public boolean resume(EntityPlayerMP player, String storyId) {
@@ -333,6 +355,42 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             @Override
             public CanonicalTaskInstanceSnapshot startTask(String storyId, String placementId, String resourceId) {
                 return tasks.start(routePlayer, storyId, placementId, resourceId);
+            }
+
+            @Override
+            public boolean showTitle(final CanonicalStoryDispatch title) {
+                return darkgrey.rpg.title.CanonicalTitleServer.enqueue(routePlayer, title, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            Context current = context(routePlayer);
+                            darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot snapshot = current.data
+                                .getStorySnapshot(
+                                    routePlayer.getUniqueID(),
+                                    title.getSnapshot()
+                                        .getStoryId());
+                            if (snapshot == null || snapshot.getActivationTime() != title.getSnapshot()
+                                .getActivationTime()) return;
+                            route(
+                                routePlayer,
+                                current,
+                                current.service.completeTitle(
+                                    routePlayer.getUniqueID(),
+                                    title.getSnapshot()
+                                        .getStoryId(),
+                                    title.getPlacementId(),
+                                    now()));
+                        } catch (RuntimeException exception) {
+                            failAndCleanup(
+                                routePlayer,
+                                title.getSnapshot()
+                                    .getStoryId(),
+                                "title completion",
+                                exception);
+                        }
+                    }
+                });
             }
 
             @Override
@@ -497,26 +555,19 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                     }
                     return true;
                 }
+                if (kind == CanonicalStoryDispatchKind.TITLE) {
+                    if (!gateway.showTitle(dispatch))
+                        throw new IllegalStateException("Title queue is unavailable or full");
+                    return true;
+                }
                 if (kind == CanonicalStoryDispatchKind.ACTION) {
                     if (!gateway.executeAction(dispatch)) throw new IllegalStateException(
                         "Canonical Story action was not executed: " + dispatch.getPlacementId());
                     dispatch = service.completeAction(playerUuid, storyId, dispatch.getPlacementId(), now());
                     continue;
                 }
-                if (kind == CanonicalStoryDispatchKind.ACTOR_INTERACT
-                    || kind == CanonicalStoryDispatchKind.INTERACT_ACTOR
-                    || kind == CanonicalStoryDispatchKind.ENTER_REGION
-                    || kind == CanonicalStoryDispatchKind.CONDITION) {
-                    // A Start trigger may encounter an already-active cursor waiting for a later event.
-                    // It is an idempotent no-op; only the event-first branch above advances it.
-                    return true;
-                }
-                if (kind == CanonicalStoryDispatchKind.TRANSFERRED) {
-                    gateway.cleanup(storyId);
-                    routedStoryId = dispatch.getTargetStoryId();
-                    dispatch = service.startByEntry(playerUuid, routedStoryId, now());
-                    continue;
-                }
+                if (kind == CanonicalStoryDispatchKind.CONDITION) return true;
+
                 if (kind == CanonicalStoryDispatchKind.TERMINATED) {
                     gateway.cleanup(storyId);
                     return true;
@@ -541,6 +592,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
     }
 
     private void cleanup(EntityPlayerMP player, String storyId) {
+        darkgrey.rpg.title.CanonicalTitleServer.clearStory(player, storyId);
         sessions.cancelByStory(player, storyId);
         tasks.cancelByStory(player, storyId);
     }
@@ -578,7 +630,16 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         return triggerIndex;
     }
 
+    private final java.util.Map<String, String> triggerQueryFailures = new java.util.HashMap<String, String>();
+    private final java.util.Map<String, Long> triggerQueryFailureTimes = new java.util.HashMap<String, Long>();
+
     private void reportTriggerQueryFailure(String kind, RuntimeException exception) {
+        String failure = kind + ":" + exception.getMessage();
+        long time = System.nanoTime();
+        Long previous = triggerQueryFailureTimes.get(kind);
+        if (failure.equals(triggerQueryFailures.get(kind)) && previous != null && time - previous < 5000000000L) return;
+        triggerQueryFailures.put(kind, failure);
+        triggerQueryFailureTimes.put(kind, time);
         LOG.warn("Canonical Story {} trigger query failed: {}", kind, exception.getMessage());
     }
 
@@ -616,23 +677,6 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             player == null ? "<missing>" : player.getUniqueID(),
             storyId,
             exception.getMessage());
-        return false;
-    }
-
-    private boolean failAndCleanupEvent(EntityPlayerMP player, String actorId, boolean actor, int dimension, double x,
-        double y, double z, RuntimeException exception) {
-        try {
-            Context context = context(player);
-            UUID playerUuid = requirePlayerUuid(player);
-            List<darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot> matches = actor
-                ? context.data.matchingStoryActorWaits(playerUuid, actorId)
-                : context.data.matchingStoryRegionWaits(playerUuid, dimension, x, y, z);
-            for (darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot snapshot : matches)
-                failAndCleanup(player, snapshot.getStoryId(), actor ? "ActorInteract" : "EnterRegion", exception);
-        } catch (RuntimeException cleanupFailure) {
-            LOG.warn("Canonical Story event failure cleanup also failed: {}", cleanupFailure.getMessage());
-        }
-        LOG.warn("Canonical Story event routing failed: {}", exception.getMessage());
         return false;
     }
 

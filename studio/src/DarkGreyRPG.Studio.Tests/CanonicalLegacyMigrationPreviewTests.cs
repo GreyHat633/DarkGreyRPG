@@ -192,86 +192,42 @@ public sealed class CanonicalLegacyMigrationPreviewTests
     }
 
     [TestMethod]
-    public void TrackedRoyalMysteryMigratesMidFlowActorInteractWithoutFoldingStartTriggers()
+    public void TrackedRoyalMysteryRequiresExplicitRemovalOfRetiredStandaloneNodes()
     {
         var root = FindRepositoryRoot();
-        var stories = Path.Combine(root, ".tooling", "2.1-acceptance", "DarkGrey-2.1-Acceptance", "stories");
-        foreach (var route in new[] { "kingdom_route.json", "empire_route.json", "uncategorized.json" })
-            Assert.IsTrue(CanonicalLegacyMigrationPreview.PreviewStory(StorySerializer.Read(Path.Combine(stories, route))).CanApply, route);
-        var story = StorySerializer.Read(Path.Combine(stories, "royal_mystery.json"));
         var project = Path.Combine(root, ".tooling", "2.1-acceptance", "DarkGrey-2.1-Acceptance");
+        var story = StorySerializer.Read(Path.Combine(project, "stories", "royal_mystery.json"));
+        var before = StorySerializer.Serialize(story);
         var children = new[]
         {
             CanonicalLegacyMigrationPreview.PreviewDialogue(DialogueSerializer.Read(Path.Combine(project, "dialogues", "final_confrontation.json"))).Envelope!,
             CanonicalLegacyMigrationPreview.PreviewQuest(QuestSerializer.Read(Path.Combine(project, "quests", "evidence.json"))).Envelope!,
         };
         var result = CanonicalLegacyMigrationPreview.PreviewStory(story, children);
-        Assert.IsTrue(result.CanApply, string.Join("; ", result.Issues.Select(issue => issue.Code)));
-        var graph = result.Envelope!.Graph!;
-        var interact = graph.Nodes.Single(node => node.Id == "interact_detective");
-        Assert.AreEqual("interact_actor", interact.Type);
-        Assert.AreEqual("detective", interact.Properties["actor_id"].GetString());
-        CollectionAssert.AreEqual(new[] { "flow_in", "flow_out" }, interact.Ports.Select(port => port.Id).ToArray());
-        Assert.IsTrue(graph.Connections.Any(edge => edge.FromNodeId == "wait_evidence" ||
-            edge.ToNodeId == "interact_detective"));
-        var start = graph.Nodes.Single(node => node.Id == "start");
-        Assert.IsTrue(start.Properties.ContainsKey(StoryStartSchema.TriggersProperty));
-        Assert.IsFalse(start.Properties[StoryStartSchema.TriggersProperty].GetRawText()
-            .Contains("interact_detective", StringComparison.Ordinal));
+        Assert.IsFalse(result.CanApply);
+        Assert.IsNull(result.Envelope);
+        Assert.IsTrue(result.Issues.Any(issue => issue.Code == "migration.story.standalone_event.removed"));
+        Assert.AreEqual(before, StorySerializer.Serialize(story));
     }
 
     [TestMethod]
-    public void EnterRegionPreservesNumericPayloadAndFailsClosedOnUnsupportedFields()
+    public void RetiredStandaloneNodesCannotBeReintroducedByMigration()
     {
-        var source = new StoryResource
+        foreach (var type in new[] { "ActorInteract", "EnterRegion", "EnterStory" })
         {
-            Id = "region_story", DisplayName = "Region", Title = "Region", Entry = "start",
-            Nodes =
-            [
-                new() { Id = "start", Type = "story_start" },
-                new() { Id = "region", Type = "enter_region", Properties = new()
-                {
-                    ["dimension"] = JsonSerializer.SerializeToElement(-1),
-                    ["x"] = JsonSerializer.SerializeToElement(12.5),
-                    ["y"] = JsonSerializer.SerializeToElement(64.25),
-                    ["z"] = JsonSerializer.SerializeToElement(-3.75),
-                    ["radius"] = JsonSerializer.SerializeToElement(8.5),
-                }},
-                new() { Id = "end", Type = "end" },
-            ],
-            Connections =
-            [
-                new() { From = "start", Output = "next", To = "region" },
-                new() { From = "region", Output = "next", To = "end" },
-            ],
-        };
-
-        var before = StorySerializer.Serialize(source);
-        var result = CanonicalLegacyMigrationPreview.PreviewStory(source);
-        Assert.IsTrue(result.CanApply, string.Join("; ", result.Issues.Select(issue => issue.Code)));
-        var region = result.Envelope!.Graph!.Nodes.Single(node => node.Id == "region");
-        Assert.AreEqual("enter_region", region.Type);
-        Assert.AreEqual(-1, region.Properties["dimension"].GetInt32());
-        Assert.AreEqual(12.5, region.Properties["x"].GetDouble());
-        Assert.AreEqual(64.25, region.Properties["y"].GetDouble());
-        Assert.AreEqual(-3.75, region.Properties["z"].GetDouble());
-        Assert.AreEqual(8.5, region.Properties["radius"].GetDouble());
-        Assert.AreEqual(before, StorySerializer.Serialize(source));
-
-        var unsupported = new StoryResource
-        {
-            Id = source.Id, DisplayName = source.DisplayName, Title = source.Title, Entry = source.Entry,
-            Nodes = source.Nodes.Select(node => new StoryNodeResource
+            var source = new StoryResource
             {
-                Id = node.Id, Type = node.Type, Position = node.Position,
-                Properties = new Dictionary<string, JsonElement>(node.Properties, StringComparer.Ordinal),
-            }).ToList(),
-            Connections = source.Connections.ToList(),
-        };
-        unsupported.Nodes.Single(node => node.Id == "region").Properties["unknown"] = JsonSerializer.SerializeToElement("must not drop");
-        var rejected = CanonicalLegacyMigrationPreview.PreviewStory(unsupported);
-        Assert.IsFalse(rejected.CanApply);
-        Assert.IsTrue(rejected.Issues.Any(issue => issue.Code == "migration.story.node.property.unsupported"));
+                Id = "old_story", DisplayName = "Old", Title = "Old", Entry = "start",
+                Nodes = [new() { Id = "start", Type = "StoryStart" }, new() { Id = "old", Type = type }],
+                Connections = [new() { From = "start", Output = "next", To = "old" }],
+            };
+            var before = StorySerializer.Serialize(source);
+            var result = CanonicalLegacyMigrationPreview.PreviewStory(source);
+            Assert.IsFalse(result.CanApply, type);
+            Assert.IsNull(result.Envelope);
+            Assert.IsTrue(result.Issues.Any(issue => issue.Code == "migration.story.standalone_event.removed"), type);
+            Assert.AreEqual(before, StorySerializer.Serialize(source));
+        }
     }
 
     [TestMethod]

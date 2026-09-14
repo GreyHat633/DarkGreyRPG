@@ -10,6 +10,8 @@ public final class CanonicalTaskEvent {
     public static final String KILL_ENTITY = "kill_entity";
     public static final String COLLECT_ITEM = "collect_item";
     public static final String INTERACT_ACTOR = "interact_actor";
+    public static final String SUBMIT_ITEM = "submit_item";
+    public static final String REACH_REGION = "reach_region";
 
     private final String type;
     private final Map<String, String> values;
@@ -18,7 +20,8 @@ public final class CanonicalTaskEvent {
     public CanonicalTaskEvent(String type, Map<String, String> values, int amount) {
         if (type == null || type.trim()
             .isEmpty()) throw new IllegalArgumentException("Event type is required.");
-        if (amount <= 0) throw new IllegalArgumentException("Event amount must be positive.");
+        if (amount < 0 || (amount == 0 && !COLLECT_ITEM.equals(type)))
+            throw new IllegalArgumentException("Event amount is invalid.");
         this.type = type;
         this.values = Collections.unmodifiableMap(
             new LinkedHashMap<String, String>(values == null ? Collections.<String, String>emptyMap() : values));

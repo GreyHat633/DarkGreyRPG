@@ -272,7 +272,7 @@ public static class CanonicalLegacyMigrationPreview
             return Failure(LegacyMigrationSourceKind.Quest, source.Id, issues);
 
         var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, source.Id,
-            DisplayName(source.Title, source.DisplayName), graph);
+            DisplayName(source.Title, source.DisplayName), graph) { TaskMetadata = string.IsNullOrEmpty(source.Description) ? null : new CanonicalTaskMetadata(source.Description) };
         return Success(LegacyMigrationSourceKind.Quest, source.Id, envelope);
     }
 

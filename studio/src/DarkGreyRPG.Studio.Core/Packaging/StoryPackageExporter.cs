@@ -36,7 +36,7 @@ public sealed class StoryPackageExporter
         // The output directory is the package boundary. Remove only files and
         // roots owned by this exporter so stale resources cannot survive a
         // rebuild and alter the package contents.
-        foreach (var directory in new[] { "actors", "dialogues", "quests", "stories", "items", "item_groups", "resources" })
+        foreach (var directory in new[] { "actors", "dialogues", "quests", "stories", "items", "item_groups", "resources", "media" })
         {
             var path = Path.Combine(root, directory);
             if (Directory.Exists(path)) Directory.Delete(path, recursive: true);
@@ -67,7 +67,9 @@ public sealed class StoryPackageExporter
             AddLegacyResources(root, required, membership);
         }
         AddCanonicalResources(root, required, storyId);
+        SessionPortraitPackageValidation.Validate(root, required);
         required = AddStoryLogicGraph(root, required, storyId);
+        StoryPackageMedia.CopyReachable(_projectDirectory, root, required);
         var projectPath = Path.Combine(_projectDirectory, "project.json");
         if (File.Exists(projectPath))
         {

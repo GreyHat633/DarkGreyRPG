@@ -38,7 +38,7 @@ public final class ActorSchema3ProjectRepositoryProbe {
 
             write(
                 project.resolve("actors/guards.json"),
-                "{\"schema_version\":3,\"type\":\"collective\",\"npc_id\":\"guards\","
+                "{\"schema_version\":4,\"type\":\"collective\",\"npc_id\":\"guards\","
                     + "\"group_id\":\"guards\",\"display_name\":\"Guards\",\"tags\":[],"
                     + "\"home_story_id\":\"uncategorized\"}");
             ProjectRepository.ReloadResult rejected = repository.reload();
@@ -63,12 +63,12 @@ public final class ActorSchema3ProjectRepositoryProbe {
             "{\"schema_version\":1,\"id\":\"actor_v3_probe\",\"display_name\":\"Actor v3 Probe\"}");
         write(
             project.resolve("actors/tavern_boss.json"),
-            "{\"schema_version\":3,\"type\":\"individual\",\"npc_id\":\"tavern_boss\","
+            "{\"schema_version\":4,\"type\":\"individual\",\"npc_id\":\"tavern_boss\","
                 + "\"display_name\":\"Tavern Boss\",\"tags\":[\"merchant\"],"
                 + "\"home_story_id\":\"uncategorized\"}");
         write(
             project.resolve("actors/guards.json"),
-            "{\"schema_version\":3,\"type\":\"collective\",\"group_id\":\"guards\","
+            "{\"schema_version\":4,\"type\":\"collective\",\"group_id\":\"guards\","
                 + "\"display_name\":\"Guards\",\"tags\":[\"guard\"],"
                 + "\"home_story_id\":\"uncategorized\"}");
     }

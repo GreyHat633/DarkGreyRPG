@@ -12,6 +12,31 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalTaskObjectiveInspectorTests
 {
     [TestMethod]
+    public void SubmitAndRegionUseTypedFieldsAndRejectInvalidRadius()
+    {
+        var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([node])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(option => option.Value == "submit_item");
+        Assert.IsTrue(inspector.IsItemObjective);
+        inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(option => option.Value == "reach_region");
+        Assert.IsTrue(inspector.IsReachRegionObjective);
+        inspector.RegionDimension = "7";
+        inspector.RegionX = "1.5";
+        inspector.RegionRadius = "0";
+        inspector.RegionNote = "测试维度";
+        var current = editor.CreatePersistenceSnapshot().Graph!.Nodes.Single();
+        Assert.AreEqual(7, current.Properties["dimension_id"].GetInt32());
+        Assert.AreEqual(1.5, current.Properties["center_x"].GetDouble());
+        Assert.AreEqual(0, current.Properties["radius"].GetDouble());
+        inspector.RegionRadius = "-1";
+        Assert.IsTrue(editor.ValidationIssues.Any(issue => issue.Code == "graph.objective.region.authoring"));
+        Assert.AreEqual(0, editor.CreatePersistenceSnapshot().Graph!.Nodes.Single().Properties["radius"].GetDouble());
+        inspector.RegionRadius = "2";
+        Assert.IsFalse(editor.ValidationIssues.Any(issue => issue.Code == "graph.objective.region.authoring"));
+    }
+
+    [TestMethod]
     public void InspectorEditsTypedObjectiveAndUsesAtomicTypeSwitch()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");

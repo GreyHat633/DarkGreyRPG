@@ -5,4 +5,6 @@ public sealed record ActorResourceInfo(
     string DisplayName,
     string SourcePath,
     IReadOnlyList<string> Tags,
-    string Type = ActorResource.LegacyResourceType);
+    string Type = ActorResource.LegacyResourceType,
+    string? DefaultPortraitRef = null,
+    IReadOnlyList<ActorPortraitVariant>? PortraitVariants = null);

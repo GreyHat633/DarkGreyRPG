@@ -36,6 +36,7 @@ public final class CanonicalTaskRuntime {
     private static final String NOT = "not";
     private static final String LOGIC_OUTPUT = "logic_output";
     private static final String SETTLE = "settle";
+    private static final String REWARD = "reward";
     private static final String PREREQUISITE = "prerequisite";
     private static final String PREREQUISITE_ENABLED = "prerequisite_enabled";
 
@@ -51,6 +52,7 @@ public final class CanonicalTaskRuntime {
     private final Map<String, Boolean> logicValues = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> publicLogicOutputs = new LinkedHashMap<String, Boolean>();
     private final Map<String, Boolean> externalLogicInputs = new LinkedHashMap<String, Boolean>();
+    private final Map<String, Boolean> rewardStates = new LinkedHashMap<String, Boolean>();
     private boolean activationLogic;
     private CanonicalTaskStatus status;
     private String resultPortId;
@@ -178,12 +180,14 @@ public final class CanonicalTaskRuntime {
         boolean changed = false;
         for (String id : activeBefore) {
             CanonicalGraphNode node = objectives.get(id);
-            if (matches(node, event)) {
+            if ((event.get("objective_id") == null || id.equals(event.get("objective_id"))) && matches(node, event)) {
                 int oldValue = progress.get(id)
                     .intValue();
                 int required = required(node);
                 int remaining = required - oldValue;
-                int next = event.getAmount() >= remaining ? required : oldValue + event.getAmount();
+                int next = CanonicalTaskEvent.COLLECT_ITEM.equals(event.getType())
+                    ? Math.min(required, event.getAmount())
+                    : event.getAmount() >= remaining ? required : oldValue + event.getAmount();
                 if (next != oldValue) {
                     progress.put(id, Integer.valueOf(next));
                     if (next >= required) objectiveStatuses.put(id, CanonicalTaskObjectiveStatus.COMPLETED);
@@ -221,7 +225,15 @@ public final class CanonicalTaskRuntime {
             logicValues,
             publicLogicOutputs,
             activationLogic,
-            resultPortId);
+            resultPortId,
+            rewardStates);
+    }
+
+    public boolean grantReward(String nodeId) {
+        if (!isActive() || !Boolean.FALSE.equals(rewardStates.get(nodeId))) return false;
+        rewardStates.put(nodeId, Boolean.TRUE);
+        refreshState();
+        return true;
     }
 
     public CanonicalTaskSnapshot createSnapshot() {
@@ -269,7 +281,13 @@ public final class CanonicalTaskRuntime {
             if (!changed) break;
         }
         recomputeLogic();
-        if (isActive()) settleIfReady();
+        if (isActive()) {
+            for (CanonicalGraphNode node : nodes.values())
+                if (REWARD.equals(node.getType()) && !rewardStates.containsKey(node.getId())
+                    && logicInputValue(node, "logic_in", new HashMap<String, Boolean>()))
+                    rewardStates.put(node.getId(), Boolean.FALSE);
+            if (!rewardStates.containsValue(Boolean.FALSE)) settleIfReady();
+        }
     }
 
     private void settleIfReady() {
@@ -397,7 +415,8 @@ public final class CanonicalTaskRuntime {
             && !OR.equals(type)
             && !NOT.equals(type)
             && !LOGIC_OUTPUT.equals(type)
-            && !SETTLE.equals(type))
+            && !SETTLE.equals(type)
+            && !REWARD.equals(type))
             throw failure("task.node.type.unsupported", "Unsupported Task node type '" + type + "'.");
         if (ACTIVATE.equals(type)) {
             requireProperties(node);
@@ -430,6 +449,10 @@ public final class CanonicalTaskRuntime {
             requireDirection(node, "logic_out", false);
             requiredString(node, "port_id", "task.logic_input");
             requiredString(node, "display_name", "task.logic_input");
+        } else if (REWARD.equals(type)) {
+            requirePorts(node, 1, 0, "logic_in");
+            requireDirection(node, "logic_in", true);
+            CanonicalTaskRewardPackage.read(node);
         } else if (SETTLE.equals(type)) {
             requireProperties(node);
             if (node.getPorts()
@@ -457,13 +480,15 @@ public final class CanonicalTaskRuntime {
     private void validateObjective(CanonicalGraphNode node) {
         String type = requiredString(node, "objective_type", "task.objective");
         if (!CanonicalTaskEvent.KILL_ENTITY.equals(type) && !CanonicalTaskEvent.COLLECT_ITEM.equals(type)
-            && !CanonicalTaskEvent.INTERACT_ACTOR.equals(type))
+            && !CanonicalTaskEvent.INTERACT_ACTOR.equals(type)
+            && !CanonicalTaskEvent.SUBMIT_ITEM.equals(type)
+            && !CanonicalTaskEvent.REACH_REGION.equals(type))
             throw failure("task.objective.type", "Unsupported objective type.");
         requiredString(node, "description", "task.objective");
         int required = required(node);
         if (required <= 0) throw failure("task.objective.required", "Objective required must be positive.");
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) requireObjectiveTarget(node, "entity");
-        if (CanonicalTaskEvent.COLLECT_ITEM.equals(type)) {
+        if (CanonicalTaskEvent.COLLECT_ITEM.equals(type) || CanonicalTaskEvent.SUBMIT_ITEM.equals(type)) {
             requireObjectiveTarget(node, "item");
             JsonElement metadata = node.getProperties()
                 .get("metadata");
@@ -479,9 +504,32 @@ public final class CanonicalTaskRuntime {
                     throw failure("task.objective.metadata", "Collect objective metadata values must be strings.");
         }
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) requireObjectiveTarget(node, "actor_id");
+        if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
+            double dimension = numeric(node, "dimension_id");
+            if (dimension != (int) dimension)
+                throw failure("task.objective.dimension", "Dimension must be an integer.");
+            numeric(node, "center_x");
+            numeric(node, "center_y");
+            numeric(node, "center_z");
+            if (numeric(node, "radius") < 0) throw failure("task.objective.radius", "Radius must not be negative.");
+            requireObjectiveProperties(
+                node,
+                "objective_type",
+                "description",
+                "dimension_id",
+                "center_x",
+                "center_y",
+                "center_z",
+                "radius",
+                "dimension_note");
+            JsonElement note = node.getProperties()
+                .get("dimension_note");
+            if (note != null && (!note.isJsonPrimitive() || !note.getAsJsonPrimitive()
+                .isString())) throw failure("task.objective.dimension_note", "Dimension note must be text.");
+        }
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type))
             requireObjectiveProperties(node, "objective_type", "description", "required", "entity");
-        if (CanonicalTaskEvent.COLLECT_ITEM.equals(type))
+        if (CanonicalTaskEvent.COLLECT_ITEM.equals(type) || CanonicalTaskEvent.SUBMIT_ITEM.equals(type))
             requireObjectiveProperties(node, "objective_type", "description", "required", "item", "metadata");
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) {
             if (node.getProperties()
@@ -550,7 +598,9 @@ public final class CanonicalTaskRuntime {
         keys.add(PREREQUISITE_ENABLED);
         Set<String> actual = node.getProperties()
             .keySet();
-        if (!actual.containsAll(new HashSet<String>(java.util.Arrays.asList(required))) || !keys.containsAll(actual))
+        Set<String> mandatory = new HashSet<String>(java.util.Arrays.asList(required));
+        if (CanonicalTaskEvent.REACH_REGION.equals(value(node, "objective_type"))) mandatory.remove("dimension_note");
+        if (!actual.containsAll(mandatory) || !keys.containsAll(actual))
             throw failure("task.node.properties", "Task node has unknown or missing properties.");
         prerequisiteEnabled(node);
     }
@@ -622,6 +672,15 @@ public final class CanonicalTaskRuntime {
                 .keySet()
                 .equals(objectives.keySet()))
             throw failure("task.snapshot.objectives", "Snapshot objective set differs.");
+        for (Map.Entry<String, Boolean> receipt : snapshot.getRewardStates()
+            .entrySet()) {
+            CanonicalGraphNode reward = nodes.get(receipt.getKey());
+            if (reward == null || !REWARD.equals(reward.getType()) || receipt.getValue() == null)
+                throw failure("task.snapshot.reward", "Invalid reward receipt.");
+            rewardStates.put(receipt.getKey(), receipt.getValue());
+        }
+        if (snapshot.getStatus() == CanonicalTaskStatus.SETTLED && rewardStates.containsValue(Boolean.FALSE))
+            throw failure("task.snapshot.reward", "Settled Task contains pending rewards.");
         progress.putAll(snapshot.getProgress());
         objectiveStatuses.putAll(snapshot.getObjectiveStatuses());
         for (String id : objectives.keySet()) {
@@ -647,6 +706,7 @@ public final class CanonicalTaskRuntime {
             throw failure("task.snapshot.state", "Settled snapshot state is contradictory.");
         if (status == CanonicalTaskStatus.ACTIVE) {
             recomputeLogic();
+            validateRewardReceipts();
             if (!logicValues.equals(snapshot.getLogicValues()))
                 throw failure("task.snapshot.logic", "Snapshot Logic state differs.");
             if (!publicLogicOutputs.keySet()
@@ -659,14 +719,15 @@ public final class CanonicalTaskRuntime {
                 if (objectiveStatuses.get(id) == CanonicalTaskObjectiveStatus.INACTIVE && enabled)
                     throw failure("task.snapshot.active_objective", "Enabled objective is marked inactive.");
             }
-            for (CanonicalGraphPort slot : settlementSlots)
-                if (logicInputValue(node(SETTLE), slot.getId(), new HashMap<String, Boolean>()))
-                    throw failure("task.snapshot.result", "Active snapshot already has a settlement result.");
+            for (CanonicalGraphPort slot : settlementSlots) if (!rewardStates.containsValue(Boolean.FALSE)
+                && logicInputValue(node(SETTLE), slot.getId(), new HashMap<String, Boolean>()))
+                throw failure("task.snapshot.result", "Active snapshot already has a settlement result.");
             if (!publicLogicOutputs.equals(snapshot.getPublicLogicOutputs()))
                 throw failure("task.snapshot.public_logic", "Snapshot public Logic differs.");
         } else {
             activationLogic = true;
             recomputeLogic();
+            validateRewardReceipts();
             for (String id : objectives.keySet()) if (objectiveStatuses.get(id) == CanonicalTaskObjectiveStatus.INACTIVE
                 && objectiveEnabled(objectives.get(id)))
                 throw failure("task.snapshot.active_objective", "Enabled objective is marked inactive.");
@@ -702,6 +763,13 @@ public final class CanonicalTaskRuntime {
         }
     }
 
+    private void validateRewardReceipts() {
+        for (CanonicalGraphNode node : nodes.values())
+            if (REWARD.equals(node.getType()) && !rewardStates.containsKey(node.getId())
+                && logicInputValue(node, "logic_in", new HashMap<String, Boolean>()))
+                throw failure("task.snapshot.reward", "Eligible reward is missing its pending/granted state.");
+    }
+
     private String firstTrueSettlement() {
         for (CanonicalGraphPort slot : settlementSlots)
             if (logicInputValue(node(SETTLE), slot.getId(), new HashMap<String, Boolean>())) return slot.getId();
@@ -721,6 +789,19 @@ public final class CanonicalTaskRuntime {
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) return value(node, "entity").equals(event.get("entity"));
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type))
             return value(node, "actor_id").equals(event.get("actor_id"));
+        if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
+            try {
+                return numeric(node, "dimension_id") == Double.parseDouble(event.get("dimension_id"))
+                    && Math.abs(Double.parseDouble(event.get("x")) - numeric(node, "center_x"))
+                        <= numeric(node, "radius")
+                    && Math.abs(Double.parseDouble(event.get("y")) - numeric(node, "center_y"))
+                        <= numeric(node, "radius")
+                    && Math.abs(Double.parseDouble(event.get("z")) - numeric(node, "center_z"))
+                        <= numeric(node, "radius");
+            } catch (RuntimeException invalid) {
+                return false;
+            }
+        }
         if (!value(node, "item").equals(event.get("item"))) return false;
         JsonObject metadata = node.getProperties()
             .get("metadata")
@@ -732,6 +813,18 @@ public final class CanonicalTaskRuntime {
         return true;
     }
 
+    private static double numeric(CanonicalGraphNode node, String key) {
+        JsonElement value = node.getProperties()
+            .get(key);
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isNumber()
+            || Double.isNaN(value.getAsDouble())
+            || Double.isInfinite(value.getAsDouble()))
+            throw failure("task.objective.region.number", "Finite region number is required: " + key);
+        return value.getAsDouble();
+    }
+
     private int required(CanonicalGraphNode node) {
         JsonElement value = node.getProperties()
             .get("required");
@@ -741,7 +834,9 @@ public final class CanonicalTaskRuntime {
             && type.isJsonPrimitive()
             && type.getAsJsonPrimitive()
                 .isString()
-            && CanonicalTaskEvent.INTERACT_ACTOR.equals(type.getAsString())) return 1;
+            && (CanonicalTaskEvent.INTERACT_ACTOR.equals(type.getAsString())
+                || CanonicalTaskEvent.REACH_REGION.equals(type.getAsString())))
+            return 1;
         if (value == null || !value.isJsonPrimitive()
             || !value.getAsJsonPrimitive()
                 .isNumber())
@@ -789,7 +884,8 @@ public final class CanonicalTaskRuntime {
         String key;
         String value = type.getAsString();
         if (CanonicalTaskEvent.KILL_ENTITY.equals(value)) key = "entity";
-        else if (CanonicalTaskEvent.COLLECT_ITEM.equals(value)) key = "item";
+        else if (CanonicalTaskEvent.COLLECT_ITEM.equals(value) || CanonicalTaskEvent.SUBMIT_ITEM.equals(value))
+            key = "item";
         else if (CanonicalTaskEvent.INTERACT_ACTOR.equals(value)) key = "actor_id";
         else return false;
         JsonElement target = node.getProperties()

@@ -200,6 +200,55 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         return instance.snapshot();
     }
 
+    public synchronized CanonicalTaskInstanceSnapshot grantReward(UUID player, String story, String placement,
+        String nodeId, long eventTime) {
+        requireBound();
+        CanonicalTaskInstance instance = store.get(player, story, placement);
+        if (instance == null || !instance.grantReward(nodeId, eventTime)) return null;
+        index.reindex(
+            instance.snapshot(),
+            instance.getRuntime()
+                .getResource());
+        markDirty();
+        return instance.snapshot();
+    }
+
+    public interface ObjectiveCommit {
+
+        void commit();
+
+        void rollback();
+    }
+
+    /** Stages one exact Objective update before committing an optional inventory deduction. */
+    public synchronized CanonicalTaskInstanceSnapshot sampleObjective(UUID playerUuid, String storyId,
+        String placementId, String objectiveId, CanonicalTaskEvent event, long time, ObjectiveCommit effect) {
+        requireBound();
+        CanonicalTaskInstance original = store.get(playerUuid, storyId, placementId);
+        if (original == null || !original.isActive()
+            || !original.getRuntime()
+                .isObjectiveActive(objectiveId))
+            return null;
+        Map<String, String> values = new LinkedHashMap<String, String>(event.getValues());
+        values.put("objective_id", objectiveId);
+        CanonicalGraphResource resource = original.getRuntime()
+            .getResource();
+        CanonicalTaskInstance staged = CanonicalTaskInstance.restore(original.snapshot(), resource);
+        if (!staged.accept(new CanonicalTaskEvent(event.getType(), values, event.getAmount()), time)) return null;
+        try {
+            if (effect != null) effect.commit();
+            store.replaceExisting(staged);
+            index.reindex(staged.snapshot(), resource);
+            markDirty();
+            return staged.snapshot();
+        } catch (RuntimeException failure) {
+            store.replaceExisting(original);
+            index.reindex(original.snapshot(), resource);
+            if (effect != null) effect.rollback();
+            throw failure;
+        }
+    }
+
     public synchronized CanonicalTaskInstanceSnapshot getInstanceSnapshot(UUID playerUuid, String storyId,
         String placementId) {
         return getSnapshot(playerUuid, storyId, placementId);

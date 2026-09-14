@@ -62,9 +62,18 @@ public final class ProjectRepository {
         new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "project_origin_code")));
     private static final Set<String> LEGACY_ACTOR_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "notes", "tags", "home_story_id")));
-    private static final Set<String> ACTOR_V3_FIELDS = Collections.unmodifiableSet(
+    private static final Set<String> ACTOR_CURRENT_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
-            Arrays.asList("schema_version", "type", "npc_id", "group_id", "display_name", "tags", "home_story_id")));
+            Arrays.asList(
+                "schema_version",
+                "type",
+                "npc_id",
+                "group_id",
+                "display_name",
+                "tags",
+                "home_story_id",
+                "default_portrait_ref",
+                "portrait_variants")));
     private static final Set<String> ITEM_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(Arrays.asList("schema_version", "type", "item_id", "display_name", "tags")));
     private static final Set<String> ITEM_GROUP_FIELDS = Collections.unmodifiableSet(
@@ -670,13 +679,13 @@ public final class ProjectRepository {
 
     private static ActorDefinition loadActor(File actorFile, JsonObject json) throws ProjectLoadException {
         int schemaVersion = requiredInt(actorFile, json, "schema_version");
-        validateSchema(actorFile, schemaVersion, 1, 2, 3);
+        validateSchema(actorFile, schemaVersion, 1, 2, 4);
         if (schemaVersion < 3) {
             rejectUnknownFields(actorFile, json, LEGACY_ACTOR_FIELDS);
             return loadLegacyActor(actorFile, json, schemaVersion);
         }
 
-        rejectUnknownFields(actorFile, json, ACTOR_V3_FIELDS);
+        rejectUnknownFields(actorFile, json, ACTOR_CURRENT_FIELDS);
         String type = requiredString(actorFile, json, "type").toLowerCase();
         String id;
         if (ActorDefinition.TYPE_INDIVIDUAL.equals(type)) {
@@ -699,7 +708,19 @@ public final class ProjectRepository {
         String displayName = requiredString(actorFile, json, "display_name");
         List<String> tags = optionalStringList(actorFile, json, "tags");
         String homeStoryId = requiredResourceId(actorFile, json, "home_story_id");
-        return new ActorDefinition(schemaVersion, type, id, displayName, "", tags, homeStoryId);
+        try {
+            return new ActorDefinition(
+                schemaVersion,
+                type,
+                id,
+                displayName,
+                "",
+                tags,
+                homeStoryId,
+                ActorPortraits.parse(json));
+        } catch (IllegalArgumentException exception) {
+            throw new ProjectLoadException("Invalid Actor portraits in " + actorFile.getAbsolutePath(), exception);
+        }
     }
 
     private static ActorDefinition loadLegacyActor(File actorFile, JsonObject json, int schemaVersion)

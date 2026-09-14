@@ -654,20 +654,16 @@ public final class CanonicalProjectContentLoader {
         if (story.getGraph() == null) return;
         for (CanonicalGraphNode node : story.getGraph()
             .getNodes()) {
+            if ("interact_actor".equals(node.getType()) || "enter_region".equals(node.getType())
+                || "enter_story".equals(node.getType()))
+                throw CanonicalProjectContentException.failure(
+                    "project.content.story.standalone_node.removed",
+                    "Retired standalone Story node is unsupported: " + node.getType());
             if ("session".equals(node.getType())) requireProperty(node, "resource_id", declared.sessions, "session");
             else if ("task".equals(node.getType())) requireProperty(node, "resource_id", declared.tasks, "task");
-            else if ("interact_actor".equals(node.getType()))
-                requireProperty(node, "actor_id", declared.actors, "actor");
             else if ("action".equals(node.getType()) && text(node, "action_type").equals("give_item"))
                 requireProperty(node, "item_id", declared.items, "item");
-            else if ("enter_story".equals(node.getType())) {
-                String id = property(node, "target_story_id");
-                if (id != null && !DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
-                    "project.content.graph.reference.invalid",
-                    "Graph node '" + node.getId() + "' has an invalid story ID.");
-                if (resolveStoryTargets && id != null && !stories.containsKey(id))
-                    throw missing("story", id, "Story graph references an unknown target Story");
-            } else if ("start".equals(node.getType())) validateStartTriggers(node, declared);
+            else if ("start".equals(node.getType())) validateStartTriggers(node, declared);
         }
     }
 
@@ -692,17 +688,27 @@ public final class CanonicalProjectContentLoader {
     private static void validateSessionGraph(CanonicalGraphResource session, ResourceDeclarations declared) {
         if (session.getGraph() == null) return;
         for (CanonicalGraphNode node : session.getGraph()
-            .getNodes())
-            if ("line".equals(node.getType())) requireProperty(node, "speaker_actor_id", declared.actors, "actor");
+            .getNodes()) if ("line".equals(node.getType())) {
+                String speaker = darkgrey.rpg.session.runtime.CanonicalSessionRuntime
+                    .optionalLineString(node, "speaker_actor_id");
+                if (speaker != null) requireProperty(node, "speaker_actor_id", declared.actors, "actor");
+            }
     }
 
     private static void validateTaskGraph(CanonicalGraphResource task, ResourceDeclarations declared) {
+        for (CanonicalGraphNode node : task.getGraph()
+            .getNodes())
+            if ("reward".equals(node.getType()))
+                for (darkgrey.rpg.task.runtime.CanonicalTaskRewardPackage.Entry entry : darkgrey.rpg.task.runtime.CanonicalTaskRewardPackage
+                    .read(node))
+                    if ("item".equals(entry.getType()) && !declared.items.contains(entry.getItem()))
+                        throw undeclared("item", entry.getItem(), node.getId());
         if (task.getGraph() == null) return;
         for (CanonicalGraphNode node : task.getGraph()
             .getNodes()) if ("objective".equals(node.getType())) {
                 String type = text(node, "objective_type");
                 if ("interact_actor".equals(type)) requireProperty(node, "actor_id", declared.actors, "actor");
-                else if ("collect_item".equals(type)) {
+                else if ("collect_item".equals(type) || "submit_item".equals(type)) {
                     String id = property(node, "item");
                     if (id != null && !nativeTarget(id)) {
                         if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(

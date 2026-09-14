@@ -153,6 +153,7 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        darkgrey.rpg.story.canonical.forge.CanonicalBuffCatalog.rebuild();
         if (packageStartup != null && packageStartup.isPackageSetCommitted()) StoryPackageGenerationLifecycle.reconcile(
             event.getServer()
                 .worldServerForDimension(0).mapStorage,

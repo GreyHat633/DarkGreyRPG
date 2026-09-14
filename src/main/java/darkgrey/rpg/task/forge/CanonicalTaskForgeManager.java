@@ -140,6 +140,186 @@ public final class CanonicalTaskForgeManager {
         }
     }
 
+    /** Samples actual inventory and continuous position, without fabricating pickup history. */
+    public void synchronizeObjectives(EntityPlayerMP player) {
+        if (player instanceof net.minecraftforge.common.util.FakePlayer) return;
+        CanonicalTaskPlayerTransactions.recover(player);
+        Context context = context(player);
+        UUID uuid = requirePlayerUuid(player);
+        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+            if (!uuid.equals(snapshot.getPlayerUuid())
+                || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
+            CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
+            for (darkgrey.rpg.graph.canonical.CanonicalGraphNode node : resource.getGraph()
+                .getNodes()) {
+                if (!"objective".equals(node.getType()) || snapshot.getRuntimeSnapshot()
+                    .getObjectiveStatuses()
+                    .get(node.getId()) != darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus.ACTIVE) continue;
+                String type = node.getProperties()
+                    .get("objective_type")
+                    .getAsString();
+                java.util.Map<String, String> values = new java.util.LinkedHashMap<String, String>();
+                int amount = 1;
+                if (CanonicalTaskEvent.SUBMIT_ITEM.equals(type)) {
+                    if (CanonicalTaskPlayerTransactions
+                        .hasReceipt(player, CanonicalTaskPlayerTransactions.key(snapshot, node.getId(), "submit")))
+                        submitItem(
+                            player,
+                            snapshot.getStoryInstanceId(),
+                            snapshot.getTaskNodePlacementId(),
+                            node.getId(),
+                            snapshot.getActivationTime());
+                    continue;
+                }
+                if (CanonicalTaskEvent.COLLECT_ITEM.equals(type)) {
+                    values.put(
+                        "item",
+                        node.getProperties()
+                            .get("item")
+                            .getAsString());
+                    for (java.util.Map.Entry<String, com.google.gson.JsonElement> field : node.getProperties()
+                        .get("metadata")
+                        .getAsJsonObject()
+                        .entrySet())
+                        values.put(
+                            field.getKey(),
+                            field.getValue()
+                                .getAsString());
+                    amount = CanonicalTaskInventory.count(
+                        player.inventory.mainInventory,
+                        node,
+                        darkgrey.rpg.item.identity.ItemIdentitySavedData.get());
+                } else if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
+                    values.put("dimension_id", String.valueOf(player.dimension));
+                    values.put("x", String.valueOf(player.posX));
+                    values.put("y", String.valueOf(player.posY));
+                    values.put("z", String.valueOf(player.posZ));
+                } else continue;
+                CanonicalTaskInstanceSnapshot changed = context.data.sampleObjective(
+                    uuid,
+                    snapshot.getStoryInstanceId(),
+                    snapshot.getTaskNodePlacementId(),
+                    node.getId(),
+                    new CanonicalTaskEvent(type, values, amount),
+                    System.currentTimeMillis(),
+                    null);
+                notifySettlement(player, changed);
+            }
+        }
+    }
+
+    /** Delivers eligible packages before notifying Story of final Task settlement. */
+    public void synchronizeRewards(EntityPlayerMP player) {
+        Context context = context(player);
+        UUID uuid = requirePlayerUuid(player);
+        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+            if (!uuid.equals(snapshot.getPlayerUuid())
+                || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
+            CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
+            for (darkgrey.rpg.graph.canonical.CanonicalGraphNode node : resource.getGraph()
+                .getNodes()) {
+                if (!Boolean.FALSE.equals(
+                    snapshot.getRuntimeSnapshot()
+                        .getRewardStates()
+                        .get(node.getId())))
+                    continue;
+                String key = CanonicalTaskPlayerTransactions.key(snapshot, node.getId(), "reward");
+                if (!CanonicalTaskPlayerTransactions.hasReceipt(player, key)) {
+                    net.minecraft.nbt.NBTTagCompound image = CanonicalTaskPlayerTransactions
+                        .rewardImage(player, darkgrey.rpg.task.runtime.CanonicalTaskRewardPackage.read(node));
+                    if (image == null) continue;
+                    CanonicalTaskPlayerTransactions.commit(player, key, image);
+                }
+                CanonicalTaskInstanceSnapshot changed = context.data.grantReward(
+                    uuid,
+                    snapshot.getStoryInstanceId(),
+                    snapshot.getTaskNodePlacementId(),
+                    node.getId(),
+                    System.currentTimeMillis());
+                notifySettlement(player, changed);
+            }
+        }
+    }
+
+    /** Consumes exactly one selected active submit Objective; repeated/stale submissions are no-ops. */
+    public boolean submitItem(final EntityPlayerMP player, String storyId, String placementId, String objectiveId,
+        long activationTime) {
+        if (player instanceof net.minecraftforge.common.util.FakePlayer) return false;
+        CanonicalTaskPlayerTransactions.recover(player);
+        Context context = context(player);
+        UUID uuid = requirePlayerUuid(player);
+        CanonicalTaskInstanceSnapshot snapshot = context.data.getSnapshot(uuid, storyId, placementId);
+        if (snapshot == null || snapshot.getActivationTime() != activationTime
+            || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) return false;
+        CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
+        for (final darkgrey.rpg.graph.canonical.CanonicalGraphNode node : resource.getGraph()
+            .getNodes()) {
+            if (!node.getId()
+                .equals(objectiveId)
+                || !"objective".equals(node.getType())
+                || !CanonicalTaskEvent.SUBMIT_ITEM.equals(
+                    node.getProperties()
+                        .get("objective_type")
+                        .getAsString())
+                || snapshot.getRuntimeSnapshot()
+                    .getObjectiveStatuses()
+                    .get(objectiveId) != darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus.ACTIVE)
+                continue;
+            final int required = node.getProperties()
+                .get("required")
+                .getAsInt();
+            final darkgrey.rpg.item.identity.ItemIdentitySavedData identities = darkgrey.rpg.item.identity.ItemIdentitySavedData
+                .get();
+            final String receipt = CanonicalTaskPlayerTransactions.key(snapshot, objectiveId, "submit");
+            final boolean committed = CanonicalTaskPlayerTransactions.hasReceipt(player, receipt);
+            final net.minecraft.item.ItemStack[] after = CanonicalTaskInventory.copy(player.inventory.mainInventory);
+            if (!committed && !CanonicalTaskInventory.removeExact(after, node, identities, required)) return false;
+            final net.minecraft.nbt.NBTTagCompound image = CanonicalTaskPlayerTransactions.image(player, after);
+            java.util.Map<String, String> values = new java.util.LinkedHashMap<String, String>();
+            values.put(
+                "item",
+                node.getProperties()
+                    .get("item")
+                    .getAsString());
+            for (java.util.Map.Entry<String, com.google.gson.JsonElement> field : node.getProperties()
+                .get("metadata")
+                .getAsJsonObject()
+                .entrySet())
+                values.put(
+                    field.getKey(),
+                    field.getValue()
+                        .getAsString());
+            CanonicalTaskInstanceSnapshot changed = context.data.sampleObjective(
+                uuid,
+                storyId,
+                placementId,
+                objectiveId,
+                new CanonicalTaskEvent(CanonicalTaskEvent.SUBMIT_ITEM, values, required),
+                System.currentTimeMillis(),
+                new CanonicalTaskSavedData.ObjectiveCommit() {
+
+                    public void commit() {
+                        if (!committed) CanonicalTaskPlayerTransactions.commit(player, receipt, image);
+                    }
+
+                    public void rollback() {
+                        // A durable journal decision is recovered forward, never undone.
+                        // Before the journal commit point, the player was not modified.
+                    }
+                });
+            if (changed == null) return false;
+            player.inventoryContainer.detectAndSendChanges();
+            notifySettlement(player, changed);
+            return true;
+        }
+        return false;
+    }
+
+    private void notifySettlement(EntityPlayerMP player, CanonicalTaskInstanceSnapshot snapshot) {
+        if (snapshot != null && snapshot.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED
+            && storySettlementListener != null) storySettlementListener.onStoryTaskSettled(player, snapshot);
+    }
+
     /** Detached per-player snapshots for a future UI boundary. */
     public List<CanonicalTaskInstanceSnapshot> snapshots(EntityPlayerMP player) {
         UUID playerUuid = requirePlayerUuid(player);

@@ -738,6 +738,21 @@ public sealed class GraphEditSession
             return true;
         }
 
+        if (Scope == GraphScope.StoryFlow && node!.Type == "title")
+        {
+            var candidate = Clone(node); candidate.Properties[property] = value.Clone();
+            var titleIssues = CanonicalTitleSchema.Validate(candidate);
+            if (titleIssues.Count != 0) return Fail(titleIssues);
+        }
+
+        if (Scope == GraphScope.Session && node!.Type is "music" or "screen")
+        {
+            var candidate = Clone(node);
+            candidate.Properties[property] = value.Clone();
+            var presentationIssues = CanonicalSessionPresentationSchema.Validate(candidate);
+            if (presentationIssues.Count != 0) return Fail(presentationIssues);
+        }
+
         var isPublicBoundary = node!.Type is "logic_input" or "logic_output"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         var isSessionEndDisplayName = Scope == GraphScope.Session
@@ -874,7 +889,7 @@ public sealed class GraphEditSession
         var property = type switch
         {
             CanonicalTaskObjectiveSchema.KillEntity => CanonicalTaskObjectiveSchema.EntityProperty,
-            CanonicalTaskObjectiveSchema.CollectItem => CanonicalTaskObjectiveSchema.ItemProperty,
+            CanonicalTaskObjectiveSchema.CollectItem or CanonicalTaskObjectiveSchema.SubmitItem => CanonicalTaskObjectiveSchema.ItemProperty,
             CanonicalTaskObjectiveSchema.InteractActor => CanonicalTaskObjectiveSchema.ActorIdProperty,
             _ => null,
         };
@@ -1006,6 +1021,51 @@ public sealed class GraphEditSession
         node.Properties = candidate.Properties;
         Commit(before);
         return true;
+    }
+
+    public bool SetSessionMusic(string nodeId, string? mediaRef)
+    {
+        if (Scope != GraphScope.Session || !TryResolvePropertyNode(nodeId, out var node, out _) || node!.Type != "music") return false;
+        var candidate = Clone(node);
+        candidate.Properties["operation"] = JsonSerializer.SerializeToElement(mediaRef is null ? "stop" : "play");
+        candidate.Properties["media_ref"] = JsonSerializer.SerializeToElement(mediaRef);
+        var issues = CanonicalSessionPresentationSchema.Validate(candidate);
+        if (issues.Count != 0) return Fail(issues);
+        var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;
+    }
+
+    public bool ChangeSessionSpeaker(string nodeId, string? actorId)
+    {
+        if (Scope != GraphScope.Session || !TryResolvePropertyNode(nodeId, out var node, out _) || node!.Type != "line") return false;
+        var next = string.IsNullOrWhiteSpace(actorId) ? null : actorId;
+        var previous = node.Properties.TryGetValue("speaker_actor_id", out var old) && old.ValueKind == JsonValueKind.String ? old.GetString() : null;
+        if (previous == next) return true;
+        var candidate = Clone(node);
+        candidate.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement(next);
+        candidate.Properties.Remove("portrait_variant");
+        var issues = CanonicalSessionLineSchema.Validate(candidate);
+        if (issues.Count != 0) return Fail(issues);
+        var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;
+    }
+
+    public bool ChangeStoryBuffMode(string nodeId, bool modExtension)
+    {
+        if (Scope != GraphScope.StoryFlow || !TryResolvePropertyNode(nodeId, out var node, out _)
+            || node!.Type != "action" || !node.Properties.TryGetValue("action_type", out var type)
+            || type.GetString() != CanonicalStoryActionSchema.GiveBuff) return false;
+        if (node.Properties["mod_extension"].GetBoolean() == modExtension) return true;
+        var candidate = Clone(node);
+        candidate.Properties["mod_extension"] = JsonSerializer.SerializeToElement(modExtension);
+        candidate.Properties.Remove("buff"); candidate.Properties.Remove("mod_id"); candidate.Properties.Remove("buff_name");
+        if (modExtension)
+        {
+            candidate.Properties["mod_id"] = JsonSerializer.SerializeToElement("examplemod");
+            candidate.Properties["buff_name"] = JsonSerializer.SerializeToElement("potion.effect");
+        }
+        else candidate.Properties["buff"] = JsonSerializer.SerializeToElement("speed");
+        var issues = CanonicalStoryActionSchema.Validate(candidate);
+        if (issues.Count != 0) return Fail(issues);
+        var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;
     }
 
     /// <summary>Atomically removes one existing untyped node property.</summary>

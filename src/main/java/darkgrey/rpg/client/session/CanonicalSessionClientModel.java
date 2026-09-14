@@ -29,6 +29,11 @@ public final class CanonicalSessionClientModel {
             || !frame.getSessionResourceId()
                 .equals(update.getSessionResourceId())))
             return false;
+        if (frame != null && (update.getLineEpoch() < frame.getLineEpoch() || update.getPresentation()
+            .getRevision()
+            < frame.getPresentation()
+                .getRevision()))
+            return false;
         if (update.getKind() != CanonicalSessionFrame.Kind.CHOICE || !update.getText()
             .trim()
             .isEmpty()) {
@@ -156,6 +161,9 @@ public final class CanonicalSessionClientModel {
             source.getKind(),
             source.getSpeaker(),
             source.getText(),
-            source.getChoices());
+            source.getChoices(),
+            source.getPortraitRef(),
+            source.getVoiceRef())
+                .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice());
     }
 }

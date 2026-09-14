@@ -29,7 +29,7 @@ public static class GraphNodeDefinitionRegistry
             && !definition.Required
             && !definition.Unique
             && !(scope == GraphScope.StoryFlow && definition.Type is
-                "session" or "task" or "interact_actor" or "enter_region")).ToArray();
+                "session" or "task")).ToArray();
 
     public static IReadOnlyList<GraphNodeDefinition> GetForAuthoringScope(GraphScope scope)
         => ForAuthoringScope(scope);
@@ -126,7 +126,7 @@ public static class GraphNodeDefinitionRegistry
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)]),
             Node("not", GraphScope.StoryFlow, "非", "逻辑", kinds: logicOnly,
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0), Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 1)]),
-            Node("action", GraphScope.StoryFlow, "动作", "动作", kinds: flowOnly,
+            Node("action", GraphScope.StoryFlow, "执行", "执行", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
                 properties:
                 [
@@ -136,26 +136,6 @@ public static class GraphNodeDefinitionRegistry
                     new GraphPropertyDefinition(CanonicalStoryActionSchema.AmountProperty, JsonValueKind.Number),
                     new GraphPropertyDefinition(CanonicalStoryActionSchema.MessageProperty, JsonValueKind.String),
                 ]),
-            // Story event waits are ordinary mid-flow nodes.  Their trigger
-            // payload is deliberately kept on the node rather than folded
-            // into Story Start metadata; Start triggers have a separate
-            // schema and lifecycle.
-            Node("interact_actor", GraphScope.StoryFlow, "角色交互", "触发", kinds: flowOnly,
-                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
-                properties: [StringProperty(StoryStartSchema.ActorIdProperty)]),
-            Node("enter_region", GraphScope.StoryFlow, "进入区域", "触发", kinds: flowOnly,
-                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
-                properties:
-                [
-                    NumberProperty(StoryStartSchema.DimensionProperty, 0),
-                    NumberProperty(StoryStartSchema.XProperty, 0),
-                    NumberProperty(StoryStartSchema.YProperty, 0),
-                    NumberProperty(StoryStartSchema.ZProperty, 0),
-                    NumberProperty(StoryStartSchema.RadiusProperty, 3),
-                ]),
-            Node("enter_story", GraphScope.StoryFlow, "进入故事", "故事", kinds: flowOnly,
-                compatibilityOnly: true, ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
-                properties: [StringProperty("target_story_id")]),
             Node("logic_input", GraphScope.StoryFlow, "逻辑输入", "逻辑", kinds: logicOnly,
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)],
                 properties: [StringProperty("port_id"), StringProperty("display_name")]),
@@ -171,17 +151,27 @@ public static class GraphNodeDefinitionRegistry
                     Out(FlowJudgmentSchema.ExecutedPortId, FlowJudgmentSchema.ExecutedDisplayName, GraphInterfaceKind.Logic, 2),
                 ]),
 
+            Node("title", GraphScope.StoryFlow, "标题", "流程", kinds: flowOnly,
+                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
+                properties: [new GraphPropertyDefinition("main", JsonValueKind.String, true, Json("\"标题\"")), StringProperty("subtitle"),
+                    NumberProperty("fade_in", 1), NumberProperty("stay", 3), NumberProperty("fade_out", 1)]),
+
             Node("start", GraphScope.Session, "起始", "会话", required: true, unique: true, kinds: flowOnly,
                 ports: [Out("flow_out", "流程输出", GraphInterfaceKind.Flow, 0)]),
             Node("line", GraphScope.Session, "台词", "会话", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
-                properties: [StringProperty("speaker_actor_id"), StringProperty("text")]),
+                properties: [new GraphPropertyDefinition("speaker_actor_id", JsonValueKind.String, false, Json("null"), allowNull: true), StringProperty("text")]),
+            Node("music", GraphScope.Session, "音乐", "会话", kinds: flowOnly,
+                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
+                properties: [new GraphPropertyDefinition("operation", JsonValueKind.String, true, Json("\"stop\"")),
+                    new GraphPropertyDefinition("media_ref", JsonValueKind.String, true, Json("null"), allowNull: true),
+                    new GraphPropertyDefinition("loop", JsonValueKind.False, true, Json("false")), NumberProperty("fade_in", 0), NumberProperty("fade_out", 0)]),
+            Node("screen", GraphScope.Session, "画面", "会话", kinds: flowOnly,
+                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
+                properties: [ArrayProperty("layers")]),
             Node("choice", GraphScope.Session, "选择", "会话", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
                 properties: [StringProperty("prompt"), ArrayProperty("options")]),
-            Node("narration", GraphScope.Session, "旁白", "会话", kinds: flowOnly,
-                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
-                properties: [StringProperty("text")]),
             Node("and", GraphScope.Session, "与", "逻辑", kinds: logicOnly,
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)]),
             Node("or", GraphScope.Session, "或", "逻辑", kinds: logicOnly,
@@ -232,6 +222,9 @@ public static class GraphNodeDefinitionRegistry
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)],
                 properties: [StringProperty("port_id"), StringProperty("display_name"),
                     new GraphPropertyDefinition("source", JsonValueKind.String)]),
+            Node("reward", GraphScope.Task, "奖励", "任务", kinds: logicOnly,
+                ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0)],
+                properties: [ArrayProperty(CanonicalTaskRewardSchema.EntriesProperty)]),
             Node("settle", GraphScope.Task, "结算", "任务", required: true, unique: true, kinds: logicOnly),
         ];
     }

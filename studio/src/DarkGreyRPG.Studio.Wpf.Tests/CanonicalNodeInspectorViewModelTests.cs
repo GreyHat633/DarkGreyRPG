@@ -96,10 +96,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.IsTrue(inspector.IsSendMessageAction);
         Assert.AreEqual("任务完成", inspector.StoryActionMessage);
         CollectionAssert.AreEqual(
-            new[] { CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.SendMessage },
+            new[] { CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.GiveBuff, CanonicalStoryActionSchema.GiveHealth, CanonicalStoryActionSchema.Teleport, CanonicalStoryActionSchema.SendMessage },
             inspector.StoryActionTypeOptions.Select(option => option.Value).ToArray());
         CollectionAssert.AreEqual(
-            new[] { "物品给予", "经验给予", "消息发送" },
+            new[] { "物品给予", "经验给予", "BUFF给予", "生命给予", "玩家传送", "消息发送" },
             inspector.StoryActionTypeOptions.Select(option => option.DisplayName).ToArray());
         Assert.AreEqual("消息发送", editor.Host.Nodes.Single().DisplayName);
         var beforeTypeRevision = editor.GraphRevision;
@@ -123,9 +123,9 @@ public sealed class CanonicalNodeInspectorViewModelTests
 
         inspector.StoryActionAmountText = "25";
         Assert.AreEqual(25, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
-        inspector.StoryActionAmountText = "0";
-        Assert.AreEqual("0", inspector.StoryActionAmountText);
-        StringAssert.Contains(inspector.StoryActionAmountError, "不小于 1");
+        inspector.StoryActionAmountText = "invalid";
+        Assert.AreEqual("invalid", inspector.StoryActionAmountText);
+        StringAssert.Contains(inspector.StoryActionAmountError, "整数");
         Assert.IsTrue(editor.Host.LastValidationIssues.Any(issue =>
             issue.Code == "graph.story.action.amount.authoring_invalid"));
         Assert.AreEqual(25, editor.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());

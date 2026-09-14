@@ -10,9 +10,18 @@ public final class CanonicalGraphResource {
     private final String id;
     private final String displayName;
     private final CanonicalGraph graph;
+    private final CanonicalTaskMetadata taskMetadata;
 
     public CanonicalGraphResource(int schemaVersion, CanonicalGraphResourceKind resourceKind, String id,
         String displayName, CanonicalGraph graph) {
+        this(schemaVersion, resourceKind, id, displayName, graph, null);
+    }
+
+    public CanonicalGraphResource(int schemaVersion, CanonicalGraphResourceKind resourceKind, String id,
+        String displayName, CanonicalGraph graph, CanonicalTaskMetadata taskMetadata) {
+        if (taskMetadata != null && resourceKind != CanonicalGraphResourceKind.TASK)
+            throw new IllegalArgumentException("Task metadata is only valid for Task resources.");
+        this.taskMetadata = taskMetadata;
         this.schemaVersion = schemaVersion;
         this.resourceKind = resourceKind;
         this.id = id;
@@ -38,6 +47,10 @@ public final class CanonicalGraphResource {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public CanonicalTaskMetadata getTaskMetadata() {
+        return taskMetadata;
     }
 
     public CanonicalGraph getGraph() {
