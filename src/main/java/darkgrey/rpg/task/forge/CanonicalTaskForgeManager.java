@@ -5,13 +5,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.MathHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
+import darkgrey.rpg.identity.EntityDgrIdentityResolver;
+import darkgrey.rpg.network.DialogueNetwork;
+import darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceFrame;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.task.event.CanonicalTaskDispatchResult;
@@ -41,6 +46,7 @@ public final class CanonicalTaskForgeManager {
 
     private final ProjectRepository projectRepository;
     private final SavedDataProvider savedDataProvider;
+    private final CanonicalTaskSubmitChoiceStore submitChoices = new CanonicalTaskSubmitChoiceStore();
     private StorySettlementListener storySettlementListener;
 
     public CanonicalTaskForgeManager(ProjectRepository projectRepository) {
@@ -140,6 +146,113 @@ public final class CanonicalTaskForgeManager {
         }
     }
 
+    /**
+     * Handles one real server-side entity interaction. Submit objectives are
+     * deliberately resolved from the actual entity identity and the player's
+     * current active snapshot; no client supplied actor or task identity is
+     * trusted for the inventory transaction.
+     */
+    public boolean handleEntityInteraction(EntityPlayerMP player, Entity target) {
+        if (player == null || target == null || player instanceof net.minecraftforge.common.util.FakePlayer)
+            return false;
+        if (target.isDead || player.worldObj != target.worldObj
+            || player.getDistanceSqToEntity(target) > 36D
+            || !player.canEntityBeSeen(target)) return false;
+        java.util.List<String> actorIds = EntityDgrIdentityResolver.resolveActorIds(target);
+        if (actorIds.isEmpty()) return false;
+        Context context = context(player);
+        UUID uuid = requirePlayerUuid(player);
+        java.util.List<CanonicalTaskSubmitChoiceStore.Candidate> candidates = new ArrayList<CanonicalTaskSubmitChoiceStore.Candidate>();
+        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+            if (!uuid.equals(snapshot.getPlayerUuid())
+                || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
+            CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
+            for (darkgrey.rpg.graph.canonical.CanonicalGraphNode node : resource.getGraph()
+                .getNodes()) {
+                if (!"objective".equals(node.getType()) || !CanonicalTaskEvent.SUBMIT_ITEM.equals(
+                    node.getProperties()
+                        .get("objective_type")
+                        .getAsString())
+                    || snapshot.getRuntimeSnapshot()
+                        .getObjectiveStatuses()
+                        .get(node.getId()) != darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus.ACTIVE)
+                    continue;
+                String requiredActor = node.getProperties()
+                    .get("actor_id")
+                    .getAsString();
+                if (!actorIds.contains(requiredActor)) continue;
+                String title = resource.getDisplayName();
+                String description = node.getProperties()
+                    .get("description")
+                    .getAsString();
+                candidates.add(
+                    new CanonicalTaskSubmitChoiceStore.Candidate(
+                        snapshot.getStoryInstanceId(),
+                        snapshot.getTaskNodePlacementId(),
+                        node.getId(),
+                        requiredActor,
+                        snapshot.getActivationTime(),
+                        title + "：" + description));
+            }
+        }
+        if (candidates.isEmpty()) return false;
+        if (candidates.size() > 1) {
+            CanonicalTaskSubmitChoiceStore.Choice choice = submitChoices.offer(
+                uuid,
+                target.getUniqueID(),
+                target.getEntityId(),
+                target.worldObj.provider.dimensionId,
+                candidates,
+                System.currentTimeMillis());
+            List<CanonicalTaskSubmitChoiceFrame.Option> options = new ArrayList<CanonicalTaskSubmitChoiceFrame.Option>();
+            for (CanonicalTaskSubmitChoiceStore.Candidate candidate : candidates) options.add(
+                new CanonicalTaskSubmitChoiceFrame.Option(
+                    candidate.getStoryId() + "\u0000"
+                        + candidate.getPlacementId()
+                        + "\u0000"
+                        + candidate.getObjectiveId(),
+                    candidate.getDisplayName()));
+            DialogueNetwork.CHANNEL.sendTo(new CanonicalTaskSubmitChoiceFrame(choice.getToken(), options), player);
+            return true;
+        }
+        CanonicalTaskSubmitChoiceStore.Candidate candidate = candidates.get(0);
+        return submitItem(
+            player,
+            candidate.getStoryId(),
+            candidate.getPlacementId(),
+            candidate.getObjectiveId(),
+            candidate.getActivationTime());
+    }
+
+    /** Revalidates a pending physical actor choice before committing inventory. */
+    public boolean selectSubmitCandidate(EntityPlayerMP player, long token, int optionIndex) {
+        if (player == null || optionIndex < 0) return false;
+        UUID uuid = requirePlayerUuid(player);
+        CanonicalTaskSubmitChoiceStore.Choice choice = submitChoices.consume(uuid, token, System.currentTimeMillis());
+        if (choice == null || choice.getDimension() != player.worldObj.provider.dimensionId) return false;
+        Entity target = player.worldObj.getEntityByID(choice.getEntityId());
+        if (target == null || !choice.getEntity()
+            .equals(target.getUniqueID()) || !validActor(player, target)) return false;
+        List<String> actorIds = EntityDgrIdentityResolver.resolveActorIds(target);
+        if (optionIndex >= choice.getCandidates()
+            .size()) return false;
+        CanonicalTaskSubmitChoiceStore.Candidate candidate = choice.getCandidates()
+            .get(optionIndex);
+        if (!actorIds.contains(candidate.getActorId())) return false;
+        boolean accepted = submitItem(
+            player,
+            candidate.getStoryId(),
+            candidate.getPlacementId(),
+            candidate.getObjectiveId(),
+            candidate.getActivationTime());
+        darkgrey.rpg.creator.CanonicalTaskPresentationServer.push(player, true);
+        return accepted;
+    }
+
+    public void forgetSubmitChoices(UUID playerUuid) {
+        submitChoices.forget(playerUuid);
+    }
+
     /** Samples actual inventory and continuous position, without fabricating pickup history. */
     public void synchronizeObjectives(EntityPlayerMP player) {
         if (player instanceof net.minecraftforge.common.util.FakePlayer) return;
@@ -191,9 +304,9 @@ public final class CanonicalTaskForgeManager {
                         darkgrey.rpg.item.identity.ItemIdentitySavedData.get());
                 } else if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
                     values.put("dimension_id", String.valueOf(player.dimension));
-                    values.put("x", String.valueOf(player.posX));
-                    values.put("y", String.valueOf(player.posY));
-                    values.put("z", String.valueOf(player.posZ));
+                    values.put("x", String.valueOf(MathHelper.floor_double(player.posX)));
+                    values.put("y", String.valueOf(MathHelper.floor_double(player.posY)));
+                    values.put("z", String.valueOf(MathHelper.floor_double(player.posZ)));
                 } else continue;
                 CanonicalTaskInstanceSnapshot changed = context.data.sampleObjective(
                     uuid,
@@ -242,7 +355,7 @@ public final class CanonicalTaskForgeManager {
     }
 
     /** Consumes exactly one selected active submit Objective; repeated/stale submissions are no-ops. */
-    public boolean submitItem(final EntityPlayerMP player, String storyId, String placementId, String objectiveId,
+    boolean submitItem(final EntityPlayerMP player, String storyId, String placementId, String objectiveId,
         long activationTime) {
         if (player instanceof net.minecraftforge.common.util.FakePlayer) return false;
         CanonicalTaskPlayerTransactions.recover(player);
@@ -276,6 +389,13 @@ public final class CanonicalTaskForgeManager {
             if (!committed && !CanonicalTaskInventory.removeExact(after, node, identities, required)) return false;
             final net.minecraft.nbt.NBTTagCompound image = CanonicalTaskPlayerTransactions.image(player, after);
             java.util.Map<String, String> values = new java.util.LinkedHashMap<String, String>();
+            // Both callers have already validated the physical server entity.
+            // Carry that selected actor into the runtime event's matching contract.
+            values.put(
+                "actor_id",
+                node.getProperties()
+                    .get("actor_id")
+                    .getAsString());
             values.put(
                 "item",
                 node.getProperties()
@@ -318,6 +438,13 @@ public final class CanonicalTaskForgeManager {
     private void notifySettlement(EntityPlayerMP player, CanonicalTaskInstanceSnapshot snapshot) {
         if (snapshot != null && snapshot.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED
             && storySettlementListener != null) storySettlementListener.onStoryTaskSettled(player, snapshot);
+    }
+
+    private static boolean validActor(EntityPlayerMP player, Entity actor) {
+        return actor != null && !actor.isDead
+            && player.worldObj == actor.worldObj
+            && player.getDistanceSqToEntity(actor) <= 36D
+            && player.canEntityBeSeen(actor);
     }
 
     /** Detached per-player snapshots for a future UI boundary. */

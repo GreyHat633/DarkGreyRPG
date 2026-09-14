@@ -202,9 +202,9 @@ public final class StoryPackageLoaderProbe {
         if (source) {
             write(
                 new File(directory, "resources/story_logic_graph.json"),
-                "{\"schema_version\":1,\"connections\":[{\"source_story_id\":\"logic_source\","
+                "{\"schema_version\":2,\"connections\":[{\"source_story_id\":\"logic_source\","
                     + "\"source_port_id\":\"signal\",\"target_story_id\":\"logic_target\","
-                    + "\"target_port_id\":\"gate\"}]}");
+                    + "\"target_port_id\":\"gate\",\"interface_kind\":\"Logic\"}]}");
             json = json
                 .replace("\"tasks\":[]", "\"tasks\":[],\"story_logic_graph\":\"resources/story_logic_graph.json\"");
         }

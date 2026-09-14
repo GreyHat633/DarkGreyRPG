@@ -1,0 +1,25 @@
+{
+  "WorkingSet": 2736107520,
+  "Pid": 36200,
+  "PrivateBytes": 3867807744,
+  "Files": [
+    {
+      "FullName": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0.3.3.1\\live-client\\darkgrey_rpg_story_packages\\.dgrs-runtime\\generations\\a882934b5bf7faa23fb01a34f0f589bd52b1c033b945e9e274aa07ed032ecfe7.dgrs",
+      "Length": 18888
+    },
+    {
+      "FullName": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0.3.3.1\\live-client\\darkgrey_rpg_story_packages\\.dgrs-runtime\\generations\\d08e8909ca73c5113675fd416b54335e9edc9a8e2a32fde3880d8930aaf2b90b.dgrs",
+      "Length": 1624
+    },
+    {
+      "FullName": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0.3.3.1\\live-client\\darkgrey_rpg_story_packages\\.dgrs-runtime\\media\\6eaa5b2c058cb427279d2ba234f661fb53342090b795df103c0ce155baed4e4a.png",
+      "Length": 6219
+    },
+    {
+      "FullName": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\0.3.3.1\\live-client\\darkgrey_rpg_story_packages\\.dgrs-runtime\\media\\7d7f03cbf38c3c362d3a8adb08b7e24b4a6052be76db64053af3bb6dbdd54b9c.ogg",
+      "Length": 34711
+    }
+  ],
+  "Handles": 1297,
+  "CacheBytes": 61442.0
+}

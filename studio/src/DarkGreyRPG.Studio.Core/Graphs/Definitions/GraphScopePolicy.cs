@@ -134,7 +134,7 @@ public static class GraphScopePolicy
         => Validate(graph, scope, compatibilityMode).All(issue => issue.Severity != ValidationSeverity.Error);
 
     public static bool CanCreateNode(GraphScope scope, string? type, bool compatibilityMode = false)
-        => GraphNodeDefinitionRegistry.TryGet(scope, type, out var definition)
+        => scope != GraphScope.Project && GraphNodeDefinitionRegistry.TryGet(scope, type, out var definition)
             && (!definition.CompatibilityOnly || compatibilityMode);
 
     public static bool CanDeleteNode(GraphScope scope, string? type, GraphDocument? graph = null)

@@ -1,0 +1,82 @@
+[
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = collect_item, DisplayName = 物品收集, Id = collect_item, Type = collect_item }",
+    "Round": 1,
+    "NodeX": 671.0,
+    "Expected": "collect_item",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = kill_entity, DisplayName = 实体击杀, Id = kill_entity, Type = kill_entity }",
+    "Round": 2,
+    "NodeX": 671.0,
+    "Expected": "kill_entity",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = collect_item, DisplayName = 物品收集, Id = collect_item, Type = collect_item }",
+    "Round": 3,
+    "NodeX": 671.0,
+    "Expected": "collect_item",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = kill_entity, DisplayName = 实体击杀, Id = kill_entity, Type = kill_entity }",
+    "Round": 4,
+    "NodeX": 671.0,
+    "Expected": "kill_entity",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = collect_item, DisplayName = 物品收集, Id = collect_item, Type = collect_item }",
+    "Round": 5,
+    "NodeX": 671.0,
+    "Expected": "collect_item",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = kill_entity, DisplayName = 实体击杀, Id = kill_entity, Type = kill_entity }",
+    "Round": 6,
+    "NodeX": 671.0,
+    "Expected": "kill_entity",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = collect_item, DisplayName = 物品收集, Id = collect_item, Type = collect_item }",
+    "Round": 7,
+    "NodeX": 671.0,
+    "Expected": "collect_item",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = kill_entity, DisplayName = 实体击杀, Id = kill_entity, Type = kill_entity }",
+    "Round": 8,
+    "NodeX": 671.0,
+    "Expected": "kill_entity",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = collect_item, DisplayName = 物品收集, Id = collect_item, Type = collect_item }",
+    "Round": 9,
+    "NodeX": 671.0,
+    "Expected": "collect_item",
+    "NodeY": 462.0
+  },
+  {
+    "Pass": true,
+    "Selection": "CanonicalObjectiveTypeOption { Value = kill_entity, DisplayName = 实体击杀, Id = kill_entity, Type = kill_entity }",
+    "Round": 10,
+    "NodeX": 671.0,
+    "Expected": "kill_entity",
+    "NodeY": 462.0
+  }
+]

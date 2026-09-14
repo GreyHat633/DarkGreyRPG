@@ -12,7 +12,7 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class M7ProjectGraphViewModelTests
 {
     [TestMethod]
-    public void DerivesOnlyValidEnterStoryEdgesAndReportsMissingAndIsolatedStories()
+    public void DerivesOnlyValidEnterStoryEdgesAndFiltersIsolatedStoriesWithoutDiagnostics()
     {
         var main = Story("mystery", "王城迷案",
             Enter("kingdom_exit", "kingdom"), Enter("missing_exit", "missing_story"));
@@ -25,7 +25,8 @@ public sealed class M7ProjectGraphViewModelTests
         Assert.AreEqual("mystery", graph.Edges[0].SourceStoryId);
         Assert.AreEqual("kingdom", graph.Edges[0].TargetStoryId);
         Assert.IsTrue(graph.Diagnostics.Any(issue => issue.Code == "project_graph.target.missing" && issue.StoryId == "mystery"));
-        Assert.IsTrue(graph.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated" && issue.StoryId == "isolated"));
+        Assert.IsFalse(graph.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated"));
+        Assert.IsTrue(graph.Nodes.Single(node => node.Id == "isolated").IsIsolated);
 
         graph.SearchText = "王国";
         Assert.IsTrue(graph.Nodes.Single(node => node.Id == "kingdom").IsVisible);
@@ -69,8 +70,8 @@ public sealed class M7ProjectGraphViewModelTests
         var after = new ProjectGraphViewModel([main, empire]);
 
         Assert.IsEmpty(after.Edges);
-        Assert.IsTrue(after.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated" && issue.StoryId == "mystery"));
-        Assert.IsTrue(after.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated" && issue.StoryId == "empire"));
+        Assert.IsFalse(after.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated"));
+        Assert.IsTrue(after.Nodes.All(node => node.IsIsolated));
     }
 
     [TestMethod]

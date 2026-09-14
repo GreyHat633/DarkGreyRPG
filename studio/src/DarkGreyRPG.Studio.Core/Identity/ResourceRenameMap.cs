@@ -64,7 +64,7 @@ public sealed class ResourceRenameMap
                 {
                     case "kill_entity": RewriteProperty(node, "entity", DgrResourceKind.Actor); break;
                     case "interact_actor": RewriteProperty(node, "actor_id", DgrResourceKind.Actor); break;
-                    case "submit_item":
+                    case "submit_item": RewriteProperty(node, "actor_id", DgrResourceKind.Actor); goto case "collect_item";
                     case "collect_item":
                         var id = StringProperty(node, "item");
                         if (id is null) break;

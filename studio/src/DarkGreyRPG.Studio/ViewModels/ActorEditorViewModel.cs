@@ -11,6 +11,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
     private EditorSnapshot _lastSnapshot;
     private bool _isApplyingEdit;
     private bool _isRestoringSnapshot;
+    private bool _isReadOnly;
 
     public ActorEditorViewModel(ActorDocument document)
     {
@@ -23,8 +24,33 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
     }
 
     public ActorDocument Document { get; }
+    public Func<string, byte[]?>? PortraitPreviewData { get; set; }
 
     public bool SupportsPortraits => Document.SupportsPortraits;
+
+    /// <summary>
+    /// The inspector can use this for package or cross-story read-only views.
+    /// Keeping the flag on the editor prevents a control-level disable from
+    /// accidentally allowing a command or a future caller to mutate data.
+    /// </summary>
+    public bool IsReadOnly
+    {
+        get => _isReadOnly;
+        set
+        {
+            if (!SetProperty(ref _isReadOnly, value)) return;
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+            OnPropertyChanged(nameof(CanSave));
+            UndoCommand.RaiseCanExecuteChanged();
+            RedoCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    /// <summary>Returns true when a portrait variant is currently referenced by a line.</summary>
+    public Func<ActorPortraitVariant, bool>? IsPortraitVariantReferenced { get; set; }
+
+    public string PortraitEditError { get; private set; } = string.Empty;
 
     public string Id => Document.Id;
 
@@ -34,7 +60,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
         set
         {
             var next = value ?? string.Empty;
-            if (string.Equals(Document.DisplayName, next, StringComparison.Ordinal))
+            if (IsReadOnly || string.Equals(Document.DisplayName, next, StringComparison.Ordinal))
             {
                 return;
             }
@@ -46,7 +72,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
     public string? DefaultPortraitRef
     {
         get => Document.DefaultPortraitRef;
-        set { if (SupportsPortraits) ApplyEdit(() => Document.DefaultPortraitRef = value); }
+        set { if (SupportsPortraits && !IsReadOnly) ApplyEdit(() => Document.DefaultPortraitRef = value); }
     }
 
     private string _portraitVariantName = string.Empty;
@@ -55,7 +81,60 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
     public ActorPortraitVariant? SelectedPortraitVariant { get => _selectedPortraitVariant; set => SetProperty(ref _selectedPortraitVariant, value); }
     public string DefaultPortraitStatus => DefaultPortraitRef is null ? "未配置默认头像" : "已配置默认头像";
     public IReadOnlyList<ActorPortraitVariant> PortraitVariants => Document.PortraitVariants;
-    public void SetPortraitVariants(IEnumerable<ActorPortraitVariant> values) { if (SupportsPortraits) ApplyEdit(() => Document.SetPortraitVariants(values)); }
+    public void SetPortraitVariants(IEnumerable<ActorPortraitVariant> values)
+    {
+        if (SupportsPortraits && !IsReadOnly) ApplyEdit(() => Document.SetPortraitVariants(values));
+    }
+
+    public bool TryRenamePortraitVariant(ActorPortraitVariant variant, string? proposedName)
+    {
+        ClearPortraitEditError();
+        var name = proposedName?.Trim() ?? string.Empty;
+        if (!SupportsPortraits || IsReadOnly)
+            return FailPortraitEdit("当前角色只读，无法修改头像差分。");
+        if (!Document.PortraitVariants.Contains(variant))
+            return FailPortraitEdit("选中的头像差分已不存在，请重新选择。");
+        if (string.IsNullOrWhiteSpace(name))
+            return FailPortraitEdit("头像差分名称不能为空。");
+        if (Document.PortraitVariants.Any(value => !Equals(value, variant) && string.Equals(value.Name, name, StringComparison.Ordinal)))
+            return FailPortraitEdit("头像差分名称不能重复。");
+        if (IsPortraitVariantReferenced?.Invoke(variant) == true)
+            return FailPortraitEdit("该头像差分仍被台词引用；请先解除引用或使用完整的引用同步操作。");
+
+        ApplyEdit(() => Document.SetPortraitVariants(Document.PortraitVariants.Select(value =>
+            Equals(value, variant) ? value with { Name = name } : value)));
+        PortraitVariantName = name;
+        return true;
+    }
+
+    public bool TryRemovePortraitVariant(ActorPortraitVariant variant)
+    {
+        ClearPortraitEditError();
+        if (!SupportsPortraits || IsReadOnly)
+            return FailPortraitEdit("当前角色只读，无法修改头像差分。");
+        if (!Document.PortraitVariants.Contains(variant))
+            return FailPortraitEdit("选中的头像差分已不存在，请重新选择。");
+        if (IsPortraitVariantReferenced?.Invoke(variant) == true)
+            return FailPortraitEdit("该头像差分仍被台词引用；请先解除引用，避免台词静默显示其他头像。");
+
+        ApplyEdit(() => Document.SetPortraitVariants(Document.PortraitVariants.Where(value => !Equals(value, variant))));
+        if (Equals(SelectedPortraitVariant, variant)) SelectedPortraitVariant = null;
+        return true;
+    }
+
+    private bool FailPortraitEdit(string message)
+    {
+        PortraitEditError = message;
+        OnPropertyChanged(nameof(PortraitEditError));
+        return false;
+    }
+
+    private void ClearPortraitEditError()
+    {
+        if (PortraitEditError.Length == 0) return;
+        PortraitEditError = string.Empty;
+        OnPropertyChanged(nameof(PortraitEditError));
+    }
 
     public string Notes
     {
@@ -63,7 +142,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
         set
         {
             var next = value ?? string.Empty;
-            if (string.Equals(Document.Notes, next, StringComparison.Ordinal))
+            if (IsReadOnly || string.Equals(Document.Notes, next, StringComparison.Ordinal))
             {
                 return;
             }
@@ -78,7 +157,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
         set
         {
             var next = value ?? string.Empty;
-            if (string.Equals(_tagsText, next, StringComparison.Ordinal))
+            if (IsReadOnly || string.Equals(_tagsText, next, StringComparison.Ordinal))
             {
                 return;
             }
@@ -95,11 +174,11 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
 
     public RelayCommand RedoCommand { get; }
 
-    public bool CanUndo => _undoHistory.Count > 0;
+    public bool CanUndo => !IsReadOnly && _undoHistory.Count > 0;
 
-    public bool CanRedo => _redoHistory.Count > 0;
+    public bool CanRedo => !IsReadOnly && _redoHistory.Count > 0;
 
-    public bool CanSave => Document.IsDirty && Document.ValidationErrors.Count == 0;
+    public bool CanSave => !IsReadOnly && Document.IsDirty && Document.ValidationErrors.Count == 0;
 
     public bool IsDirty => Document.IsDirty;
 
@@ -114,6 +193,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
 
     private void Undo()
     {
+        if (IsReadOnly) return;
         if (!_undoHistory.TryPop(out var target))
         {
             return;
@@ -126,6 +206,7 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
 
     private void Redo()
     {
+        if (IsReadOnly) return;
         if (!_redoHistory.TryPop(out var target))
         {
             return;

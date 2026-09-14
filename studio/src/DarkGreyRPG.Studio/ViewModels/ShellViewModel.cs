@@ -18,6 +18,8 @@ using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
+using System.Text.Json;
+
 namespace DarkGreyRPG.Studio.ViewModels;
 
 public sealed partial class ShellViewModel : ObservableObject
@@ -100,9 +102,9 @@ public sealed partial class ShellViewModel : ObservableObject
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
-        SaveCurrentResourceCommand = new RelayCommand(SaveCurrentResource, () => ActiveEditor?.CanSave == true);
-        UndoCurrentCommand = new RelayCommand(UndoCurrent, () => ActiveEditor?.UndoCommand.CanExecute(null) == true || CanUndoProjectNamespace() || CanUndoReference());
-        RedoCurrentCommand = new RelayCommand(RedoCurrent, () => ActiveEditor?.RedoCommand.CanExecute(null) == true || CanRedoReference());
+        SaveCurrentResourceCommand = new RelayCommand(SaveCurrentResource, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanSave == true || ActiveEditor?.CanSave == true);
+        UndoCurrentCommand = new RelayCommand(UndoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanUndo == true || ActiveProjectGraphHost?.CanUndo == true || ActiveEditor?.UndoCommand.CanExecute(null) == true || CanUndoProjectNamespace() || CanUndoReference());
+        RedoCurrentCommand = new RelayCommand(RedoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanRedo == true || ActiveProjectGraphHost?.CanRedo == true || ActiveEditor?.RedoCommand.CanExecute(null) == true || CanRedoReference());
         NewActorCommand = new RelayCommand(NewActor, CanCreateOrReferenceActor);
         ReferenceActorCommand = new RelayCommand(ReferenceActor, CanCreateOrReferenceActor);
         RemoveActorReferenceCommand = new RelayCommand(RemoveActorReference, CanRemoveActorReference);
@@ -271,8 +273,8 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     public string WindowTitle => _projectService.CurrentProject is { } project
-        ? $"{project.Project.DisplayName} — DarkGrey RPG Studio 0.3.3.0"
-        : "DarkGrey RPG Studio 0.3.3.0";
+        ? $"{project.Project.DisplayName} — {StudioBuildInfo.ProductTitle}"
+        : StudioBuildInfo.ProductTitle;
 
     public string ProjectDirectory
     {
@@ -918,6 +920,26 @@ public sealed partial class ShellViewModel : ObservableObject
     private void ConfigureCanonicalResourceActions(CanonicalStoryWorkspaceViewModel workspace)
     {
         workspace.MediaProjectDirectory = ProjectDirectory;
+        workspace.PortraitEditorFactory = actor =>
+        {
+            var document = actor.Provider is { } provider
+                ? ActorDocument.FromResource(provider.ReadActorDefinition()!, provider.SourcePath)
+                : _projectService.OpenActor(actor.Id);
+            var editor = new ActorEditorViewModel(document) { IsReadOnly = actor.IsReadOnly };
+            if (actor.Provider is { } mediaProvider)
+                editor.PortraitPreviewData = mediaRef => OfflineDgrsPackageReader.Read(mediaProvider.PackagePath)
+                    .Entries.TryGetValue("resources/" + mediaRef, out var data) ? data : null;
+            editor.IsPortraitVariantReferenced = variant =>
+            {
+                var sessions = workspace.SessionEditors.Select(item => item.Document.Graph)
+                    .Concat(_canonicalGraphStore?.Sessions.List().Select(info => _canonicalGraphStore.Sessions.Load(info.Id).Graph) ?? []);
+                return sessions.Where(graph => graph is not null).SelectMany(graph => graph!.Nodes).Any(node => node.Type == "line"
+                    && node.Properties.TryGetValue("speaker_actor_id", out var speaker) && speaker.ValueKind == JsonValueKind.String && speaker.GetString() == actor.Id
+                    && node.Properties.TryGetValue("portrait_variant", out var name) && name.ValueKind == JsonValueKind.String && name.GetString() == variant.Name);
+            };
+            editor.PropertyChanged += (_, _) => { SaveCurrentResourceCommand.RaiseCanExecuteChanged(); UndoCurrentCommand.RaiseCanExecuteChanged(); RedoCurrentCommand.RaiseCanExecuteChanged(); };
+            return editor;
+        };
         if (_projectService.CurrentProject?.Project is { } project)
             workspace.ConfigureProjectBreadcrumb(project.Id, project.DisplayName, ShowProjectHome);
         workspace.ReadOnlyResourceRequested = item =>
@@ -1877,7 +1899,8 @@ public sealed partial class ShellViewModel : ObservableObject
     private void OnCanonicalStoryWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActiveEditor)
-            or nameof(CanonicalStoryWorkspaceViewModel.HasDirtyEditors))
+            or nameof(CanonicalStoryWorkspaceViewModel.HasDirtyEditors)
+            or nameof(CanonicalStoryWorkspaceViewModel.InspectorPortraitEditor))
             RaiseCurrentEditorStates();
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActiveEditor)
             or nameof(CanonicalStoryWorkspaceViewModel.InspectorValidationText)
@@ -2361,6 +2384,15 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (CanonicalStoryWorkspace is not null)
         {
+            if (CanonicalStoryWorkspace.InspectorPortraitEditor is { } portrait)
+            {
+                if (portrait.CanSave)
+                {
+                    SaveOpenActor(portrait.Document);
+                    ReloadCanonicalStoryWorkspace(CanonicalStoryWorkspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, portrait.Document.Id);
+                }
+                return;
+            }
             TrySaveCanonicalResource();
             return;
         }
@@ -3473,6 +3505,13 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void OnProjectHomePropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(ProjectHomeViewModel.Graph))
+        {
+            if (_observedProjectGraphHost is not null) _observedProjectGraphHost.PropertyChanged -= OnProjectGraphHostPropertyChanged;
+            _observedProjectGraphHost = ProjectHome.Graph.CanonicalHost;
+            if (_observedProjectGraphHost is not null) _observedProjectGraphHost.PropertyChanged += OnProjectGraphHostPropertyChanged;
+            OnProjectGraphHostPropertyChanged(null, new PropertyChangedEventArgs(null));
+        }
         if (args.PropertyName == nameof(ProjectHomeViewModel.SelectedStory))
         {
             SelectedReferencedPackage = null;
@@ -3481,6 +3520,13 @@ public sealed partial class ShellViewModel : ObservableObject
             DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
             ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
         }
+    }
+
+    private GraphEditorHostViewModel? _observedProjectGraphHost;
+    private void OnProjectGraphHostPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        UndoCurrentCommand.RaiseCanExecuteChanged();
+        RedoCurrentCommand.RaiseCanExecuteChanged();
     }
 
     private void ProjectHomeOnOpenStoryFlowRequested(object? sender, string storyId) => OpenStoryFlow(storyId);

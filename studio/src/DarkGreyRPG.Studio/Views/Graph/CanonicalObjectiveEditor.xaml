@@ -1,0 +1,36 @@
+<UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.CanonicalObjectiveEditor"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:graph="clr-namespace:DarkGreyRPG.Studio.Views.Graph">
+ <UserControl.Resources>
+  <BooleanToVisibilityConverter x:Key="VisibleWhen"/>
+ </UserControl.Resources>
+ <StackPanel Visibility="{Binding IsObjective, Converter={StaticResource VisibleWhen}}">
+  <TextBlock Text="目标描述"/><TextBox graph:TextInputWatermark.Text="描述玩家需要完成的目标" x:Name="Description" Text="{Binding ObjectiveDescription, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap"/>
+  <TextBlock Text="玩家将在游戏中看到的目标文字。" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+  <TextBlock Text="{Binding ObjectiveDescriptionError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
+  <TextBlock Text="目标类型" Margin="0,6,0,2"/><ComboBox x:Name="TypeSelector" ItemsSource="{Binding ObjectiveTypeOptions}" SelectedItem="{Binding SelectedObjectiveType, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
+  <StackPanel Visibility="{Binding HasObjectiveQuantity, Converter={StaticResource VisibleWhen}}">
+   <TextBlock Text="需求数量" Margin="0,6,0,2"/><TextBox graph:NumericDrag.Step="1" graph:NumericDrag.Minimum="1" x:Name="Required" Text="{Binding ObjectiveRequiredText, UpdateSourceTrigger=LostFocus}"/>
+   <TextBlock Text="{Binding ObjectiveRequiredError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
+  </StackPanel>
+  <StackPanel Visibility="{Binding IsItemObjective, Converter={StaticResource VisibleWhen}}">
+   <TextBlock Text="目标物品" Margin="0,6,0,2"/><ComboBox x:Name="ItemSelector" ItemsSource="{Binding ObjectiveItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveItemId, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
+   <TextBlock Text="{Binding ObjectiveItemStatusText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+  </StackPanel>
+  <StackPanel Visibility="{Binding HasObjectiveActor, Converter={StaticResource VisibleWhen}}">
+   <TextBlock Text="{Binding ObjectiveActorLabel}" Margin="0,6,0,2"/><ComboBox x:Name="ActorSelector" ItemsSource="{Binding ObjectiveActorOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveActorId, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
+   <TextBlock Text="{Binding ObjectiveActorStatusText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+  </StackPanel>
+  <StackPanel Visibility="{Binding IsReachRegionObjective, Converter={StaticResource VisibleWhen}}">
+   <TextBlock Text="维度" Margin="0,6,0,2"/><TextBox graph:NumericDrag.Step="1" Text="{Binding RegionDimension, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveRegionDimension"/>
+   <Grid Margin="0,5,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+    <StackPanel Margin="0,0,2,0"><TextBlock Text="X"/><TextBox graph:NumericDrag.Step="1" Text="{Binding RegionX, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveRegionX"/></StackPanel>
+    <StackPanel Grid.Column="1" Margin="2,0"><TextBlock Text="Y"/><TextBox graph:NumericDrag.Step="1" Text="{Binding RegionY, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveRegionY"/></StackPanel>
+    <StackPanel Grid.Column="2" Margin="2,0,0,0"><TextBlock Text="Z"/><TextBox graph:NumericDrag.Step="1" Text="{Binding RegionZ, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveRegionZ"/></StackPanel>
+   </Grid>
+   <TextBlock Text="半径（方块）" Margin="0,5,0,2"/><TextBox graph:NumericDrag.Step="1" graph:NumericDrag.Minimum="0" Text="{Binding RegionRadius, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="TaskObjectiveRegionRadius"/>
+   <TextBlock Text="按整数方块坐标判定；包含立方体边界，半径 0 表示中心方块。" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+  </StackPanel>
+  <CheckBox x:Name="Prerequisite" Content="前置条件" IsChecked="{Binding ObjectivePrerequisiteEnabled, Mode=TwoWay}" Margin="0,6,0,0"/>
+  <TextBlock x:Name="PrerequisiteHelp" Text="{Binding ObjectivePrerequisiteHelpText}" Visibility="{Binding ObjectivePrerequisiteEnabled, Converter={StaticResource VisibleWhen}}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+ </StackPanel>
+</UserControl>

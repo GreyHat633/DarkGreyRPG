@@ -1,0 +1,21 @@
+{
+  "Before": {
+    "X": 696.0,
+    "Y": 330.0
+  },
+  "After": {
+    "X": 756.0,
+    "Y": 270.0
+  },
+  "Undo": {
+    "X": 696.0,
+    "Y": 330.0
+  },
+  "Redo": {
+    "X": 756.0,
+    "Y": 270.0
+  },
+  "Moved": true,
+  "UndoRestored": true,
+  "RedoRestored": true
+}

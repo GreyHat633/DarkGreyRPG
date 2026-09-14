@@ -206,7 +206,7 @@ public sealed class StoryPackageExporter
             .ToArray();
         if (outgoing.Length == 0) return required;
         const string relative = "resources/story_logic_graph.json";
-        var graph = new CanonicalStoryLogicGraph(1, outgoing);
+        var graph = new CanonicalStoryLogicGraph(2, outgoing);
         var options = new JsonSerializerOptions { WriteIndented = true };
         var target = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);

@@ -14,7 +14,7 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 public partial class CanonicalStoryWorkspaceView : UserControl
 {
     private void EditActorPortrait_OnClick(object sender, RoutedEventArgs e) => Workspace?.EditActorPortrait();
-    private async void ImportLineAudio_OnClick(object sender, RoutedEventArgs e)
+    internal async void ImportLineAudio_OnClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.DataContext is not CanonicalNodeInspectorViewModel inspector
             || Workspace?.MediaProjectDirectory is not { } projectRoot || !Workspace.IsWritableEditor(Workspace.ActiveEditor)) return;
@@ -37,9 +37,14 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         finally { button.IsEnabled = true; }
     }
 
-    private void RemoveLineAudio_OnClick(object sender, RoutedEventArgs e)
+    internal void RemoveLineAudio_OnClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: CanonicalNodeInspectorViewModel inspector }) { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
+    }
+    private void AudioPreview_ClearRequested(object? sender, EventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: CanonicalNodeInspectorViewModel inspector })
+        { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
     }
 
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";

@@ -81,6 +81,7 @@ public sealed class GraphNodeShapeValidatorTests
             if (role.Scope == GraphScope.Task && role.NodeType == "objective")
                 node.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
                     JsonSerializer.SerializeToElement("test_actor");
+            if (role.Scope == GraphScope.Task && role.NodeType == "objective") node.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
             if (role.Scope == GraphScope.Session && role.NodeType == "choice")
             {
                 SessionChoiceSchema.InitializeDefault(node, "option_1", "flow_1");

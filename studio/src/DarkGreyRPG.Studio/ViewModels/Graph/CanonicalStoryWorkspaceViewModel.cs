@@ -454,6 +454,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             OnPropertyChanged(nameof(InspectorValidationText));
             OnPropertyChanged(nameof(HasResourceInspectorDetails));
             OnPropertyChanged(nameof(CanEditActorPortrait));
+            OnPropertyChanged(nameof(InspectorPortraitEditor));
             OnPropertyChanged(nameof(InspectorIdentityLabel));
             OnPropertyChanged(nameof(InspectorIdentityText));
             OnPropertyChanged(nameof(InspectorTagsText));
@@ -470,6 +471,19 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
     public string? MediaProjectDirectory { get; set; }
     public CanonicalNodeInspectorViewModel? NodeInspector => _nodeInspector;
     public Action<CanonicalStoryActorItem>? EditActorPortraitRequested { get; set; }
+    public Func<CanonicalStoryActorItem, ActorEditorViewModel?>? PortraitEditorFactory { get; set; }
+    private readonly Dictionary<string, ActorEditorViewModel> _portraitEditors = new(StringComparer.Ordinal);
+    public ActorEditorViewModel? InspectorPortraitEditor
+    {
+        get
+        {
+            if (InspectorSelection is not CanonicalStoryActorItem actor) return null;
+            if (_portraitEditors.TryGetValue(actor.Id, out var editor)) return editor;
+            editor = PortraitEditorFactory?.Invoke(actor);
+            if (editor is not null) _portraitEditors[actor.Id] = editor;
+            return editor;
+        }
+    }
     public bool CanEditActorPortrait => InspectorSelection is CanonicalStoryActorItem { IsReadOnly: false, Actor.Type: not null };
     public void EditActorPortrait()
     {
@@ -572,7 +586,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
     public string InspectorSaveStateText => InspectorSelection switch
     {
-        CanonicalNodeInspectorViewModel node => ActiveEditor.IsDirty ? "未保存" : "已保存",
+        CanonicalNodeInspectorViewModel node => string.Empty,
         CanonicalGraphResourceEditorViewModel editor => editor.SaveStateText,
         CanonicalStoryMissingItem => "资源缺失",
         _ => string.Empty,

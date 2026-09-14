@@ -97,10 +97,12 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
         new ReadOnlyDictionary<string, JsonElement>(new Dictionary<string, JsonElement>(StringComparer.Ordinal));
     private readonly Action<GraphEditorNodeViewModel, double, double>? _positionChanged;
     private readonly Dictionary<string, GraphEditorPortViewModel> _uniquePorts = new(StringComparer.Ordinal);
+    private readonly GraphScope _scope;
 
     internal GraphEditorNodeViewModel(GraphNode node, double x, double y,
-        Action<GraphEditorNodeViewModel, double, double>? positionChanged)
+        Action<GraphEditorNodeViewModel, double, double>? positionChanged, GraphScope scope)
     {
+        _scope = scope;
         NodeId = node.Id ?? string.Empty;
         _type = node.Type ?? string.Empty;
         _displayName = node.DisplayName ?? string.Empty;
@@ -159,11 +161,17 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
         Type = node.Type ?? string.Empty;
         var properties = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         foreach (var pair in node.Properties ?? []) properties[pair.Key] = pair.Value.Clone();
-        DisplayName = Type == CanonicalStoryActionSchema.NodeType
+        var extraName = Type == CanonicalStoryActionSchema.NodeType
             && properties.TryGetValue(CanonicalStoryActionSchema.TypeProperty, out var actionType)
             && actionType.ValueKind == JsonValueKind.String
                 ? CanonicalStoryActionSchema.AuthoringDisplayNameFor(actionType.GetString())
                 : node.DisplayName ?? string.Empty;
+        var typeName = GraphNodeDefinitionRegistry.Get(_scope, Type)?.DisplayName ?? Type;
+        if (Type is "terminate" or "end" or "logic_input" or "logic_output"
+            && properties.TryGetValue("display_name", out var boundaryName) && boundaryName.ValueKind == JsonValueKind.String)
+            extraName = boundaryName.GetString() ?? "";
+        DisplayName = string.IsNullOrWhiteSpace(extraName) || extraName == typeName
+            ? typeName : $"{typeName} [{extraName}]";
         _properties = new ReadOnlyDictionary<string, JsonElement>(properties);
         OnPropertyChanged(nameof(Properties));
         OnPropertyChanged(nameof(ParameterSummary));
@@ -243,6 +251,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     private readonly Stack<HostHistoryEntry> _redoHistory = [];
     private IReadOnlyList<ValidationIssue> _lastValidationIssues = [];
     private IReadOnlyList<ValidationIssue> _coreValidationIssues = [];
+    private Func<string, bool>? _readOnlySourcePolicy;
     private Dictionary<string, GraphEditorNodePosition>? _activeLayoutMoveBefore;
     private bool _suppressLayoutChanged;
 
@@ -319,6 +328,17 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public IReadOnlyDictionary<string, GraphEditorNodePosition> Layout => _layout;
     public long GraphRevision { get; private set; }
 
+    /// <summary>
+    /// Optional host policy for graph edges whose output/source is owned by a
+    /// read-only projection.  The policy is deliberately opt-in so the shared
+    /// editor remains usable for ordinary story/session/task documents.
+    /// </summary>
+    public Func<string, bool>? ReadOnlySourcePolicy
+    {
+        get => _readOnlySourcePolicy;
+        set => _readOnlySourcePolicy = value;
+    }
+
     /// <summary>Publishes or clears a staged editor error without mutating the graph.</summary>
     public void SetAuthoringIssue(string key, ValidationIssue? issue)
     {
@@ -383,7 +403,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             else
             {
                 var position = PositionFor(id, index, fallbackIndex);
-                item = new GraphEditorNodeViewModel(node, position.X, position.Y, OnNodePositionChanged);
+                item = new GraphEditorNodeViewModel(node, position.X, position.Y, OnNodePositionChanged, Scope);
                 if (unique) _uniqueNodeItems[id] = item;
             }
 
@@ -515,6 +535,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
     public bool CanConnect(GraphEditorEndpoint first, GraphEditorEndpoint second)
     {
+        if (RejectReadOnlySource(first, second)) return false;
         var result = _commandBridge.CanConnect(first, second);
         PublishState(_commandBridge.LastValidationIssues);
         return result;
@@ -522,25 +543,36 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
     public bool CanReconnect(GraphConnection original, GraphEditorEndpoint first, GraphEditorEndpoint second)
     {
+        if (RejectReadOnlySource(original.FromNodeId)
+            || RejectReadOnlySource(first, second)) return false;
         var result = _commandBridge.CanReconnect(original, first, second);
         PublishState(_commandBridge.LastValidationIssues);
         return result;
     }
 
     public bool Connect(GraphEditorEndpoint first, GraphEditorEndpoint second)
-        => ExecuteBridge(() => _commandBridge.Connect(first, second));
+        => RejectReadOnlySource(first, second)
+            ? false
+            : ExecuteBridge(() => _commandBridge.Connect(first, second));
 
     public bool Reconnect(GraphConnection original, GraphEditorEndpoint first, GraphEditorEndpoint second)
-        => ExecuteBridge(() => _commandBridge.Reconnect(original, first, second));
+        => RejectReadOnlySource(original.FromNodeId)
+            || RejectReadOnlySource(first, second)
+            ? false
+            : ExecuteBridge(() => _commandBridge.Reconnect(original, first, second));
 
     public bool Disconnect(GraphConnection connection)
-        => ExecuteBridge(() => _commandBridge.Disconnect(connection));
+        => RejectReadOnlySource(connection.FromNodeId)
+            ? false
+            : ExecuteBridge(() => _commandBridge.Disconnect(connection));
 
     public bool Disconnect(GraphEditorConnectionViewModel connection)
         => connection is not null && Disconnect(connection.Connection);
 
     public bool Disconnect(GraphEditorEndpoint first, GraphEditorEndpoint second)
-        => ExecuteBridge(() => _commandBridge.Disconnect(first, second));
+        => RejectReadOnlySource(first, second)
+            ? false
+            : ExecuteBridge(() => _commandBridge.Disconnect(first, second));
 
     public bool AddNode(GraphNode node)
         => ExecuteSession(() => _session.AddNode(node));
@@ -565,6 +597,11 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     {
         plan = null!;
         if (original is null || string.IsNullOrWhiteSpace(draggedNodeId)) return false;
+        if (IsReadOnlySource(original.FromNodeId))
+        {
+            RejectReadOnlySource(original.FromNodeId);
+            return false;
+        }
         var liveOriginals = (Graph.Connections ?? []).Where(connection => connection is not null
             && connection.Equals(original)).ToArray();
         var nodes = (Graph.Nodes ?? []).Where(node => node is not null
@@ -586,6 +623,11 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         if (outputs.Length == 1)
             replacements.Add(new GraphConnection(draggedNodeId, outputs[0].Id,
                 original.ToNodeId, original.ToPortId, original.InterfaceKind));
+        if (replacements.Any(replacement => IsReadOnlySource(replacement.FromNodeId)))
+        {
+            RejectReadOnlySource(replacements.First(replacement => IsReadOnlySource(replacement.FromNodeId)).FromNodeId);
+            return false;
+        }
         var detached = GraphDocument.FromJson(Graph.ToJson());
         var preview = new GraphEditSession(detached, Scope, _session.CompatibilityMode);
         if (!preview.ReplaceConnections([original], replacements)) return false;
@@ -599,17 +641,26 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool SpliceConnection(GraphConnectionSplicePlan plan)
     {
         ArgumentNullException.ThrowIfNull(plan);
+        if (RejectReadOnlySource(plan.Original.FromNodeId)
+            || plan.Replacements.Any(replacement => IsReadOnlySource(replacement.FromNodeId)))
+            return false;
         return ExecuteSession(() => _session.ReplaceConnections(
-            [plan.Original], plan.Replacements));
+                [plan.Original], plan.Replacements));
     }
 
     public bool CompleteConnectionDrag(GraphEditorEndpoint? first, GraphEditorEndpoint? second,
         GraphConnection? original = null)
-        => ExecuteBridge(() => _commandBridge.CompleteConnectionDrag(first, second, original));
+        => RejectReadOnlySource(original?.FromNodeId)
+            || RejectReadOnlySource(first, second)
+            ? false
+            : ExecuteBridge(() => _commandBridge.CompleteConnectionDrag(first, second, original));
 
     public bool CompleteWireDrag(GraphEditorEndpoint? first, GraphEditorEndpoint? second,
         GraphConnection? original = null)
-        => ExecuteBridge(() => _commandBridge.CompleteWireDrag(first, second, original));
+        => RejectReadOnlySource(original?.FromNodeId)
+            || RejectReadOnlySource(first, second)
+            ? false
+            : ExecuteBridge(() => _commandBridge.CompleteWireDrag(first, second, original));
 
     /// <summary>
     /// Reconnects every edge incident to a multi-wire endpoint as one validated
@@ -620,6 +671,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         GraphEditorEndpoint movingEndpoint, GraphEditorEndpoint? target)
     {
         if (originals is null || originals.Count == 0) return false;
+        if (RejectReadOnlySources(originals.Select(connection => connection?.FromNodeId))
+            || RejectReadOnlySource(movingEndpoint, target)) return false;
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
         var beforePorts = CapturePortSignatures();
@@ -692,6 +745,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool CanReconnectIncidentConnections(IReadOnlyList<GraphConnection> originals,
         GraphEditorEndpoint movingEndpoint, GraphEditorEndpoint target)
     {
+        if (RejectReadOnlySources(originals.Select(connection => connection?.FromNodeId))
+            || RejectReadOnlySource(movingEndpoint, target)) return false;
         if (!TryBuildIncidentCandidates(originals, movingEndpoint, target, out _, out var issues))
         {
             PublishState(issues);
@@ -716,6 +771,16 @@ public sealed class GraphEditorHostViewModel : ObservableObject
             || movingEndpoint.InterfaceKind != target.InterfaceKind
             || movingEndpoint.Direction != target.Direction)
             return false;
+        if (IsReadOnlySource(movingEndpoint.IsOutput ? movingEndpoint.NodeId : target.NodeId)
+            || originals.Any(connection => connection is not null
+                && IsReadOnlySource(connection.FromNodeId)))
+        {
+            var sourceId = movingEndpoint.IsOutput ? movingEndpoint.NodeId
+                : originals.FirstOrDefault(connection => connection is not null
+                    && IsReadOnlySource(connection.FromNodeId))?.FromNodeId;
+            if (sourceId is not null) RejectReadOnlySource(sourceId);
+            return false;
+        }
         var current = originals.Where(connection => connection is not null).ToArray();
         var documentConnections = (Graph.Connections ?? []).Where(connection => connection is not null).ToArray();
         if (current.Length != originals.Count || current.Distinct().Count() != current.Length
@@ -794,6 +859,18 @@ public sealed class GraphEditorHostViewModel : ObservableObject
 
     public bool SetNodeProperty(string nodeId, string property, JsonElement value)
         => ExecuteSession(() => _session.SetNodeProperty(nodeId, property, value));
+
+    private readonly Dictionary<string, string> _nativeActionTypes = new(StringComparer.Ordinal);
+    public bool SetAdvancedActionMode(string nodeId, bool enabled)
+    {
+        var node = Nodes.FirstOrDefault(n => n.NodeId == nodeId);
+        if (node is null || !node.Properties.TryGetValue("action_type", out var value)) return false;
+        var current = value.GetString() ?? CanonicalStoryActionSchema.SendMessage;
+        if (enabled && current != CanonicalStoryActionSchema.ExecuteCommand) _nativeActionTypes[nodeId] = current;
+        var target = enabled ? CanonicalStoryActionSchema.ExecuteCommand
+            : _nativeActionTypes.GetValueOrDefault(nodeId, CanonicalStoryActionSchema.SendMessage);
+        return ChangeStoryActionType(nodeId, target);
+    }
 
     public bool SetSessionMusic(string nodeId, string? mediaRef)
         => ExecuteSession(() => _session.SetSessionMusic(nodeId, mediaRef));
@@ -958,6 +1035,51 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         _undoHistory.Push(entry);
         NotifyHistoryStateChanged(oldUndo, oldRedo);
         return true;
+    }
+
+    private bool IsReadOnlySource(string? nodeId)
+        => !string.IsNullOrWhiteSpace(nodeId)
+            && _readOnlySourcePolicy?.Invoke(nodeId) == true;
+
+    private bool RejectReadOnlySource(string? nodeId)
+    {
+        if (!IsReadOnlySource(nodeId)) return false;
+        PublishState([
+            new ValidationIssue(
+                "story.graph.reference.readonly",
+                "引用故事的输出连线由源故事包定义；请导入后编辑。可从本地故事接入引用故事输入。",
+                "source_story_id",
+                NodeId: nodeId)]);
+        return true;
+    }
+
+    private bool RejectReadOnlySources(IEnumerable<string?> nodeIds)
+    {
+        var nodeId = nodeIds.FirstOrDefault(IsReadOnlySource);
+        return nodeId is not null && RejectReadOnlySource(nodeId);
+    }
+
+    private bool RejectReadOnlySource(GraphEditorEndpoint first, GraphEditorEndpoint second)
+    {
+        if (first.IsOutput) return RejectReadOnlySource(first.NodeId);
+        if (second.IsOutput) return RejectReadOnlySource(second.NodeId);
+        return false;
+    }
+
+    private bool RejectReadOnlySource(GraphEditorEndpoint? first, GraphEditorEndpoint? second)
+    {
+        if (first.HasValue && first.Value.IsOutput
+            && RejectReadOnlySource(first.Value.NodeId)) return true;
+        return second.HasValue && second.Value.IsOutput
+            && RejectReadOnlySource(second.Value.NodeId);
+    }
+
+    private bool RejectReadOnlySource(GraphEditorEndpoint movingEndpoint,
+        GraphEditorEndpoint? target)
+    {
+        if (movingEndpoint.IsOutput && RejectReadOnlySource(movingEndpoint.NodeId)) return true;
+        return target.HasValue && target.Value.IsOutput
+            && RejectReadOnlySource(target.Value.NodeId);
     }
 
     private bool ExecuteBridge(Func<bool> command)

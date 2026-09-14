@@ -1,0 +1,20 @@
+gradle.projectsEvaluated {
+    def p = rootProject
+    def live = p.sourceSets.create('acceptance0331') {
+        java.srcDir(p.file('.tooling/0.3.3.1/live-src'))
+        compileClasspath = p.sourceSets.main.compileClasspath + p.sourceSets.main.output
+        runtimeClasspath = output + compileClasspath
+    }
+    def harness = p.tasks.register('acceptance0331Jar', Jar) {
+        dependsOn(p.tasks.named('acceptance0331Classes'))
+        from(live.output)
+        archiveFileName = 'dgr-acceptance-harness-0331.jar'
+        destinationDirectory = p.layout.projectDirectory.dir('.tooling/0.3.3.1/live-client/mods')
+    }
+    p.tasks.named('runClient') {
+        dependsOn(harness)
+        workingDir(p.file('.tooling/0.3.3.1/live-client'))
+        args('--width', '1280', '--height', '800')
+        jvmArgs('-Djava.io.tmpdir=' + p.file('.tooling/0.3.3.1/live-tmp'), '-Duser.home=E:/AI/CODEX')
+    }
+}

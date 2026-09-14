@@ -38,6 +38,21 @@ public final class CanonicalTaskUiProjection {
                 objective.setBoolean("submit", "submit_item".equals(row.getObjectiveType()));
                 objective.setInteger("current", row.getCurrent());
                 objective.setInteger("required", row.getRequired());
+                if (row.getSubmitActorId() != null) objective.setString("submit_actor", row.getSubmitActorId());
+                if (row.hasRegionCoordinates()) {
+                    objective.setInteger(
+                        "x",
+                        row.getRegionX()
+                            .intValue());
+                    objective.setInteger(
+                        "y",
+                        row.getRegionY()
+                            .intValue());
+                    objective.setInteger(
+                        "z",
+                        row.getRegionZ()
+                            .intValue());
+                }
                 objectives.appendTag(objective);
             }
             task.setTag("objectives", objectives);

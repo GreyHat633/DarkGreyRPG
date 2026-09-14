@@ -23,6 +23,8 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResourceException;
 public final class CanonicalStoryStartConfiguration {
 
     public static final String ENTER_STORY = "enter_story";
+    /** Public Story boundary trigger. Unlike the legacy enter_story trigger this is selected by its stable port ID. */
+    public static final String FLOW_DRIVEN = "flow_driven";
     public static final String INTERACT_ACTOR = "interact_actor";
     public static final String ENTER_REGION = "enter_region";
     public static final String LOGIC = "logic";
@@ -123,6 +125,13 @@ public final class CanonicalStoryStartConfiguration {
         }, "enter_story");
     }
 
+    public Trigger selectFlowDriven(String portId) {
+        if (blank(portId)) throw new IllegalArgumentException("Flow-driven Story port ID is required.");
+        for (Trigger trigger : triggers)
+            if (FLOW_DRIVEN.equals(trigger.getType()) && portId.equals(trigger.getPortId())) return trigger;
+        throw failure("story.start.trigger.missing", "No Story flow_driven trigger matches " + portId + ".");
+    }
+
     public Trigger selectActor(final String actorId) {
         Trigger result = findActor(actorId);
         if (result == null)
@@ -188,7 +197,7 @@ public final class CanonicalStoryStartConfiguration {
         JsonObject properties, String logicPortId) {
         Map<String, JsonElement> values = new LinkedHashMap<String, JsonElement>();
         for (Map.Entry<String, JsonElement> entry : properties.entrySet()) values.put(entry.getKey(), entry.getValue());
-        if (ENTER_STORY.equals(type)) {
+        if (ENTER_STORY.equals(type) || FLOW_DRIVEN.equals(type)) {
             requireExactKeys(values.keySet(), Collections.<String>emptySet(), "enter_story properties");
         } else if (INTERACT_ACTOR.equals(type)) {
             requireExactKeys(values.keySet(), set("actor_id"), "interact_actor properties");

@@ -169,6 +169,16 @@ public sealed class CanonicalProjectStoryGraphService
         var storyIds = items.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
         var transitions = new List<CanonicalProjectStoryGraphTransition>();
         var invalidStoryIds = new HashSet<string>(StringComparer.Ordinal);
+        try
+        {
+            foreach (var edge in _store.StoryLogicGraph.Load().Connections)
+                transitions.Add(new(edge.SourceStoryId, edge.TargetStoryId, edge.SourcePortId,
+                    incomingBranchOutputs: [edge.InterfaceKind + " → " + edge.TargetPortId]));
+        }
+        catch (CanonicalStoryLogicGraphRepositoryException exception)
+        {
+            diagnostics.Add(new(exception.Code, exception.Message));
+        }
 
         foreach (var item in items)
         {
@@ -190,11 +200,6 @@ public sealed class CanonicalProjectStoryGraphService
 
         var connected = edges.SelectMany(edge => new[] { edge.SourceStoryId, edge.TargetStoryId })
             .ToHashSet(StringComparer.Ordinal);
-        foreach (var item in items.Where(item => !connected.Contains(item.Id)))
-        {
-            diagnostics.Add(new(IsolatedStoryCode,
-                $"Story '{item.Id}' is not connected to any EnterStory transition.", item.Id));
-        }
 
         var adjacency = storyIds.ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
         foreach (var edge in edges) adjacency[edge.SourceStoryId].Add(edge.TargetStoryId);

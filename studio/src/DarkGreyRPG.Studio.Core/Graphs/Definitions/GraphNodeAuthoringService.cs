@@ -239,7 +239,7 @@ public sealed class GraphNodeAuthoringService
         }
         else if ((scope == GraphScope.Session && nodeType is "end" or "logic_input" or "logic_output")
             || (scope == GraphScope.Task && nodeType is "logic_input" or "logic_output")
-            || (scope == GraphScope.StoryFlow && nodeType is "logic_input" or "logic_output"))
+            || (scope == GraphScope.StoryFlow && nodeType is "logic_input" or "logic_output" or "terminate"))
         {
             string? publicPortId;
             try { publicPortId = _dynamicPortIdSource(); }
@@ -285,11 +285,11 @@ public sealed class GraphNodeAuthoringService
             var publicDisplayName = nodeType switch
             {
                 "end" => "结束",
+                "terminate" => "终止",
                 "logic_input" => "逻辑输入",
                 _ => "逻辑输出",
             };
-            if (scope == GraphScope.Task)
-                publicDisplayName = NextTaskPublicDisplayName(existingNodes, publicDisplayName);
+            publicDisplayName = NextTaskPublicDisplayName(existingNodes, publicDisplayName);
             candidate.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement(publicDisplayName);
         }
         else if (scope == GraphScope.Task && nodeType == "settle")
@@ -330,13 +330,12 @@ public sealed class GraphNodeAuthoringService
         // no mutation if the candidate is rejected.
         var shapeIssues = GraphNodeShapeValidator.Validate(candidate, scope);
         if (scope == GraphScope.Task
-            && string.Equals(nodeType, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal)
-            && CanonicalTaskObjectiveSchema.IsUnselectedTarget(candidate))
+            && string.Equals(nodeType, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
         {
-            shapeIssues = shapeIssues.Where(issue => issue.Code != "graph.objective.target.invalid"
-                || issue.Field is not ("properties.entity" or "properties.item" or "properties.actor_id"))
-                .ToArray();
+            shapeIssues = CanonicalTaskObjectiveSchema.AllowDraftIssues(candidate, shapeIssues);
         }
+        if (scope == GraphScope.StoryFlow && nodeType == CanonicalStoryActionSchema.NodeType)
+            shapeIssues = CanonicalStoryActionSchema.AllowDraftIssues(candidate, shapeIssues);
         if (shapeIssues.Count != 0)
             return FailureIssues(shapeIssues);
 
@@ -483,7 +482,7 @@ public sealed class GraphNodeAuthoringService
             if (node.Type == "settle")
                 names.AddRange((node.Ports ?? []).Where(port => port is not null)
                     .Select(port => port.DisplayName));
-            if (node.Type is "logic_input" or "logic_output"
+            if (node.Type is "logic_input" or "logic_output" or "terminate" or "end"
                 && (node.Properties ?? []).TryGetValue("display_name", out var value)
                 && value.ValueKind == System.Text.Json.JsonValueKind.String)
                 names.Add(value.GetString() ?? string.Empty);

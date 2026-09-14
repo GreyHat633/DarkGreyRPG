@@ -30,6 +30,7 @@ public final class StoryPackageLoader {
     private static final String DGRS_EXTENSION = ".dgrs";
     private static final String RUNTIME_CACHE_DIRECTORY = ".dgrs-runtime";
     private final File installDirectory;
+    private final DgrsGenerationStore generationStore;
     private volatile Map<String, LoadedStoryPackage> packages = Collections.emptyMap();
     private volatile Map<String, String> packageIdsBySourceName = Collections.emptyMap();
     private volatile ReloadResult lastReload = ReloadResult.empty();
@@ -37,6 +38,9 @@ public final class StoryPackageLoader {
     public StoryPackageLoader(File installDirectory) {
         if (installDirectory == null) throw new IllegalArgumentException("installDirectory cannot be null");
         this.installDirectory = installDirectory.getAbsoluteFile();
+        this.generationStore = new DgrsGenerationStore(
+            this.installDirectory.toPath()
+                .resolve(RUNTIME_CACHE_DIRECTORY));
     }
 
     public StoryPackageLoader(String installDirectory) {
@@ -80,9 +84,11 @@ public final class StoryPackageLoader {
             if (mappedSourceName != null) source = new File(installDirectory, mappedSourceName);
         }
         Map<String, LoadedStoryPackage> next = new LinkedHashMap<String, LoadedStoryPackage>(packages);
+        LoadedStoryPackage previousPackage = packages.get(packageId);
         Map<String, String> nextSources = new LinkedHashMap<String, String>(packageIdsBySourceName);
+        LoadedStoryPackage candidate = null;
         try {
-            LoadedStoryPackage candidate = loadCandidateSource(source);
+            candidate = loadCandidateSource(source);
             if (!packageId.equals(candidate.getPackageId())) throw new ProjectLoadException(
                 "Reloaded source declares package_id '" + candidate.getPackageId() + "'");
             next.put(candidate.getPackageId(), candidate);
@@ -90,9 +96,12 @@ public final class StoryPackageLoader {
             packages = Collections.unmodifiableMap(next);
             nextSources.put(sourceKey(source), candidate.getPackageId());
             packageIdsBySourceName = Collections.unmodifiableMap(nextSources);
+            if (previousPackage != null && previousPackage != candidate) previousPackage.close();
+            sweepGenerations(next, null);
             lastReload = ReloadResult.success(next.size());
             return lastReload;
         } catch (ProjectLoadException exception) {
+            if (candidate != null && candidate != previousPackage) candidate.close();
             List<String> errors = new ArrayList<String>();
             errors.add(packageId + ": " + exception.getMessage());
             lastReload = ReloadResult.partial(next.size(), errors);
@@ -116,7 +125,11 @@ public final class StoryPackageLoader {
                 .failure(errors, "Story Package install path is not a directory: " + installDirectory);
             return lastReload;
         }
-        cleanupRuntimeResidue(errors);
+        try {
+            generationStore.recoverParts();
+        } catch (IOException exception) {
+            errors.add("Cannot recover DGRS runtime temporary files: " + exception.getMessage());
+        }
         File[] children = installDirectory.listFiles();
         if (children == null) {
             lastReload = ReloadResult
@@ -152,11 +165,16 @@ public final class StoryPackageLoader {
             if (!next.isEmpty()) StoryPackageSnapshotMerger.merge(next);
         } catch (ProjectLoadException exception) {
             errors.add("Package set: " + exception.getMessage());
+            for (LoadedStoryPackage value : next.values()) if (!previous.containsValue(value)) value.close();
             next = previous;
             nextSources = previousSources;
         }
         packages = Collections.unmodifiableMap(new LinkedHashMap<String, LoadedStoryPackage>(next));
         packageIdsBySourceName = Collections.unmodifiableMap(new LinkedHashMap<String, String>(nextSources));
+        for (Map.Entry<String, LoadedStoryPackage> old : previous.entrySet())
+            if (next.get(old.getKey()) != old.getValue()) old.getValue()
+                .close();
+        sweepGenerations(next, errors);
         lastReload = errors.isEmpty() ? ReloadResult.success(next.size()) : ReloadResult.partial(next.size(), errors);
         return lastReload;
     }
@@ -188,13 +206,22 @@ public final class StoryPackageLoader {
             && result.getSnapshot()
                 .getCanonicalStoryMembership(manifest.getStoryId()) == null)
             throw new ProjectLoadException("Manifest story_id has no DGRS canonical membership");
+        String fingerprint = StoryPackageContentFingerprint.compute(manifest, reader);
+        DgrsGenerationStore.Generation generation;
+        try {
+            generation = generationStore.install(archive, fingerprint);
+        } catch (IOException exception) {
+            throw new ProjectLoadException("Cannot publish immutable DGRS generation", exception);
+        }
         return new LoadedStoryPackage(
             manifest,
-            null,
             archive.getAbsoluteFile(),
+            generationStore,
+            generation,
             result.getSnapshot(),
             result.getStoryLogicGraph(),
-            result.getDeclaredBytes());
+            result.getDeclaredBytes(),
+            fingerprint);
     }
 
     private LoadedStoryPackage loadCandidate(File directory, String expectedPackageId, boolean requireDgrs)
@@ -266,7 +293,17 @@ public final class StoryPackageLoader {
         return source.getName();
     }
 
-    /** Removes only the exact legacy cache child, after a no-links safety pass. */
+    private void sweepGenerations(Map<String, LoadedStoryPackage> current, List<String> errors) {
+        java.util.Set<String> fingerprints = new java.util.HashSet<String>();
+        for (LoadedStoryPackage value : current.values()) fingerprints.add(value.getContentFingerprint());
+        try {
+            generationStore.sweepGenerations(fingerprints);
+        } catch (IOException exception) {
+            if (errors != null) errors.add("Cannot sweep old DGRS generations: " + exception.getMessage());
+        }
+    }
+
+    /** Legacy residue is now recovered as controlled generations and .part files. */
     private void cleanupRuntimeResidue(List<String> errors) {
         Path install = installDirectory.toPath()
             .toAbsolutePath()

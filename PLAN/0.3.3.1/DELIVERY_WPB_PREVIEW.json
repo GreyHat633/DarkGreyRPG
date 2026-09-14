@@ -1,0 +1,13 @@
+{
+  "Path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "ProductVersion": "0.3.3.1-wpb-preview",
+  "Bytes": 141841646,
+  "SHA256": "E2E63465198FD4CC877705DDA1717F367D8924C2F565754C86C9606BB6372E26",
+  "Configuration": "Release",
+  "Runtime": "win-x64",
+  "SelfContained": true,
+  "Scope": "WP-B first interaction preview; A22 and remaining work packages OPEN",
+  "EngineeringComplete": false,
+  "UserAccepted": false,
+  "SupersededBy": "DELIVERY_LIVE_FIX.json"
+}

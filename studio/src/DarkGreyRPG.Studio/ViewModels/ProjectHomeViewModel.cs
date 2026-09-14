@@ -201,7 +201,7 @@ public sealed record ProjectGraphDiagnosticViewModel(
 }
 
 /// <summary>Read-only project Story graph snapshot for the M3 Project Graph route.</summary>
-public sealed class ProjectGraphViewModel : ObservableObject
+public sealed partial class ProjectGraphViewModel : ObservableObject
 {
     private sealed record BuildNode(string Id, string DisplayName, string BaseWarningText = "");
     private sealed record BuildTransition(
@@ -283,12 +283,6 @@ public sealed class ProjectGraphViewModel : ObservableObject
             .ToList();
 
         var connected = edges.SelectMany(edge => new[] { edge.SourceStoryId, edge.TargetStoryId }).ToHashSet(StringComparer.Ordinal);
-        foreach (var story in input.Nodes.Where(story => !connected.Contains(story.Id)))
-        {
-            diagnostics.Add(new("project_graph.story.isolated", $"Story '{story.Id}' 未连接到任何 EnterStory 转场。", story.Id));
-            warnedStories.Add(story.Id);
-        }
-
         var adjacency = storyIds.ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
         foreach (var edge in edges)
             adjacency[edge.SourceStoryId].Add(edge.TargetStoryId);
@@ -338,6 +332,7 @@ public sealed class ProjectGraphViewModel : ObservableObject
         AutoLayoutCommand = new RelayCommand(AutoLayout, () => Nodes.Count > 0);
         AddLogicConnectionCommand = new RelayCommand(AddLogicConnection,
             () => _storyLogicRepository is not null && SelectedLogicSource is not null && SelectedLogicTarget is not null);
+        InitializeCanonicalGraph(projectDirectory);
     }
 
     private static BuildInput CreateLegacyInput(IReadOnlyList<StoryResource> stories)

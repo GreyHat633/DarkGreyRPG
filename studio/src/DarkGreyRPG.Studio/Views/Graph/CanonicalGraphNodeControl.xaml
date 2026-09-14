@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:DarkGreyRPG.Studio.Views"
              xmlns:graphview="clr-namespace:DarkGreyRPG.Studio.Views.Graph"
              Width="232" MinHeight="92" Focusable="True" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <AdornerDecorator ClipToBounds="True">
     <Border x:Name="NodeBorder" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6"
             Padding="0" AutomationProperties.AutomationId="CanonicalGraphNodeBorder">
         <Grid>
@@ -56,4 +57,4 @@
             </Expander>
         </Grid>
     </Border>
-</UserControl>
+</AdornerDecorator></UserControl>

@@ -585,7 +585,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
 
         StringAssert.Contains(storyStart.Host.Nodes.Single().ParameterSummary, "进入区域");
         StringAssert.Contains(task.Host.Nodes.Single().ParameterSummary, "击杀实体");
-        Assert.AreEqual("物品给予", storyAction.Host.Nodes.Single().DisplayName);
+        Assert.AreEqual("执行 [物品给予]", storyAction.Host.Nodes.Single().DisplayName);
         StringAssert.Contains(storyAction.Host.Nodes.Single().ParameterSummary, "物品给予");
         StringAssert.Contains(session.Host.Nodes.Single().ParameterSummary, "欢迎来到酒馆");
         Assert.IsTrue(session.Host.Nodes.Single().HasParameterSummary);

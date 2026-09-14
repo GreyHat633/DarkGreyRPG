@@ -184,6 +184,13 @@ public final class CanonicalActorArbitrationProbe {
 
     private static CanonicalGraphNode node(String id, String type, Map<String, JsonElement> properties,
         CanonicalGraphPort... ports) {
+        // Fixture upgrade: public termination metadata belongs in test data, not runtime fallback.
+        if ("terminate".equals(type)) {
+            properties = new java.util.LinkedHashMap<String, JsonElement>(properties);
+            if (!properties.containsKey("port_id")) properties.put("port_id", new com.google.gson.JsonPrimitive(id));
+            if (!properties.containsKey("display_name"))
+                properties.put("display_name", new com.google.gson.JsonPrimitive(id));
+        }
         return new CanonicalGraphNode(id, type, id, Arrays.asList(ports), properties);
     }
 

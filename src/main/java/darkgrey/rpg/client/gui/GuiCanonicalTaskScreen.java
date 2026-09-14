@@ -30,24 +30,6 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private String selectedTaskId;
     private int taskScroll;
     private int detailScroll;
-    private final List<SubmitHit> submitHits = new ArrayList<SubmitHit>();
-
-    private static final class SubmitHit {
-
-        int left, top, right, bottom;
-        long revision;
-        String task, objective;
-
-        SubmitHit(int l, int t, int r, int b, long revision, String task, String objective) {
-            left = l;
-            top = t;
-            right = r;
-            bottom = b;
-            this.revision = revision;
-            this.task = task;
-            this.objective = objective;
-        }
-    }
 
     private final UtilityWindowGeometry windowGeometry = new UtilityWindowGeometry(280, 180, 620, 300);
     private boolean geometryInitialized;
@@ -82,7 +64,6 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         NBTTagCompound next = CanonicalTaskClientStore.getSnapshot();
         snapshot = next == null ? new NBTTagCompound() : next;
         snapshotRevision = revision;
-        submitHits.clear();
         NBTTagList tasks = tasks();
         if (selectedTaskId != null && findTask(tasks, selectedTaskId) != null) return;
         selectedTaskId = tasks.tagCount() == 0 ? null : taskId(tasks.getCompoundTagAt(0));
@@ -131,15 +112,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         if (windowGeometry.begin(mouseX, mouseY, button)) return;
         super.mouseClicked(mouseX, mouseY, button);
         if (button != 0) return;
-        for (SubmitHit hit : submitHits)
-            if (mouseX >= hit.left && mouseX < hit.right && mouseY >= hit.top && mouseY < hit.bottom) {
-                darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendToServer(
-                    new darkgrey.rpg.network.message.canonical.CanonicalTaskSubmit(
-                        hit.revision,
-                        hit.task,
-                        hit.objective));
-                return;
-            }
+        // Item submission is completed only by the server's real entity
+        // interaction event. The journal has no remote-submit hit target.
         CanonicalTaskLayout layout = layout();
         if (!layout.containsList(mouseX, mouseY)) return;
         int rowHeight = layout.stacked ? STACKED_ROW_HEIGHT : ROW_HEIGHT;
@@ -221,8 +195,6 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     }
 
     private void drawDetails(CanonicalTaskLayout layout) {
-        submitHits.clear();
-        java.util.Map<Integer, String> submitLines = new java.util.HashMap<Integer, String>();
         NBTTagCompound task = findTask(tasks(), selectedTaskId);
         if (task == null) {
             fontRendererObj.drawString("选择一个任务查看详情", layout.detailLeft + 8, layout.detailTop + 8, 0xFFAAAAAA);
@@ -257,8 +229,12 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                 int current = objective.getInteger("current");
                 if (required > 1 || current > 0) lines.add("  进度 " + current + " / " + required);
                 if (objective.getBoolean("submit")) {
-                    submitLines.put(lines.size(), objective.getString("id"));
-                    lines.add("  提交物品");
+                    String actor = value(objective, "submit_actor", "指定角色");
+                    lines.add("  请与 " + actor + " 交互提交物品");
+                } else if (objective.hasKey("x") && objective.hasKey("y") && objective.hasKey("z")) {
+                    lines.add(
+                        "  坐标：" + objective
+                            .getInteger("x") + " / " + objective.getInteger("y") + " / " + objective.getInteger("z"));
                 }
             }
         }
@@ -267,19 +243,6 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         detailScroll = Math.min(detailScroll, Math.max(0, lines.size() - visible));
         for (int index = 0; index < visible && index + detailScroll < lines.size(); index++) {
             int lineIndex = index + detailScroll;
-            if (submitLines.containsKey(lineIndex)) {
-                int y = layout.detailTop + index * lineHeight;
-                drawRect(layout.detailLeft + 6, y, layout.detailRight - 6, y + lineHeight, 0xFF284B68);
-                submitHits.add(
-                    new SubmitHit(
-                        layout.detailLeft + 6,
-                        y,
-                        layout.detailRight - 6,
-                        y + lineHeight,
-                        snapshotRevision,
-                        selectedTaskId,
-                        submitLines.get(lineIndex)));
-            }
             int color = lineIndex == 0 ? DgrUiPalette.TEXT
                 : lineIndex == 1 ? DgrUiPalette.SECONDARY : DgrUiPalette.TEXT;
             fontRendererObj

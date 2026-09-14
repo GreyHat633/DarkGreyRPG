@@ -69,7 +69,7 @@ public sealed class GraphEditorHostViewModelTests
 
         Assert.IsTrue(host.AddNode(added));
         Assert.AreSame(source, host.Nodes.Single(node => node.NodeId == "source"));
-        Assert.AreEqual("消息发送", host.Nodes.Single(node => node.NodeId == "action").DisplayName);
+        Assert.AreEqual("执行 [消息发送]", host.Nodes.Single(node => node.NodeId == "action").DisplayName);
         Assert.IsEmpty(host.LastValidationIssues);
         Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("source", "out", GraphInterfaceKind.Flow),
             GraphEditorEndpoint.Input("action", "flow_in", GraphInterfaceKind.Flow)));
@@ -253,7 +253,7 @@ public sealed class GraphEditorHostViewModelTests
         var updated = host.Nodes.Single(item => item.NodeId == "source");
         Assert.AreSame(node, updated);
         Assert.AreEqual("line", updated.Type);
-        Assert.AreEqual("Changed", updated.DisplayName);
+        Assert.AreEqual("台词 [Changed]", updated.DisplayName);
         Assert.AreSame(port, updated.Outputs.Single());
         Assert.AreEqual("Changed port", updated.Outputs.Single().DisplayName);
         Assert.AreEqual(4, updated.Outputs.Single().Order);

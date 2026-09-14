@@ -7,6 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Validation;
@@ -118,6 +119,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private bool _hostEventsAttached;
     private bool _hostFromDataContext;
     private bool _settingHostFromDataContext;
+    private bool _layoutRefreshPending;
 
     public static readonly DependencyProperty HostProperty = DependencyProperty.Register(
         nameof(Host), typeof(GraphEditorHostViewModel), typeof(CanonicalGraphEditorView),
@@ -278,6 +280,7 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Returns whether a type is currently safe to author in Host's scope.</summary>
     public bool CanAuthorNodeType(string? nodeType)
     {
+        if (Host?.Scope == GraphScope.Project) return false;
         if (Host is not { } host || string.IsNullOrWhiteSpace(nodeType) ||
             !GraphNodeDefinitionRegistry.TryGet(host.Scope, nodeType, out var definition) ||
             definition.CompatibilityOnly ||
@@ -445,6 +448,7 @@ public partial class CanonicalGraphEditorView : UserControl
         host.Nodes.CollectionChanged += HostNodesCollectionChanged;
         host.Connections.CollectionChanged += HostConnectionsCollectionChanged;
         host.GraphChanged += HostGraphChanged;
+        host.LayoutChanged += HostLayoutChanged;
         host.PortsChanged += HostPortsChanged;
         host.NodesChanged += HostNodesChanged;
         foreach (var node in host.Nodes) node.PropertyChanged += NodePropertyChanged;
@@ -457,6 +461,7 @@ public partial class CanonicalGraphEditorView : UserControl
         host.Nodes.CollectionChanged -= HostNodesCollectionChanged;
         host.Connections.CollectionChanged -= HostConnectionsCollectionChanged;
         host.GraphChanged -= HostGraphChanged;
+        host.LayoutChanged -= HostLayoutChanged;
         host.PortsChanged -= HostPortsChanged;
         host.NodesChanged -= HostNodesChanged;
         foreach (var node in host.Nodes) node.PropertyChanged -= NodePropertyChanged;
@@ -521,6 +526,41 @@ public partial class CanonicalGraphEditorView : UserControl
         IndexPorts();
     }
 
+    private void HostLayoutChanged(object? sender, EventArgs args)
+    {
+        if (!ReferenceEquals(sender, _host)) return;
+        QueueLayoutGeometryRefresh();
+    }
+
+    /// <summary>
+    /// Coalesces the host's layout transaction completion into one render-pass
+    /// refresh. Node X/Y notifications keep the live drag responsive; this
+    /// pass runs after WPF has arranged every affected node and rebuilds the
+    /// port index plus both visible and hit-test wire geometry together.
+    /// </summary>
+    private void QueueLayoutGeometryRefresh()
+    {
+        if (_layoutRefreshPending) return;
+        _layoutRefreshPending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
+        {
+            _layoutRefreshPending = false;
+            if (_host is null || !_hostEventsAttached) return;
+            GraphCanvas.UpdateLayout();
+            IndexPorts();
+            RedrawConnections();
+        }));
+    }
+
+    private void NodeVisualSizeChanged(object sender, SizeChangedEventArgs args)
+        => QueueLayoutGeometryRefresh();
+
+    private void DisposeNodeVisual(CanonicalGraphNodeControl visual)
+    {
+        visual.SizeChanged -= NodeVisualSizeChanged;
+        visual.DisposeInlineEditor();
+    }
+
     private void HostPortsChanged(object? sender, GraphPortsChangedEventArgs args)
     {
         if (_host is null) return;
@@ -579,7 +619,7 @@ public partial class CanonicalGraphEditorView : UserControl
             .ToHashSet(StringComparer.Ordinal);
         CancelPointerGesture(false);
         foreach (var node in _nodeVisuals.Keys) node.PropertyChanged -= NodePropertyChanged;
-        foreach (var visual in _nodeVisuals.Values) visual.DisposeInlineEditor();
+        foreach (var visual in _nodeVisuals.Values) DisposeNodeVisual(visual);
         GraphCanvas.Children.Clear();
         _nodeVisuals.Clear();
         _ports.Clear();
@@ -618,6 +658,7 @@ public partial class CanonicalGraphEditorView : UserControl
             ?? (_host is null ? null : new CanonicalNodeInspectorViewModel(
                 _host, node, subscribeToHostChanges: false));
         var visual = new CanonicalGraphNodeControl(node, inlineEditor) { IsEnabled = !IsReadOnly };
+        visual.SizeChanged += NodeVisualSizeChanged;
         _nodeVisuals[node] = visual;
         GraphCanvas.Children.Add(visual);
         Canvas.SetLeft(visual, Safe(node.X));
@@ -630,7 +671,7 @@ public partial class CanonicalGraphEditorView : UserControl
         node.PropertyChanged -= NodePropertyChanged;
         if (_nodeVisuals.Remove(node, out var visual))
         {
-            visual.DisposeInlineEditor();
+            DisposeNodeVisual(visual);
             GraphCanvas.Children.Remove(visual);
         }
         _selectedNodes.Remove(node);
@@ -794,8 +835,7 @@ public partial class CanonicalGraphEditorView : UserControl
                 e.Handled = true;
                 return;
             }
-            if (!nodeVisual.IsHeaderDragSource(source)
-                || !BeginNodeDrag(node, e.GetPosition(GraphCanvas), wasSelectedWithPeers)) return;
+            if (!BeginNodeDrag(node, e.GetPosition(GraphCanvas), wasSelectedWithPeers)) return;
             CanvasViewport.CaptureMouse();
             e.Handled = true;
             return;
@@ -1698,8 +1738,7 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         if (IsReadOnly) return false;
         if (!_selectedNodes.Contains(node) || !_pointerState.Begin(GraphPointerMode.NodeDrag)) return false;
-        if (_selectedNodes.Count > 1
-            && (_host is null || !_host.BeginLayoutMove(_selectedNodes.Select(selected => selected.NodeId))))
+        if (_host is null || !_host.BeginLayoutMove(_selectedNodes.Select(selected => selected.NodeId)))
         {
             _pointerState.End(GraphPointerMode.NodeDrag);
             return false;
@@ -1984,7 +2023,7 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         CancelPointerGesture(false);
         foreach (var node in _nodeVisuals.Keys) node.PropertyChanged -= NodePropertyChanged;
-        foreach (var visual in _nodeVisuals.Values) visual.DisposeInlineEditor();
+        foreach (var visual in _nodeVisuals.Values) DisposeNodeVisual(visual);
         GraphCanvas.Children.Clear();
         _nodeVisuals.Clear();
         _ports.Clear();
@@ -2043,6 +2082,14 @@ public partial class CanonicalGraphEditorView : UserControl
             return new[] { new Point(node.X, node.Y), new Point(node.X + width, node.Y + height) };
         });
         _viewportController.FitToBounds(points, new Size(CanvasViewport.ActualWidth, CanvasViewport.ActualHeight));
+        ApplyViewport();
+    }
+    public void FocusNode(GraphEditorNodeViewModel node)
+    {
+        SelectNode(node);
+        var center = ViewportCenter();
+        _viewportController.PanX = center.X - (node.X + NodeWidth / 2) * _viewportController.Zoom;
+        _viewportController.PanY = center.Y - (node.Y + NodeHeight / 2) * _viewportController.Zoom;
         ApplyViewport();
     }
     private void FitAll_OnClick(object sender, RoutedEventArgs e) => FitAllNodes();

@@ -1,0 +1,8 @@
+{
+  "Choices": [
+    "CanonicalStoryActionTypeOption { Value = give_item, DisplayName = 物品给予 }",
+    "CanonicalStoryActionTypeOption { Value = give_xp, DisplayName = 经验给予 }"
+  ],
+  "Cycles": 100,
+  "Passed": true
+}

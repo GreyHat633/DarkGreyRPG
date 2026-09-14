@@ -1,0 +1,82 @@
+[
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = interact_actor, DisplayName = 角色交互 }",
+    "NodeX": 756.0,
+    "Expected": "interact_actor",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 1
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = enter_region, DisplayName = 进入区域 }",
+    "NodeX": 756.0,
+    "Expected": "enter_region",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 2
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = interact_actor, DisplayName = 角色交互 }",
+    "NodeX": 756.0,
+    "Expected": "interact_actor",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 3
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = enter_region, DisplayName = 进入区域 }",
+    "NodeX": 756.0,
+    "Expected": "enter_region",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 4
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = interact_actor, DisplayName = 角色交互 }",
+    "NodeX": 756.0,
+    "Expected": "interact_actor",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 5
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = enter_region, DisplayName = 进入区域 }",
+    "NodeX": 756.0,
+    "Expected": "enter_region",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 6
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = interact_actor, DisplayName = 角色交互 }",
+    "NodeX": 756.0,
+    "Expected": "interact_actor",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 7
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = enter_region, DisplayName = 进入区域 }",
+    "NodeX": 756.0,
+    "Expected": "enter_region",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 8
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = interact_actor, DisplayName = 角色交互 }",
+    "NodeX": 756.0,
+    "Expected": "interact_actor",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 9
+  },
+  {
+    "Selection": "CanonicalStoryStartTriggerTypeOption { Value = enter_region, DisplayName = 进入区域 }",
+    "NodeX": 756.0,
+    "Expected": "enter_region",
+    "Pass": true,
+    "NodeY": 270.0,
+    "Round": 10
+  }
+]

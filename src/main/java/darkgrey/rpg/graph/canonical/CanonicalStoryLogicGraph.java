@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Immutable schema-versioned aggregate of cross-Story logic connections. */
+/** Immutable schema-versioned aggregate of cross-Story Flow and Logic boundary connections. */
 public final class CanonicalStoryLogicGraph {
 
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
     private static final CanonicalStoryLogicGraph EMPTY = new CanonicalStoryLogicGraph(
         CURRENT_SCHEMA_VERSION,
         Collections.<CanonicalStoryLogicConnection>emptyList());

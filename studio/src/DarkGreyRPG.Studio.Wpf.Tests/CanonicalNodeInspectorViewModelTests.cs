@@ -94,14 +94,16 @@ public sealed class CanonicalNodeInspectorViewModelTests
 
         Assert.IsTrue(inspector.IsStoryAction);
         Assert.IsTrue(inspector.IsSendMessageAction);
-        Assert.AreEqual("任务完成", inspector.StoryActionMessage);
+        // Free text fields start as empty authoring drafts; example copy must
+        // never be materialized into the graph payload.
+        Assert.AreEqual(string.Empty, inspector.StoryActionMessage);
         CollectionAssert.AreEqual(
             new[] { CanonicalStoryActionSchema.GiveItem, CanonicalStoryActionSchema.GiveXp, CanonicalStoryActionSchema.GiveBuff, CanonicalStoryActionSchema.GiveHealth, CanonicalStoryActionSchema.Teleport, CanonicalStoryActionSchema.SendMessage },
             inspector.StoryActionTypeOptions.Select(option => option.Value).ToArray());
         CollectionAssert.AreEqual(
             new[] { "物品给予", "经验给予", "BUFF给予", "生命给予", "玩家传送", "消息发送" },
             inspector.StoryActionTypeOptions.Select(option => option.DisplayName).ToArray());
-        Assert.AreEqual("消息发送", editor.Host.Nodes.Single().DisplayName);
+        Assert.AreEqual("执行 [消息发送]", editor.Host.Nodes.Single().DisplayName);
         var beforeTypeRevision = editor.GraphRevision;
         var beforeTypeUndo = editor.Host.Session.UndoCount;
 
@@ -111,8 +113,8 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual(beforeTypeRevision + 1, editor.GraphRevision);
         Assert.AreEqual(beforeTypeUndo + 1, editor.Host.Session.UndoCount);
         Assert.IsTrue(inspector.IsGiveItemAction);
-        Assert.AreEqual("物品给予", editor.Host.Nodes.Single().DisplayName);
-        Assert.AreEqual("starter_reward", inspector.StoryActionItem);
+        Assert.AreEqual("执行 [物品给予]", editor.Host.Nodes.Single().DisplayName);
+        Assert.AreEqual(string.Empty, inspector.StoryActionItem);
         Assert.AreEqual("10", inspector.StoryActionAmountText);
         CollectionAssert.AreEquivalent(new[]
         {

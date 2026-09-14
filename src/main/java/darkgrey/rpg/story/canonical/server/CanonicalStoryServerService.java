@@ -116,6 +116,82 @@ public final class CanonicalStoryServerService {
         return null;
     }
 
+    /** Internal coordinator seam for an already selected stable Start trigger. */
+    public CanonicalStoryDispatch startByLogicTrigger(UUID playerUuid, String storyId, String triggerPortId,
+        Map<String, Boolean> logicInputs, long activationTime) {
+        if (!isStartEligible(playerUuid, storyId)) return null;
+        CanonicalGraphResource resource = story(storyId);
+        CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(resource);
+        CanonicalStoryStartConfiguration.Trigger trigger = null;
+        for (CanonicalStoryStartConfiguration.Trigger candidate : start.getLogicTriggers()) if (candidate.getPortId()
+            .equals(triggerPortId)) {
+                trigger = candidate;
+                break;
+            }
+        if (trigger == null) throw new CanonicalGraphResourceException(
+            "story.start.trigger.missing",
+            "No Logic Story Start trigger matches " + triggerPortId + ".");
+        return startDispatch(
+            requirePlayer(playerUuid),
+            resource,
+            trigger.getPortId(),
+            start.getRepeatPolicy(),
+            logicInputs,
+            activationTime);
+    }
+
+    /** Detached resource lookup used by the bounded Forge coordinator. */
+    public CanonicalGraphResource storyResource(String storyId) {
+        return story(storyId);
+    }
+
+    /** Starts exactly the authored flow_driven boundary selected by a cross-Story Flow edge. */
+    public CanonicalStoryDispatch startByFlow(UUID playerUuid, String sourceStoryId, String sourcePortId,
+        String targetStoryId, String targetPortId, long activationTime) {
+        if (!isStartEligible(playerUuid, targetStoryId)) return null;
+        CanonicalGraphResource source = story(sourceStoryId);
+        CanonicalGraphResource target = story(targetStoryId);
+        boolean found = false;
+        for (darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection connection : project
+            .getCanonicalStoryLogicConnections())
+            if (connection.getInterfaceKind() == darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.FLOW
+                && sourceStoryId.equals(connection.getSourceStoryId())
+                && sourcePortId.equals(connection.getSourcePortId())
+                && targetStoryId.equals(connection.getTargetStoryId())
+                && targetPortId.equals(connection.getTargetPortId())) {
+                    found = true;
+                    break;
+                }
+        if (!found) return null;
+        CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(target);
+        CanonicalStoryStartConfiguration.Trigger trigger = start.selectFlowDriven(targetPortId);
+        return startDispatch(
+            requirePlayer(playerUuid),
+            target,
+            trigger.getPortId(),
+            start.getRepeatPolicy(),
+            Collections.<String, Boolean>emptyMap(),
+            activationTime);
+    }
+
+    /** Resolves one terminated public Flow output against the installed package graph. */
+    public CanonicalStoryDispatch startFlowFromTerminal(UUID playerUuid, String sourceStoryId, String sourcePortId,
+        long activationTime) {
+        for (darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection connection : project
+            .getCanonicalStoryLogicConnections())
+            if (connection.getInterfaceKind() == darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.FLOW
+                && sourceStoryId.equals(connection.getSourceStoryId())
+                && sourcePortId.equals(connection.getSourcePortId()))
+                return startByFlow(
+                    playerUuid,
+                    sourceStoryId,
+                    sourcePortId,
+                    connection.getTargetStoryId(),
+                    connection.getTargetPortId(),
+                    activationTime);
+        return null;
+    }
+
     public CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId) {
         return data.startDisposition(requirePlayer(playerUuid), requireText(storyId, "Story ID"));
     }

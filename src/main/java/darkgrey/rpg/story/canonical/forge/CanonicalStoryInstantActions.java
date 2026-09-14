@@ -71,7 +71,11 @@ public final class CanonicalStoryInstantActions {
         if (CanonicalStoryActionConfiguration.EXECUTE_COMMAND.equals(type)) {
             return MinecraftServer.getServer()
                 .getCommandManager()
-                .executeCommand(commandContext(player), configuration.getText("command")) > 0;
+                .executeCommand(
+                    commandContext(player),
+                    configuration.getText("command")
+                        .substring(1))
+                > 0;
         }
         return false;
     }

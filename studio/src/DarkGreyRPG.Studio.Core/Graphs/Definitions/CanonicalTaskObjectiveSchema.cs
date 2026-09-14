@@ -32,7 +32,7 @@ public static class CanonicalTaskObjectiveSchema
     public const string ReachRegion = "reach_region";
 
     public static IReadOnlyList<string> ObjectiveTypes { get; } =
-        [KillEntity, CollectItem, SubmitItem, InteractActor, ReachRegion];
+        [KillEntity, InteractActor, CollectItem, SubmitItem, ReachRegion];
 
     public static IReadOnlySet<string> CommonProperties { get; } =
         new HashSet<string>([TypeProperty, DescriptionProperty], StringComparer.Ordinal);
@@ -40,14 +40,15 @@ public static class CanonicalTaskObjectiveSchema
     public static IReadOnlySet<string> AllProperties { get; } =
         new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty,
             EntityProperty, ItemProperty, MetadataProperty, ActorIdProperty,
-            PrerequisiteEnabledProperty, "dimension_id", "dimension_note", "center_x", "center_y", "center_z", "radius"], StringComparer.Ordinal);
+            PrerequisiteEnabledProperty, "dimension_id", "center_x", "center_y", "center_z", "radius"], StringComparer.Ordinal);
 
     public static IReadOnlySet<string> PropertiesFor(string type) => type switch
     {
         KillEntity => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, EntityProperty], StringComparer.Ordinal),
-        CollectItem or SubmitItem => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, ItemProperty, MetadataProperty], StringComparer.Ordinal),
+        CollectItem => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, ItemProperty, MetadataProperty], StringComparer.Ordinal),
+        SubmitItem => new HashSet<string>([TypeProperty, DescriptionProperty, RequiredProperty, ItemProperty, MetadataProperty, ActorIdProperty], StringComparer.Ordinal),
         InteractActor => new HashSet<string>([TypeProperty, DescriptionProperty, ActorIdProperty], StringComparer.Ordinal),
-        ReachRegion => new HashSet<string>([TypeProperty, DescriptionProperty, "dimension_id", "dimension_note", "center_x", "center_y", "center_z", "radius"], StringComparer.Ordinal),
+        ReachRegion => new HashSet<string>([TypeProperty, DescriptionProperty, "dimension_id", "center_x", "center_y", "center_z", "radius"], StringComparer.Ordinal),
         _ => new HashSet<string>(StringComparer.Ordinal),
     };
 
@@ -97,7 +98,7 @@ public static class CanonicalTaskObjectiveSchema
                 && !IsSafeLegacyInteractRequired(type!, key, properties))
                 issues.Add(Issue("graph.objective.property.unsupported", $"Objective property '{key}' is not valid for type '{type}'.", $"properties.{key}", node.Id));
         foreach (var key in expected)
-            if (key != "dimension_note" && !properties.ContainsKey(key))
+            if (!properties.ContainsKey(key))
                 issues.Add(Issue("graph.objective.property.missing", $"Objective property '{key}' is required for type '{type}'.", $"properties.{key}", node.Id));
 
         if (!properties.TryGetValue(DescriptionProperty, out var description)
@@ -127,6 +128,7 @@ public static class CanonicalTaskObjectiveSchema
                 break;
             case CollectItem:
             case SubmitItem:
+                if (type == SubmitItem) ValidateString(properties, ActorIdProperty, issues, node.Id);
                 ValidateString(properties, ItemProperty, issues, node.Id);
                 if (!properties.TryGetValue(MetadataProperty, out var metadata)
                     || metadata.ValueKind != JsonValueKind.Object)
@@ -147,10 +149,8 @@ public static class CanonicalTaskObjectiveSchema
                 issues.Add(Issue("graph.objective.region.dimension", "维度 ID 必须为整数。", "dimension_id", node.Id));
             foreach (var field in new[] { "center_x", "center_y", "center_z", "radius" })
                 if (!properties.TryGetValue(field, out var number) || number.ValueKind != JsonValueKind.Number
-                    || !number.TryGetDouble(out var parsed) || !double.IsFinite(parsed) || (field == "radius" && parsed < 0))
-                    issues.Add(Issue("graph.objective.region.coordinate", "坐标必须为有限数值，半径不得小于 0。", field, node.Id));
-            if (properties.TryGetValue("dimension_note", out var note) && note.ValueKind != JsonValueKind.String)
-                issues.Add(Issue("graph.objective.region.note", "维度备注必须为文本。", "dimension_note", node.Id));
+                    || !number.TryGetInt32(out var parsed) || (field == "radius" && parsed < 0))
+                    issues.Add(Issue("graph.objective.region.coordinate", "坐标必须为整数方块坐标，半径必须为非负整数。", field, node.Id));
         }
 
         var prerequisiteEnabled = IsPrerequisiteEnabled(node);
@@ -275,8 +275,7 @@ public static class CanonicalTaskObjectiveSchema
             && prerequisite.GetBoolean();
         properties.Clear();
         properties[TypeProperty] = JsonSerializer.SerializeToElement(type);
-        properties[DescriptionProperty] = JsonSerializer.SerializeToElement(
-            string.IsNullOrWhiteSpace(description) ? DefaultDescription(type) : description);
+        properties[DescriptionProperty] = JsonSerializer.SerializeToElement(description ?? "");
         properties[PrerequisiteEnabledProperty] = JsonSerializer.SerializeToElement(prerequisiteEnabled);
         if (type is KillEntity or CollectItem or SubmitItem)
             properties[RequiredProperty] = JsonSerializer.SerializeToElement(required);
@@ -287,14 +286,14 @@ public static class CanonicalTaskObjectiveSchema
                 break;
             case CollectItem:
             case SubmitItem:
+                if (type == SubmitItem) properties[ActorIdProperty] = JsonSerializer.SerializeToElement(actorId ?? UnselectedTarget);
                 properties[ItemProperty] = JsonSerializer.SerializeToElement(UnselectedTarget);
                 properties[MetadataProperty] = JsonSerializer.SerializeToElement(new Dictionary<string, string>());
                 break;
             case ReachRegion:
                 properties["dimension_id"] = JsonSerializer.SerializeToElement(0);
-                properties["dimension_note"] = JsonSerializer.SerializeToElement("");
                 foreach (var field in new[] { "center_x", "center_y", "center_z", "radius" })
-                    properties[field] = JsonSerializer.SerializeToElement(field == "radius" ? 1d : 0d);
+                    properties[field] = JsonSerializer.SerializeToElement(field == "radius" ? 1 : 0);
                 break;
             case InteractActor:
                 if (string.IsNullOrWhiteSpace(actorId))
@@ -327,14 +326,17 @@ public static class CanonicalTaskObjectiveSchema
             && properties.TryGetValue(RequiredProperty, out var value)
             && value.TryGetInt32(out var count) && count == 1;
 
-    private static string DefaultDescription(string type) => type switch
+    /// <summary>Permit explicit empty authoring strings without weakening executable validation.</summary>
+    public static IReadOnlyList<ValidationIssue> AllowDraftIssues(GraphNode node, IReadOnlyList<ValidationIssue> issues)
     {
-        CollectItem => "收集史莱姆凝胶",
-        InteractActor => "向角色复命",
-        SubmitItem => "提交物品",
-        ReachRegion => "到达指定区域",
-        _ => "消灭史莱姆",
-    };
+        return issues.Where(issue =>
+        {
+            if (issue.Code is not ("graph.objective.target.invalid" or "graph.objective.description.invalid")) return true;
+            var field = issue.Field?.Replace("properties.", "", StringComparison.Ordinal);
+            return field is null || !node.Properties.TryGetValue(field, out var value)
+                || value.ValueKind != JsonValueKind.String || !string.IsNullOrEmpty(value.GetString());
+        }).ToArray();
+    }
 
     private static ValidationIssue Issue(string code, string message, string field, string? nodeId)
         => new(code, message, field, NodeId: string.IsNullOrWhiteSpace(nodeId) ? null : nodeId);

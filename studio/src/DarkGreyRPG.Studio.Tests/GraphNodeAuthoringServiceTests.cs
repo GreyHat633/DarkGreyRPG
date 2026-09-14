@@ -7,6 +7,16 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class GraphNodeAuthoringServiceTests
 {
     [TestMethod]
+    public void BlankActionCanBeCreatedThroughCanvasAuthoringButCannotExportAsComplete()
+    {
+        var graph = new GraphDocument();
+        var result = new GraphNodeAuthoringService().Create(graph, GraphScope.StoryFlow, "action", "action");
+        Assert.IsTrue(result.IsSuccess, string.Join(",", result.Issues.Select(issue => issue.Code)));
+        Assert.IsTrue(new DarkGreyRPG.Studio.Core.Graphs.Editing.GraphEditSession(graph, GraphScope.StoryFlow).AddNode(result.Candidate!));
+        Assert.IsNotEmpty(CanonicalStoryActionSchema.Validate(graph.Nodes.Single()));
+    }
+
+    [TestMethod]
     [DataRow(GraphScope.StoryFlow, "terminate", "终止")]
     [DataRow(GraphScope.Session, "line", "台词")]
     [DataRow(GraphScope.Task, "objective", "目标")]

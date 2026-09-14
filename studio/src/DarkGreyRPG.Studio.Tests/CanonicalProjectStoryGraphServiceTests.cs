@@ -24,7 +24,7 @@ public sealed class CanonicalProjectStoryGraphServiceTests
         Assert.IsEmpty(snapshot.Edges);
         Assert.IsFalse(snapshot.Diagnostics.Any(issue => issue.Code == "project_graph.story.cycle"));
         Assert.IsTrue(snapshot.Diagnostics.Any(issue => issue.Code == "story.discovery.root.missing" && issue.StoryId == "membership_only"));
-        Assert.IsTrue(snapshot.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated" && issue.StoryId == "membership_only"));
+        Assert.IsFalse(snapshot.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated"));
     }
 
     [TestMethod]

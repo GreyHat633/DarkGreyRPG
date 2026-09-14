@@ -17,6 +17,9 @@ public sealed class CanonicalStoryActionSchemaTests
             var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action");
             var graph = new GraphDocument([node]); var session = new GraphEditSession(graph, GraphScope.StoryFlow);
             Assert.IsTrue(session.ChangeStoryActionType("action", type));
+            if (type == "give_item") Assert.IsTrue(session.SetNodeProperty("action", "item_id", "fixture_item"));
+            if (type == "send_message") Assert.IsTrue(session.SetNodeProperty("action", "message", "fixture message"));
+            if (type == "execute_command") Assert.IsTrue(session.SetNodeProperty("action", "command", "/say fixture"));
             Assert.IsEmpty(CanonicalStoryActionSchema.Validate(node), type);
             if (type is "give_item" or "give_xp" or "give_health")
             {
@@ -36,7 +39,8 @@ public sealed class CanonicalStoryActionSchemaTests
             if (type == "execute_command")
             {
                 Assert.IsFalse(session.SetNodeProperty("action", "command", "say one\nsay two"));
-                Assert.IsTrue(session.SetNodeProperty("action", "command", "say one"));
+                Assert.IsFalse(session.SetNodeProperty("action", "command", "say one"));
+                Assert.IsTrue(session.SetNodeProperty("action", "command", "/say one"));
             }
             var roundtrip = GraphSerializer.Deserialize(GraphSerializer.Serialize(graph));
             Assert.IsEmpty(CanonicalStoryActionSchema.Validate(roundtrip.Nodes.Single()));
@@ -44,7 +48,7 @@ public sealed class CanonicalStoryActionSchemaTests
     }
 
     [TestMethod]
-    public void FactoryCreatesStrictMessageDefault()
+    public void FactoryCreatesEmptyAuthorDraftWithoutExportingExampleText()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
 
@@ -53,8 +57,9 @@ public sealed class CanonicalStoryActionSchemaTests
             action.Properties.Keys.ToArray());
         Assert.AreEqual(CanonicalStoryActionSchema.SendMessage,
             action.Properties[CanonicalStoryActionSchema.TypeProperty].GetString());
-        Assert.AreEqual("任务完成", action.Properties[CanonicalStoryActionSchema.MessageProperty].GetString());
-        Assert.IsEmpty(CanonicalStoryActionSchema.Validate(action));
+        Assert.AreEqual("", action.Properties[CanonicalStoryActionSchema.MessageProperty].GetString());
+        Assert.IsNotEmpty(CanonicalStoryActionSchema.Validate(action));
+        Assert.IsEmpty(CanonicalStoryActionSchema.AllowDraftIssues(action, CanonicalStoryActionSchema.Validate(action)));
     }
 
     [TestMethod]
@@ -71,7 +76,7 @@ public sealed class CanonicalStoryActionSchemaTests
             CanonicalStoryActionSchema.ItemIdProperty,
             CanonicalStoryActionSchema.AmountProperty,
         }, action.Properties.Keys.ToArray());
-        Assert.AreEqual("starter_reward", action.Properties[CanonicalStoryActionSchema.ItemIdProperty].GetString());
+        Assert.AreEqual("", action.Properties[CanonicalStoryActionSchema.ItemIdProperty].GetString());
         Assert.AreEqual(10, action.Properties[CanonicalStoryActionSchema.AmountProperty].GetInt32());
         Assert.AreEqual(1, session.UndoCount);
 

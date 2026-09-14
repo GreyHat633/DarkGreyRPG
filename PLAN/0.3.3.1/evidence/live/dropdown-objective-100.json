@@ -1,0 +1,8 @@
+{
+  "Control": "TaskObjectiveTypeSelector",
+  "Selections": 100,
+  "Targets": [
+    "CanonicalObjectiveTypeOption { Value = kill_entity, DisplayName = 实体击杀, Id = kill_entity, Type = kill_entity }",
+    "CanonicalObjectiveTypeOption { Value = interact_actor, DisplayName = 角色交互, Id = interact_actor, Type = interact_actor }"
+  ]
+}

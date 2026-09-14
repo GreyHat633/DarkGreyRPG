@@ -1,7 +1,7 @@
 package darkgrey.rpg.project.packages;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -20,36 +20,25 @@ import java.util.zip.ZipFile;
 
 import darkgrey.rpg.project.ProjectLoadException;
 
-/**
- * Detached, read-only view of one DGRS archive.
- *
- * <p>
- * The ZIP file is only held while the archive is opened. Every entry is
- * validated and copied into memory before this reader is returned; callers
- * therefore never retain a ZIP stream or a file handle.
- * </p>
- */
+/** Strict metadata view of a DGRS archive. */
 public final class DgrsArchiveReader {
 
-    /** Safety bound for one archive entry, including entries with unknown size. */
-    static final long MAX_ENTRY_BYTES = 64L * 1024L * 1024L;
-    /** Maximum number of file entries retained by one detached archive. */
-    static final int MAX_ENTRY_COUNT = 4096;
-    /** Aggregate uncompressed budget for one detached archive. */
-    static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 256L * 1024L * 1024L;
+    public static final long MAX_ENTRY_BYTES = 64L * 1024L * 1024L;
+    public static final int MAX_ENTRY_COUNT = 4096;
+    public static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 256L * 1024L * 1024L;
+    public static final int READ_BUFFER_BYTES = 32768;
     private static final String MANIFEST_ENTRY = "manifest.json";
     private static final String PROJECT_ENTRY = "project.json";
 
     private final File sourceArchive;
     private final List<String> entryNames;
-    private final Map<String, byte[]> entries;
+    private final Map<String, EntryMetadata> entries;
 
     public DgrsArchiveReader(File archive) throws ProjectLoadException {
         if (archive == null) throw new ProjectLoadException("DGRS archive cannot be null");
         sourceArchive = archive.getAbsoluteFile();
         if (!sourceArchive.isFile()) throw new ProjectLoadException("DGRS archive does not exist: " + sourceArchive);
-
-        Map<String, byte[]> loaded = new HashMap<String, byte[]>();
+        Map<String, EntryMetadata> loaded = new HashMap<String, EntryMetadata>();
         List<String> names = new ArrayList<String>();
         Map<String, String> normalizedNames = new HashMap<String, String>();
         try (ZipFile zip = new ZipFile(sourceArchive)) {
@@ -68,10 +57,14 @@ public final class DgrsArchiveReader {
                 if (previous != null) throw failure(
                     "Duplicate normalized archive entry '" + name + "' (already '" + previous + "')",
                     null);
-                byte[] content = readEntry(zip, entry, totalUncompressedBytes);
-                totalUncompressedBytes += content.length;
+                long declared = entry.getSize();
+                if (declared > MAX_ENTRY_BYTES
+                    || (declared >= 0L && declared > MAX_TOTAL_UNCOMPRESSED_BYTES - totalUncompressedBytes))
+                    throw failure("DGRS entry exceeds its declared size: " + name, null);
+                long actual = consumeEntry(zip, entry, totalUncompressedBytes);
+                totalUncompressedBytes += actual;
                 names.add(name);
-                loaded.put(name, content);
+                loaded.put(name, new EntryMetadata(name, actual));
             }
         } catch (ProjectLoadException exception) {
             throw exception;
@@ -82,9 +75,8 @@ public final class DgrsArchiveReader {
             throw failure("DGRS archive is missing manifest.json: " + sourceArchive, null);
         if (!loaded.containsKey(PROJECT_ENTRY))
             throw failure("DGRS archive is missing project.json: " + sourceArchive, null);
-
         entryNames = Collections.unmodifiableList(new ArrayList<String>(names));
-        entries = Collections.unmodifiableMap(new HashMap<String, byte[]>(loaded));
+        entries = Collections.unmodifiableMap(new HashMap<String, EntryMetadata>(loaded));
     }
 
     public static DgrsArchiveReader open(File archive) throws ProjectLoadException {
@@ -115,11 +107,54 @@ public final class DgrsArchiveReader {
         return path != null && entries.containsKey(path);
     }
 
-    public byte[] readBytes(String path) throws ProjectLoadException {
+    public long getEntrySize(String path) throws ProjectLoadException {
+        EntryMetadata metadata = entries.get(path);
+        if (metadata == null) throw new ProjectLoadException("DGRS entry is missing: " + path);
+        return metadata.size;
+    }
+
+    /** Opens one entry without retaining its bytes. Caller must close it. */
+    public InputStream openStream(final String path) throws ProjectLoadException {
         if (path == null || path.length() == 0) throw new ProjectLoadException("DGRS entry path is required");
-        byte[] content = entries.get(path);
-        if (content == null) throw new ProjectLoadException("DGRS entry is missing: " + path);
-        return content.clone();
+        if (!entries.containsKey(path)) throw new ProjectLoadException("DGRS entry is missing: " + path);
+        try {
+            final ZipFile zip = new ZipFile(sourceArchive);
+            InputStream input = zip.getInputStream(zip.getEntry(path));
+            return new FilterInputStream(input) {
+
+                private boolean closed;
+
+                @Override
+                public void close() throws IOException {
+                    if (closed) return;
+                    closed = true;
+                    try {
+                        super.close();
+                    } finally {
+                        zip.close();
+                    }
+                }
+            };
+        } catch (IOException | RuntimeException exception) {
+            throw failure("Cannot open DGRS entry: " + path, exception);
+        }
+    }
+
+    public byte[] readBytes(String path) throws ProjectLoadException {
+        try (InputStream input = openStream(path)) {
+            java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[READ_BUFFER_BYTES];
+            int count;
+            long total = 0L;
+            while ((count = input.read(buffer)) != -1) {
+                total += count;
+                if (total > MAX_ENTRY_BYTES) throw failure("DGRS entry exceeds the maximum size: " + path, null);
+                output.write(buffer, 0, count);
+            }
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw failure("Cannot read DGRS entry: " + path, exception);
+        }
     }
 
     public String readUtf8(String path) throws ProjectLoadException {
@@ -134,6 +169,24 @@ public final class DgrsArchiveReader {
         }
     }
 
+    private static long consumeEntry(ZipFile zip, ZipEntry entry, long prior) throws IOException, ProjectLoadException {
+        long declared = entry.getSize();
+        long remaining = MAX_TOTAL_UNCOMPRESSED_BYTES - prior;
+        long total = 0L;
+        try (InputStream input = zip.getInputStream(entry)) {
+            byte[] buffer = new byte[READ_BUFFER_BYTES];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                total += count;
+                if (total > MAX_ENTRY_BYTES || total > remaining) throw failure(
+                    "DGRS archive exceeds its uncompressed size limit at '" + entry.getName() + "'",
+                    null);
+            }
+        }
+        if (declared >= 0L && total != declared) throw failure("DGRS entry size mismatch: " + entry.getName(), null);
+        return total;
+    }
+
     private static void validateEntryPath(String name, ZipEntry entry) throws ProjectLoadException {
         if (name == null || name.length() == 0) throw failure("DGRS archive contains an empty entry path", null);
         if (entry.isDirectory() || name.endsWith("/"))
@@ -141,43 +194,31 @@ public final class DgrsArchiveReader {
         if (name.indexOf('\\') >= 0) throw failure("DGRS archive entry contains a backslash: " + name, null);
         if (name.startsWith("/") || name.indexOf(':') >= 0)
             throw failure("DGRS archive entry is absolute or drive-qualified: " + name, null);
-        String[] segments = name.split("/", -1);
-        for (String segment : segments) {
+        for (String segment : name.split("/", -1))
             if (segment.length() == 0 || ".".equals(segment) || "..".equals(segment))
                 throw failure("DGRS archive entry contains an unsafe path segment: " + name, null);
-        }
-    }
-
-    private static byte[] readEntry(ZipFile zip, ZipEntry entry, long totalUncompressedBytes)
-        throws IOException, ProjectLoadException {
-        long declared = entry.getSize();
-        if (declared > MAX_ENTRY_BYTES) throw failure("DGRS entry exceeds the maximum size: " + entry.getName(), null);
-        long remaining = MAX_TOTAL_UNCOMPRESSED_BYTES - totalUncompressedBytes;
-        if (remaining < 0L || (declared >= 0L && declared > remaining)) throw failure(
-            "DGRS archive exceeds the maximum uncompressed size of " + MAX_TOTAL_UNCOMPRESSED_BYTES,
-            null);
-        long limit = declared >= 0 ? declared : Math.min(MAX_ENTRY_BYTES, remaining);
-        int initial = declared >= 0 && declared <= Integer.MAX_VALUE ? (int) declared : 0;
-        ByteArrayOutputStream output = new ByteArrayOutputStream(initial);
-        InputStream input = zip.getInputStream(entry);
-        try {
-            byte[] buffer = new byte[8192];
-            long total = 0;
-            int count;
-            while ((count = input.read(buffer)) != -1) {
-                if (count > limit - total)
-                    throw failure("DGRS entry exceeds its declared size: " + entry.getName(), null);
-                output.write(buffer, 0, count);
-                total += count;
-            }
-            if (declared >= 0 && total != declared) throw failure("DGRS entry size mismatch: " + entry.getName(), null);
-            return output.toByteArray();
-        } finally {
-            input.close();
-        }
     }
 
     private static ProjectLoadException failure(String message, Throwable cause) {
         return cause == null ? new ProjectLoadException(message) : new ProjectLoadException(message, cause);
+    }
+
+    public static final class EntryMetadata {
+
+        private final String name;
+        private final long size;
+
+        EntryMetadata(String name, long size) {
+            this.name = name;
+            this.size = size;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public long getSize() {
+            return size;
+        }
     }
 }

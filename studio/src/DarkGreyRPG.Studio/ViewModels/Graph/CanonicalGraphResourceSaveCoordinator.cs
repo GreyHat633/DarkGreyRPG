@@ -1,5 +1,10 @@
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Identity;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Runtime.CompilerServices;
 
 namespace DarkGreyRPG.Studio.ViewModels.Graph;
 
@@ -13,6 +18,7 @@ public sealed class CanonicalGraphResourceSaveCoordinator
 {
     private readonly CanonicalProjectGraphStore _store;
     private readonly CanonicalGraphLayoutStore _layoutStore;
+    private static readonly ConditionalWeakTable<CanonicalGraphResourceEditorViewModel, List<CanonicalStoryLogicConnection>> RemovedBoundaryEdges = new();
 
     public CanonicalGraphResourceSaveCoordinator(
         CanonicalProjectGraphStore store,
@@ -43,9 +49,9 @@ public sealed class CanonicalGraphResourceSaveCoordinator
         var persisted = snapshot;
         if (graphDirty)
         {
-            if (snapshot.ResourceKind == GraphResourceKind.Story)
-                _store.StoryLogicGraph.ValidateStoryReplacement(snapshot);
-            persisted = RepositoryFor(snapshot.ResourceKind).Replace(snapshot);
+            persisted = snapshot.ResourceKind == GraphResourceKind.Story
+                ? ReplaceStoryAndBoundaryEdges(editor, snapshot)
+                : RepositoryFor(snapshot.ResourceKind).Replace(snapshot);
             editor.MarkGraphSaved();
         }
 
@@ -61,6 +67,35 @@ public sealed class CanonicalGraphResourceSaveCoordinator
             editor.MarkLayoutSaved();
         }
         return persisted;
+    }
+
+    private GraphResourceEnvelope ReplaceStoryAndBoundaryEdges(CanonicalGraphResourceEditorViewModel editor, GraphResourceEnvelope snapshot)
+    {
+        var repository = _store.StoryLogicGraph;
+        var current = repository.Load();
+        var removed = RemovedBoundaryEdges.GetOrCreateValue(editor);
+        bool Exists(CanonicalStoryLogicConnection edge)
+            => (edge.SourceStoryId != snapshot.Id || CanonicalStoryLogicGraphRepository.HasBoundary(snapshot, edge.SourcePortId,
+                    edge.InterfaceKind == "Flow" ? "terminate" : "logic_output"))
+                && (edge.TargetStoryId != snapshot.Id || CanonicalStoryLogicGraphRepository.HasBoundary(snapshot, edge.TargetPortId,
+                    edge.InterfaceKind == "Flow" ? "flow_driven" : "logic_input"));
+        var dropped = current.Connections.Where(edge => !Exists(edge)).ToArray();
+        var restored = removed.Where(Exists).ToArray();
+        var next = new CanonicalStoryLogicGraph(2, current.Connections.Where(Exists).Concat(restored).Distinct().ToArray());
+        repository.Validate(next, snapshot);
+        if (dropped.Length == 0 && restored.Length == 0) return _store.Stories.Replace(snapshot);
+        var storyPath = _store.Stories.GetPath(snapshot.Id);
+        var changes = new[]
+        {
+            new NamespaceFileChange(Path.GetRelativePath(_store.ProjectDirectory, storyPath), File.ReadAllBytes(storyPath),
+                Encoding.UTF8.GetBytes(GraphResourceEnvelopeSerializer.Serialize(snapshot))),
+            new NamespaceFileChange(Path.GetRelativePath(_store.ProjectDirectory, repository.Path), File.Exists(repository.Path) ? File.ReadAllBytes(repository.Path) : null,
+                JsonSerializer.SerializeToUtf8Bytes(next, new JsonSerializerOptions { WriteIndented = true }))
+        };
+        new NamespaceFileTransaction().Apply(_store.ProjectDirectory, changes, () => repository.Validate(next, snapshot));
+        foreach (var edge in dropped) if (!removed.Contains(edge)) removed.Add(edge);
+        foreach (var edge in restored) removed.Remove(edge);
+        return _store.Stories.Load(snapshot.Id);
     }
 
     private GraphResourceRepository RepositoryFor(GraphResourceKind kind)

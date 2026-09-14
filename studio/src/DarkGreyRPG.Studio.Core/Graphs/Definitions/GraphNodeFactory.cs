@@ -53,6 +53,8 @@ public static class GraphNodeFactory
             CanonicalTaskObjectiveSchema.InitializeDefault(node);
         if (scope == GraphScope.StoryFlow && string.Equals(type, CanonicalStoryActionSchema.NodeType, StringComparison.Ordinal))
             CanonicalStoryActionSchema.InitializeDefault(node);
+        if (scope == GraphScope.Task && type == "reward")
+            node.Properties["entries"] = JsonSerializer.SerializeToElement(new[] { new { type = "item", item = "", amount = 1 } });
         return node;
     }
 

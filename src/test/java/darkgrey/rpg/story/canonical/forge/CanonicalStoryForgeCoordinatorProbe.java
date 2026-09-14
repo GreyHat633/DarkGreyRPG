@@ -60,6 +60,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         activeChildrenCleanup();
         failedActionMarksErrorAndCleans();
         crossStoryPublicLogicAndDynamicResume();
+        terminalFlowFaultRecovery();
+        terminalFlowCycleSafety();
         System.out.println("CANONICAL_STORY_FORGE_AGGREGATE_ROUTE=PASS");
         System.out.println("CANONICAL_STORY_FORGE_TRANSFER_ROUTE=PASS");
         System.out.println("CANONICAL_STORY_FORGE_FAILURE_CLEANUP=PASS");
@@ -120,6 +122,120 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             !CanonicalStoryForgeManager.propagateStoryLogicTrusted(other, project, otherStories, data, gateway),
             "One player's public Logic leaked into another player");
         check(data.getStorySnapshot(other, "logic_start") == null, "Cross-player target Story was created");
+    }
+
+    private static void terminalFlowFaultRecovery() {
+        // Fault before destination start: the source remains TERMINATED and
+        // the pending claim survives a world reload; a corrected package then
+        // replays the destination exactly once.
+        ProjectSnapshot invalid = flowBoundaryProject(false);
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        CanonicalStoryServerService stories = new CanonicalStoryServerService(invalid, data);
+        RecordingGateway gateway = new RecordingGateway(invalid, data, false);
+        try {
+            CanonicalStoryForgeManager
+                .routeTrusted(PLAYER, stories, data, stories.startByEntry(PLAYER, "flow_source", 700L), gateway);
+            throw new AssertionError("Fault before destination start was not injected");
+        } catch (RuntimeException expected) {
+            check(
+                data.pendingStoryTerminalRouteStoryIds(PLAYER)
+                    .contains("flow_source"),
+                "Pre-start fault lost pending terminal route");
+            check(
+                data.getStorySnapshot(PLAYER, "flow_source")
+                    .getRuntimeSnapshot()
+                    .getStatus() == CanonicalStoryStatus.TERMINATED,
+                "Pre-start fault changed source terminal state");
+        }
+        CanonicalSessionSavedData restored = reloadSessionWorld(data);
+        ProjectSnapshot valid = flowBoundaryProject(true);
+        CanonicalStoryServerService recoveredStories = new CanonicalStoryServerService(valid, restored);
+        RecordingGateway recoveredGateway = new RecordingGateway(valid, restored, false);
+        check(
+            CanonicalStoryForgeManager
+                .recoverPendingTerminalRoutes(PLAYER, recoveredStories, restored, recoveredGateway),
+            "Pre-start pending route did not recover");
+        check(
+            restored.pendingStoryTerminalRouteStoryIds(PLAYER)
+                .isEmpty(),
+            "Recovered pre-start route remained pending");
+
+        // Fault after destination start: target is already durable and its
+        // terminal state prevents a duplicate; source pending claim is applied
+        // during replay after reload.
+        ProjectSnapshot repeatableTarget = flowBoundaryProject(true, true);
+        CanonicalSessionSavedData afterData = new CanonicalSessionSavedData();
+        CanonicalStoryServerService afterStories = new CanonicalStoryServerService(repeatableTarget, afterData);
+        RecordingGateway afterGateway = new RecordingGateway(repeatableTarget, afterData, false);
+        afterGateway.failCleanupOnce("flow_target");
+        try {
+            CanonicalStoryForgeManager.routeTrusted(
+                PLAYER,
+                afterStories,
+                afterData,
+                afterStories.startByEntry(PLAYER, "flow_source", 701L),
+                afterGateway);
+            throw new AssertionError("Fault after destination start was not injected");
+        } catch (RuntimeException expected) {
+            check(
+                afterData.pendingStoryTerminalRouteStoryIds(PLAYER)
+                    .contains("flow_source"),
+                "Post-start fault lost pending terminal route");
+            check(
+                afterData.getStorySnapshot(PLAYER, "flow_target")
+                    .getRuntimeSnapshot()
+                    .getStatus() == CanonicalStoryStatus.TERMINATED,
+                "Post-start target was not durable");
+        }
+        long targetRun = afterData.getStorySnapshot(PLAYER, "flow_target")
+            .getActivationTime();
+        CanonicalStoryDispatch newerTarget = afterStories
+            .startByFlow(PLAYER, "flow_source", "out", "flow_target", "in", 702L);
+        check(
+            newerTarget != null && afterData.getStorySnapshot(PLAYER, "flow_target")
+                .getActivationTime() != targetRun,
+            "Repeatable target newer run was not created for recovery test");
+        CanonicalSessionSavedData afterRestored = reloadSessionWorld(afterData);
+        CanonicalStoryServerService afterRecoveredStories = new CanonicalStoryServerService(
+            repeatableTarget,
+            afterRestored);
+        RecordingGateway afterRecoveredGateway = new RecordingGateway(repeatableTarget, afterRestored, false);
+        check(
+            CanonicalStoryForgeManager
+                .recoverPendingTerminalRoutes(PLAYER, afterRecoveredStories, afterRestored, afterRecoveredGateway),
+            "Post-start pending route did not recover");
+        check(
+            afterRestored.pendingStoryTerminalRouteStoryIds(PLAYER)
+                .isEmpty(),
+            "Recovered post-start route remained pending");
+        check(
+            afterRestored.getStorySnapshot(PLAYER, "flow_target")
+                .getActivationTime() != targetRun,
+            "Recovery replaced a newer repeatable target run");
+        System.out.println("CANONICAL_STORY_FLOW_FAULT_BEFORE_DESTINATION_RECOVERED=PASS");
+        System.out.println("CANONICAL_STORY_FLOW_FAULT_AFTER_DESTINATION_DEDUP=PASS");
+    }
+
+    private static void terminalFlowCycleSafety() {
+        ProjectSnapshot project = flowCycleProject();
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        CanonicalStoryServerService stories = new CanonicalStoryServerService(project, data);
+        RecordingGateway gateway = new RecordingGateway(project, data, false);
+        try {
+            CanonicalStoryForgeManager
+                .routeTrusted(PLAYER, stories, data, stories.startByEntry(PLAYER, "cycle_a", 800L), gateway);
+            throw new AssertionError("Cyclic terminal Flow route was not bounded");
+        } catch (IllegalStateException expected) {
+            check(
+                expected.getMessage()
+                    .contains("safety bound"),
+                "Cyclic terminal Flow route failed without the safety-bound diagnostic");
+            check(
+                data.pendingStoryTerminalRouteStoryIds(PLAYER)
+                    .isEmpty(),
+                "Cyclic terminal Flow failure left a retry storm pending");
+            System.out.println("CANONICAL_STORY_FLOW_CYCLE_SAFETY_BOUND=PASS");
+        }
     }
 
     private static void bartenderVerticalSlice() {
@@ -361,6 +477,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         private final CanonicalSessionServerService sessions;
         private final boolean failAction;
         private final List<String> cleaned = new ArrayList<String>();
+        private String failCleanupStoryId;
         private CanonicalSessionDispatch frame;
         private int sessionStarts;
         private int actions;
@@ -368,6 +485,10 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         RecordingGateway(ProjectSnapshot project, CanonicalSessionSavedData data, boolean failAction) {
             this.sessions = new CanonicalSessionServerService(project, data);
             this.failAction = failAction;
+        }
+
+        void failCleanupOnce(String storyId) {
+            failCleanupStoryId = storyId;
         }
 
         @Override
@@ -391,11 +512,16 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         @Override
         public void cleanup(String storyId) {
             cleaned.add(storyId);
+            if (storyId.equals(failCleanupStoryId)) {
+                failCleanupStoryId = null;
+                throw new IllegalStateException("Injected cleanup fault for " + storyId);
+            }
         }
 
         @Override
         public void resetPreviousRun(String storyId) {
-            throw new AssertionError("Repeat reset was not expected");
+            // The cycle-safety fixture intentionally uses repeatable Stories;
+            // no aggregate child state exists in this gateway to reset.
         }
     }
 
@@ -495,6 +621,121 @@ public final class CanonicalStoryForgeCoordinatorProbe {
                 memberships));
     }
 
+    private static ProjectSnapshot flowBoundaryProject(boolean validTarget) {
+        return flowBoundaryProject(validTarget, false);
+    }
+
+    private static ProjectSnapshot flowBoundaryProject(boolean validTarget, boolean repeatableTarget) {
+        Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
+        stories.put("flow_source", flowBoundaryStory("flow_source", "out", "enter_story", true, false));
+        stories
+            .put("flow_target", flowBoundaryStory("flow_target", "in", "flow_driven", validTarget, repeatableTarget));
+        return new ProjectSnapshot(
+            new ProjectDefinition(1, "flow-boundary", "Flow Boundary"),
+            Collections.<String, ActorDefinition>emptyMap(),
+            Collections.<String, DialogueDefinition>emptyMap(),
+            Collections.<String, QuestDefinition>emptyMap(),
+            Collections.<String, StoryDefinition>emptyMap(),
+            new CanonicalProjectContent(
+                stories,
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalStoryMembership>emptyMap(),
+                new CanonicalStoryLogicGraph(
+                    Collections.singletonList(
+                        new CanonicalStoryLogicConnection(
+                            "flow_source",
+                            "out",
+                            "flow_target",
+                            "in",
+                            CanonicalGraphInterfaceKind.FLOW)))));
+    }
+
+    private static ProjectSnapshot flowCycleProject() {
+        Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
+        stories.put("cycle_a", flowCycleStory("cycle_a", "to_b", "entry", true));
+        stories.put("cycle_b", flowCycleStory("cycle_b", "to_a", "in", false));
+        return new ProjectSnapshot(
+            new ProjectDefinition(1, "flow-cycle", "Flow Cycle"),
+            Collections.<String, ActorDefinition>emptyMap(),
+            Collections.<String, DialogueDefinition>emptyMap(),
+            Collections.<String, QuestDefinition>emptyMap(),
+            Collections.<String, StoryDefinition>emptyMap(),
+            new CanonicalProjectContent(
+                stories,
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalStoryMembership>emptyMap(),
+                new CanonicalStoryLogicGraph(
+                    Arrays.asList(
+                        new CanonicalStoryLogicConnection(
+                            "cycle_a",
+                            "to_b",
+                            "cycle_b",
+                            "in",
+                            CanonicalGraphInterfaceKind.FLOW),
+                        new CanonicalStoryLogicConnection(
+                            "cycle_b",
+                            "to_a",
+                            "cycle_a",
+                            "back",
+                            CanonicalGraphInterfaceKind.FLOW)))));
+    }
+
+    private static CanonicalGraphResource flowCycleStory(String id, String terminalPort, String flowTrigger,
+        boolean withEntry) {
+        Map<String, JsonElement> startProperties = new LinkedHashMap<String, JsonElement>();
+        startProperties.put("repeat_policy", json("\"repeatable\""));
+        String triggers = withEntry
+            ? "[{\"port_id\":\"entry\",\"display_name\":\"entry\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
+                + "{\"port_id\":\"back\",\"display_name\":\"back\",\"trigger_type\":\"flow_driven\",\"trigger_properties\":{},\"order\":1}]"
+            : "[{\"port_id\":\"in\",\"display_name\":\"in\",\"trigger_type\":\"flow_driven\",\"trigger_properties\":{},\"order\":0}]";
+        startProperties.put("triggers", json(triggers));
+        List<CanonicalGraphPort> startPorts = withEntry ? Arrays.asList(out("entry", 0), out("back", 1))
+            : Collections.singletonList(out("in", 0));
+        CanonicalGraphNode start = node("start", "start", startPorts, startProperties);
+        CanonicalGraphNode end = node(
+            "end",
+            "terminate",
+            ports(in("flow_in", 0)),
+            props("port_id", terminalPort, "display_name", terminalPort));
+        List<CanonicalGraphConnection> edges = withEntry
+            ? Arrays.asList(edge("start", "entry", "end", "flow_in"), edge("start", "back", "end", "flow_in"))
+            : Collections.singletonList(edge("start", "in", "end", "flow_in"));
+        return resource(id, CanonicalGraphResourceKind.STORY, Arrays.asList(start, end), edges);
+    }
+
+    private static CanonicalGraphResource flowBoundaryStory(String id, String triggerPort, String triggerType,
+        boolean valid) {
+        return flowBoundaryStory(id, triggerPort, triggerType, valid, false);
+    }
+
+    private static CanonicalGraphResource flowBoundaryStory(String id, String triggerPort, String triggerType,
+        boolean valid, boolean repeatable) {
+        Map<String, JsonElement> startProperties = new LinkedHashMap<String, JsonElement>();
+        startProperties.put("repeat_policy", json(repeatable ? "\"repeatable\"" : "\"once\""));
+        startProperties.put(
+            "triggers",
+            json(
+                "[{\"port_id\":\"" + triggerPort
+                    + "\",\"display_name\":\""
+                    + triggerPort
+                    + "\",\"trigger_type\":\""
+                    + triggerType
+                    + "\",\"trigger_properties\":{},\"order\":0}]"));
+        CanonicalGraphNode start = node(
+            "start",
+            "start",
+            Collections.singletonList(out(triggerPort, 0)),
+            startProperties);
+        Map<String, JsonElement> endProperties = props("port_id", triggerPort, "display_name", triggerPort);
+        CanonicalGraphNode end = node("end", "terminate", ports(in("flow_in", 0)), endProperties);
+        List<CanonicalGraphConnection> edges = valid
+            ? Collections.singletonList(edge("start", triggerPort, "end", "flow_in"))
+            : Collections.<CanonicalGraphConnection>emptyList();
+        return resource(id, CanonicalGraphResourceKind.STORY, Arrays.asList(start, end), edges);
+    }
+
     private static ProjectSnapshot crossStoryLogicProject() {
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
         stories.put("logic_source", logicConditionStory("logic_source", "source_gate", "signal"));
@@ -555,11 +796,11 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             "triggers",
             json(
                 "[{\"port_id\":\"logic_start\",\"display_name\":\"logic_start\",\"trigger_type\":\"logic\","
-                    + "\"trigger_properties\":{},\"order\":0,\"logic_port_id\":\"logic_condition\"}]"));
+                    + "\"trigger_properties\":{},\"order\":0,\"logic_port_id\":\"start_gate\"}]"));
         CanonicalGraphNode start = node(
             "start",
             "start",
-            ports(out("logic_start", 0), logicIn("logic_condition", 1)),
+            ports(out("logic_start", 0), logicIn("start_gate", 1)),
             properties);
         CanonicalGraphNode input = node(
             "input",
@@ -572,7 +813,7 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             CanonicalGraphResourceKind.STORY,
             Arrays.asList(start, input, end),
             Arrays.asList(
-                logicEdge("input", "logic_out", "start", "logic_condition"),
+                logicEdge("input", "logic_out", "start", "start_gate"),
                 edge("start", "logic_start", "end", "flow_in")));
     }
 
@@ -930,6 +1171,13 @@ public final class CanonicalStoryForgeCoordinatorProbe {
 
     private static CanonicalGraphNode node(String id, String type, List<CanonicalGraphPort> ports,
         Map<String, JsonElement> properties) {
+        // Fixture upgrade: public termination metadata belongs in test data, not runtime fallback.
+        if ("terminate".equals(type)) {
+            properties = new java.util.LinkedHashMap<String, JsonElement>(properties);
+            if (!properties.containsKey("port_id")) properties.put("port_id", new com.google.gson.JsonPrimitive(id));
+            if (!properties.containsKey("display_name"))
+                properties.put("display_name", new com.google.gson.JsonPrimitive(id));
+        }
         return new CanonicalGraphNode(id, type, id, ports, properties);
     }
 

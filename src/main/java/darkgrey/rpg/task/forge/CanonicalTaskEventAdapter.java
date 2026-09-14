@@ -41,7 +41,15 @@ public final class CanonicalTaskEventAdapter {
     @SubscribeEvent(receiveCanceled = true)
     public void onEntityInteract(EntityInteractEvent event) {
         try {
-            if (event == null || !(event.entityPlayer instanceof EntityPlayerMP)) return;
+            if (event == null || event.isCanceled() || !(event.entityPlayer instanceof EntityPlayerMP)) return;
+            EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
+            // A successful submit consumes this physical interaction. Do not
+            // dispatch the same click as a second actor event, which could
+            // activate a newly unlocked objective in the same tick.
+            if (manager.handleEntityInteraction(player, event.target)) {
+                event.setCanceled(true);
+                return;
+            }
             List<CanonicalTaskEvent> taskEvents = CanonicalTaskForgeEventNormalizer.interactEvents(event.target);
             for (CanonicalTaskEvent taskEvent : taskEvents) dispatch((EntityPlayerMP) event.entityPlayer, taskEvent);
         } catch (RuntimeException failure) {
@@ -64,6 +72,11 @@ public final class CanonicalTaskEventAdapter {
         } catch (RuntimeException failure) {
             LOG.warn("Canonical Task world Logic synchronization failed: {}", failure.getMessage());
         }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogout(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event != null && event.player != null) manager.forgetSubmitChoices(event.player.getUniqueID());
     }
 
     private void dispatch(EntityPlayerMP player, CanonicalTaskEvent event) {

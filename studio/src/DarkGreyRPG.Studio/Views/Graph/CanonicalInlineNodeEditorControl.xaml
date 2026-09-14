@@ -1,151 +1,733 @@
-<UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.CanonicalInlineNodeEditorControl"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:graph="clr-namespace:DarkGreyRPG.Studio.Views.Graph"
-             x:Name="Root" Focusable="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <UserControl.Resources>
-        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <EventSetter Event="PreviewKeyDown" Handler="DraftTextBox_OnPreviewKeyDown" />
+<UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.CanonicalInlineNodeEditorControl" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:graph="clr-namespace:DarkGreyRPG.Studio.Views.Graph" xmlns:views="clr-namespace:DarkGreyRPG.Studio.Views" x:Name="Root" Focusable="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+  <UserControl.Resources>
+    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+      <EventSetter Event="PreviewKeyDown" Handler="DraftTextBox_OnPreviewKeyDown" />
+    </Style>
+  </UserControl.Resources>
+  <StackPanel DataContext="{Binding Editor, ElementName=Root}">
+    <StackPanel.Style>
+      <Style TargetType="StackPanel">
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding HasEditableFields}" Value="True">
+            <Setter Property="Visibility" Value="Visible" />
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </StackPanel.Style>
+
+    <StackPanel Margin="0,10,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsStoryStart}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
         </Style>
-    </UserControl.Resources>
-    <Grid DataContext="{Binding Editor, ElementName=Root}">
-        <StackPanel>
-            <StackPanel.Style>
-                <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers><DataTrigger Binding="{Binding IsStoryStart}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
-                </Style>
-            </StackPanel.Style>
-            <CheckBox Margin="0,0,0,6" Content="可重复"
-                      IsChecked="{Binding IsRepeatable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      AutomationProperties.AutomationId="InlineStartRepeatableToggle"
-                      AutomationProperties.Name="Story Start repeatable" />
-            <ItemsControl ItemsSource="{Binding StoryStartTriggers}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Margin="0,4" Padding="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
-                                    <Button Grid.Column="1" Margin="3,0,0,0" Padding="5,1" Content="−" Command="{Binding RemoveCommand}"
-                                            ToolTip="删除启动条件" AutomationProperties.AutomationId="InlineStartRemoveTrigger" />
-                                </Grid>
-                                <TextBlock Margin="0,8,0,2" Text="名称" />
-                                <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                         AutomationProperties.AutomationId="InlineStartTriggerName" />
-                                <TextBlock Margin="0,6,0,2" Text="类型" />
-                                <ComboBox ItemsSource="{Binding TriggerTypeOptions}" SelectedItem="{Binding SelectedTriggerType, Mode=TwoWay}"
-                                          DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineStartTriggerType" />
-                                <TextBlock Margin="0,6,0,2" Text="目标角色">
-                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                </TextBlock>
-                                <ComboBox ItemsSource="{Binding ActorOptions}" SelectedItem="{Binding SelectedActor, Mode=TwoWay}"
-                                          DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineStartActor">
-                                    <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
-                                </ComboBox>
-                                <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="连接此启动条件的逻辑输入端口">
-                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLogic}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                </TextBlock>
-                                <StackPanel Margin="0,4,0,0">
-                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                                    <TextBlock Text="维度" /><TextBox Text="{Binding DimensionText, UpdateSourceTrigger=LostFocus}" />
-                                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding DimensionError}" TextWrapping="Wrap" />
-                                </StackPanel>
-                                <Grid Margin="0,3,0,0">
-                                    <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                    <StackPanel Margin="0,0,2,0"><TextBlock Text="X" /><TextBox Text="{Binding XText, UpdateSourceTrigger=LostFocus}" /><TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding XError}" TextWrapping="Wrap" /></StackPanel>
-                                    <StackPanel Grid.Column="1" Margin="2,0"><TextBlock Text="Y" /><TextBox Text="{Binding YText, UpdateSourceTrigger=LostFocus}" /><TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding YError}" TextWrapping="Wrap" /></StackPanel>
-                                    <StackPanel Grid.Column="2" Margin="2,0,0,0"><TextBlock Text="Z" /><TextBox Text="{Binding ZText, UpdateSourceTrigger=LostFocus}" /><TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ZError}" TextWrapping="Wrap" /></StackPanel>
-                                </Grid>
-                                <StackPanel Margin="0,3,0,0">
-                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                                    <TextBlock Text="半径" /><TextBox Text="{Binding RadiusText, UpdateSourceTrigger=LostFocus}" />
-                                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding RadiusError}" TextWrapping="Wrap" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <Button Margin="0,6,0,0" Padding="5,2" Content="＋ 启动条件" Command="{Binding AddStoryStartTriggerCommand}"
-                    AutomationProperties.AutomationId="InlineStartAddTrigger" />
-        </StackPanel>
-
-        <StackPanel>
-            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-            <TextBlock Text="目标类型" /><ComboBox ItemsSource="{Binding ObjectiveTypeOptions}" SelectedItem="{Binding SelectedObjectiveType, Mode=TwoWay}"
-                                             DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineObjectiveType" />
-            <TextBlock Margin="0,4,0,0" Text="目标对象" />
-            <ComboBox ItemsSource="{Binding ObjectiveActorOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveActorId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName">
-                <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsKillEntityObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsInteractActorObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
-            </ComboBox>
-            <ComboBox ItemsSource="{Binding ObjectiveItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName">
-                <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsCollectItemObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
-            </ComboBox>
-            <StackPanel Margin="0,4,0,0">
-                <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsKillEntityObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsCollectItemObjective}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                <TextBlock Text="数量" /><TextBox Text="{Binding ObjectiveRequiredText, UpdateSourceTrigger=LostFocus}"
-                                                  AutomationProperties.AutomationId="InlineObjectiveRequired" />
-                <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ObjectiveRequiredError}" TextWrapping="Wrap" />
-            </StackPanel>
-            <CheckBox Margin="0,6,0,0" Content="前置条件"
-                      IsChecked="{Binding ObjectivePrerequisiteEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      AutomationProperties.AutomationId="InlineObjectivePrerequisiteToggle" />
-            <TextBlock Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                       Text="{Binding ObjectivePrerequisiteHelpText}" TextWrapping="Wrap"
-                       AutomationProperties.AutomationId="InlineObjectivePrerequisiteHelp">
-                <TextBlock.Style>
+      </StackPanel.Style>
+      <CheckBox Content="可重复" IsChecked="{Binding IsRepeatable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="InlineStartRepeatableToggle" AutomationProperties.Name="Story Start repeatable" />
+      <Grid Margin="0,12,0,3">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock FontWeight="SemiBold" Text="启动条件" />
+        <Button Grid.Column="1" Width="26" Height="24" Padding="5" Command="{Binding AddStoryStartTriggerCommand}" ToolTip="添加启动条件" AutomationProperties.AutomationId="InlineStartAddTrigger" AutomationProperties.Name="添加启动条件">
+          <Viewbox>
+            <Canvas Width="16" Height="16">
+              <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="2" StrokeStartLineCap="Round" Data="M 8,2 L 8,14 M 2,8 L 14,8" />
+            </Canvas>
+          </Viewbox>
+        </Button>
+      </Grid>
+      <ItemsControl ItemsSource="{Binding StoryStartTriggers}" AutomationProperties.AutomationId="InlineStartTriggerList">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Margin="0,4" Padding="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
+              <StackPanel>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Margin="3,0,0,0" Padding="4,1" Content="↑" Command="{Binding MoveUpCommand}" ToolTip="上移" />
+                    <Button Margin="2,0,0,0" Padding="4,1" Content="↓" Command="{Binding MoveDownCommand}" ToolTip="下移" />
+                    <Button Margin="2,0,0,0" Padding="4,1" Content="−" Command="{Binding RemoveCommand}" ToolTip="删除启动条件" />
+                  </StackPanel>
+                </Grid>
+                <TextBlock Margin="0,8,0,3" Text="名称" />
+                <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerName" />
+                <TextBlock Margin="0,8,0,3" Text="类型" />
+                <ComboBox ItemsSource="{Binding TriggerTypeOptions}" SelectedItem="{Binding SelectedTriggerType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineStartTriggerType" AutomationProperties.Name="Story Start trigger type" />
+                <TextBlock Margin="0,4,0,0" Text="将 Story 公共逻辑输入连接到此触发的条件端口。" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                  <TextBlock.Style>
                     <Style TargetType="TextBlock">
-                        <Setter Property="Visibility" Value="Collapsed" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding ObjectivePrerequisiteEnabled}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLogic}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
                     </Style>
-                </TextBlock.Style>
-            </TextBlock>
-        </StackPanel>
-
-        <StackPanel>
-            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-            <TextBlock Text="动作类型" AutomationProperties.AutomationId="InlineActionTypeLabel" /><ComboBox ItemsSource="{Binding StoryActionTypeOptions}" SelectedItem="{Binding SelectedStoryActionType, Mode=TwoWay}"
-                                             DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineActionType" />
-            <TextBlock Margin="0,4,0,0" Text="物品" AutomationProperties.AutomationId="InlineActionItemLabel">
-                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-            </TextBlock>
-            <ComboBox ItemsSource="{Binding StoryActionItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedStoryActionItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineActionItem">
-                <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
-            </ComboBox>
-            <TextBlock Margin="0,4,0,0" Text="数量" AutomationProperties.AutomationId="InlineActionAmountLabel">
-                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-            </TextBlock>
-            <TextBlock Margin="0,4,0,0" Text="经验值" AutomationProperties.AutomationId="InlineActionXpLabel">
-                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-            </TextBlock>
-            <TextBox Text="{Binding StoryActionAmountText, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineActionAmount">
-                <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
-            </TextBox>
-            <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionAmountError}" TextWrapping="Wrap" />
-            <TextBlock Margin="0,4,0,0" Text="消息" AutomationProperties.AutomationId="InlineActionMessageLabel">
-                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-            </TextBlock>
-            <TextBox Text="{Binding StoryActionMessage, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.AutomationId="InlineActionMessage">
-                <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
-            </TextBox>
-            <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionMessageError}" TextWrapping="Wrap" />
-        </StackPanel>
-
-        <StackPanel>
-            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsLine}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-            <TextBlock Text="说话角色" /><ComboBox ItemsSource="{Binding SpeakerOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedSpeakerId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineLineSpeaker" />
-            <TextBlock Margin="0,4,0,0" Text="台词" /><TextBox Text="{Binding LineText, UpdateSourceTrigger=LostFocus}"
-                                                            MinHeight="44" TextWrapping="Wrap" AcceptsReturn="True"
-                                                            AutomationProperties.AutomationId="InlineLineText" />
-            <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LineTextError}" TextWrapping="Wrap" />
-        </StackPanel>
-    </Grid>
+                  </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Margin="0,8,0,3" Text="目标角色" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsActorInteraction}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+                <ComboBox ItemsSource="{Binding ActorOptions}" SelectedItem="{Binding SelectedActor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineStartTriggerActorId">
+                  <ComboBox.Style>
+                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsActorInteraction}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </ComboBox.Style>
+                </ComboBox>
+                <StackPanel Margin="0,4,0,0">
+                  <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRegionEntry}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </StackPanel.Style>
+                  <TextBlock Text="维度" />
+                  <TextBox graph:NumericDrag.Step="1" Text="{Binding DimensionText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerDimension" />
+                  <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding DimensionError}" TextWrapping="Wrap" />
+                </StackPanel>
+                <Grid Margin="0,4,0,0">
+                  <Grid.Style>
+                    <Style TargetType="Grid">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRegionEntry}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </Grid.Style>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0" Margin="0,0,2,0">
+                    <TextBlock Text="X" />
+                    <TextBox graph:NumericDrag.Step="0.1" Text="{Binding XText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerX" />
+                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding XError}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Margin="2,0">
+                    <TextBlock Text="Y" />
+                    <TextBox graph:NumericDrag.Step="0.1" Text="{Binding YText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerY" />
+                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding YError}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Margin="2,0,0,0">
+                    <TextBlock Text="Z" />
+                    <TextBox graph:NumericDrag.Step="0.1" Text="{Binding ZText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerZ" />
+                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ZError}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Grid>
+                <StackPanel Margin="0,4,0,0">
+                  <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRegionEntry}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </StackPanel.Style>
+                  <TextBlock Text="半径" />
+                  <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding RadiusText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerRadius" />
+                  <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding RadiusError}" TextWrapping="Wrap" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+    <CheckBox Content="高级选项" IsChecked="{Binding AdvancedActions}" Margin="0,8,0,0" ToolTip="开启指令执行；关闭后恢复先前原生类型，可撤销。">
+      <CheckBox.Style>
+        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsStoryAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </CheckBox.Style>
+    </CheckBox>
+    <TextBlock Margin="0,10,0,3" Text="执行类型" AutomationProperties.AutomationId="InlineActionTypeLabel">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsStoryAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <ComboBox ItemsSource="{Binding StoryActionTypeOptions}" SelectedItem="{Binding SelectedStoryActionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineActionTypeSelector" AutomationProperties.Name="Story Action type selector">
+      <ComboBox.Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsStoryAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </ComboBox.Style>
+    </ComboBox>
+    <TextBlock Margin="0,10,0,3" Text="物品" AutomationProperties.AutomationId="InlineActionItemLabel">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveItemAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <ComboBox ItemsSource="{Binding StoryActionItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedStoryActionItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" IsEditable="False" AutomationProperties.AutomationId="InlineActionItem">
+      <ComboBox.Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveItemAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </ComboBox.Style>
+    </ComboBox>
+    <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryActionItemStatusText}" TextWrapping="Wrap">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <MultiDataTrigger>
+              <MultiDataTrigger.Conditions>
+                <Condition Binding="{Binding IsGiveItemAction}" Value="True" />
+                <Condition Binding="{Binding HasStoryActionItemStatus}" Value="True" />
+              </MultiDataTrigger.Conditions>
+              <Setter Property="Visibility" Value="Visible" />
+            </MultiDataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBlock Margin="0,10,0,3" Text="物品数量（增减）" AutomationProperties.AutomationId="InlineActionAmountLabel">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveItemAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBlock Margin="0,10,0,3" Text="经验值（增减）（XP points）" AutomationProperties.AutomationId="InlineActionXpLabel">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveXpAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBox graph:NumericDrag.Step="1" Text="{Binding StoryActionAmountText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineActionAmount">
+      <TextBox.Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveItemAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsGiveXpAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBox.Style>
+    </TextBox>
+    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionAmountError}" TextWrapping="Wrap" />
+    <TextBlock Margin="0,10,0,3" Text="消息" AutomationProperties.AutomationId="InlineActionMessageLabel">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSendMessageAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBox graph:TextInputWatermark.Text="输入聊天消息" Text="{Binding StoryActionMessage, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.AutomationId="InlineActionMessage">
+      <TextBox.Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSendMessageAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBox.Style>
+    </TextBox>
+    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionMessageError}" TextWrapping="Wrap" />
+    <StackPanel Margin="0,8,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveHealthAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="生命值（增减）（1 点 = 半颗心）" />
+      <TextBox graph:NumericDrag.Step="0.1" Text="{Binding HealthDelta, UpdateSourceTrigger=LostFocus}" ToolTip="直接增减生命，限制在 0 与最大生命之间。" />
+    </StackPanel>
+    <StackPanel Margin="0,8,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsTeleportAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="维度 ID" />
+      <TextBox graph:NumericDrag.Step="1" Text="{Binding TeleportDimension, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="位置 X / Y / Z" Margin="0,4,0,2" />
+      <UniformGrid Columns="3">
+        <TextBox graph:NumericDrag.Step="0.1" Text="{Binding TeleportX, UpdateSourceTrigger=LostFocus}" Margin="0,0,3,0" ToolTip="X" />
+        <TextBox graph:NumericDrag.Step="0.1" Text="{Binding TeleportY, UpdateSourceTrigger=LostFocus}" Margin="0,0,3,0" ToolTip="Y" />
+        <TextBox graph:NumericDrag.Step="0.1" Text="{Binding TeleportZ, UpdateSourceTrigger=LostFocus}" ToolTip="Z" />
+      </UniformGrid>
+    </StackPanel>
+    <StackPanel Margin="0,8,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsGiveBuffAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <CheckBox Content="MOD扩展" IsChecked="{Binding ModBuff}" />
+      <ComboBox ItemsSource="{Binding VanillaBuffOptions}" SelectedItem="{Binding SelectedVanillaBuff}" DisplayMemberPath="DisplayName" Margin="0,4,0,0">
+        <ComboBox.Style>
+          <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding VanillaBuff}" Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </ComboBox.Style>
+      </ComboBox>
+      <StackPanel>
+        <StackPanel.Style>
+          <Style TargetType="StackPanel">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding ModBuff}" Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </StackPanel.Style>
+        <TextBlock Text="ModID" Margin="0,4,0,0" />
+        <TextBox graph:TextInputWatermark.Text="输入 MOD ID" Text="{Binding BuffModId, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Text="BUFF内部名称" Margin="0,4,0,0" />
+        <TextBox graph:TextInputWatermark.Text="输入效果内部名称" Text="{Binding BuffInternalName, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Text="在游戏中使用 /dgr buff list 或 /dgr buff export 查询准确名称。" TextWrapping="Wrap" Margin="0,3,0,0" />
+      </StackPanel>
+      <TextBlock Text="持续时间（增减）（秒）" Margin="0,5,0,0" />
+      <TextBox graph:NumericDrag.Step="1" Text="{Binding BuffDurationDelta, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="等级（增减）（等级从 1 开始）" Margin="0,5,0,0" />
+      <TextBox graph:NumericDrag.Step="1" Text="{Binding BuffLevelDelta, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="持续时间或等级减至 0 时移除效果；结果等级最高 128。" TextWrapping="Wrap" Margin="0,3,0,0" />
+    </StackPanel>
+    <StackPanel Margin="0,8,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsCommandAction}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="除非必要，否则建议优先使用 Studio 原生节点功能。" TextWrapping="Wrap" />
+      <TextBox graph:TextInputWatermark.Text="/输入服务器指令" Text="{Binding AdvancedCommand, UpdateSourceTrigger=LostFocus}" AcceptsReturn="False" MaxLength="2048" Margin="0,4,0,0" />
+    </StackPanel>
+    <TextBlock Text="{Binding ActionExtraError}" Foreground="OrangeRed" TextWrapping="Wrap" />
+    <graph:CanonicalObjectiveEditor IsInline="True" />
+    <TextBlock Margin="0,10,0,3" Text="说话角色">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsLine}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <ComboBox ItemsSource="{Binding SpeakerOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedSpeakerId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" IsEditable="False" AutomationProperties.AutomationId="InlineLineActorSelector" AutomationProperties.Name="Session Line Actor selector">
+      <ComboBox.Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsLine}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </ComboBox.Style>
+    </ComboBox>
+    <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SpeakerStatusText}" TextWrapping="Wrap">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <MultiDataTrigger>
+              <MultiDataTrigger.Conditions>
+                <Condition Binding="{Binding IsLine}" Value="True" />
+                <Condition Binding="{Binding HasSpeakerStatus}" Value="True" />
+              </MultiDataTrigger.Conditions>
+              <Setter Property="Visibility" Value="Visible" />
+            </MultiDataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBlock Margin="0,10,0,3" Text="台词文本">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsLine}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBox Text="{Binding LineText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.AutomationId="InlineLineTextEditor">
+      <TextBox.Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsLine}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBox.Style>
+    </TextBox>
+    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LineTextError}" TextWrapping="Wrap" />
+    <StackPanel>
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding HasLineSpeaker}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Margin="0,10,0,3" Text="头像差分" />
+      <ComboBox ItemsSource="{Binding PortraitVariantOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectedValue="{Binding SelectedPortraitVariant, Mode=TwoWay}" AutomationProperties.AutomationId="SessionPortraitVariant" />
+    </StackPanel>
+    <StackPanel Margin="0,10,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsLine}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="本句语音" Margin="0,0,0,3" />
+      <StackPanel Orientation="Horizontal">
+        <Button Content="导入音频…" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportLineAudio" />
+        <Button Content="移除语音" Margin="6,0,0,0" Click="RemoveLineAudio_OnClick" />
+      </StackPanel>
+      <TextBlock Text="{Binding LineVoiceStatus}" Margin="0,3,0,0" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
+    </StackPanel>
+    <StackPanel Margin="0,10,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsMusic}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="音乐" />
+      <WrapPanel>
+        <Button Content="导入音乐…" Click="ImportLineAudio_OnClick" />
+        <Button Content="停止音乐" Click="RemoveLineAudio_OnClick" />
+      </WrapPanel>
+      <TextBlock Text="{Binding MusicStatus}" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
+      <CheckBox Content="循环" IsChecked="{Binding MusicLoop, Mode=TwoWay}" />
+      <TextBlock Text="淡入（秒）" />
+      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="淡出（秒）" />
+      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="{Binding PresentationError}" Foreground="Tomato" TextWrapping="Wrap" />
+    </StackPanel>
+    <StackPanel Margin="0,10,0,0">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsTitle}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="主标题" />
+      <TextBox graph:TextInputWatermark.Text="输入主标题" Text="{Binding TitleMain, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="副标题（可选）" />
+      <TextBox graph:TextInputWatermark.Text="输入副标题（可选）" Text="{Binding TitleSubtitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="淡入（秒）" />
+      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="停留（秒）" />
+      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleStay, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="淡出（秒）" />
+      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <TextBlock Text="播放结束后继续流程" Margin="0,4,0,0" />
+      <TextBlock Text="{Binding TitleError}" Foreground="Tomato" TextWrapping="Wrap" />
+    </StackPanel>
+    <graph:SessionScreenEditor IsEnabled="{Binding Workspace.CanEditActivePresentation, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}">
+      <graph:SessionScreenEditor.Style>
+        <Style TargetType="graph:SessionScreenEditor">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsScreen}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </graph:SessionScreenEditor.Style>
+    </graph:SessionScreenEditor>
+    <TextBlock Margin="0,10,0,3" Text="选择提示">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChoice}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBox graph:TextInputWatermark.Text="输入选项提示" Text="{Binding ChoicePrompt, Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
+      <TextBox.Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChoice}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBox.Style>
+    </TextBox>
+    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ChoicePromptError}" TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChoice}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock FontWeight="SemiBold" Text="选项" />
+      <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
+    </StackPanel>
+    <ItemsControl ItemsSource="{Binding ChoiceOptions}">
+      <ItemsControl.Style>
+        <Style TargetType="ItemsControl">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChoice}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </ItemsControl.Style>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid Margin="0,2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox graph:TextInputWatermark.Text="输入选项文字" Grid.Column="0" Text="{Binding DisplayText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+              <Button Margin="3,0,0,0" Padding="4,1" Content="↑" Command="{Binding MoveUpCommand}" />
+              <Button Margin="2,0,0,0" Padding="4,1" Content="↓" Command="{Binding MoveDownCommand}" />
+              <Button Margin="2,0,0,0" Padding="4,1" Content="−" Command="{Binding RemoveCommand}" ToolTip="删除选项" />
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsTaskSettle}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock FontWeight="SemiBold" Text="结算结果（上方优先）" />
+      <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddTaskResultSlotCommand}" ToolTip="添加结算结果" />
+    </StackPanel>
+    <StackPanel Margin="0,8,0,6">
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsTaskReward}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="奖励内容" FontWeight="SemiBold" />
+      <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="正数给予，负数扣除，零不操作。每个任务实例只发放一次。" TextWrapping="Wrap" Margin="0,3,0,6" />
+      <ItemsControl ItemsSource="{Binding RewardEntries}" AutomationProperties.AutomationId="TaskRewardEntries">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Margin="0,3">
+              <Grid>
+ <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+ <StackPanel><TextBlock Text="类型"/><ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding SelectedType}" DisplayMemberPath="DisplayName"/></StackPanel>
+ <Button Grid.Column="1" Content="−" Command="{Binding RemoveCommand}" Margin="5,18,0,0" Padding="6,1" ToolTip="删除奖励条目"/>
+</Grid>
+<TextBlock Text="数量（增减）" Margin="0,5,0,2"/>
+<TextBox graph:NumericDrag.Step="1" Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}" ToolTip="正数给予，负数扣除，零不操作。"/>
+<TextBlock Text="物品" Margin="0,5,0,2"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsItem}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+              <ComboBox ItemsSource="{Binding ItemOptions}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="DisplayName" Margin="0,3,0,0">
+                <ComboBox.Style>
+                  <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding IsItem}" Value="True">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </ComboBox.Style>
+              </ComboBox>
+              <TextBlock Text="{Binding Error}" Foreground="OrangeRed" TextWrapping="Wrap" />
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Content="+ 添加奖励" Command="{Binding AddRewardEntryCommand}" HorizontalAlignment="Left" Margin="0,5,0,0" />
+    </StackPanel>
+    <ItemsControl ItemsSource="{Binding TaskResultSlots}">
+      <ItemsControl.Style>
+        <Style TargetType="ItemsControl">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsTaskSettle}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </ItemsControl.Style>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid Margin="0,2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+              <Button Margin="3,0,0,0" Padding="4,1" Content="↑" Command="{Binding MoveUpCommand}" />
+              <Button Margin="2,0,0,0" Padding="4,1" Content="↓" Command="{Binding MoveDownCommand}" />
+              <Button Margin="2,0,0,0" Padding="4,1" Content="−" Command="{Binding RemoveCommand}" ToolTip="删除结算结果" />
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <StackPanel>
+      <StackPanel.Style>
+        <Style TargetType="StackPanel">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsPublicBoundary}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </StackPanel.Style>
+      <TextBlock Text="公共端口显示名" Margin="0,10,0,3" />
+      <TextBox graph:TextInputWatermark.Text="输入公共端口显示名" Text="{Binding BoundaryDisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" ToolTip="修改显示名保留端口身份与现有连线。" />
+    </StackPanel>
+  </StackPanel>
 </UserControl>

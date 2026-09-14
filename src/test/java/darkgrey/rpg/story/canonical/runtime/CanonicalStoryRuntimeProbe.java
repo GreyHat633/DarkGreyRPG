@@ -39,11 +39,35 @@ public final class CanonicalStoryRuntimeProbe {
         retiredStandaloneNodesRejected();
         terminalAndFailurePaths();
         strictGraphValidation();
+        missingTerminalIdentityRejected();
         System.out.println("CANONICAL_STORY_RUNTIME_SINGLE_CURSOR=PASS");
         System.out.println("CANONICAL_STORY_FLOW_JUDGMENT=PASS");
         System.out.println("CANONICAL_STORY_RETIRED_STANDALONE_NODES_REJECTED=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_AGGREGATE_HANDOFF=PASS");
         System.out.println("CANONICAL_STORY_RUNTIME_STRICT_VALIDATION=PASS");
+    }
+
+    private static void missingTerminalIdentityRejected() {
+        expectFailure("story.terminate.port", new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalGraphNode missing = new CanonicalGraphNode(
+                    "end",
+                    "terminate",
+                    "End",
+                    ports(flowIn("flow_in")),
+                    empty());
+                CanonicalStoryRuntime.start(
+                    story(
+                        "missing_boundary",
+                        Arrays.asList(start(), missing),
+                        Arrays.asList(flow("start", "trigger_accept", "end", "flow_in"))),
+                    "trigger_accept",
+                    CanonicalStoryRepeatPolicy.ONCE);
+            }
+        });
+        System.out.println("CANONICAL_STORY_MISSING_TERMINAL_IDENTITY_REJECTED=PASS");
     }
 
     private static void flowJudgmentPathAndRestore() {
@@ -411,6 +435,13 @@ public final class CanonicalStoryRuntimeProbe {
 
     private static CanonicalGraphNode node(String id, String type, java.util.List<CanonicalGraphPort> ports,
         Map<String, JsonElement> properties) {
+        // Fixture upgrade: public termination metadata belongs in test data, not runtime fallback.
+        if ("terminate".equals(type)) {
+            properties = new java.util.LinkedHashMap<String, JsonElement>(properties);
+            if (!properties.containsKey("port_id")) properties.put("port_id", new com.google.gson.JsonPrimitive(id));
+            if (!properties.containsKey("display_name"))
+                properties.put("display_name", new com.google.gson.JsonPrimitive(id));
+        }
         return new CanonicalGraphNode(id, type, id, ports, properties);
     }
 

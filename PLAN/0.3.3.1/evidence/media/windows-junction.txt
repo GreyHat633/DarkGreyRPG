@@ -1,0 +1,2 @@
+DGRS_WINDOWS_JUNCTION_INSTALL_REJECTED=PASS: Cache path is not a safe directory: E:\Java\MinecraftMod\DarkGrey_RPG\.tooling\0.3.3.1\junction-check\link
+DGRS_WINDOWS_JUNCTION_CLEANUP_PRESERVED=PASS

@@ -7,7 +7,9 @@ using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
+using DarkGreyRPG.Studio.ViewModels;
 using DarkGreyRPG.Studio.ViewModels.Graph;
+using DarkGreyRPG.Studio.Views;
 using DarkGreyRPG.Studio.Views.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
@@ -17,22 +19,14 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalResourceInspectorHierarchyTests
 {
     [STATestMethod]
-    public void SelectedNodeSaveIndicatorRefreshesAfterSavingWithoutReselection()
+    public void SelectedNodeUsesHelpInsteadOfSaveIndicator()
     {
         var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "title", "title");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([node])));
         Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
-        var observed = new List<string>();
-        workspace.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(workspace.InspectorSaveStateText)) observed.Add(workspace.InspectorSaveStateText);
-        };
-        workspace.ActiveGraphHost.SetNodeProperty("title", "main", System.Text.Json.JsonSerializer.SerializeToElement("新标题"));
-        Assert.AreEqual("未保存", workspace.InspectorSaveStateText);
-        observed.Clear();
-        workspace.ActiveEditor.MarkSaved();
-        CollectionAssert.Contains(observed, "已保存");
+        Assert.AreEqual(string.Empty, workspace.InspectorSaveStateText);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(workspace.NodeInspector?.HelpText));
     }
 
     [STATestMethod]
@@ -41,6 +35,8 @@ public sealed class CanonicalResourceInspectorHierarchyTests
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
             actors: [new ActorResourceInfo("actor", "角色", "actor.json", [], IndividualActorResource.ResourceType)]);
+        workspace.PortraitEditorFactory = actor =>
+            new ActorEditorViewModel(ActorDocument.CreateIndividual(actor.Id, actor.DisplayName));
         var view = Arrange(workspace);
         Assert.IsTrue(workspace.SelectTreeItem(workspace.ActorItems.Single()));
         view.UpdateLayout();
@@ -49,7 +45,8 @@ public sealed class CanonicalResourceInspectorHierarchyTests
         workspace.EditActorPortraitRequested = actor => edited = actor.Id;
         workspace.EditActorPortrait();
         Assert.AreEqual("actor", edited);
-        var entry = Descendants<Button>(view).Single(b => AutomationProperties.GetAutomationId(b) == "CanonicalEditActorPortrait");
+        var entry = Descendants<ActorPortraitEditor>(view).Single();
+        Assert.AreSame(workspace.InspectorPortraitEditor, entry.Editor);
         Assert.AreEqual(Visibility.Visible, entry.Visibility);
         workspace.ClearGraphSelection();
         Assert.IsFalse(workspace.CanEditActorPortrait);

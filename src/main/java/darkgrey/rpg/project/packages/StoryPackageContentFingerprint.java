@@ -1,5 +1,6 @@
 package darkgrey.rpg.project.packages;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -53,6 +54,75 @@ public final class StoryPackageContentFingerprint {
             digest.update(record.content);
         }
         return hex(digest.digest());
+    }
+
+    /** Same v1 encoding, reading each entry in bounded chunks from a DGRS source. */
+    public static String compute(StoryPackageManifest manifest, DgrsArchiveReader archive) throws ProjectLoadException {
+        if (manifest == null || archive == null)
+            throw new IllegalArgumentException("Story Package fingerprint inputs are required.");
+        MessageDigest digest = sha256();
+        digest.update(HEADER);
+        updateText(digest, nullable(manifest.getFormat()));
+        updateText(
+            digest,
+            manifest.getFormatVersion() == null ? ""
+                : manifest.getFormatVersion()
+                    .toString());
+        updateText(digest, Integer.toString(manifest.getSchemaVersion()));
+        updateText(digest, Integer.toString(manifest.getStorySchemaVersion()));
+        List<NameRecord> names = names(manifest);
+        Collections.sort(names, new Comparator<NameRecord>() {
+
+            @Override
+            public int compare(NameRecord left, NameRecord right) {
+                int result = left.role.compareTo(right.role);
+                return result == 0 ? left.path.compareTo(right.path) : result;
+            }
+        });
+        byte[] buffer = new byte[DgrsArchiveReader.READ_BUFFER_BYTES];
+        for (NameRecord record : names) {
+            updateBytes(digest, record.role.getBytes(StandardCharsets.UTF_8));
+            updateBytes(digest, record.path.getBytes(StandardCharsets.UTF_8));
+            long length = archive.getEntrySize(record.path);
+            digest.update(
+                ByteBuffer.allocate(8)
+                    .putLong(length)
+                    .array());
+            try (InputStream input = archive.openStream(record.path)) {
+                int count;
+                while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count);
+            } catch (java.io.IOException exception) {
+                throw new ProjectLoadException("Cannot fingerprint DGRS entry: " + record.path, exception);
+            }
+        }
+        return hex(digest.digest());
+    }
+
+    private static List<NameRecord> names(StoryPackageManifest manifest) {
+        List<NameRecord> result = new ArrayList<NameRecord>();
+        result.add(new NameRecord("project", "project.json"));
+        StoryPackageManifest.RequiredResources required = manifest.getRequiredResources();
+        addNames(result, "story", required.getStory());
+        addNames(result, "actor", required.getActors());
+        addNames(result, "item", required.getItems());
+        addNames(result, "item_group", required.getItemGroups());
+        addNames(result, "dialogue", required.getDialogues());
+        addNames(result, "quest", required.getQuests());
+        addNames(result, "canonical_story", required.getCanonicalStories());
+        addNames(result, "canonical_membership", required.getCanonicalMemberships());
+        addNames(result, "session", required.getSessions());
+        addNames(result, "task", required.getTasks());
+        addNames(result, "media", required.getMedia());
+        if (required.getStoryLogicGraph() != null) addNames(result, "story_logic_graph", required.getStoryLogicGraph());
+        return result;
+    }
+
+    private static void addNames(List<NameRecord> result, String role, String path) {
+        result.add(new NameRecord(role, path));
+    }
+
+    private static void addNames(List<NameRecord> result, String role, List<String> paths) {
+        for (String path : paths) addNames(result, role, path);
     }
 
     private static List<Record> records(StoryPackageManifest manifest, Map<String, byte[]> bytes)
@@ -129,6 +199,17 @@ public final class StoryPackageContentFingerprint {
             this.role = role;
             this.path = path;
             this.content = content;
+        }
+    }
+
+    private static final class NameRecord {
+
+        private final String role;
+        private final String path;
+
+        NameRecord(String role, String path) {
+            this.role = role;
+            this.path = path;
         }
     }
 }

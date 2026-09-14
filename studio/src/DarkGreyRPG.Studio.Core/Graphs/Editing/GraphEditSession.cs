@@ -16,6 +16,7 @@ public sealed class GraphEditSession
     private readonly Func<string> _dynamicPortIdSource;
     private readonly HashSet<string> _issuedDynamicPortIds = new(StringComparer.Ordinal);
     private IReadOnlyList<ValidationIssue> _lastValidationIssues = [];
+    private readonly Dictionary<(string Node, string Type), Dictionary<string, JsonElement>> _actionDrafts = new();
 
     public GraphEditSession(GraphDocument document, GraphScope? scope = null, bool compatibilityMode = false,
         Func<string>? dynamicPortIdSource = null)
@@ -71,6 +72,7 @@ public sealed class GraphEditSession
     public bool AddNode(GraphNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        if (Scope == GraphScope.Project) return Fail([new("graph.project.projection.readonly", "请通过项目资源操作创建故事。", "node")]);
         if (!Scope.HasValue)
             return Fail([new("graph.node.scope.required",
                 "A graph scope is required for node edits.", "scope", NodeId: NullIfBlank(node.Id))]);
@@ -117,7 +119,7 @@ public sealed class GraphEditSession
                     CanonicalTaskObjectiveSchema.Validate(node)));
             if (Scope.Value == GraphScope.StoryFlow
                 && string.Equals(node.Type, CanonicalStoryActionSchema.NodeType, StringComparison.Ordinal))
-                issues.AddRange(CanonicalStoryActionSchema.Validate(node));
+                issues.AddRange(CanonicalStoryActionSchema.AllowDraftIssues(node, CanonicalStoryActionSchema.Validate(node)));
         }
 
         if (!string.IsNullOrWhiteSpace(node.Id))
@@ -689,6 +691,7 @@ public sealed class GraphEditSession
     /// <summary>Atomically sets one untyped node property.</summary>
     public bool SetNodeProperty(string nodeId, string property, JsonElement value)
     {
+        if (Scope == GraphScope.Project) return Fail([new("graph.project.projection.readonly", "请进入故事编辑内部内容。", "node")]);
         if (string.IsNullOrWhiteSpace(property))
             return Fail([new("graph.node.property.key.required", "Node property key is required.", "property", NodeId: NullIfBlank(nodeId))]);
         if (value.ValueKind == JsonValueKind.Undefined)
@@ -730,7 +733,7 @@ public sealed class GraphEditSession
                     $"Action property '{property}' is not part of the enabled contract.", property, NodeId: node.Id)]);
             var candidate = Clone(node);
             candidate.Properties[property] = value.Clone();
-            var actionIssues = CanonicalStoryActionSchema.Validate(candidate);
+            var actionIssues = CanonicalStoryActionSchema.AllowDraftIssues(candidate, CanonicalStoryActionSchema.Validate(candidate));
             if (actionIssues.Count != 0) return Fail(actionIssues);
             var beforeAction = DeepClone(Document);
             node.Properties[property] = value.Clone();
@@ -753,7 +756,7 @@ public sealed class GraphEditSession
             if (presentationIssues.Count != 0) return Fail(presentationIssues);
         }
 
-        var isPublicBoundary = node!.Type is "logic_input" or "logic_output"
+        var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         var isSessionEndDisplayName = Scope == GraphScope.Session
             && string.Equals(node.Type, "end", StringComparison.Ordinal)
@@ -815,6 +818,11 @@ public sealed class GraphEditSession
                 "properties.display_name", NodeId: node.Id)]);
         }
 
+        if (isPublicBoundary && property == "display_name"
+            && Document.Nodes.Any(other => other.Id != node.Id && other.Type == node.Type
+                && other.Properties.TryGetValue("display_name", out var name)
+                && name.ValueKind == JsonValueKind.String && name.GetString() == value.GetString()))
+            return Fail([new("graph.public_boundary.display_name.duplicate", "同类公共端口显示名不能重复。", "properties.display_name", NodeId: node.Id)]);
         var before = DeepClone(Document);
         node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         node.Properties[property] = value.Clone();
@@ -1011,11 +1019,15 @@ public sealed class GraphEditSession
         var candidate = Clone(node);
         if (!CanonicalStoryActionSchema.TryInitializeType(candidate, type, out var typeIssues))
             return Fail(typeIssues);
+        if (currentType.ValueKind == JsonValueKind.String)
+            _actionDrafts[(nodeId, currentType.GetString()!)] = node.Properties.ToDictionary(p => p.Key, p => p.Value.Clone());
+        if (_actionDrafts.TryGetValue((nodeId, type!), out var draft))
+            candidate.Properties = draft.ToDictionary(p => p.Key, p => p.Value.Clone());
         if (string.Equals(type, CanonicalStoryActionSchema.GiveItem, StringComparison.Ordinal)
             && !string.IsNullOrWhiteSpace(itemId))
             candidate.Properties[CanonicalStoryActionSchema.ItemProperty] =
                 JsonSerializer.SerializeToElement(itemId.Trim());
-        var shapeIssues = GraphNodeShapeValidator.Validate(candidate, GraphScope.StoryFlow);
+        var shapeIssues = CanonicalStoryActionSchema.AllowDraftIssues(candidate, GraphNodeShapeValidator.Validate(candidate, GraphScope.StoryFlow));
         if (shapeIssues.Count != 0) return Fail(shapeIssues);
         var before = DeepClone(Document);
         node.Properties = candidate.Properties;
@@ -1059,11 +1071,11 @@ public sealed class GraphEditSession
         candidate.Properties.Remove("buff"); candidate.Properties.Remove("mod_id"); candidate.Properties.Remove("buff_name");
         if (modExtension)
         {
-            candidate.Properties["mod_id"] = JsonSerializer.SerializeToElement("examplemod");
-            candidate.Properties["buff_name"] = JsonSerializer.SerializeToElement("potion.effect");
+            candidate.Properties["mod_id"] = JsonSerializer.SerializeToElement("");
+            candidate.Properties["buff_name"] = JsonSerializer.SerializeToElement("");
         }
         else candidate.Properties["buff"] = JsonSerializer.SerializeToElement("speed");
-        var issues = CanonicalStoryActionSchema.Validate(candidate);
+        var issues = CanonicalStoryActionSchema.AllowDraftIssues(candidate, CanonicalStoryActionSchema.Validate(candidate));
         if (issues.Count != 0) return Fail(issues);
         var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;
     }
@@ -1074,7 +1086,7 @@ public sealed class GraphEditSession
         if (string.IsNullOrWhiteSpace(property))
             return Fail([new("graph.node.property.key.required", "Node property key is required.", "property", NodeId: NullIfBlank(nodeId))]);
         if (!TryResolvePropertyNode(nodeId, out var node, out var issues)) return Fail(issues);
-        var isPublicBoundary = node!.Type is "logic_input" or "logic_output"
+        var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         if (Scope == GraphScope.Task && string.Equals(node!.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
             return Fail([ObjectivePropertyIssue("graph.objective.property.immutable",
@@ -1866,8 +1878,7 @@ public sealed class GraphEditSession
     private static IReadOnlyList<ValidationIssue> AllowUnselectedObjectiveTarget(
         GraphNode node, IReadOnlyList<ValidationIssue> issues)
     {
-        if (!CanonicalTaskObjectiveSchema.IsUnselectedTarget(node)) return issues;
-        return issues.Where(issue => !IsObjectiveTargetIssue(issue)).ToArray();
+        return CanonicalTaskObjectiveSchema.AllowDraftIssues(node, issues);
     }
 
     private static bool IsObjectiveTargetIssue(ValidationIssue issue)

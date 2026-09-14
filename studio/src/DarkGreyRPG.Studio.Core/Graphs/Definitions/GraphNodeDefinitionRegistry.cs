@@ -24,7 +24,7 @@ public static class GraphNodeDefinitionRegistry
 
     /// <summary>Returns authorable definitions in canonical registry order.</summary>
     public static IReadOnlyList<GraphNodeDefinition> ForAuthoringScope(GraphScope scope)
-        => _definitions.Where(definition => definition.Scope == scope
+        => _definitions.Where(definition => scope != GraphScope.Project && definition.Scope == scope
             && !definition.CompatibilityOnly
             && !definition.Required
             && !definition.Unique
@@ -107,13 +107,15 @@ public static class GraphNodeDefinitionRegistry
         var logicOnly = new[] { GraphInterfaceKind.Logic };
         return
         [
+            new GraphNodeDefinition("story", GraphScope.Project, "故事", "项目", all, nonDeletable: true),
             Node("start", GraphScope.StoryFlow, "开始", "流程", required: true, unique: true, kinds: all,
                 properties: [
                     new GraphPropertyDefinition(StoryStartSchema.TriggersProperty, JsonValueKind.Array),
                     new GraphPropertyDefinition(StoryStartSchema.RepeatPolicyProperty, JsonValueKind.String),
                 ]),
             Node("terminate", GraphScope.StoryFlow, "终止", "流程", kinds: flowOnly,
-                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)]),
+                ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
+                properties: [StringProperty("port_id"), StringProperty("display_name")]),
             Node("session", GraphScope.StoryFlow, "会话", "聚合", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
                 properties: [StringProperty("resource_id")]),
@@ -203,7 +205,7 @@ public static class GraphNodeDefinitionRegistry
                 ports: [Out(CanonicalTaskObjectiveSchema.CompletionPortId, CanonicalTaskObjectiveSchema.CompletionDisplayName, GraphInterfaceKind.Logic, 0)],
                 properties: [
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.TypeProperty, JsonValueKind.String, true, Json("\"kill_entity\"")),
-                    new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.DescriptionProperty, JsonValueKind.String, true, Json("\"消灭史莱姆\"")),
+                    new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.DescriptionProperty, JsonValueKind.String, true, Json("\"\"")),
                     NumberProperty(CanonicalTaskObjectiveSchema.RequiredProperty, 10, required: false),
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.EntityProperty, JsonValueKind.String),
                     new GraphPropertyDefinition(CanonicalTaskObjectiveSchema.ItemProperty, JsonValueKind.String),

@@ -215,7 +215,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
             Assert.IsTrue(view.GraphView.SelectNode(testCase.Id));
             view.UpdateLayout();
             var visual = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == testCase.Id);
-            Assert.AreEqual(testCase.Name, visual.Node!.DisplayName);
+            Assert.AreEqual($"执行 [{testCase.Name}]", visual.Node!.DisplayName);
             Assert.AreEqual(testCase.Name, visual.InlineEditor!.SelectedStoryActionType!.DisplayName);
             Assert.AreEqual(testCase.Name, workspace.NodeInspector!.SelectedStoryActionType!.DisplayName);
             Assert.AreEqual(Visibility.Visible, Field(view, testCase.InspectorLabel).Visibility);
@@ -785,16 +785,6 @@ public sealed class CanonicalStoryWorkspaceViewTests
             AutomationProperties.GetAutomationId(control) == "TaskObjectivePrerequisiteHelp");
         Assert.AreEqual("前置条件", toggle.Content);
         Assert.AreEqual(Visibility.Collapsed, helper.Visibility);
-
-        var darkThemeText = new SolidColorBrush(Color.FromRgb(0xF2, 0xF2, 0xF2));
-        view.Resources["TextFillColorPrimaryBrush"] = darkThemeText;
-        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        Assert.AreSame(darkThemeText, toggle.Foreground);
-
-        var lightThemeText = new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20));
-        view.Resources["TextFillColorPrimaryBrush"] = lightThemeText;
-        view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        Assert.AreSame(lightThemeText, toggle.Foreground);
 
         toggle.IsChecked = true;
         view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);

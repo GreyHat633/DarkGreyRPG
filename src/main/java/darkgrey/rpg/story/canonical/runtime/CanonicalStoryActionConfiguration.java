@@ -109,7 +109,11 @@ public final class CanonicalStoryActionConfiguration {
         } else if (EXECUTE_COMMAND.equals(type)) {
             requireExactKeys(properties, set("action_type", "command"));
             String command = string(properties, "command");
-            if (command.length() > 2048 || command.indexOf('\n') >= 0
+            if (!command.startsWith("/") || command.substring(1)
+                .trim()
+                .isEmpty()
+                || command.length() > 2048
+                || command.indexOf('\n') >= 0
                 || command.indexOf('\r') >= 0
                 || command.indexOf('\0') >= 0)
                 throw failure("story.action.command", "Command must be one line of at most 2048 characters.");

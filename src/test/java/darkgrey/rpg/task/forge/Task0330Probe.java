@@ -122,9 +122,9 @@ public final class Task0330Probe {
     private static darkgrey.rpg.task.runtime.CanonicalTaskEvent position(int dimension, double x, double y, double z) {
         java.util.Map<String, String> values = new java.util.LinkedHashMap<String, String>();
         values.put("dimension_id", String.valueOf(dimension));
-        values.put("x", String.valueOf(x));
-        values.put("y", String.valueOf(y));
-        values.put("z", String.valueOf(z));
+        values.put("x", String.valueOf((long) Math.floor(x)));
+        values.put("y", String.valueOf((long) Math.floor(y)));
+        values.put("z", String.valueOf((long) Math.floor(z)));
         return new darkgrey.rpg.task.runtime.CanonicalTaskEvent("reach_region", values, 1);
     }
 
@@ -147,24 +147,24 @@ public final class Task0330Probe {
             "Completed collect must latch after restore");
         CanonicalGraphResource region = task(
             "reach_region",
-            ",\"dimension_id\":7,\"center_x\":1.5,\"center_y\":2.5,\"center_z\":3.5,\"radius\":2");
+            ",\"dimension_id\":7,\"center_x\":1,\"center_y\":2,\"center_z\":3,\"radius\":2");
         for (double[] point : new double[][] { { -2, 0, 0 }, { 2, 0, 0 }, { 0, -2, 0 }, { 0, 2, 0 }, { 0, 0, -2 },
             { 0, 0, 2 }, { -2, -2, -2 }, { -2, -2, 2 }, { -2, 2, -2 }, { -2, 2, 2 }, { 2, -2, -2 }, { 2, -2, 2 },
             { 2, 2, -2 }, { 2, 2, 2 } }) {
             runtime = darkgrey.rpg.task.runtime.CanonicalTaskRuntime.start(region);
             require(!runtime.accept(position(0, 1.5 + point[0], 2.5 + point[1], 3.5 + point[2])), "Dimension mismatch");
             require(
-                runtime.accept(position(7, 1.5 + point[0], 2.5 + point[1], 3.5 + point[2])),
+                runtime.accept(position(7, 1 + point[0], 2 + point[1], 3 + point[2])),
                 "Cube inclusive face/corner");
         }
         runtime = darkgrey.rpg.task.runtime.CanonicalTaskRuntime.start(region);
-        require(!runtime.accept(position(7, 3.500001, 2.5, 3.5)), "Outside cube accepted");
+        require(!runtime.accept(position(7, 4, 2, 3)), "Outside cube accepted");
         CanonicalGraphResource point = task(
             "reach_region",
-            ",\"dimension_id\":7,\"center_x\":1.5,\"center_y\":2.5,\"center_z\":3.5,\"radius\":0");
+            ",\"dimension_id\":7,\"center_x\":1,\"center_y\":2,\"center_z\":3,\"radius\":0");
         runtime = darkgrey.rpg.task.runtime.CanonicalTaskRuntime.start(point);
-        require(!runtime.accept(position(7, 1.500001, 2.5, 3.5)), "Radius zero is a point");
-        require(runtime.accept(position(7, 1.5, 2.5, 3.5)), "Radius zero center");
+        require(!runtime.accept(position(7, 2, 2, 3)), "Radius zero is a point");
+        require(runtime.accept(position(7, 1, 2, 3)), "Radius zero center");
         System.out.println("TASK_0330_COLLECT_CURRENT_COUNT_AND_LATCH=PASS");
         System.out.println("TASK_0330_REGION_6_FACES_8_CORNERS_DIMENSION_AND_ZERO=PASS");
     }
@@ -177,7 +177,7 @@ public final class Task0330Probe {
         register.invoke(net.minecraft.item.Item.itemRegistry, 31001, "minecraft:apple", apple);
         final CanonicalGraphResource resource = task(
             "submit_item",
-            ",\"required\":5,\"item\":\"minecraft:apple\",\"metadata\":{}");
+            ",\"required\":5,\"item\":\"minecraft:apple\",\"actor_id\":\"probe_actor\",\"metadata\":{}");
         final CanonicalGraphNode objective = resource.getGraph()
             .getNodes()
             .get(0);
@@ -201,9 +201,12 @@ public final class Task0330Probe {
         java.util.UUID player = java.util.UUID.fromString("11111111-1111-1111-1111-111111111111");
         data.start(player, "story", "placement", resource, 100);
         final net.minecraft.item.ItemStack[] before = CanonicalTaskInventory.copy(inventory);
+        java.util.Map<String, String> eventValues = new java.util.LinkedHashMap<String, String>();
+        eventValues.put("item", "minecraft:apple");
+        eventValues.put("actor_id", "probe_actor");
         darkgrey.rpg.task.runtime.CanonicalTaskEvent event = new darkgrey.rpg.task.runtime.CanonicalTaskEvent(
             "submit_item",
-            java.util.Collections.singletonMap("item", "minecraft:apple"),
+            eventValues,
             5);
         net.minecraft.nbt.NBTTagCompound saved = new net.minecraft.nbt.NBTTagCompound();
         data.writeToNBT(saved);

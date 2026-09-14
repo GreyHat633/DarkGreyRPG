@@ -12,6 +12,10 @@ public sealed class GraphDynamicPortEditTests
     {
         var expected = new[]
         {
+            (GraphScope.Project, "story", GraphPortDirection.Input, GraphInterfaceKind.Flow, 0),
+            (GraphScope.Project, "story", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0),
+            (GraphScope.Project, "story", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
+            (GraphScope.Project, "story", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0),
             (GraphScope.StoryFlow, "start", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1),
             (GraphScope.StoryFlow, "start", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
             (GraphScope.StoryFlow, "session", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0),

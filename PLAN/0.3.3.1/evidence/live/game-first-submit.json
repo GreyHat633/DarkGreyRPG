@@ -1,0 +1,389 @@
+{
+  "screen": "world",
+  "server_result": "interact entity 212 => false",
+  "fixture_entity_ids": [],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    0.5,
+    5.620000004768372,
+    0.5
+  ],
+  "inventory": [
+    {
+      "item": "minecraft:apple",
+      "damage": 0,
+      "count": 2
+    }
+  ],
+  "task_client_visible_text": "",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": -1,
+    "musicRevision": -1,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "error": "java.lang.IllegalAccessException: Class dgr.acceptance.LiveHarness can not access a member of class net.minecraft.client.audio.SoundManager$SoundSystemStarterThread with modifiers \"public\""
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      0.5,
+      4.0,
+      0.5
+    ],
+    "tick": 3699,
+    "heap": {
+      "used": 1986413376,
+      "free": 810138816,
+      "total": 2796552192,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 2,
+      "task_presentation_generation": 6
+    },
+    "inventory": [
+      {
+        "item": "minecraft:apple",
+        "damage": 0,
+        "count": 2
+      }
+    ],
+    "tasks": [
+      {
+        "story_id": "LiveHarness:Collect",
+        "placement_id": "task",
+        "task_id": "LiveHarness:CollectApple",
+        "status": "SETTLED",
+        "activation_time": 1789379902900,
+        "settlement_time": 1789379903802,
+        "runtime": {
+          "status": "SETTLED",
+          "progress": {
+            "objective_collect": 1
+          },
+          "objective_statuses": {
+            "objective_collect": "COMPLETED"
+          },
+          "result_port_id": "result"
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "collect",
+        "task_id": "LiveHarness:CollectApple",
+        "status": "SETTLED",
+        "activation_time": 1789379469498,
+        "settlement_time": 1789379469955,
+        "runtime": {
+          "status": "SETTLED",
+          "progress": {
+            "objective_collect": 1
+          },
+          "objective_statuses": {
+            "objective_collect": "COMPLETED"
+          },
+          "result_port_id": "result"
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "region",
+        "task_id": "LiveHarness:ReachRegion",
+        "status": "CANCELLED_BY_STORY_TERMINATION",
+        "activation_time": 1789379469563,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_region": 0
+          },
+          "objective_statuses": {
+            "objective_region": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-a",
+        "task_id": "LiveHarness:SubmitApple",
+        "status": "CANCELLED_BY_STORY_TERMINATION",
+        "activation_time": 1789379469592,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_submit": 0
+          },
+          "objective_statuses": {
+            "objective_submit": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-b",
+        "task_id": "LiveHarness:SubmitApple",
+        "status": "CANCELLED_BY_STORY_TERMINATION",
+        "activation_time": 1789379469641,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_submit": 0
+          },
+          "objective_statuses": {
+            "objective_submit": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:Region",
+        "placement_id": "task",
+        "task_id": "LiveHarness:ReachRegion",
+        "status": "ACTIVE",
+        "activation_time": 1789379902948,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_region": 0
+          },
+          "objective_statuses": {
+            "objective_region": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:SubmitA",
+        "placement_id": "task",
+        "task_id": "LiveHarness:SubmitApple",
+        "status": "ACTIVE",
+        "activation_time": 1789379902844,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_submit": 0
+          },
+          "objective_statuses": {
+            "objective_submit": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:SubmitB",
+        "placement_id": "task",
+        "task_id": "LiveHarness:SubmitApple",
+        "status": "ACTIVE",
+        "activation_time": 1789379902870,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_submit": 0
+          },
+          "objective_statuses": {
+            "objective_submit": "ACTIVE"
+          }
+        }
+      }
+    ],
+    "journal": [
+      {
+        "task_id": "LiveHarness:CollectApple",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "collect",
+        "title": "Collect one apple",
+        "status": "SETTLED",
+        "objectives": [
+          {
+            "id": "objective_collect",
+            "type": "collect_item",
+            "description": "Collect one apple",
+            "status": "COMPLETED",
+            "current": 1,
+            "required": 1
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:ReachRegion",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "region",
+        "title": "Reach the integer region",
+        "status": "CANCELLED_BY_STORY_TERMINATION",
+        "objectives": [
+          {
+            "id": "objective_region",
+            "type": "reach_region",
+            "description": "Stand in the integer region at 0,64,0",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "region": [
+              0,
+              64,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:SubmitApple",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-a",
+        "title": "Submit an apple to the actor",
+        "status": "CANCELLED_BY_STORY_TERMINATION",
+        "objectives": [
+          {
+            "id": "objective_submit",
+            "type": "submit_item",
+            "description": "Submit one apple to the Live Harness Actor",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "submit_actor_id": "LiveHarness:TarvenBoss"
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:SubmitApple",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-b",
+        "title": "Submit an apple to the actor",
+        "status": "CANCELLED_BY_STORY_TERMINATION",
+        "objectives": [
+          {
+            "id": "objective_submit",
+            "type": "submit_item",
+            "description": "Submit one apple to the Live Harness Actor",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "submit_actor_id": "LiveHarness:TarvenBoss"
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:SubmitApple",
+        "story_id": "LiveHarness:SubmitA",
+        "placement_id": "task",
+        "title": "Submit an apple to the actor",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_submit",
+            "type": "submit_item",
+            "description": "Submit one apple to the Live Harness Actor",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "submit_actor_id": "LiveHarness:TarvenBoss"
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:SubmitApple",
+        "story_id": "LiveHarness:SubmitB",
+        "placement_id": "task",
+        "title": "Submit an apple to the actor",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_submit",
+            "type": "submit_item",
+            "description": "Submit one apple to the Live Harness Actor",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "submit_actor_id": "LiveHarness:TarvenBoss"
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:CollectApple",
+        "story_id": "LiveHarness:Collect",
+        "placement_id": "task",
+        "title": "Collect one apple",
+        "status": "SETTLED",
+        "objectives": [
+          {
+            "id": "objective_collect",
+            "type": "collect_item",
+            "description": "Collect one apple",
+            "status": "COMPLETED",
+            "current": 1,
+            "required": 1
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:ReachRegion",
+        "story_id": "LiveHarness:Region",
+        "placement_id": "task",
+        "title": "Reach the integer region",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_region",
+            "type": "reach_region",
+            "description": "Stand in the integer region at 0,64,0",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "region": [
+              0,
+              64,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "entities": [
+      {
+        "entity_id": 212,
+        "uuid": "d4f2bdf0-a98b-4558-b5bd-1233dd98aa56",
+        "name": "Manatsu Haru",
+        "dimension": 0,
+        "pos": [
+          2.5,
+          4.0,
+          0.5
+        ],
+        "actor_ids": [
+          "LiveHarness:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      },
+      {
+        "entity_id": 213,
+        "uuid": "28597eae-0335-41ae-ab5c-8779a7505935",
+        "name": "Mszczona",
+        "dimension": 0,
+        "pos": [
+          3.5,
+          4.0,
+          0.5
+        ],
+        "actor_ids": [
+          "LiveHarness:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      }
+    ],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": -1,
+      "musicRevision": -1,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 0.0,
+      "engine_ready": true,
+      "error": "java.lang.IllegalAccessException: Class dgr.acceptance.LiveHarness can not access a member of class net.minecraft.client.audio.SoundManager$SoundSystemStarterThread with modifiers \"public\""
+    },
+    "server_result": "interact entity 212 => false"
+  }
+}

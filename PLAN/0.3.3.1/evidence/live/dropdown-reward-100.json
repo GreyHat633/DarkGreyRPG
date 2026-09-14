@@ -1,0 +1,8 @@
+{
+  "Control": "TaskRewardType",
+  "Selections": 100,
+  "Targets": [
+    "CanonicalStoryActionTypeOption { Value = item, DisplayName = 物品 }",
+    "CanonicalStoryActionTypeOption { Value = xp, DisplayName = 经验 }"
+  ]
+}

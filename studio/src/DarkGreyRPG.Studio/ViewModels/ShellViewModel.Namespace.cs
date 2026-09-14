@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.Settings;
@@ -144,6 +144,8 @@ public sealed partial class ShellViewModel
 
     private void UndoCurrent()
     {
+        if (CanonicalStoryWorkspace?.InspectorPortraitEditor is { } portrait) { portrait.UndoCommand.Execute(null); return; }
+        if (ActiveProjectGraphHost is { CanUndo: true } graph) { graph.Undo(); return; }
         if (TryUndoReference()) return;
         if (ActiveEditor?.UndoCommand.CanExecute(null) == true) ActiveEditor.UndoCommand.Execute(null);
         else if (CanUndoProjectNamespace()) UndoNamespaceMigration();

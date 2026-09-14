@@ -35,15 +35,17 @@ public sealed class StoryAction0330InspectorTests
         inspector.BuffDurationDelta = "-5"; inspector.BuffLevelDelta = "-1";
         Assert.IsFalse(editor.Host.Graph.Nodes.Single().Properties.ContainsKey("buff"));
         inspector.AdvancedActions = true;
-        inspector.SelectedStoryActionType = inspector.StoryActionTypeOptions.Single(type => type.Value == "execute_command");
+        Assert.IsTrue(inspector.IsCommandAction);
+        Assert.AreEqual("execute_command", editor.Host.Graph.Nodes.Single().Properties["action_type"].GetString());
         inspector.AdvancedCommand = "say one\nsay two";
         Assert.IsTrue(editor.Host.LastValidationIssues.Any(issue => issue.Code == "graph.story.action.authoring"));
-        inspector.AdvancedCommand = "say one";
+        inspector.AdvancedCommand = "/say one";
+        Assert.AreEqual("/say one", editor.Host.Graph.Nodes.Single().Properties["command"].GetString());
         inspector.AdvancedActions = false;
-        Assert.IsTrue(inspector.IsSendMessageAction);
+        Assert.IsTrue(inspector.IsGiveBuffAction);
         Assert.IsFalse(inspector.StoryActionTypeOptions.Any(type => type.Value == "execute_command"));
         Assert.IsTrue(editor.Host.Undo());
         Assert.IsTrue(inspector.IsCommandAction && inspector.AdvancedActions);
-        Assert.AreEqual("say one", inspector.AdvancedCommand);
+        Assert.AreEqual("/say one", inspector.AdvancedCommand);
     }
 }

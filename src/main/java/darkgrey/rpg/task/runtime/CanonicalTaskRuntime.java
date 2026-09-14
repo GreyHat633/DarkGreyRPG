@@ -504,14 +504,14 @@ public final class CanonicalTaskRuntime {
                     throw failure("task.objective.metadata", "Collect objective metadata values must be strings.");
         }
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) requireObjectiveTarget(node, "actor_id");
+        if (CanonicalTaskEvent.SUBMIT_ITEM.equals(type)) requireObjectiveTarget(node, "actor_id");
         if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
-            double dimension = numeric(node, "dimension_id");
-            if (dimension != (int) dimension)
-                throw failure("task.objective.dimension", "Dimension must be an integer.");
-            numeric(node, "center_x");
-            numeric(node, "center_y");
-            numeric(node, "center_z");
-            if (numeric(node, "radius") < 0) throw failure("task.objective.radius", "Radius must not be negative.");
+            integerRegion(node, "dimension_id");
+            integerRegion(node, "center_x");
+            integerRegion(node, "center_y");
+            integerRegion(node, "center_z");
+            if (integerRegion(node, "radius") < 0)
+                throw failure("task.objective.radius", "Radius must not be negative.");
             requireObjectiveProperties(
                 node,
                 "objective_type",
@@ -520,17 +520,20 @@ public final class CanonicalTaskRuntime {
                 "center_x",
                 "center_y",
                 "center_z",
-                "radius",
-                "dimension_note");
-            JsonElement note = node.getProperties()
-                .get("dimension_note");
-            if (note != null && (!note.isJsonPrimitive() || !note.getAsJsonPrimitive()
-                .isString())) throw failure("task.objective.dimension_note", "Dimension note must be text.");
+                "radius");
         }
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type))
             requireObjectiveProperties(node, "objective_type", "description", "required", "entity");
-        if (CanonicalTaskEvent.COLLECT_ITEM.equals(type) || CanonicalTaskEvent.SUBMIT_ITEM.equals(type))
+        if (CanonicalTaskEvent.COLLECT_ITEM.equals(type))
             requireObjectiveProperties(node, "objective_type", "description", "required", "item", "metadata");
+        if (CanonicalTaskEvent.SUBMIT_ITEM.equals(type)) requireObjectiveProperties(
+            node,
+            "objective_type",
+            "description",
+            "required",
+            "item",
+            "actor_id",
+            "metadata");
         if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) {
             if (node.getProperties()
                 .containsKey("required")) {
@@ -599,7 +602,6 @@ public final class CanonicalTaskRuntime {
         Set<String> actual = node.getProperties()
             .keySet();
         Set<String> mandatory = new HashSet<String>(java.util.Arrays.asList(required));
-        if (CanonicalTaskEvent.REACH_REGION.equals(value(node, "objective_type"))) mandatory.remove("dimension_note");
         if (!actual.containsAll(mandatory) || !keys.containsAll(actual))
             throw failure("task.node.properties", "Task node has unknown or missing properties.");
         prerequisiteEnabled(node);
@@ -791,18 +793,24 @@ public final class CanonicalTaskRuntime {
             return value(node, "actor_id").equals(event.get("actor_id"));
         if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
             try {
-                return numeric(node, "dimension_id") == Double.parseDouble(event.get("dimension_id"))
-                    && Math.abs(Double.parseDouble(event.get("x")) - numeric(node, "center_x"))
-                        <= numeric(node, "radius")
-                    && Math.abs(Double.parseDouble(event.get("y")) - numeric(node, "center_y"))
-                        <= numeric(node, "radius")
-                    && Math.abs(Double.parseDouble(event.get("z")) - numeric(node, "center_z"))
-                        <= numeric(node, "radius");
+                long dimension = Long.parseLong(event.get("dimension_id"));
+                long x = Long.parseLong(event.get("x"));
+                long y = Long.parseLong(event.get("y"));
+                long z = Long.parseLong(event.get("z"));
+                long centerX = integerRegion(node, "center_x");
+                long centerY = integerRegion(node, "center_y");
+                long centerZ = integerRegion(node, "center_z");
+                long radius = integerRegion(node, "radius");
+                return dimension == integerRegion(node, "dimension_id") && withinInclusive(x, centerX, radius)
+                    && withinInclusive(y, centerY, radius)
+                    && withinInclusive(z, centerZ, radius);
             } catch (RuntimeException invalid) {
                 return false;
             }
         }
         if (!value(node, "item").equals(event.get("item"))) return false;
+        if (CanonicalTaskEvent.SUBMIT_ITEM.equals(type) && !value(node, "actor_id").equals(event.get("actor_id")))
+            return false;
         JsonObject metadata = node.getProperties()
             .get("metadata")
             .getAsJsonObject();
@@ -823,6 +831,17 @@ public final class CanonicalTaskRuntime {
             || Double.isInfinite(value.getAsDouble()))
             throw failure("task.objective.region.number", "Finite region number is required: " + key);
         return value.getAsDouble();
+    }
+
+    private static int integerRegion(CanonicalGraphNode node, String key) {
+        double value = numeric(node, key);
+        if (value != Math.rint(value) || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE)
+            throw failure("task.objective.region.integer", "Region field must be a 32-bit integer: " + key);
+        return (int) value;
+    }
+
+    private static boolean withinInclusive(long value, long center, long radius) {
+        return value >= center - radius && value <= center + radius;
     }
 
     private int required(CanonicalGraphNode node) {

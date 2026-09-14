@@ -1,0 +1,36 @@
+WP-F standalone verification (2026-09-14, Windows, Java E:/Java/jdk-25.0.1)
+Command:
+  $env:JAVA_HOME='E:/Java/jdk-25.0.1'; $env:GRADLE_USER_HOME='E:/Java/MinecraftMod/DarkGrey_RPG/repo/.gradle-user-home';
+  .\gradlew.bat compileJava testClasses --offline
+  java -cp build/classes/java/test;build/classes/java/main;build/classes/java/patchedMc;build/resources/main;build/resources/patchedMc;<gson-2.11.0.jar> darkgrey.rpg.project.packages.DgrsMediaStreaming0331Probe E:/Java/MinecraftMod/DarkGrey_RPG/build/dgrs-media-probes
+  java -cp build/classes/java/test;build/classes/java/main;build/classes/java/patchedMc;build/resources/main;build/resources/patchedMc;<gson-2.11.0.jar> darkgrey.rpg.project.packages.DgrsMediaLifecycle0331Probe E:/Java/MinecraftMod/DarkGrey_RPG/build/dgrs-media-probes
+
+Build result: BUILD SUCCESSFUL (compileJava, testClasses; offline).
+
+DGRS_MEDIA_STREAMING_HEAP_DELTA_BYTES=-136
+DGRS_MEDIA_STREAMING_MEASURED_ARCHIVE_BYTES=8388608
+DGRS_MEDIA_STREAMING_CONCURRENT_MATERIALIZE=PASS
+DGRS_MEDIA_STREAMING_RELOAD_TRANSFER_LEASE=PASS
+DGRS_MEDIA_STREAMING_0331=PASS
+DGRS_MEDIA_CACHE_BYTES=1048576
+DGRS_MEDIA_CACHE_REBUILD=PASS
+DGRS_MEDIA_CONCURRENT_REQUESTS=8
+DGRS_MEDIA_CONCURRENT_DISTINCT_MATERIALIZED_PATHS=1
+DGRS_MEDIA_CONCURRENT_SINGLE_MATERIALIZATION=PASS
+DGRS_MEDIA_INVALID_FORMAT_PATH_HASH=PASS
+DGRS_MEDIA_GENERATION_LEASE_TRANSFER=PASS
+DGRS_MEDIA_PART_RECOVERY=PASS
+DGRS_MEDIA_REPARSE_ROOT_GUARD=SKIP_UNAVAILABLE
+DGRS_MEDIA_OPEN_HANDLES=-1
+DGRS_MEDIA_HEAP_RETAINED_SMALL_BYTES=4472
+DGRS_MEDIA_HEAP_RETAINED_LARGE_INCREMENT_BYTES=1008
+DGRS_MEDIA_HEAP_SCAN_PEAK_SMALL_DELTA_BYTES=198864
+DGRS_MEDIA_HEAP_SCAN_PEAK_LARGE_DELTA_BYTES=65568
+DGRS_MEDIA_HEAP_MEDIA_BYTES_SMALL=8388608
+DGRS_MEDIA_HEAP_MEDIA_BYTES_LARGE=33554432
+DGRS_MEDIA_METADATA_ONLY_HEAP=PASS
+DGRS_MEDIA_MAX_IN_FLIGHT_BYTES=32768
+DGRS_MEDIA_CACHE_DISK_BYTES=1048576
+DGRS_MEDIA_LIFECYCLE_0331=PASS
+
+Evidence boundary: this is a standalone package/cache probe. It does not prove Minecraft tick latency, client playback retention, or runtime generation handoff through the live server. Reparse-point creation was unavailable on this machine, and open-handle MXBean reporting is unsupported (-1); both remain environment/runtime acceptance gaps.

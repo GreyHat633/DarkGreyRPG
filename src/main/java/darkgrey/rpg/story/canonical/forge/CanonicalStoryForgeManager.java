@@ -54,7 +54,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
     }
 
     /** Server-neutral aggregate seam used to verify coordinator routing without a Minecraft process. */
-    interface AggregateGateway {
+    public interface AggregateGateway {
 
         boolean startSession(String storyId, String placementId, boolean activationLogic);
 
@@ -343,6 +343,18 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         }
     }
 
+    public boolean recoverPendingRoutes(EntityPlayerMP player) {
+        try {
+            Context current = context(player);
+            if (current.data.pendingStoryTerminalRouteStoryIds(requirePlayerUuid(player))
+                .isEmpty()) return false;
+            return route(player, current, null);
+        } catch (RuntimeException exception) {
+            reportTriggerQueryFailure("pending Flow recovery", exception);
+            return false;
+        }
+    }
+
     private boolean route(EntityPlayerMP player, Context context, CanonicalStoryDispatch first) {
         final EntityPlayerMP routePlayer = player;
         AggregateGateway gateway = new AggregateGateway() {
@@ -409,9 +421,10 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             }
         };
         UUID playerUuid = requirePlayerUuid(player);
+        boolean recovered = recoverPendingTerminalRoutes(playerUuid, context.service, context.data, gateway);
         boolean routed = first != null && routeTrusted(playerUuid, context.service, context.data, first, gateway);
-        return propagateStoryLogicTrusted(playerUuid, context.project, context.service, context.data, gateway)
-            || routed;
+        return propagateStoryLogicTrusted(playerUuid, context.project, context.service, context.data, gateway) || routed
+            || recovered;
     }
 
     /** Applies one externally-owned public Logic input and routes all authored continuations. */
@@ -455,6 +468,8 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             throw new IllegalArgumentException("Trusted Story Logic propagation inputs are required.");
         Map<String, List<CanonicalStoryLogicConnection>> targets = new LinkedHashMap<String, List<CanonicalStoryLogicConnection>>();
         for (CanonicalStoryLogicConnection connection : project.getCanonicalStoryLogicConnections()) {
+            if (connection.getInterfaceKind() != darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.LOGIC)
+                continue;
             List<CanonicalStoryLogicConnection> incoming = targets.get(connection.getTargetStoryId());
             if (incoming == null) {
                 incoming = new java.util.ArrayList<CanonicalStoryLogicConnection>();
@@ -480,9 +495,33 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                     values.put(connection.getTargetPortId(), Boolean.valueOf(output != null && output.booleanValue()));
                 }
 
+                Map<String, Boolean> previousStartValues = new LinkedHashMap<String, Boolean>();
+                darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration startConfig = darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration
+                    .parse(service.storyResource(target.getKey()));
+                for (darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration.Trigger trigger : startConfig
+                    .getLogicTriggers()) {
+                    String conditionPort = trigger.getLogicPortId();
+                    boolean currentValue = Boolean.TRUE.equals(values.get(conditionPort));
+                    previousStartValues.put(
+                        trigger.getPortId(),
+                        Boolean.valueOf(
+                            data.observeStoryStartCondition(
+                                playerUuid,
+                                target.getKey(),
+                                trigger.getPortId(),
+                                currentValue)));
+                }
+
                 CanonicalStoryInstanceSnapshot before = data.getStorySnapshot(playerUuid, target.getKey());
+                boolean wasActive = before != null && before.getRuntimeSnapshot()
+                    .getStatus() == CanonicalStoryStatus.ACTIVE;
                 if (before == null) {
-                    CanonicalStoryDispatch started = service.startByLogic(playerUuid, target.getKey(), values, now());
+                    CanonicalStoryDispatch started = risingLogicStart(
+                        service,
+                        playerUuid,
+                        target.getKey(),
+                        values,
+                        previousStartValues);
                     if (started != null) {
                         routeTrusted(playerUuid, service, data, started, gateway);
                         changed = true;
@@ -491,21 +530,44 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                     continue;
                 }
                 CanonicalStorySnapshot runtime = before.getRuntimeSnapshot();
-                if (!logicChanged(runtime.getExternalLogicInputs(), values)) continue;
+                boolean inputChanged = logicChanged(runtime.getExternalLogicInputs(), values);
+                if (!inputChanged) continue;
 
                 CanonicalStoryDispatch updated = service.setLogicInputs(playerUuid, target.getKey(), values, now());
                 routeTrusted(playerUuid, service, data, updated, gateway);
                 changed = true;
                 routed = true;
-                if (runtime.getStatus() != CanonicalStoryStatus.ACTIVE
+                if (!wasActive && runtime.getStatus() != CanonicalStoryStatus.ACTIVE
                     && runtime.getRepeatPolicy() == CanonicalStoryRepeatPolicy.REPEATABLE) {
-                    CanonicalStoryDispatch restarted = service.startByLogic(playerUuid, target.getKey(), values, now());
+                    CanonicalStoryDispatch restarted = risingLogicStart(
+                        service,
+                        playerUuid,
+                        target.getKey(),
+                        values,
+                        previousStartValues);
                     if (restarted != null) routeTrusted(playerUuid, service, data, restarted, gateway);
                 }
             }
             if (!changed) return routed;
         }
         throw new IllegalStateException("Cross-Story public Logic propagation exceeded its safety bound.");
+    }
+
+    /** Start only conditions whose own stable input changed from false to true. */
+    private static CanonicalStoryDispatch risingLogicStart(CanonicalStoryServerService service, UUID playerUuid,
+        String storyId, Map<String, Boolean> values, Map<String, Boolean> previous) {
+        darkgrey.rpg.graph.canonical.CanonicalGraphResource resource = service.storyResource(storyId);
+        darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration config = darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration
+            .parse(resource);
+        for (darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration.Trigger trigger : config
+            .getLogicTriggers()) {
+            String conditionPort = trigger.getLogicPortId();
+            boolean before = previous != null && Boolean.TRUE.equals(previous.get(trigger.getPortId()));
+            boolean nowValue = Boolean.TRUE.equals(values.get(conditionPort));
+            if (!before && nowValue)
+                return service.startByLogicTrigger(playerUuid, storyId, trigger.getPortId(), values, now());
+        }
+        return null;
     }
 
     private static boolean logicChanged(Map<String, Boolean> current, Map<String, Boolean> next) {
@@ -517,8 +579,32 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         return false;
     }
 
+    /**
+     * Replays durable terminal claims left pending by a crash around the
+     * destination Story start. The source terminal snapshot is the replay
+     * token; an applied claim makes the replay idempotent.
+     */
+    public static boolean recoverPendingTerminalRoutes(UUID playerUuid, CanonicalStoryServerService service,
+        CanonicalSessionSavedData data, AggregateGateway gateway) {
+        if (playerUuid == null || service == null || data == null || gateway == null)
+            throw new IllegalArgumentException("Terminal route recovery inputs are required.");
+        boolean recovered = false;
+        for (String storyId : data.pendingStoryTerminalRouteStoryIds(playerUuid)) {
+            CanonicalStoryDispatch dispatch = service.snapshot(playerUuid, storyId);
+            if (dispatch == null || dispatch.getKind() != CanonicalStoryDispatchKind.TERMINATED) continue;
+            routeTrusted(playerUuid, service, data, dispatch, gateway);
+            recovered = true;
+        }
+        return recovered;
+    }
+
     static boolean routeTrusted(UUID playerUuid, CanonicalStoryServerService service, CanonicalSessionSavedData data,
         CanonicalStoryDispatch first, AggregateGateway gateway) {
+        return routeTrusted(playerUuid, service, data, first, gateway, new ChainBudget(MAX_EXTERNAL_CHAIN));
+    }
+
+    private static boolean routeTrusted(UUID playerUuid, CanonicalStoryServerService service,
+        CanonicalSessionSavedData data, CanonicalStoryDispatch first, AggregateGateway gateway, ChainBudget budget) {
         if (playerUuid == null || service == null || data == null || first == null || gateway == null)
             throw new IllegalArgumentException("Trusted canonical Story routing inputs are required.");
         CanonicalStoryDispatch dispatch = first;
@@ -526,6 +612,8 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             .getStoryId();
         try {
             for (int step = 0; step < MAX_EXTERNAL_CHAIN; step++) {
+                if (!budget.consume()) throw new IllegalStateException(
+                    "Canonical Story external dispatch chain exceeded its safety bound.");
                 CanonicalStoryStartDisposition disposition = dispatch.getStartDisposition();
                 if (disposition != null && !disposition.isEligible()) return false;
                 if (disposition == CanonicalStoryStartDisposition.REPEATABLE_RESTART) gateway.resetPreviousRun(
@@ -570,6 +658,70 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
                 if (kind == CanonicalStoryDispatchKind.TERMINATED) {
                     gateway.cleanup(storyId);
+                    String terminalPort = CanonicalStoryRuntime
+                        .restore(
+                            service.storyResource(storyId),
+                            dispatch.getSnapshot()
+                                .getRuntimeSnapshot())
+                        .getTerminalPortId();
+                    if (terminalPort != null) budget.observeRoute(
+                        playerUuid.toString() + "\u0000"
+                            + storyId
+                            + "\u0000"
+                            + dispatch.getSnapshot()
+                                .getActivationTime()
+                            + "\u0000"
+                            + terminalPort);
+                    if (terminalPort != null && data.claimStoryTerminalRoute(
+                        playerUuid,
+                        storyId,
+                        dispatch.getSnapshot()
+                            .getActivationTime(),
+                        terminalPort)) {
+                        String targetIdentity = data.storyTerminalRouteTarget(
+                            playerUuid,
+                            storyId,
+                            dispatch.getSnapshot()
+                                .getActivationTime(),
+                            terminalPort);
+                        CanonicalStoryDispatch next = targetIdentity == null
+                            ? service.startFlowFromTerminal(playerUuid, storyId, terminalPort, now())
+                            : recoverTargetDispatch(playerUuid, service, data, targetIdentity);
+                        if (targetIdentity != null && next == null) {
+                            // The recorded target was already dispatched but is
+                            // no longer the current repeatable run. Resolve the
+                            // source claim without starting a replacement.
+                            data.markStoryTerminalRouteApplied(
+                                playerUuid,
+                                storyId,
+                                dispatch.getSnapshot()
+                                    .getActivationTime(),
+                                terminalPort);
+                            return true;
+                        }
+                        if (next != null) try {
+                            if (targetIdentity == null) data.recordStoryTerminalRouteTarget(
+                                playerUuid,
+                                storyId,
+                                dispatch.getSnapshot()
+                                    .getActivationTime(),
+                                terminalPort,
+                                next.getSnapshot()
+                                    .getStoryId(),
+                                next.getSnapshot()
+                                    .getActivationTime());
+                            routeTrusted(playerUuid, service, data, next, gateway, budget);
+                        } catch (RuntimeException failure) {
+                            // Leave a durable pending claim for recovery after a crash/fault.
+                            throw failure;
+                        }
+                        data.markStoryTerminalRouteApplied(
+                            playerUuid,
+                            storyId,
+                            dispatch.getSnapshot()
+                                .getActivationTime(),
+                            terminalPort);
+                    }
                     return true;
                 }
                 if (kind == CanonicalStoryDispatchKind.ERROR) {
@@ -581,13 +733,60 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             throw new IllegalStateException("Canonical Story external dispatch chain exceeded its safety bound.");
         } catch (RuntimeException failure) {
             try {
-                if (routedStoryId != null && data.getStorySnapshot(playerUuid, routedStoryId) != null)
+                // A terminal source with a pending Flow claim is a durable
+                // replay token. Keep it TERMINATED across a destination-start
+                // fault so recovery can retry the exact route after reload.
+                if (failure.getMessage() != null && failure.getMessage()
+                    .contains("safety bound"))
+                    for (String key : budget.routeKeys()) data.markStoryTerminalRouteAppliedKey(key);
+                if (routedStoryId != null
+                    && (dispatch == null || dispatch.getKind() != CanonicalStoryDispatchKind.TERMINATED)
+                    && data.getStorySnapshot(playerUuid, routedStoryId) != null)
                     data.markStoryError(playerUuid, routedStoryId, now());
                 if (routedStoryId != null) gateway.cleanup(routedStoryId);
             } catch (RuntimeException cleanupFailure) {
                 failure.addSuppressed(cleanupFailure);
             }
             throw failure;
+        }
+    }
+
+    private static CanonicalStoryDispatch recoverTargetDispatch(UUID playerUuid, CanonicalStoryServerService service,
+        CanonicalSessionSavedData data, String targetIdentity) {
+        String[] parts = targetIdentity.split("\\u0000", -1);
+        if (parts.length != 3 || !playerUuid.toString()
+            .equals(parts[0])) return null;
+        long activation;
+        try {
+            activation = Long.parseLong(parts[2]);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+        darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot target = data
+            .getStorySnapshot(playerUuid, parts[1]);
+        if (target == null || target.getActivationTime() != activation) return null;
+        return service.snapshot(playerUuid, parts[1]);
+    }
+
+    private static final class ChainBudget {
+
+        private int remaining;
+        private final java.util.Set<String> routeKeys = new java.util.LinkedHashSet<String>();
+
+        ChainBudget(int limit) {
+            remaining = limit;
+        }
+
+        boolean consume() {
+            return remaining-- > 0;
+        }
+
+        void observeRoute(String key) {
+            if (key != null) routeKeys.add(key);
+        }
+
+        java.util.Set<String> routeKeys() {
+            return routeKeys;
         }
     }
 

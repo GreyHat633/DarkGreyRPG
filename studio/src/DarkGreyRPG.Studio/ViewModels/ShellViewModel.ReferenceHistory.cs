@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
@@ -63,8 +63,12 @@ public sealed partial class ShellViewModel
         return true;
     }
 
+    private GraphEditorHostViewModel? ActiveProjectGraphHost => !IsCanonicalStoryWorkspaceVisible && ActiveEditor is null && Navigation.SelectedItem?.Page == "Story" ? ProjectHome.Graph.CanonicalHost : null;
+
     private void RedoCurrent()
     {
+        if (CanonicalStoryWorkspace?.InspectorPortraitEditor is { } portrait) { portrait.RedoCommand.Execute(null); return; }
+        if (ActiveProjectGraphHost is { CanRedo: true } graph) { graph.Redo(); return; }
         if (CanRedoReference() && (ActiveEditor is not CanonicalGraphResourceEditorViewModel editor
             || editor.Host.RedoSequence > _referenceRedo.Peek().Sequence))
         {

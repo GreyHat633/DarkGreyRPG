@@ -20,15 +20,24 @@ public final class MediaTransfer0330Probe {
             int limit = CanonicalMediaTextures.decodeLimitForCount(count);
             require((long) limit * limit * count <= 16777216, "aggregate decoded texture budget");
         }
-        byte[] content = new byte[70000];
-        for (int i = 0; i < content.length; i++) content[i] = (byte) (i * 31);
+        java.awt.image.BufferedImage fixture = new java.awt.image.BufferedImage(
+            128,
+            180,
+            java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.util.Random random = new java.util.Random(331L);
+        for (int y = 0; y < fixture.getHeight(); y++)
+            for (int x = 0; x < fixture.getWidth(); x++) fixture.setRGB(x, y, random.nextInt());
+        java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(fixture, "png", png);
+        byte[] content = png.toByteArray();
+        require(content.length > 65536 && content.length <= 98304, "legal three-chunk media fixture");
         StringBuilder hash = new StringBuilder();
         for (byte value : MessageDigest.getInstance("SHA-256")
             .digest(content)) {
             hash.append(Character.forDigit((value & 255) >> 4, 16));
             hash.append(Character.forDigit(value & 15, 16));
         }
-        String ref = "media/" + hash + ".ogg";
+        String ref = "media/" + hash + ".png";
         ByteBuf encoded = Unpooled.buffer();
         new CanonicalMediaRequest(9, ref, 32768).toBytes(encoded);
         CanonicalMediaRequest decoded = new CanonicalMediaRequest();

@@ -31,6 +31,8 @@ public sealed class CanonicalTaskMetadataTests
         {
             var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "target");
             Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(node, type, "guard", out _));
+            node.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Test objective");
+            if (type == "submit_item") node.Properties["actor_id"] = System.Text.Json.JsonSerializer.SerializeToElement("guard");
             if (type == "kill_entity") node.Properties["entity"] = System.Text.Json.JsonSerializer.SerializeToElement("guard");
             if (type is "collect_item" or "submit_item") node.Properties["item"] = System.Text.Json.JsonSerializer.SerializeToElement("apple");
             Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(node), type);

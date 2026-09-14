@@ -63,6 +63,7 @@ public sealed class GraphNodeDefinitionSchemaTests
     {
         var expectedNames = new Dictionary<(GraphScope Scope, string Type), string>
         {
+            [(GraphScope.Project, "story")] = "故事",
             [(GraphScope.StoryFlow, "start")] = "开始",
             [(GraphScope.StoryFlow, "terminate")] = "终止",
             [(GraphScope.StoryFlow, "session")] = "会话",
@@ -101,7 +102,8 @@ public sealed class GraphNodeDefinitionSchemaTests
             [(GraphScope.Task, "reward")] = "奖励",
         };
 
-        Assert.AreEqual(36, GraphNodeDefinitionRegistry.Definitions.Count);
+        Assert.AreEqual(37, GraphNodeDefinitionRegistry.Definitions.Count);
+        Assert.IsEmpty(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Project));
         foreach (var definition in GraphNodeDefinitionRegistry.Definitions)
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(definition.DisplayName));

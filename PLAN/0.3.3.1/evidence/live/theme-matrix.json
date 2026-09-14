@@ -1,0 +1,11 @@
+{
+  "Themes": [
+    "Light",
+    "Dark"
+  ],
+  "RequestedSmall": "1200x800 (minimum width applies)",
+  "RequestedCommon": "1463x942",
+  "CurrentBounds": "229,44,1463,942",
+  "Native": true,
+  "Dpi": 119
+}

@@ -1,0 +1,215 @@
+{
+  "screen": "world",
+  "server_result": "/give @p minecraft:apple 2 => 1",
+  "fixture_entity_ids": [],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    -815.5,
+    5.620000004768372,
+    -1612.5
+  ],
+  "inventory": [
+    {
+      "item": "minecraft:apple",
+      "damage": 0,
+      "count": 2
+    }
+  ],
+  "task_client_visible_text": "",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": -1,
+    "musicRevision": -1,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "error": "java.lang.IllegalAccessException: Class dgr.acceptance.LiveHarness can not access a member of class net.minecraft.client.audio.SoundManager$SoundSystemStarterThread with modifiers \"public\""
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      -815.5,
+      4.0,
+      -1612.5
+    ],
+    "tick": 662,
+    "heap": {
+      "used": 1536867512,
+      "free": 1062028104,
+      "total": 2598895616,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 1,
+      "task_presentation_generation": 4
+    },
+    "inventory": [
+      {
+        "item": "minecraft:apple",
+        "damage": 0,
+        "count": 2
+      }
+    ],
+    "tasks": [
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "collect",
+        "task_id": "LiveHarness:CollectApple",
+        "status": "ACTIVE",
+        "activation_time": 1789379469498,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_collect": 0
+          },
+          "objective_statuses": {
+            "objective_collect": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "region",
+        "task_id": "LiveHarness:ReachRegion",
+        "status": "ACTIVE",
+        "activation_time": 1789379469563,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_region": 0
+          },
+          "objective_statuses": {
+            "objective_region": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-a",
+        "task_id": "LiveHarness:SubmitApple",
+        "status": "ACTIVE",
+        "activation_time": 1789379469592,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_submit": 0
+          },
+          "objective_statuses": {
+            "objective_submit": "ACTIVE"
+          }
+        }
+      },
+      {
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-b",
+        "task_id": "LiveHarness:SubmitApple",
+        "status": "ACTIVE",
+        "activation_time": 1789379469641,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "objective_submit": 0
+          },
+          "objective_statuses": {
+            "objective_submit": "ACTIVE"
+          }
+        }
+      }
+    ],
+    "journal": [
+      {
+        "task_id": "LiveHarness:CollectApple",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "collect",
+        "title": "Collect one apple",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_collect",
+            "type": "collect_item",
+            "description": "Collect one apple",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:ReachRegion",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "region",
+        "title": "Reach the integer region",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_region",
+            "type": "reach_region",
+            "description": "Stand in the integer region at 0,64,0",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "region": [
+              0,
+              64,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:SubmitApple",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-a",
+        "title": "Submit an apple to the actor",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_submit",
+            "type": "submit_item",
+            "description": "Submit one apple to the Live Harness Actor",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "submit_actor_id": "LiveHarness:TarvenBoss"
+          }
+        ]
+      },
+      {
+        "task_id": "LiveHarness:SubmitApple",
+        "story_id": "LiveHarness:LiveStory",
+        "placement_id": "submit-b",
+        "title": "Submit an apple to the actor",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "objective_submit",
+            "type": "submit_item",
+            "description": "Submit one apple to the Live Harness Actor",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 1,
+            "submit_actor_id": "LiveHarness:TarvenBoss"
+          }
+        ]
+      }
+    ],
+    "entities": [],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": -1,
+      "musicRevision": -1,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 0.0,
+      "engine_ready": true,
+      "error": "java.lang.IllegalAccessException: Class dgr.acceptance.LiveHarness can not access a member of class net.minecraft.client.audio.SoundManager$SoundSystemStarterThread with modifiers \"public\""
+    },
+    "server_result": "/give @p minecraft:apple 2 => 1"
+  }
+}

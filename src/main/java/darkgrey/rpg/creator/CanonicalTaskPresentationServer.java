@@ -60,40 +60,12 @@ public final class CanonicalTaskPresentationServer {
         state.dimension = player.dimension;
     }
 
-    /** Validates an action against the exact read-only snapshot last sent to this connection. */
+    /**
+     * Legacy menu-submit entry point retained for wire compatibility. It is
+     * intentionally inert: only a server EntityInteractEvent may submit.
+     */
     public static boolean submit(EntityPlayerMP player, long revision, String taskId, String objectiveId) {
-        State state = STATES.get(player);
-        if (state == null || state.player.get() != player
-            || state.previous == null
-            || state.lastSubmitTick == player.ticksExisted) return false;
-        state.lastSubmitTick = player.ticksExisted;
-        if (state.revision != revision || state.source != CanonicalTaskSavedData.get(player)
-            || state.generation != state.source.getPresentationGeneration()
-            || state.dimension != player.dimension
-            || state.project != DarkGreyRpg.getProjectRepository()
-                .getSnapshot()) {
-            push(player, true);
-            return false;
-        }
-        net.minecraft.nbt.NBTTagList tasks = state.previous.getTagList("tasks", 10);
-        for (int i = 0; i < tasks.tagCount(); i++) {
-            NBTTagCompound task = tasks.getCompoundTagAt(i);
-            if (!taskId.equals(task.getString("id"))) continue;
-            net.minecraft.nbt.NBTTagList objectives = task.getTagList("objectives", 10);
-            for (int j = 0; j < objectives.tagCount(); j++) {
-                NBTTagCompound objective = objectives.getCompoundTagAt(j);
-                if (!objectiveId.equals(objective.getString("id")) || !objective.getBoolean("submit")) continue;
-                boolean accepted = DarkGreyRpg.getCanonicalTaskManager()
-                    .submitItem(
-                        player,
-                        task.getString("story"),
-                        task.getString("placement"),
-                        objectiveId,
-                        task.getLong("activation"));
-                push(player, true);
-                return accepted;
-            }
-        }
+        if (player != null) push(player, true);
         return false;
     }
 

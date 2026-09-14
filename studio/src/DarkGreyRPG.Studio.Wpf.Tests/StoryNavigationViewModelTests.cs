@@ -595,7 +595,7 @@ public sealed class StoryNavigationViewModelTests
     }
 
     [TestMethod]
-    public void ProjectGraphProblemsFocusStoryOrOpenMissingTargetEnterStory()
+    public void ProjectGraphProblemsFocusOrOpenMissingTargetEnterStory()
     {
         var directory = CreateProjectDirectory();
         try
@@ -630,10 +630,7 @@ public sealed class StoryNavigationViewModelTests
             shell.ShowProjectHomeCommand.Execute(null);
             shell.ShowProjectGraphCommand.Execute(null);
             shell.FocusProjectGraphProblems();
-            var isolated = shell.Problems.Problems.First(problem => problem.Code == "project_graph.story.isolated");
-            shell.OpenProblem(isolated);
-            Assert.IsTrue(shell.ProjectHome.IsGraphVisible);
-            Assert.AreEqual(isolated.Source?.Split('/')[1], shell.ProjectHome.Graph.ProblemFocusRequest?.StoryId);
+            Assert.IsFalse(shell.Problems.Problems.Any(problem => problem.Code == "project_graph.story.isolated"));
         }
         finally
         {

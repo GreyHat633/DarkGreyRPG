@@ -19,10 +19,12 @@ public sealed class CanonicalTaskRewardInspectorTests
              new CanonicalStoryItemItem(new CollectiveItemResource { GroupId = "Author:food", DisplayName = "食物组" })]);
         Assert.IsTrue(inspector.IsTaskReward);
         Assert.AreEqual(1, inspector.RewardItemOptions.Count);
-        inspector.AddRewardEntryCommand.Execute(null);
+        Assert.HasCount(1, inspector.RewardEntries);
         var row = inspector.RewardEntries.Single();
+        Assert.AreEqual("item", row.SelectedType.Value);
+        Assert.AreEqual("1", row.AmountText);
         var before = editor.Host.Session.UndoCount;
-        row.SelectedType = row.TypeOptions.Single(type => type.Value == "item");
+        row.SelectedType = row.TypeOptions.Single(type => type.Value == "xp");
         Assert.AreEqual(before + 1, editor.Host.Session.UndoCount);
         row.AmountText = "-5";
         Assert.AreEqual(-5, editor.Host.Graph.Nodes.Single().Properties["entries"][0].GetProperty("amount").GetInt32());

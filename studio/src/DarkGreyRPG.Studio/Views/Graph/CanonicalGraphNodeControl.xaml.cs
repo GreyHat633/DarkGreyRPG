@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
@@ -83,7 +84,40 @@ public partial class CanonicalGraphNodeControl : UserControl
         => source is not null && HeaderDragZone.IsAncestorOf(source);
 
     public bool IsParameterInteractionSource(DependencyObject? source)
-        => source is not null && ParameterInteractiveZone.IsAncestorOf(source);
+    {
+        // Routed text events can originate from a Run rather than a Visual.
+        while (source is FrameworkContentElement content) source = content.Parent;
+        if (source is null || !ParameterInteractiveZone.IsAncestorOf(source)) return false;
+
+        // The parameter expander contains large stretches of layout-only
+        // StackPanel/Grid/Border surface.  Only controls which have their own
+        // pointer gesture may claim the routed press; the remaining surface is
+        // deliberately available for node dragging.
+        if (FindAncestor<Expander>(source) is not null
+            && FindAncestor<ToggleButton>(source) is not null)
+            return true;
+
+        return FindAncestor<TextBoxBase>(source) is not null
+            || FindAncestor<PasswordBox>(source) is not null
+            || FindAncestor<ComboBox>(source) is not null
+            || FindAncestor<ListBoxItem>(source) is not null
+            || FindAncestor<TreeViewItem>(source) is not null
+            || FindAncestor<ButtonBase>(source) is not null
+            || FindAncestor<RangeBase>(source) is not null
+            || FindAncestor<Thumb>(source) is not null;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? source) where T : DependencyObject
+    {
+        while (source is not null)
+        {
+            if (source is T match) return match;
+            source = source is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(source) : LogicalTreeHelper.GetParent(source);
+        }
+
+        return null;
+    }
 
     public void DisposeInlineEditor()
     {

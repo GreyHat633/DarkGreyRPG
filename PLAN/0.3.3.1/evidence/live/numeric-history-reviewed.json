@@ -1,0 +1,72 @@
+{
+  "FocusType": "ControlType.Edit",
+  "FocusBounds": "1474,516,148,40",
+  "Changed": true,
+  "UndoExact": false,
+  "Before": [
+    {
+      "media_ref": "media/0429098572aecbbcde2c124c961752e620ea41cffbd3492df01dce17fac50058.png",
+      "x": 1.22461772,
+      "y": 0.4412223905955819,
+      "width": 0.507934977269597,
+      "height": 0.7829154612664736,
+      "anchor_x": 0.5,
+      "anchor_y": 0.5,
+      "z": 0
+    },
+    {
+      "media_ref": "media/f04fccd5f7f7bb6639b094e2c5f035472dfa75790f528b233b97ecdc41f77297.jpg",
+      "x": 1.2,
+      "y": 0.5,
+      "width": 0.5,
+      "height": 0.75,
+      "anchor_x": 0.5,
+      "anchor_y": 0.5,
+      "z": 1
+    }
+  ],
+  "After": [
+    {
+      "media_ref": "media/0429098572aecbbcde2c124c961752e620ea41cffbd3492df01dce17fac50058.png",
+      "x": 0.92461772,
+      "y": 0.4412223905955819,
+      "width": 0.507934977269597,
+      "height": 0.7829154612664736,
+      "anchor_x": 0.5,
+      "anchor_y": 0.5,
+      "z": 0
+    },
+    {
+      "media_ref": "media/f04fccd5f7f7bb6639b094e2c5f035472dfa75790f528b233b97ecdc41f77297.jpg",
+      "x": 1.2,
+      "y": 0.5,
+      "width": 0.5,
+      "height": 0.75,
+      "anchor_x": 0.5,
+      "anchor_y": 0.5,
+      "z": 1
+    }
+  ],
+  "Undo": [
+    {
+      "media_ref": "media/0429098572aecbbcde2c124c961752e620ea41cffbd3492df01dce17fac50058.png",
+      "x": 0.92461772,
+      "y": 0.4412223905955819,
+      "width": 0.507934977269597,
+      "height": 0.7829154612664736,
+      "anchor_x": 0.5,
+      "anchor_y": 0.5,
+      "z": 0
+    },
+    {
+      "media_ref": "media/f04fccd5f7f7bb6639b094e2c5f035472dfa75790f528b233b97ecdc41f77297.jpg",
+      "x": 1.2,
+      "y": 0.5,
+      "width": 0.5,
+      "height": 0.75,
+      "anchor_x": 0.5,
+      "anchor_y": 0.5,
+      "z": 1
+    }
+  ]
+}

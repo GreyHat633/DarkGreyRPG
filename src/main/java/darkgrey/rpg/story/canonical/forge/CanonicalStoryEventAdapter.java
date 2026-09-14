@@ -34,6 +34,7 @@ public final class CanonicalStoryEventAdapter {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof EntityPlayerMP)
             || event.player.ticksExisted % 10 != 0) return;
         EntityPlayerMP player = (EntityPlayerMP) event.player;
+        stories.recoverPendingRoutes(player);
         stories.handleRegionPosition(
             player,
             player.dimension,
@@ -43,6 +44,11 @@ public final class CanonicalStoryEventAdapter {
             regions.update(
                 player.getUniqueID(),
                 stories.matchingRegionTriggers(player, player.dimension, player.posX, player.posY, player.posZ)));
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.player instanceof EntityPlayerMP) stories.recoverPendingRoutes((EntityPlayerMP) event.player);
     }
 
     @SubscribeEvent

@@ -10,7 +10,7 @@ import java.util.zip.ZipOutputStream;
 
 import darkgrey.rpg.project.ProjectLoadException;
 
-/** Focused contract probe for the detached DGRS archive reader. */
+/** Focused contract probe for the metadata-only DGRS archive reader. */
 public final class DgrsArchiveReaderProbe {
 
     private DgrsArchiveReaderProbe() {}
@@ -41,12 +41,11 @@ public final class DgrsArchiveReaderProbe {
                 // expected
             }
             require(!new File(root, ".dgrs-runtime").exists(), "reader created a runtime directory");
-            require(archive.delete(), "ZipFile remained open after reader construction");
             require(
                 "{\"name\":\"演示\"}".equals(reader.readUtf8("project.json")),
-                "detached reader could not read after archive deletion");
+                "metadata reader could not reopen the source archive");
             System.out.println("DGRS_ARCHIVE_READER_VALID=PASS");
-            System.out.println("DGRS_ARCHIVE_READER_DETACHED=PASS");
+            System.out.println("DGRS_ARCHIVE_READER_METADATA_ONLY=PASS");
 
             Entry[] tooManyEntries = new Entry[DgrsArchiveReader.MAX_ENTRY_COUNT + 1];
             tooManyEntries[0] = new Entry("manifest.json", "{}");

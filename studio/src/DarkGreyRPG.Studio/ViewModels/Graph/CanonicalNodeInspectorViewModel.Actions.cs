@@ -10,6 +10,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
     private bool _advancedActions;
     private string _extraActionType = "";
     private readonly Dictionary<string, string> _actionExtraDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Dictionary<string, string>> _inactiveActionDrafts = new(StringComparer.Ordinal);
     public bool IsGiveHealthAction => IsStoryAction && _actionType == CanonicalStoryActionSchema.GiveHealth;
     public bool IsTeleportAction => IsStoryAction && _actionType == CanonicalStoryActionSchema.Teleport;
     public bool IsGiveBuffAction => IsStoryAction && _actionType == CanonicalStoryActionSchema.GiveBuff;
@@ -19,15 +20,19 @@ public sealed partial class CanonicalNodeInspectorViewModel
         get => _advancedActions;
         set
         {
-            if (_advancedActions == value) return;
-            _advancedActions = value;
-            if (!value && IsCommandAction) _host.ChangeStoryActionType(NodeId, CanonicalStoryActionSchema.SendMessage);
+            if (_isProjectingCanonicalChange || _advancedActions == value) return;
+            _host.SetAdvancedActionMode(NodeId, value);
             OnPropertyChanged(); OnPropertyChanged(nameof(StoryActionTypeOptions)); OnPropertyChanged(nameof(SelectedStoryActionType));
         }
     }
-    public IReadOnlyList<CanonicalStoryActionTypeOption> StoryActionTypeOptions => CanonicalStoryActionSchema.ActionTypes
-        .Where(type => AdvancedActions || type != CanonicalStoryActionSchema.ExecuteCommand)
+    private static readonly IReadOnlyList<CanonicalStoryActionTypeOption> AllActionOptions = CanonicalStoryActionSchema.ActionTypes
         .Select(type => new CanonicalStoryActionTypeOption(type, CanonicalStoryActionSchema.AuthoringDisplayNameFor(type))).ToArray();
+    private static readonly IReadOnlyList<CanonicalStoryActionTypeOption> NativeActionOptions = AllActionOptions
+        .Where(option => option.Value != CanonicalStoryActionSchema.ExecuteCommand).ToArray();
+    private static readonly IReadOnlyList<CanonicalStoryActionTypeOption> CommandActionOptions = AllActionOptions
+        .Where(option => option.Value == CanonicalStoryActionSchema.ExecuteCommand).ToArray();
+    public IReadOnlyList<CanonicalStoryActionTypeOption> StoryActionTypeOptions
+        => AdvancedActions ? CommandActionOptions : NativeActionOptions;
     public string HealthDelta { get => Extra("amount"); set => SetExtra("amount", value, 1); }
     public string TeleportDimension { get => Extra("dimension_id"); set => SetExtra("dimension_id", value, 2); }
     public string TeleportX { get => Extra("x"); set => SetExtra("x", value, 1); }
@@ -83,9 +88,12 @@ public sealed partial class CanonicalNodeInspectorViewModel
         if (_extraActionType != _actionType)
         {
             foreach (var key in _actionExtraDrafts.Keys) _host.SetAuthoringIssue($"{NodeId}:action-extra:{key}", null);
+            if (_extraActionType.Length > 0) _inactiveActionDrafts[_extraActionType] = new(_actionExtraDrafts, StringComparer.Ordinal);
             _actionExtraDrafts.Clear(); ActionExtraError = ""; _extraActionType = _actionType;
+            if (_inactiveActionDrafts.TryGetValue(_actionType, out var drafts))
+                foreach (var (key, text) in drafts) ExtraError(key, text, "已恢复未完成输入，请修正后保存。");
         }
-        if (IsCommandAction) _advancedActions = true;
+        _advancedActions = IsCommandAction;
         if (IsGiveBuffAction)
         {
             foreach (var key in _actionExtraDrafts.Keys.ToArray())

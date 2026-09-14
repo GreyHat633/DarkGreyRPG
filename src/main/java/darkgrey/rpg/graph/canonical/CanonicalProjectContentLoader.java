@@ -717,6 +717,14 @@ public final class CanonicalProjectContentLoader {
                         if (!declared.items.contains(id) && !declared.itemGroups.contains(id))
                             throw undeclared("item", id, node.getId());
                     }
+                    if ("submit_item".equals(type)) {
+                        JsonElement actor = node.getProperties()
+                            .get("actor_id");
+                        if (actor == null) throw CanonicalProjectContentException.failure(
+                            "project.content.graph.reference.missing",
+                            "Graph node '" + node.getId() + "' is missing actor reference.");
+                        requireDeclared(actor, declared.actors, "actor", node.getId());
+                    }
                 } else if ("kill_entity".equals(type)) {
                     String id = property(node, "entity");
                     if (id != null && !nativeTarget(id)) {

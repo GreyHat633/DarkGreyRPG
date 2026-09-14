@@ -1,0 +1,116 @@
+Window: "测试项目 — DarkGrey RPG Studio 0.3.3.1-wpb-preview", App: DarkGreyRPGStudio.exe.
+	0 窗口 测试项目 — DarkGrey RPG Studio 0.3.3.1-wpb-preview Secondary Actions: Raise ID: RootWindow
+		1 标题栏
+			2 菜单栏 系统 ID: MenuBar
+				3 菜单项目 系统
+			4 按钮 最小化
+			5 按钮 还原
+			6 按钮 关闭
+		7 菜单
+			8 菜单项 文件(F)
+				9 文本 文件(_F)
+			10 菜单项 编辑(E)
+				11 文本 编辑(_E)
+			12 菜单项 视图(V)
+				13 文本 视图(_V)
+			14 菜单项 项目(P)
+				15 文本 项目(_P)
+			16 菜单项 帮助(H)
+				17 文本 帮助(_H)
+		18 文本 已恢复上次项目，共 2 个 Actor。
+		19 列表视图
+			20 列表项 (selectable) BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }
+				21 文本 输出
+			22 列表项 (selectable) BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }
+				23 文本 问题
+			24 列表项 (selectable) BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }
+				25 文本 调试器
+			26 列表项 (selectable) BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }
+				27 文本 Minecraft
+		28 按钮 新建故事 Description: 新建故事
+		29 文本 项目首页
+		30 按钮 引用故事包
+		31 窗格
+			32 列表视图 引用故事包区域
+		33 编辑 搜索故事 Description: 按 ID、显示名称或标签搜索 ID: StorySearchBox
+		34 列表视图 故事导航列表 ID: StoryList
+			35 列表项 (selectable) DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel
+				36 文本 测试故事
+				37 文本 GreyHat_:test_story
+				38 文本 新格式
+		39 缩略 ID: ResourceBrowserSplitter
+		40 按钮 进入选中故事
+			41 文本 进入故事
+		42 文本 项目故事图谱
+		43 文本 左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。
+		44 自定义 故事图谱自由布局画布
+			45 编辑 搜索故事图谱
+			46 组合框 筛选故事图谱
+			47 按钮 故事图谱自动布局
+				48 文本 自动布局
+			49 按钮 故事图谱缩放到百分之百
+				50 文本 100%
+			51 按钮 适应全部故事节点
+				52 文本 适应
+			53 按钮 重置故事图谱视图
+				54 文本 重置
+			55 按钮 故事图谱缩小
+				56 文本 −
+			57 文本 100%
+			58 按钮 故事图谱放大
+				59 文本 +
+			60 文本 1 个故事 · 0 条转场 / 0 组关系 · 1 个诊断
+			61 按钮 打开故事图谱错误
+				62 文本 错误 0
+			63 按钮 打开故事图谱警告
+				64 文本 警告 1
+			65 文本 跨 Story 公共逻辑桥
+			66 组合框 选择公共逻辑输出
+			67 文本 →
+			68 组合框 选择公共逻辑输入
+			69 按钮 (disabled) 连接跨故事公共逻辑
+				70 文本 (disabled) 连接
+			71 列表视图
+			72 自定义 故事图谱自由布局画布 ID: ProjectGraphCanvasViewport
+				73 自定义 故事图谱节点 测试故事 GreyHat_:test_story Description: Story 'GreyHat_:test_story' 未连接到任何 EnterStory 转场。
+					74 文本 测试故事
+					75 文本 GreyHat_:test_story
+		76 缩略
+		77 窗格
+			78 文本 故事详情
+			79 文本 选中故事完整概览
+			80 文本 GreyHat_:test_story
+			81 列表视图
+				82 数据项 HomeStoryResourceFolder { DisplayName = 角色, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }
+					83 组 角色
+						84 按钮 角色 ID: HeaderToggle
+							85 文本 角色
+				86 数据项 HomeStoryResourceFolder { DisplayName = 物品, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }
+					87 组 物品
+						88 按钮 物品 ID: HeaderToggle
+							89 文本 物品
+				90 数据项 HomeStoryResourceFolder { DisplayName = 会话, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }
+					91 组 会话
+						92 按钮 会话 ID: HeaderToggle
+							93 文本 会话
+				94 数据项 HomeStoryResourceFolder { DisplayName = 任务, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }
+					95 组 任务
+						96 按钮 任务 ID: HeaderToggle
+							97 文本 任务
+
+Document text: ```
+自动布局
+100%
+适应
+重置
+−
++
+1 个故事 · 0 条转场 / 0 组关系 · 1 个诊断
+错误 0
+警告 1
+跨 Story 公共逻辑桥
+→
+连接
+测试故事
+GreyHat_:test_story
+```

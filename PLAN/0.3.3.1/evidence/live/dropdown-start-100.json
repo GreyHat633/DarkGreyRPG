@@ -1,0 +1,9 @@
+{
+  "Control": "StoryStartTriggerType",
+  "Selections": 100,
+  "Targets": [
+    "CanonicalStoryStartTriggerTypeOption { Value = interact_actor, DisplayName = 角色交互 }",
+    "CanonicalStoryStartTriggerTypeOption { Value = enter_region, DisplayName = 进入区域 }"
+  ],
+  "ProcessAlive": true
+}

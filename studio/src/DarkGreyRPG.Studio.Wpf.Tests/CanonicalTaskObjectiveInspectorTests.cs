@@ -23,11 +23,13 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsTrue(inspector.IsReachRegionObjective);
         inspector.RegionDimension = "7";
         inspector.RegionX = "1.5";
+        Assert.IsTrue(editor.ValidationIssues.Any(issue => issue.Code == "graph.objective.region.authoring"));
+        inspector.RegionX = "-2";
         inspector.RegionRadius = "0";
-        inspector.RegionNote = "测试维度";
         var current = editor.CreatePersistenceSnapshot().Graph!.Nodes.Single();
         Assert.AreEqual(7, current.Properties["dimension_id"].GetInt32());
-        Assert.AreEqual(1.5, current.Properties["center_x"].GetDouble());
+        Assert.AreEqual(-2, current.Properties["center_x"].GetInt32());
+        Assert.IsFalse(current.Properties.ContainsKey("dimension_note"));
         Assert.AreEqual(0, current.Properties["radius"].GetDouble());
         inspector.RegionRadius = "-1";
         Assert.IsTrue(editor.ValidationIssues.Any(issue => issue.Code == "graph.objective.region.authoring"));

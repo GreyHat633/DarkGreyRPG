@@ -18,6 +18,7 @@ public static class StoryStartSchema
     public const string ActorInteraction = "interact_actor";
     public const string RegionEntry = "enter_region";
     public const string Logic = "logic";
+    public const string FlowDriven = "flow_driven";
     public const string EnterStory = "enter_story";
     /// <summary>Optional per-trigger Logic condition port identity.</summary>
     public const string LogicPortIdProperty = "logic_port_id";
@@ -30,7 +31,7 @@ public static class StoryStartSchema
     public const string RadiusProperty = "radius";
 
     public static IReadOnlyList<string> SupportedTriggerTypes { get; } =
-        [ActorInteraction, RegionEntry, Logic];
+        [ActorInteraction, RegionEntry, Logic, FlowDriven];
 
     /// <summary>Legacy trigger types accepted only when loading old data.</summary>
     public static IReadOnlyList<string> LegacyTriggerTypes { get; } = [EnterStory];

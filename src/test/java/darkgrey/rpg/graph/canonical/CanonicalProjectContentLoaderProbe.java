@@ -179,19 +179,19 @@ public final class CanonicalProjectContentLoaderProbe {
             "Absent Story logic graph did not return stable empty graph");
 
         Path graphFile = project.resolve("resources/canonical/story_logic_graph.json");
-        write(graphFile, "{\"schema_version\":1,\"connections\":[]}");
+        write(graphFile, "{\"schema_version\":2,\"connections\":[]}");
         CanonicalProjectContent present = load(loader, project);
         require(
             present.getStoryLogicGraph()
-                .getSchemaVersion() == 1,
+                .getSchemaVersion() == 2,
             "Story logic graph schema changed");
         require(
             present.getStoryLogicGraph()
                 .getConnections()
                 .isEmpty(),
             "Empty Story logic graph changed");
-        expectStoryLogicFailure(loader, project, "{\"schema_version\":1,\"connections\":[],\"extra\":0}");
-        expectStoryLogicFailure(loader, project, "{\"schema_version\":2,\"connections\":[]}");
+        expectStoryLogicFailure(loader, project, "{\"schema_version\":2,\"connections\":[],\"extra\":0}");
+        expectStoryLogicFailure(loader, project, "{\"schema_version\":1,\"connections\":[]}");
         Files.deleteIfExists(graphFile);
 
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
@@ -201,8 +201,8 @@ public final class CanonicalProjectContentLoaderProbe {
         CanonicalStoryLogicGraphLoader direct = new CanonicalStoryLogicGraphLoader();
         write(
             graphFile,
-            "{\"schema_version\":1,\"connections\":[" + "{\"source_story_id\":\"source\",\"source_port_id\":\"out\","
-                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\"}]}");
+            "{\"schema_version\":2,\"connections\":[" + "{\"source_story_id\":\"source\",\"source_port_id\":\"out\","
+                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\",\"interface_kind\":\"Logic\"}]}");
         CanonicalStoryLogicGraph graph = direct.load(graphFile, stories);
         require(
             graph.getConnections()
@@ -212,10 +212,10 @@ public final class CanonicalProjectContentLoaderProbe {
             direct,
             graphFile,
             stories,
-            "{\"schema_version\":1,\"connections\":[" + "{\"source_story_id\":\"source\",\"source_port_id\":\"out\","
-                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\"},"
+            "{\"schema_version\":2,\"connections\":[" + "{\"source_story_id\":\"source\",\"source_port_id\":\"out\","
+                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\",\"interface_kind\":\"Logic\"},"
                 + "{\"source_story_id\":\"source2\",\"source_port_id\":\"out\","
-                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\"}]}",
+                + "\"target_story_id\":\"target\",\"target_port_id\":\"in\",\"interface_kind\":\"Logic\"}]}",
             "story.logic.graph.target.multiple_sources");
         Files.delete(graphFile);
     }

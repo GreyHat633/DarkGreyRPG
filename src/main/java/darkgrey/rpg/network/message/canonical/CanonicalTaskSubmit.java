@@ -66,15 +66,11 @@ public final class CanonicalTaskSubmit implements IMessage {
             MainThreadScheduler.scheduleServer(new Runnable() {
 
                 public void run() {
-                    try {
-                        if (!CanonicalTaskPresentationServer
-                            .submit(player, message.revision, message.taskId, message.objectiveId))
-                            player.addChatMessage(new net.minecraft.util.ChatComponentText("物品不足或目标状态已变化，请查看最新任务状态。"));
-                    } catch (RuntimeException failure) {
-                        player.addChatMessage(new net.minecraft.util.ChatComponentText("提交未完成，请重试。"));
-                        org.apache.logging.log4j.LogManager.getLogger("DGR Task")
-                            .warn("Task submit failed", failure);
-                    }
+                    // Submission is actor-bound. A packet from the task menu
+                    // has no server-side EntityInteractEvent and therefore
+                    // must never reach the inventory transaction path.
+                    player.addChatMessage(new net.minecraft.util.ChatComponentText("请与指定角色交互提交物品。"));
+                    CanonicalTaskPresentationServer.push(player, true);
                 }
             });
             return null;

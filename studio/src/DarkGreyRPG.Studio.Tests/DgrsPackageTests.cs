@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Editing;
@@ -167,11 +168,13 @@ public sealed class DgrsPackageTests
         CreateCanonicalStory(project.Root, "kill_slimes", "消灭史莱姆");
         var store = new CanonicalProjectGraphStore(project.Root);
         var configured = GraphNodeFactory.Create(GraphScope.Task, "objective", "configured");
+        configured.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         configured.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
             System.Text.Json.JsonSerializer.SerializeToElement("slimes");
         configured.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
             System.Text.Json.JsonSerializer.SerializeToElement(3);
         var dormant = GraphNodeFactory.Create(GraphScope.Task, "objective", "dormant");
+        dormant.Properties["description"] = JsonSerializer.SerializeToElement("Dormant objective");
         dormant.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
             System.Text.Json.JsonSerializer.SerializeToElement(10);
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
@@ -204,6 +207,7 @@ public sealed class DgrsPackageTests
         CreateCanonicalStory(project.Root, "invalid", "Invalid");
         var store = new CanonicalProjectGraphStore(project.Root);
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
         settle.Ports.Add(new GraphPort("complete", "完成", true, GraphInterfaceKind.Logic));
         store.Tasks.Create(new GraphResourceEnvelope(GraphResourceKind.Task, "invalid", "Invalid",
@@ -238,6 +242,7 @@ public sealed class DgrsPackageTests
     private static GraphResourceEnvelope Task(string id, bool prerequisite)
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
             System.Text.Json.JsonSerializer.SerializeToElement("boss");
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");

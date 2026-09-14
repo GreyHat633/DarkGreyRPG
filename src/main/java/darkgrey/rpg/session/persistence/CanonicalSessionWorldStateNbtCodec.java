@@ -23,10 +23,14 @@ import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
 /** Strict wrapper for canonical Session world state and pending Story cursors. */
 public final class CanonicalSessionWorldStateNbtCodec {
 
-    public static final int SCHEMA_VERSION = 2;
+    public static final int SCHEMA_VERSION = 6;
     public static final String SESSIONS_KEY = "sessions";
     public static final String CONTINUATIONS_KEY = "continuations";
     public static final String STORIES_KEY = "stories";
+    public static final String TERMINAL_ROUTES_KEY = "terminal_routes";
+    public static final String PENDING_TERMINAL_ROUTES_KEY = "pending_terminal_routes";
+    public static final String START_OBSERVATIONS_KEY = "start_observations";
+    public static final String TERMINAL_ROUTE_TARGETS_KEY = "terminal_route_targets";
     private static final int COMPOUND = 10;
     private static final int LIST = 9;
     private static final int BYTE = 1;
@@ -55,8 +59,67 @@ public final class CanonicalSessionWorldStateNbtCodec {
 
     public static NBTTagCompound encode(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
         List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories) {
+        return encode(
+            sessions,
+            nextTransportId,
+            continuations,
+            stories,
+            Collections.<String>emptyList(),
+            Collections.<String, Boolean>emptyMap());
+    }
+
+    public static NBTTagCompound encode(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
+        List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+        java.util.Collection<String> terminalRoutes) {
+        return encode(
+            sessions,
+            nextTransportId,
+            continuations,
+            stories,
+            terminalRoutes,
+            Collections.<String, Boolean>emptyMap(),
+            Collections.<String>emptyList());
+    }
+
+    public static NBTTagCompound encode(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
+        List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+        java.util.Collection<String> terminalRoutes, Map<String, Boolean> startObservations) {
+        return encode(
+            sessions,
+            nextTransportId,
+            continuations,
+            stories,
+            terminalRoutes,
+            startObservations,
+            Collections.<String>emptyList(),
+            Collections.<String, String>emptyMap());
+    }
+
+    public static NBTTagCompound encode(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
+        List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+        java.util.Collection<String> terminalRoutes, Map<String, Boolean> startObservations,
+        java.util.Collection<String> pendingTerminalRoutes) {
+        return encode(
+            sessions,
+            nextTransportId,
+            continuations,
+            stories,
+            terminalRoutes,
+            startObservations,
+            pendingTerminalRoutes,
+            Collections.<String, String>emptyMap());
+    }
+
+    public static NBTTagCompound encode(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
+        List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+        java.util.Collection<String> terminalRoutes, Map<String, Boolean> startObservations,
+        java.util.Collection<String> pendingTerminalRoutes, Map<String, String> terminalRouteTargets) {
         if (continuations == null) throw malformed("continuations");
         if (stories == null) throw malformed("stories");
+        if (terminalRoutes == null) throw malformed("terminal routes");
+        if (startObservations == null) throw malformed("start observations");
+        if (pendingTerminalRoutes == null) throw malformed("pending terminal routes");
+        if (terminalRouteTargets == null) throw malformed("terminal route targets");
         Set<String> sessionIdentities = new HashSet<String>();
         if (sessions != null) for (CanonicalSessionInstanceSnapshot session : sessions) {
             if (session == null) throw malformed("null Session snapshot");
@@ -93,6 +156,56 @@ public final class CanonicalSessionWorldStateNbtCodec {
         for (CanonicalStoryPendingContinuation continuation : ordered) list.appendTag(encodeContinuation(continuation));
         root.setTag(CONTINUATIONS_KEY, list);
         root.setTag(STORIES_KEY, CanonicalStoryInstanceNbtCodec.encode(stories));
+        NBTTagList routes = new NBTTagList();
+        java.util.Set<String> routeSet = new java.util.TreeSet<String>();
+        for (String route : terminalRoutes) if (route == null || route.trim()
+            .isEmpty() || !routeSet.add(route)) throw malformed("invalid terminal route");
+        for (String route : routeSet) {
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("key", route);
+            routes.appendTag(item);
+        }
+        root.setTag(TERMINAL_ROUTES_KEY, routes);
+        NBTTagList observations = new NBTTagList();
+        java.util.Set<String> observationKeys = new java.util.TreeSet<String>();
+        for (Map.Entry<String, Boolean> entry : startObservations.entrySet()) if (entry.getKey() == null
+            || entry.getKey()
+                .trim()
+                .isEmpty()
+            || entry.getValue() == null
+            || !observationKeys.add(entry.getKey())) throw malformed("invalid start observation");
+        for (String key : observationKeys) {
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("key", key);
+            item.setByte(
+                "value",
+                (byte) (startObservations.get(key)
+                    .booleanValue() ? 1 : 0));
+            observations.appendTag(item);
+        }
+        root.setTag(START_OBSERVATIONS_KEY, observations);
+        java.util.Set<String> pendingSet = new java.util.HashSet<String>();
+        for (String route : pendingTerminalRoutes) if (route == null || route.trim()
+            .isEmpty() || !pendingSet.add(route) || routeSet.contains(route))
+            throw malformed("invalid pending terminal route");
+        root.setTag(PENDING_TERMINAL_ROUTES_KEY, routeList(pendingSet));
+        NBTTagList targetList = new NBTTagList();
+        java.util.Set<String> targetKeys = new java.util.TreeSet<String>();
+        for (Map.Entry<String, String> entry : terminalRouteTargets.entrySet()) {
+            if (entry.getKey() == null || entry.getKey()
+                .trim()
+                .isEmpty()
+                || entry.getValue() == null
+                || entry.getValue()
+                    .trim()
+                    .isEmpty()
+                || !targetKeys.add(entry.getKey())) throw malformed("invalid terminal route target");
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("source_key", entry.getKey());
+            item.setString("target_key", entry.getValue());
+            targetList.appendTag(item);
+        }
+        root.setTag(TERMINAL_ROUTE_TARGETS_KEY, targetList);
         return root;
     }
 
@@ -106,8 +219,45 @@ public final class CanonicalSessionWorldStateNbtCodec {
         int schemaVersion = root.getInteger("schema_version");
         if (schemaVersion == 1)
             requireKeys(root, set("schema_version", SESSIONS_KEY, CONTINUATIONS_KEY), "world state");
-        else if (schemaVersion == SCHEMA_VERSION)
+        else if (schemaVersion == 2)
             requireKeys(root, set("schema_version", SESSIONS_KEY, CONTINUATIONS_KEY, STORIES_KEY), "world state");
+        else if (schemaVersion == 3) requireKeys(
+            root,
+            set("schema_version", SESSIONS_KEY, CONTINUATIONS_KEY, STORIES_KEY, TERMINAL_ROUTES_KEY),
+            "world state");
+        else if (schemaVersion == 4) requireKeys(
+            root,
+            set(
+                "schema_version",
+                SESSIONS_KEY,
+                CONTINUATIONS_KEY,
+                STORIES_KEY,
+                TERMINAL_ROUTES_KEY,
+                START_OBSERVATIONS_KEY),
+            "world state");
+        else if (schemaVersion == 5) requireKeys(
+            root,
+            set(
+                "schema_version",
+                SESSIONS_KEY,
+                CONTINUATIONS_KEY,
+                STORIES_KEY,
+                TERMINAL_ROUTES_KEY,
+                START_OBSERVATIONS_KEY,
+                PENDING_TERMINAL_ROUTES_KEY),
+            "world state");
+        else if (schemaVersion == SCHEMA_VERSION) requireKeys(
+            root,
+            set(
+                "schema_version",
+                SESSIONS_KEY,
+                CONTINUATIONS_KEY,
+                STORIES_KEY,
+                TERMINAL_ROUTES_KEY,
+                START_OBSERVATIONS_KEY,
+                PENDING_TERMINAL_ROUTES_KEY,
+                TERMINAL_ROUTE_TARGETS_KEY),
+            "world state");
         else throw malformed("unsupported schema_version");
         requireType(root, SESSIONS_KEY, COMPOUND);
         requireType(root, CONTINUATIONS_KEY, LIST);
@@ -131,11 +281,22 @@ public final class CanonicalSessionWorldStateNbtCodec {
         List<CanonicalStoryInstanceSnapshot> stories = schemaVersion == 1
             ? Collections.<CanonicalStoryInstanceSnapshot>emptyList()
             : decodeStories(root);
+        List<String> terminalRoutes = schemaVersion < 3 ? Collections.<String>emptyList() : decodeTerminalRoutes(root);
+        Map<String, Boolean> startObservations = schemaVersion < 4 ? Collections.<String, Boolean>emptyMap()
+            : decodeStartObservations(root);
+        List<String> pendingRoutes = schemaVersion < 5 ? Collections.<String>emptyList()
+            : decodeTerminalRoutes(root, PENDING_TERMINAL_ROUTES_KEY);
+        Map<String, String> routeTargets = schemaVersion < 6 ? Collections.<String, String>emptyMap()
+            : decodeTerminalRouteTargets(root);
         return new Decoded(
             sessions,
             CanonicalSessionInstanceNbtCodec.nextTransportId(root.getCompoundTag(SESSIONS_KEY)),
             continuations,
-            stories);
+            stories,
+            terminalRoutes,
+            startObservations,
+            pendingRoutes,
+            routeTargets);
     }
 
     public static Decoded read(NBTTagCompound root) {
@@ -148,14 +309,52 @@ public final class CanonicalSessionWorldStateNbtCodec {
         private final long nextTransportId;
         private final List<CanonicalStoryPendingContinuation> continuations;
         private final List<CanonicalStoryInstanceSnapshot> stories;
+        private final List<String> terminalRoutes;
+        private final Map<String, Boolean> startObservations;
+        private final List<String> pendingTerminalRoutes;
+        private final Map<String, String> terminalRouteTargets;
 
         private Decoded(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
-            List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories) {
+            List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+            List<String> terminalRoutes, Map<String, Boolean> startObservations) {
+            this(
+                sessions,
+                nextTransportId,
+                continuations,
+                stories,
+                terminalRoutes,
+                startObservations,
+                Collections.<String>emptyList());
+        }
+
+        private Decoded(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
+            List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+            List<String> terminalRoutes, Map<String, Boolean> startObservations, List<String> pendingTerminalRoutes) {
+            this(
+                sessions,
+                nextTransportId,
+                continuations,
+                stories,
+                terminalRoutes,
+                startObservations,
+                pendingTerminalRoutes,
+                Collections.<String, String>emptyMap());
+        }
+
+        private Decoded(List<CanonicalSessionInstanceSnapshot> sessions, long nextTransportId,
+            List<CanonicalStoryPendingContinuation> continuations, List<CanonicalStoryInstanceSnapshot> stories,
+            List<String> terminalRoutes, Map<String, Boolean> startObservations, List<String> pendingTerminalRoutes,
+            Map<String, String> terminalRouteTargets) {
             this.sessions = Collections.unmodifiableList(new ArrayList<CanonicalSessionInstanceSnapshot>(sessions));
             this.nextTransportId = nextTransportId;
             this.continuations = Collections
                 .unmodifiableList(new ArrayList<CanonicalStoryPendingContinuation>(continuations));
             this.stories = Collections.unmodifiableList(new ArrayList<CanonicalStoryInstanceSnapshot>(stories));
+            this.terminalRoutes = Collections.unmodifiableList(new ArrayList<String>(terminalRoutes));
+            this.startObservations = Collections.unmodifiableMap(new LinkedHashMap<String, Boolean>(startObservations));
+            this.pendingTerminalRoutes = Collections.unmodifiableList(new ArrayList<String>(pendingTerminalRoutes));
+            this.terminalRouteTargets = Collections
+                .unmodifiableMap(new LinkedHashMap<String, String>(terminalRouteTargets));
         }
 
         public List<CanonicalSessionInstanceSnapshot> getSessions() {
@@ -173,11 +372,92 @@ public final class CanonicalSessionWorldStateNbtCodec {
         public List<CanonicalStoryInstanceSnapshot> getStories() {
             return stories;
         }
+
+        public List<String> getTerminalRoutes() {
+            return terminalRoutes;
+        }
+
+        public Map<String, Boolean> getStartObservations() {
+            return startObservations;
+        }
+
+        public List<String> getPendingTerminalRoutes() {
+            return pendingTerminalRoutes;
+        }
+
+        public Map<String, String> getTerminalRouteTargets() {
+            return terminalRouteTargets;
+        }
     }
 
     private static List<CanonicalStoryInstanceSnapshot> decodeStories(NBTTagCompound root) {
         requireType(root, STORIES_KEY, COMPOUND);
         return CanonicalStoryInstanceNbtCodec.decode(root.getCompoundTag(STORIES_KEY));
+    }
+
+    private static List<String> decodeTerminalRoutes(NBTTagCompound root) {
+        return decodeTerminalRoutes(root, TERMINAL_ROUTES_KEY);
+    }
+
+    private static List<String> decodeTerminalRoutes(NBTTagCompound root, String routeKey) {
+        requireType(root, routeKey, LIST);
+        NBTTagList list = (NBTTagList) root.getTag(routeKey);
+        if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND) throw malformed("invalid terminal routes type");
+        List<String> result = new ArrayList<String>();
+        for (int index = 0; index < list.tagCount(); index++) {
+            NBTTagCompound item = list.getCompoundTagAt(index);
+            requireKeys(item, set("key"), "terminal route");
+            String key = string(item, "key");
+            if (!result.isEmpty() && result.contains(key)) throw malformed("duplicate terminal route");
+            result.add(key);
+        }
+        return result;
+    }
+
+    private static Map<String, String> decodeTerminalRouteTargets(NBTTagCompound root) {
+        requireType(root, TERMINAL_ROUTE_TARGETS_KEY, LIST);
+        NBTTagList list = (NBTTagList) root.getTag(TERMINAL_ROUTE_TARGETS_KEY);
+        if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND)
+            throw malformed("invalid terminal route targets type");
+        Map<String, String> result = new LinkedHashMap<String, String>();
+        for (int index = 0; index < list.tagCount(); index++) {
+            NBTTagCompound item = list.getCompoundTagAt(index);
+            requireKeys(item, set("source_key", "target_key"), "terminal route target");
+            String source = string(item, "source_key");
+            String target = string(item, "target_key");
+            if (result.put(source, target) != null) throw malformed("duplicate terminal route target");
+        }
+        return result;
+    }
+
+    private static NBTTagList routeList(java.util.Collection<String> values) {
+        NBTTagList result = new NBTTagList();
+        java.util.Set<String> ordered = new java.util.TreeSet<String>();
+        for (String value : values) if (value == null || value.trim()
+            .isEmpty() || !ordered.add(value)) throw malformed("invalid terminal route");
+        for (String value : ordered) {
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("key", value);
+            result.appendTag(item);
+        }
+        return result;
+    }
+
+    private static Map<String, Boolean> decodeStartObservations(NBTTagCompound root) {
+        requireType(root, START_OBSERVATIONS_KEY, LIST);
+        NBTTagList list = (NBTTagList) root.getTag(START_OBSERVATIONS_KEY);
+        if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND) throw malformed("invalid start observations type");
+        Map<String, Boolean> result = new LinkedHashMap<String, Boolean>();
+        for (int index = 0; index < list.tagCount(); index++) {
+            NBTTagCompound item = list.getCompoundTagAt(index);
+            requireKeys(item, set("key", "value"), "start observation");
+            String key = string(item, "key");
+            requireType(item, "value", BYTE);
+            byte value = item.getByte("value");
+            if (value != 0 && value != 1 || result.put(key, Boolean.valueOf(value == 1)) != null)
+                throw malformed("invalid or duplicate start observation");
+        }
+        return result;
     }
 
     private static NBTTagCompound encodeContinuation(CanonicalStoryPendingContinuation value) {

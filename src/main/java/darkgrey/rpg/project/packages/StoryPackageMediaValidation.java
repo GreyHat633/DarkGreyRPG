@@ -1,5 +1,7 @@
 package darkgrey.rpg.project.packages;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -85,6 +87,94 @@ final class StoryPackageMediaValidation {
                 throw new ProjectLoadException("Corrupt media payload: " + ref, exception);
             }
         }
+    }
+
+    /** Validates media descriptors against a ZIP source without retaining media bytes. */
+    static void validate(StoryPackageManifest manifest, DgrsArchiveReader archive, Map<String, byte[]> bytes)
+        throws ProjectLoadException {
+        Set<String> reachable = reachable(manifest, bytes);
+        if (!reachable.equals(
+            new HashSet<String>(
+                manifest.getRequiredResources()
+                    .getMedia())))
+            throw new ProjectLoadException("Declared media must match reachable resource references.");
+        for (String ref : reachable) {
+            long size = archive.getEntrySize(ref);
+            if (size <= 0L || size > DgrsArchiveReader.MAX_ENTRY_BYTES)
+                throw new ProjectLoadException("Missing or oversized media: " + ref);
+            try (InputStream input = archive.openStream(ref)) {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                java.io.FilterInputStream checked = new java.io.FilterInputStream(input) {
+
+                    @Override
+                    public int read(byte[] target, int off, int length) throws IOException {
+                        int count = super.read(target, off, length);
+                        if (count > 0) digest.update(target, off, count);
+                        return count;
+                    }
+
+                    @Override
+                    public int read() throws IOException {
+                        int value = super.read();
+                        if (value >= 0) digest.update((byte) value);
+                        return value;
+                    }
+                };
+                darkgrey.rpg.media.MediaPayloadValidation.validate(ref, checked, size);
+                if (!ref.substring(6, 70)
+                    .equals(hex(digest.digest()))) throw new ProjectLoadException("Media fingerprint mismatch: " + ref);
+            } catch (NoSuchAlgorithmException exception) {
+                throw new ProjectLoadException("SHA-256 is unavailable", exception);
+            } catch (IOException | IllegalArgumentException exception) {
+                throw new ProjectLoadException("Corrupt media payload: " + ref, exception);
+            }
+        }
+    }
+
+    private static Set<String> reachable(StoryPackageManifest manifest, Map<String, byte[]> bytes)
+        throws ProjectLoadException {
+        Set<String> reachable = new HashSet<String>();
+        for (String path : manifest.getRequiredResources()
+            .getActors()) {
+            JsonObject actor = object(bytes, path);
+            add(reachable, actor.get("default_portrait_ref"));
+            JsonElement variants = actor.get("portrait_variants");
+            if (variants != null) for (JsonElement variant : variants.getAsJsonArray()) add(
+                reachable,
+                variant.getAsJsonObject()
+                    .get("media_ref"));
+        }
+        for (String path : manifest.getRequiredResources()
+            .getSessions()) {
+            JsonObject session = object(bytes, path);
+            JsonElement graph = session.get("graph");
+            if (graph == null || graph.isJsonNull()) continue;
+            for (JsonElement value : graph.getAsJsonObject()
+                .getAsJsonArray("nodes")) {
+                JsonObject node = value.getAsJsonObject();
+                String type = node.get("type")
+                    .getAsString();
+                JsonObject properties = node.getAsJsonObject("properties");
+                if (properties == null) continue;
+                if ("line".equals(type)) add(reachable, properties.get("voice_ref"));
+                if ("music".equals(type)) add(reachable, properties.get("media_ref"));
+                if ("screen".equals(type) && properties.has("layers"))
+                    for (JsonElement layer : properties.getAsJsonArray("layers")) add(
+                        reachable,
+                        layer.getAsJsonObject()
+                            .get("media_ref"));
+            }
+        }
+        return reachable;
+    }
+
+    private static String hex(byte[] values) {
+        StringBuilder result = new StringBuilder(values.length * 2);
+        for (byte value : values) {
+            result.append(Character.forDigit((value & 255) >>> 4, 16));
+            result.append(Character.forDigit(value & 15, 16));
+        }
+        return result.toString();
     }
 
     private static boolean starts(byte[] content, int[] signature) {

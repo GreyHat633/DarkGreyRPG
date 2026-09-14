@@ -117,6 +117,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void InteractHasNoRequiredFieldAndRejectsRequiredEdits()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         var graph = new GraphDocument([objective]);
         var session = new GraphEditSession(graph, GraphScope.Task);
 
@@ -133,6 +134,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void LegacyInteractRequiredOneNormalizesButHigherCountRequestsMigration()
     {
         var safe = GraphNodeFactory.Create(GraphScope.Task, "objective", "safe");
+        safe.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(safe,
             CanonicalTaskObjectiveSchema.InteractActor, "actor-1", out _));
         safe.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(1);
@@ -142,6 +144,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         Assert.IsFalse(safe.Properties.ContainsKey(CanonicalTaskObjectiveSchema.RequiredProperty));
 
         var ambiguous = GraphNodeFactory.Create(GraphScope.Task, "objective", "ambiguous");
+        ambiguous.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(ambiguous,
             CanonicalTaskObjectiveSchema.InteractActor, "actor-2", out _));
         ambiguous.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(3);
@@ -177,6 +180,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void AddAllowsUnselectedObjectiveUntilDgrTargetIsSelected()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         var graph = new GraphDocument();
         var session = new GraphEditSession(graph, GraphScope.Task);
 
@@ -194,11 +198,14 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void LegacyMinecraftTargetsRemainValidAndDgrIdsRoundTripThroughJson()
     {
         var kill = GraphNodeFactory.Create(GraphScope.Task, "objective", "kill");
+        kill.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         kill.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("minecraft:zombie");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(kill));
 
         var authoredKill = GraphNodeFactory.Create(GraphScope.Task, "objective", "authored_kill");
+        authoredKill.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         var collect = GraphNodeFactory.Create(GraphScope.Task, "objective", "collect");
+        collect.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         var collectGraph = new GraphDocument([authoredKill, collect]);
         var session = new GraphEditSession(collectGraph, GraphScope.Task);
         Assert.IsTrue(session.SetNodeProperty("authored_kill", CanonicalTaskObjectiveSchema.EntityProperty, "tavern_boss"));
@@ -256,6 +263,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void LegacyObjectiveWithoutPrerequisiteFlagRemainsDefaultActiveShape()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "legacy");
+        objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("boss");
         objective.Properties.Remove(CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty);
 

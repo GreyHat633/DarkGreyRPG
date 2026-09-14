@@ -7,13 +7,21 @@ public final class CanonicalStoryLogicConnection {
     private final String sourcePortId;
     private final String targetStoryId;
     private final String targetPortId;
+    private final CanonicalGraphInterfaceKind interfaceKind;
 
     public CanonicalStoryLogicConnection(String sourceStoryId, String sourcePortId, String targetStoryId,
         String targetPortId) {
+        this(sourceStoryId, sourcePortId, targetStoryId, targetPortId, CanonicalGraphInterfaceKind.LOGIC);
+    }
+
+    public CanonicalStoryLogicConnection(String sourceStoryId, String sourcePortId, String targetStoryId,
+        String targetPortId, CanonicalGraphInterfaceKind interfaceKind) {
         this.sourceStoryId = require(sourceStoryId, "sourceStoryId");
         this.sourcePortId = require(sourcePortId, "sourcePortId");
         this.targetStoryId = require(targetStoryId, "targetStoryId");
         this.targetPortId = require(targetPortId, "targetPortId");
+        if (interfaceKind == null) throw new IllegalArgumentException("interfaceKind cannot be null.");
+        this.interfaceKind = interfaceKind;
     }
 
     public String getSourceStoryId() {
@@ -48,6 +56,10 @@ public final class CanonicalStoryLogicConnection {
         return targetPortId;
     }
 
+    public CanonicalGraphInterfaceKind getInterfaceKind() {
+        return interfaceKind;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) return true;
@@ -55,7 +67,8 @@ public final class CanonicalStoryLogicConnection {
         CanonicalStoryLogicConnection that = (CanonicalStoryLogicConnection) other;
         return sourceStoryId.equals(that.sourceStoryId) && sourcePortId.equals(that.sourcePortId)
             && targetStoryId.equals(that.targetStoryId)
-            && targetPortId.equals(that.targetPortId);
+            && targetPortId.equals(that.targetPortId)
+            && interfaceKind == that.interfaceKind;
     }
 
     @Override
@@ -64,12 +77,20 @@ public final class CanonicalStoryLogicConnection {
         result = 31 * result + sourcePortId.hashCode();
         result = 31 * result + targetStoryId.hashCode();
         result = 31 * result + targetPortId.hashCode();
+        result = 31 * result + interfaceKind.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return sourceStoryId + ":" + sourcePortId + " -> " + targetStoryId + ":" + targetPortId;
+        return interfaceKind.name() + " "
+            + sourceStoryId
+            + ":"
+            + sourcePortId
+            + " -> "
+            + targetStoryId
+            + ":"
+            + targetPortId;
     }
 
     private static String require(String value, String name) {

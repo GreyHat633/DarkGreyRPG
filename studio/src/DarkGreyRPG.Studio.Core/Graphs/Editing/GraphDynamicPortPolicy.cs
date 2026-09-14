@@ -26,6 +26,10 @@ public static class GraphDynamicPortPolicy
 {
     private static readonly IReadOnlyList<GraphDynamicPortRole> _roles =
     [
+        new(GraphScope.Project, "story", GraphPortDirection.Input, GraphInterfaceKind.Flow, 0, false),
+        new(GraphScope.Project, "story", GraphPortDirection.Output, GraphInterfaceKind.Flow, 0, false),
+        new(GraphScope.Project, "story", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
+        new(GraphScope.Project, "story", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.StoryFlow, "start", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1),
         new(GraphScope.StoryFlow, "start", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
         // These are projections of child-resource public boundaries. They are

@@ -31,7 +31,7 @@ public static class CanonicalStoryActionSchema
         GiveBuff => "BUFF给予",
         GiveHealth => "生命给予",
         Teleport => "玩家传送",
-        ExecuteCommand => "命令执行（高级）",
+        ExecuteCommand => "指令执行",
         _ => "执行",
     };
 
@@ -118,8 +118,8 @@ public static class CanonicalStoryActionSchema
             case ExecuteCommand:
                 ValidateString(properties, "command", issues, node.Id);
                 var command = ReadString(properties, "command") ?? "";
-                if (command.Length > 2048 || command.IndexOfAny(['\r', '\n', '\0']) >= 0)
-                    issues.Add(Issue("graph.story.action.command", "命令只能为单行，最多 2048 字符。", "command", node.Id));
+                if (command.Length > 2048 || command.IndexOfAny(['\r', '\n', '\0']) >= 0 || !command.StartsWith('/') || string.IsNullOrWhiteSpace(command.TrimStart('/')))
+                    issues.Add(Issue("graph.story.action.command", "请输入以 / 开头的完整单行指令，最多 2048 字符。", "command", node.Id));
                 break;
             case SendMessage:
                 ValidateString(properties, MessageProperty, issues, node.Id);
@@ -138,7 +138,7 @@ public static class CanonicalStoryActionSchema
         switch (type)
         {
             case GiveItem:
-                properties[ItemIdProperty] = JsonSerializer.SerializeToElement("starter_reward");
+                properties[ItemIdProperty] = JsonSerializer.SerializeToElement("");
                 properties[AmountProperty] = JsonSerializer.SerializeToElement(10);
                 break;
             case GiveXp:
@@ -155,9 +155,9 @@ public static class CanonicalStoryActionSchema
                 properties["duration_delta"] = JsonSerializer.SerializeToElement(30);
                 properties["level_delta"] = JsonSerializer.SerializeToElement(1); break;
             case ExecuteCommand:
-                properties["command"] = JsonSerializer.SerializeToElement("say 任务事件"); break;
+                properties["command"] = JsonSerializer.SerializeToElement(""); break;
             case SendMessage:
-                properties[MessageProperty] = JsonSerializer.SerializeToElement("任务完成");
+                properties[MessageProperty] = JsonSerializer.SerializeToElement("");
                 break;
         }
     }
@@ -167,6 +167,16 @@ public static class CanonicalStoryActionSchema
             ? []
             : [Issue("graph.story.action.type.invalid",
                 "请选择支持的执行类型。", $"properties.{TypeProperty}", nodeId)];
+
+    public static IReadOnlyList<ValidationIssue> AllowDraftIssues(GraphNode node, IReadOnlyList<ValidationIssue> issues)
+        => issues.Where(issue =>
+        {
+            var field = issue.Field?.Replace("properties.", "", StringComparison.Ordinal);
+            return issue.Code is "graph.story.action.property.unsupported" or "graph.story.action.property.missing"
+                || field is not ("message" or "command" or "item_id" or "mod_id" or "buff_name")
+                || !node.Properties.TryGetValue(field, out var value)
+                || value.ValueKind != JsonValueKind.String || !string.IsNullOrEmpty(value.GetString());
+        }).ToArray();
 
     public sealed record VanillaBuffOption(string Value, string DisplayName);
     public static IReadOnlyList<VanillaBuffOption> VanillaBuffs { get; } =

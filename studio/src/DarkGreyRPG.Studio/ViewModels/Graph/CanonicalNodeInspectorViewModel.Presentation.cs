@@ -8,6 +8,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
 {
     public bool IsMusic => IsSessionNode && Node.Type == "music";
     public bool IsScreen => IsSessionNode && Node.Type == "screen";
+    public string? AudioMediaRef => IsMusic ? LineString("media_ref") : LineVoiceRef;
     public string MusicStatus => LineString("media_ref") is null ? "停止当前音乐" : "播放项目内音乐";
     public bool MusicLoop { get => Node.Properties.TryGetValue("loop", out var value) && value.ValueKind == JsonValueKind.True;
         set { if (IsMusic && !_isProjectingCanonicalChange) _host.SetNodeProperty(NodeId, "loop", JsonSerializer.SerializeToElement(value)); } }

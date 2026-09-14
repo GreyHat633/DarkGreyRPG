@@ -739,6 +739,14 @@ tasks.register<JavaExec>("task0330Probe") {
     mainClass.set("darkgrey.rpg.task.forge.Task0330Probe")
 }
 
+tasks.register<JavaExec>("task0331RuntimeProbe") {
+    group = "verification"
+    description = "Runs the 0.3.3.1 WP-C actor-bound submission and integer-region probe."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.task.forge.Task0331RuntimeProbe")
+}
+
 tasks.register<JavaExec>("taskReward0330Probe") {
     group = "verification"
     dependsOn(tasks.named("testClasses"))
@@ -781,4 +789,28 @@ tasks.register<JavaExec>("title0330Probe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.story.canonical.runtime.Title0330Probe")
+}
+
+tasks.register<JavaExec>("storyBoundary0331Probe") {
+    group = "verification"
+    description = "Runs the 0.3.3.1 WP-D Story boundary wire probe."
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.graph.canonical.StoryBoundary0331Probe")
+}
+
+tasks.register<JavaExec>("dgrsMediaStreaming0331Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.DgrsMediaStreaming0331Probe")
+    args(layout.buildDirectory.dir("dgrs-media-streaming-0331").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("dgrsMediaLifecycle0331Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.DgrsMediaLifecycle0331Probe")
+    args(layout.buildDirectory.dir("dgrs-media-lifecycle-0331").get().asFile.absolutePath)
 }

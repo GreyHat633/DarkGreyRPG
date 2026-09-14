@@ -16,7 +16,10 @@ public sealed class CanonicalTaskRewardTests
         Assert.AreEqual(1, node.Ports.Count);
         Assert.IsTrue(node.Ports.Single().IsInput);
         Assert.AreEqual(GraphInterfaceKind.Logic, node.Ports.Single().InterfaceKind);
-        Assert.AreEqual(0, CanonicalTaskRewardSchema.Validate(node).Count);
+        Assert.AreEqual(1, node.Properties["entries"].GetArrayLength());
+        Assert.AreEqual("", node.Properties["entries"][0].GetProperty("item").GetString());
+        Assert.AreEqual(1, node.Properties["entries"][0].GetProperty("amount").GetInt32());
+        Assert.AreEqual(1, CanonicalTaskRewardSchema.Validate(node).Count);
         foreach (var invalid in new[] { "null", "[{}]", "[{\"type\":\"currency\",\"amount\":1}]", "[{\"type\":\"xp\",\"amount\":1.5}]", "[{\"type\":\"xp\",\"amount\":2147483648}]", "[{\"type\":\"xp\",\"amount\":0,\"item\":\"a\"}]", "[{\"type\":\"item\",\"amount\":1}]" })
         {
             node.Properties["entries"] = JsonDocument.Parse(invalid).RootElement.Clone();

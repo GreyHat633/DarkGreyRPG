@@ -65,6 +65,8 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         Node = node ?? throw new ArgumentNullException(nameof(node));
         _actorItems = (actorItems ?? []).Where(item => item is not null).ToArray();
         _itemItems = (itemItems ?? []).Where(item => item is not null).ToArray();
+        RewardItemOptions = _itemItems.Where(item => item.Item is IndividualItemResource)
+            .Select(item => new CanonicalResourceSelectionOption(item.Id, item.DisplayName, true, item)).ToArray();
         _subscribeToHostChanges = subscribeToHostChanges;
         AddChoiceOptionCommand = new RelayCommand(() => AddChoiceOption(), () => IsChoice);
         AddTaskResultSlotCommand = new RelayCommand(() => AddTaskResultSlot(), () => IsTaskSettle);
@@ -86,6 +88,12 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public bool IsLine => IsSessionNode && string.Equals(NodeType, "line", StringComparison.Ordinal);
     public bool IsChoice => IsSessionNode && string.Equals(NodeType, "choice", StringComparison.Ordinal);
     public bool IsEnd => IsSessionNode && string.Equals(NodeType, "end", StringComparison.Ordinal);
+    public bool IsPublicBoundary => NodeType is "terminate" or "end" or "logic_input" or "logic_output";
+    public string BoundaryDisplayName
+    {
+        get => Node.Properties.TryGetValue("display_name", out var value) ? value.GetString() ?? "" : "";
+        set { if (IsPublicBoundary && !_isProjectingCanonicalChange) _host.SetNodeProperty(NodeId, "display_name", value); }
+    }
     public bool IsLogicOutput => (IsSessionNode || IsTaskNode)
         && string.Equals(NodeType, "logic_output", StringComparison.Ordinal);
     public bool IsTaskSettle => IsTaskNode && string.Equals(NodeType, "settle", StringComparison.Ordinal);
@@ -99,12 +107,16 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public bool IsObjective => IsTaskNode && string.Equals(NodeType, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal);
     public bool IsKillEntityObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.KillEntity;
     public bool IsCollectItemObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.CollectItem;
+    public bool IsSubmitItemObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.SubmitItem;
+    public bool HasObjectiveActor => IsKillEntityObjective || IsInteractActorObjective || IsSubmitItemObjective;
+    public bool HasObjectiveQuantity => IsKillEntityObjective || IsItemObjective;
+    public string ObjectiveActorLabel => IsSubmitItemObjective ? "提交对象" : "目标角色";
     public bool IsItemObjective => IsObjective && _objectiveType is CanonicalTaskObjectiveSchema.CollectItem or CanonicalTaskObjectiveSchema.SubmitItem;
     public bool IsReachRegionObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.ReachRegion;
     public bool IsInteractActorObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.InteractActor;
     public bool HasEditableFields => IsLine || IsChoice || IsEnd || IsLogicOutput || IsTaskSettle || IsObjective
-        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle;
-    public bool HasInlineFields => IsLine || IsObjective || IsStoryStart || IsStoryAction;
+        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle || IsPublicBoundary;
+    public bool HasInlineFields => HasEditableFields;
 
     public CanonicalStoryActionTypeOption? SelectedStoryActionType
     {
@@ -198,7 +210,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public string RegionY { get => ReadRegion("center_y"); set => SetRegion("center_y", value, nameof(RegionY)); }
     public string RegionZ { get => ReadRegion("center_z"); set => SetRegion("center_z", value, nameof(RegionZ)); }
     public string RegionRadius { get => ReadRegion("radius"); set => SetRegion("radius", value, nameof(RegionRadius)); }
-    public string RegionNote { get => ReadRegion("dimension_note"); set => SetRegion("dimension_note", value, nameof(RegionNote)); }
     private string ReadRegion(string key)
     {
         if (_invalidRegionValues.TryGetValue(key, out var pending)) return pending;
@@ -209,19 +220,16 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     {
         if (!IsReachRegionObjective || _isProjectingCanonicalChange) return;
         JsonElement json;
-        if (key == "dimension_note") json = JsonSerializer.SerializeToElement(value ?? "");
-        else
         {
-            if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number)
-                || !double.IsFinite(number) || (key == "radius" && number < 0)
-                || (key == "dimension_id" && (number != Math.Truncate(number) || number < int.MinValue || number > int.MaxValue)))
+            if (!int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var number)
+                || (key == "radius" && number < 0))
             {
                 _invalidRegionValues[key] = value ?? "";
-                _host.SetAuthoringIssue($"{NodeId}:region:{key}", new ValidationIssue("graph.objective.region.authoring", "维度需为整数，坐标需为有限数值，半径不得小于 0。", key, ValidationSeverity.Error, NodeId));
+                _host.SetAuthoringIssue($"{NodeId}:region:{key}", new ValidationIssue("graph.objective.region.authoring", "请输入整数方块坐标；半径必须为非负整数。", key, ValidationSeverity.Error, NodeId));
                 OnPropertyChanged(propertyName);
                 return;
             }
-            json = key == "dimension_id" ? JsonSerializer.SerializeToElement((int)number) : JsonSerializer.SerializeToElement(number);
+            json = JsonSerializer.SerializeToElement(number);
         }
         _invalidRegionValues.Remove(key);
         _host.SetAuthoringIssue($"{NodeId}:region:{key}", null);
@@ -235,14 +243,13 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(RegionY));
         OnPropertyChanged(nameof(RegionZ));
         OnPropertyChanged(nameof(RegionRadius));
-        OnPropertyChanged(nameof(RegionNote));
     }
 
     public IReadOnlyList<CanonicalObjectiveTypeOption> ObjectiveTypeOptions { get; } =
     [
         new(CanonicalTaskObjectiveSchema.KillEntity, "实体击杀"),
-        new(CanonicalTaskObjectiveSchema.CollectItem, "物品收集"),
         new(CanonicalTaskObjectiveSchema.InteractActor, "角色交互"),
+        new(CanonicalTaskObjectiveSchema.CollectItem, "物品收集"),
         new(CanonicalTaskObjectiveSchema.SubmitItem, "物品提交"),
         new(CanonicalTaskObjectiveSchema.ReachRegion, "区域到达"),
     ];
@@ -749,10 +756,12 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     private void SetSelectedObjectiveActorId(string? id)
     {
         var next = id ?? string.Empty;
-        if ((!IsInteractActorObjective && !IsKillEntityObjective)
+        if (!HasObjectiveActor
             || string.IsNullOrWhiteSpace(next)
             || string.Equals(next, _objectiveActorId, StringComparison.Ordinal)) return;
-        if (!_host.ChangeObjectiveTarget(NodeId, next)) RefreshFromHost();
+        if (!(IsSubmitItemObjective
+            ? _host.SetNodeProperty(NodeId, CanonicalTaskObjectiveSchema.ActorIdProperty, JsonSerializer.SerializeToElement(next))
+            : _host.ChangeObjectiveTarget(NodeId, next))) RefreshFromHost();
     }
 
     private void SetSelectedObjectiveItemId(string? id)
@@ -846,6 +855,8 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     {
         if (args.PropertyName == nameof(GraphEditorHostViewModel.LastValidationIssues))
             OnPropertyChanged(nameof(ValidationIssues));
+        OnPropertyChanged(nameof(HelpText));
+        OnPropertyChanged(nameof(BoundaryDisplayName));
     }
 
     public IReadOnlyList<ValidationIssue> ValidationIssues
@@ -881,17 +892,28 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
         _repeatPolicy = current.Properties.TryGetValue(StoryStartSchema.RepeatPolicyProperty, out var repeat)
             && repeat.ValueKind == JsonValueKind.String ? repeat.GetString() ?? StoryStartSchema.Once : StoryStartSchema.Once;
-        var previousStoryStartTriggers = StoryStartTriggers.ToArray();
-        StoryStartTriggers.Clear();
+        var desiredTriggers = new List<CanonicalStoryStartTriggerViewModel>();
         if (IsStoryStart)
         {
             foreach (var slot in StoryStartSchema.ReadTriggers(new GraphNode(current.NodeId, current.Type,
                 current.DisplayName, current.Inputs.Concat(current.Outputs).Select(port => new GraphPort(port.PortId,
                     port.DisplayName, port.IsInput, port.GraphInterfaceKind, port.Order)), current.Properties)))
-                StoryStartTriggers.Add(new CanonicalStoryStartTriggerViewModel(this, slot));
-            foreach (var trigger in previousStoryStartTriggers.Concat(StoryStartTriggers))
-                trigger.RefreshCommandStates();
+            {
+                var trigger = StoryStartTriggers.FirstOrDefault(item => item.Identity == slot.PortId);
+                if (trigger is null) trigger = new CanonicalStoryStartTriggerViewModel(this, slot);
+                else trigger.UpdateProjection(slot);
+                desiredTriggers.Add(trigger);
+            }
         }
+        foreach (var removed in StoryStartTriggers.Where(item => !desiredTriggers.Contains(item)).ToArray())
+            StoryStartTriggers.Remove(removed);
+        for (var index = 0; index < desiredTriggers.Count; index++)
+        {
+            var existing = StoryStartTriggers.IndexOf(desiredTriggers[index]);
+            if (existing < 0) StoryStartTriggers.Insert(index, desiredTriggers[index]);
+            else if (existing != index) StoryStartTriggers.Move(existing, index);
+        }
+        foreach (var trigger in StoryStartTriggers) trigger.RefreshCommandStates();
 
         _speakerActorId = current.Properties.TryGetValue("speaker_actor_id", out var speaker)
             && speaker.ValueKind == JsonValueKind.String
@@ -983,6 +1005,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(SelectedPortraitVariant));
         OnPropertyChanged(nameof(HasLineSpeaker));
         OnPropertyChanged(nameof(LineVoiceRef));
+        OnPropertyChanged(nameof(AudioMediaRef));
         OnPropertyChanged(nameof(LineVoiceStatus));
         NotifyPresentation();
         NotifyTitle();
@@ -1016,6 +1039,10 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(IsItemObjective));
         OnPropertyChanged(nameof(IsCollectItemObjective));
         OnPropertyChanged(nameof(IsReachRegionObjective));
+        OnPropertyChanged(nameof(IsSubmitItemObjective));
+        OnPropertyChanged(nameof(HasObjectiveActor));
+        OnPropertyChanged(nameof(HasObjectiveQuantity));
+        OnPropertyChanged(nameof(ObjectiveActorLabel));
         NotifyRegionFields();
         OnPropertyChanged(nameof(IsInteractActorObjective));
         OnPropertyChanged(nameof(ObjectiveActorOptions));
@@ -1047,6 +1074,8 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(IsGiveXpAction));
         OnPropertyChanged(nameof(IsSendMessageAction));
         OnPropertyChanged(nameof(ValidationIssues));
+        OnPropertyChanged(nameof(HelpText));
+        OnPropertyChanged(nameof(BoundaryDisplayName));
         AddChoiceOptionCommand.RaiseCanExecuteChanged();
         AddTaskResultSlotCommand.RaiseCanExecuteChanged();
     }
@@ -1185,6 +1214,7 @@ public sealed record CanonicalStoryStartTriggerRemovalConfirmation(string Displa
 /// </summary>
 public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
 {
+    private bool _projecting;
     private readonly CanonicalNodeInspectorViewModel _owner;
     private string _displayName;
     private string _triggerType;
@@ -1226,7 +1256,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         get => _displayName;
         set
         {
-            if (string.Equals(_displayName, value, StringComparison.Ordinal)) return;
+            if (_projecting || string.Equals(_displayName, value, StringComparison.Ordinal)) return;
             if (_owner.RenameStoryStartTriggerLocally(Identity, value))
             {
                 _displayName = value;
@@ -1235,21 +1265,13 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         }
     }
 
+    private static readonly IReadOnlyList<CanonicalStoryStartTriggerTypeOption> CurrentTriggerOptions =
+        [new(StoryStartSchema.ActorInteraction, "角色交互"), new(StoryStartSchema.RegionEntry, "进入区域"),
+         new(StoryStartSchema.Logic, "逻辑条件"), new(StoryStartSchema.FlowDriven, "流程驱动")];
+    private static readonly IReadOnlyList<CanonicalStoryStartTriggerTypeOption> LegacyTriggerOptions =
+        [new(StoryStartSchema.EnterStory, "进入故事（旧版兼容）"), .. CurrentTriggerOptions];
     public IReadOnlyList<CanonicalStoryStartTriggerTypeOption> TriggerTypeOptions
-        => _triggerType == StoryStartSchema.EnterStory
-            ?
-            [
-                new(StoryStartSchema.EnterStory, "进入故事（旧版兼容）"),
-                new(StoryStartSchema.ActorInteraction, "角色交互"),
-                new(StoryStartSchema.RegionEntry, "进入区域"),
-                new(StoryStartSchema.Logic, "逻辑条件"),
-            ]
-            :
-            [
-                new(StoryStartSchema.ActorInteraction, "角色交互"),
-                new(StoryStartSchema.RegionEntry, "进入区域"),
-                new(StoryStartSchema.Logic, "逻辑条件"),
-            ];
+        => _triggerType == StoryStartSchema.EnterStory ? LegacyTriggerOptions : CurrentTriggerOptions;
 
     public string TriggerType => _triggerType;
     public CanonicalStoryStartTriggerTypeOption? SelectedTriggerType
@@ -1257,7 +1279,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         get => TriggerTypeOptions.FirstOrDefault(option => option.Value == _triggerType);
         set
         {
-            if (value is null || value.Value == _triggerType) return;
+            if (_projecting || value is null || value.Value == _triggerType) return;
             if (_owner.SetStoryStartTriggerTypeLocally(Identity, value.Value))
             {
                 if (_owner.TryGetStoryStartTrigger(Identity, out var slot) && slot is not null)
@@ -1299,6 +1321,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         }
     }
 
+    private IReadOnlyList<CanonicalSessionSpeakerOption> _cachedActorOptions = [];
     public IReadOnlyList<CanonicalSessionSpeakerOption> ActorOptions
     {
         get
@@ -1307,7 +1330,8 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
             if (!string.IsNullOrWhiteSpace(ActorId)
                 && !options.Any(option => string.Equals(option.Id, ActorId, StringComparison.Ordinal)))
                 options.Add(new CanonicalSessionSpeakerOption(ActorId, $"未解析角色：{ActorId}", false));
-            return options;
+            if (!_cachedActorOptions.SequenceEqual(options)) _cachedActorOptions = options;
+            return _cachedActorOptions;
         }
     }
 
@@ -1383,6 +1407,34 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         MoveDownCommand.RaiseCanExecuteChanged();
     }
 
+    internal void UpdateProjection(StoryStartTriggerSlot slot)
+    {
+        _projecting = true;
+        try
+        {
+            var typeChanged = _triggerType != slot.TriggerType;
+            var propertiesChanged = !JsonElement.DeepEquals(_triggerProperties, slot.TriggerProperties);
+            if (_displayName != slot.DisplayName)
+            {
+                _displayName = slot.DisplayName;
+                OnPropertyChanged(nameof(DisplayName));
+            }
+            Order = slot.Order;
+            _triggerType = slot.TriggerType;
+            if (typeChanged || propertiesChanged)
+            {
+                _triggerProperties = slot.TriggerProperties.Clone();
+                LoadPropertyFields(clearErrors: true);
+                NotifyPropertyFields();
+            }
+            if (typeChanged)
+                foreach (var name in new[] { nameof(TriggerType), nameof(TriggerTypeOptions), nameof(SelectedTriggerType),
+                    nameof(IsActorInteraction), nameof(IsRegionEntry), nameof(IsEnterStory), nameof(IsLogic) })
+                    OnPropertyChanged(name);
+        }
+        finally { _projecting = false; }
+    }
+
     private string ReadString(string property)
         => _triggerProperties.ValueKind == JsonValueKind.Object
             && _triggerProperties.TryGetProperty(property, out var value)
@@ -1396,7 +1448,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
 
     private void SetString(string property, string? value)
     {
-        if (!IsActorInteraction || string.IsNullOrWhiteSpace(value)) return;
+        if (_projecting || !IsActorInteraction || string.IsNullOrWhiteSpace(value)) return;
         if (_owner.SetStoryStartTriggerProperty(Identity, property,
                 JsonSerializer.SerializeToElement(value.Trim())))
         {
@@ -1408,7 +1460,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
     private void SetNumberField(string property, string? value, bool integer,
         ref string text, ref string error, string textProperty, string errorProperty)
     {
-        if (!IsRegionEntry) return;
+        if (_projecting || !IsRegionEntry) return;
         var next = value ?? string.Empty;
         if (string.Equals(text, next, StringComparison.Ordinal)) return;
         text = next;

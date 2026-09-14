@@ -45,6 +45,7 @@ final class StoryPackageSnapshotReader {
                 .contains(path))
             throw new ProjectLoadException("Unreachable media entry: " + path);
         Map<String, byte[]> declaredBytes = requiredBytes(archive, required);
+        StoryPackageMediaValidation.validate(manifest, archive, declaredBytes);
         declaredBytes.put("project.json", archive.readBytes("project.json"));
         ProjectDefinition project = ProjectRepository
             .readPackagedProject(archive.readBytes("project.json"), source(archive, "project.json"));
@@ -215,12 +216,12 @@ final class StoryPackageSnapshotReader {
         add(paths, required.getCanonicalMemberships());
         add(paths, required.getSessions());
         add(paths, required.getTasks());
-        add(paths, required.getMedia());
+        // Media is indexed and validated as a stream. It must never enter the
+        // structural snapshot byte map.
         if (required.getStoryLogicGraph() != null) add(paths, required.getStoryLogicGraph());
         Map<String, byte[]> result = new LinkedHashMap<String, byte[]>();
         for (String path : paths) {
-            if (!required.getMedia()
-                .contains(path)) archive.readUtf8(path);
+            archive.readUtf8(path);
             result.put(path, archive.readBytes(path));
         }
         return result;

@@ -181,7 +181,17 @@ public final class CanonicalTaskJournalProjector {
             JsonElement metadata = properties.get("metadata");
             if (metadata == null || !metadata.isJsonObject())
                 throw new IllegalArgumentException("Collect objective metadata must be an object.");
+            if ("submit_item".equals(type)) string(properties, "actor_id");
         } else if ("interact_actor".equals(type)) string(properties, "actor_id");
+        String submitActor = "submit_item".equals(type) ? string(properties, "actor_id") : null;
+        Integer regionX = null;
+        Integer regionY = null;
+        Integer regionZ = null;
+        if ("reach_region".equals(type)) {
+            regionX = integer(properties, "center_x");
+            regionY = integer(properties, "center_y");
+            regionZ = integer(properties, "center_z");
+        }
         Integer currentValue = runtimeSnapshot.getProgress()
             .get(node.getId());
         CanonicalTaskObjectiveStatus status = runtimeSnapshot.getObjectiveStatuses()
@@ -206,7 +216,11 @@ public final class CanonicalTaskJournalProjector {
             current,
             required,
             true,
-            display);
+            display,
+            submitActor,
+            regionX,
+            regionY,
+            regionZ);
     }
 
     private static String string(Map<String, JsonElement> properties, String key) {

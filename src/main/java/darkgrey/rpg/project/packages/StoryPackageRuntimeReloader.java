@@ -36,8 +36,13 @@ public final class StoryPackageRuntimeReloader {
         if (!loader.getPackages()
             .isEmpty()) return publishAcceptedPackages(repository, loader, packages);
         ProjectRepository.ReloadResult restoredBase = repository.reload();
-        if (!restoredBase.isSuccessful()) repository.installUnavailableSnapshot(restoredBase.getSummary());
-        return new Result(packages.isSuccessful() && restoredBase.isSuccessful(), packages, restoredBase, null);
+        // A rejected live candidate must keep the last usable project and its
+        // persisted generation bindings. Startup alone may install unavailable.
+        return new Result(
+            packages.isSuccessful() && restoredBase.isSuccessful(),
+            packages,
+            restoredBase,
+            restoredBase.isSuccessful() ? null : restoredBase.getSummary());
     }
 
     private static Result publishAcceptedPackages(ProjectRepository repository, StoryPackageLoader loader,

@@ -473,6 +473,13 @@ public final class CanonicalStoryServerServiceProbe {
 
     private static CanonicalGraphNode node(String id, String type, List<CanonicalGraphPort> ports,
         Map<String, JsonElement> properties) {
+        // Fixture upgrade: public termination metadata belongs in test data, not runtime fallback.
+        if ("terminate".equals(type)) {
+            properties = new java.util.LinkedHashMap<String, JsonElement>(properties);
+            if (!properties.containsKey("port_id")) properties.put("port_id", new com.google.gson.JsonPrimitive(id));
+            if (!properties.containsKey("display_name"))
+                properties.put("display_name", new com.google.gson.JsonPrimitive(id));
+        }
         return new CanonicalGraphNode(id, type, id, ports, properties);
     }
 

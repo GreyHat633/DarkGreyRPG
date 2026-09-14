@@ -1,0 +1,78 @@
+{
+  "screen": "world",
+  "server_result": "/dgr reload => 1",
+  "fixture_entity_ids": [],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    10.5,
+    5.620000004768372,
+    0.5
+  ],
+  "inventory": [],
+  "task_client_visible_text": "",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": -1,
+    "musicRevision": -1,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 1.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      10.5,
+      4.0,
+      0.5
+    ],
+    "tick": 2335,
+    "tick_p95_ms": 7.0562,
+    "tick_max_ms": 40.8931,
+    "heap": {
+      "used": 2155576880,
+      "free": 831291856,
+      "total": 2986868736,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 5,
+      "task_presentation_generation": 0
+    },
+    "inventory": [],
+    "tasks": [],
+    "journal": [],
+    "entities": [],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": -1,
+      "musicRevision": -1,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 1.0,
+      "engine_ready": true,
+      "playing": {
+        "dgr_session_voice": false,
+        "dgr_session_music_a": false,
+        "dgr_session_music_b": false
+      },
+      "worker_queue": 0,
+      "worker_active": 0,
+      "in_flight": 0
+    },
+    "server_result": "/dgr reload => 1"
+  }
+}

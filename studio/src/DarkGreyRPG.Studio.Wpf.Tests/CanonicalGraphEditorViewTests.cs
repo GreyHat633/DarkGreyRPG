@@ -334,7 +334,7 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsNull(view.SelectedNode);
 
         var textBox = Descendants<TextBox>(visual).Single(control =>
-            AutomationProperties.GetAutomationId(control) == "InlineLineText");
+            AutomationProperties.GetAutomationId(control) == "InlineLineTextEditor");
         Assert.IsTrue(visual.IsParameterInteractionSource(textBox));
         Assert.IsFalse(visual.IsHeaderDragSource(textBox));
         editor.LineText = "直接编辑";
@@ -421,7 +421,7 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsNull(view.SelectedNode);
         Assert.IsFalse(view.SelectNode(""));
         Assert.IsNull(view.SelectedNode);
-        Assert.IsTrue(view.SelectNode(view.NodeVisuals.Single(node => node.Node?.DisplayName == "One").Node));
+        Assert.IsTrue(view.SelectNode(view.NodeVisuals.Single(node => node.Node?.DisplayName == "台词 [One]").Node));
 
         host.Refresh();
 

@@ -25,7 +25,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-/** Strict loader for the optional schema-version-1 cross-Story logic graph. */
+/** Strict loader for the optional schema-version-2 cross-Story boundary graph. */
 public final class CanonicalStoryLogicGraphLoader {
 
     private static final Set<String> ROOT = set("schema_version", "connections");
@@ -33,7 +33,8 @@ public final class CanonicalStoryLogicGraphLoader {
         "source_story_id",
         "source_port_id",
         "target_story_id",
-        "target_port_id");
+        "target_port_id",
+        "interface_kind");
 
     public CanonicalStoryLogicGraph load(File file, Map<String, CanonicalGraphResource> stories)
         throws CanonicalGraphResourceException {
@@ -106,11 +107,12 @@ public final class CanonicalStoryLogicGraphLoader {
         int version = integer(root, "schema_version", "story.logic.graph.root");
         if (version != CanonicalStoryLogicGraph.CURRENT_SCHEMA_VERSION) throw CanonicalGraphResourceException.failure(
             "story.logic.graph.schema_version.unsupported",
-            "Unsupported Story logic graph schema_version " + version + "; expected 1.");
+            "Unsupported Story logic graph schema_version " + version + "; expected 2.");
         JsonArray values = array(root, "connections", "story.logic.graph.root");
         List<CanonicalStoryLogicConnection> connections = new ArrayList<CanonicalStoryLogicConnection>();
         Set<CanonicalStoryLogicConnection> duplicateEdges = new HashSet<CanonicalStoryLogicConnection>();
         Map<String, String> targetSources = new LinkedHashMap<String, String>();
+        Set<String> flowSources = new HashSet<String>();
         for (JsonElement value : values) {
             CanonicalStoryLogicConnection connection = connection(value);
             if (!duplicateEdges.add(connection)) throw CanonicalGraphResourceException.failure(
@@ -119,15 +121,29 @@ public final class CanonicalStoryLogicGraphLoader {
             if (validateEndpoints) {
                 requireStory(stories, connection.getSourceStoryId(), "source");
                 requireStory(stories, connection.getTargetStoryId(), "target");
-                requirePublicPort(stories.get(connection.getSourceStoryId()), connection.getSourcePortId(), true);
-                requirePublicPort(stories.get(connection.getTargetStoryId()), connection.getTargetPortId(), false);
+                requirePublicPort(
+                    stories.get(connection.getSourceStoryId()),
+                    connection.getSourcePortId(),
+                    true,
+                    connection.getInterfaceKind());
+                requirePublicPort(
+                    stories.get(connection.getTargetStoryId()),
+                    connection.getTargetPortId(),
+                    false,
+                    connection.getInterfaceKind());
             }
             String targetKey = connection.getTargetStoryId() + "\u0000" + connection.getTargetPortId();
-            if (targetSources.put(targetKey, connection.getSourceStoryId() + "\u0000" + connection.getSourcePortId())
-                != null)
+            if (connection.getInterfaceKind() == CanonicalGraphInterfaceKind.LOGIC
+                && targetSources.put(targetKey, connection.getSourceStoryId() + "\u0000" + connection.getSourcePortId())
+                    != null)
                 throw CanonicalGraphResourceException.failure(
                     "story.logic.graph.target.multiple_sources",
                     "A Story logic input may have at most one source.");
+            if (connection.getInterfaceKind() == CanonicalGraphInterfaceKind.FLOW
+                && !flowSources.add(connection.getSourceStoryId() + "\u0000" + connection.getSourcePortId()))
+                throw CanonicalGraphResourceException.failure(
+                    "story.logic.graph.source.multiple_targets",
+                    "A Story Flow output may have at most one target.");
             connections.add(connection);
         }
         return new CanonicalStoryLogicGraph(version, connections);
@@ -138,20 +154,41 @@ public final class CanonicalStoryLogicGraphLoader {
         throws CanonicalGraphResourceException {
         if (graph == null || stories == null) throw CanonicalGraphResourceException
             .failure("story.logic.graph.validation.required", "Story logic graph and known Stories are required.");
+        if (graph.getSchemaVersion() != CanonicalStoryLogicGraph.CURRENT_SCHEMA_VERSION)
+            throw CanonicalGraphResourceException.failure(
+                "story.logic.graph.schema_version.unsupported",
+                "Unsupported Story logic graph schema_version " + graph.getSchemaVersion() + "; expected 2.");
         Set<CanonicalStoryLogicConnection> duplicateEdges = new HashSet<CanonicalStoryLogicConnection>();
         Set<String> targets = new HashSet<String>();
+        Set<String> flowSources = new HashSet<String>();
         for (CanonicalStoryLogicConnection connection : graph.getConnections()) {
+            if (connection == null) throw CanonicalGraphResourceException
+                .failure("story.logic.graph.connection.invalid", "Story logic graph cannot contain a null connection.");
             if (!duplicateEdges.add(connection)) throw CanonicalGraphResourceException.failure(
                 "story.logic.graph.connection.duplicate",
                 "Duplicate Story logic connections are not allowed.");
             String targetKey = connection.getTargetStoryId() + "\u0000" + connection.getTargetPortId();
-            if (!targets.add(targetKey)) throw CanonicalGraphResourceException.failure(
-                "story.logic.graph.target.multiple_sources",
-                "A Story logic input may have at most one source.");
+            if (connection.getInterfaceKind() == CanonicalGraphInterfaceKind.LOGIC && !targets.add(targetKey))
+                throw CanonicalGraphResourceException.failure(
+                    "story.logic.graph.target.multiple_sources",
+                    "A Story logic input may have at most one source.");
+            if (connection.getInterfaceKind() == CanonicalGraphInterfaceKind.FLOW
+                && !flowSources.add(connection.getSourceStoryId() + "\u0000" + connection.getSourcePortId()))
+                throw CanonicalGraphResourceException.failure(
+                    "story.logic.graph.source.multiple_targets",
+                    "A Story Flow output may have at most one target.");
             requireStory(stories, connection.getSourceStoryId(), "source");
             requireStory(stories, connection.getTargetStoryId(), "target");
-            requirePublicPort(stories.get(connection.getSourceStoryId()), connection.getSourcePortId(), true);
-            requirePublicPort(stories.get(connection.getTargetStoryId()), connection.getTargetPortId(), false);
+            requirePublicPort(
+                stories.get(connection.getSourceStoryId()),
+                connection.getSourcePortId(),
+                true,
+                connection.getInterfaceKind());
+            requirePublicPort(
+                stories.get(connection.getTargetStoryId()),
+                connection.getTargetPortId(),
+                false,
+                connection.getInterfaceKind());
         }
     }
 
@@ -178,11 +215,18 @@ public final class CanonicalStoryLogicGraphLoader {
     private static CanonicalStoryLogicConnection connection(JsonElement value) throws CanonicalGraphResourceException {
         JsonObject object = requireObject(value, "story.logic.graph.connection");
         exact(object, CONNECTION, "story.logic.graph.connection");
+        String interfaceKind = string(object, "interface_kind", "story.logic.graph.connection");
+        CanonicalGraphInterfaceKind kind;
+        if ("Flow".equals(interfaceKind)) kind = CanonicalGraphInterfaceKind.FLOW;
+        else if ("Logic".equals(interfaceKind)) kind = CanonicalGraphInterfaceKind.LOGIC;
+        else throw CanonicalGraphResourceException
+            .failure("story.logic.graph.interface_kind.invalid", "interface_kind must be exactly 'Flow' or 'Logic'.");
         return new CanonicalStoryLogicConnection(
             string(object, "source_story_id", "story.logic.graph.connection"),
             string(object, "source_port_id", "story.logic.graph.connection"),
             string(object, "target_story_id", "story.logic.graph.connection"),
-            string(object, "target_port_id", "story.logic.graph.connection"));
+            string(object, "target_port_id", "story.logic.graph.connection"),
+            kind);
     }
 
     private static void requireStory(Map<String, CanonicalGraphResource> stories, String storyId, String side)
@@ -194,19 +238,39 @@ public final class CanonicalStoryLogicGraphLoader {
                 "Story logic connection " + side + " Story does not exist: " + storyId);
     }
 
-    private static void requirePublicPort(CanonicalGraphResource story, String portId, boolean output)
-        throws CanonicalGraphResourceException {
-        String type = output ? "logic_output" : "logic_input";
+    private static void requirePublicPort(CanonicalGraphResource story, String portId, boolean output,
+        CanonicalGraphInterfaceKind kind) throws CanonicalGraphResourceException {
+        String type = kind == CanonicalGraphInterfaceKind.FLOW ? output ? "terminate" : "flow_driven"
+            : output ? "logic_output" : "logic_input";
         int matches = 0;
         for (CanonicalGraphNode node : story.getGraph()
             .getNodes()) {
-            if (!type.equals(node.getType())) continue;
-            JsonElement property = node.getProperties()
-                .get("port_id");
-            if (property != null && property.isJsonPrimitive()
-                && property.getAsJsonPrimitive()
-                    .isString()
-                && portId.equals(property.getAsString())) matches++;
+            if (type.equals(node.getType())) {
+                JsonElement property = node.getProperties()
+                    .get("port_id");
+                if (property != null && property.isJsonPrimitive()
+                    && property.getAsJsonPrimitive()
+                        .isString()
+                    && portId.equals(property.getAsString())) matches++;
+            }
+            // flow_driven is a public projection of a Start trigger and is intentionally
+            // not a second node/resource in the canonical Story graph.
+            if (!"flow_driven".equals(type) || !"start".equals(node.getType())) continue;
+            JsonElement triggers = node.getProperties()
+                .get("triggers");
+            if (triggers == null || !triggers.isJsonArray()) continue;
+            for (JsonElement value : triggers.getAsJsonArray()) {
+                if (!value.isJsonObject()) continue;
+                JsonElement triggerPort = value.getAsJsonObject()
+                    .get("port_id");
+                JsonElement triggerType = value.getAsJsonObject()
+                    .get("trigger_type");
+                if (triggerPort != null && triggerType != null
+                    && triggerPort.isJsonPrimitive()
+                    && triggerType.isJsonPrimitive()
+                    && portId.equals(triggerPort.getAsString())
+                    && "flow_driven".equals(triggerType.getAsString())) matches++;
+            }
         }
         if (matches == 1) return;
         throw CanonicalGraphResourceException.failure(

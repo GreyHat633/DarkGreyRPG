@@ -219,6 +219,15 @@ public final class CanonicalStoryRuntime {
         return targetStoryId;
     }
 
+    /** Stable public boundary identity for a terminated Story run. */
+    public String getTerminalPortId() {
+        ensureInitialized();
+        if (status != CanonicalStoryStatus.TERMINATED || currentNodeId == null) return null;
+        CanonicalGraphNode node = nodes.get(currentNodeId);
+        if (node == null || !"terminate".equals(node.getType())) return null;
+        return requiredString(node, "port_id", "story.terminate.port");
+    }
+
     public Map<String, Boolean> getLogicInputs() {
         return detached(externalLogicInputs);
     }
@@ -615,6 +624,8 @@ public final class CanonicalStoryRuntime {
                 throw failure("story.start.trigger.required", "Start requires at least one trigger output.");
         } else if ("terminate".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
+            requiredString(node, "port_id", "story.terminate.port");
+            requiredString(node, "display_name", "story.terminate.port");
         } else if ("condition".equals(type)) {
             requirePort(node, "flow_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.FLOW);
             requirePort(node, "logic_in", CanonicalGraphPortDirection.INPUT, CanonicalGraphInterfaceKind.LOGIC);

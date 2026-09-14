@@ -6,6 +6,8 @@ public enum GraphScope
     StoryFlow,
     Session,
     Task,
+    /// <summary>Studio-only projection; persisted as the project connection model.</summary>
+    Project,
 
     // Short alias retained for callers that refer to the first scope as Story.
     Story = StoryFlow,

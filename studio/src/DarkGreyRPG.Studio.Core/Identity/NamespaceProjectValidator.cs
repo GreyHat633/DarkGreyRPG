@@ -86,7 +86,7 @@ public static class NamespaceProjectValidator
                         switch (Text(node, "objective_type"))
                         {
                             case "kill_entity": Require("entity", DgrResourceKind.Actor, legacyTarget: true); break;
-                            case "submit_item":
+                            case "submit_item": Require("actor_id", DgrResourceKind.Actor); goto case "collect_item";
                             case "collect_item": Require("item", DgrResourceKind.Item, legacyTarget: true, allowItemGroup: true); break;
                             case "interact_actor": Require("actor_id", DgrResourceKind.Actor); break;
                         }

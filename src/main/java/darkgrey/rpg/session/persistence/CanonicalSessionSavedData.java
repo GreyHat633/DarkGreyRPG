@@ -1,5 +1,8 @@
 package darkgrey.rpg.session.persistence;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +47,11 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     private boolean pendingLegacy;
     private CanonicalSessionResourceResolver boundSessionResolver;
     private CanonicalStoryResourceResolver boundStoryResolver;
+    /** Idempotency keys for terminal Flow routing; keyed by player, Story run and public port. */
+    private final Set<String> claimedStoryTerminalRoutes = new HashSet<String>();
+    private final Set<String> pendingStoryTerminalRoutes = new HashSet<String>();
+    private final Map<String, String> terminalRouteTargets = new java.util.LinkedHashMap<String, String>();
+    private final Map<String, Boolean> observedStoryStartConditions = new java.util.LinkedHashMap<String, Boolean>();
 
     /** Constructor required by Forge MapStorage reflective loading. */
     public CanonicalSessionSavedData(String name) {
@@ -140,6 +148,14 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             replacementNextTransportId = decoded.getNextTransportId();
             storySnapshots = decoded.getStories();
             pendingContinuations = decoded.getContinuations();
+            claimedStoryTerminalRoutes.clear();
+            claimedStoryTerminalRoutes.addAll(decoded.getTerminalRoutes());
+            pendingStoryTerminalRoutes.clear();
+            pendingStoryTerminalRoutes.addAll(decoded.getPendingTerminalRoutes());
+            terminalRouteTargets.clear();
+            terminalRouteTargets.putAll(decoded.getTerminalRouteTargets());
+            observedStoryStartConditions.clear();
+            observedStoryStartConditions.putAll(decoded.getStartObservations());
         } else {
             sessionSnapshots = store.snapshots();
             replacementNextTransportId = nextTransportId();
@@ -267,6 +283,109 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         UUID playerUuid, String storyId) {
         requireStoryBound();
         return storyStore.startDisposition(playerUuid, storyId);
+    }
+
+    /** Claims a terminal output exactly once for one durable Story run. */
+    public synchronized boolean claimStoryTerminalRoute(UUID playerUuid, String storyId, long activationTime,
+        String terminalPortId) {
+        requireBound();
+        if (playerUuid == null || storyId == null || terminalPortId == null || activationTime <= 0)
+            throw new IllegalArgumentException("Terminal Story route identity is required.");
+        String key = terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId);
+        if (claimedStoryTerminalRoutes.contains(key)) return false;
+        if (!pendingStoryTerminalRoutes.add(key)) return true;
+        markDirty();
+        return true;
+    }
+
+    public synchronized void markStoryTerminalRouteApplied(UUID playerUuid, String storyId, long activationTime,
+        String terminalPortId) {
+        String key = terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId);
+        pendingStoryTerminalRoutes.remove(key);
+        if (claimedStoryTerminalRoutes.add(key)) markDirty();
+    }
+
+    /** Resolves one syntactically valid pending route after a bounded cycle abort. */
+    public synchronized void markStoryTerminalRouteAppliedKey(String key) {
+        if (key == null) return;
+        String[] parts = key.split("\\u0000", -1);
+        if (parts.length != 4) return;
+        UUID player;
+        long activation;
+        try {
+            player = UUID.fromString(parts[0]);
+            activation = Long.parseLong(parts[2]);
+        } catch (RuntimeException exception) {
+            return;
+        }
+        if (activation <= 0 || parts[1].trim()
+            .isEmpty()
+            || parts[3].trim()
+                .isEmpty())
+            return;
+        markStoryTerminalRouteApplied(player, parts[1], activation, parts[3]);
+    }
+
+    /** Releases a claim after a destination start failed before its route became durable. */
+    public synchronized void releaseStoryTerminalRoute(UUID playerUuid, String storyId, long activationTime,
+        String terminalPortId) {
+        if (playerUuid == null || storyId == null || terminalPortId == null || activationTime <= 0) return;
+        String key = terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId);
+        if (pendingStoryTerminalRoutes.remove(key)) markDirty();
+    }
+
+    /** Associates a source terminal claim with the exact destination run identity. */
+    public synchronized void recordStoryTerminalRouteTarget(UUID playerUuid, String storyId, long activationTime,
+        String terminalPortId, String targetStoryId, long targetActivationTime) {
+        if (playerUuid == null || storyId == null
+            || terminalPortId == null
+            || activationTime <= 0
+            || targetStoryId == null
+            || targetStoryId.trim()
+                .isEmpty()
+            || targetActivationTime <= 0)
+            throw new IllegalArgumentException("Terminal route target identity is required.");
+        String source = terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId);
+        String target = playerUuid.toString() + "\u0000" + targetStoryId + "\u0000" + targetActivationTime;
+        String previous = terminalRouteTargets.get(source);
+        if (previous != null && !previous.equals(target))
+            throw new IllegalStateException("Terminal route target identity changed for " + source);
+        terminalRouteTargets.put(source, target);
+        if (previous == null) markDirty();
+    }
+
+    public synchronized String storyTerminalRouteTarget(UUID playerUuid, String storyId, long activationTime,
+        String terminalPortId) {
+        return terminalRouteTargets.get(terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId));
+    }
+
+    private static String terminalRouteKey(UUID playerUuid, String storyId, long activationTime,
+        String terminalPortId) {
+        return playerUuid.toString() + "\u0000" + storyId + "\u0000" + activationTime + "\u0000" + terminalPortId;
+    }
+
+    /** Returns source Story IDs whose terminal route still needs recovery after a crash. */
+    public synchronized List<String> pendingStoryTerminalRouteStoryIds(UUID playerUuid) {
+        if (playerUuid == null) return Collections.emptyList();
+        Set<String> result = new java.util.TreeSet<String>();
+        String prefix = playerUuid.toString() + "\u0000";
+        for (String key : pendingStoryTerminalRoutes) if (key.startsWith(prefix)) {
+            String[] parts = key.split("\\u0000", -1);
+            if (parts.length == 4 && !parts[1].isEmpty()) result.add(parts[1]);
+        }
+        return Collections.unmodifiableList(new ArrayList<String>(result));
+    }
+
+    /** Records the latest evaluated value and returns the prior durable observation (false baseline). */
+    public synchronized boolean observeStoryStartCondition(UUID playerUuid, String storyId, String triggerPortId,
+        boolean value) {
+        requireBound();
+        if (playerUuid == null || storyId == null || triggerPortId == null)
+            throw new IllegalArgumentException("Story Start observation identity is required.");
+        String key = playerUuid.toString() + "\u0000" + storyId + "\u0000" + triggerPortId;
+        Boolean prior = observedStoryStartConditions.put(key, Boolean.valueOf(value));
+        if (prior == null || prior.booleanValue() != value) markDirty();
+        return prior != null && prior.booleanValue();
     }
 
     public synchronized CanonicalStoryInstanceSnapshot setStoryLogicInput(UUID playerUuid, String storyId,
@@ -593,7 +712,9 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         List<CanonicalStoryPendingContinuation> remaining = filterContinuations(continuations, storyIds);
         int continuationsRemoved = continuations.size() - remaining.size();
         if (continuationsRemoved > 0) continuations = remaining;
-        if (sessionsRemoved > 0 || storiesRemoved > 0 || continuationsRemoved > 0) markWorldIfChanged(before);
+        int routesRemoved = removeTerminalRoutes(storyIds);
+        if (sessionsRemoved > 0 || storiesRemoved > 0 || continuationsRemoved > 0 || routesRemoved > 0)
+            markWorldIfChanged(before);
         return new DiscardResult(storiesRemoved, sessionsRemoved, continuationsRemoved);
     }
 
@@ -613,6 +734,10 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         List<CanonicalSessionInstanceSnapshot> sessions = filterSessions(decoded.getSessions(), storyIds);
         List<CanonicalStoryInstanceSnapshot> stories = filterStories(decoded.getStories(), storyIds);
         List<CanonicalStoryPendingContinuation> remaining = filterContinuations(decoded.getContinuations(), storyIds);
+        List<String> terminalRoutes = filterTerminalRoutes(decoded.getTerminalRoutes(), storyIds);
+        List<String> pendingRoutes = filterTerminalRoutes(decoded.getPendingTerminalRoutes(), storyIds);
+        Map<String, Boolean> observations = filterStartObservations(decoded.getStartObservations(), storyIds);
+        Map<String, String> routeTargets = filterTerminalRouteTargets(decoded.getTerminalRouteTargets(), storyIds);
         DiscardResult result = new DiscardResult(
             decoded.getStories()
                 .size() - stories.size(),
@@ -620,9 +745,27 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
                 .size() - sessions.size(),
             decoded.getContinuations()
                 .size() - remaining.size());
-        if (result.total() > 0) {
-            pendingRaw = CanonicalSessionWorldStateNbtCodec
-                .encode(sessions, decoded.getNextTransportId(), remaining, stories);
+        int metadataRemoved = decoded.getTerminalRoutes()
+            .size() - terminalRoutes.size()
+            + decoded.getPendingTerminalRoutes()
+                .size()
+            - pendingRoutes.size()
+            + decoded.getStartObservations()
+                .size()
+            - observations.size()
+            + decoded.getTerminalRouteTargets()
+                .size()
+            - routeTargets.size();
+        if (result.total() > 0 || metadataRemoved > 0) {
+            pendingRaw = CanonicalSessionWorldStateNbtCodec.encode(
+                sessions,
+                decoded.getNextTransportId(),
+                remaining,
+                stories,
+                terminalRoutes,
+                observations,
+                pendingRoutes,
+                routeTargets);
             markDirty();
         }
         return result;
@@ -650,6 +793,76 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         for (CanonicalStoryPendingContinuation value : source)
             if (!storyIds.contains(value.getStoryId())) result.add(value);
         return result;
+    }
+
+    private static List<String> filterTerminalRoutes(List<String> source, Set<String> storyIds) {
+        List<String> result = new java.util.ArrayList<String>();
+        for (String route : source) {
+            String[] parts = route.split("\\u0000", -1);
+            if (parts.length != 4 || !storyIds.contains(parts[1])) result.add(route);
+        }
+        return result;
+    }
+
+    private static Map<String, Boolean> filterStartObservations(Map<String, Boolean> source, Set<String> storyIds) {
+        Map<String, Boolean> result = new java.util.LinkedHashMap<String, Boolean>();
+        for (Map.Entry<String, Boolean> entry : source.entrySet()) {
+            String[] parts = entry.getKey()
+                .split("\\u0000", -1);
+            if (parts.length < 3 || !storyIds.contains(parts[1])) result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    private static Map<String, String> filterTerminalRouteTargets(Map<String, String> source, Set<String> storyIds) {
+        Map<String, String> result = new java.util.LinkedHashMap<String, String>();
+        for (Map.Entry<String, String> entry : source.entrySet()) {
+            String[] parts = entry.getKey()
+                .split("\\u0000", -1);
+            if (parts.length != 4 || !storyIds.contains(parts[1])) result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    private int removeTerminalRoutes(Set<String> storyIds) {
+        int removed = 0;
+        removed += removeTerminalRoutes(claimedStoryTerminalRoutes, storyIds);
+        removed += removeTerminalRoutes(pendingStoryTerminalRoutes, storyIds);
+        java.util.Iterator<String> targets = terminalRouteTargets.keySet()
+            .iterator();
+        while (targets.hasNext()) {
+            String[] parts = targets.next()
+                .split("\\u0000", -1);
+            if (parts.length == 4 && storyIds.contains(parts[1])) {
+                targets.remove();
+                removed++;
+            }
+        }
+        java.util.Iterator<String> observations = observedStoryStartConditions.keySet()
+            .iterator();
+        while (observations.hasNext()) {
+            String key = observations.next();
+            String[] parts = key.split("\\u0000", -1);
+            if (parts.length >= 3 && storyIds.contains(parts[1])) {
+                observations.remove();
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    private static int removeTerminalRoutes(Set<String> routes, Set<String> storyIds) {
+        int removed = 0;
+        java.util.Iterator<String> iterator = routes.iterator();
+        while (iterator.hasNext()) {
+            String route = iterator.next();
+            String[] parts = route.split("\\u0000", -1);
+            if (parts.length == 4 && storyIds.contains(parts[1])) {
+                iterator.remove();
+                removed++;
+            }
+        }
+        return removed;
     }
 
     public static final class DiscardResult {
@@ -700,8 +913,15 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized void writeToNBT(NBTTagCompound root) {
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         NBTTagCompound output;
-        if (bound) output = CanonicalSessionWorldStateNbtCodec
-            .encode(store.snapshots(), nextTransportId(), continuations, storyStore.snapshots());
+        if (bound) output = CanonicalSessionWorldStateNbtCodec.encode(
+            store.snapshots(),
+            nextTransportId(),
+            continuations,
+            storyStore.snapshots(),
+            claimedStoryTerminalRoutes,
+            observedStoryStartConditions,
+            pendingStoryTerminalRoutes,
+            terminalRouteTargets);
         else if (pendingRaw != null) output = copy(pendingRaw);
         else output = new CanonicalSessionInstanceStore().writeToNbt();
         for (String key : new java.util.HashSet<String>(root.func_150296_c())) root.removeTag(key);

@@ -151,7 +151,7 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
     }
 
     [TestMethod]
-    public void ReferencedPublicStoryPortCannotBeDeletedUntilGraphConnectionIsRemoved()
+    public void DeletingPublicBoundaryRemovesIncidentEdgeAndUndoRestoresIdentityAndEdge()
     {
         using var project = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Path);
@@ -164,12 +164,18 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         using var editor = new CanonicalGraphResourceEditorViewModel(source);
         Assert.IsTrue(editor.Host.RemoveNode("output"));
 
-        var exception = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(
-            () => new CanonicalGraphResourceSaveCoordinator(store).Replace(editor));
-
-        Assert.AreEqual("story.logic_graph.port.referenced", exception.Code);
-        Assert.IsTrue(editor.IsDirty);
-        Assert.AreEqual(before, File.ReadAllText(store.Stories.GetPath("source")));
+        var coordinator = new CanonicalGraphResourceSaveCoordinator(store);
+        coordinator.Replace(editor);
+        Assert.IsEmpty(store.StoryLogicGraph.Load().Connections);
+        Assert.IsEmpty(store.Stories.Load("source").Graph!.Nodes);
+        Assert.IsFalse(editor.IsDirty);
+        Assert.IsTrue(editor.Host.Undo());
+        coordinator.Replace(editor);
+        Assert.AreEqual("rescued", store.Stories.Load("source").Graph!.Nodes.Single().Properties["port_id"].GetString());
+        Assert.AreEqual(new CanonicalStoryLogicConnection("source", "rescued", "target", "kingdom_gate"), store.StoryLogicGraph.Load().Connections.Single());
+        Assert.IsTrue(editor.Host.Redo());
+        coordinator.Replace(editor);
+        Assert.IsEmpty(store.StoryLogicGraph.Load().Connections);
     }
 
     private static GraphResourceRepository Repository(

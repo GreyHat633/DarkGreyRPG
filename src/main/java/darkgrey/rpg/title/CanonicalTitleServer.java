@@ -104,6 +104,12 @@ public final class CanonicalTitleServer {
         QUEUES.remove(playerId);
     }
 
+    public static synchronized void retireStories(java.util.Set<String> storyIds) {
+        java.util.List<EntityPlayerMP> players = new java.util.ArrayList<EntityPlayerMP>();
+        for (Queue queue : QUEUES.values()) players.add(queue.player);
+        for (EntityPlayerMP player : players) for (String storyId : storyIds) clearStory(player, storyId);
+    }
+
     public static synchronized void clearStory(EntityPlayerMP player, String story) {
         Queue queue = QUEUES.get(player.getUniqueID());
         if (queue == null) return;

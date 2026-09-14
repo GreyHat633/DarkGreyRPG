@@ -45,6 +45,10 @@ public final class StoryPackageGenerationLifecycle {
         int tasks = CanonicalTaskSavedData.get(storage)
             .discardByStoryIds(affectedStories);
         registry.replace(current);
+        if (!affectedStories.isEmpty()) {
+            darkgrey.rpg.media.CanonicalMediaServer.retireStories(affectedStories);
+            darkgrey.rpg.title.CanonicalTitleServer.retireStories(affectedStories);
+        }
         Result result = new Result(deltas, affectedStories, sessions, tasks, bootstrap);
         log(result);
         return result;
