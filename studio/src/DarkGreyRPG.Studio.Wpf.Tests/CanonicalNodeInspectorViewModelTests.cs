@@ -103,7 +103,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         CollectionAssert.AreEqual(
             new[] { "物品给予", "经验给予", "BUFF给予", "生命给予", "玩家传送", "消息发送" },
             inspector.StoryActionTypeOptions.Select(option => option.DisplayName).ToArray());
-        Assert.AreEqual("执行 [消息发送]", editor.Host.Nodes.Single().DisplayName);
+        Assert.AreEqual("执行「消息发送」", editor.Host.Nodes.Single().DisplayName);
         var beforeTypeRevision = editor.GraphRevision;
         var beforeTypeUndo = editor.Host.Session.UndoCount;
 
@@ -113,7 +113,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual(beforeTypeRevision + 1, editor.GraphRevision);
         Assert.AreEqual(beforeTypeUndo + 1, editor.Host.Session.UndoCount);
         Assert.IsTrue(inspector.IsGiveItemAction);
-        Assert.AreEqual("执行 [物品给予]", editor.Host.Nodes.Single().DisplayName);
+        Assert.AreEqual("执行「物品给予」", editor.Host.Nodes.Single().DisplayName);
         Assert.AreEqual(string.Empty, inspector.StoryActionItem);
         Assert.AreEqual("10", inspector.StoryActionAmountText);
         CollectionAssert.AreEquivalent(new[]

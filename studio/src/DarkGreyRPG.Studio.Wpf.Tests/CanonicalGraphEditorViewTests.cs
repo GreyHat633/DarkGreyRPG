@@ -421,7 +421,7 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsNull(view.SelectedNode);
         Assert.IsFalse(view.SelectNode(""));
         Assert.IsNull(view.SelectedNode);
-        Assert.IsTrue(view.SelectNode(view.NodeVisuals.Single(node => node.Node?.DisplayName == "台词 [One]").Node));
+        Assert.IsTrue(view.SelectNode(view.NodeVisuals.Single(node => node.Node?.DisplayName == "台词「One」").Node));
 
         host.Refresh();
 

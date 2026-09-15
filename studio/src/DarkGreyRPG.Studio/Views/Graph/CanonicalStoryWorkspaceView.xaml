@@ -746,8 +746,8 @@
                     </ItemsControl>
                     <StackPanel>
   <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsPublicBoundary}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-  <TextBlock Text="公共端口显示名" Margin="0,10,0,3"/>
-  <TextBox graph:TextInputWatermark.Text="输入公共端口显示名" Text="{Binding BoundaryDisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" ToolTip="修改显示名保留端口身份与现有连线。"/>
+  <TextBlock Text="名称" Margin="0,10,0,3"/>
+  <TextBox graph:TextInputWatermark.Text="输入名称" Text="{Binding BoundaryDisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" ToolTip="修改名称不会改变现有连线。"/>
 </StackPanel>
                 </StackPanel>
                 </StackPanel>

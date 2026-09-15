@@ -822,7 +822,7 @@ public sealed class GraphEditSession
             && Document.Nodes.Any(other => other.Id != node.Id && other.Type == node.Type
                 && other.Properties.TryGetValue("display_name", out var name)
                 && name.ValueKind == JsonValueKind.String && name.GetString() == value.GetString()))
-            return Fail([new("graph.public_boundary.display_name.duplicate", "同类公共端口显示名不能重复。", "properties.display_name", NodeId: node.Id)]);
+            return Fail([new("graph.public_boundary.display_name.duplicate", "同类节点的名称不能重复。", "properties.display_name", NodeId: node.Id)]);
         var before = DeepClone(Document);
         node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         node.Properties[property] = value.Clone();

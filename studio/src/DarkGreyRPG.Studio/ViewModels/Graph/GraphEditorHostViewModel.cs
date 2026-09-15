@@ -167,11 +167,15 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
                 ? CanonicalStoryActionSchema.AuthoringDisplayNameFor(actionType.GetString())
                 : node.DisplayName ?? string.Empty;
         var typeName = GraphNodeDefinitionRegistry.Get(_scope, Type)?.DisplayName ?? Type;
+        var hasBoundaryName = false;
         if (Type is "terminate" or "end" or "logic_input" or "logic_output"
             && properties.TryGetValue("display_name", out var boundaryName) && boundaryName.ValueKind == JsonValueKind.String)
+        {
             extraName = boundaryName.GetString() ?? "";
-        DisplayName = string.IsNullOrWhiteSpace(extraName) || extraName == typeName
-            ? typeName : $"{typeName} [{extraName}]";
+            hasBoundaryName = !string.IsNullOrWhiteSpace(extraName);
+        }
+        DisplayName = string.IsNullOrWhiteSpace(extraName) || extraName == typeName && !hasBoundaryName
+            ? typeName : $"{typeName}「{extraName}」";
         _properties = new ReadOnlyDictionary<string, JsonElement>(properties);
         OnPropertyChanged(nameof(Properties));
         OnPropertyChanged(nameof(ParameterSummary));

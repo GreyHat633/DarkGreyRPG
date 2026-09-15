@@ -38,7 +38,7 @@ public sealed class InlineLayout0331Tests
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         var view = new CanonicalInlineNodeEditorControl { Width = 210, Editor = inspector };
         Layout(view);
-        var fieldLabel = Descendants(view).OfType<TextBlock>().Single(t => t.Text == "公共端口显示名");
+        var fieldLabel = Descendants(view).OfType<TextBlock>().Single(t => t.Text == "名称");
         Assert.IsTrue(fieldLabel.TranslatePoint(new Point(), view).Y <= 20, "Unrelated sections must not push the first field down.");
         var error = Descendants(view).OfType<TextBlock>().Single(t => BindingOperations.GetBinding(t, TextBlock.TextProperty)?.Path.Path == "StoryActionAmountError");
         var before = view.DesiredSize.Height;

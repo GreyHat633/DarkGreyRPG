@@ -22,7 +22,7 @@ public sealed class NumericDragAndWatermark0331Tests
         var root = (FrameworkElement)host.RootVisual;
         root.Resources["TextFillColorSecondaryBrush"] = System.Windows.Media.Brushes.White;
         box.SetResourceReference(Control.ForegroundProperty, "TextFillColorSecondaryBrush");
-        TextInputWatermark.SetText(box, "输入公共端口显示名");
+        TextInputWatermark.SetText(box, "输入名称");
         var adorner = AdornerLayer.GetAdornerLayer(box)!.GetAdorners(box)!.Single();
         var label = (TextBlock)System.Windows.Media.VisualTreeHelper.GetChild(adorner, 0);
         Assert.AreSame(System.Windows.Media.Brushes.White, label.Foreground);

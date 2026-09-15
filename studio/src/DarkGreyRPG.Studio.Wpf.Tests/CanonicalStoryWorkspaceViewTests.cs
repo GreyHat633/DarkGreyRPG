@@ -215,7 +215,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
             Assert.IsTrue(view.GraphView.SelectNode(testCase.Id));
             view.UpdateLayout();
             var visual = view.GraphView.NodeVisuals.Single(node => node.Node?.NodeId == testCase.Id);
-            Assert.AreEqual($"执行 [{testCase.Name}]", visual.Node!.DisplayName);
+            Assert.AreEqual($"执行「{testCase.Name}」", visual.Node!.DisplayName);
             Assert.AreEqual(testCase.Name, visual.InlineEditor!.SelectedStoryActionType!.DisplayName);
             Assert.AreEqual(testCase.Name, workspace.NodeInspector!.SelectedStoryActionType!.DisplayName);
             Assert.AreEqual(Visibility.Visible, Field(view, testCase.InspectorLabel).Visibility);
