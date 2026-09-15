@@ -72,6 +72,8 @@ public sealed class SessionScreenEditor : UserControl
 
     public SessionScreenEditor()
     {
+        SetResourceReference(ForegroundProperty, "TextFillColorPrimaryBrush");
+        _error.SetResourceReference(TextBlock.ForegroundProperty, "SystemFillColorCriticalBrush");
         Focusable = true;
         PreviewKeyDown += OnPreviewKeyDown;
         var panel = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };

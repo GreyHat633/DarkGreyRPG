@@ -30,6 +30,8 @@ public sealed class ActorPortraitEditor : UserControl
 
     public ActorPortraitEditor()
     {
+        SetResourceReference(ForegroundProperty, "TextFillColorPrimaryBrush");
+        _error.SetResourceReference(TextBlock.ForegroundProperty, "SystemFillColorCriticalBrush");
         BuildVisualTree();
         DataContextChanged += OnDataContextChanged;
         _variants.SelectionChanged += OnVariantSelectionChanged;

@@ -318,7 +318,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               AutomationProperties.AutomationId="CanonicalInspectorScrollViewer"><AdornerDecorator>
                 <StackPanel>
-                <Expander Header="介绍说明" DataContext="{Binding NodeInspector}" IsExpanded="{Binding HelpExpanded, Mode=TwoWay}" Margin="0,0,0,10" AutomationProperties.AutomationId="CanonicalNodeHelp">
+                <Expander Header="介绍说明" Foreground="{DynamicResource TextFillColorPrimaryBrush}" DataContext="{Binding NodeInspector}" IsExpanded="{Binding HelpExpanded, Mode=TwoWay}" Margin="0,0,0,10" AutomationProperties.AutomationId="CanonicalNodeHelp">
                     <Expander.Style><Style TargetType="Expander"><Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Expander.Style>
                     <TextBlock Text="{Binding HelpText}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                 </Expander>

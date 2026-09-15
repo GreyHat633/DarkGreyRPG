@@ -23,6 +23,10 @@ public sealed class AudioPreviewControl : UserControl
 
     public AudioPreviewControl()
     {
+        SetResourceReference(ForegroundProperty, "TextFillColorPrimaryBrush");
+        _name.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        _duration.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        _error.SetResourceReference(TextBlock.ForegroundProperty, "SystemFillColorCriticalBrush");
         BuildVisualTree();
         _timer.Tick += (_, _) => Refresh();
         Loaded += (_, _) => { AttachService(PreviewService ?? LocalAudioPreviewService.Shared); _timer.Start(); };

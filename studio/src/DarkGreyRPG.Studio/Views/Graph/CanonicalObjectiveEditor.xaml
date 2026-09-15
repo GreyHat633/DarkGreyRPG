@@ -1,4 +1,4 @@
-<UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.CanonicalObjectiveEditor"
+<UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.CanonicalObjectiveEditor" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:graph="clr-namespace:DarkGreyRPG.Studio.Views.Graph">
  <UserControl.Resources>
   <BooleanToVisibilityConverter x:Key="VisibleWhen"/>

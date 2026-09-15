@@ -15,6 +15,26 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class NumericDragAndWatermark0331Tests
 {
     [STATestMethod]
+    public void WatermarkUsesThemeResourceAndUpdatesWithoutRecreation()
+    {
+        var box = new TextBox { Width = 240, Height = 32, Foreground = System.Windows.Media.Brushes.Black };
+        using var host = Host(box);
+        var root = (FrameworkElement)host.RootVisual;
+        root.Resources["TextFillColorSecondaryBrush"] = System.Windows.Media.Brushes.White;
+        box.SetResourceReference(Control.ForegroundProperty, "TextFillColorSecondaryBrush");
+        TextInputWatermark.SetText(box, "输入公共端口显示名");
+        var adorner = AdornerLayer.GetAdornerLayer(box)!.GetAdorners(box)!.Single();
+        var label = (TextBlock)System.Windows.Media.VisualTreeHelper.GetChild(adorner, 0);
+        Assert.AreSame(System.Windows.Media.Brushes.White, label.Foreground);
+        root.Resources["TextFillColorSecondaryBrush"] = System.Windows.Media.Brushes.DarkSlateGray;
+        Assert.AreSame(System.Windows.Media.Brushes.DarkSlateGray, label.Foreground);
+        root.Resources["TextFillColorSecondaryBrush"] = System.Windows.Media.Brushes.White;
+        Assert.AreSame(System.Windows.Media.Brushes.White, label.Foreground);
+        Assert.AreEqual(1.0, adorner.Opacity);
+        Assert.AreEqual("", box.Text);
+    }
+
+    [STATestMethod]
     public void EmptyWatermarkIsAnAdornerAndNeverReplacesText()
     {
         var box = new TextBox { Width = 240, Height = 32, Text = "" };

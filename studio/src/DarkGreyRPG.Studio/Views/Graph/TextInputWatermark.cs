@@ -145,7 +145,6 @@ public static class TextInputWatermark
             _label = new TextBlock
             {
                 Text = GetText(box),
-                Foreground = box.Foreground,
                 FontFamily = box.FontFamily,
                 FontSize = box.FontSize,
                 FontStretch = box.FontStretch,
@@ -155,9 +154,9 @@ public static class TextInputWatermark
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(box.Padding.Left + 2, box.Padding.Top, box.Padding.Right + 2, box.Padding.Bottom)
             };
+            _label.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(TextBox.Foreground)) { Source = box });
             AddVisualChild(_label);
             AddLogicalChild(_label);
-            Opacity = 0.7;
         }
 
         protected override int VisualChildrenCount => 1;
