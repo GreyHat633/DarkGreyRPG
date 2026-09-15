@@ -1,3 +1,4 @@
+using System.Windows.Controls;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.Views;
 
@@ -39,6 +40,40 @@ public sealed class LocalAudioPreviewService0331Tests
             Assert.IsNotNull(control.Content);
             control.Release();
         });
+    }
+
+    [TestMethod]
+    public void PreviewControlUsesClassicTransportLayoutWithoutStatusActions()
+    {
+        RunOnSta(() =>
+        {
+            var control = new AudioPreviewControl();
+            var root = (StackPanel)control.Content!;
+            var transport = (Grid)root.Children[0];
+            var buttons = transport.Children.OfType<Button>().ToArray();
+
+            CollectionAssert.AreEqual(new object[] { "-5s", "▶", "+5s" }, buttons.Select(button => button.Content).ToArray());
+            Assert.IsFalse(buttons[0].IsEnabled);
+            Assert.IsFalse(buttons[2].IsEnabled);
+            Assert.IsInstanceOfType(root.Children[1], typeof(Slider));
+            Assert.IsFalse(((Slider)root.Children[1]).IsEnabled);
+            Assert.IsFalse(root.Children.OfType<TextBlock>().Any(text => text.Text is "试听" or "清除" or "未选择音频"));
+            control.Release();
+        });
+    }
+
+    [TestMethod]
+    public void SeekControlsRemainUnavailableUntilMediaIsReady()
+    {
+        using var service = new LocalAudioPreviewService(
+            Path.Combine(Path.GetTempPath(), "missing-ffmpeg.exe"),
+            Path.Combine(Path.GetTempPath(), "darkgrey-audio-test", Guid.NewGuid().ToString("N")));
+
+        Assert.IsFalse(service.CanSeek);
+        service.SeekBy(TimeSpan.FromSeconds(5));
+        service.SeekFraction(-1);
+        service.SeekFraction(2);
+        Assert.AreEqual(AudioPreviewState.Empty, service.State);
     }
 
     private static void RunOnSta(Action action)

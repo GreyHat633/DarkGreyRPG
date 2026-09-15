@@ -53,11 +53,11 @@ public sealed class CanonicalStoryActionSchemaTests
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
 
         CollectionAssert.AreEquivalent(
-            new[] { CanonicalStoryActionSchema.TypeProperty, CanonicalStoryActionSchema.MessageProperty },
+            new[] { CanonicalStoryActionSchema.TypeProperty, CanonicalStoryActionSchema.ItemIdProperty, CanonicalStoryActionSchema.AmountProperty },
             action.Properties.Keys.ToArray());
-        Assert.AreEqual(CanonicalStoryActionSchema.SendMessage,
+        Assert.AreEqual(CanonicalStoryActionSchema.ActionTypes[0],
             action.Properties[CanonicalStoryActionSchema.TypeProperty].GetString());
-        Assert.AreEqual("", action.Properties[CanonicalStoryActionSchema.MessageProperty].GetString());
+        Assert.AreEqual("", action.Properties[CanonicalStoryActionSchema.ItemIdProperty].GetString());
         Assert.IsNotEmpty(CanonicalStoryActionSchema.Validate(action));
         Assert.IsEmpty(CanonicalStoryActionSchema.AllowDraftIssues(action, CanonicalStoryActionSchema.Validate(action)));
     }
@@ -66,6 +66,7 @@ public sealed class CanonicalStoryActionSchemaTests
     public void TypeChangeReplacesPayloadAsOneUndoUnit()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(action, CanonicalStoryActionSchema.SendMessage, out _));
         var graph = new GraphDocument([action]);
         var session = new GraphEditSession(graph, GraphScope.StoryFlow);
 
@@ -92,6 +93,7 @@ public sealed class CanonicalStoryActionSchemaTests
     public void DirectTypeMutationAndInvalidPayloadFailWithoutMutation()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action");
+        Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(action, CanonicalStoryActionSchema.SendMessage, out _));
         var graph = new GraphDocument([action]);
         var session = new GraphEditSession(graph, GraphScope.StoryFlow);
         var before = graph.ToJson();

@@ -1908,7 +1908,9 @@ public sealed partial class ShellViewModel : ObservableObject
             RefreshProblems();
     }
 
-    private void CreateStory()
+    private void CreateStory() => CreateStory(null);
+
+    private void CreateStory(System.Windows.Point? graphPosition)
     {
         var project = _projectService.CurrentProject;
         if (project is null || _canonicalGraphStore is null) return;
@@ -1926,6 +1928,8 @@ public sealed partial class ShellViewModel : ObservableObject
                     project.Stories)
                 .Create(NamespaceCreationId(request.Id), request.DisplayName);
             LoadStoryList();
+            if (graphPosition is { } position)
+                ProjectHome.Graph.CanonicalHost?.SetNodePosition(story.Id, position.X, position.Y);
             ProjectHome.SelectedStory = ProjectHome.Stories.Single(item => item.Id == story.Id);
             RefreshHomeResourceFolders();
             ProjectHome.ShowHome();
@@ -3509,6 +3513,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (args.PropertyName == nameof(ProjectHomeViewModel.Graph))
         {
+            ProjectHome.Graph.CreateStoryRequested = (x, y) => CreateStory(new System.Windows.Point(x, y));
             if (_observedProjectGraphHost is not null) _observedProjectGraphHost.PropertyChanged -= OnProjectGraphHostPropertyChanged;
             _observedProjectGraphHost = ProjectHome.Graph.CanonicalHost;
             if (_observedProjectGraphHost is not null) _observedProjectGraphHost.PropertyChanged += OnProjectGraphHostPropertyChanged;

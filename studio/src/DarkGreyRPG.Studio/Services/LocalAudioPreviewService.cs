@@ -69,6 +69,7 @@ public sealed class LocalAudioPreviewService : IDisposable
     private readonly string _tempRoot;
     private readonly Dispatcher _dispatcher;
     private readonly MediaPlayer _player;
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
     private CancellationTokenSource? _loadCancellation;
     private string? _temporaryWav;
     private TaskCompletionSource<bool>? _openCompletion;
@@ -99,6 +100,8 @@ public sealed class LocalAudioPreviewService : IDisposable
     public TimeSpan Duration => _player.NaturalDuration.HasTimeSpan ? _player.NaturalDuration.TimeSpan : TimeSpan.Zero;
     public TimeSpan Position => _player.Position;
     public double Progress => Duration <= TimeSpan.Zero ? 0 : Math.Clamp(Position.TotalSeconds / Duration.TotalSeconds, 0, 1);
+    public bool CanSeek => _state is AudioPreviewState.Ready or AudioPreviewState.Paused or AudioPreviewState.Playing
+        && Duration > TimeSpan.Zero;
 
     public async Task LoadAsync(string sourcePath, string? mediaName = null, CancellationToken cancellationToken = default)
     {
@@ -109,38 +112,62 @@ public sealed class LocalAudioPreviewService : IDisposable
         if (!string.Equals(Path.GetExtension(source), ".ogg", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("本地试听要求 OGG 音频。");
 
-        _loadCancellation?.Cancel();
-        _loadCancellation?.Dispose();
-        StopOtherServices();
-        CloseCore();
-        SourcePath = source;
-        _loadCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var loadToken = _loadCancellation.Token;
-        _mediaName = string.IsNullOrWhiteSpace(mediaName) ? Path.GetFileName(source) : mediaName;
-        SetState(AudioPreviewState.Loading, string.Empty);
+        var loadCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var previousCancellation = Interlocked.Exchange(ref _loadCancellation, loadCancellation);
+        Cancel(previousCancellation);
+        var acquired = false;
+        string? output = null;
 
         try
         {
+            await _loadGate.WaitAsync(loadCancellation.Token).ConfigureAwait(false);
+            acquired = true;
+            loadCancellation.Token.ThrowIfCancellationRequested();
+            StopOtherServices();
+            CloseCore();
+            SourcePath = source;
+            _mediaName = string.IsNullOrWhiteSpace(mediaName) ? Path.GetFileName(source) : mediaName;
+            SetState(AudioPreviewState.Loading, string.Empty);
             var directory = Path.Combine(_tempRoot, "audio-preview", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory);
-            var output = Path.Combine(directory, "preview.wav");
+            output = Path.Combine(directory, "preview.wav");
             _temporaryWav = output;
-            await DecodeAsync(source, output, loadToken).ConfigureAwait(false);
-            loadToken.ThrowIfCancellationRequested();
-            await OpenOnDispatcherAsync(output, loadToken).ConfigureAwait(false);
-            lock (OwnershipGate) _active = this;
+            await DecodeAsync(source, output, loadCancellation.Token).ConfigureAwait(false);
+            loadCancellation.Token.ThrowIfCancellationRequested();
+            await OpenOnDispatcherAsync(output, loadCancellation.Token).ConfigureAwait(false);
+            loadCancellation.Token.ThrowIfCancellationRequested();
+            lock (OwnershipGate)
+            {
+                loadCancellation.Token.ThrowIfCancellationRequested();
+                ThrowIfDisposed();
+                _active = this;
+            }
         }
         catch (OperationCanceledException)
         {
-            CloseCore();
-            SetState(AudioPreviewState.Empty, string.Empty);
+            if (acquired)
+            {
+                CloseCore();
+                SetState(AudioPreviewState.Empty, string.Empty);
+            }
+            else if (output is not null) DeletePreviewArtifact(output);
             throw;
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException or Win32Exception)
         {
-            CloseCore();
-            SetState(AudioPreviewState.Error, exception.Message);
+            if (acquired)
+            {
+                CloseCore();
+                SetState(AudioPreviewState.Error, exception.Message);
+            }
+            else if (output is not null) DeletePreviewArtifact(output);
             throw new InvalidDataException("音频试听失败：" + exception.Message, exception);
+        }
+        finally
+        {
+            if (acquired) _loadGate.Release();
+            Interlocked.CompareExchange(ref _loadCancellation, null, loadCancellation);
+            loadCancellation.Dispose();
         }
     }
 
@@ -170,10 +197,24 @@ public sealed class LocalAudioPreviewService : IDisposable
     public void Seek(TimeSpan position)
     {
         ThrowIfDisposed();
-        if (_state is AudioPreviewState.Empty or AudioPreviewState.Loading or AudioPreviewState.Error) return;
+        if (!CanSeek) return;
         var duration = Duration;
         _player.Position = duration <= TimeSpan.Zero ? TimeSpan.Zero : TimeSpan.FromTicks(Math.Clamp(position.Ticks, 0, duration.Ticks));
         StateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SeekBy(TimeSpan offset)
+    {
+        ThrowIfDisposed();
+        if (!CanSeek) return;
+        var currentTicks = Position.Ticks;
+        var offsetTicks = offset.Ticks;
+        var targetTicks = offsetTicks > 0 && currentTicks > long.MaxValue - offsetTicks
+            ? long.MaxValue
+            : offsetTicks < 0 && currentTicks < long.MinValue - offsetTicks
+                ? long.MinValue
+                : currentTicks + offsetTicks;
+        Seek(TimeSpan.FromTicks(targetTicks));
     }
 
     public void SeekFraction(double fraction) => Seek(TimeSpan.FromTicks((long)(Math.Clamp(fraction, 0, 1) * Duration.Ticks)));
@@ -181,7 +222,7 @@ public sealed class LocalAudioPreviewService : IDisposable
     public void StopAndRelease()
     {
         ThrowIfDisposed();
-        _loadCancellation?.Cancel();
+        Cancel(_loadCancellation);
         CloseCore();
         lock (OwnershipGate) if (ReferenceEquals(_active, this)) _active = null;
         _mediaName = string.Empty;
@@ -192,7 +233,7 @@ public sealed class LocalAudioPreviewService : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        _loadCancellation?.Cancel();
+        Cancel(_loadCancellation);
         RunOnDispatcher(CloseCore);
         lock (OwnershipGate) if (ReferenceEquals(_active, this)) _active = null;
         lock (OwnershipGate)
@@ -237,13 +278,14 @@ public sealed class LocalAudioPreviewService : IDisposable
 
     private Task OpenOnDispatcherAsync(string output, CancellationToken cancellationToken)
     {
-        _openCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _openCompletion = completion;
         return InvokeOnDispatcherAsync(() => _player.Open(new Uri(output)), cancellationToken)
             .ContinueWith(async task =>
             {
                 await task.ConfigureAwait(false);
-                using (cancellationToken.Register(() => _openCompletion.TrySetCanceled(cancellationToken)))
-                    await _openCompletion.Task.ConfigureAwait(false);
+                using (cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken)))
+                    await completion.Task.ConfigureAwait(false);
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default).Unwrap();
     }
 
@@ -294,6 +336,25 @@ public sealed class LocalAudioPreviewService : IDisposable
             _temporaryWav = null;
         }
         _openCompletion = null;
+    }
+
+    private static void DeletePreviewArtifact(string output)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(output);
+            if (File.Exists(output)) File.Delete(output);
+            if (directory is not null && Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any()) Directory.Delete(directory);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private static void Cancel(CancellationTokenSource? cancellation)
+    {
+        if (cancellation is null) return;
+        try { cancellation.Cancel(); }
+        catch (ObjectDisposedException) { }
     }
 
     private void SetState(AudioPreviewState state, string error)

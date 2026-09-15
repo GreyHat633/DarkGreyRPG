@@ -64,6 +64,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
             RewardEntries.Insert(prefix + index, new(this, entry.GetProperty("type").GetString()!,
                 entry.TryGetProperty("item", out var item) ? item.GetString() : null, entry.GetProperty("amount").GetInt32()));
         }
+        for (var index = 0; index < RewardEntries.Count; index++) RewardEntries[index].Number = index + 1;
         OnPropertyChanged(nameof(IsTaskReward));
         AddRewardEntryCommand.RaiseCanExecuteChanged();
     }
@@ -71,6 +72,13 @@ public sealed partial class CanonicalNodeInspectorViewModel
 
 public sealed class CanonicalTaskRewardEntryViewModel : ObservableObject
 {
+    private int _number;
+    public int Number
+    {
+        get => _number;
+        internal set { if (SetProperty(ref _number, value)) OnPropertyChanged(nameof(EntryTitle)); }
+    }
+    public string EntryTitle => $"奖励 {Number}";
     private readonly CanonicalNodeInspectorViewModel _owner;
     private string _type;
     private string? _item;

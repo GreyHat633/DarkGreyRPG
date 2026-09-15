@@ -117,6 +117,29 @@ public sealed class NumericDragAndWatermark0331Tests
     }
 
     [STATestMethod]
+    public void PreviewedEventBubblesEveryIntermediateValueAndCanceledEventIsSeparate()
+    {
+        var root = new Grid();
+        var box = new TextBox { Text = "1" };
+        root.Children.Add(box);
+        var previews = new List<string>();
+        var canceled = 0;
+        root.AddHandler(NumericDrag.PreviewedEvent, new RoutedEventHandler((_, args) =>
+        {
+            var preview = (NumericDrag.PreviewedEventArgs)args;
+            previews.Add($"{preview.BeforeText}->{preview.ValueText}");
+        }));
+        root.AddHandler(NumericDrag.CanceledEvent, new RoutedEventHandler((_, _) => canceled++));
+
+        box.RaiseEvent(new NumericDrag.PreviewedEventArgs("1", "2"));
+        box.RaiseEvent(new NumericDrag.PreviewedEventArgs("1", "3"));
+        box.RaiseEvent(new RoutedEventArgs(NumericDrag.CanceledEvent));
+
+        CollectionAssert.AreEqual(new[] { "1->2", "1->3" }, previews);
+        Assert.AreEqual(1, canceled);
+    }
+
+    [STATestMethod]
     public void PropertyChangedBindingReceivesOneSourceEditAfterGesture()
     {
         var model = new Probe("1");

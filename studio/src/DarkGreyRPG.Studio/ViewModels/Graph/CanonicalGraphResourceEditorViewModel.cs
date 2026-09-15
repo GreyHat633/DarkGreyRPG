@@ -28,6 +28,7 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         if (scope == GraphScope.Task)
             CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(Document.Graph);
         Host = new GraphEditorHostViewModel(Document.Graph, Document.Scope, layout);
+        Host.AuthoringResourceKey = CanonicalGraphLayoutStore.BuildGraphKey(envelope.ResourceKind, envelope.Id);
         _savedLayout = CreateLayoutSnapshot();
         UndoCommand = new RelayCommand(() => Host.Undo(), () => Host.CanUndo);
         RedoCommand = new RelayCommand(() => Host.Redo(), () => Host.CanRedo);

@@ -10,18 +10,25 @@
             <RowDefinition Height="8" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal">
+        <Grid MinWidth="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
             <Button Margin="0,0,4,0" Padding="8,4" Click="Zoom100_OnClick" Content="100%" AutomationProperties.Name="图编辑器缩放到百分之百" />
-            <Button Margin="0,0,4,0" Padding="8,4" Click="FitAll_OnClick" Content="适应" AutomationProperties.Name="适应全部图节点" />
-            <Button Margin="0,0,4,0" Padding="8,4" Click="ResetView_OnClick" Content="重置" AutomationProperties.Name="重置图视图" />
-            <Button x:Name="ScissorsButton" Margin="0,0,4,0" Padding="8,4" Click="Scissors_OnClick"
+            <Button Grid.Column="1" Margin="0,0,4,0" Padding="8,4" Click="FitAll_OnClick" Content="适应" AutomationProperties.Name="适应全部图节点" />
+            <Button Grid.Column="2" Margin="0,0,4,0" Padding="8,4" Click="ResetView_OnClick" Content="重置" AutomationProperties.Name="重置图视图" />
+            <Button Grid.Column="3" x:Name="ScissorsButton" Margin="0,0,4,0" Padding="8,4" Click="Scissors_OnClick"
                     Content="剪刀" ToolTip="剪断连线&#10;Alt 键" AutomationProperties.Name="剪断连线">
                 <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsReadOnly, ElementName=GraphRoot}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Button.Style>
             </Button>
-            <TextBlock Margin="8,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+            <TextBlock Grid.Column="4" Margin="8,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap">
                 <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放"/><Style.Triggers><DataTrigger Binding="{Binding IsReadOnly, ElementName=GraphRoot}" Value="True"><Setter Property="Text" Value="只读 · 中键平移 · 滚轮缩放 · 双击会话或任务进入子流程"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
             </TextBlock>
-        </StackPanel>
+        </Grid>
         <Border x:Name="CanvasViewport" Grid.Row="2" ClipToBounds="True" Background="{DynamicResource LayerFillColorAltBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5" Focusable="True" FocusVisualStyle="{x:Null}"
                 AutomationProperties.Name="节点图视口" AutomationProperties.AutomationId="CanonicalGraphViewport"

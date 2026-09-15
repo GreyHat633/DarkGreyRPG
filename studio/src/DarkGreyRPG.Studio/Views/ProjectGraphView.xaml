@@ -3,10 +3,7 @@
  xmlns:graph="clr-namespace:DarkGreyRPG.Studio.Views.Graph" Focusable="True" AutomationProperties.Name="故事图谱自由布局画布">
  <UserControl.Resources><BooleanToVisibilityConverter x:Key="VisibleWhen"/></UserControl.Resources>
  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <DockPanel Margin="0,0,0,8">
-   <TextBox x:Name="Search" Width="180" DockPanel.Dock="Left" TextChanged="SearchChanged" ToolTip="搜索故事，按 Enter 定位" KeyDown="SearchKeyDown" AutomationProperties.Name="搜索故事图谱"/>
-   <TextBlock Text="{Binding ConnectionSummary}" Margin="12,0" VerticalAlignment="Center"/>
-  </DockPanel>
+  <TextBlock Text="{Binding ConnectionSummary}" Margin="0,0,0,8" VerticalAlignment="Center"/>
   <graph:CanonicalGraphEditorView x:Name="Editor" Grid.Row="1" Host="{Binding CanonicalHost}"/>
   <StackPanel Grid.Row="2" Margin="0,8,0,0">
    <Expander Header="介绍说明" Foreground="{DynamicResource TextFillColorPrimaryBrush}" x:Name="Help"><TextBlock graph:AuthoringText.IsHelp="True" x:Name="HelpText" TextWrapping="Wrap"/></Expander>

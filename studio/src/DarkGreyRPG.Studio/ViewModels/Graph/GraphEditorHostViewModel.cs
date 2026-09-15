@@ -267,6 +267,22 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     private sealed record GraphHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
         : HostHistoryEntry(DisplacedRedo);
 
+    private sealed record EditorHistoryEntry(Action Undo, Action Redo, IReadOnlyList<HostHistoryEntry> DisplacedRedo)
+        : HostHistoryEntry(DisplacedRedo);
+
+    public string AuthoringResourceKey { get; internal set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>History for persisted editor-only metadata, never sent to Runtime.</summary>
+    public void EditMetadata(Action undo, Action redo)
+    {
+        var oldUndo = CanUndo; var oldRedo = CanRedo;
+        redo();
+        RecordHistory(new EditorHistoryEntry(undo, redo, _redoHistory.ToArray()));
+        NotifyHistoryStateChanged(oldUndo, oldRedo);
+    }
+
+    private static bool ApplyEditorHistory(Action action) { action(); return true; }
+
     private sealed record LayoutHistoryEntry(
         IReadOnlyDictionary<string, GraphEditorNodePosition> Before,
         IReadOnlyDictionary<string, GraphEditorNodePosition> After,
@@ -872,15 +888,12 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public bool SetNodeProperty(string nodeId, string property, JsonElement value)
         => ExecuteSession(() => _session.SetNodeProperty(nodeId, property, value));
 
-    private readonly Dictionary<string, string> _nativeActionTypes = new(StringComparer.Ordinal);
     public bool SetAdvancedActionMode(string nodeId, bool enabled)
     {
         var node = Nodes.FirstOrDefault(n => n.NodeId == nodeId);
         if (node is null || !node.Properties.TryGetValue("action_type", out var value)) return false;
-        var current = value.GetString() ?? CanonicalStoryActionSchema.SendMessage;
-        if (enabled && current != CanonicalStoryActionSchema.ExecuteCommand) _nativeActionTypes[nodeId] = current;
         var target = enabled ? CanonicalStoryActionSchema.ExecuteCommand
-            : _nativeActionTypes.GetValueOrDefault(nodeId, CanonicalStoryActionSchema.SendMessage);
+            : CanonicalStoryActionSchema.ActionTypes.First(type => type != CanonicalStoryActionSchema.ExecuteCommand);
         return ChangeStoryActionType(nodeId, target);
     }
 
@@ -1022,6 +1035,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         {
             GraphHistoryEntry => ApplyGraphHistory(_commandBridge.Undo, () => _commandBridge.LastValidationIssues),
             LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.Before, publishChange: true),
+            EditorHistoryEntry metadata => ApplyEditorHistory(metadata.Undo),
             _ => false,
         };
         if (!result) return false;
@@ -1040,6 +1054,7 @@ public sealed class GraphEditorHostViewModel : ObservableObject
         {
             GraphHistoryEntry => ApplyGraphHistory(_commandBridge.Redo, () => _commandBridge.LastValidationIssues),
             LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.After, publishChange: true),
+            EditorHistoryEntry metadata => ApplyEditorHistory(metadata.Redo),
             _ => false,
         };
         if (!result) return false;

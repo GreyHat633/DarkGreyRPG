@@ -91,18 +91,19 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
         ClearPortraitEditError();
         var name = proposedName?.Trim() ?? string.Empty;
         if (!SupportsPortraits || IsReadOnly)
-            return FailPortraitEdit("当前角色只读，无法修改头像差分。");
+            return FailPortraitEdit("当前角色只读，无法修改表情差分。");
         if (!Document.PortraitVariants.Contains(variant))
-            return FailPortraitEdit("选中的头像差分已不存在，请重新选择。");
+            return FailPortraitEdit("选中的表情差分已不存在，请重新选择。");
         if (string.IsNullOrWhiteSpace(name))
-            return FailPortraitEdit("头像差分名称不能为空。");
+            return FailPortraitEdit("表情差分名称不能为空。");
         if (Document.PortraitVariants.Any(value => !Equals(value, variant) && string.Equals(value.Name, name, StringComparison.Ordinal)))
-            return FailPortraitEdit("头像差分名称不能重复。");
+            return FailPortraitEdit("表情差分名称不能重复。");
         if (IsPortraitVariantReferenced?.Invoke(variant) == true)
-            return FailPortraitEdit("该头像差分仍被台词引用；请先解除引用或使用完整的引用同步操作。");
+            return FailPortraitEdit("该表情差分仍被台词引用；请先解除引用或使用完整的引用同步操作。");
 
         ApplyEdit(() => Document.SetPortraitVariants(Document.PortraitVariants.Select(value =>
             Equals(value, variant) ? value with { Name = name } : value)));
+        SelectedPortraitVariant = Document.PortraitVariants.First(value => value.Name == name);
         PortraitVariantName = name;
         return true;
     }
@@ -111,11 +112,11 @@ public sealed class ActorEditorViewModel : ObservableObject, IWorkspaceEditorVie
     {
         ClearPortraitEditError();
         if (!SupportsPortraits || IsReadOnly)
-            return FailPortraitEdit("当前角色只读，无法修改头像差分。");
+            return FailPortraitEdit("当前角色只读，无法修改表情差分。");
         if (!Document.PortraitVariants.Contains(variant))
-            return FailPortraitEdit("选中的头像差分已不存在，请重新选择。");
+            return FailPortraitEdit("选中的表情差分已不存在，请重新选择。");
         if (IsPortraitVariantReferenced?.Invoke(variant) == true)
-            return FailPortraitEdit("该头像差分仍被台词引用；请先解除引用，避免台词静默显示其他头像。");
+            return FailPortraitEdit("该表情差分仍被台词引用；请先解除引用，避免台词静默显示其他头像。");
 
         ApplyEdit(() => Document.SetPortraitVariants(Document.PortraitVariants.Where(value => !Equals(value, variant))));
         if (Equals(SelectedPortraitVariant, variant)) SelectedPortraitVariant = null;

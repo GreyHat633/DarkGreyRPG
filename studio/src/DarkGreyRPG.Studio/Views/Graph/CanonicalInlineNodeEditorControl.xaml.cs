@@ -31,11 +31,6 @@ public partial class CanonicalInlineNodeEditorControl : UserControl
     }
     private void ImportLineAudio_OnClick(object sender, RoutedEventArgs e) => WorkspaceView()?.ImportLineAudio_OnClick(sender, e);
     private void RemoveLineAudio_OnClick(object sender, RoutedEventArgs e) => WorkspaceView()?.RemoveLineAudio_OnClick(sender, e);
-    private void AudioPreview_ClearRequested(object? sender, EventArgs e)
-    {
-        if (Editor is { } inspector) { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
-    }
-
     private void DraftTextBox_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || sender is not TextBox { AcceptsReturn: false } textBox) return;

@@ -19,11 +19,11 @@
    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding ObjectiveRequiredError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
   </StackPanel>
   <StackPanel Visibility="{Binding IsItemObjective, Converter={StaticResource VisibleWhen}}">
-   <TextBlock Text="目标物品" Margin="0,6,0,2"/><ComboBox x:Name="ItemSelector" ItemsSource="{Binding ObjectiveItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveItemId, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
+   <TextBlock Text="目标物品" Margin="0,6,0,2"/><ComboBox graph:ResourceSelectorDrop.Kind="Item" x:Name="ItemSelector" ItemsSource="{Binding ObjectiveItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveItemId, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
    <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding ObjectiveItemStatusText}" TextWrapping="Wrap"/>
   </StackPanel>
   <StackPanel Visibility="{Binding HasObjectiveActor, Converter={StaticResource VisibleWhen}}">
-   <TextBlock Text="{Binding ObjectiveActorLabel}" Margin="0,6,0,2"/><ComboBox x:Name="ActorSelector" ItemsSource="{Binding ObjectiveActorOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveActorId, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
+   <TextBlock Text="{Binding ObjectiveActorLabel}" Margin="0,6,0,2"/><ComboBox graph:ResourceSelectorDrop.Kind="Actor" x:Name="ActorSelector" ItemsSource="{Binding ObjectiveActorOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedObjectiveActorId, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
    <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding ObjectiveActorStatusText}" TextWrapping="Wrap"/>
   </StackPanel>
   <StackPanel Visibility="{Binding IsReachRegionObjective, Converter={StaticResource VisibleWhen}}">

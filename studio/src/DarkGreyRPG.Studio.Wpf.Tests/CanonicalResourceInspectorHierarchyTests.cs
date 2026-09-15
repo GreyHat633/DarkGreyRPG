@@ -74,6 +74,13 @@ public sealed class CanonicalResourceInspectorHierarchyTests
                 window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.DataBind);
                 window.UpdateLayout();
                 var scroll = Descendants<ScrollViewer>(view).Single(s => AutomationProperties.GetAutomationId(s) == "CanonicalInspectorScrollViewer");
+                if (type == "screen")
+                {
+                    Assert.IsFalse(Descendants<TextBox>(scroll).Any(t => t.IsVisible));
+                    var header = Descendants<Button>(scroll).Single(b => Equals(b.Tag, "screen-layer-properties-header"));
+                    header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    window.UpdateLayout();
+                }
                 var fields = Descendants<TextBox>(scroll).Where(t => t.IsVisible).ToArray();
                 Assert.IsTrue(fields.Length > 0, $"{type} inspector must expose actual editable controls.");
             }

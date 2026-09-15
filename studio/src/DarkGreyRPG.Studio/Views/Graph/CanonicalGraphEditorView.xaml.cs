@@ -120,6 +120,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private bool _hostFromDataContext;
     private bool _settingHostFromDataContext;
     private bool _layoutRefreshPending;
+    private bool _viewportResizeTrackingEnabled;
 
     public static readonly DependencyProperty HostProperty = DependencyProperty.Register(
         nameof(Host), typeof(GraphEditorHostViewModel), typeof(CanonicalGraphEditorView),
@@ -173,6 +174,7 @@ public partial class CanonicalGraphEditorView : UserControl
         InitializeComponent();
         GraphCanvas.RenderTransform = new TransformGroup { Children = [_scale, _translate] };
         DataContextChanged += OnDataContextChanged;
+        CanvasViewport.SizeChanged += CanvasViewport_OnSizeChanged;
         Loaded += View_OnLoaded;
         Unloaded += View_OnUnloaded;
         if (host is not null) Host = host;
@@ -185,6 +187,7 @@ public partial class CanonicalGraphEditorView : UserControl
     }
 
     public GraphEditorHostViewModel? ViewModel => Host;
+    public Action<Point>? ProjectStoryCreateRequested { get; set; }
     public GraphViewportController ViewportController => _viewportController;
     public GraphViewportState? ViewportState
     {
@@ -334,7 +337,7 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Creates and explicitly commits one safe candidate through Host.</summary>
     public bool AddNodeAt(string? nodeType, double x, double y)
     {
-        if (IsReadOnly) return false;
+        if (IsReadOnly || Host?.Scope == GraphScope.Project) return false;
         var result = CreateNodeAt(nodeType, x, y);
         if (!result.IsSuccess || result.Candidate is not { } candidate || Host is not { } host)
             return false;
@@ -354,6 +357,13 @@ public partial class CanonicalGraphEditorView : UserControl
     public ContextMenu CreateCanvasContextMenu(Point graphPoint)
     {
         var menu = FluentContextMenuFactory.Create(GraphCanvas);
+        if (Host?.Scope == GraphScope.Project)
+        {
+            menu.Items.Add(FluentContextMenuFactory.CreateItem("添加故事",
+                () => { if (!IsReadOnly) ProjectStoryCreateRequested?.Invoke(graphPoint); },
+                !IsReadOnly && ProjectStoryCreateRequested is not null));
+            return menu;
+        }
         var add = FluentContextMenuFactory.CreateSubmenu("添加节点");
         foreach (var category in AuthoringCategories)
         {
@@ -394,16 +404,35 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void View_OnLoaded(object sender, RoutedEventArgs args)
     {
+        _viewportResizeTrackingEnabled = false;
         AttachHost(_host);
         RebuildGraph();
         RestoreViewport(ViewportState);
+        _viewportResizeTrackingEnabled = true;
     }
 
     private void View_OnUnloaded(object sender, RoutedEventArgs args)
     {
+        _viewportResizeTrackingEnabled = false;
         if (ViewportState is { } state) CaptureViewport(state);
         CancelPointerGesture();
         DetachHost(_host);
+    }
+
+    private void CanvasViewport_OnSizeChanged(object sender, SizeChangedEventArgs args)
+    {
+        if (!_viewportResizeTrackingEnabled
+            || !IsUsableViewportSize(args.PreviousSize)
+            || !IsUsableViewportSize(args.NewSize)
+            || (args.PreviousSize == args.NewSize)) return;
+
+        // Pan is measured in viewport pixels. Moving the viewport centre by
+        // half the visible-size delta keeps the same graph point at centre,
+        // while leaving zoom and every graph/layout value unchanged.
+        _viewportController.PanBy(
+            (args.NewSize.Width - args.PreviousSize.Width) / 2,
+            (args.NewSize.Height - args.PreviousSize.Height) / 2);
+        ApplyViewport();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs args)
@@ -2095,6 +2124,10 @@ public partial class CanonicalGraphEditorView : UserControl
     private void FitAll_OnClick(object sender, RoutedEventArgs e) => FitAllNodes();
     private void ResetView_OnClick(object sender, RoutedEventArgs e) { _viewportController.ResetView(); ApplyViewport(); }
     private Point ViewportCenter() => new(Math.Max(1, CanvasViewport.ActualWidth) / 2, Math.Max(1, CanvasViewport.ActualHeight) / 2);
+
+    private static bool IsUsableViewportSize(Size size)
+        => double.IsFinite(size.Width) && double.IsFinite(size.Height)
+            && size.Width > 0 && size.Height > 0;
 
     private static PathGeometry WireGeometry(Point start, Point end)
     {

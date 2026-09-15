@@ -388,7 +388,7 @@
                                   AutomationProperties.Name="Story Start repeatable" />
                         <Grid Margin="0,12,0,3">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                            <TextBlock FontWeight="SemiBold" Text="启动条件" />
+                            <TextBlock FontWeight="SemiBold" Text="{Binding StoryStartTriggers.Count, StringFormat=启动条件（共 {0} 条）}" />
                             <Button Grid.Column="1" Width="26" Height="24" Padding="5" Command="{Binding AddStoryStartTriggerCommand}"
                                     ToolTip="添加启动条件" AutomationProperties.AutomationId="StoryStartAddTrigger" AutomationProperties.Name="添加启动条件">
                                 <Viewbox><Canvas Width="16" Height="16"><Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="2" StrokeStartLineCap="Round" Data="M 8,2 L 8,14 M 2,8 L 14,8" /></Canvas></Viewbox>
@@ -397,7 +397,7 @@
                         <ItemsControl ItemsSource="{Binding StoryStartTriggers}" AutomationProperties.AutomationId="StoryStartTriggerList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,4" Padding="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
+                                    <Border Margin="0,0,0,10" Padding="8" BorderBrush="#727272" BorderThickness="1" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                                         <StackPanel>
                                             <Grid>
                                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -405,7 +405,7 @@
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                                     <Button Margin="3,0,0,0" Padding="4,1" Content="↑" Command="{Binding MoveUpCommand}" ToolTip="上移" />
                                                     <Button Margin="2,0,0,0" Padding="4,1" Content="↓" Command="{Binding MoveDownCommand}" ToolTip="下移" />
-                                                    <Button Margin="2,0,0,0" Padding="4,1" Content="−" Command="{Binding RemoveCommand}" ToolTip="删除启动条件" />
+                                                    <Button Margin="2,0,0,0" Padding="6,2" Content="删除" Command="{Binding RemoveCommand}" ToolTip="删除启动条件" />
                                                 </StackPanel>
                                             </Grid>
                                             <TextBlock Margin="0,8,0,3" Text="名称" />
@@ -422,7 +422,7 @@
                                             <TextBlock Margin="0,8,0,3" Text="目标角色" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                                                 <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                             </TextBlock>
-                                            <ComboBox ItemsSource="{Binding ActorOptions}"
+                                            <ComboBox graph:ResourceSelectorDrop.Kind="Actor" ItemsSource="{Binding ActorOptions}"
                                                       SelectedItem="{Binding SelectedActor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                       DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="StoryStartTriggerActorId">
                                                 <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsActorInteraction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
@@ -452,23 +452,23 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                    <CheckBox Content="高级选项" IsChecked="{Binding AdvancedActions}" Margin="0,8,0,0" ToolTip="开启指令执行；关闭后恢复先前原生类型，可撤销。">
+                    <CheckBox Content="高级选项" IsChecked="{Binding AdvancedActions}" Margin="0,8,0,0" ToolTip="切换后选中执行类型列表第一项，可撤销。">
                         <CheckBox.Style><Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></CheckBox.Style>
                     </CheckBox>
                     <TextBlock Margin="0,10,0,3" Text="执行类型" AutomationProperties.AutomationId="StoryActionTypeLabel">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
-                    <ComboBox ItemsSource="{Binding StoryActionTypeOptions}"
-                              SelectedItem="{Binding SelectedStoryActionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    <graph:ActionTypeSelector ItemsSource="{Binding StoryActionTypeOptions}"
+                              SelectedValuePath="Value" ActionType="{Binding StoryActionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="DisplayName"
                               AutomationProperties.AutomationId="StoryActionTypeSelector"
                               AutomationProperties.Name="Story Action type selector">
-                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
-                    </ComboBox>
+                        <graph:ActionTypeSelector.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsStoryAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></graph:ActionTypeSelector.Style>
+                    </graph:ActionTypeSelector>
                     <TextBlock Margin="0,10,0,3" Text="物品" AutomationProperties.AutomationId="StoryActionItemLabel">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
-                    <ComboBox ItemsSource="{Binding StoryActionItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedStoryActionItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    <ComboBox graph:ResourceSelectorDrop.Kind="Item" ItemsSource="{Binding StoryActionItemOptions}" SelectedValuePath="Id" SelectedValue="{Binding SelectedStoryActionItemId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="DisplayName" IsEditable="False" AutomationProperties.AutomationId="StoryActionItem">
                         <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                     </ComboBox>
@@ -534,11 +534,11 @@
                             <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ModBuff}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                             <TextBlock Text="ModID" Margin="0,4,0,0" /><TextBox graph:TextInputWatermark.Text="输入 MOD ID" Text="{Binding BuffModId, UpdateSourceTrigger=LostFocus}" />
                             <TextBlock Text="BUFF内部名称" Margin="0,4,0,0" /><TextBox graph:TextInputWatermark.Text="输入效果内部名称" Text="{Binding BuffInternalName, UpdateSourceTrigger=LostFocus}" />
-                            <TextBlock Text="在游戏中使用 /dgr buff list 或 /dgr buff export 查询准确名称。" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            <TextBlock graph:AuthoringText.IsHelp="True" Text="在游戏中使用 /dgr buff list 或 /dgr buff export 查询准确名称。" TextWrapping="Wrap" Margin="0,3,0,0" />
                         </StackPanel>
                         <TextBlock Text="持续时间（增减）（秒）" Margin="0,5,0,0" /><TextBox graph:NumericDrag.Step="1" Text="{Binding BuffDurationDelta, UpdateSourceTrigger=LostFocus}" />
                         <TextBlock Text="等级（增减）（等级从 1 开始）" Margin="0,5,0,0" /><TextBox graph:NumericDrag.Step="1" Text="{Binding BuffLevelDelta, UpdateSourceTrigger=LostFocus}" />
-                        <TextBlock Text="持续时间或等级减至 0 时移除效果；结果等级最高 128。" TextWrapping="Wrap" Margin="0,3,0,0" />
+                        <TextBlock graph:AuthoringText.IsHelp="True" Text="持续时间或等级减至 0 时移除效果；结果等级最高 128。" TextWrapping="Wrap" Margin="0,3,0,0" />
                     </StackPanel>
                     <StackPanel Margin="0,8,0,0">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsCommandAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
@@ -556,7 +556,7 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <ComboBox ItemsSource="{Binding SpeakerOptions}"
+                    <ComboBox graph:ResourceSelectorDrop.Kind="Actor" ItemsSource="{Binding SpeakerOptions}"
                               SelectedValuePath="Id" SelectedValue="{Binding SelectedSpeakerId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="DisplayName"
                               IsEditable="False"
@@ -586,7 +586,12 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <TextBlock Margin="0,10,0,3" Text="台词文本">
+                    <StackPanel>
+                        <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasLineSpeaker}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                        <TextBlock Margin="0,10,0,3" Text="头像"/>
+                        <ComboBox ItemsSource="{Binding PortraitVariantOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectedValue="{Binding SelectedPortraitVariant, Mode=TwoWay}" AutomationProperties.AutomationId="SessionPortraitVariant"/>
+                    <views:PortraitPreviewControl Margin="0,6,0,0" MediaRef="{Binding SelectedPortraitMediaRef}" Actor="{Binding SelectedPortraitActor}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" AutomationProperties.AutomationId="LinePortraitPreview"/></StackPanel>
+<TextBlock Margin="0,10,0,3" Text="台词文本">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -604,25 +609,21 @@
                         </TextBox.Style>
                     </TextBox>
                     <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LineTextError}" TextWrapping="Wrap" />
-                    <StackPanel>
-                        <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasLineSpeaker}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                        <TextBlock Margin="0,10,0,3" Text="头像差分"/>
-                        <ComboBox ItemsSource="{Binding PortraitVariantOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectedValue="{Binding SelectedPortraitVariant, Mode=TwoWay}" AutomationProperties.AutomationId="SessionPortraitVariant"/>
-                    </StackPanel>
+
                     <StackPanel Margin="0,10,0,0">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsLine}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                        <TextBlock Text="本句语音" Margin="0,0,0,3"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="导入音频…" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportLineAudio"/>
-                            <Button Content="移除语音" Margin="6,0,0,0" Click="RemoveLineAudio_OnClick"/>
-                        </StackPanel>
-                        <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding LineVoiceStatus}" Margin="0,3,0,0"/><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
+                        <CheckBox Content="语音/音效" IsChecked="{Binding IsLineAudioEnabled, Mode=TwoWay}" AutomationProperties.AutomationId="EnableLineAudio" />
+                            <Border Margin="0,5,0,0" Padding="8" BorderBrush="#727272" BorderThickness="1" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                                <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsLineAudioEnabled}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                <StackPanel><UniformGrid Columns="2"><Button Content="导入" Margin="0,0,3,0" HorizontalAlignment="Stretch" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportLineAudio"/><Button Content="移除" Margin="3,0,0,0" HorizontalAlignment="Stretch" Click="RemoveLineAudio_OnClick"/></UniformGrid>
+                        <views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/></StackPanel>
+                            </Border>
                     </StackPanel>
                     <StackPanel Margin="0,10,0,0">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsMusic}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                         <TextBlock Text="音乐"/>
                         <WrapPanel><Button Content="导入音乐…" Click="ImportLineAudio_OnClick"/><Button Content="停止音乐" Click="RemoveLineAudio_OnClick"/></WrapPanel>
-                        <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding MusicStatus}"/><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
+                        <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding MusicStatus}"/><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
                         <CheckBox Content="循环" IsChecked="{Binding MusicLoop, Mode=TwoWay}"/>
                         <TextBlock Text="淡入（秒）"/><TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                         <TextBlock Text="淡出（秒）"/><TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
@@ -701,27 +702,7 @@
                     </StackPanel>
                     <StackPanel Margin="0,8,0,6">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsTaskReward}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                        <TextBlock Text="奖励内容" FontWeight="SemiBold" />
-                        <TextBlock graph:AuthoringText.IsHelp="True" Text="正数给予，负数扣除，零不操作。每个任务实例只发放一次。" TextWrapping="Wrap" Margin="0,3,0,6" />
-                        <ItemsControl ItemsSource="{Binding RewardEntries}" AutomationProperties.AutomationId="TaskRewardEntries">
-                            <ItemsControl.ItemTemplate><DataTemplate>
-                                <StackPanel Margin="0,3">
-                                    <Grid>
- <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
- <StackPanel><TextBlock Text="类型"/><ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding SelectedType}" DisplayMemberPath="DisplayName"/></StackPanel>
- <Button Grid.Column="1" Content="−" Command="{Binding RemoveCommand}" Margin="5,18,0,0" Padding="6,1" ToolTip="删除奖励条目"/>
-</Grid>
-<TextBlock Text="数量（增减）" Margin="0,5,0,2"/>
-<TextBox graph:NumericDrag.Step="1" Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}" ToolTip="正数给予，负数扣除，零不操作。"/>
-<TextBlock Text="物品" Margin="0,5,0,2"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsItem}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-                                    <ComboBox ItemsSource="{Binding ItemOptions}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="DisplayName" Margin="0,3,0,0">
-                                        <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsItem}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
-                                    </ComboBox>
-                                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding Error}" Foreground="OrangeRed" TextWrapping="Wrap" />
-                                </StackPanel>
-                            </DataTemplate></ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <Button Content="+ 添加奖励" Command="{Binding AddRewardEntryCommand}" HorizontalAlignment="Left" Margin="0,5,0,0" />
+                        <graph:RewardEntriesEditor />
                     </StackPanel>
                     <ItemsControl ItemsSource="{Binding TaskResultSlots}">
                         <ItemsControl.Style>

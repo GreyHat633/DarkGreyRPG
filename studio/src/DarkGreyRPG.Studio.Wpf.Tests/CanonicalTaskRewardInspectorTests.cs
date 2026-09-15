@@ -20,6 +20,7 @@ public sealed class CanonicalTaskRewardInspectorTests
         Assert.IsTrue(inspector.IsTaskReward);
         Assert.AreEqual(1, inspector.RewardItemOptions.Count);
         Assert.HasCount(1, inspector.RewardEntries);
+        Assert.AreEqual("奖励 1", inspector.RewardEntries[0].EntryTitle);
         var row = inspector.RewardEntries.Single();
         Assert.AreEqual("item", row.SelectedType.Value);
         Assert.AreEqual("1", row.AmountText);
@@ -35,11 +36,14 @@ public sealed class CanonicalTaskRewardInspectorTests
         Assert.AreEqual("", row.Error);
         inspector.AddRewardEntryCommand.Execute(null);
         Assert.AreEqual(2, inspector.RewardEntries.Count);
+        CollectionAssert.AreEqual(new[] { "奖励 1", "奖励 2" }, inspector.RewardEntries.Select(entry => entry.EntryTitle).ToArray());
         inspector.RewardEntries.Last().AmountText = "250";
         inspector.RewardEntries.First().RemoveCommand.Execute(null);
         Assert.AreEqual(1, inspector.RewardEntries.Count);
+        Assert.AreEqual("奖励 1", inspector.RewardEntries[0].EntryTitle);
         Assert.IsTrue(editor.Host.Undo());
         Assert.AreEqual(2, inspector.RewardEntries.Count);
+        CollectionAssert.AreEqual(new[] { "奖励 1", "奖励 2" }, inspector.RewardEntries.Select(entry => entry.EntryTitle).ToArray());
         var json = GraphSerializer.Serialize(editor.Host.Graph);
         Assert.AreEqual(2, GraphSerializer.Deserialize(json).Nodes.Single().Properties["entries"].GetArrayLength());
     }

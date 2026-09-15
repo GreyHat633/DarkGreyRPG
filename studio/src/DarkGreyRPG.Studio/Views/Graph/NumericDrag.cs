@@ -16,6 +16,10 @@ public static class NumericDrag
     public static readonly DependencyProperty MaximumProperty = DependencyProperty.RegisterAttached("Maximum", typeof(double), typeof(NumericDrag), new PropertyMetadata((double)int.MaxValue));
     public static readonly RoutedEvent CommittedEvent = EventManager.RegisterRoutedEvent(
         "Committed", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(NumericDrag));
+    public static readonly RoutedEvent PreviewedEvent = EventManager.RegisterRoutedEvent(
+        "Previewed", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(NumericDrag));
+    public static readonly RoutedEvent CanceledEvent = EventManager.RegisterRoutedEvent(
+        "Canceled", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(NumericDrag));
 
     public static void SetStep(DependencyObject target, double value) => target.SetValue(StepProperty, value);
     public static double GetStep(DependencyObject target) => (double)target.GetValue(StepProperty);
@@ -27,9 +31,26 @@ public static class NumericDrag
         => ((UIElement)target).AddHandler(CommittedEvent, handler);
     public static void RemoveCommittedHandler(DependencyObject target, RoutedEventHandler handler)
         => ((UIElement)target).RemoveHandler(CommittedEvent, handler);
+    public static void AddPreviewedHandler(DependencyObject target, RoutedEventHandler handler)
+        => ((UIElement)target).AddHandler(PreviewedEvent, handler);
+    public static void RemovePreviewedHandler(DependencyObject target, RoutedEventHandler handler)
+        => ((UIElement)target).RemoveHandler(PreviewedEvent, handler);
+    public static void AddCanceledHandler(DependencyObject target, RoutedEventHandler handler)
+        => ((UIElement)target).AddHandler(CanceledEvent, handler);
+    public static void RemoveCanceledHandler(DependencyObject target, RoutedEventHandler handler)
+        => ((UIElement)target).RemoveHandler(CanceledEvent, handler);
+    public static bool HasActiveGesture(DependencyObject target)
+        => target.GetValue(StateProperty) is Gesture { Pending: true };
 
     /// <summary>Details of one completed numeric drag gesture.</summary>
     public sealed class CommittedEventArgs(string beforeText, string valueText) : RoutedEventArgs(CommittedEvent)
+    {
+        public string BeforeText { get; } = beforeText;
+        public string ValueText { get; } = valueText;
+    }
+
+    /// <summary>Details of the current numeric drag preview, raised for every movement.</summary>
+    public sealed class PreviewedEventArgs(string beforeText, string valueText) : RoutedEventArgs(PreviewedEvent)
     {
         public string BeforeText { get; } = beforeText;
         public string ValueText { get; } = valueText;
@@ -72,7 +93,9 @@ public static class NumericDrag
                 state.Dragging = true; state.CursorBefore = box.Cursor; box.Focus(); box.Cursor = Cursors.SizeWE;
             }
             var value = Math.Clamp(state.Number + Math.Truncate(delta / 4) * GetStep(box), GetMinimum(box), GetMaximum(box));
-            box.Text = value.ToString("0.########", CultureInfo.InvariantCulture); e.Handled = true;
+            box.Text = value.ToString("0.########", CultureInfo.InvariantCulture);
+            box.RaiseEvent(new PreviewedEventArgs(state.Before, box.Text));
+            e.Handled = true;
         };
         box.PreviewMouseLeftButtonUp += (_, e) =>
         {
@@ -97,7 +120,6 @@ public static class NumericDrag
             var box = state.Box; var value = commit ? box.Text : state.Before;
             var dragged = state.Dragging;
             var binding = state.Binding;
-            var changed = dragged && commit && !string.Equals(value, state.Before, StringComparison.Ordinal);
             if (dragged)
             {
                 if (binding is not null)
@@ -126,8 +148,10 @@ public static class NumericDrag
             if (state.CursorBefore is null) box.ClearValue(FrameworkElement.CursorProperty);
             else box.Cursor = state.CursorBefore;
             state.CursorBefore = null;
-            if (changed)
+            if (dragged && commit)
                 box.RaiseEvent(new CommittedEventArgs(state.Before, value));
+            else if (dragged && !commit)
+                box.RaiseEvent(new RoutedEventArgs(CanceledEvent));
             // A drag is a model history action. Do not leave keyboard focus in
             // TextBox's private undo stack; a subsequent click still enters text.
             if (dragged) box.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>

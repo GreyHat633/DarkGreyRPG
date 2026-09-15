@@ -64,6 +64,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         _host = host ?? throw new ArgumentNullException(nameof(host));
         Node = node ?? throw new ArgumentNullException(nameof(node));
         _actorItems = (actorItems ?? []).Where(item => item is not null).ToArray();
+        foreach (var actor in _actorItems) actor.PortraitsChanged += OnActorPortraitsChanged;
         _itemItems = (itemItems ?? []).Where(item => item is not null).ToArray();
         RewardItemOptions = _itemItems.Where(item => item.Item is IndividualItemResource)
             .Select(item => new CanonicalResourceSelectionOption(item.Id, item.DisplayName, true, item)).ToArray();
@@ -72,6 +73,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         AddTaskResultSlotCommand = new RelayCommand(() => AddTaskResultSlot(), () => IsTaskSettle);
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
         AddRewardEntryCommand = new RelayCommand(AddRewardEntry, () => IsTaskReward);
+        AudioState.Changed += OnLineAudioStateChanged;
         RefreshFromHost();
         if (_subscribeToHostChanges) _host.NodesChanged += HostOnNodesChanged;
         _host.PropertyChanged += HostOnPropertyChanged;
@@ -131,7 +133,11 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         }
     }
 
-    public string StoryActionType => _actionType;
+    public string StoryActionType
+    {
+        get => _actionType;
+        set => SelectedStoryActionType = StoryActionTypeOptions.FirstOrDefault(option => option.Value == value);
+    }
     public string StoryActionItem
     {
         get => _actionItem;
@@ -659,6 +665,8 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     {
         if (_disposed) return;
         _disposed = true;
+        AudioState.Changed -= OnLineAudioStateChanged;
+        foreach (var actor in _actorItems) actor.PortraitsChanged -= OnActorPortraitsChanged;
         if (_subscribeToHostChanges) _host.NodesChanged -= HostOnNodesChanged;
         _host.PropertyChanged -= HostOnPropertyChanged;
     }
@@ -1002,9 +1010,12 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         }
 
         OnPropertyChanged(nameof(PortraitVariantOptions));
+        OnPropertyChanged(nameof(SelectedPortraitMediaRef));
+        OnPropertyChanged(nameof(SelectedPortraitActor));
         OnPropertyChanged(nameof(SelectedPortraitVariant));
         OnPropertyChanged(nameof(HasLineSpeaker));
         OnPropertyChanged(nameof(LineVoiceRef));
+        OnPropertyChanged(nameof(IsLineAudioEnabled));
         OnPropertyChanged(nameof(AudioMediaRef));
         OnPropertyChanged(nameof(LineVoiceStatus));
         NotifyPresentation();

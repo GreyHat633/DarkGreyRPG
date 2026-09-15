@@ -41,12 +41,6 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         if (sender is Button { DataContext: CanonicalNodeInspectorViewModel inspector }) { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
     }
-    private void AudioPreview_ClearRequested(object? sender, EventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: CanonicalNodeInspectorViewModel inspector })
-        { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
-    }
-
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";
     private static readonly Vector ResourceNodePointerAnchor = new(116d, 46d);
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;

@@ -51,7 +51,7 @@ public static class CanonicalStoryActionSchema
         _ => new HashSet<string>(StringComparer.Ordinal),
     };
 
-    public static void InitializeDefault(GraphNode node) => InitializeType(node, SendMessage);
+    public static void InitializeDefault(GraphNode node) => InitializeType(node, ActionTypes[0]);
 
     public static bool TryInitializeType(GraphNode node, string? type, out IReadOnlyList<ValidationIssue> issues)
     {

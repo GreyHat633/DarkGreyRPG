@@ -32,6 +32,27 @@ public sealed record CanonicalStoryActorItem(
     CanonicalStoryWorkspaceMembershipKind MembershipKind = CanonicalStoryWorkspaceMembershipKind.Owned)
     : ICanonicalStoryTreeItem
 {
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<CanonicalStoryActorItem, ActorPortraitState> PortraitStates = new();
+    private ActorPortraitState _portraitState => PortraitStates.GetValue(this, item => new(item.Actor));
+    public ActorResourceInfo PortraitSource => _portraitState.Source;
+    public event EventHandler? PortraitsChanged
+    {
+        add => _portraitState.Changed += value;
+        remove => _portraitState.Changed -= value;
+    }
+    public void UpdatePortraits(string? defaultPortrait, IReadOnlyList<ActorPortraitVariant> variants)
+    {
+        _portraitState.Source = Actor with { DefaultPortraitRef = defaultPortrait, PortraitVariants = variants.ToArray() };
+        _portraitState.Notify(this);
+    }
+    // Keep the record's equality/hash stable while live media and subscribers change.
+    // WPF selectors retain these resource records in their item lookup tables.
+    private sealed class ActorPortraitState(ActorResourceInfo source)
+    {
+        public ActorResourceInfo Source = source;
+        public event EventHandler? Changed;
+        public void Notify(object sender) => Changed?.Invoke(sender, EventArgs.Empty);
+    }
     public OfflineProviderResource? Provider { get; init; }
     public bool IsReadOnly => Provider is not null;
     public string ProviderPackageText => Provider?.PackageIdentity.ToString() ?? string.Empty;
@@ -480,7 +501,16 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
             if (InspectorSelection is not CanonicalStoryActorItem actor) return null;
             if (_portraitEditors.TryGetValue(actor.Id, out var editor)) return editor;
             editor = PortraitEditorFactory?.Invoke(actor);
-            if (editor is not null) _portraitEditors[actor.Id] = editor;
+            if (editor is not null)
+            {
+                _portraitEditors[actor.Id] = editor;
+                editor.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName is nameof(ActorEditorViewModel.DefaultPortraitRef) or nameof(ActorEditorViewModel.PortraitVariants))
+                        actor.UpdatePortraits(editor.DefaultPortraitRef, editor.PortraitVariants);
+                };
+                actor.UpdatePortraits(editor.DefaultPortraitRef, editor.PortraitVariants);
+            }
             return editor;
         }
     }

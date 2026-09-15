@@ -88,6 +88,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void StoryActionInspectorAtomicallySwitchesPayloadAndStagesInvalidFields()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action-1");
+        Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(action, CanonicalStoryActionSchema.SendMessage, out _));
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([action])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());

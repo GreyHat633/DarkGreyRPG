@@ -13,6 +13,7 @@ namespace DarkGreyRPG.Studio.ViewModels;
 public sealed partial class ProjectGraphViewModel
 {
     public GraphEditorHostViewModel? CanonicalHost { get; private set; }
+    public Action<double, double>? CreateStoryRequested { get; set; }
     public string ConnectionSummary => CanonicalHost is null ? "" : $"{CanonicalHost.Nodes.Count} 个故事 · {CanonicalHost.Connections.Count} 条连接";
     private bool _savingCanonical;
     private Func<bool>? _saveBoundarySource;

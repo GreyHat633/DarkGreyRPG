@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DarkGreyRPG.Studio.Core.Actors;
@@ -19,10 +20,11 @@ namespace DarkGreyRPG.Studio.Views;
 public sealed class ActorPortraitEditor : UserControl
 {
     private ActorEditorViewModel? _editor;
-    private readonly Border _defaultPreview = new() { Width = 96, Height = 96, Margin = new Thickness(0, 4, 10, 4) };
+    private readonly Border _defaultPreview = new() { Width = 96, Height = 96, ClipToBounds = true, Margin = new Thickness(0, 4, 10, 4) };
     private readonly TextBlock _defaultStatus = new() { VerticalAlignment = VerticalAlignment.Center };
     private readonly ListBox _variants = new() { Height = 146, MinHeight = 96, HorizontalContentAlignment = HorizontalAlignment.Stretch };
     private readonly TextBox _variantName = new() { MinWidth = 180 };
+    private readonly StackPanel _renameRow = new() { Orientation = Orientation.Horizontal, Visibility = Visibility.Collapsed };
     private readonly TextBlock _error = new() { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel _root = new();
     private bool _refreshing;
@@ -35,6 +37,7 @@ public sealed class ActorPortraitEditor : UserControl
         BuildVisualTree();
         DataContextChanged += OnDataContextChanged;
         _variants.SelectionChanged += OnVariantSelectionChanged;
+        _variants.PreviewKeyDown += (_, args) => { if (args.Key == Key.F2) { BeginRename(); args.Handled = true; } };
     }
 
     public static readonly DependencyProperty ProjectDirectoryProperty = DependencyProperty.Register(
@@ -103,18 +106,18 @@ public sealed class ActorPortraitEditor : UserControl
     public async Task<bool> ImportVariantAsync(string source, string? name = null, CancellationToken cancellationToken = default)
     {
         if (!CanEdit(out var editor)) return false;
-        var variantName = (name ?? editor.PortraitVariantName).Trim();
-        if (string.IsNullOrWhiteSpace(variantName) || editor.PortraitVariants.Any(value => value.Name == variantName))
-        {
-            SetError("头像差分名称不能为空且不能重复。");
-            return false;
-        }
+        var variantName = (name ?? Path.GetFileNameWithoutExtension(source)).Trim();
+        if (string.IsNullOrWhiteSpace(variantName)) variantName = "表情";
+        var baseName = variantName;
+        for (var suffix = 1; editor.PortraitVariants.Any(value => value.Name == variantName); suffix++)
+            variantName = $"{baseName}({suffix})";
 
         try
         {
             var media = await CreateStore().ImportImageAsync(source, cancellationToken);
             editor.SetPortraitVariants([.. editor.PortraitVariants, new ActorPortraitVariant(variantName, media.MediaRef)]);
             editor.PortraitVariantName = variantName;
+            editor.SelectedPortraitVariant = editor.PortraitVariants.Last();
             SetError(string.Empty);
             return true;
         }
@@ -127,7 +130,7 @@ public sealed class ActorPortraitEditor : UserControl
 
     public bool RenameSelected(string? name)
     {
-        if (_editor?.SelectedPortraitVariant is not { } selected) return SetErrorAndFalse("请先选择一个头像差分。");
+        if (_editor?.SelectedPortraitVariant is not { } selected) return SetErrorAndFalse("请先选择一个表情差分。");
         var success = _editor.TryRenamePortraitVariant(selected, name);
         SetError(success ? string.Empty : _editor.PortraitEditError);
         return success;
@@ -135,7 +138,7 @@ public sealed class ActorPortraitEditor : UserControl
 
     public bool RemoveSelected()
     {
-        if (_editor?.SelectedPortraitVariant is not { } selected) return SetErrorAndFalse("请先选择一个头像差分。");
+        if (_editor?.SelectedPortraitVariant is not { } selected) return SetErrorAndFalse("请先选择一个表情差分。");
         var success = _editor.TryRemovePortraitVariant(selected);
         SetError(success ? string.Empty : _editor.PortraitEditError);
         return success;
@@ -165,18 +168,25 @@ public sealed class ActorPortraitEditor : UserControl
         defaultRow.Children.Add(defaultActions);
         _root.Children.Add(defaultRow);
 
-        _root.Children.Add(new TextBlock { Text = "头像差分", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 3) });
+        _root.Children.Add(new TextBlock { Text = "表情差分", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 3) });
         _root.Children.Add(_variants);
-        var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
-        nameRow.Children.Add(new TextBlock { Text = "名称", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
-        nameRow.Children.Add(_variantName);
-        _root.Children.Add(nameRow);
+        _renameRow.Margin = new Thickness(0, 5, 0, 0);
+        _renameRow.Children.Add(_variantName);
+        var confirmRename = NamedButton("确定", "确定重命名");
+        confirmRename.Click += (_, _) => CommitRename();
+        _renameRow.Children.Add(confirmRename);
+        _variantName.KeyDown += (_, args) =>
+        {
+            if (args.Key == Key.Enter) { CommitRename(); args.Handled = true; }
+            else if (args.Key == Key.Escape) { _renameRow.Visibility = Visibility.Collapsed; _variants.Focus(); args.Handled = true; }
+        };
+        _root.Children.Add(_renameRow);
         var variantActions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
-        var importVariant = NamedButton("导入差分…", "导入头像差分", new Thickness(0, 0, 6, 0));
+        var importVariant = NamedButton("导入", "导入表情差分", new Thickness(0, 0, 6, 0));
         importVariant.Click += async (_, _) => await PickAndImportVariantAsync(importVariant);
-        var rename = NamedButton("重命名", "重命名头像差分", new Thickness(0, 0, 6, 0));
-        rename.Click += (_, _) => RenameSelected(_variantName.Text);
-        var remove = NamedButton("删除", "删除头像差分");
+        var rename = NamedButton("重命名", "重命名表情差分", new Thickness(0, 0, 6, 0));
+        rename.Click += (_, _) => BeginRename();
+        var remove = NamedButton("删除", "删除表情差分");
         remove.Click += (_, _) => RemoveSelected();
         variantActions.Children.Add(importVariant); variantActions.Children.Add(rename); variantActions.Children.Add(remove);
         _root.Children.Add(variantActions);
@@ -208,7 +218,7 @@ public sealed class ActorPortraitEditor : UserControl
         var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "图片|*.png;*.jpg;*.jpeg", CheckFileExists = true, Multiselect = false };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         button.IsEnabled = false;
-        try { await ImportVariantAsync(dialog.FileName, _variantName.Text); }
+        try { await ImportVariantAsync(dialog.FileName); }
         finally { button.IsEnabled = true; }
     }
 
@@ -217,6 +227,20 @@ public sealed class ActorPortraitEditor : UserControl
         if (string.IsNullOrWhiteSpace(ProjectDirectory)) throw new InvalidOperationException("未设置项目目录。");
         var tools = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
         return new ProjectMediaStore(ProjectDirectory, Path.Combine(tools, "ffmpeg.exe"), Path.Combine(tools, "ffprobe.exe"));
+    }
+
+    private void BeginRename()
+    {
+        if (!CanEdit(out var editor) || editor.SelectedPortraitVariant is not { } selected) return;
+        _variantName.Text = selected.Name;
+        _renameRow.Visibility = Visibility.Visible;
+        _variantName.Focus();
+        _variantName.SelectAll();
+    }
+
+    private void CommitRename()
+    {
+        if (RenameSelected(_variantName.Text)) { _renameRow.Visibility = Visibility.Collapsed; _variants.Focus(); }
     }
 
     private bool CanEdit(out ActorEditorViewModel editor)
@@ -271,7 +295,7 @@ public sealed class ActorPortraitEditor : UserControl
                 foreach (var variant in editor.PortraitVariants)
                 {
                     var row = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 1, 0, 1) };
-                    row.Children.Add(new Border { Width = 42, Height = 42, Margin = new Thickness(0, 0, 8, 0), Child = TryImage(variant.MediaRef) });
+                    row.Children.Add(new Border { Width = 42, Height = 42, ClipToBounds = true, Margin = new Thickness(0, 0, 8, 0), Child = TryImage(variant.MediaRef) });
                     row.Children.Add(new TextBlock { Text = variant.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
                     _variants.Items.Add(new ListBoxItem { Content = row, Tag = variant, ToolTip = variant.MediaRef });
                 }

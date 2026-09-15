@@ -42,7 +42,7 @@ public sealed class StoryAction0330InspectorTests
         inspector.AdvancedCommand = "/say one";
         Assert.AreEqual("/say one", editor.Host.Graph.Nodes.Single().Properties["command"].GetString());
         inspector.AdvancedActions = false;
-        Assert.IsTrue(inspector.IsGiveBuffAction);
+        Assert.IsTrue(inspector.IsGiveItemAction);
         Assert.IsFalse(inspector.StoryActionTypeOptions.Any(type => type.Value == "execute_command"));
         Assert.IsTrue(editor.Host.Undo());
         Assert.IsTrue(inspector.IsCommandAction && inspector.AdvancedActions);
