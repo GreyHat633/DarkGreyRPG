@@ -8,6 +8,17 @@ public static class CanonicalTaskRewardSchema
     public const string NodeType = "reward";
     public const string EntriesProperty = "entries";
 
+    public static IReadOnlyList<ValidationIssue> AllowDraftIssues(GraphNode node, IReadOnlyList<ValidationIssue> issues)
+    {
+        if (!node.Properties.TryGetValue(EntriesProperty, out var entries) || entries.ValueKind != JsonValueKind.Array) return issues;
+        var emptyItemFields = entries.EnumerateArray().Select((entry, index) => (entry, index))
+            .Where(pair => pair.entry.ValueKind == JsonValueKind.Object
+                && pair.entry.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String && type.GetString() == "item"
+                && pair.entry.TryGetProperty("item", out var item) && item.ValueKind == JsonValueKind.String && item.GetString() == "")
+            .Select(pair => $"properties.entries[{pair.index}].item").ToHashSet(StringComparer.Ordinal);
+        return issues.Where(issue => issue.Code != "graph.reward.package" || !emptyItemFields.Contains(issue.Field ?? "")).ToArray();
+    }
+
     public static IReadOnlyList<ValidationIssue> Validate(GraphNode node)
     {
         var issues = new List<ValidationIssue>();

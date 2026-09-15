@@ -336,6 +336,8 @@ public sealed class GraphNodeAuthoringService
         }
         if (scope == GraphScope.StoryFlow && nodeType == CanonicalStoryActionSchema.NodeType)
             shapeIssues = CanonicalStoryActionSchema.AllowDraftIssues(candidate, shapeIssues);
+        if (scope == GraphScope.Task && nodeType == CanonicalTaskRewardSchema.NodeType)
+            shapeIssues = CanonicalTaskRewardSchema.AllowDraftIssues(candidate, shapeIssues);
         if (shapeIssues.Count != 0)
             return FailureIssues(shapeIssues);
 
