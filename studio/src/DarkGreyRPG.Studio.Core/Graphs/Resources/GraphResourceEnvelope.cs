@@ -139,6 +139,7 @@ public static class GraphResourceEnvelopeSerializer
             }
             writer.WritePropertyName("graph");
             var graph = envelope.SnapshotGraph()!;
+            if (envelope.ResourceKind == GraphResourceKind.Story) LegacyStoryBoundaryUpgrade.Apply(graph);
             JsonSerializer.Serialize(writer, graph, GraphSerializer.Options);
             writer.WriteEndObject();
         }
@@ -184,6 +185,7 @@ public static class GraphResourceEnvelopeSerializer
             var graph = JsonSerializer.Deserialize<GraphDocument>(graphElement.GetRawText(), GraphSerializer.Options)
                 ?? throw Failure("graph.resource.graph.required", "Canonical graph resource graph cannot be null.");
             RejectRetiredStandaloneNodes(kind, graph);
+            if (kind == GraphResourceKind.Story) LegacyStoryBoundaryUpgrade.Apply(graph);
             var tags = root.TryGetProperty("tags", out var tagsValue)
                 ? tagsValue.EnumerateArray().Select(tag => tag.ValueKind == JsonValueKind.String ? tag.GetString()! : throw new JsonException("Tags must be strings.")).ToArray() : [];
             return new GraphResourceEnvelope(kind, id, displayName, graph) { SchemaVersion = version, Tags = tags, TaskMetadata = CanonicalTaskMetadata.Read(root, kind) };

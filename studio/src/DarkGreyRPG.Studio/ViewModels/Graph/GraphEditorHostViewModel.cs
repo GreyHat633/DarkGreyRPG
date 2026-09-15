@@ -356,6 +356,14 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     public void Refresh()
         => Refresh(_commandBridge.LastValidationIssues);
 
+    public void RefreshProjectedStoryBoundary(string storyId)
+    {
+        if (Scope != GraphScope.Project) throw new InvalidOperationException("Story boundary projection requires project scope.");
+        Refresh();
+        // Canvas ports are retained visuals; refreshing only view models leaves old sockets on screen.
+        PortsChanged?.Invoke(this, new GraphPortsChangedEventArgs([storyId]));
+    }
+
     /// <summary>
     /// Reconciles the retained WPF host with a repository-committed graph and
     /// clears history that belongs to the superseded persistence baseline.

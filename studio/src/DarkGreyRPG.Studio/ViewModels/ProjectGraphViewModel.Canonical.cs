@@ -15,6 +15,29 @@ public sealed partial class ProjectGraphViewModel
     public GraphEditorHostViewModel? CanonicalHost { get; private set; }
     public string ConnectionSummary => CanonicalHost is null ? "" : $"{CanonicalHost.Nodes.Count} 个故事 · {CanonicalHost.Connections.Count} 条连接";
     private bool _savingCanonical;
+    private Func<bool>? _saveBoundarySource;
+
+    public void RefreshStoryBoundary(GraphResourceEnvelope story, Func<bool>? saveBoundarySource = null)
+    {
+        if (CanonicalHost?.Graph.Nodes.FirstOrDefault(node => node.Id == story.Id) is not { } node) return;
+        node.Ports = CanonicalStoryBoundaryProjection.Ports(story).ToList();
+        node.DisplayName = story.DisplayName;
+        bool Valid(GraphConnection edge) =>
+            (edge.FromNodeId != story.Id || node.Ports.Any(port => !port.IsInput && port.Id == edge.FromPortId && port.InterfaceKind == edge.InterfaceKind))
+            && (edge.ToNodeId != story.Id || node.Ports.Any(port => port.IsInput && port.Id == edge.ToPortId && port.InterfaceKind == edge.InterfaceKind));
+        CanonicalHost.Graph.Connections.RemoveAll(edge => !Valid(edge));
+        // Restore still-persisted edges when an internal boundary removal was undone.
+        if (_storyLogicRepository is not null)
+            foreach (var edge in _storyLogicRepository.Load().Connections.Where(edge => edge.SourceStoryId == story.Id || edge.TargetStoryId == story.Id))
+            {
+                var connection = new GraphConnection(edge.SourceStoryId, edge.SourcePortId, edge.TargetStoryId, edge.TargetPortId,
+                    edge.InterfaceKind == "Flow" ? GraphInterfaceKind.Flow : GraphInterfaceKind.Logic);
+                if (Valid(connection) && !CanonicalHost.Graph.Connections.Contains(connection)) CanonicalHost.Graph.Connections.Add(connection);
+            }
+        _saveBoundarySource = saveBoundarySource;
+        CanonicalHost.RefreshProjectedStoryBoundary(story.Id);
+        OnPropertyChanged(nameof(ConnectionSummary));
+    }
     private readonly HashSet<string> _referencedStoryIds = new(StringComparer.Ordinal);
     private readonly List<CanonicalStoryLogicConnection> _referencedEdges = [];
     public bool IsReferencedStory(string id) => _referencedStoryIds.Contains(id);
@@ -81,6 +104,13 @@ public sealed partial class ProjectGraphViewModel
         _savingCanonical = true;
         try
         {
+            // Connecting to an unsaved internal entry must persist its declaration before the edge.
+            if (_saveBoundarySource?.Invoke() == false)
+            {
+                LogicEditorError = "故事修改未能保存，连线未保存。";
+                CanonicalHost.Undo();
+                return;
+            }
             var edges = CanonicalHost.Graph.Connections.Select(edge =>
                 new CanonicalStoryLogicConnection(edge.FromNodeId, edge.FromPortId, edge.ToNodeId, edge.ToPortId, edge.InterfaceKind.ToString())).ToArray();
             var visibleReferenceEdges = _referencedEdges.Where(edge => CanonicalHost.Nodes.Any(n => n.NodeId == edge.TargetStoryId));

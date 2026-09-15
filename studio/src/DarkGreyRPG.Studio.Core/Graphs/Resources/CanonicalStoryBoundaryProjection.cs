@@ -9,7 +9,9 @@ public static class CanonicalStoryBoundaryProjection
     public static IReadOnlyList<GraphPort> Ports(GraphResourceEnvelope story)
     {
         var result = new List<GraphPort>();
-        foreach (var node in story.Graph?.Nodes ?? [])
+        var graph = story.Graph;
+        if (graph is not null) LegacyStoryBoundaryUpgrade.Apply(graph);
+        foreach (var node in graph?.Nodes ?? [])
         {
             if (node.Type == "start")
                 foreach (var trigger in StoryStartSchema.ReadTriggers(node).Where(t => t.TriggerType == StoryStartSchema.FlowDriven))

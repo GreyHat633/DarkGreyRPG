@@ -232,7 +232,15 @@ public sealed class StoryPackageExporter
     {
         if (!File.Exists(source)) throw new StoryPackageException($"Required canonical resource is missing: {source}");
         var relative = packageDirectory + "/" + DgrResourceId.RelativeJsonPath(id);
-        CopyFile(source, Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar)));
+        var target = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        if (packageDirectory == "resources/canonical/stories")
+        {
+            // Export the same upgraded boundary identities shown by Studio, including unsaved legacy stories.
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.WriteAllText(target, GraphResourceEnvelopeSerializer.Serialize(
+                GraphResourceEnvelopeSerializer.Deserialize(File.ReadAllText(source))));
+        }
+        else CopyFile(source, target);
         AddUnique(paths, relative);
     }
 

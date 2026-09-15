@@ -2055,6 +2055,8 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (CanonicalStoryWorkspace is { } canonicalWorkspace)
         {
+            ProjectHome.Graph.RefreshStoryBoundary(canonicalWorkspace.StoryEditor.CreatePersistenceSnapshot(),
+                () => TrySaveCanonicalResource(canonicalWorkspace.StoryEditor, canonicalWorkspace));
             SetCanonicalStoryWorkspaceVisible(false);
             ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story =>
                 story.Id == canonicalWorkspace.StoryEditor.Id);
