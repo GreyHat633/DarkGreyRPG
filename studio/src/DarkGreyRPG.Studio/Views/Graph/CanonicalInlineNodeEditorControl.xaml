@@ -69,7 +69,7 @@
                 <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="InlineStartTriggerName" />
                 <TextBlock Margin="0,8,0,3" Text="类型" />
                 <ComboBox ItemsSource="{Binding TriggerTypeOptions}" SelectedItem="{Binding SelectedTriggerType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="InlineStartTriggerType" AutomationProperties.Name="Story Start trigger type" />
-                <TextBlock Margin="0,4,0,0" Text="将 Story 公共逻辑输入连接到此触发的条件端口。" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                <TextBlock graph:AuthoringText.IsHelp="True" Margin="0,4,0,0" Text="将 Story 公共逻辑输入连接到此触发的条件端口。" TextWrapping="Wrap">
                   <TextBlock.Style>
                     <Style TargetType="TextBlock">
                       <Setter Property="Visibility" Value="Collapsed" />
@@ -233,7 +233,7 @@
         </Style>
       </ComboBox.Style>
     </ComboBox>
-    <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryActionItemStatusText}" TextWrapping="Wrap">
+    <TextBlock graph:AuthoringText.IsHelp="True" Margin="0,3,0,0" Text="{Binding StoryActionItemStatusText}" TextWrapping="Wrap">
       <TextBlock.Style>
         <Style TargetType="TextBlock">
           <Setter Property="Visibility" Value="Collapsed" />
@@ -406,7 +406,7 @@
           </Style.Triggers>
         </Style>
       </StackPanel.Style>
-      <TextBlock Text="除非必要，否则建议优先使用 Studio 原生节点功能。" TextWrapping="Wrap" />
+      <TextBlock graph:AuthoringText.IsHelp="True" Text="除非必要，否则建议优先使用 Studio 原生节点功能。" TextWrapping="Wrap" />
       <TextBox graph:TextInputWatermark.Text="/输入服务器指令" Text="{Binding AdvancedCommand, UpdateSourceTrigger=LostFocus}" AcceptsReturn="False" MaxLength="2048" Margin="0,4,0,0" />
     </StackPanel>
     <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding ActionExtraError}" Foreground="OrangeRed" TextWrapping="Wrap" />
@@ -435,7 +435,7 @@
         </Style>
       </ComboBox.Style>
     </ComboBox>
-    <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SpeakerStatusText}" TextWrapping="Wrap">
+    <TextBlock graph:AuthoringText.IsHelp="True" Margin="0,3,0,0" Text="{Binding SpeakerStatusText}" TextWrapping="Wrap">
       <TextBlock.Style>
         <Style TargetType="TextBlock">
           <Setter Property="Visibility" Value="Collapsed" />
@@ -506,7 +506,7 @@
         <Button Content="导入音频…" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportLineAudio" />
         <Button Content="移除语音" Margin="6,0,0,0" Click="RemoveLineAudio_OnClick" />
       </StackPanel>
-      <TextBlock Text="{Binding LineVoiceStatus}" Margin="0,3,0,0" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
+      <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding LineVoiceStatus}" Margin="0,3,0,0" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
     </StackPanel>
     <StackPanel Margin="0,10,0,0">
       <StackPanel.Style>
@@ -524,7 +524,7 @@
         <Button Content="导入音乐…" Click="ImportLineAudio_OnClick" />
         <Button Content="停止音乐" Click="RemoveLineAudio_OnClick" />
       </WrapPanel>
-      <TextBlock Text="{Binding MusicStatus}" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
+      <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding MusicStatus}" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ClearRequested="AudioPreview_ClearRequested"/>
       <CheckBox Content="循环" IsChecked="{Binding MusicLoop, Mode=TwoWay}" />
       <TextBlock Text="淡入（秒）" />
       <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
@@ -553,7 +553,7 @@
       <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleStay, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
       <TextBlock Text="淡出（秒）" />
       <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-      <TextBlock Text="播放结束后继续流程" Margin="0,4,0,0" />
+      <TextBlock graph:AuthoringText.IsHelp="True" Text="播放结束后继续流程" Margin="0,4,0,0" />
       <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding TitleError}" Foreground="Tomato" TextWrapping="Wrap" />
     </StackPanel>
     <graph:SessionScreenEditor IsEnabled="{Binding Workspace.CanEditActivePresentation, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}">
@@ -661,7 +661,7 @@
         </Style>
       </StackPanel.Style>
       <TextBlock Text="奖励内容" FontWeight="SemiBold" />
-      <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="正数给予，负数扣除，零不操作。每个任务实例只发放一次。" TextWrapping="Wrap" Margin="0,3,0,6" />
+      <TextBlock graph:AuthoringText.IsHelp="True" Text="正数给予，负数扣除，零不操作。每个任务实例只发放一次。" TextWrapping="Wrap" Margin="0,3,0,6" />
       <ItemsControl ItemsSource="{Binding RewardEntries}" AutomationProperties.AutomationId="TaskRewardEntries">
         <ItemsControl.ItemTemplate>
           <DataTemplate>

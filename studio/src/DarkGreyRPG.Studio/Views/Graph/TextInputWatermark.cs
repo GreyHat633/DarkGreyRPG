@@ -154,7 +154,7 @@ public static class TextInputWatermark
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(box.Padding.Left + 2, box.Padding.Top, box.Padding.Right + 2, box.Padding.Bottom)
             };
-            _label.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(TextBox.Foreground)) { Source = box });
+            AuthoringText.BindPlaceholder(_label, box);
             AddVisualChild(_label);
             AddLogicalChild(_label);
         }

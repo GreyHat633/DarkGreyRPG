@@ -8,7 +8,7 @@
   </DockPanel>
   <graph:CanonicalGraphEditorView x:Name="Editor" Grid.Row="1" Host="{Binding CanonicalHost}"/>
   <StackPanel Grid.Row="2" Margin="0,8,0,0">
-   <Expander Header="介绍说明" Foreground="{DynamicResource TextFillColorPrimaryBrush}" x:Name="Help"><TextBlock x:Name="HelpText" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/></Expander>
+   <Expander Header="介绍说明" Foreground="{DynamicResource TextFillColorPrimaryBrush}" x:Name="Help"><TextBlock graph:AuthoringText.IsHelp="True" x:Name="HelpText" TextWrapping="Wrap"/></Expander>
    <TextBlock Text="{Binding LogicEditorError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
   </StackPanel>
  </Grid>
