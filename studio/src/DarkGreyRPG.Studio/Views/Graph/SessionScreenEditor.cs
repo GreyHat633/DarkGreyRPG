@@ -107,10 +107,10 @@ public sealed class SessionScreenEditor : UserControl
 
         panel.Children.Add(new Viewbox
         {
-            Stretch = Stretch.Uniform, Child = _canvas, Height = 190, MaxHeight = 190,
+            Stretch = Stretch.Uniform, Child = _canvas, MaxHeight = 190,
             Margin = new Thickness(0, 6, 0, 6)
         });
-        var overlays = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        var overlays = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left };
         overlays.Children.Add(_dialogue);
         overlays.Children.Add(_choice);
         panel.Children.Add(overlays);

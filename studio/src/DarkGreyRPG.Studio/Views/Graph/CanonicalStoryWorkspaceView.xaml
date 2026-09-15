@@ -6,6 +6,12 @@
              xmlns:vm="clr-namespace:DarkGreyRPG.Studio.ViewModels.Graph" xmlns:views="clr-namespace:DarkGreyRPG.Studio.Views"
              AutomationProperties.AutomationId="CanonicalStoryWorkspace">
     <UserControl.Resources>
+        <Style TargetType="TextBlock">
+            <Style.Triggers>
+                <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed" /></Trigger>
+                <Trigger Property="Text" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger>
+            </Style.Triggers>
+        </Style>
         <graph:CanonicalStorySelectionEqualityConverter x:Key="CanonicalStorySelectionEqualityConverter" />
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <EventSetter Event="PreviewKeyDown" Handler="DraftTextBox_OnPreviewKeyDown" />
@@ -425,20 +431,20 @@
                                                 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                                                 <TextBlock Text="维度" />
                                                 <TextBox graph:NumericDrag.Step="1" Text="{Binding DimensionText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerDimension" />
-                                                <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding DimensionError}" TextWrapping="Wrap" />
+                                                <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding DimensionError}" TextWrapping="Wrap" />
                                             </StackPanel>
                                             <Grid Margin="0,4,0,0">
                                                 <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
                                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0" Margin="0,0,2,0"><TextBlock Text="X" /><TextBox graph:NumericDrag.Step="0.1" Text="{Binding XText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerX" /><TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding XError}" TextWrapping="Wrap" /></StackPanel>
-                                                <StackPanel Grid.Column="1" Margin="2,0"><TextBlock Text="Y" /><TextBox graph:NumericDrag.Step="0.1" Text="{Binding YText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerY" /><TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding YError}" TextWrapping="Wrap" /></StackPanel>
-                                                <StackPanel Grid.Column="2" Margin="2,0,0,0"><TextBlock Text="Z" /><TextBox graph:NumericDrag.Step="0.1" Text="{Binding ZText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerZ" /><TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ZError}" TextWrapping="Wrap" /></StackPanel>
+                                                <StackPanel Grid.Column="0" Margin="0,0,2,0"><TextBlock Text="X" /><TextBox graph:NumericDrag.Step="0.1" Text="{Binding XText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerX" /><TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding XError}" TextWrapping="Wrap" /></StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="2,0"><TextBlock Text="Y" /><TextBox graph:NumericDrag.Step="0.1" Text="{Binding YText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerY" /><TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding YError}" TextWrapping="Wrap" /></StackPanel>
+                                                <StackPanel Grid.Column="2" Margin="2,0,0,0"><TextBlock Text="Z" /><TextBox graph:NumericDrag.Step="0.1" Text="{Binding ZText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerZ" /><TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ZError}" TextWrapping="Wrap" /></StackPanel>
                                             </Grid>
                                             <StackPanel Margin="0,4,0,0">
                                                 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsRegionEntry}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                                                 <TextBlock Text="半径" />
                                                 <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding RadiusText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.AutomationId="StoryStartTriggerRadius" />
-                                                <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding RadiusError}" TextWrapping="Wrap" />
+                                                <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding RadiusError}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
@@ -492,7 +498,7 @@
                              AutomationProperties.AutomationId="StoryActionAmount">
                         <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveItemAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsGiveXpAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
                     </TextBox>
-                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionAmountError}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionAmountError}" TextWrapping="Wrap" />
                     <TextBlock Margin="0,10,0,3" Text="消息" AutomationProperties.AutomationId="StoryActionMessageLabel">
                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                     </TextBlock>
@@ -501,7 +507,7 @@
                              AutomationProperties.AutomationId="StoryActionMessage">
                         <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsSendMessageAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style>
                     </TextBox>
-                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionMessageError}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionMessageError}" TextWrapping="Wrap" />
                     <StackPanel Margin="0,8,0,0">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsGiveHealthAction}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                         <TextBlock Text="生命值（增减）（1 点 = 半颗心）" />
@@ -540,7 +546,7 @@
                         <TextBox graph:TextInputWatermark.Text="/输入服务器指令" Text="{Binding AdvancedCommand, UpdateSourceTrigger=LostFocus}" AcceptsReturn="False" MaxLength="2048" Margin="0,4,0,0" />
 
                     </StackPanel>
-                    <TextBlock Text="{Binding ActionExtraError}" Foreground="OrangeRed" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding ActionExtraError}" Foreground="OrangeRed" TextWrapping="Wrap" />
                     <graph:CanonicalObjectiveEditor />
                     <TextBlock Margin="0,10,0,3" Text="说话角色">
                         <TextBlock.Style>
@@ -597,7 +603,7 @@
                             </Style>
                         </TextBox.Style>
                     </TextBox>
-                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LineTextError}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LineTextError}" TextWrapping="Wrap" />
                     <StackPanel>
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasLineSpeaker}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                         <TextBlock Margin="0,10,0,3" Text="头像差分"/>
@@ -620,7 +626,7 @@
                         <CheckBox Content="循环" IsChecked="{Binding MusicLoop, Mode=TwoWay}"/>
                         <TextBlock Text="淡入（秒）"/><TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                         <TextBlock Text="淡出（秒）"/><TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
-                        <TextBlock Text="{Binding PresentationError}" Foreground="Tomato" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding PresentationError}" Foreground="Tomato" TextWrapping="Wrap"/>
                     </StackPanel>
                     <StackPanel Margin="0,10,0,0">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsTitle}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
@@ -630,7 +636,7 @@
                         <TextBlock Text="停留（秒）"/><TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleStay, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                         <TextBlock Text="淡出（秒）"/><TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                         <TextBlock Text="播放结束后继续流程" Margin="0,4,0,0"/>
-                        <TextBlock Text="{Binding TitleError}" Foreground="Tomato" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding TitleError}" Foreground="Tomato" TextWrapping="Wrap"/>
                     </StackPanel>
                     <graph:SessionScreenEditor IsEnabled="{Binding Workspace.CanEditActivePresentation, ElementName=Root}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, ElementName=Root}">
                         <graph:SessionScreenEditor.Style><Style TargetType="graph:SessionScreenEditor"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsScreen}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></graph:SessionScreenEditor.Style>
@@ -651,7 +657,7 @@
                             </Style>
                         </TextBox.Style>
                     </TextBox>
-                    <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ChoicePromptError}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ChoicePromptError}" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
@@ -711,7 +717,7 @@
                                     <ComboBox ItemsSource="{Binding ItemOptions}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="DisplayName" Margin="0,3,0,0">
                                         <ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsItem}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ComboBox.Style>
                                     </ComboBox>
-                                    <TextBlock Text="{Binding Error}" Foreground="OrangeRed" TextWrapping="Wrap" />
+                                    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding Error}" Foreground="OrangeRed" TextWrapping="Wrap" />
                                 </StackPanel>
                             </DataTemplate></ItemsControl.ItemTemplate>
                         </ItemsControl>
