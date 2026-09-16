@@ -334,14 +334,14 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsNull(view.SelectedNode);
 
         var textBox = Descendants<TextBox>(visual).Single(control =>
-            AutomationProperties.GetAutomationId(control) == "InlineLineTextEditor");
+            AutomationProperties.GetAutomationId(control) == "LinePageText");
         Assert.IsTrue(visual.IsParameterInteractionSource(textBox));
         Assert.IsFalse(visual.IsHeaderDragSource(textBox));
         editor.LineText = "直接编辑";
-        Assert.AreEqual("直接编辑", host.Graph.Nodes.Single().Properties["text"].GetString());
+        Assert.AreEqual("直接编辑", host.Graph.Nodes.Single().Properties["pages"][0].GetProperty("text").GetString());
         Assert.IsNull(view.SelectedNode);
 
-        var expander = Descendants<Expander>(visual).Single();
+        var expander = Descendants<Expander>(visual).Single(e => Equals(e.Header, "参数"));
         var expandedHeight = visual.ActualHeight;
         expander.IsExpanded = false;
         view.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);

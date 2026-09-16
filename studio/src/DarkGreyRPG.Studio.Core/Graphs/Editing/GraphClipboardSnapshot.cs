@@ -33,6 +33,15 @@ public sealed class GraphClipboardSnapshot
         var ports = new Dictionary<(string Node, string Port), string>();
         foreach (var node in graph.Nodes)
         {
+            if (node.Type == "line")
+            {
+                if (CanonicalSessionLineSchema.Validate(node).Count != 0)
+                    throw new InvalidOperationException("台词句子数据无效，无法粘贴。请先修复问题列表中的台词错误。");
+                var pages = CanonicalSessionLineSchema.ReadPages(node);
+                foreach (var page in pages) page["page_id"] = JsonSerializer.SerializeToElement($"page_{Guid.NewGuid():N}");
+                node.Properties["pages"] = JsonSerializer.SerializeToElement(pages);
+                CanonicalSessionLineSchema.Normalize(node);
+            }
             var fixedIds = GraphNodeDefinitionRegistry.Get(target, node.Type)!.FixedPorts.Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
             var dynamicIds = node.Ports.Where(p => !fixedIds.Contains(p.Id)).Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
             if (node.Properties.TryGetValue("port_id", out var boundary) && boundary.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(boundary.GetString())) dynamicIds.Add(boundary.GetString()!);

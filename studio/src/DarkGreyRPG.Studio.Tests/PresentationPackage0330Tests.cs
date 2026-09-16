@@ -30,7 +30,9 @@ public sealed class PresentationPackage0330Tests
         var music = GraphNodeFactory.Create(GraphScope.Session, "music", "music");
         var screen = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         screen.Properties["layers"] = JsonSerializer.SerializeToElement(new[] { new { media_ref = image, x = 0.5, y = 0.5, width = 0.5, height = 1, anchor_x = 0.5, anchor_y = 0.5, z = 0 } });
-        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line"); line.Properties["text"] = JsonSerializer.SerializeToElement("完整画面测试");
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        var linePage = CanonicalSessionLineSchema.CreatePage(); linePage["text"] = JsonSerializer.SerializeToElement("完整画面测试");
+        line.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { linePage });
         var sessionEnd = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
         sessionEnd.Properties["port_id"] = JsonSerializer.SerializeToElement("done"); sessionEnd.Properties["display_name"] = JsonSerializer.SerializeToElement("完成");
         var nodes = new[] { GraphNodeFactory.Create(GraphScope.Session, "start", "start"), music, screen, line, sessionEnd };

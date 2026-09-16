@@ -154,7 +154,8 @@ public final class CanonicalSessionClientModel {
             frame.getStoryId(),
             frame.getCurrentNodeId(),
             CanonicalSessionAction.Kind.CONTINUE,
-            null);
+            null,
+            frame.getLineEpoch());
     }
 
     public synchronized CanonicalSessionAction choiceAction(String optionId) {
@@ -169,7 +170,8 @@ public final class CanonicalSessionClientModel {
                     frame.getStoryId(),
                     frame.getCurrentNodeId(),
                     CanonicalSessionAction.Kind.CHOICE,
-                    optionId);
+                    optionId,
+                    frame.getLineEpoch());
         }
         throw new IllegalArgumentException("Unknown canonical Session option ID.");
     }

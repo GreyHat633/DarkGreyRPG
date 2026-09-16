@@ -22,38 +22,7 @@ final class StoryPackageMediaValidation {
     private StoryPackageMediaValidation() {}
 
     static void validate(StoryPackageManifest manifest, Map<String, byte[]> bytes) throws ProjectLoadException {
-        Set<String> reachable = new HashSet<String>();
-        for (String path : manifest.getRequiredResources()
-            .getActors()) {
-            JsonObject actor = object(bytes, path);
-            add(reachable, actor.get("default_portrait_ref"));
-            JsonElement variants = actor.get("portrait_variants");
-            if (variants != null) for (JsonElement variant : variants.getAsJsonArray()) add(
-                reachable,
-                variant.getAsJsonObject()
-                    .get("media_ref"));
-        }
-        for (String path : manifest.getRequiredResources()
-            .getSessions()) {
-            JsonObject session = object(bytes, path);
-            JsonElement graph = session.get("graph");
-            if (graph == null || graph.isJsonNull()) continue;
-            for (JsonElement value : graph.getAsJsonObject()
-                .getAsJsonArray("nodes")) {
-                JsonObject node = value.getAsJsonObject();
-                String type = node.get("type")
-                    .getAsString();
-                JsonObject properties = node.getAsJsonObject("properties");
-                if (properties == null) continue;
-                if ("line".equals(type)) add(reachable, properties.get("voice_ref"));
-                if ("music".equals(type)) add(reachable, properties.get("media_ref"));
-                if ("screen".equals(type) && properties.has("layers"))
-                    for (JsonElement layer : properties.getAsJsonArray("layers")) add(
-                        reachable,
-                        layer.getAsJsonObject()
-                            .get("media_ref"));
-            }
-        }
+        Set<String> reachable = reachable(manifest, bytes);
         if (!reachable.equals(
             new HashSet<String>(
                 manifest.getRequiredResources()
@@ -131,8 +100,7 @@ final class StoryPackageMediaValidation {
         }
     }
 
-    private static Set<String> reachable(StoryPackageManifest manifest, Map<String, byte[]> bytes)
-        throws ProjectLoadException {
+    static Set<String> reachable(StoryPackageManifest manifest, Map<String, byte[]> bytes) throws ProjectLoadException {
         Set<String> reachable = new HashSet<String>();
         for (String path : manifest.getRequiredResources()
             .getActors()) {
@@ -156,7 +124,7 @@ final class StoryPackageMediaValidation {
                     .getAsString();
                 JsonObject properties = node.getAsJsonObject("properties");
                 if (properties == null) continue;
-                if ("line".equals(type)) add(reachable, properties.get("voice_ref"));
+                if ("line".equals(type)) addLineVoices(reachable, properties);
                 if ("music".equals(type)) add(reachable, properties.get("media_ref"));
                 if ("screen".equals(type) && properties.has("layers"))
                     for (JsonElement layer : properties.getAsJsonArray("layers")) add(
@@ -166,6 +134,23 @@ final class StoryPackageMediaValidation {
             }
         }
         return reachable;
+    }
+
+    private static void addLineVoices(Set<String> reachable, JsonObject properties) throws ProjectLoadException {
+        if (!properties.has("pages")) {
+            add(reachable, properties.get("voice_ref"));
+            return;
+        }
+        JsonElement pages = properties.get("pages");
+        if (!pages.isJsonArray() || pages.getAsJsonArray()
+            .size() == 0) throw new ProjectLoadException("Session line pages must be a nonempty array.");
+        for (JsonElement page : pages.getAsJsonArray()) {
+            if (!page.isJsonObject()) throw new ProjectLoadException("Session line page must be an object.");
+            add(
+                reachable,
+                page.getAsJsonObject()
+                    .get("voice_ref"));
+        }
     }
 
     private static String hex(byte[] values) {

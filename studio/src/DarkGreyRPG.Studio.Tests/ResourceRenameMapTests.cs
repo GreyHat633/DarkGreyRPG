@@ -80,7 +80,7 @@ public sealed class ResourceRenameMapTests
         var session = map.Rewrite(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "slimes", new GraphDocument([
             Node("line", "line", "{\"speaker_actor_id\":\"slimes\",\"text\":\"slimes\"}")])));
         Assert.AreEqual("Author:slimes", session.Graph!.Nodes[0].Properties["speaker_actor_id"].GetString());
-        Assert.AreEqual("slimes", session.Graph.Nodes[0].Properties["text"].GetString());
+        Assert.AreEqual("slimes", DarkGreyRPG.Studio.Core.Graphs.Definitions.CanonicalSessionLineSchema.ReadPages(session.Graph.Nodes[0])[0]["text"].GetString());
     }
 
     private static GraphNode Node(string id, string type, string properties)

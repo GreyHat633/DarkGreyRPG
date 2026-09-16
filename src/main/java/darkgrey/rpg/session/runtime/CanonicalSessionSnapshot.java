@@ -11,6 +11,11 @@ public final class CanonicalSessionSnapshot {
 
     private final CanonicalSessionPresentation presentation;
     private final long lineEpoch;
+    private final int linePageIndex;
+
+    public int getLinePageIndex() {
+        return linePageIndex;
+    }
 
     public CanonicalSessionPresentation getPresentation() {
         return presentation;
@@ -149,8 +154,35 @@ public final class CanonicalSessionSnapshot {
         List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
         Boolean waitingConditionValue, List<String> executedFlowJudgmentNodeIds,
         CanonicalSessionPresentation presentation, long lineEpoch) {
-        if (presentation == null || lineEpoch < 0)
+        this(
+            sessionResourceId,
+            currentNodeId,
+            status,
+            selectedOptionIds,
+            internalLogicValues,
+            finalEndPortId,
+            publicLogicOutputs,
+            activationLogic,
+            latestChoiceSelections,
+            selectedChoiceNodeIds,
+            externalLogicInputs,
+            waitingCondition,
+            waitingConditionValue,
+            executedFlowJudgmentNodeIds,
+            presentation,
+            lineEpoch,
+            0);
+    }
+
+    public CanonicalSessionSnapshot(String sessionResourceId, String currentNodeId, CanonicalSessionStatus status,
+        List<String> selectedOptionIds, Map<String, Boolean> internalLogicValues, String finalEndPortId,
+        Map<String, Boolean> publicLogicOutputs, boolean activationLogic, Map<String, String> latestChoiceSelections,
+        List<String> selectedChoiceNodeIds, Map<String, Boolean> externalLogicInputs, boolean waitingCondition,
+        Boolean waitingConditionValue, List<String> executedFlowJudgmentNodeIds,
+        CanonicalSessionPresentation presentation, long lineEpoch, int linePageIndex) {
+        if (presentation == null || lineEpoch < 0 || linePageIndex < 0)
             throw new IllegalArgumentException("Invalid Session presentation state");
+        this.linePageIndex = linePageIndex;
         this.presentation = presentation;
         this.lineEpoch = lineEpoch;
         this.sessionResourceId = sessionResourceId;

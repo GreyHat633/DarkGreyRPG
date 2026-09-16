@@ -101,12 +101,12 @@ public sealed class ClipboardPlanTests
         var b = GraphNodeFactory.Create(GraphScope.Session, "line", "b");
         var graph = new GraphDocument([a, b], [new("a", "flow_out", "b", "flow_in", GraphInterfaceKind.Flow), new("b", "flow_out", "external", "flow_in", GraphInterfaceKind.Flow)]);
         var copy = new GraphClipboardSnapshot(GraphScope.Session, graph, ["a", "b"]);
-        a.Properties["text"] = JsonSerializer.SerializeToElement("Changed after copy");
+        a.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { new { page_id = "mutated", text = "Changed after copy" } });
         var pasted = copy.CloneForPaste(GraphScope.Session, out var ids);
         Assert.HasCount(2, pasted.Nodes); Assert.HasCount(1, pasted.Connections);
         Assert.AreNotEqual("a", ids["a"]);
         Assert.AreEqual(ids["a"], pasted.Connections[0].FromNodeId);
-        Assert.AreNotEqual("Changed after copy", pasted.Nodes[0].Properties["text"].GetString());
+        Assert.AreNotEqual("Changed after copy", pasted.Nodes[0].Properties["pages"][0].GetProperty("text").GetString());
     }
 
     [TestMethod]

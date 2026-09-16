@@ -78,7 +78,13 @@ internal static class CanonicalNodeParameterSummary
     }
 
     private static string FormatLine(IReadOnlyDictionary<string, JsonElement> properties)
-        => $"说话者：{Read(properties, "speaker_actor_id")}{Environment.NewLine}台词：{Shorten(Read(properties, "text"))}";
+    {
+        var text = Read(properties, "text");
+        var count = 1;
+        if (properties.TryGetValue("pages", out var pages) && pages.ValueKind == JsonValueKind.Array && pages.GetArrayLength() > 0)
+        { count = pages.GetArrayLength(); text = Read(pages[0], "text"); }
+        return $"说话者：{Read(properties, "speaker_actor_id")}{Environment.NewLine}台词（{count} 句）：{Shorten(text)}";
+    }
 
     private static string Read(IReadOnlyDictionary<string, JsonElement> properties, string name)
         => properties.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String

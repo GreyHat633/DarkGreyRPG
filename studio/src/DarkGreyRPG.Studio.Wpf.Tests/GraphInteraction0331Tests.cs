@@ -44,13 +44,13 @@ public sealed class GraphInteraction0331Tests
         var view = Arrange(host);
         var visual = view.NodeVisuals.Single();
         var textBox = Descendants<TextBox>(visual).Single(control =>
-            System.Windows.Automation.AutomationProperties.GetAutomationId(control) == "InlineLineTextEditor");
+            System.Windows.Automation.AutomationProperties.GetAutomationId(control) == "LinePageText");
         var textHit = VisualTreeHelper.HitTest(visual, textBox.TranslatePoint(
             new Point(Math.Max(1, textBox.ActualWidth / 2), Math.Max(1, textBox.ActualHeight / 2)), visual))?.VisualHit as DependencyObject;
         Assert.IsNotNull(textHit, "The rendered TextBox must be hit-testable.");
         Assert.IsTrue(visual.IsParameterInteractionSource(textHit));
 
-        var expander = Descendants<Expander>(visual).Single();
+        var expander = Descendants<Expander>(visual).Single(e => Equals(e.Header, "参数"));
         var blankHit = FindNonInteractiveParameterHit(visual, expander);
         Assert.IsNotNull(blankHit,
             "Expected a real hit in the rendered parameter surface outside editor controls.");

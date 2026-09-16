@@ -15,6 +15,8 @@ public sealed class SessionPortrait0330Tests
     {
         Assert.IsNull(GraphNodeDefinitionRegistry.Get(GraphScope.Session, "narration"));
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        line.Properties.Remove("pages");
+        line.Properties["text"] = JsonSerializer.SerializeToElement("");
         Assert.AreEqual(JsonValueKind.Null, line.Properties["speaker_actor_id"].ValueKind);
         line.Properties["voice_ref"] = JsonSerializer.SerializeToElement("media/" + new string('b', 64) + ".ogg");
         Assert.AreEqual(0, CanonicalSessionLineSchema.Validate(line).Count);

@@ -16,6 +16,7 @@ public final class CanonicalSessionClientModelProbe {
     private CanonicalSessionClientModelProbe() {}
 
     public static void main(String[] args) {
+        verifySameNodePages();
         DialoguePreferences.setSpeed(60);
         require(DialoguePreferences.resolve(-1) == 60, "global speed selected");
         require(DialoguePreferences.resolve(0) == 0, "zero override stays immediate");
@@ -53,6 +54,10 @@ public final class CanonicalSessionClientModelProbe {
         CanonicalSessionClientModel model = new CanonicalSessionClientModel();
         CanonicalSessionFrame line = line(11L, "story_a", "node_line");
         require(model.acceptFrame(line), "new frame accepted");
+        require(
+            model.continueAction()
+                .getLineEpoch() == line.getLineEpoch(),
+            "continue carries observed playback epoch");
         require(
             model.continueAction()
                 .getCurrentNodeId()
@@ -181,6 +186,27 @@ public final class CanonicalSessionClientModelProbe {
             "Speaker",
             "Text",
             Collections.<CanonicalSessionChoiceOption>emptyList());
+    }
+
+    private static void verifySameNodePages() {
+        CanonicalSessionClientModel pages = new CanonicalSessionClientModel();
+        CanonicalSessionFrame first = line(33L, "pages", "same_node").withTextSpeed(1)
+            .withPresentation(darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY, 1L, true);
+        require(pages.acceptFrame(first) && pages.finishVisibleText(), "first page can be completed");
+        require(pages.acceptFrame(first) && !pages.finishVisibleText(), "repeat sync does not restart completed text");
+        CanonicalSessionFrame second = lineWithPortrait(33L, "pages", "same_node").withTextSpeed(1)
+            .withPresentation(darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY, 2L, true);
+        require(pages.acceptFrame(second) && pages.finishVisibleText(), "same node new epoch restarts reveal");
+        require(
+            second.getPortraitRef()
+                .equals(pages.getVisiblePortraitRef()),
+            "same node page updates portrait");
+        require(
+            pages.continueAction()
+                .getLineEpoch() == 2L,
+            "page continue uses latest epoch");
+        require(!pages.acceptFrame(first), "late prior page sync rejected");
+        require(!pages.finishVisibleText(), "late sync cannot restart reveal");
     }
 
     private static CanonicalSessionFrame lineWithPortrait(long transportId, String storyId, String nodeId) {

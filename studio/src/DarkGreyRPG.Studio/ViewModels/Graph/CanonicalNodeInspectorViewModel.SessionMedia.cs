@@ -24,6 +24,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
             OnPropertyChanged(nameof(PortraitVariantOptions));
             OnPropertyChanged(nameof(SelectedPortraitVariant));
             OnPropertyChanged(nameof(SelectedPortraitMediaRef));
+            RefreshLinePages();
         }
         finally { _isProjectingCanonicalChange = false; }
     }
@@ -38,7 +39,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
         set
         {
             if (_disposed || _isProjectingCanonicalChange || !HasLineSpeaker || !PortraitVariantOptions.Any(option => option.Name == value)) return;
-            _host.SetNodeProperty(NodeId, "portrait_variant", JsonSerializer.SerializeToElement(value));
+            SetFirstPageProperty("portrait_variant", value);
         }
     }
 
@@ -74,11 +75,11 @@ public sealed partial class CanonicalNodeInspectorViewModel
 
     public bool IsLineTextSpeedCustom
     {
-        get => IsLine && _host.Graph.Nodes.First(n => n.Id == NodeId).Properties.TryGetValue("custom_text_speed", out var flag) && flag.ValueKind == JsonValueKind.True;
+        get => IsLine && LinePages.FirstOrDefault()?.CustomSpeed == true;
         set
         {
             if (_disposed || _isProjectingCanonicalChange || !IsLine) return;
-            _host.SetNodeProperty(NodeId, "custom_text_speed", JsonSerializer.SerializeToElement(value));
+            SetFirstPageProperty("custom_text_speed", value);
             OnPropertyChanged(nameof(IsLineTextSpeedCustom));
         }
     }
@@ -89,7 +90,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
         set
         {
             if (_disposed || _isProjectingCanonicalChange || !IsLine || !double.IsFinite(value) || value < 0 || value > 120) return;
-            _host.SetNodeProperty(NodeId, "text_speed", JsonSerializer.SerializeToElement(value));
+            SetFirstPageProperty("text_speed", value);
             OnPropertyChanged(nameof(LineTextSpeed));
         }
     }
@@ -124,20 +125,23 @@ public sealed partial class CanonicalNodeInspectorViewModel
     public bool SetLineVoice(string? mediaRef)
     {
         if (_disposed || !IsLine || (mediaRef is not null && !MediaReference.IsAudio(mediaRef))) return false;
-        return _host.SetNodeProperty(NodeId, "voice_ref", JsonSerializer.SerializeToElement(mediaRef));
+        return SetFirstPageProperty("voice_ref", mediaRef);
     }
 
-    private string LineNumber(string key, double fallback) => Node.Properties.TryGetValue(key, out var value) ? value.ToString() : fallback.ToString(CultureInfo.InvariantCulture);
+    private IReadOnlyDictionary<string, JsonElement> LineProperties => IsLine ? ReadLinePages().FirstOrDefault() ?? new Dictionary<string, JsonElement>() : Node.Properties;
+    private string LineNumber(string key, double fallback) => LineProperties.TryGetValue(key, out var value) ? value.ToString() : fallback.ToString(CultureInfo.InvariantCulture);
     private void SetLineNumber(string key, string value)
     {
         if (_disposed || _isProjectingCanonicalChange || !IsLine) return;
         if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number)
             || !double.IsFinite(number) || number < 0 || number > 1) return;
-        _host.SetNodeProperty(NodeId, key, JsonSerializer.SerializeToElement(number));
+        SetFirstPageProperty(key, number);
     }
 
-    private string? LineString(string key) => Node.Properties.TryGetValue(key, out var value)
+    private string? LineString(string key) => LineProperties.TryGetValue(key, out var value)
         && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+    private bool SetFirstPageProperty(string key, object? value) => LinePages.FirstOrDefault() is { } page && SetPageProperty(page.PageId, key, value);
 }
 
 public sealed record SessionPortraitOption(string? Name, string DisplayName);

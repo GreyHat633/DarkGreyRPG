@@ -1,0 +1,38 @@
+[03:27:58] [main/INFO]: Setting user: Developer
+[03:27:59] [Client thread/INFO]: LWJGL Version: 2.9.4
+[03:28:07] [Client thread/INFO]: Reloading ResourceManager: Default, FMLFileResourcePack:Forge Mod Loader, FMLFileResourcePack:Minecraft Forge, FMLFileResourcePack:DarkGrey RPG, FMLFileResourcePack:UniMixins, FMLFileResourcePack:UniMixins: Mixin (UniMix), FMLFileResourcePack:UniMixins: Compatibility, FMLFileResourcePack:UniMixins: Mixingasm, FMLFileResourcePack:UniMixins: SpongeMixins, FMLFileResourcePack:UniMixins: MixinBooterLegacy, FMLFileResourcePack:UniMixins: GTNHMixins, FMLFileResourcePack:UniMixins: MixinExtras, FMLFileResourcePack:CustomNPC+, FMLFileResourcePack:Isolated DGR 0331 acceptance harness
+[03:28:14] [Sound Library Loader/INFO]: Sound engine started
+[03:28:15] [Client thread/INFO]: Created: 16x16 textures/blocks-atlas
+[03:28:15] [Client thread/INFO]: Created: 16x16 textures/items-atlas
+[03:28:18] [Client thread/INFO]: Reloading ResourceManager: Default, FMLFileResourcePack:Forge Mod Loader, FMLFileResourcePack:Minecraft Forge, FMLFileResourcePack:DarkGrey RPG, FMLFileResourcePack:UniMixins, FMLFileResourcePack:UniMixins: Mixin (UniMix), FMLFileResourcePack:UniMixins: Compatibility, FMLFileResourcePack:UniMixins: Mixingasm, FMLFileResourcePack:UniMixins: SpongeMixins, FMLFileResourcePack:UniMixins: MixinBooterLegacy, FMLFileResourcePack:UniMixins: GTNHMixins, FMLFileResourcePack:UniMixins: MixinExtras, FMLFileResourcePack:CustomNPC+, FMLFileResourcePack:Isolated DGR 0331 acceptance harness
+[03:28:18] [Client thread/INFO]: Created: 512x256 textures/blocks-atlas
+[03:28:20] [Client thread/INFO]: Created: 512x512 textures/items-atlas
+[03:28:21] [Sound Library Loader/INFO]: Sound engine started
+[03:28:41] [Server thread/INFO]: Starting integrated minecraft server version 1.7.10
+[03:28:41] [Server thread/INFO]: Generating keypair
+[03:28:42] [Server thread/INFO]: Converting map!
+[03:28:42] [Server thread/INFO]: Scanning folders...
+[03:28:42] [Server thread/INFO]: Total conversion count is 0
+[03:28:43] [Server thread/INFO]: Preparing start region for level 0
+[03:28:44] [Server thread/INFO]: Changing view distance to 12, from 10
+[03:28:44] [Server thread/INFO]: Developer[local:E:5c672002] logged in with entity id 32 at (-818.5, 4.0, -1600.5)
+[03:28:44] [Server thread/INFO]: Developer joined the game
+[03:28:46] [Thread-8/INFO]: [CHAT] §cCustomNPC+§f installed. For more info §9§nClick here
+[03:29:30] [Server thread/INFO]: Stopping server
+[03:29:30] [Server thread/INFO]: Saving players
+[03:29:30] [Server thread/INFO]: Saving worlds
+[03:29:30] [Server thread/INFO]: Saving chunks for level 'DGR 0331 Live Harness'/Overworld
+[03:29:31] [Server thread/INFO]: Saving chunks for level 'DGR 0331 Live Harness'/Nether
+[03:29:31] [Server thread/INFO]: Saving chunks for level 'DGR 0331 Live Harness'/The End
+[03:29:32] [Server thread/INFO]: Starting integrated minecraft server version 1.7.10
+[03:29:32] [Server thread/INFO]: Generating keypair
+[03:29:33] [Server thread/INFO]: Preparing start region for level 0
+[03:29:33] [Server thread/INFO]: Changing view distance to 12, from 10
+[03:29:33] [Server thread/INFO]: Developer[local:E:0d0f20bf] logged in with entity id 309349 at (-818.5, 4.0, -1600.5)
+[03:29:33] [Server thread/INFO]: Developer joined the game
+[03:30:42] [Server thread/INFO]: Stopping server
+[03:30:42] [Server thread/INFO]: Saving players
+[03:30:42] [Server thread/INFO]: Saving worlds
+[03:30:42] [Server thread/INFO]: Saving chunks for level 'DGR 0331 Live Harness'/Overworld
+[03:30:42] [Server thread/INFO]: Saving chunks for level 'DGR 0331 Live Harness'/Nether
+[03:30:42] [Server thread/INFO]: Saving chunks for level 'DGR 0331 Live Harness'/The End

@@ -16,6 +16,7 @@ public final class CanonicalSessionAction implements IMessage {
     private String currentNodeId;
     private Kind kind;
     private String optionId;
+    private long lineEpoch = -1L;
 
     public CanonicalSessionAction() {}
 
@@ -26,6 +27,13 @@ public final class CanonicalSessionAction implements IMessage {
         this.currentNodeId = currentNodeId;
         this.kind = kind;
         this.optionId = optionId;
+    }
+
+    public CanonicalSessionAction(long transportId, String storyId, String currentNodeId, Kind kind, String optionId,
+        long lineEpoch) {
+        this(transportId, storyId, currentNodeId, kind, optionId);
+        if (lineEpoch < 0L) throw CanonicalSessionNetworkCodec.invalid("line_epoch must be nonnegative");
+        this.lineEpoch = lineEpoch;
     }
 
     @Override
@@ -41,6 +49,12 @@ public final class CanonicalSessionAction implements IMessage {
         String decodedOptionId = null;
         if (decodedKind == Kind.CHOICE) decodedOptionId = CanonicalSessionNetworkCodec
             .readField(buffer, "option_id", CanonicalSessionNetworkCodec.MAX_ID_BYTES);
+        long decodedEpoch = -1L;
+        if (buffer.readableBytes() != 0) {
+            if (buffer.readableBytes() != 8) throw CanonicalSessionNetworkCodec.invalid("invalid line_epoch extension");
+            decodedEpoch = buffer.readLong();
+            if (decodedEpoch < 0L) throw CanonicalSessionNetworkCodec.invalid("line_epoch must be nonnegative");
+        }
         CanonicalSessionNetworkCodec.requireNoTrailingBytes(buffer);
         validate(decodedTransportId, decodedStoryId, decodedNodeId, decodedKind, decodedOptionId);
         transportId = decodedTransportId;
@@ -48,6 +62,7 @@ public final class CanonicalSessionAction implements IMessage {
         currentNodeId = decodedNodeId;
         kind = decodedKind;
         optionId = decodedOptionId;
+        lineEpoch = decodedEpoch;
     }
 
     @Override
@@ -60,6 +75,7 @@ public final class CanonicalSessionAction implements IMessage {
         buffer.writeByte(kind.ordinal());
         if (kind == Kind.CHOICE) CanonicalSessionNetworkCodec
             .writeField(buffer, optionId, "option_id", CanonicalSessionNetworkCodec.MAX_ID_BYTES);
+        if (lineEpoch >= 0L) buffer.writeLong(lineEpoch);
     }
 
     public long getTransportId() {
@@ -88,6 +104,11 @@ public final class CanonicalSessionAction implements IMessage {
 
     public String getOptionId() {
         return optionId;
+    }
+
+    /** -1 identifies a legacy action without the page playback fence. */
+    public long getLineEpoch() {
+        return lineEpoch;
     }
 
     private static void validate(long transportId, String storyId, String nodeId, Kind kind, String optionId) {

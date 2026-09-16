@@ -38,6 +38,7 @@ public final class CanonicalSessionRuntime {
     private final List<String> executedFlowJudgmentNodeIds = new ArrayList<String>();
     private CanonicalSessionPresentation presentation = CanonicalSessionPresentation.EMPTY;
     private long lineEpoch;
+    private int linePageIndex;
     private CanonicalSessionStatus status;
     private String currentNodeId;
     private String finalEndPortId;
@@ -208,6 +209,11 @@ public final class CanonicalSessionRuntime {
         CanonicalGraphNode node = currentNode();
         if (!"line".equals(node.getType()))
             throw fail("session.line.expected", "Session is not paused at a line node.");
+        if (linePageIndex + 1 < linePages(node).size()) {
+            linePageIndex++;
+            resolveAutomatic();
+            return currentStep;
+        }
         transitionFrom(node, "flow_out");
         resolveAutomatic();
         return currentStep;
@@ -260,7 +266,8 @@ public final class CanonicalSessionRuntime {
             waitingConditionValue,
             executedFlowJudgmentNodeIds,
             presentation,
-            lineEpoch);
+            lineEpoch,
+            linePageIndex);
     }
 
     public CanonicalSessionSnapshot createSnapshot() {
@@ -430,7 +437,6 @@ public final class CanonicalSessionRuntime {
                     spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW),
                     spec("flow_out", false, CanonicalGraphInterfaceKind.FLOW));
                 validateLine(node);
-                requiredString(node, "text", "session.line");
 
             } else if ("end".equals(type)) {
                 validateFixedPorts(node, "end", spec("flow_in", true, CanonicalGraphInterfaceKind.FLOW));
@@ -675,6 +681,7 @@ public final class CanonicalSessionRuntime {
                 }
         if (found == null) throw fail("session.flow.unconnected", "Flow output '" + outputPortId + "' is unconnected.");
         currentNodeId = found.getToNodeId();
+        linePageIndex = 0;
     }
 
     private void transitionFromSingleFlowOutput(CanonicalGraphNode node) {
@@ -776,6 +783,7 @@ public final class CanonicalSessionRuntime {
         externalLogicInputs.putAll(snapshot.getExternalLogicInputs());
         presentation = snapshot.getPresentation();
         lineEpoch = snapshot.getLineEpoch();
+        linePageIndex = snapshot.getLinePageIndex();
         currentNodeId = snapshot.getCurrentNodeId();
         status = snapshot.getStatus();
         finalEndPortId = snapshot.getFinalEndPortId();
@@ -789,6 +797,9 @@ public final class CanonicalSessionRuntime {
             || !publicLogicOutputs.equals(snapshot.getPublicLogicOutputs()))
             throw failure("session.snapshot.logic", "Snapshot Logic maps are stale, unknown, or incomplete.");
         CanonicalGraphNode node = currentNode();
+        if (linePageIndex < 0
+            || ("line".equals(node.getType()) ? linePageIndex >= linePages(node).size() : linePageIndex != 0))
+            throw failure("session.snapshot.page", "Snapshot line page is outside the current node.");
         if (status == CanonicalSessionStatus.ACTIVE && waitingCondition) {
             if (!"condition".equals(node.getType()))
                 throw failure("session.snapshot.state", "Condition wait must point at a Condition node.");
@@ -824,6 +835,7 @@ public final class CanonicalSessionRuntime {
     }
 
     private CanonicalSessionStep lineStep(CanonicalGraphNode node) {
+        node = linePages(node).get(linePageIndex);
         return CanonicalSessionStep
             .line(
                 node.getId(),
@@ -893,6 +905,57 @@ public final class CanonicalSessionRuntime {
     }
 
     private static void validateLine(CanonicalGraphNode node) {
+        for (CanonicalGraphNode page : linePages(node)) {
+            validateLinePage(page);
+            requiredString(page, "text", "session.line");
+        }
+    }
+
+    /** Detached per-page views; legacy single-line nodes remain readable. */
+    public static List<CanonicalGraphNode> linePages(CanonicalGraphNode node) {
+        Map<String, JsonElement> properties = node.getProperties();
+        if (!properties.containsKey("pages")) return Collections.singletonList(node);
+        for (String key : properties.keySet()) if (!"pages".equals(key) && !"speaker_actor_id".equals(key)
+            && !"text".equals(key)
+            && !"portrait_variant".equals(key)
+            && !"voice_ref".equals(key)
+            && !"voice_volume".equals(key)
+            && !"text_speed".equals(key)
+            && !"custom_text_speed".equals(key))
+            throw failure("session.line.property.unsupported", "Unsupported paged line property: " + key);
+        optionalLineString(node, "speaker_actor_id");
+        JsonElement pages = properties.get("pages");
+        if (pages == null || !pages.isJsonArray()
+            || pages.getAsJsonArray()
+                .size() == 0)
+            throw failure("session.line.pages", "Line pages must be a nonempty array.");
+        List<CanonicalGraphNode> result = new ArrayList<CanonicalGraphNode>();
+        Set<String> ids = new HashSet<String>();
+        for (JsonElement page : pages.getAsJsonArray()) {
+            if (!page.isJsonObject()) throw failure("session.line.page", "Line page must be an object.");
+            JsonObject object = page.getAsJsonObject();
+            JsonElement id = object.get("page_id");
+            if (id == null || !id.isJsonPrimitive()
+                || !id.getAsJsonPrimitive()
+                    .isString()
+                || blank(id.getAsString())
+                || !ids.add(id.getAsString()))
+                throw failure("session.line.page.id", "Line page IDs must be nonblank and unique.");
+            Map<String, JsonElement> values = new LinkedHashMap<String, JsonElement>();
+            for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+                if ("speaker_actor_id".equals(entry.getKey()))
+                    throw failure("session.line.page.speaker", "The speaker belongs to the line node.");
+                if (!"page_id".equals(entry.getKey())) values.put(entry.getKey(), entry.getValue());
+            }
+            if (properties.containsKey("speaker_actor_id"))
+                values.put("speaker_actor_id", properties.get("speaker_actor_id"));
+            result.add(
+                new CanonicalGraphNode(node.getId(), node.getType(), node.getDisplayName(), node.getPorts(), values));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    private static void validateLinePage(CanonicalGraphNode node) {
         for (String key : node.getProperties()
             .keySet())
             if (!"speaker_actor_id".equals(key) && !"text".equals(key)

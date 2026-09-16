@@ -106,7 +106,7 @@ public sealed class CanonicalLegacyMigrationPreviewTests
         Assert.IsTrue(task.CanApply, string.Join("; ", task.Issues.Select(issue => issue.Code)));
         Assert.AreEqual("final_confrontation", session.Envelope!.Id);
         Assert.AreEqual("证物就在你手里。现在，作出选择。",
-            session.Envelope.Graph!.Nodes.Single(node => node.Id == "question").Properties["text"].GetString());
+            DarkGreyRPG.Studio.Core.Graphs.Definitions.CanonicalSessionLineSchema.ReadPages(session.Envelope.Graph!.Nodes.Single(node => node.Id == "question"))[0]["text"].GetString());
         CollectionAssert.AreEquivalent(new[] { "hand_over", "conceal" },
             session.Envelope.Graph.Nodes.Where(node => node.Type == "end")
                 .Select(node => node.Properties["port_id"].GetString()).ToArray());

@@ -30,6 +30,7 @@ public final class DgrsMediaLifecycle0331Probe {
     private DgrsMediaLifecycle0331Probe() {}
 
     public static void main(String[] args) throws Exception {
+        SessionPageMediaProbe.run();
         if (args.length != 1) throw new IllegalArgumentException("Expected <E-drive probe root>");
         Path parent = new File(args[0]).getAbsoluteFile()
             .toPath()

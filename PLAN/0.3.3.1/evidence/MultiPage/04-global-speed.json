@@ -1,0 +1,67 @@
+{
+  "screen": "world",
+  "server_result": "",
+  "fixture_entity_ids": [
+    117001,
+    117002
+  ],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    -818.5,
+    5.620000004768372,
+    -1600.5
+  ],
+  "inventory": [],
+  "task_client_visible_text": "",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": -1,
+    "musicRevision": -1,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "sources": {
+      "66850550-79af-4ee5-91ee-c6a713d08e65": {
+        "sourcename": "66850550-79af-4ee5-91ee-c6a713d08e65",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 8539.524
+      },
+      "e33b2562-789b-496e-ace0-26ab832c5a3e": {
+        "sourcename": "e33b2562-789b-496e-ace0-26ab832c5a3e",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      }
+    },
+    "textures_ready": [],
+    "downloads": {},
+    "master_level": 1.0,
+    "players_level": 1.0,
+    "music_level": 1.0,
+    "cached_packages": 0,
+    "preloading_packages": 0,
+    "queued_packages": 0,
+    "package_entries": [],
+    "cache_hits": 0,
+    "local_hits": 0,
+    "network_requests": 0,
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  }
+}

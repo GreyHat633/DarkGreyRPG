@@ -150,7 +150,7 @@ public sealed class GraphNodeShapeValidatorTests
         node.Properties["unknown"] = JsonSerializer.SerializeToElement(true);
 
         var issues = GraphNodeShapeValidator.Validate(node, GraphScope.Session);
-        CollectionAssert.Contains(issues.Select(issue => issue.Code).ToArray(), "graph.node.shape.property.missing");
+        Assert.IsTrue(issues.Any(issue => issue.Code == "graph.session.line" && issue.Field == "text"));
         CollectionAssert.Contains(issues.Select(issue => issue.Code).ToArray(), "graph.node.shape.property.kind");
         Assert.IsFalse(issues.Any(issue => issue.Field == "properties.unknown"));
     }
@@ -199,9 +199,9 @@ public sealed class GraphNodeShapeValidatorTests
 
         var issues = GraphNodeShapeValidator.Validate(graph, GraphScope.Session);
         CollectionAssert.Contains(issues.Select(issue => issue.Code).ToArray(), "graph.node.shape.node.required");
-        var missing = issues.Single(issue => issue.Code == "graph.node.shape.property.missing");
+        var missing = issues.Single(issue => issue.Code == "graph.session.line" && issue.Field == "text");
         Assert.AreEqual("line_node", missing.NodeId);
-        Assert.AreEqual("properties.text", missing.Field);
+        Assert.AreEqual("text", missing.Field);
         Assert.IsFalse(GraphNodeShapeValidator.IsValid(graph, GraphScope.Session));
     }
 

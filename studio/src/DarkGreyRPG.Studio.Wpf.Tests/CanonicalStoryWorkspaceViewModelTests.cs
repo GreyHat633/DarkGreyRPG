@@ -572,6 +572,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
             action, CanonicalStoryActionSchema.GiveItem, out var issues), string.Join("; ", issues));
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
         line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("bartender");
+        line.Properties.Remove("pages");
         line.Properties["text"] = JsonSerializer.SerializeToElement("欢迎来到酒馆");
 
         using var storyStart = new CanonicalGraphResourceEditorViewModel(

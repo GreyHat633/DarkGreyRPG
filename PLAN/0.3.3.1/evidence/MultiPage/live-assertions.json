@@ -1,0 +1,15 @@
+{
+  "global_reveal": true,
+  "first_click_completes_only": true,
+  "duplicate_and_scale_keep_complete": true,
+  "same_node_three_epochs": true,
+  "three_portraits_and_voices": true,
+  "real_voice_channels_volumes": true,
+  "instant_second": true,
+  "reconnect_restores_second": true,
+  "third_120_reveal_and_complete": true,
+  "choice_retains_last_page": true,
+  "choice_gui_scale_retains_text": true,
+  "choice_finishes_session": true,
+  "all_page_media_preloaded": true
+}

@@ -32,6 +32,7 @@ public final class CanonicalSessionInstanceProbe {
     private CanonicalSessionInstanceProbe() {}
 
     public static void main(String[] args) {
+        pageCursorPersistence();
         CanonicalGraphResource choice = choiceResource("choice-session");
         CanonicalGraphResource linear = linearResource("linear-session");
         CanonicalSessionInstanceStore store = new CanonicalSessionInstanceStore();
@@ -364,6 +365,13 @@ public final class CanonicalSessionInstanceProbe {
         Map<String, JsonElement> lineProperties = new HashMap<String, JsonElement>();
         lineProperties.put("speaker_actor_id", json("actor"));
         lineProperties.put("text", json("Hello"));
+        if ("page-session".equals(id)) {
+            lineProperties.remove("text");
+            lineProperties.put(
+                "pages",
+                new JsonParser()
+                    .parse("[{\"page_id\":\"one\",\"text\":\"First\"},{\"page_id\":\"two\",\"text\":\"Second\"}]"));
+        }
         CanonicalGraphNode line = node(
             "line",
             "line",
@@ -377,6 +385,41 @@ public final class CanonicalSessionInstanceProbe {
             id,
             Arrays.asList(start, line, end),
             Arrays.asList(edge("start", "flow_out", "line", "flow_in"), edge("line", "flow_out", "end", "flow_in")));
+    }
+
+    private static void pageCursorPersistence() {
+        CanonicalGraphResource pages = linearResource("page-session");
+        CanonicalSessionInstanceStore store = new CanonicalSessionInstanceStore();
+        CanonicalSessionInstance instance = store.start(PLAYER_ONE, "page-story", "page-placement", pages);
+        store.continueLine(PLAYER_ONE, "page-story", instance.getTransportId(), "line");
+        NBTTagCompound encoded = store.writeToNbt();
+        CanonicalSessionInstanceSnapshot decoded = CanonicalSessionInstanceNbtCodec.decode(encoded)
+            .get(0);
+        require(
+            decoded.getRuntimeSnapshot()
+                .getLinePageIndex() == 1,
+            "second page index survives NBT");
+        darkgrey.rpg.session.runtime.CanonicalSessionRuntime restored = darkgrey.rpg.session.runtime.CanonicalSessionRuntime
+            .restore(pages, decoded.getRuntimeSnapshot());
+        require(
+            "Second".equals(
+                restored.getCurrentStep()
+                    .getText()),
+            "restore resumes exact page");
+        NBTTagCompound legacy = copy(encoded);
+        instanceAt(legacy).removeTag("line_page_index");
+        require(
+            CanonicalSessionInstanceNbtCodec.decode(legacy)
+                .get(0)
+                .getRuntimeSnapshot()
+                .getLinePageIndex() == 0,
+            "old snapshot without page cursor defaults to first page");
+        NBTTagCompound wrongType = copy(encoded);
+        instanceAt(wrongType).setString("line_page_index", "1");
+        rejectDecode(wrongType, "page cursor wrong NBT type");
+        NBTTagCompound negative = copy(encoded);
+        instanceAt(negative).setInteger("line_page_index", -1);
+        rejectDecode(negative, "negative page cursor");
     }
 
     private static CanonicalGraphResource choiceResource(String id) {

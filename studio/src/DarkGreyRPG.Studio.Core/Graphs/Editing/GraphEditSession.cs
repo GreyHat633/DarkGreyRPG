@@ -756,6 +756,14 @@ public sealed class GraphEditSession
             if (presentationIssues.Count != 0) return Fail(presentationIssues);
         }
 
+        if (Scope == GraphScope.Session && node!.Type == "line")
+        {
+            var candidate = Clone(node);
+            candidate.Properties[property] = value.Clone();
+            var lineIssues = CanonicalSessionLineSchema.Validate(candidate);
+            if (lineIssues.Count != 0) return Fail(lineIssues);
+        }
+
         var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         var isSessionEndDisplayName = Scope == GraphScope.Session
@@ -1057,6 +1065,14 @@ public sealed class GraphEditSession
         var candidate = Clone(node);
         candidate.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement(next);
         candidate.Properties.Remove("portrait_variant");
+        var inputIssues = CanonicalSessionLineSchema.Validate(candidate);
+        if (inputIssues.Count != 0) return Fail(inputIssues);
+        if (candidate.Properties.ContainsKey("pages"))
+        {
+            var pages = CanonicalSessionLineSchema.ReadPages(candidate);
+            foreach (var page in pages) page.Remove("portrait_variant");
+            candidate.Properties["pages"] = JsonSerializer.SerializeToElement(pages);
+        }
         var issues = CanonicalSessionLineSchema.Validate(candidate);
         if (issues.Count != 0) return Fail(issues);
         var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;

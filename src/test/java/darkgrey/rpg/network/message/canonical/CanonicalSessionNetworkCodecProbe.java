@@ -75,6 +75,11 @@ public final class CanonicalSessionNetworkCodecProbe {
             Collections.<CanonicalSessionChoiceOption>emptyList());
         CanonicalSessionClose close = new CanonicalSessionClose(8L, "故事-1");
         require(roundTrip(continueAction).getKind() == CanonicalSessionAction.Kind.CONTINUE, "CONTINUE round-trip");
+        require(roundTrip(continueAction).getLineEpoch() == -1L, "legacy action remains unversioned");
+        require(
+            roundTrip(new CanonicalSessionAction(8L, "story", "line", CanonicalSessionAction.Kind.CONTINUE, null, 27L))
+                .getLineEpoch() == 27L,
+            "page epoch round-trip");
         require("option-右".equals(roundTrip(choiceAction).getOptionId()), "CHOICE option round-trip");
         CanonicalSessionFrame lineDecoded = roundTrip(line);
         require(

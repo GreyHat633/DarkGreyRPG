@@ -58,7 +58,7 @@ public sealed class SessionMedia0330InspectorTests
         var voice = "media/" + new string('b', 64) + ".ogg";
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
-        editor.Host.SetNodeProperty("line", "voice_ref", JsonSerializer.SerializeToElement(voice));
+        using (var setup = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single())) setup.SetLineVoice(voice);
         var before = editor.Host.Session.UndoCount;
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.IsTrue(inspector.IsLineAudioEnabled);
@@ -80,7 +80,7 @@ public sealed class SessionMedia0330InspectorTests
         Assert.AreEqual(0.35, inspector.LineVoiceVolumeDisplayValue, 0.0001);
         inspector.CommitVolumePreview();
         Assert.AreEqual(before + 1, editor.Host.Session.UndoCount);
-        Assert.AreEqual(0.35, editor.Host.Graph.Nodes.Single().Properties["voice_volume"].GetDouble(), 0.0001);
+        Assert.AreEqual(0.35, editor.Host.Graph.Nodes.Single().Properties["pages"][0].GetProperty("voice_volume").GetDouble(), 0.0001);
         Assert.IsTrue(editor.Host.Undo());
         Assert.AreEqual(1d, inspector.LineVoiceVolumeValue, 0.0001);
         Assert.IsTrue(editor.Host.Redo());
@@ -142,7 +142,7 @@ public sealed class SessionMedia0330InspectorTests
             [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "", [], IndividualActorResource.ResourceType, image, [new("默认头像", image)]))]);
         inspector.SelectedSpeakerId = "actor";
         inspector.SelectedPortraitVariant = "默认头像";
-        Assert.AreEqual("默认头像", editor.Host.Graph.Nodes.Single().Properties["portrait_variant"].GetString());
+        Assert.AreEqual("默认头像", editor.Host.Graph.Nodes.Single().Properties["pages"][0].GetProperty("portrait_variant").GetString());
         var voice = "media/" + new string('b', 64) + ".ogg";
         Assert.IsTrue(inspector.SetLineVoice(voice));
         var before = editor.Host.Session.UndoCount;

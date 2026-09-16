@@ -107,7 +107,9 @@ public static class CanonicalLegacyMigrationPreview
                 case "line":
                     target = GraphNodeFactory.Create(GraphScope.Session, "line", sourceNode.Id, sourceNode.Id);
                     target.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement(sourceNode.Speaker!);
-                    target.Properties["text"] = JsonSerializer.SerializeToElement(sourceNode.Text!);
+                    var page = CanonicalSessionLineSchema.CreatePage(sourceNode.Id + ":page:0");
+                    page["text"] = JsonSerializer.SerializeToElement(sourceNode.Text!);
+                    target.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { page });
                     break;
                 case "choice":
                     target = CreateChoice(sourceNode);

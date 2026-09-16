@@ -1,0 +1,105 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :
+You might want to check out './gradlew :faq' if your build fails.
+Recommend replacing '4.19.0' with '4.19' for Eclipse JDT
+
+> Task :spotlessInternalRegisterDependencies UP-TO-DATE
+> Task :spotlessJava
+> Task :spotlessJavaApply
+> Task :compileInjectedInterfacesJava NO-SOURCE
+> Task :extractDependencyATs SKIPPED
+> Task :generateForgeSrgMappings SKIPPED
+> Task :downloadVanillaJars SKIPPED
+> Task :mergeVanillaSidedJars SKIPPED
+> Task :deobfuscateMergedJarToSrg SKIPPED
+> Task :downloadFernflower SKIPPED
+> Task :decompileSrgJar SKIPPED
+> Task :cleanupDecompSrgJar SKIPPED
+> Task :patchDecompiledJar SKIPPED
+> Task :applyJST SKIPPED
+> Task :remapDecompiledJar SKIPPED
+> Task :decompressDecompiledSources UP-TO-DATE
+> Task :processInjectedInterfacesResources NO-SOURCE
+> Task :injectedInterfacesClasses UP-TO-DATE
+> Task :compilePatchedMcJava UP-TO-DATE
+> Task :processPatchedMcResources UP-TO-DATE
+> Task :patchedMcClasses UP-TO-DATE
+> Task :compileApiJava NO-SOURCE
+> Task :processApiResources NO-SOURCE
+> Task :apiClasses UP-TO-DATE
+> Task :injectTags UP-TO-DATE
+> Task :compileInjectedTagsJava UP-TO-DATE
+> Task :extractNatives2 UP-TO-DATE
+> Task :createMcLauncherFiles UP-TO-DATE
+> Task :compileMcLauncherJava UP-TO-DATE
+> Task :processInjectedTagsResources NO-SOURCE
+> Task :injectedTagsClasses UP-TO-DATE
+> Task :processMcLauncherResources NO-SOURCE
+> Task :mcLauncherClasses UP-TO-DATE
+
+注: E:\Java\MinecraftMod\DarkGreyRPG\src\main\java\darkgrey\rpg\command\CommandDarkGreyRpg.java使用了未经检查或不安全的操作。
+注: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+> Task :compileJava
+
+> Task :processResources UP-TO-DATE
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources NO-SOURCE
+> Task :testClasses
+
+> Task :canonicalSessionRuntimeProbe
+CANONICAL_SESSION_RUNTIME_PROBE=PASS
+
+> Task :canonicalSessionInstanceProbe
+CANONICAL_SESSION_INSTANCE_PROBE=PASS
+
+> Task :canonicalSessionClientModelProbe
+CANONICAL_DIALOGUE_PRESENTATION_PROBE=PASS
+CANONICAL_SESSION_CLIENT_MODEL_PROBE=PASS
+
+> Task :canonicalSessionNetworkCodecProbe
+SESSION_LINE_MEDIA_PACKET_ROUNDTRIP=PASS
+CANONICAL_SESSION_NETWORK_CODEC_PROBE=PASS
+
+> Task :canonicalSessionServerServiceProbe
+CANONICAL_SESSION_SERVER_SERVICE_PROBE=PASS
+
+> Task :sessionPresentation0330Probe
+SESSION_PRESENTATION_0330_PROBE=PASS
+
+> Task :dgrsMediaLifecycle0331Probe
+SESSION_PAGE_MEDIA=PASS
+DGRS_MEDIA_CACHE_BYTES=1048576
+DGRS_MEDIA_CACHE_REBUILD=PASS
+DGRS_MEDIA_CONCURRENT_REQUESTS=8
+DGRS_MEDIA_CONCURRENT_DISTINCT_MATERIALIZED_PATHS=1
+DGRS_MEDIA_CONCURRENT_SINGLE_MATERIALIZATION=PASS
+DGRS_MEDIA_INVALID_FORMAT_PATH_HASH=PASS
+DGRS_MEDIA_GENERATION_LEASE_TRANSFER=PASS
+DGRS_MEDIA_PART_RECOVERY=PASS
+DGRS_MEDIA_REPARSE_ROOT_GUARD=SKIP_UNAVAILABLE
+DGRS_MEDIA_OPEN_HANDLES=-1
+DGRS_MEDIA_HEAP_RETAINED_SMALL_BYTES=0
+DGRS_MEDIA_HEAP_RETAINED_LARGE_INCREMENT_BYTES=1336
+DGRS_MEDIA_HEAP_SCAN_PEAK_SMALL_DELTA_BYTES=0
+DGRS_MEDIA_HEAP_SCAN_PEAK_LARGE_DELTA_BYTES=0
+DGRS_MEDIA_HEAP_MEDIA_BYTES_SMALL=8388608
+DGRS_MEDIA_HEAP_MEDIA_BYTES_LARGE=33554432
+DGRS_MEDIA_METADATA_ONLY_HEAP=PASS
+DGRS_MEDIA_MAX_IN_FLIGHT_BYTES=32768
+DGRS_MEDIA_CACHE_DISK_BYTES=1048576
+DGRS_MEDIA_LIFECYCLE_0331=PASS
+
+> Task :jar
+> Task :packageMcLauncher UP-TO-DATE
+> Task :packagePatchedMc UP-TO-DATE
+> Task :reobfJar
+> Task :sourcesJar
+> Task :assemble
+
+[Incubating] Problems report is available at: file:///E:/Java/MinecraftMod/DarkGreyRPG/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 50s
+26 actionable tasks: 14 executed, 12 up-to-date

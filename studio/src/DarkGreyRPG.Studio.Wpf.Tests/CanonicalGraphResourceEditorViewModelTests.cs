@@ -65,10 +65,10 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
         Assert.IsTrue(editor.CanSave);
         var snapshot = editor.CreatePersistenceSnapshot();
         Assert.AreEqual("line-1", snapshot.Graph!.Nodes.Single().Id);
-        var snapshotText = snapshot.Graph!.Nodes.Single().Properties["text"].GetString();
+        var snapshotText = snapshot.Graph!.Nodes.Single().Properties["pages"][0].GetProperty("text").GetString();
 
         Assert.IsTrue(editor.Host.SetNodeProperty("line-1", "text", "changed"));
-        Assert.AreEqual(snapshotText, snapshot.Graph!.Nodes.Single().Properties["text"].GetString());
+        Assert.AreEqual(snapshotText, snapshot.Graph!.Nodes.Single().Properties["pages"][0].GetProperty("text").GetString());
         editor.MarkSaved();
         Assert.IsFalse(editor.IsDirty);
         Assert.AreEqual("已保存", editor.SaveStateText);

@@ -59,8 +59,8 @@ public static class GraphNodeFactory
             node.Properties["entries"] = JsonSerializer.SerializeToElement(new[] { new { type = "item", item = "", amount = 1 } });
         if (scope == GraphScope.Session && type == "line")
         {
-            node.Properties["voice_volume"] = JsonSerializer.SerializeToElement(1d);
-            node.Properties["text_speed"] = JsonSerializer.SerializeToElement(30d);
+            node.Properties.Remove("text");
+            node.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { CanonicalSessionLineSchema.CreatePage() });
         }
         if (scope == GraphScope.Session && type == "music")
             node.Properties["volume"] = JsonSerializer.SerializeToElement(1d);

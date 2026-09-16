@@ -27,12 +27,136 @@ public final class CanonicalSessionRuntimeProbe {
 
     public static void main(String[] args) {
         verifyLinearStartLineEnd();
+        verifyPagedLines();
         verifyExactStartAndChoiceHistory();
         verifyLogicActivationAndChoiceOutputs();
         verifyFlowJudgment();
         verifySnapshotDetachAndRestore();
         verifyFailures();
         System.out.println("CANONICAL_SESSION_RUNTIME_PROBE=PASS");
+    }
+
+    private static void verifyPagedLines() {
+        String pages = "[{\"page_id\":\"a\",\"text\":\"first\"},"
+            + "{\"page_id\":\"b\",\"text\":\"second\",\"portrait_variant\":\"smile\","
+            + "\"voice_ref\":\"media/"
+            + repeat('a', 64)
+            + ".ogg\",\"voice_volume\":0.4,"
+            + "\"custom_text_speed\":true,\"text_speed\":120},"
+            + "{\"page_id\":\"c\",\"text\":\"third\",\"custom_text_speed\":true,\"text_speed\":0}]";
+        CanonicalGraphResource resource = pagedSession(pages);
+        CanonicalSessionRuntime runtime = CanonicalSessionRuntime.start(resource);
+        require(
+            "first".equals(
+                runtime.getCurrentStep()
+                    .getText()),
+            "first page missing");
+        require(
+            runtime.getCurrentStep()
+                .getTextSpeed() == -1,
+            "default page must use global speed");
+        long epoch = runtime.snapshot()
+            .getLineEpoch();
+        runtime.continueLine();
+        require(
+            "second".equals(
+                runtime.getCurrentStep()
+                    .getText()),
+            "continued outside page node");
+        require(
+            "smile".equals(
+                runtime.getCurrentStep()
+                    .getPortraitVariant()),
+            "page portrait lost");
+        require(
+            runtime.getCurrentStep()
+                .getVoiceRef() != null
+                && runtime.getCurrentStep()
+                    .getVoiceVolume() == 0.4,
+            "page voice settings lost");
+        require(
+            runtime.getCurrentStep()
+                .getTextSpeed() == 120,
+            "custom speed lost");
+        require(
+            runtime.snapshot()
+                .getLineEpoch() == epoch + 1
+                && runtime.snapshot()
+                    .getLinePageIndex() == 1,
+            "page epoch/cursor not advanced");
+        runtime = CanonicalSessionRuntime.restore(resource, runtime.snapshot());
+        require(
+            "second".equals(
+                runtime.getCurrentStep()
+                    .getText())
+                && runtime.snapshot()
+                    .getLineEpoch() == epoch + 1,
+            "snapshot replayed or reset page");
+        runtime.continueLine();
+        require(
+            "third".equals(
+                runtime.getCurrentStep()
+                    .getText())
+                && runtime.getCurrentStep()
+                    .getTextSpeed() == 0,
+            "third page missing");
+        require(
+            runtime.getCurrentStep()
+                .getVoiceRef() == null,
+            "voice leaked into silent page");
+        runtime.continueLine();
+        require(
+            runtime.getCurrentStep()
+                .getKind() == CanonicalSessionStep.Kind.CHOICE,
+            "last page did not enter choice");
+        require(
+            runtime.snapshot()
+                .getLinePageIndex() == 0,
+            "page cursor not reset after leaving node");
+        expectFailure(new Runnable() {
+
+            public void run() {
+                CanonicalSessionRuntime.start(pagedSession("[]"));
+            }
+        }, "session.line.pages");
+        expectFailure(new Runnable() {
+
+            public void run() {
+                CanonicalSessionRuntime
+                    .start(pagedSession("[{\"page_id\":\"a\",\"text\":\"a\"},{\"page_id\":\"a\",\"text\":\"b\"}]"));
+            }
+        }, "session.line.page.id");
+    }
+
+    private static String repeat(char value, int count) {
+        char[] text = new char[count];
+        Arrays.fill(text, value);
+        return new String(text);
+    }
+
+    private static CanonicalGraphResource pagedSession(String pages) {
+        return session(
+            "pages",
+            new CanonicalGraph(
+                Arrays.asList(
+                    node("start", "start", startPorts(), empty()),
+                    node("line", "line", ports(in("flow_in"), out("flow_out")), rawProps("pages", pages)),
+                    node(
+                        "choice",
+                        "choice",
+                        ports(
+                            in("flow_in"),
+                            out("flow_accept"),
+                            out("flow_decline"),
+                            logicOut("accept"),
+                            logicOut("decline")),
+                        choiceProps()),
+                    node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done"))),
+                Arrays.asList(
+                    edge("start", "flow_out", "line", "flow_in"),
+                    edge("line", "flow_out", "choice", "flow_in"),
+                    edge("choice", "flow_accept", "end", "flow_in"),
+                    edge("choice", "flow_decline", "end", "flow_in"))));
     }
 
     private static void verifyLogicActivationAndChoiceOutputs() {

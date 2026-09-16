@@ -133,6 +133,16 @@ public partial class CanonicalGraphNodeControl : UserControl
             AutomationProperties.SetName(control, $"图节点 {control.Node.DisplayName} {control.Node.NodeId}");
             AutomationProperties.SetAutomationId(control, $"CanonicalGraphNode_{control.Node.NodeId}");
             control.RebuildPorts();
+            if (NodeHeaderPalette.ForType(control.Node.Type) is { } color)
+            {
+                control.HeaderDragZone.Background = color;
+                control.HeaderTitle.Foreground = NodeHeaderPalette.Foreground;
+            }
+            else
+            {
+                control.HeaderDragZone.SetResourceReference(Border.BackgroundProperty, "AccentFillColorDefaultBrush");
+                control.HeaderTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextOnAccentFillColorPrimaryBrush");
+            }
         }
     }
 

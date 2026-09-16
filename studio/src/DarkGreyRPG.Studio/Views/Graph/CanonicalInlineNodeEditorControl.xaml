@@ -451,74 +451,7 @@
         </Style>
       </TextBlock.Style>
     </TextBlock>
-    <StackPanel>
-      <StackPanel.Style>
-        <Style TargetType="StackPanel">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding HasLineSpeaker}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </StackPanel.Style>
-      <TextBlock Margin="0,10,0,3" Text="头像" />
-      <ComboBox ItemsSource="{Binding PortraitVariantOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectedValue="{Binding SelectedPortraitVariant, Mode=TwoWay}" AutomationProperties.AutomationId="SessionPortraitVariant" />
-    <views:PortraitPreviewControl Margin="0,6,0,0" MediaRef="{Binding SelectedPortraitMediaRef}" Actor="{Binding SelectedPortraitActor}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" AutomationProperties.AutomationId="LinePortraitPreview"/></StackPanel>
-<TextBlock Margin="0,10,0,3" Text="台词文本">
-      <TextBlock.Style>
-        <Style TargetType="TextBlock">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsLine}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </TextBlock.Style>
-    </TextBlock>
-    <TextBox Text="{Binding LineText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.AutomationId="InlineLineTextEditor">
-      <TextBox.Style>
-        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsLine}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </TextBox.Style>
-    </TextBox>
-    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding LineTextError}" TextWrapping="Wrap" />
-
-    <StackPanel Margin="0,10,0,0">
-      <StackPanel.Style>
-        <Style TargetType="StackPanel">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsLine}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </StackPanel.Style>
-      <CheckBox Content="自定义显示速度" IsChecked="{Binding IsLineTextSpeedCustom, Mode=TwoWay}" Margin="0,4,0,0" />
-      <StackPanel><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsLineTextSpeedCustom}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-      <TextBlock Text="显示速度（字/秒）" Margin="0,4,0,0" />
-      <Grid Margin="0,4,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
-        <Slider Minimum="0" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding LineTextSpeed, Mode=TwoWay}" Margin="0,0,8,0" />
-        <TextBox Grid.Column="1" Text="{Binding LineTextSpeed, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" graph:NumericDrag.Minimum="0" graph:NumericDrag.Maximum="120" graph:NumericDrag.Step="1" />
-      </Grid>
-      </StackPanel>
-      <CheckBox Content="语音/音效" IsChecked="{Binding IsLineAudioEnabled, Mode=TwoWay}" AutomationProperties.AutomationId="EnableLineAudio" />
-                            <Border Margin="0,5,0,0" Padding="8" BorderBrush="#727272" BorderThickness="1" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
-                                <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsLineAudioEnabled}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
-                                <StackPanel><UniformGrid Columns="2"><Button Content="导入" Margin="0,0,3,0" HorizontalAlignment="Stretch" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportLineAudio" /><Button Content="移除" Margin="3,0,0,0" HorizontalAlignment="Stretch" Click="RemoveLineAudio_OnClick" /></UniformGrid>
-      <views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" Volume="{Binding LineVoiceVolumeDisplayValue}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
-      <Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="音量"/><TextBlock Grid.Column="1" Text="{Binding LineVoiceVolumeLabel}"/></Grid>
-      <Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="{Binding LineVoiceVolumeDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PreviewMouseLeftButtonUp="VolumeSlider_OnPreviewMouseLeftButtonUp" LostKeyboardFocus="VolumeSlider_OnLostKeyboardFocus" PreviewKeyDown="VolumeSlider_OnPreviewKeyDown" AutomationProperties.AutomationId="LineVoiceVolume"/></StackPanel>
-                            </Border>
-    </StackPanel>
+<graph:LinePagesEditor />
     <StackPanel Margin="0,10,0,0">
       <StackPanel.Style>
         <Style TargetType="StackPanel">
@@ -621,34 +554,7 @@
       <TextBlock FontWeight="SemiBold" Text="选项" />
       <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
     </StackPanel>
-    <ItemsControl ItemsSource="{Binding ChoiceOptions}">
-      <ItemsControl.Style>
-        <Style TargetType="ItemsControl">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsChoice}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </ItemsControl.Style>
-      <ItemsControl.ItemTemplate>
-        <DataTemplate>
-          <Grid Margin="0,2">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox graph:TextInputWatermark.Text="输入选项文字" Grid.Column="0" Text="{Binding DisplayText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-              <Button Margin="3,0,0,0" Padding="4,1" Content="↑" Command="{Binding MoveUpCommand}" />
-              <Button Margin="2,0,0,0" Padding="4,1" Content="↓" Command="{Binding MoveDownCommand}" />
-              <Button Margin="2,0,0,0" Padding="4,1" Content="−" Command="{Binding RemoveCommand}" ToolTip="删除选项" />
-            </StackPanel>
-          </Grid>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
+<graph:ReorderEntriesEditor ItemsSource="{Binding ChoiceOptions}" />
     <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
       <StackPanel.Style>
         <Style TargetType="StackPanel">
@@ -676,34 +582,7 @@
       </StackPanel.Style>
       <graph:RewardEntriesEditor />
     </StackPanel>
-    <ItemsControl ItemsSource="{Binding TaskResultSlots}">
-      <ItemsControl.Style>
-        <Style TargetType="ItemsControl">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsTaskSettle}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </ItemsControl.Style>
-      <ItemsControl.ItemTemplate>
-        <DataTemplate>
-          <Grid Margin="0,2">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-              <Button Margin="3,0,0,0" Padding="4,1" Content="↑" Command="{Binding MoveUpCommand}" />
-              <Button Margin="2,0,0,0" Padding="4,1" Content="↓" Command="{Binding MoveDownCommand}" />
-              <Button Margin="2,0,0,0" Padding="4,1" Content="−" Command="{Binding RemoveCommand}" ToolTip="删除结算结果" />
-            </StackPanel>
-          </Grid>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
+<graph:ReorderEntriesEditor ItemsSource="{Binding TaskResultSlots}" />
     <StackPanel>
       <StackPanel.Style>
         <Style TargetType="StackPanel">

@@ -139,6 +139,7 @@ public final class CanonicalSessionInstanceNbtCodec {
             runtime.getPresentation()
                 .toJson());
         tag.setLong("line_epoch", runtime.getLineEpoch());
+        tag.setInteger("line_page_index", runtime.getLinePageIndex());
         tag.setString(
             "status",
             runtime.getStatus()
@@ -184,7 +185,8 @@ public final class CanonicalSessionInstanceNbtCodec {
             "waiting_condition",
             "waiting_condition_value",
             "presentation",
-            "line_epoch");
+            "line_epoch",
+            "line_page_index");
         String player = string(tag, "player_uuid");
         UUID uuid;
         if (player.length() != 36) throw malformed("invalid player_uuid");
@@ -244,6 +246,7 @@ public final class CanonicalSessionInstanceNbtCodec {
         if (status == CanonicalSessionStatus.COMPLETED && end == null) throw malformed("completed end is required");
         if (status != CanonicalSessionStatus.COMPLETED && end != null) throw malformed("only completed has end");
         if (tag.hasKey("line_epoch")) requireType(tag, "line_epoch", LONG);
+        if (tag.hasKey("line_page_index")) requireType(tag, "line_page_index", INT);
         CanonicalSessionSnapshot runtime = new CanonicalSessionSnapshot(
             resource,
             current,
@@ -262,7 +265,8 @@ public final class CanonicalSessionInstanceNbtCodec {
             tag.hasKey("presentation")
                 ? darkgrey.rpg.session.runtime.CanonicalSessionPresentation.fromJson(string(tag, "presentation"))
                 : darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY,
-            tag.hasKey("line_epoch") ? tag.getLong("line_epoch") : 0);
+            tag.hasKey("line_epoch") ? tag.getLong("line_epoch") : 0,
+            tag.hasKey("line_page_index") ? tag.getInteger("line_page_index") : 0);
         return new CanonicalSessionInstanceSnapshot(uuid, story, placement, resource, transport, runtime);
     }
 

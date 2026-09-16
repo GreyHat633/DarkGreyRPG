@@ -40,6 +40,7 @@ public final class CanonicalSessionServerServiceProbe {
     private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     public static void main(String[] args) {
+        multiPageActions();
         ProjectSnapshot project = project(true, true, "session_a");
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         CanonicalSessionServerService service = new CanonicalSessionServerService(project, data);
@@ -302,6 +303,65 @@ public final class CanonicalSessionServerServiceProbe {
         return project(actor, member, resourceId, resourceId, "actor_a");
     }
 
+    private static void multiPageActions() {
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        final CanonicalSessionServerService service = new CanonicalSessionServerService(
+            project(true, true, "pages_session"),
+            data);
+        CanonicalSessionFrame first = service.start(PLAYER, "story_a", "place_a")
+            .getFrame();
+        final CanonicalSessionAction legacy = new CanonicalSessionAction(
+            first.getTransportId(),
+            "story_a",
+            first.getCurrentNodeId(),
+            CanonicalSessionAction.Kind.CONTINUE,
+            null);
+        reject(new Runnable() {
+
+            public void run() {
+                service.dispatch(PLAYER, legacy);
+            }
+        }, "unversioned page action");
+        final CanonicalSessionAction advance = new CanonicalSessionAction(
+            first.getTransportId(),
+            "story_a",
+            first.getCurrentNodeId(),
+            CanonicalSessionAction.Kind.CONTINUE,
+            null,
+            first.getLineEpoch());
+        CanonicalSessionFrame second = service.dispatch(PLAYER, advance)
+            .getFrame();
+        require(
+            "Second".equals(second.getText()) && second.getCurrentNodeId()
+                .equals(first.getCurrentNodeId()),
+            "second page remains on same node");
+        require(second.getLineEpoch() == first.getLineEpoch() + 1L, "page playback epoch advances");
+        reject(new Runnable() {
+
+            public void run() {
+                service.dispatch(PLAYER, advance);
+            }
+        }, "duplicate page action");
+        require(
+            "Second".equals(
+                service.resume(PLAYER, "story_a")
+                    .getFrame()
+                    .getText()),
+            "rejected duplicate does not skip page");
+        CanonicalSessionFrame choice = service
+            .dispatch(
+                PLAYER,
+                new CanonicalSessionAction(
+                    second.getTransportId(),
+                    "story_a",
+                    second.getCurrentNodeId(),
+                    CanonicalSessionAction.Kind.CONTINUE,
+                    null,
+                    second.getLineEpoch()))
+            .getFrame();
+        require(choice.getKind() == CanonicalSessionFrame.Kind.CHOICE, "last page follows flow output");
+    }
+
     private static ProjectSnapshot project(boolean actor, boolean member, String resourceId, String storyResourceId) {
         return project(actor, member, resourceId, storyResourceId, "actor_a");
     }
@@ -406,11 +466,15 @@ public final class CanonicalSessionServerServiceProbe {
             "start",
             ports(out("flow_out", false), out("logic_out", true)),
             props());
-        CanonicalGraphNode line = node(
-            "line",
-            "line",
-            ports(in("flow_in", false), out("flow_out", false)),
-            props("speaker_actor_id", actorId, "text", "Hello"));
+        Map<String, JsonElement> lineProps = props("speaker_actor_id", actorId, "text", "Hello");
+        if ("pages_session".equals(id)) {
+            lineProps.remove("text");
+            lineProps.put(
+                "pages",
+                new JsonParser().parse(
+                    "[{\"page_id\":\"first\",\"text\":\"First\"},{\"page_id\":\"second\",\"text\":\"Second\"}]"));
+        }
+        CanonicalGraphNode line = node("line", "line", ports(in("flow_in", false), out("flow_out", false)), lineProps);
         Map<String, JsonElement> choiceProps = props("prompt", "Pick one");
         JsonArray options = new JsonArray();
         options.add(option("option_a", "A", "flow_a"));

@@ -440,8 +440,8 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     public string LineText
     {
-        get => _lineText;
-        set => SetStringProperty("text", value, ref _lineText, nameof(LineText));
+        get => IsLine ? LinePages.FirstOrDefault()?.Text ?? _lineText : _lineText;
+        set { if (IsLine && LinePages.FirstOrDefault() is { } page) page.Text = value; }
     }
     public string LineTextError => TextDraftError(nameof(LineText));
 
@@ -665,6 +665,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     {
         if (_disposed) return;
         _disposed = true;
+        foreach (var page in LinePages) page.Dispose();
         AudioState.Changed -= OnLineAudioStateChanged;
         foreach (var actor in _actorItems) actor.PortraitsChanged -= OnActorPortraitsChanged;
         if (_subscribeToHostChanges) _host.NodesChanged -= HostOnNodesChanged;
@@ -976,7 +977,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         RebuildObjectiveActorOptions();
         RebuildItemOptions();
 
-        ChoiceOptions.Clear();
+        var seenChoices = new HashSet<string>(StringComparer.Ordinal);
         if (IsChoice && current.Properties.TryGetValue(SessionChoiceSchema.OptionsProperty, out var options)
             && options.ValueKind == JsonValueKind.Array)
         {
@@ -989,14 +990,17 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
                     || optionId.ValueKind != JsonValueKind.String
                     || displayText.ValueKind != JsonValueKind.String)
                     continue;
-                ChoiceOptions.Add(new CanonicalChoiceOptionViewModel(
-                    this, optionId.GetString() ?? string.Empty,
-                    displayText.GetString() ?? string.Empty, index));
+                var id = optionId.GetString() ?? string.Empty;
+                seenChoices.Add(id);
+                var row = ChoiceOptions.FirstOrDefault(item => item.OptionId == id);
+                if (row is null) { row = new(this, id, displayText.GetString() ?? string.Empty, index); ChoiceOptions.Insert(index, row); }
+                else { if (ChoiceOptions.IndexOf(row) != index) ChoiceOptions.Move(ChoiceOptions.IndexOf(row), index); row.Project(displayText.GetString() ?? string.Empty, index); }
                 index++;
             }
         }
+        for (var i = ChoiceOptions.Count - 1; i >= 0; i--) if (!seenChoices.Contains(ChoiceOptions[i].OptionId)) ChoiceOptions.RemoveAt(i);
 
-        TaskResultSlots.Clear();
+        var seenResults = new HashSet<string>(StringComparer.Ordinal);
         if (IsTaskSettle)
         {
             foreach (var port in current.Inputs
@@ -1004,11 +1008,16 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
                 .OrderBy(port => port.Order)
                 .ThenBy(port => port.PortId, StringComparer.Ordinal))
             {
-                TaskResultSlots.Add(new CanonicalTaskResultSlotViewModel(
-                    this, port.PortId, port.DisplayName, port.Order));
+                seenResults.Add(port.PortId);
+                var row = TaskResultSlots.FirstOrDefault(item => item.PortId == port.PortId);
+                var index = seenResults.Count - 1;
+                if (row is null) { row = new(this, port.PortId, port.DisplayName, port.Order); TaskResultSlots.Insert(index, row); }
+                else { if (TaskResultSlots.IndexOf(row) != index) TaskResultSlots.Move(TaskResultSlots.IndexOf(row), index); row.Project(port.DisplayName, port.Order); }
             }
         }
+        for (var i = TaskResultSlots.Count - 1; i >= 0; i--) if (!seenResults.Contains(TaskResultSlots[i].PortId)) TaskResultSlots.RemoveAt(i);
 
+        RefreshLinePages();
         OnPropertyChanged(nameof(PortraitVariantOptions));
         OnPropertyChanged(nameof(SelectedPortraitMediaRef));
         OnPropertyChanged(nameof(SelectedPortraitActor));
@@ -1590,6 +1599,9 @@ public sealed class CanonicalChoiceOptionViewModel : ObservableObject
     }
 
     public string OptionId { get; }
+    internal void Project(string text, int order) { _displayText = text; Order = order; OnPropertyChanged(nameof(DisplayText)); OnPropertyChanged(nameof(EditorText)); MoveUpCommand.RaiseCanExecuteChanged(); MoveDownCommand.RaiseCanExecuteChanged(); }
+    public string EditorText { get => DisplayText; set => DisplayText = value; }
+    public bool MoveTo(int index) => _owner.ReorderChoiceOption(OptionId, index);
     public string DisplayText
     {
         get => _displayText;
@@ -1643,6 +1655,9 @@ public sealed class CanonicalTaskResultSlotViewModel : ObservableObject
 
     public string PortId { get; }
     public string StablePortId => PortId;
+    internal void Project(string text, int order) { _displayName = text; Order = order; OnPropertyChanged(nameof(DisplayName)); OnPropertyChanged(nameof(EditorText)); MoveUpCommand.RaiseCanExecuteChanged(); MoveDownCommand.RaiseCanExecuteChanged(); }
+    public string EditorText { get => DisplayName; set => DisplayName = value; }
+    public bool MoveTo(int index) => _owner.ReorderTaskResultSlot(PortId, index);
     public string DisplayName
     {
         get => _displayName;

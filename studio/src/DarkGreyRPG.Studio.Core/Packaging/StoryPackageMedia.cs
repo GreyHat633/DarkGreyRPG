@@ -28,7 +28,13 @@ internal static class StoryPackageMedia
             var session = GraphResourceEnvelopeSerializer.Deserialize(readJson(path));
             foreach (var node in session.Graph?.Nodes ?? [])
             {
-                if (node.Type == "line" && node.Properties.TryGetValue("voice_ref", out var voice)) Add(voice);
+                if (node.Type == "line")
+                {
+                    if (Graphs.Definitions.CanonicalSessionLineSchema.Validate(node).Count != 0)
+                        throw new StoryPackageException("台词数据无效，无法确定全部媒体引用。");
+                    foreach (var page in Graphs.Definitions.CanonicalSessionLineSchema.ReadPages(node))
+                        if (page.TryGetValue("voice_ref", out var voice)) Add(voice);
+                }
                 if (node.Type == "music" && node.Properties.TryGetValue("media_ref", out var music)) Add(music);
                 if (node.Type == "screen" && node.Properties.TryGetValue("layers", out var layers))
                     foreach (var layer in layers.EnumerateArray()) Add(layer.GetProperty("media_ref"));

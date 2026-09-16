@@ -78,7 +78,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         using (inspector)
         {
             inspector.LineText = "Hello";
-            Assert.AreEqual("Hello", host.Host.Graph.Nodes.Single().Properties["text"].GetString());
+            Assert.AreEqual("Hello", host.Host.Graph.Nodes.Single().Properties["pages"][0].GetProperty("text").GetString());
             Assert.IsTrue(host.IsDirty);
             Assert.AreEqual("Hello", inspector.LineText);
         }
@@ -230,6 +230,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         inspector.ChoiceOptions[1].MoveUpCommand.Execute(null);
         Assert.IsTrue(inspector.RenameChoiceOption(second.OptionId, "Renamed"));
         Assert.IsTrue(inspector.ReorderChoiceOption(second.OptionId, 0));
+        Assert.AreSame(second, inspector.ChoiceOptions[0], "Editing and dragging must retain the row instance and focus.");
 
         var options = editor.Host.Graph.Nodes.Single().Properties["options"].EnumerateArray().ToArray();
         Assert.AreEqual("Renamed", options[0].GetProperty("display_text").GetString());
@@ -405,6 +406,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.AreEqual("settle", changedNodes.Single());
         Assert.IsTrue(inspector.RenameTaskResultSlot(second.PortId, "Renamed"));
         Assert.IsTrue(inspector.ReorderTaskResultSlot(second.PortId, 0));
+        Assert.AreSame(second, inspector.TaskResultSlots[0], "Settlement rows must retain focus and identity through edits and reorder.");
 
         var slots = editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
             .OrderBy(port => port.Order).ToArray();

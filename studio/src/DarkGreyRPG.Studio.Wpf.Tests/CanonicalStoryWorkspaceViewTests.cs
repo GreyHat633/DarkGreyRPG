@@ -651,6 +651,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     public void TextDraftChangesTwentyTimesAndCommitsOneGraphRevision()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        line.Properties.Remove("pages");
         line.Properties["text"] = JsonSerializer.SerializeToElement("原值");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
@@ -664,7 +665,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var draft = Descendants<TextBox>(view)
             .First(textBox => string.Equals(
                 textBox.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path.Path,
-                "LineText",
+                "Text",
                 StringComparison.Ordinal));
         var binding = draft.GetBindingExpression(TextBox.TextProperty)!;
         Assert.AreEqual(System.Windows.Data.UpdateSourceTrigger.LostFocus,
@@ -683,13 +684,14 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.AreEqual(beforeRevision + 1, workspace.ActiveEditor.GraphRevision);
         Assert.AreEqual(new string('字', 20),
             workspace.ActiveEditor.Host.Graph.Nodes.Single(node => node.NodeId == "line-1")
-                .Properties["text"].GetString());
+                .Properties["pages"][0].GetProperty("text").GetString());
     }
 
     [STATestMethod]
     public void CtrlSFlushesActiveTextDraftAsOneCanonicalCommit()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
+        line.Properties.Remove("pages");
         line.Properties["text"] = JsonSerializer.SerializeToElement("原值");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
@@ -703,7 +705,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var draft = Descendants<TextBox>(view)
             .First(textBox => string.Equals(
                 textBox.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path.Path,
-                "LineText",
+                "Text",
                 StringComparison.Ordinal));
         var beforeRevision = workspace.ActiveEditor.GraphRevision;
         var beforeUndo = workspace.ActiveGraphHost.Session.UndoCount;
@@ -715,7 +717,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.AreEqual(beforeUndo + 1, workspace.ActiveGraphHost.Session.UndoCount);
         Assert.AreEqual("焦点仍在输入框的最后一个字",
             workspace.ActiveEditor.Host.Graph.Nodes.Single(node => node.NodeId == "line-1")
-                .Properties["text"].GetString());
+                .Properties["pages"][0].GetProperty("text").GetString());
     }
 
     [STATestMethod]
@@ -776,7 +778,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var actor = Descendants<ComboBox>(view).Single(control =>
             AutomationProperties.GetAutomationId(control) == "SessionLineActorSelector");
         var text = Descendants<TextBox>(view).Single(control =>
-            AutomationProperties.GetAutomationId(control) == "SessionLineTextEditor");
+            AutomationProperties.GetAutomationId(control) == "LinePageText" && ReferenceEquals(((CanonicalLinePageViewModel)control.DataContext).Owner, workspace.NodeInspector));
         Assert.AreEqual(Visibility.Visible, actor.Visibility);
         Assert.AreEqual(Visibility.Visible, text.Visibility);
         Assert.IsLessThan(

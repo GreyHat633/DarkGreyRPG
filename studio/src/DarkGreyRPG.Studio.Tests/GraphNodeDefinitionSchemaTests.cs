@@ -174,7 +174,7 @@ public sealed class GraphNodeDefinitionSchemaTests
 
         var line = GraphNodeDefinitionRegistry.Get(GraphScope.Session, "line")!;
         Assert.IsFalse(line.PropertyDefinitions.Single(property => property.Name == "speaker_actor_id").Required);
-        Assert.IsTrue(line.PropertyDefinitions.Single(property => property.Name == "text").Required);
+        Assert.IsFalse(line.PropertyDefinitions.Single(property => property.Name == "text").Required);
         Assert.AreEqual(JsonValueKind.Null, line.PropertyDefinitions.Single(property => property.Name == "speaker_actor_id").DefaultValue!.Value.ValueKind);
         Assert.AreEqual(string.Empty, line.PropertyDefinitions.Single(property => property.Name == "text").DefaultValue!.Value.GetString());
         Assert.AreEqual(0, GraphNodeDefinitionRegistry.Get(GraphScope.Session, "choice")!
@@ -196,7 +196,7 @@ public sealed class GraphNodeDefinitionSchemaTests
         first.Ports[0].DisplayName = "changed";
         first.Properties["text"] = JsonSerializer.SerializeToElement("changed");
         Assert.AreEqual("流程输入", second.Ports[0].DisplayName);
-        Assert.AreEqual(string.Empty, second.Properties["text"].GetString());
+        Assert.AreEqual(string.Empty, CanonicalSessionLineSchema.ReadPages(second)[0]["text"].GetString());
         Assert.AreEqual("流程输入", GraphNodeDefinitionRegistry.Get(GraphScope.Session, "line")!.FixedPorts[0].DisplayName);
     }
 
@@ -268,7 +268,7 @@ public sealed class GraphNodeDefinitionSchemaTests
         var definitions = GraphNodeDefinitionRegistry.Get(scope, type)!.PropertyDefinitions;
         CollectionAssert.AreEqual(expected.Select(item => item.Name).ToArray(), definitions.Select(item => item.Name).ToArray());
         CollectionAssert.AreEqual(expected.Select(item => item.Kind).ToArray(), definitions.Select(item => item.Kind).ToArray());
-        Assert.IsTrue(definitions.All(item => item.DefaultValue.HasValue &&
+        Assert.IsTrue(definitions.All(item => (scope == GraphScope.Session && type == "line" && item.Name == "text" && !item.Required) || item.DefaultValue.HasValue &&
             (item.Required || (scope == GraphScope.Session && type == "line" && item.Name == "speaker_actor_id" && item.AllowNull))));
     }
 }

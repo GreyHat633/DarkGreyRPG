@@ -162,7 +162,7 @@ public static class GraphNodeDefinitionRegistry
                 ports: [Out("flow_out", "流程输出", GraphInterfaceKind.Flow, 0)]),
             Node("line", GraphScope.Session, "台词", "会话", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
-                properties: [new GraphPropertyDefinition("speaker_actor_id", JsonValueKind.String, false, Json("null"), allowNull: true), StringProperty("text")]),
+                properties: [new GraphPropertyDefinition("speaker_actor_id", JsonValueKind.String, false, Json("null"), allowNull: true), new GraphPropertyDefinition("text", JsonValueKind.String, false, Json("\"\""))]),
             Node("music", GraphScope.Session, "音乐", "演出", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
                 properties: [new GraphPropertyDefinition("operation", JsonValueKind.String, true, Json("\"stop\"")),

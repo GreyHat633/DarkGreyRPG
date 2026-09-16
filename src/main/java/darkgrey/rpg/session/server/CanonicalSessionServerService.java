@@ -101,10 +101,25 @@ public final class CanonicalSessionServerService {
         CanonicalSessionStep current = savedData.getCurrentStep(playerUuid, expectedStoryId);
         if (current == null || before.getRuntimeSnapshot()
             .getStatus() != CanonicalSessionStatus.ACTIVE) throw new IllegalStateException("Session is not active.");
+        if (action.getLineEpoch() >= 0L && action.getLineEpoch() != before.getRuntimeSnapshot()
+            .getLineEpoch()) throw new IllegalStateException("Session action playback epoch is stale.");
         CanonicalSessionStep next;
         if (action.getKind() == CanonicalSessionAction.Kind.CONTINUE) {
             if (current.getKind() != CanonicalSessionStep.Kind.LINE)
                 throw new IllegalStateException("Continue requires a Session Line.");
+            if (action.getLineEpoch() < 0L) {
+                for (CanonicalGraphNode node : binding.session.getGraph()
+                    .getNodes()) {
+                    if (!node.getId()
+                        .equals(current.getNodeId())) continue;
+                    JsonElement pages = node.getProperties()
+                        .get("pages");
+                    if (pages != null && pages.isJsonArray()
+                        && pages.getAsJsonArray()
+                            .size() > 1)
+                        throw new IllegalStateException("Multi-page Session actions require a playback epoch.");
+                }
+            }
             next = savedData
                 .continueLine(playerUuid, expectedStoryId, action.getTransportId(), action.getCurrentNodeId());
         } else if (action.getKind() == CanonicalSessionAction.Kind.CHOICE) {
@@ -286,9 +301,12 @@ public final class CanonicalSessionServerService {
                 .optionalLineString(node, "speaker_actor_id");
             if (actorId == null) continue;
             ActorDefinition actor = project.getActor(actorId);
-            if (actor != null) actor.getPortraits()
-                .resolve(
-                    darkgrey.rpg.session.runtime.CanonicalSessionRuntime.optionalLineString(node, "portrait_variant"));
+            if (actor != null)
+                for (CanonicalGraphNode page : darkgrey.rpg.session.runtime.CanonicalSessionRuntime.linePages(node))
+                    actor.getPortraits()
+                        .resolve(
+                            darkgrey.rpg.session.runtime.CanonicalSessionRuntime
+                                .optionalLineString(page, "portrait_variant"));
             boolean owned = binding.membership.getOwnedResources()
                 .getActorIds()
                 .contains(actorId);
