@@ -146,7 +146,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     }
 
     private void drawPanel(CanonicalTaskLayout layout) {
-        drawRect(layout.panelLeft, layout.panelTop, layout.panelRight, layout.panelBottom, 0xEE161616);
+        drawRect(layout.panelLeft, layout.panelTop, layout.panelRight, layout.panelBottom, DgrUiPalette.WINDOW_PANEL);
         drawRect(
             layout.panelLeft,
             layout.panelTop,

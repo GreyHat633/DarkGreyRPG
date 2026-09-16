@@ -159,6 +159,16 @@ public final class SessionPresentation0330Probe {
         require(backend.playing.isEmpty(), "death stops DGR channels");
         audio.tick(5, true);
         require(backend.plays == 3 && !backend.playing.containsKey("dgr_session_voice"), "respawn restores music only");
+        Fake failed = new Fake();
+        failed.available = true;
+        failed.failVoice = true;
+        SessionAudioPlayback failedAudio = new SessionAudioPlayback(failed);
+        failedAudio.present(frame(CanonicalSessionPresentation.EMPTY, 3, true), 0);
+        failedAudio.tick(1, true);
+        failedAudio.tick(2, true);
+        require(failed.plays == 1, "failed voice is attempted once per line");
+        failedAudio.advance();
+        require(failed.playing.isEmpty(), "advance stops failed voice channel");
         audio.clear();
         audio.present(frame(state, 2, false), 6);
         require(backend.plays == 4 && !backend.playing.containsKey("dgr_session_voice"), "reconnect suppresses voice");
@@ -168,7 +178,92 @@ public final class SessionPresentation0330Probe {
         require(backend.playing.size() == 1, "fade releases previous channel");
         audio.clear();
         require(backend.playing.isEmpty(), "END cleanup");
+        verifyVolumes(music);
+        CanonicalSessionFrame portraitLine = new CanonicalSessionFrame(
+            1,
+            "story",
+            "probe",
+            "line",
+            CanonicalSessionFrame.Kind.LINE,
+            "speaker",
+            "line",
+            Collections.<CanonicalSessionChoiceOption>emptyList(),
+            IMAGE,
+            AUDIO);
+        CanonicalSessionFrame choice = new CanonicalSessionFrame(
+            1,
+            "story",
+            "probe",
+            "choice",
+            CanonicalSessionFrame.Kind.CHOICE,
+            "",
+            "",
+            Collections.singletonList(new CanonicalSessionChoiceOption("a", "A")));
+        require(
+            IMAGE.equals(CanonicalMediaServer.retainedPortrait(portraitLine, choice, IMAGE)),
+            "choice keeps in-flight portrait download authorized");
+        require(
+            CanonicalMediaServer.retainedPortrait(portraitLine, frame(state, 2, true), IMAGE) == null,
+            "next line without portrait revokes previous image");
         System.out.println("SESSION_PRESENTATION_0330_PROBE=PASS");
+    }
+
+    private static void verifyVolumes(CanonicalGraphNode originalMusic) {
+        CanonicalSessionPresentation low = CanonicalSessionPresentation.EMPTY.apply(
+            node(
+                "low",
+                "music",
+                "{\"operation\":\"play\",\"media_ref\":\"" + AUDIO
+                    + "\",\"loop\":true,\"fade_in\":0,\"fade_out\":2,\"volume\":0.25}"));
+        require(
+            CanonicalSessionPresentation.fromJson(low.toJson())
+                .getMusicVolume() == 0.25,
+            "music volume persists in presentation");
+        require(
+            CanonicalSessionPresentation.fromJson(
+                low.toJson()
+                    .replace(",\"volume\":0.25", ""))
+                .getMusicVolume() == 1,
+            "old snapshots default to full volume");
+        CanonicalSessionFrame quiet = new CanonicalSessionFrame(
+            1,
+            "story",
+            "probe",
+            "line",
+            CanonicalSessionFrame.Kind.LINE,
+            "",
+            "volume",
+            Collections.<CanonicalSessionChoiceOption>emptyList(),
+            null,
+            AUDIO,
+            0.4).withPresentation(low, 1, true);
+        ByteBuf bytes = Unpooled.buffer();
+        quiet.toBytes(bytes);
+        CanonicalSessionFrame decoded = new CanonicalSessionFrame();
+        decoded.fromBytes(bytes);
+        bytes.readerIndex(0);
+        bytes.writerIndex(bytes.writerIndex() - 16);
+        CanonicalSessionFrame legacy = new CanonicalSessionFrame();
+        legacy.fromBytes(bytes);
+        require(legacy.getVoiceVolume() == 1, "older network frames retain default gain");
+        bytes.release();
+        require(decoded.getVoiceVolume() == 0.4, "voice volume wire round trip");
+        Fake fake = new Fake();
+        fake.available = true;
+        SessionAudioPlayback playback = new SessionAudioPlayback(fake);
+        playback.present(decoded, 0);
+        require(Math.abs(fake.volumes.get("dgr_session_voice") - 0.4) < 0.0001, "voice gain applied");
+        require(fake.volumes.get("dgr_session_music_a") == 0.25f, "music gain applied");
+        playback.present(frame(low.apply(originalMusic), 2, false), 1);
+        playback.tick(2, true);
+        require(
+            fake.volumes.get("dgr_session_music_a") == 0.125f,
+            "crossfade starts from configured gain, never jumps to full volume");
+        reject(
+            () -> CanonicalSessionPresentation.fromJson(
+                low.toJson()
+                    .replace("\"volume\":0.25", "\"volume\":2")));
+        playback.clear();
     }
 
     private static CanonicalSessionFrame frame(CanonicalSessionPresentation state, long epoch, boolean voice) {
@@ -228,8 +323,10 @@ public final class SessionPresentation0330Probe {
     private static final class Fake implements SessionAudioPlayback.Backend {
 
         boolean available;
+        boolean failVoice;
         int plays;
         final Map<String, String> playing = new HashMap<String, String>();
+        final Map<String, Float> volumes = new HashMap<String, Float>();
 
         @Override
         public boolean ready(String ref) {
@@ -240,12 +337,13 @@ public final class SessionPresentation0330Probe {
         public boolean play(String channel, String ref, boolean loop) {
             playing.put(channel, ref);
             plays++;
-            return true;
+            return !failVoice || !"dgr_session_voice".equals(channel);
         }
 
         @Override
         public void volume(String channel, float volume) {
             require(volume >= 0 && volume <= 1, "volume bounds");
+            volumes.put(channel, volume);
         }
 
         @Override

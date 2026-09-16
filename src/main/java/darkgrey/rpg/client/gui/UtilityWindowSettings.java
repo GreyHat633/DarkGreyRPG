@@ -81,6 +81,19 @@ public final class UtilityWindowSettings {
         saveAll();
     }
 
+    public double dialogueSpeed() {
+        double value = finiteDouble(properties.getProperty("dialogue.charactersPerSecond"), 30);
+        return value >= 0 && value <= 120 ? value : 30;
+    }
+
+    public void saveDialogueSpeed(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value) || value < 0 || value > 120)
+            throw new IllegalArgumentException("speed");
+        reloadFromDisk();
+        properties.setProperty("dialogue.charactersPerSecond", Double.toString(value));
+        saveAll();
+    }
+
     /** Writes all currently loaded/updated properties. */
     public void saveAll() {
         File parent = file.getParentFile();

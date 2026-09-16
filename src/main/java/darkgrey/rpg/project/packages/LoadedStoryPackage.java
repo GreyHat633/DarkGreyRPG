@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
+import darkgrey.rpg.network.message.canonical.CanonicalMediaChunk;
 import darkgrey.rpg.project.ProjectSnapshot;
 
 /** Validated immutable package candidate exposed to server integration code. */
@@ -161,6 +162,34 @@ public final class LoadedStoryPackage {
         }
     }
 
+    /**
+     * Opens one validated package media entry for sequential chunk reads. Archive
+     * media is materialized and hash-checked once, then served through one leased
+     * file handle instead of re-materializing and hashing the full entry per chunk.
+     */
+    public MediaReader openMediaReader(String ref) {
+        if (!manifest.getRequiredResources()
+            .getMedia()
+            .contains(ref)) return null;
+        if (mediaSource == null) {
+            byte[] bytes = declaredResourceBytes.get(ref);
+            return bytes == null ? null : new MediaReader(ref, bytes);
+        }
+        if (closed || generation == null || !generation.retain()) return null;
+        try {
+            long size = mediaSource.getEntrySize(ref);
+            if (size <= 0 || size > CanonicalMediaChunk.MAX_MEDIA_BYTES)
+                throw new IOException("Media entry exceeds reader bounds");
+            Path file = generationStore.materialize(ref, mediaSource);
+            return new MediaReader(ref, file, (int) size, generation);
+        } catch (IOException | darkgrey.rpg.project.ProjectLoadException | RuntimeException exception) {
+            try {
+                generation.release();
+            } catch (IOException ignored) {}
+            return null;
+        }
+    }
+
     /** Called by StoryPackageLoader once this package is no longer current. */
     void close() {
         if (closed) return;
@@ -179,5 +208,64 @@ public final class LoadedStoryPackage {
         if (generation != null) try {
             generation.release();
         } catch (IOException ignored) {}
+    }
+
+    public final class MediaReader implements AutoCloseable {
+
+        private final String ref;
+        private final byte[] bytes;
+        private final RandomAccessFile file;
+        private final int total;
+        private final DgrsGenerationStore.Generation lease;
+        private boolean readerClosed;
+
+        private MediaReader(String ref, byte[] bytes) {
+            this.ref = ref;
+            this.bytes = bytes;
+            this.file = null;
+            this.total = bytes.length;
+            this.lease = null;
+        }
+
+        private MediaReader(String ref, Path path, int total, DgrsGenerationStore.Generation lease) throws IOException {
+            this.ref = ref;
+            this.bytes = null;
+            this.file = new RandomAccessFile(path.toFile(), "r");
+            this.total = total;
+            this.lease = lease;
+        }
+
+        public CanonicalMediaChunk readChunk(long requestId, int offset) throws IOException {
+            if (readerClosed || requestId <= 0
+                || offset < 0
+                || offset >= total
+                || offset % CanonicalMediaChunk.CHUNK_BYTES != 0) return null;
+            int length = Math.min(CanonicalMediaChunk.CHUNK_BYTES, total - offset);
+            byte[] chunk = new byte[length];
+            if (bytes != null) System.arraycopy(bytes, offset, chunk, 0, length);
+            else {
+                file.seek(offset);
+                file.readFully(chunk);
+            }
+            return new CanonicalMediaChunk(requestId, ref, total, offset, chunk);
+        }
+
+        @Override
+        public synchronized void close() throws IOException {
+            if (readerClosed) return;
+            readerClosed = true;
+            IOException failure = null;
+            try {
+                if (file != null) file.close();
+            } catch (IOException exception) {
+                failure = exception;
+            }
+            if (lease != null) try {
+                lease.release();
+            } catch (IOException exception) {
+                if (failure == null) failure = exception;
+            }
+            if (failure != null) throw failure;
+        }
     }
 }

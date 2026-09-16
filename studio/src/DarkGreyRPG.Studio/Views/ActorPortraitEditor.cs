@@ -205,7 +205,7 @@ public sealed class ActorPortraitEditor : UserControl
     private async Task PickAndImportDefaultAsync(Button button)
     {
         if (!CanEdit(out _)) return;
-        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "图片|*.png;*.jpg;*.jpeg", CheckFileExists = true, Multiselect = false };
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = ProjectMediaStore.ImageFileFilter, CheckFileExists = true, Multiselect = false };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         button.IsEnabled = false;
         try { await ImportDefaultAsync(dialog.FileName); }
@@ -215,7 +215,7 @@ public sealed class ActorPortraitEditor : UserControl
     private async Task PickAndImportVariantAsync(Button button)
     {
         if (!CanEdit(out _)) return;
-        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "图片|*.png;*.jpg;*.jpeg", CheckFileExists = true, Multiselect = false };
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = ProjectMediaStore.ImageFileFilter, CheckFileExists = true, Multiselect = false };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         button.IsEnabled = false;
         try { await ImportVariantAsync(dialog.FileName); }

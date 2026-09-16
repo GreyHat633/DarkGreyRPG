@@ -1015,6 +1015,13 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(SelectedPortraitVariant));
         OnPropertyChanged(nameof(HasLineSpeaker));
         OnPropertyChanged(nameof(LineVoiceRef));
+        OnPropertyChanged(nameof(LineTextSpeed));
+        OnPropertyChanged(nameof(IsLineTextSpeedCustom));
+        OnPropertyChanged(nameof(LineVoiceVolume));
+        OnPropertyChanged(nameof(LineVoiceVolumeValue));
+        OnPropertyChanged(nameof(LineVoiceVolumeDraft));
+        OnPropertyChanged(nameof(LineVoiceVolumeDisplayValue));
+        OnPropertyChanged(nameof(LineVoiceVolumeLabel));
         OnPropertyChanged(nameof(IsLineAudioEnabled));
         OnPropertyChanged(nameof(AudioMediaRef));
         OnPropertyChanged(nameof(LineVoiceStatus));

@@ -154,7 +154,7 @@ public sealed class ProjectCreationDialogViewModel : ObservableObject
         var parent = string.IsNullOrWhiteSpace(initialParentDirectory)
             ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
             : initialParentDirectory.Trim();
-        return new(parent, "darkgrey_rpg_project", string.Empty, "darkgrey_rpg_project", "DarkGrey RPG 项目");
+        return new(parent, "Project", string.Empty, "DarkGreyRPGProject", "DarkGrey RPG 项目");
     }
 
     private void ApplySuggestion() => Id = NormalizedSuggestion;

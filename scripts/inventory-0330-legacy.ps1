@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [string]$OutputDirectory = 'PLAN/0.3.3.0/evidence',
     [string[]]$ProjectPaths = @(
@@ -44,7 +44,7 @@ try {
     $rows | Export-Csv (Join-Path $output 'legacy-source-inventory.csv') -NoTypeInformation -Encoding utf8
 
     # Read current editable projects and active Runtime project fixtures; never rewrite them.
-    $projects = @($ProjectPaths) + @((Join-Path $root 'run/client/darkgrey_rpg_project'), (Join-Path $root 'run/server/darkgrey_rpg_project'))
+    $projects = @($ProjectPaths) + @((Join-Path $root 'run/client/DarkGreyRPG/Project'), (Join-Path $root 'run/client/darkgrey_rpg_project'), (Join-Path $root 'run/server/DarkGreyRPG/Project'), (Join-Path $root 'run/server/darkgrey_rpg_project'))
     $projectRows = foreach ($project in $projects) {
         if (!(Test-Path -LiteralPath $project -PathType Container)) {
             [pscustomobject]@{ Project = $project; Path = ''; Status = 'MISSING'; SHA256 = ''; LegacyNodes = ''; StartProperties = '' }
@@ -70,7 +70,7 @@ try {
     $projectRows | Export-Csv (Join-Path $output 'legacy-project-inventory.csv') -NoTypeInformation -Encoding utf8
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $packageDirectories = @('run/client/darkgrey_rpg_story_packages', 'run/server/darkgrey_rpg_story_packages', 'PLAN/0.3.2.4/evidence', '.tooling/0.3.3.0/fixtures/legacy-dgrs', '.tooling/0.3.3.0/fixtures/objective0324')
+    $packageDirectories = @('run/client/DarkGreyRPG/StoryPackages', 'run/server/DarkGreyRPG/StoryPackages', 'run/client/darkgrey_rpg_story_packages', 'run/server/darkgrey_rpg_story_packages', 'PLAN/0.3.2.4/evidence', '.tooling/0.3.3.0/fixtures/legacy-dgrs', '.tooling/0.3.3.0/fixtures/objective0324')
     $packageRows = foreach ($directory in $packageDirectories) {
         if (!(Test-Path -LiteralPath $directory)) { continue }
         foreach ($file in Get-ChildItem -LiteralPath $directory -File -Filter *.dgrs) {

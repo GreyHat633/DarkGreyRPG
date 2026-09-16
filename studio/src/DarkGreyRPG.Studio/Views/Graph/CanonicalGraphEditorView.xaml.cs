@@ -364,7 +364,7 @@ public partial class CanonicalGraphEditorView : UserControl
                 !IsReadOnly && ProjectStoryCreateRequested is not null));
             return menu;
         }
-        var add = FluentContextMenuFactory.CreateSubmenu("添加节点");
+        var add = FluentContextMenuFactory.CreateSubmenu("添加");
         foreach (var category in AuthoringCategories)
         {
             var group = FluentContextMenuFactory.CreateSubmenu(category.Name);
@@ -379,6 +379,7 @@ public partial class CanonicalGraphEditorView : UserControl
             add.Items.Add(group);
         }
         menu.Items.Add(add);
+        AddClipboardMenuItems(menu, null, graphPoint);
         return menu;
     }
 
@@ -930,6 +931,7 @@ public partial class CanonicalGraphEditorView : UserControl
                     _ = RequestNodeEdit(node);
             }));
 
+        AddClipboardMenuItems(menu, node, _contextGraphPoint);
         var canDelete = Host is { } host && _selectedNodes.Any(selected =>
             !GraphNodeDefinitionRegistry.TryGet(host.Scope, selected.Type, out var definition)
                 || !definition.NonDeletable && !definition.Required);
@@ -1398,7 +1400,12 @@ public partial class CanonicalGraphEditorView : UserControl
             CancelPointerGesture();
             return true;
         }
-        if (key == Key.Delete && IsEditableKeyboardSource(source)) return false;
+        if (IsEditableKeyboardSource(source)) return false;
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && Host?.Scope != GraphScope.Project)
+        {
+            if (key == Key.C) return CopySelectedNodes();
+            if (key == Key.V) return PasteNodes(ScreenToGraph(new Point(CanvasViewport.ActualWidth / 2, CanvasViewport.ActualHeight / 2)));
+        }
         if (key == Key.Delete && _selectedConnection is not null)
         {
             var selected = _selectedConnection;

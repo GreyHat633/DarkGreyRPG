@@ -37,4 +37,19 @@ public partial class CanonicalInlineNodeEditorControl : UserControl
         textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
     }
 
+    private static CanonicalNodeInspectorViewModel? VolumeInspector(object sender)
+        => (sender as FrameworkElement)?.DataContext as CanonicalNodeInspectorViewModel;
+
+    private void VolumeSlider_OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => VolumeInspector(sender)?.CommitVolumePreview();
+
+    private void VolumeSlider_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        => VolumeInspector(sender)?.CommitVolumePreview();
+
+    private void VolumeSlider_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) { VolumeInspector(sender)?.CommitVolumePreview(); e.Handled = true; }
+        else if (e.Key == Key.Escape) { VolumeInspector(sender)?.CommitVolumePreview(false); e.Handled = true; }
+    }
+
 }

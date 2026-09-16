@@ -54,6 +54,16 @@ public final class Title0330Probe {
                     .duration() == 4,
             "Chinese packet round trip");
         bytes = Unpooled.buffer();
+        new CanonicalTitleFrame(10, new CanonicalTitleConfiguration("标题", "", 0, 3, 0, false)).toBytes(bytes);
+        bytes.markReaderIndex();
+        decoded.fromBytes(bytes);
+        require(!decoded.getTitle().waitForCompletion, "nonblocking title wire flag");
+        bytes.resetReaderIndex();
+        bytes.writerIndex(bytes.writerIndex() - 1);
+        decoded.fromBytes(bytes);
+        require(decoded.getTitle().waitForCompletion, "old title packet defaults to waiting");
+        bytes.release();
+        bytes = Unpooled.buffer();
         new CanonicalTitleFrame(9, null).toBytes(bytes);
         decoded.fromBytes(bytes);
         bytes.release();

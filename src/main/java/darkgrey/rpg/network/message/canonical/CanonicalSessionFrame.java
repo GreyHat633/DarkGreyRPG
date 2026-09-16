@@ -20,6 +20,19 @@ public final class CanonicalSessionFrame implements IMessage {
     private darkgrey.rpg.session.runtime.CanonicalSessionPresentation presentation = darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY;
     private long lineEpoch;
     private boolean playVoice;
+    private double voiceVolume = 1;
+    private double textSpeed = 30;
+
+    public double getTextSpeed() {
+        return textSpeed;
+    }
+
+    public CanonicalSessionFrame withTextSpeed(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value) || (value != -1 && value < 0) || value > 120)
+            throw CanonicalSessionNetworkCodec.invalid("text speed");
+        textSpeed = value;
+        return this;
+    }
 
     public darkgrey.rpg.session.runtime.CanonicalSessionPresentation getPresentation() {
         return presentation;
@@ -46,7 +59,9 @@ public final class CanonicalSessionFrame implements IMessage {
             text,
             choices,
             portraitRef,
-            voiceRef);
+            voiceRef,
+            voiceVolume);
+        copy.textSpeed = textSpeed;
         copy.presentation = state;
         copy.lineEpoch = epoch;
         copy.playVoice = voice && kind == Kind.LINE && voiceRef != null;
@@ -74,10 +89,30 @@ public final class CanonicalSessionFrame implements IMessage {
     public CanonicalSessionFrame(long transportId, String storyId, String sessionResourceId, String currentNodeId,
         Kind kind, String speaker, String text, List<CanonicalSessionChoiceOption> choices, String portraitRef,
         String voiceRef) {
+        this(
+            transportId,
+            storyId,
+            sessionResourceId,
+            currentNodeId,
+            kind,
+            speaker,
+            text,
+            choices,
+            portraitRef,
+            voiceRef,
+            1);
+    }
+
+    public CanonicalSessionFrame(long transportId, String storyId, String sessionResourceId, String currentNodeId,
+        Kind kind, String speaker, String text, List<CanonicalSessionChoiceOption> choices, String portraitRef,
+        String voiceRef, double voiceVolume) {
         validate(transportId, storyId, sessionResourceId, currentNodeId, kind, speaker, text, choices);
         validateMedia(kind, speaker, portraitRef, voiceRef);
+        if (Double.isNaN(voiceVolume) || Double.isInfinite(voiceVolume) || voiceVolume < 0 || voiceVolume > 1)
+            throw CanonicalSessionNetworkCodec.invalid("voice volume");
         this.portraitRef = portraitRef;
         this.voiceRef = voiceRef;
+        this.voiceVolume = voiceVolume;
         this.transportId = transportId;
         this.storyId = storyId;
         this.sessionResourceId = sessionResourceId;
@@ -133,6 +168,14 @@ public final class CanonicalSessionFrame implements IMessage {
         if (decodedEpoch < 0 || decodedPlay > 1
             || (decodedPlay == 1 && (decodedKind != Kind.LINE || decodedVoice == null)))
             throw CanonicalSessionNetworkCodec.invalid("invalid voice state");
+        // Older frames omitted gain; retain their full-volume behavior.
+        if (buffer.readableBytes() != 0 && buffer.readableBytes() != 8 && buffer.readableBytes() != 16)
+            throw CanonicalSessionNetworkCodec.invalid("invalid voice volume length");
+        double decodedVoiceVolume = buffer.isReadable() ? buffer.readDouble() : 1;
+        if (Double.isNaN(decodedVoiceVolume) || Double.isInfinite(decodedVoiceVolume)
+            || decodedVoiceVolume < 0
+            || decodedVoiceVolume > 1) throw CanonicalSessionNetworkCodec.invalid("invalid voice volume");
+        withTextSpeed(buffer.isReadable() ? buffer.readDouble() : 30);
         CanonicalSessionNetworkCodec.requireNoTrailingBytes(buffer);
         presentation = decodedPresentation;
         lineEpoch = decodedEpoch;
@@ -148,6 +191,7 @@ public final class CanonicalSessionFrame implements IMessage {
             decodedChoices);
         portraitRef = decodedPortrait;
         voiceRef = decodedVoice;
+        voiceVolume = decodedVoiceVolume;
         transportId = decodedTransportId;
         storyId = decodedStoryId;
         sessionResourceId = decodedResourceId;
@@ -193,6 +237,8 @@ public final class CanonicalSessionFrame implements IMessage {
         CanonicalSessionNetworkCodec.writeField(buffer, presentation.toJson(), "presentation", 16384);
         buffer.writeLong(lineEpoch);
         buffer.writeBoolean(playVoice);
+        buffer.writeDouble(voiceVolume);
+        buffer.writeDouble(textSpeed);
     }
 
     public String getPortraitRef() {
@@ -201,6 +247,10 @@ public final class CanonicalSessionFrame implements IMessage {
 
     public String getVoiceRef() {
         return voiceRef;
+    }
+
+    public double getVoiceVolume() {
+        return voiceVolume;
     }
 
     private static void validateMedia(Kind kind, String speaker, String portrait, String voice) {

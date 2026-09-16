@@ -11,7 +11,8 @@ public static class CanonicalTitleSchema
         var issues = new List<ValidationIssue>();
         void Invalid(string field) => issues.Add(new("graph.story.title", "标题字段无效：主标题不能为空，时间为 0–60 秒。", field, NodeId: node.Id));
         string[] fields = ["main", "subtitle", "fade_in", "stay", "fade_out"];
-        if (!node.Properties.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(fields)) { Invalid("properties"); return issues; }
+        if (!fields.All(node.Properties.ContainsKey) || node.Properties.Keys.Any(key => !fields.Contains(key) && key != "wait_for_completion")) { Invalid("properties"); return issues; }
+        if (node.Properties.TryGetValue("wait_for_completion", out var wait) && wait.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) Invalid("wait_for_completion");
         foreach (var field in new[] { "main", "subtitle" })
         {
             var value = node.Properties[field];

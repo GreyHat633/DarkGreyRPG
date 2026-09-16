@@ -14,8 +14,10 @@ public static class CanonicalSessionPresentationSchema
             && value.TryGetDouble(out var number) && double.IsFinite(number) && number >= min && number <= max;
         if (node.Type == "music")
         {
-            string[] fields = ["operation", "media_ref", "loop", "fade_in", "fade_out"];
-            if (!node.Properties.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(fields)) { Invalid("properties"); return issues; }
+            string[] fields = ["operation", "media_ref", "loop", "volume", "fade_in", "fade_out"];
+            var legacyFields = new[] { "operation", "media_ref", "loop", "fade_in", "fade_out" };
+            var propertyNames = node.Properties.Keys.ToHashSet(StringComparer.Ordinal);
+            if (!propertyNames.SetEquals(fields) && !propertyNames.SetEquals(legacyFields)) { Invalid("properties"); return issues; }
             var op = node.Properties["operation"];
             if (op.ValueKind != JsonValueKind.String || op.GetString() is not ("play" or "stop")) Invalid("operation");
             var media = node.Properties["media_ref"];
@@ -25,6 +27,7 @@ public static class CanonicalSessionPresentationSchema
             }
             else if (media.ValueKind != JsonValueKind.Null) Invalid("media_ref");
             if (node.Properties["loop"].ValueKind is not (JsonValueKind.True or JsonValueKind.False)) Invalid("loop");
+            if (node.Properties.TryGetValue("volume", out var volume) && !Number(volume, 0, 1)) Invalid("volume");
             foreach (var field in new[] { "fade_in", "fade_out" }) if (!Number(node.Properties[field], 0, 60)) Invalid(field);
         }
         else if (node.Type == "screen")

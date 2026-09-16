@@ -36,3 +36,5 @@ gui.darkgrey_rpg.no_tasks=No active tasks
 gui.darkgrey_rpg.objective_complete=Objective complete
 gui.darkgrey_rpg.waiting_objective=Waiting for objective
 gui.darkgrey_rpg.task_help=Esc: Close / Mouse wheel: Scroll
+
+key.darkgrey_rpg.settings=Settings

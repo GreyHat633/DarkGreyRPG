@@ -36,6 +36,16 @@ public sealed class DgrsExportPathPickerTests
         Assert.AreEqual(Path.GetFullPath(directories.Fallback), resolved);
     }
 
+    [TestMethod]
+    public void ResolveInitialDirectory_FollowsRuntimeAndRepositoryRename()
+    {
+        using var directories = new TemporaryDirectories();
+        var oldPath = Path.Combine(directories.Remembered, "DarkGrey_RPG", "run", "client", "darkgrey_rpg_story_packages");
+        var newPath = Path.Combine(directories.Remembered, "DarkGreyRPG", "run", "client", "DarkGreyRPG", "StoryPackages");
+        Directory.CreateDirectory(newPath);
+        Assert.AreEqual(newPath, DgrsExportPathPicker.ResolveInitialDirectory(oldPath, directories.Fallback));
+    }
+
     private sealed class TemporaryDirectories : IDisposable
     {
         private readonly string _root = Path.Combine(Path.GetTempPath(), "DarkGreyRPG.FileDialogTests", Guid.NewGuid().ToString("N"));

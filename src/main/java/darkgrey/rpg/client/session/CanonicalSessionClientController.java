@@ -104,8 +104,10 @@ public final class CanonicalSessionClientController {
         acceptClose(close);
     }
 
-    public static void sendContinue() {
+    public static boolean sendContinue() {
+        if (MODEL.finishVisibleText()) return false;
         send(MODEL.continueAction());
+        return true;
     }
 
     public static String getVisibleText() {
@@ -114,6 +116,10 @@ public final class CanonicalSessionClientController {
 
     public static String getVisibleSpeaker() {
         return MODEL.getVisibleSpeaker();
+    }
+
+    public static String getVisiblePortraitRef() {
+        return MODEL.getVisiblePortraitRef();
     }
 
     public static void sendChoice(String optionId) {

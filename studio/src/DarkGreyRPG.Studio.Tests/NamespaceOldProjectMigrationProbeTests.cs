@@ -37,7 +37,7 @@ public sealed class NamespaceOldProjectMigrationProbeTests
             var exportRoot = Environment.GetEnvironmentVariable("DGR_B4_MIGRATION_EXPORTS");
             Assert.IsFalse(string.IsNullOrWhiteSpace(exportRoot), "Set the E-drive artifact directory for the exported fixture packages.");
             var output = Path.GetFullPath(exportRoot!);
-            Assert.IsTrue(output.StartsWith("E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\", StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(output.StartsWith("E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\", StringComparison.OrdinalIgnoreCase));
             Directory.CreateDirectory(output);
             foreach (var story in result.Graphs.Where(graph => graph.ResourceKind == GraphResourceKind.Story))
             {

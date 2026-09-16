@@ -62,7 +62,7 @@ public sealed class DgrsExportPathPicker : IDgrsExportPathPicker
         {
             try
             {
-                var remembered = Path.GetFullPath(rememberedDirectory);
+                var remembered = ResolveMovedDirectory(rememberedDirectory);
                 if (Directory.Exists(remembered)) return remembered;
             }
             catch (ArgumentException) { }
@@ -74,7 +74,7 @@ public sealed class DgrsExportPathPicker : IDgrsExportPathPicker
             if (string.IsNullOrWhiteSpace(candidate)) continue;
             try
             {
-                var directory = new DirectoryInfo(Path.GetFullPath(candidate));
+                var directory = new DirectoryInfo(ResolveMovedDirectory(candidate));
                 for (var current = directory; current is not null; current = current.Parent)
                 {
                     if (current.Exists) return current.FullName;
@@ -85,6 +85,27 @@ public sealed class DgrsExportPathPicker : IDgrsExportPathPicker
         }
 
         return Environment.CurrentDirectory;
+    }
+
+    private static string ResolveMovedDirectory(string path)
+    {
+        var original = Path.GetFullPath(path);
+        if (Directory.Exists(original)) return original;
+        var parts = original.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        for (var i = parts.Length - 1; i >= 0; i--)
+        {
+            parts[i] = parts[i] switch
+            {
+                "DarkGrey_RPG" => "DarkGreyRPG",
+                "darkgrey_rpg_story_packages" => Path.Combine("DarkGreyRPG", "StoryPackages"),
+                "darkgrey_rpg_project" => Path.Combine("DarkGreyRPG", "Project"),
+                "darkgrey_rpg_media_cache" => Path.Combine("DarkGreyRPG", "Cache"),
+                _ => parts[i],
+            };
+            var moved = string.Join(Path.DirectorySeparatorChar, parts);
+            if (Directory.Exists(moved)) return moved;
+        }
+        return original;
     }
 
     private void RememberDirectory(string selectedPath)

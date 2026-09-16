@@ -38,6 +38,7 @@ public final class CanonicalTitleFrame implements IMessage {
             buffer.writeDouble(title.fadeIn);
             buffer.writeDouble(title.stay);
             buffer.writeDouble(title.fadeOut);
+            buffer.writeBoolean(title.waitForCompletion);
         }
     }
 
@@ -51,13 +52,12 @@ public final class CanonicalTitleFrame implements IMessage {
         if (present == 1) {
             String main = CanonicalSessionNetworkCodec.readField(buffer, "main", 4096);
             String sub = CanonicalSessionNetworkCodec.readOptionalField(buffer, "subtitle", 4096);
-            if (buffer.readableBytes() != 24) throw new IllegalArgumentException("Invalid title timings payload");
-            value = new CanonicalTitleConfiguration(
-                main,
-                sub,
-                buffer.readDouble(),
-                buffer.readDouble(),
-                buffer.readDouble());
+            if (buffer.readableBytes() != 24 && buffer.readableBytes() != 25)
+                throw new IllegalArgumentException("Invalid title timings payload");
+            double fadeIn = buffer.readDouble(), stay = buffer.readDouble(), fadeOut = buffer.readDouble();
+            int wait = buffer.isReadable() ? buffer.readUnsignedByte() : 1;
+            if (wait > 1) throw new IllegalArgumentException("Invalid title wait flag");
+            value = new CanonicalTitleConfiguration(main, sub, fadeIn, stay, fadeOut, wait == 1);
         }
         CanonicalSessionNetworkCodec.requireNoTrailingBytes(buffer);
         token = id;

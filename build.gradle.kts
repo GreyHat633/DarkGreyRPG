@@ -6,7 +6,7 @@ tasks.register<JavaExec>("namespacedResourceLoadingProbe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.identity.NamespacedResourceLoadingProbe")
-    args("E:/Java/MinecraftMod/DarkGrey_RPG/.tooling/0.3.2.0_B4/resource-loader")
+    args(layout.projectDirectory.dir(".tooling/0.3.2.0_B4/resource-loader").asFile.absolutePath)
 }
 
 tasks.register<JavaExec>("dgrResourceIdProbe") {
@@ -770,6 +770,25 @@ tasks.register<JavaExec>("mediaPackage0330Probe") {
     args(layout.projectDirectory.dir(".tooling/0.3.3.0/p9/fixtures").asFile.absolutePath)
 }
 
+tasks.register<JavaExec>("storyMediaCacheIndexProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.StoryMediaCacheIndexProbe")
+}
+
+tasks.register<JavaExec>("runtimeDirectoriesProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.config.RpgRuntimeDirectoriesProbe")
+    args(layout.projectDirectory.dir(".tooling/0.3.3.1/DirectoryProbe").asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("storyMediaServerProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.StoryMediaServerProbe")
+}
+
 tasks.register<JavaExec>("mediaTransfer0330Probe") {
     group = "verification"
     dependsOn(tasks.testClasses)
@@ -813,4 +832,20 @@ tasks.register<JavaExec>("dgrsMediaLifecycle0331Probe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.project.packages.DgrsMediaLifecycle0331Probe")
     args(layout.buildDirectory.dir("dgrs-media-lifecycle-0331").get().asFile.absolutePath)
+}
+
+
+tasks.register<JavaExec>("taskNotificationsPlanProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.creator.TaskNotificationsPlanProbe")
+}
+
+tasks.register<JavaExec>("packageRuntimeMigrationPlanProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.PackageRuntimeMigrationPlanProbe")
+    args(layout.projectDirectory.dir(".tmp").asFile.absolutePath)
 }

@@ -502,11 +502,21 @@
           </Style.Triggers>
         </Style>
       </StackPanel.Style>
+      <CheckBox Content="自定义显示速度" IsChecked="{Binding IsLineTextSpeedCustom, Mode=TwoWay}" Margin="0,4,0,0" />
+      <StackPanel><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsLineTextSpeedCustom}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+      <TextBlock Text="显示速度（字/秒）" Margin="0,4,0,0" />
+      <Grid Margin="0,4,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+        <Slider Minimum="0" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding LineTextSpeed, Mode=TwoWay}" Margin="0,0,8,0" />
+        <TextBox Grid.Column="1" Text="{Binding LineTextSpeed, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" graph:NumericDrag.Minimum="0" graph:NumericDrag.Maximum="120" graph:NumericDrag.Step="1" />
+      </Grid>
+      </StackPanel>
       <CheckBox Content="语音/音效" IsChecked="{Binding IsLineAudioEnabled, Mode=TwoWay}" AutomationProperties.AutomationId="EnableLineAudio" />
                             <Border Margin="0,5,0,0" Padding="8" BorderBrush="#727272" BorderThickness="1" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                                 <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsLineAudioEnabled}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
                                 <StackPanel><UniformGrid Columns="2"><Button Content="导入" Margin="0,0,3,0" HorizontalAlignment="Stretch" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportLineAudio" /><Button Content="移除" Margin="3,0,0,0" HorizontalAlignment="Stretch" Click="RemoveLineAudio_OnClick" /></UniformGrid>
-      <views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/></StackPanel>
+      <views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" Volume="{Binding LineVoiceVolumeDisplayValue}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
+      <Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="音量"/><TextBlock Grid.Column="1" Text="{Binding LineVoiceVolumeLabel}"/></Grid>
+      <Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="{Binding LineVoiceVolumeDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PreviewMouseLeftButtonUp="VolumeSlider_OnPreviewMouseLeftButtonUp" LostKeyboardFocus="VolumeSlider_OnLostKeyboardFocus" PreviewKeyDown="VolumeSlider_OnPreviewKeyDown" AutomationProperties.AutomationId="LineVoiceVolume"/></StackPanel>
                             </Border>
     </StackPanel>
     <StackPanel Margin="0,10,0,0">
@@ -520,18 +530,21 @@
           </Style.Triggers>
         </Style>
       </StackPanel.Style>
-      <TextBlock Text="音乐" />
-      <WrapPanel>
-        <Button Content="导入音乐…" Click="ImportLineAudio_OnClick" />
-        <Button Content="停止音乐" Click="RemoveLineAudio_OnClick" />
-      </WrapPanel>
-      <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding MusicStatus}" /><views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
-      <CheckBox Content="循环" IsChecked="{Binding MusicLoop, Mode=TwoWay}" />
-      <TextBlock Text="淡入（秒）" />
-      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-      <TextBlock Text="淡出（秒）" />
-      <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-      <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding PresentationError}" Foreground="Tomato" TextWrapping="Wrap" />
+      <Border Margin="0,5,0,0" Padding="8" BorderBrush="#727272" BorderThickness="1" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+        <StackPanel>
+          <TextBlock Text="音乐" />
+          <UniformGrid Columns="2" Margin="0,5,0,0"><Button Content="导入" Margin="0,0,3,0" HorizontalAlignment="Stretch" Click="ImportLineAudio_OnClick" AutomationProperties.AutomationId="ImportMusic" /><Button Content="停止" Margin="3,0,0,0" HorizontalAlignment="Stretch" Click="RemoveLineAudio_OnClick" AutomationProperties.AutomationId="StopMusic" /></UniformGrid>
+          <views:AudioPreviewControl Margin="0,5,0,0" MediaRef="{Binding AudioMediaRef}" Volume="{Binding MusicVolumeDisplayValue}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
+          <Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="音量"/><TextBlock Grid.Column="1" Text="{Binding MusicVolumeLabel}"/></Grid>
+          <Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="{Binding MusicVolumeDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PreviewMouseLeftButtonUp="VolumeSlider_OnPreviewMouseLeftButtonUp" LostKeyboardFocus="VolumeSlider_OnLostKeyboardFocus" PreviewKeyDown="VolumeSlider_OnPreviewKeyDown" AutomationProperties.AutomationId="MusicVolume"/>
+          <CheckBox Content="循环" IsChecked="{Binding MusicLoop, Mode=TwoWay}" />
+          <TextBlock Text="淡入（秒）" />
+          <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Text="淡出（秒）" />
+          <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding MusicFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding PresentationError}" Foreground="Tomato" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
     </StackPanel>
     <StackPanel Margin="0,10,0,0">
       <StackPanel.Style>
@@ -554,7 +567,7 @@
       <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleStay, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
       <TextBlock Text="淡出（秒）" />
       <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleFadeOut, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-      <TextBlock graph:AuthoringText.IsHelp="True" Text="播放结束后继续流程" Margin="0,4,0,0" />
+      <CheckBox Content="播放完再继续流程" IsChecked="{Binding TitleWaitForCompletion, Mode=TwoWay}" Margin="0,8,0,0" />
       <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding TitleError}" Foreground="Tomato" TextWrapping="Wrap" />
     </StackPanel>
     <graph:SessionScreenEditor IsEnabled="{Binding Workspace.CanEditActivePresentation, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}">

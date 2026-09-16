@@ -15,12 +15,24 @@ public final class ClientQuestKeyHandler {
         Keyboard.KEY_I,
         "key.categories.darkgrey_rpg");
 
+    private final KeyBinding settingsKey = new KeyBinding(
+        "key.darkgrey_rpg.settings",
+        Keyboard.KEY_P,
+        "key.categories.darkgrey_rpg");
+
     public ClientQuestKeyHandler() {
+        ClientRegistry.registerKeyBinding(settingsKey);
+        darkgrey.rpg.client.gui.GuiDialogueSettings.loadPreferences();
         ClientRegistry.registerKeyBinding(journalKey);
     }
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && settingsKey.isPressed()) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+            if (mc.thePlayer != null && mc.currentScreen == null)
+                mc.displayGuiScreen(new darkgrey.rpg.client.gui.GuiDialogueSettings());
+        }
         if (event.phase == TickEvent.Phase.END && journalKey.isPressed()) {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
             if (mc.thePlayer != null && mc.currentScreen == null)

@@ -11,6 +11,23 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class SessionMedia0330InspectorTests
 {
     [TestMethod]
+    public void TextSpeedOverrideDefaultsOffSynchronizesAndUndoes()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        Assert.IsFalse(inline.IsLineTextSpeedCustom);
+        bool notified = false;
+        inspector.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(inspector.IsLineTextSpeedCustom)) notified = true; };
+        inline.IsLineTextSpeedCustom = true; Assert.IsTrue(inspector.IsLineTextSpeedCustom); Assert.IsTrue(notified);
+        inline.LineTextSpeed = 120;
+        inline.IsLineTextSpeedCustom = false; Assert.IsFalse(inspector.IsLineTextSpeedCustom);
+        Assert.AreEqual(120, inspector.LineTextSpeed);
+        Assert.IsTrue(editor.Host.Undo()); Assert.IsTrue(inspector.IsLineTextSpeedCustom);
+    }
+
+    [TestMethod]
     public void AudioGateDefaultsClosedSharesEmptyStateAndSupportsUndo()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
@@ -47,6 +64,27 @@ public sealed class SessionMedia0330InspectorTests
         Assert.IsTrue(inspector.IsLineAudioEnabled);
         Assert.AreEqual(voice, inspector.LineVoiceRef);
         Assert.AreEqual(before, editor.Host.Session.UndoCount);
+    }
+
+    [TestMethod]
+    public void VoiceVolumeDraftCommitsOnceAndUndoRedoRestoresValue()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        line.Properties.Remove("voice_volume"); // legacy line fixture
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        Assert.AreEqual(1d, inspector.LineVoiceVolumeValue, 0.0001);
+        var before = editor.Host.Session.UndoCount;
+        inspector.LineVoiceVolumeDraft = 0.35;
+        Assert.AreEqual(before, editor.Host.Session.UndoCount);
+        Assert.AreEqual(0.35, inspector.LineVoiceVolumeDisplayValue, 0.0001);
+        inspector.CommitVolumePreview();
+        Assert.AreEqual(before + 1, editor.Host.Session.UndoCount);
+        Assert.AreEqual(0.35, editor.Host.Graph.Nodes.Single().Properties["voice_volume"].GetDouble(), 0.0001);
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.AreEqual(1d, inspector.LineVoiceVolumeValue, 0.0001);
+        Assert.IsTrue(editor.Host.Redo());
+        Assert.AreEqual(0.35, inspector.LineVoiceVolumeValue, 0.0001);
     }
 
     [STATestMethod]

@@ -1041,6 +1041,8 @@ public sealed class GraphEditSession
         var candidate = Clone(node);
         candidate.Properties["operation"] = JsonSerializer.SerializeToElement(mediaRef is null ? "stop" : "play");
         candidate.Properties["media_ref"] = JsonSerializer.SerializeToElement(mediaRef);
+        if (!candidate.Properties.ContainsKey("volume"))
+            candidate.Properties["volume"] = JsonSerializer.SerializeToElement(1d);
         var issues = CanonicalSessionPresentationSchema.Validate(candidate);
         if (issues.Count != 0) return Fail(issues);
         var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;

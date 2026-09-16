@@ -9,6 +9,21 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class Title0330InspectorTests
 {
     [TestMethod]
+    public void WaitDefaultsToTrueForOldAndNewNodesAndSupportsUndo()
+    {
+        var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "title", "title");
+        Assert.IsTrue(node.Properties["wait_for_completion"].GetBoolean());
+        node.Properties.Remove("wait_for_completion");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([node])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        Assert.IsTrue(inspector.TitleWaitForCompletion);
+        inspector.TitleWaitForCompletion = false;
+        Assert.IsFalse(inspector.TitleWaitForCompletion);
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.IsTrue(inspector.TitleWaitForCompletion);
+    }
+
+    [TestMethod]
     public void TitleIsStoryOnlyWithValidatedTimingAndUndo()
     {
         Assert.IsNull(GraphNodeDefinitionRegistry.Get(GraphScope.Session, "title"));

@@ -14,12 +14,16 @@ public final class CanonicalSessionClientModel {
 
     private CanonicalSessionFrame frame;
     private String visibleText = "";
+    private final DialogueTextReveal reveal = new DialogueTextReveal();
     private String visibleSpeaker = "";
+    /** Portrait context for the currently visible line, retained while a choice frame is shown. */
+    private String visiblePortraitRef;
 
     public synchronized void clear() {
         frame = null;
         visibleText = "";
         visibleSpeaker = "";
+        visiblePortraitRef = null;
     }
 
     public synchronized boolean acceptFrame(CanonicalSessionFrame update) {
@@ -34,11 +38,20 @@ public final class CanonicalSessionClientModel {
             < frame.getPresentation()
                 .getRevision()))
             return false;
-        if (update.getKind() != CanonicalSessionFrame.Kind.CHOICE || !update.getText()
-            .trim()
-            .isEmpty()) {
+        boolean newLine = update.getKind() == CanonicalSessionFrame.Kind.LINE
+            && (frame == null || frame.getLineEpoch() != update.getLineEpoch()
+                || !frame.getCurrentNodeId()
+                    .equals(update.getCurrentNodeId()));
+        if (update.getKind() == CanonicalSessionFrame.Kind.LINE || frame == null) {
             visibleText = update.getText();
             visibleSpeaker = update.getSpeaker();
+        }
+        // Choice packets intentionally carry no line media. Keep the current portrait
+        // visible until the next line explicitly replaces it.
+        if (update.getKind() == CanonicalSessionFrame.Kind.LINE) visiblePortraitRef = update.getPortraitRef();
+        if (newLine) reveal.begin(visibleText, DialoguePreferences.resolve(update.getTextSpeed()), System.nanoTime());
+        else if (update.getKind() == CanonicalSessionFrame.Kind.CHOICE) {
+            reveal.begin(visibleText, 0, System.nanoTime());
         }
         frame = copy(update);
         return true;
@@ -57,6 +70,7 @@ public final class CanonicalSessionClientModel {
         frame = null;
         visibleText = "";
         visibleSpeaker = "";
+        visiblePortraitRef = null;
         return true;
     }
 
@@ -108,11 +122,23 @@ public final class CanonicalSessionClientModel {
 
     /** Presentation context only; the authoritative frame and outgoing actions stay unchanged. */
     public synchronized String getVisibleText() {
-        return visibleText;
+        return frame == null ? "" : reveal.visible(System.nanoTime());
+    }
+
+    public synchronized boolean finishVisibleText() {
+        return frame != null && frame.getKind() == CanonicalSessionFrame.Kind.LINE && reveal.finish(System.nanoTime());
     }
 
     public synchronized String getVisibleSpeaker() {
         return visibleSpeaker;
+    }
+
+    /**
+     * Returns the portrait belonging to the visible line. Choice frames intentionally omit
+     * line media, so this context survives while the options are displayed.
+     */
+    public synchronized String getVisiblePortraitRef() {
+        return visiblePortraitRef;
     }
 
     public synchronized List<CanonicalSessionChoiceOption> getChoices() {
@@ -163,7 +189,8 @@ public final class CanonicalSessionClientModel {
             source.getText(),
             source.getChoices(),
             source.getPortraitRef(),
-            source.getVoiceRef())
+            source.getVoiceRef(),
+            source.getVoiceVolume()).withTextSpeed(source.getTextSpeed())
                 .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice());
     }
 }

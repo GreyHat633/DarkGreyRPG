@@ -13,6 +13,16 @@ namespace DarkGreyRPG.Studio.Views.Graph;
 /// <summary>Reusable visual projection of the parallel Story-first workspace state.</summary>
 public partial class CanonicalStoryWorkspaceView : UserControl
 {
+    private void Inspector_OnContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (Workspace is not { } workspace || workspace.NodeInspector is not { } inspector) return;
+        var node = workspace.ActiveGraphHost.Nodes.SingleOrDefault(n => n.NodeId == inspector.NodeId);
+        if (node is null) return;
+        var menu = FluentContextMenuFactory.Create((FrameworkElement)sender);
+        WorkspaceGraph.AddParameterMenuItems(menu, node);
+        menu.PlacementTarget = (UIElement)sender; menu.IsOpen = true; e.Handled = true;
+    }
+
     private void EditActorPortrait_OnClick(object sender, RoutedEventArgs e) => Workspace?.EditActorPortrait();
     internal async void ImportLineAudio_OnClick(object sender, RoutedEventArgs e)
     {
@@ -41,6 +51,22 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         if (sender is Button { DataContext: CanonicalNodeInspectorViewModel inspector }) { if (inspector.IsMusic) inspector.SetMusic(null); else inspector.SetLineVoice(null); }
     }
+
+    private static CanonicalNodeInspectorViewModel? VolumeInspector(object sender)
+        => (sender as FrameworkElement)?.DataContext as CanonicalNodeInspectorViewModel;
+
+    private void VolumeSlider_OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => VolumeInspector(sender)?.CommitVolumePreview();
+
+    private void VolumeSlider_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        => VolumeInspector(sender)?.CommitVolumePreview();
+
+    private void VolumeSlider_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) { VolumeInspector(sender)?.CommitVolumePreview(); e.Handled = true; }
+        else if (e.Key == Key.Escape) { VolumeInspector(sender)?.CommitVolumePreview(false); e.Handled = true; }
+    }
+
     internal const string ResourceDragFormat = "DarkGreyRPG.Studio.CanonicalStoryGraphItem";
     private static readonly Vector ResourceNodePointerAnchor = new(116d, 46d);
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;

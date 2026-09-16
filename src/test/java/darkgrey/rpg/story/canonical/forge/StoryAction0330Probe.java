@@ -22,12 +22,13 @@ public final class StoryAction0330Probe {
             "{\"action_type\":\"give_buff\",\"mod_extension\":false,\"buff\":\"speed\",\"duration_delta\":-5,\"level_delta\":0}",
             "{\"action_type\":\"give_buff\",\"mod_extension\":true,\"mod_id\":\"test\",\"buff_name\":\"potion.test\",\"duration_delta\":30,\"level_delta\":1}",
             "{\"action_type\":\"send_message\",\"message\":\"Hello\"}",
-            "{\"action_type\":\"execute_command\",\"command\":\"say Hello\"}" })
+            "{\"action_type\":\"execute_command\",\"command\":\"/say Hello\"}" })
             CanonicalStoryActionConfiguration.parse(properties(json));
         for (String json : new String[] { "{\"action_type\":\"give_xp\",\"amount\":1.5}",
             "{\"action_type\":\"give_buff\",\"mod_extension\":false,\"buff\":\"unknown\",\"duration_delta\":1,\"level_delta\":1}",
             "{\"action_type\":\"give_buff\",\"mod_extension\":true,\"buff\":\"speed\",\"duration_delta\":1,\"level_delta\":1}",
-            "{\"action_type\":\"execute_command\",\"command\":\"say one\\nsay two\"}",
+            "{\"action_type\":\"execute_command\",\"command\":\"/say one\\nsay two\"}",
+            "{\"action_type\":\"execute_command\",\"command\":\"say Hello\"}",
             "{\"action_type\":\"teleport_player\",\"dimension_id\":1.5,\"x\":0,\"y\":0,\"z\":0}",
             "{\"action_type\":\"teleport_player\",\"dimension_id\":0,\"x\":1e100,\"y\":0,\"z\":0}" }) {
             try {

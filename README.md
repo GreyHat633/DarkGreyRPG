@@ -1,6 +1,6 @@
-# DarkGrey_RPG 0.3.1.0
+# DarkGreyRPG 0.3.1.0
 
-DarkGrey_RPG is a server-authoritative RPG authoring and runtime framework for
+DarkGreyRPG is a server-authoritative RPG authoring and runtime framework for
 Minecraft 1.7.10. The Windows WPF Studio authors Story, Session, Task, Actor,
 and Item resources; a Story can be exported as a self-contained Story Package
 and installed by a single-player host or dedicated-server owner.
@@ -22,7 +22,7 @@ model introduced in 0.3.0.0:
   and one prioritized Settlement node;
 - UUID-isolated player Story/Session/Task state and idempotent reward receipts;
 - `give_item` actions that resolve only a DGR individual Item ID;
-- optional, reflection-safe CustomNPC+ identity compatibility. DarkGrey_RPG
+- optional, reflection-safe CustomNPC+ identity compatibility. DarkGreyRPG
   starts and runs without CustomNPC+.
 
 The Project Story Graph remains a cross-Story logic layer, not a second Story
@@ -74,8 +74,8 @@ The self-contained Windows x64 application is published to
 3. Export the completed Story. The package includes its manifest and declared
    Actor, Item, Session, Task, and graph resources.
 4. Copy the package directory into the server-owned
-   `darkgrey_rpg_story_packages` directory. Its path is configurable in
-   `config/darkgrey_rpg.cfg`.
+   `DarkGreyRPG/StoryPackages` directory. Its path is configurable in
+   `DarkGreyRPG/Config/darkgrey_rpg.cfg`.
 5. Start the server or run `/dgr reload` as an operator. Invalid replacement
    packages are rejected without first discarding the active definitions.
 
@@ -110,10 +110,26 @@ progress during a normal package reload.
 
 See:
 
-- `PLAN/DarkGrey_RPG_0.3.1.0_Construction_Plan.md`
+- `PLAN/DarkGreyRPG_0.3.1.0_Construction_Plan.md`
 - `docs/0.3.1.0_ARCHITECTURE.md`
 - `docs/0.3.1.0_MIGRATION.md`
 - `docs/0.3.1.0_ACCEPTANCE.md`
 
 The earlier `docs/0.3.0.0_*` and `docs/2.1.3_*` files remain historical
 specifications and migration evidence.
+
+## Runtime directory layout (0.3.3.1)
+
+Player-facing files are grouped under `<Minecraft>/DarkGreyRPG/`:
+
+- `Project`: default runtime project.
+- `StoryPackages`: installed story packages.
+- `Cache`: downloaded image/audio resources and whole-package cache metadata.
+- `Config`: mod configuration and client window preferences.
+- `Exports`: generated BUFF catalog exports.
+
+Legacy default directories migrate on startup without overwriting conflicting
+content. Explicitly configured external project/package paths remain supported.
+Minecraft's `mods`, `saves`, and `logs`, persisted mod IDs, and world SavedData
+remain managed by Minecraft. The development checkout is now
+`E:\Java\MinecraftMod\DarkGreyRPG`.

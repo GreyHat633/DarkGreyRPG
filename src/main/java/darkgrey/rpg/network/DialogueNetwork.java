@@ -25,6 +25,7 @@ public final class DialogueNetwork {
     public static final int STORY_CHOOSER_SELECTION_DISCRIMINATOR = 16;
     public static final int TASK_SUBMIT_CHOOSER_FRAME_DISCRIMINATOR = 26;
     public static final int TASK_SUBMIT_CHOOSER_SELECTION_DISCRIMINATOR = 27;
+    public static final int STORY_MEDIA_PLAN_DISCRIMINATOR = 28;
 
     public static final SimpleNetworkWrapper CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel(DarkGreyRpg.MOD_ID);
     private static boolean registered;
@@ -83,6 +84,11 @@ public final class DialogueNetwork {
             darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceSelection.class,
             TASK_SUBMIT_CHOOSER_SELECTION_DISCRIMINATOR,
             Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.StoryMediaPlan.Handler.class,
+            darkgrey.rpg.network.message.canonical.StoryMediaPlan.class,
+            STORY_MEDIA_PLAN_DISCRIMINATOR,
+            Side.CLIENT);
         registered = true;
     }
 }

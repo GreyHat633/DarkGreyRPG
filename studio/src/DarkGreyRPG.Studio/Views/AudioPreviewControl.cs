@@ -74,10 +74,20 @@ public sealed class AudioPreviewControl : UserControl
     public static readonly DependencyProperty MediaRefProperty = DependencyProperty.Register(nameof(MediaRef), typeof(string), typeof(AudioPreviewControl), new PropertyMetadata(null, (d, _) => ((AudioPreviewControl)d).LoadConfiguredMedia()));
     public string? MediaRef { get => (string?)GetValue(MediaRefProperty); set => SetValue(MediaRefProperty, value); }
 
+    public static readonly DependencyProperty VolumeProperty = DependencyProperty.Register(
+        nameof(Volume), typeof(double), typeof(AudioPreviewControl), new PropertyMetadata(1d, (d, _) => ((AudioPreviewControl)d).ApplyVolume()));
+
+    public double Volume
+    {
+        get => (double)GetValue(VolumeProperty);
+        set => SetValue(VolumeProperty, value);
+    }
+
     public async Task<bool> LoadAsync(string path, string? name = null, CancellationToken cancellationToken = default)
     {
         var service = _service ?? LocalAudioPreviewService.Shared;
         AttachService(service);
+        service.Volume = Volume;
         var configuredPath = Path.GetFullPath(path);
         var generation = Interlocked.Increment(ref _loadGeneration);
         var loadCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -177,6 +187,11 @@ public sealed class AudioPreviewControl : UserControl
     private void OnServiceChanged(object? sender, EventArgs args)
     {
         if (Dispatcher.CheckAccess()) Refresh(); else Dispatcher.InvokeAsync(Refresh);
+    }
+
+    private void ApplyVolume()
+    {
+        if (OwnsPreview && _service is not null) _service.Volume = Volume;
     }
 
     private void Refresh()

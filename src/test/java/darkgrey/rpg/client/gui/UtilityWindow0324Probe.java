@@ -16,6 +16,17 @@ public final class UtilityWindow0324Probe {
         resizeAndMinimumProbe();
         fourCornerProbe();
         persistenceProbe();
+        File preferencesFile = File.createTempFile("DialoguePreferences", ".properties");
+        try {
+            UtilityWindowSettings preferences = new UtilityWindowSettings(preferencesFile);
+            assertTrue(preferences.dialogueSpeed() == 30, "default global speed");
+            preferences.saveDialogueSpeed(0);
+            assertTrue(new UtilityWindowSettings(preferencesFile).dialogueSpeed() == 0, "immediate speed persists");
+            preferences.saveDialogueSpeed(120);
+            assertTrue(new UtilityWindowSettings(preferencesFile).dialogueSpeed() == 120, "maximum speed persists");
+        } finally {
+            preferencesFile.delete();
+        }
         System.out.println("UTILITY_WINDOW_0324_PROBE=PASS");
     }
 

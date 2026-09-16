@@ -384,6 +384,38 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     /// Reconciles the retained WPF host with a repository-committed graph and
     /// clears history that belongs to the superseded persistence baseline.
     /// </summary>
+    public void RestoreClipboardSnapshot(GraphDocument graph, IReadOnlyDictionary<string, GraphEditorNodePosition> positions)
+    {
+        var ports = CapturePortSignatures(); var nodes = CaptureNodeSignatures();
+        var detached = GraphDocument.FromJson(graph.ToJson());
+        Graph.Nodes = detached.Nodes; Graph.Connections = detached.Connections;
+        _layout.Clear(); foreach (var pair in positions) _layout[pair.Key] = pair.Value;
+        Refresh(); PublishGraphChanged(); PublishPortsChanged(ports); PublishNodesChanged(nodes);
+        LayoutChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void CommitClipboardSnapshot(GraphDocument graph, IReadOnlyDictionary<string, GraphEditorNodePosition> layout,
+        Action? undoResources = null, Action? redoResources = null)
+    {
+        var before = Graph.ToJson(); var after = graph.ToJson();
+        var beforeLayout = _layout.ToDictionary(p => p.Key, p => p.Value);
+        var afterLayout = layout.ToDictionary(p => p.Key, p => p.Value);
+        void Apply(string desired, IReadOnlyDictionary<string, GraphEditorNodePosition> positions, Action? applyResources,
+            Action? revertResources, string previous, IReadOnlyDictionary<string, GraphEditorNodePosition> previousPositions)
+        {
+            applyResources?.Invoke();
+            try { RestoreClipboardSnapshot(GraphDocument.FromJson(desired), positions); }
+            catch
+            {
+                revertResources?.Invoke();
+                RestoreClipboardSnapshot(GraphDocument.FromJson(previous), previousPositions);
+                throw;
+            }
+        }
+        EditMetadata(() => Apply(before, beforeLayout, undoResources, redoResources, after, afterLayout),
+            () => Apply(after, afterLayout, redoResources, undoResources, before, beforeLayout));
+    }
+
     public void ApplyPersistedSnapshot(GraphDocument graph)
     {
         ArgumentNullException.ThrowIfNull(graph);

@@ -276,6 +276,8 @@ public sealed partial class ShellViewModel : ObservableObject
         ? $"{project.Project.DisplayName} — {StudioBuildInfo.ProductTitle}"
         : StudioBuildInfo.ProductTitle;
 
+    private readonly CanonicalGraphClipboard _graphClipboard = new();
+
     public string ProjectDirectory
     {
         get => _projectDirectory;
@@ -653,6 +655,7 @@ public sealed partial class ShellViewModel : ObservableObject
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
+            _graphClipboard.SetProject(ProjectDirectory);
             RememberProject(project.ProjectDirectory);
             LoadActorList();
             LoadStoryList();
@@ -728,6 +731,7 @@ public sealed partial class ShellViewModel : ObservableObject
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
+            _graphClipboard.SetProject(ProjectDirectory);
             RememberProject(project.ProjectDirectory);
             LoadActorList();
             LoadStoryList();
@@ -920,6 +924,10 @@ public sealed partial class ShellViewModel : ObservableObject
     private void ConfigureCanonicalResourceActions(CanonicalStoryWorkspaceViewModel workspace)
     {
         workspace.MediaProjectDirectory = ProjectDirectory;
+        _graphClipboard.SetProject(ProjectDirectory);
+        workspace.Clipboard = _graphClipboard;
+        workspace.OpenProjectWorkspaces = () => _retainedStoryWorkspaces.Values
+            .Concat(CanonicalStoryWorkspace is { } active ? [active] : []).Distinct();
         workspace.PortraitEditorFactory = actor =>
         {
             var document = actor.Provider is { } provider

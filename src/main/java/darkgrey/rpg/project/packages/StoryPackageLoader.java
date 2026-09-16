@@ -2,7 +2,6 @@ package darkgrey.rpg.project.packages;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -36,11 +35,20 @@ public final class StoryPackageLoader {
     private volatile ReloadResult lastReload = ReloadResult.empty();
 
     public StoryPackageLoader(File installDirectory) {
-        if (installDirectory == null) throw new IllegalArgumentException("installDirectory cannot be null");
+        this(
+            installDirectory,
+            new File(
+                installDirectory.getAbsoluteFile()
+                    .getParentFile(),
+                "Cache"));
+    }
+
+    public StoryPackageLoader(File installDirectory, File cacheDirectory) {
+        if (installDirectory == null || cacheDirectory == null)
+            throw new IllegalArgumentException("Package and cache directories are required");
         this.installDirectory = installDirectory.getAbsoluteFile();
         this.generationStore = new DgrsGenerationStore(
-            this.installDirectory.toPath()
-                .resolve(RUNTIME_CACHE_DIRECTORY));
+            PackageRuntimeMigration.cacheRoot(this.installDirectory, cacheDirectory));
     }
 
     public StoryPackageLoader(String installDirectory) {
@@ -125,6 +133,7 @@ public final class StoryPackageLoader {
                 .failure(errors, "Story Package install path is not a directory: " + installDirectory);
             return lastReload;
         }
+        PackageRuntimeMigration.migrate(installDirectory.toPath(), generationStore.getRoot(), errors);
         try {
             generationStore.recoverParts();
         } catch (IOException exception) {
@@ -301,53 +310,6 @@ public final class StoryPackageLoader {
         } catch (IOException exception) {
             if (errors != null) errors.add("Cannot sweep old DGRS generations: " + exception.getMessage());
         }
-    }
-
-    /** Legacy residue is now recovered as controlled generations and .part files. */
-    private void cleanupRuntimeResidue(List<String> errors) {
-        Path install = installDirectory.toPath()
-            .toAbsolutePath()
-            .normalize();
-        Path residue = install.resolve(RUNTIME_CACHE_DIRECTORY)
-            .normalize();
-        if (!install.equals(residue.getParent())) {
-            errors.add("Cannot safely inspect Story Package runtime residue: " + residue);
-            return;
-        }
-        try {
-            if (isLinkLike(install)) {
-                errors
-                    .add("Cannot safely inspect Story Package runtime residue through a symbolic/reparse install path");
-                return;
-            }
-            if (!Files.exists(residue, LinkOption.NOFOLLOW_LINKS)) return;
-            verifySafeResidue(residue);
-            deleteSafeResidue(residue);
-        } catch (IOException | RuntimeException exception) {
-            errors
-                .add("Cannot safely clean Story Package runtime residue '" + residue + "': " + exception.getMessage());
-        }
-    }
-
-    private static void verifySafeResidue(Path path) throws IOException {
-        if (isLinkLike(path)) throw new IOException("symbolic/reparse link encountered");
-        if (!Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) throw new IOException("residue is not a directory");
-        try (DirectoryStream<Path> children = Files.newDirectoryStream(path)) {
-            for (Path child : children) {
-                if (isLinkLike(child)) throw new IOException("symbolic/reparse link encountered");
-                if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) verifySafeResidue(child);
-            }
-        }
-    }
-
-    private static void deleteSafeResidue(Path path) throws IOException {
-        if (isLinkLike(path)) throw new IOException("symbolic/reparse link encountered");
-        if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-            try (DirectoryStream<Path> children = Files.newDirectoryStream(path)) {
-                for (Path child : children) deleteSafeResidue(child);
-            }
-        }
-        Files.deleteIfExists(path);
     }
 
     private static boolean isLinkLike(Path path) throws IOException {

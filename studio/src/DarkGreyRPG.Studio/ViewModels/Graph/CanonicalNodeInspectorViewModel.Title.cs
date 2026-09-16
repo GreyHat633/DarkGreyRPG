@@ -13,6 +13,15 @@ public sealed partial class CanonicalNodeInspectorViewModel
     public string TitleFadeIn { get => PresentationNumber("fade_in"); set => SetTitle("fade_in", value, true); }
     public string TitleStay { get => PresentationNumber("stay"); set => SetTitle("stay", value, true); }
     public string TitleFadeOut { get => PresentationNumber("fade_out"); set => SetTitle("fade_out", value, true); }
+    public bool TitleWaitForCompletion
+    {
+        get => !Node.Properties.TryGetValue("wait_for_completion", out var value) || value.ValueKind != JsonValueKind.False;
+        set
+        {
+            if (!IsTitle || _disposed || _isProjectingCanonicalChange) return;
+            _host.SetNodeProperty(NodeId, "wait_for_completion", JsonSerializer.SerializeToElement(value));
+        }
+    }
     public string TitleError { get; private set; } = "";
     private void SetTitle(string field, string value, bool number)
     {
@@ -30,6 +39,6 @@ public sealed partial class CanonicalNodeInspectorViewModel
     }
     private void NotifyTitle()
     {
-        foreach (var name in new[] { nameof(IsTitle), nameof(TitleMain), nameof(TitleSubtitle), nameof(TitleFadeIn), nameof(TitleStay), nameof(TitleFadeOut) }) OnPropertyChanged(name);
+        foreach (var name in new[] { nameof(IsTitle), nameof(TitleMain), nameof(TitleSubtitle), nameof(TitleFadeIn), nameof(TitleStay), nameof(TitleFadeOut), nameof(TitleWaitForCompletion) }) OnPropertyChanged(name);
     }
 }

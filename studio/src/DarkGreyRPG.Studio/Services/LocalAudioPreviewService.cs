@@ -77,6 +77,7 @@ public sealed class LocalAudioPreviewService : IDisposable
     private AudioPreviewState _state = AudioPreviewState.Empty;
     private string _mediaName = string.Empty;
     private string _error = string.Empty;
+    private double _volume = 1;
 
     public LocalAudioPreviewService(string ffmpegPath, string tempRoot)
     {
@@ -85,6 +86,7 @@ public sealed class LocalAudioPreviewService : IDisposable
         Directory.CreateDirectory(_tempRoot);
         _dispatcher = Dispatcher.CurrentDispatcher;
         _player = new MediaPlayer();
+        _player.Volume = _volume;
         _player.MediaOpened += PlayerOnMediaOpened;
         _player.MediaEnded += PlayerOnMediaEnded;
         _player.MediaFailed += PlayerOnMediaFailed;
@@ -96,6 +98,19 @@ public sealed class LocalAudioPreviewService : IDisposable
     public string MediaName => _mediaName;
     public string? SourcePath { get; private set; }
     public string Error => _error;
+    public double Volume
+    {
+        get => _volume;
+        set
+        {
+            ThrowIfDisposed();
+            var next = double.IsFinite(value) ? Math.Clamp(value, 0, 1) : 1;
+            if (Math.Abs(_volume - next) < double.Epsilon) return;
+            _volume = next;
+            RunOnDispatcher(() => _player.Volume = next);
+            StateChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
     public bool IsPlaying => _state == AudioPreviewState.Playing;
     public TimeSpan Duration => _player.NaturalDuration.HasTimeSpan ? _player.NaturalDuration.TimeSpan : TimeSpan.Zero;
     public TimeSpan Position => _player.Position;

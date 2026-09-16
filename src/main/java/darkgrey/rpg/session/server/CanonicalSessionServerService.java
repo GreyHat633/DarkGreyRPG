@@ -228,7 +228,8 @@ public final class CanonicalSessionServerService {
                 actor == null ? null
                     : actor.getPortraits()
                         .resolve(step.getPortraitVariant()),
-                step.getVoiceRef());
+                step.getVoiceRef(),
+                step.getVoiceVolume()).withTextSpeed(step.getTextSpeed());
         }
         java.util.ArrayList<CanonicalSessionChoiceOption> choices = new java.util.ArrayList<CanonicalSessionChoiceOption>();
         for (darkgrey.rpg.session.runtime.CanonicalSessionChoiceOption option : step.getOptions())

@@ -824,12 +824,15 @@ public final class CanonicalSessionRuntime {
     }
 
     private CanonicalSessionStep lineStep(CanonicalGraphNode node) {
-        return CanonicalSessionStep.line(
-            node.getId(),
-            optionalLineString(node, "speaker_actor_id"),
-            requiredString(node, "text", "session.line"),
-            optionalLineString(node, "portrait_variant"),
-            optionalLineString(node, "voice_ref"));
+        return CanonicalSessionStep
+            .line(
+                node.getId(),
+                optionalLineString(node, "speaker_actor_id"),
+                requiredString(node, "text", "session.line"),
+                optionalLineString(node, "portrait_variant"),
+                optionalLineString(node, "voice_ref"),
+                optionalNumber(node, "voice_volume", 0, 1, 1))
+            .withTextSpeed(customTextSpeed(node) ? optionalNumber(node, "text_speed", 0, 120, 30) : -1);
     }
 
     private void setInitialLogicInputs(Map<String, Boolean> values) {
@@ -894,7 +897,10 @@ public final class CanonicalSessionRuntime {
             .keySet())
             if (!"speaker_actor_id".equals(key) && !"text".equals(key)
                 && !"portrait_variant".equals(key)
-                && !"voice_ref".equals(key))
+                && !"voice_ref".equals(key)
+                && !"voice_volume".equals(key)
+                && !"text_speed".equals(key)
+                && !"custom_text_speed".equals(key))
                 throw failure("session.line.property.unsupported", "Unsupported line property: " + key);
         optionalLineString(node, "speaker_actor_id");
         for (String name : new String[] { "portrait_variant", "voice_ref" }) {
@@ -907,6 +913,31 @@ public final class CanonicalSessionRuntime {
                 && !darkgrey.rpg.graph.canonical.CanonicalMediaReference.isAudio(parsed))
                 throw failure("session.line.voice.invalid", "Line voice must reference project OGG media.");
         }
+        optionalNumber(node, "voice_volume", 0, 1, 1);
+        optionalNumber(node, "text_speed", 0, 120, 30);
+        customTextSpeed(node);
+    }
+
+    private static boolean customTextSpeed(CanonicalGraphNode node) {
+        JsonElement flag = node.getProperties()
+            .get("custom_text_speed");
+        if (flag == null) return false;
+        if (!(flag instanceof JsonPrimitive) || !flag.getAsJsonPrimitive()
+            .isBoolean()) throw failure("session.line.property.type", "Custom text speed must be boolean");
+        return flag.getAsBoolean();
+    }
+
+    private static double optionalNumber(CanonicalGraphNode node, String name, double min, double max,
+        double fallback) {
+        JsonElement value = node.getProperties()
+            .get(name);
+        if (value == null || value.isJsonNull()) return fallback;
+        if (!(value instanceof JsonPrimitive) || !value.getAsJsonPrimitive()
+            .isNumber()) throw failure("session.line.property.type", "Line property must be a number: " + name);
+        double number = value.getAsDouble();
+        if (Double.isNaN(number) || Double.isInfinite(number) || number < min || number > max)
+            throw failure("session.line.property.range", "Line property is outside its allowed range: " + name);
+        return number;
     }
 
     public static String optionalLineString(CanonicalGraphNode node, String name) {

@@ -26,6 +26,11 @@ public final class CanonicalSessionAudio {
 
         @Override
         public boolean play(String channel, String ref, boolean loop) {
+            return play(channel, ref, loop, channel.endsWith("voice") ? 1 : 0);
+        }
+
+        @Override
+        public boolean play(String channel, String ref, boolean loop, float initialVolume) {
             Path path = CanonicalMediaClient.ready(ref);
             if (engine == null || path == null || !CanonicalMediaClient.pin(ref)) return false;
             stop(channel);
@@ -42,11 +47,16 @@ public final class CanonicalSessionAudio {
                     0,
                     0,
                     0);
-                engine.setVolume(channel, 0);
-                engine.play(channel);
                 PINS.put(channel, ref);
+                // Paulscode queues source commands. Give voice its configured level before
+                // play is queued; music is faded in by SessionAudioPlayback on the same tick.
+                volume(channel, initialVolume);
+                engine.play(channel);
                 return true;
             } catch (Exception exception) {
+                org.apache.logging.log4j.LogManager.getLogger(CanonicalSessionAudio.class)
+                    .warn("Could not start DGR audio {} from {}", channel, ref, exception);
+                PINS.remove(channel);
                 CanonicalMediaClient.unpin(ref);
                 try {
                     engine.removeSource(channel);

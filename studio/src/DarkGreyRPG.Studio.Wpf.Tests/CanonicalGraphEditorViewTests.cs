@@ -363,7 +363,7 @@ public sealed class CanonicalGraphEditorViewTests
         var before = graph.ToJson();
 
         var menu = view.CreateNodeContextMenu(view.SelectedNode!);
-        var delete = menu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "删除"));
+        var delete = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "删除"));
         delete.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
 
         Assert.IsNull(view.SelectedNode);
@@ -880,7 +880,7 @@ public sealed class CanonicalGraphEditorViewTests
             new[] { "line", "music", "screen", "choice", "and", "or", "not", "logic_input", "logic_output", "condition", "flow_judgment", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
-        CollectionAssert.AreEqual(new[] { "会话", "逻辑", "结束" },
+        CollectionAssert.AreEqual(new[] { "会话", "演出", "逻辑", "结束" },
             view.AuthoringCategories.Select(category => category.Name).ToArray());
         Assert.IsTrue(view.CanAuthorNodeType("choice"));
         Assert.IsTrue(view.CanAuthorNodeType("flow_judgment"));
@@ -913,22 +913,27 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host, ids.Dequeue);
 
         var menu = view.CreateCanvasContextMenu(new Point(73.5, 144.25));
-        Assert.HasCount(1, menu.Items);
+        Assert.HasCount(4, menu.Items);
+        foreach (var header in new[] { "复制", "粘贴" })
+        {
+            var submenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, header));
+            CollectionAssert.AreEqual(new[] { "节点", "参数" }, submenu.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
+        }
         var add = (MenuItem)menu.Items[0];
-        Assert.AreEqual("添加节点", add.Header);
+        Assert.AreEqual("添加", add.Header);
         CollectionAssert.AreEqual(
-            new[] { "会话", "逻辑", "结束" },
-            add.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
+            new[] { "会话", "演出", "逻辑", "结束" },
+            add.Items.OfType<MenuItem>().Select(item => item.Header).ToArray());
 
-        var logic = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "逻辑"));
+        var logic = add.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "逻辑"));
         CollectionAssert.AreEqual(
             new[] { "与", "或", "非", "逻辑输入", "逻辑输出", "条件判断", "流程判断" },
-            logic.Items.Cast<MenuItem>().Select(item => item.Header).ToArray());
+            logic.Items.OfType<MenuItem>().Select(item => item.Header).ToArray());
 
-        var session = add.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "会话"));
-        var line = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "台词"));
-        var choice = session.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "选择"));
-        Assert.IsFalse(session.Items.Cast<MenuItem>().Any(item => Equals(item.Header, "起始")));
+        var session = add.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "会话"));
+        var line = session.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "台词"));
+        var choice = session.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "选择"));
+        Assert.IsFalse(session.Items.OfType<MenuItem>().Any(item => Equals(item.Header, "起始")));
         Assert.IsTrue(choice.IsEnabled);
         Assert.IsTrue(line.IsEnabled);
 
@@ -1098,14 +1103,14 @@ public sealed class CanonicalGraphEditorViewTests
         var menu = view.CreateNodeContextMenu(host.Nodes.Single(node => node.NodeId == "b"));
         CollectionAssert.AreEquivalent(new[] { "a", "b" },
             view.SelectedNodes.Select(node => node.NodeId).ToArray());
-        menu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "编辑"))
+        menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "编辑"))
             .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         Assert.IsEmpty(edits);
         CollectionAssert.AreEquivalent(new[] { "a", "b" },
             view.SelectedNodes.Select(node => node.NodeId).ToArray());
         Assert.AreEqual(before, graph.ToJson());
 
-        menu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "删除"))
+        menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "删除"))
             .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         CollectionAssert.AreEqual(new[] { "c" }, host.Nodes.Select(node => node.NodeId).ToArray());
         Assert.IsEmpty(host.Connections);
@@ -1115,7 +1120,7 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.SelectNodes(["a", "b"]));
         var singleMenu = view.CreateNodeContextMenu(host.Nodes.Single(node => node.NodeId == "c"));
         CollectionAssert.AreEqual(new[] { "c" }, view.SelectedNodes.Select(node => node.NodeId).ToArray());
-        singleMenu.Items.Cast<MenuItem>().Single(item => Equals(item.Header, "编辑"))
+        singleMenu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "编辑"))
             .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         CollectionAssert.AreEqual(new[] { "c" }, edits);
     }

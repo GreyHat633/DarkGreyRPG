@@ -12,6 +12,12 @@ public final class SessionAudioPlayback {
 
         boolean play(String channel, String ref, boolean loop);
 
+        default boolean play(String channel, String ref, boolean loop, float initialVolume) {
+            boolean started = play(channel, ref, loop);
+            volume(channel, initialVolume);
+            return started;
+        }
+
         void volume(String channel, float volume);
 
         void stop(String channel);
@@ -95,14 +101,18 @@ public final class SessionAudioPlayback {
             if (musicStarted) musicStartedAt = now;
         }
         if (musicStarted) {
-            currentVolume = state.getFadeIn() <= 0 ? 1
-                : (float) Math.min(1, Math.max(0, (now - musicStartedAt) / state.getFadeIn()));
+            currentVolume = (state.getFadeIn() <= 0 ? 1
+                : (float) Math.min(1, Math.max(0, (now - musicStartedAt) / state.getFadeIn())))
+                * (float) state.getMusicVolume();
             backend.volume(musicChannel, currentVolume);
         }
         if (!voiceConsumed && frame.getVoiceRef() != null && backend.ready(frame.getVoiceRef())) {
-            voiceConsumed = backend.play(VOICE, frame.getVoiceRef(), false);
+            // Mark the line as attempted before calling the backend. A backend failure must
+            // not replay a voice on every client tick or after an advance.
+            voiceConsumed = true;
+            backend.play(VOICE, frame.getVoiceRef(), false, (float) frame.getVoiceVolume());
         }
-        backend.volume(VOICE, 1);
+        backend.volume(VOICE, (float) frame.getVoiceVolume());
     }
 
     /** Sound engine reload restarts music, but never repeats the active line. */

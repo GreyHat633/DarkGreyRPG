@@ -1,4 +1,4 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
@@ -332,7 +332,7 @@ public sealed class OfflineShellWorkflowTests
         private readonly bool _keep;
         public Fixture(string? root = null, bool keep = false)
         {
-            Root = root ?? Path.Combine("E:/Java/MinecraftMod/DarkGrey_RPG/.tooling/0.3.2.0_B4/offline-collaboration", "test-" + Guid.NewGuid().ToString("N"));
+            Root = root ?? Path.Combine("E:/Java/MinecraftMod/DarkGreyRPG/.tooling/0.3.2.0_B4/offline-collaboration", "test-" + Guid.NewGuid().ToString("N"));
             _keep = keep;
             A = Path.Combine(Root, "ProjectA");
             var b = Path.Combine(Root, "ProjectB");

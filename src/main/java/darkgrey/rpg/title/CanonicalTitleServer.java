@@ -96,7 +96,7 @@ public final class CanonicalTitleServer {
         }
         queue.entries.remove();
         if (queue.entries.isEmpty()) QUEUES.remove(player.getUniqueID());
-        entry.completed.run();
+        if (entry.title.waitForCompletion) entry.completed.run();
         tick(player);
     }
 
@@ -111,12 +111,20 @@ public final class CanonicalTitleServer {
     }
 
     public static synchronized void clearStory(EntityPlayerMP player, String story) {
+        clearStory(player, story, false);
+    }
+
+    public static synchronized void clearWaitingStory(EntityPlayerMP player, String story) {
+        clearStory(player, story, true);
+    }
+
+    private static void clearStory(EntityPlayerMP player, String story, boolean preserveDetached) {
         Queue queue = QUEUES.get(player.getUniqueID());
         if (queue == null) return;
         Iterator<Entry> entries = queue.entries.iterator();
         while (entries.hasNext()) {
             Entry entry = entries.next();
-            if (entry.story.equals(story)) {
+            if (entry.story.equals(story) && (!preserveDetached || entry.title.waitForCompletion)) {
                 if (entry.token > 0 && player.playerNetServerHandler != null)
                     DialogueNetwork.CHANNEL.sendTo(new CanonicalTitleFrame(entry.token, null), player);
                 entries.remove();

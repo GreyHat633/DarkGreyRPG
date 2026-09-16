@@ -7,11 +7,12 @@ namespace DarkGreyRPG.Studio.Core.Media;
 
 public sealed record MediaImportLimits(long MaximumSourceBytes = 268435456, double MaximumDurationSeconds = 3600);
 
-public sealed record ImportedMedia(string MediaRef, string OriginalName, string SourceFingerprint, long Bytes, double DurationSeconds);
+public sealed record ImportedMedia(string MediaRef, string OriginalName, string SourceFingerprint, long Bytes, double DurationSeconds, int PixelWidth = 0, int PixelHeight = 0);
 
 /// <summary>Project-owned import; resources reference only runtime bytes, never the external source.</summary>
 public sealed class ProjectMediaStore
 {
+    public const string ImageFileFilter = "图片|*.png;*.apng;*.jpg;*.jpeg;*.webp;*.bmp;*.gif;*.tif;*.tiff|所有文件|*.*";
     private readonly MediaImportLimits _limits;
     private readonly string _root;
     private readonly string _ffmpeg;
@@ -91,18 +92,25 @@ public sealed class ProjectMediaStore
 
     private async Task<ImportedMedia> ImportImageCoreAsync(string source, CancellationToken cancellationToken)
     {
-        var extension = Path.GetExtension(source).ToLowerInvariant();
-        if (extension == ".jpeg") extension = ".jpg";
-        if (extension is not (".png" or ".jpg")) throw new InvalidDataException("请选择 PNG 或 JPG 图片。");
         if (new FileInfo(source).Length > _limits.MaximumSourceBytes) throw new InvalidDataException("图片超过当前导入大小限制。");
         var workspace = Path.Combine(_root, "resources", "media_work", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(workspace);
         try
         {
-            var master = Path.Combine(workspace, "image" + extension);
+            // Probe the content without an extension hint: downloaded images are often misnamed.
+            var master = Path.Combine(workspace, "source");
             await using (var input = File.OpenRead(source))
             await using (var output = new FileStream(master, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
-                await input.CopyToAsync(output, cancellationToken);
+            {
+                var buffer = new byte[81920]; long copied = 0;
+                int count;
+                while ((count = await input.ReadAsync(buffer, cancellationToken)) != 0)
+                {
+                    copied += count;
+                    if (copied > _limits.MaximumSourceBytes) throw new InvalidDataException("图片超过当前导入大小限制。");
+                    await output.WriteAsync(buffer.AsMemory(0, count), cancellationToken);
+                }
+            }
             var probe = await RunAsync(_ffprobe, workspace, ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name,width,height", "-of", "json", master], cancellationToken);
             using var info = JsonDocument.Parse(probe);
             var streams = info.RootElement.GetProperty("streams");
@@ -110,14 +118,26 @@ public sealed class ProjectMediaStore
             var stream = streams[0];
             var codec = stream.GetProperty("codec_name").GetString();
             var width = stream.GetProperty("width").GetInt32(); var height = stream.GetProperty("height").GetInt32();
-            if ((extension == ".png" && codec != "png") || (extension == ".jpg" && codec != "mjpeg")
-                || width <= 0 || height <= 0 || (long)width * height > 33554432)
-                throw new InvalidDataException("图片格式不匹配或像素数量超过当前限制。");
-            await RunAsync(_ffmpeg, workspace, ["-nostdin", "-v", "error", "-xerror", "-i", master, "-frames:v", "1", "-f", "null", "-"], cancellationToken);
-            var hash = await HashAsync(master, cancellationToken);
-            var mediaRef = "media/" + hash + extension;
-            Install(master, Resolve(mediaRef));
-            var result = new ImportedMedia(mediaRef, Path.GetFileName(source), hash, new FileInfo(master).Length, 0);
+            if (codec is not ("png" or "apng" or "mjpeg" or "webp" or "webp_anim" or "bmp" or "gif" or "tiff"))
+                throw new InvalidDataException("请选择 PNG、JPG、WebP、BMP、GIF 或 TIFF 图片。");
+            if (width <= 0 || height <= 0) throw new InvalidDataException("图片尺寸无效，文件可能已损坏。");
+            if ((long)width * height > 33554432)
+                throw new InvalidDataException($"图片为 {width} × {height} 像素，超过 33554432 像素限制，请缩小后导入。");
+            // Runtime receives a static, alpha-preserving PNG, including for animated inputs.
+            var runtime = Path.Combine(workspace, "runtime.png");
+            await RunAsync(_ffmpeg, workspace, ["-nostdin", "-v", "error", "-xerror", "-i", master,
+                "-map", "0:v:0", "-frames:v", "1", "-map_metadata", "-1", "-c:v", "png", "-pix_fmt", "rgba",
+                "-update", "1", runtime], cancellationToken);
+            // Autorotation may exchange width and height; report the actual installed image geometry.
+            var header = new byte[24];
+            await using (var image = File.OpenRead(runtime)) await image.ReadExactlyAsync(header, cancellationToken);
+            width = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(header.AsSpan(16, 4));
+            height = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(header.AsSpan(20, 4));
+            var sourceHash = await HashAsync(master, cancellationToken);
+            var hash = await HashAsync(runtime, cancellationToken);
+            var mediaRef = "media/" + hash + ".png";
+            Install(runtime, Resolve(mediaRef));
+            var result = new ImportedMedia(mediaRef, Path.GetFileName(source), sourceHash, new FileInfo(runtime).Length, 0, width, height);
             var metadata = Path.Combine(_root, "resources", "media_metadata", hash + ".json");
             Directory.CreateDirectory(Path.GetDirectoryName(metadata)!);
             if (!File.Exists(metadata)) await File.WriteAllTextAsync(metadata, JsonSerializer.Serialize(result), cancellationToken);

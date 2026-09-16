@@ -17,6 +17,7 @@ public final class CanonicalTaskClientStore {
             world = currentWorld;
             revision = -1;
             snapshot = empty();
+            TaskNotificationCards.clear();
         }
     }
 
@@ -27,7 +28,8 @@ public final class CanonicalTaskClientStore {
             || data == null
             || !data.hasKey("dimension", 3)
             || data.getInteger("dimension") != mc.thePlayer.dimension) return;
-        replace(data);
+        long before = getRevision();
+        if (replace(data) && before >= 0) TaskNotificationCards.accept(data.getTagList("notifications", 10), System.nanoTime());
     }
 
     public static synchronized boolean replace(NBTTagCompound data) {

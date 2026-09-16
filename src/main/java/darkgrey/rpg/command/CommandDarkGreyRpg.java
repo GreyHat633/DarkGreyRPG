@@ -206,12 +206,12 @@ public final class CommandDarkGreyRpg extends CommandBase {
                 .entries()) lines.add(entry.displayLine());
             if ("list".equalsIgnoreCase(arguments[1])) for (String line : lines) ChatMessages.info(sender, line);
             else try {
-                java.nio.file.Path directory = sender.getEntityWorld()
-                    .getSaveHandler()
-                    .getWorldDirectory()
-                    .toPath()
-                    .resolve("data")
-                    .resolve("dgr_exports");
+                java.nio.file.Path directory = darkgrey.rpg.config.RpgRuntimeDirectories.prepare(
+                    Loader.instance()
+                        .getConfigDir()
+                        .getParentFile())
+                    .exportsDirectory()
+                    .toPath();
                 java.nio.file.Files.createDirectories(directory);
                 java.nio.file.Path destination = directory.resolve("buffs.txt");
                 java.nio.file.Files.write(destination, lines, java.nio.charset.StandardCharsets.UTF_8);

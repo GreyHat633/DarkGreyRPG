@@ -34,6 +34,7 @@ public final class CanonicalStoryEventAdapter {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof EntityPlayerMP)
             || event.player.ticksExisted % 10 != 0) return;
         EntityPlayerMP player = (EntityPlayerMP) event.player;
+        stories.synchronizeMedia(player);
         stories.recoverPendingRoutes(player);
         stories.handleRegionPosition(
             player,
@@ -54,6 +55,8 @@ public final class CanonicalStoryEventAdapter {
     @SubscribeEvent
     public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.player == null) return;
+        if (event.player instanceof EntityPlayerMP)
+            darkgrey.rpg.media.StoryMediaServer.unload((EntityPlayerMP) event.player);
         regions.forget(event.player.getUniqueID());
         stories.forgetActorChoices(event.player.getUniqueID());
     }

@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$RepositoryRoot = "E:\Java\MinecraftMod\DarkGrey_RPG",
+    [string]$RepositoryRoot = "E:\Java\MinecraftMod\DarkGreyRPG",
     [switch]$SkipLaunch
 )
 

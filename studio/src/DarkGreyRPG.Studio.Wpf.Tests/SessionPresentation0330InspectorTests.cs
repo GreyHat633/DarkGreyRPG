@@ -32,6 +32,27 @@ public sealed class SessionPresentation0330InspectorTests
     }
 
     [TestMethod]
+    public void MusicVolumeDraftCommitsOnceAndUndoRedoRestoresValue()
+    {
+        var music = GraphNodeFactory.Create(GraphScope.Session, "music", "music");
+        music.Properties.Remove("volume"); // legacy music fixture
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([music])));
+        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        Assert.AreEqual(1d, inspector.MusicVolumeValue, 0.0001);
+        var before = editor.Host.Session.UndoCount;
+        inspector.MusicVolumeDraft = 0.65;
+        Assert.AreEqual(before, editor.Host.Session.UndoCount);
+        Assert.AreEqual(0.65, inspector.MusicVolumeDisplayValue, 0.0001);
+        inspector.CommitVolumePreview();
+        Assert.AreEqual(before + 1, editor.Host.Session.UndoCount);
+        Assert.AreEqual(0.65, editor.Host.Graph.Nodes.Single().Properties["volume"].GetDouble(), 0.0001);
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.AreEqual(1d, inspector.MusicVolumeValue, 0.0001);
+        Assert.IsTrue(editor.Host.Redo());
+        Assert.AreEqual(0.65, inspector.MusicVolumeValue, 0.0001);
+    }
+
+    [TestMethod]
     public void FullScreenReplacementUndoAndInvalidTransformsPreservePreviousSnapshot()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");

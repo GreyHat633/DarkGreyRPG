@@ -72,9 +72,14 @@ public sealed class ProjectAtlasMenuTests
 
         var menu = view.CreateCanvasContextMenu(new Point(12, 34));
 
-        Assert.HasCount(1, menu.Items);
+        Assert.HasCount(4, menu.Items);
+        foreach (var header in new[] { "复制", "粘贴" })
+        {
+            var submenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, header));
+            CollectionAssert.AreEqual(new[] { "节点", "参数" }, submenu.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
+        }
         var addNode = (MenuItem)menu.Items[0];
-        Assert.AreEqual("添加节点", addNode.Header);
+        Assert.AreEqual("添加", addNode.Header);
         Assert.IsFalse(menu.Items.OfType<MenuItem>().Any(item => Equals(item.Header, "添加故事")));
         Assert.IsTrue(addNode.Items.Count > 0);
     }

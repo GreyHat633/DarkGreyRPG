@@ -18,6 +18,70 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class SessionScreenEditor0331Tests
 {
+    [STATestMethod]
+    public void ImageDecodedBeforeLoadedSurvivesReenteringView()
+    {
+        var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ScreenPreview-" + Guid.NewGuid().ToString("N"));
+        var media = "media/" + new string('a', 64) + ".png";
+        System.IO.Directory.CreateDirectory(System.IO.Path.Combine(root, "resources", "media"));
+        var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(1, 1, 96, 96, PixelFormats.Bgra32, null, new byte[] { 0, 0, 255, 255 }, 4);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var file = System.IO.File.Create(System.IO.Path.Combine(root, "resources", media))) encoder.Save(file);
+        var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
+        node.Properties["layers"] = JsonSerializer.SerializeToElement(new[] { new { media_ref = media, x = 0.1, y = 0.1, width = 0.5, height = 0.5, anchor_x = 0, anchor_y = 0, z = 0 } });
+        using var resource = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([node])));
+        using var inspector = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Single());
+        var window = new Window { Width = 400, Height = 700 };
+        try
+        {
+            for (var round = 0; round < 2; round++)
+            {
+                var editor = new SessionScreenEditor { ProjectDirectory = root, DataContext = inspector };
+                var cache = (System.Collections.IDictionary)typeof(SessionScreenEditor).GetField("_images", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(editor)!;
+                var timeout = System.Diagnostics.Stopwatch.StartNew();
+                while (cache.Count == 0 && timeout.ElapsedMilliseconds < 3000)
+                { Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background); Thread.Sleep(5); }
+                Assert.AreEqual(1, cache.Count, "Decode before Loaded must be retained.");
+                window.Content = editor; window.Show(); window.UpdateLayout();
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                Assert.IsTrue(Descendants<Image>(editor).Any(image => image.Source is not null));
+                window.Content = null;
+            }
+        }
+        finally { window.Close(); System.IO.Directory.Delete(root, true); }
+    }
+
+    [STATestMethod]
+    public void ImportCompletionCannotWriteIntoAnotherNodeOrProject()
+    {
+        using var resource = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session",
+            new([GraphNodeFactory.Create(GraphScope.Session, "screen", "a"), GraphNodeFactory.Create(GraphScope.Session, "screen", "b")])));
+        using var a = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes[0]);
+        using var b = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes[1]);
+        var editor = new SessionScreenEditor { DataContext = a, ProjectDirectory = AppContext.BaseDirectory };
+        var window = new Window { Content = editor, Width = 400, Height = 700 };
+        window.Show(); window.UpdateLayout();
+        try
+        {
+            foreach (bool switchProject in new[] { false, true })
+            {
+                editor.DataContext = a;
+                var source = new TaskCompletionSource<DarkGreyRPG.Studio.Core.Media.ImportedMedia>();
+                var operation = editor.ImportImageSelectionAsync("test.png", () => source.Task);
+                Assert.IsFalse(editor.IsEnabled);
+                if (switchProject) editor.ProjectDirectory = System.IO.Path.Combine(AppContext.BaseDirectory, "other-project");
+                else editor.DataContext = b;
+                source.SetResult(new("media/" + new string('a', 64) + ".png", "test.png", new string('a', 64), 1, 0, 800, 400));
+                for (int i = 0; !operation.IsCompleted && i < 100; i++)
+                    window.Dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                Assert.IsTrue(operation.IsCompletedSuccessfully);
+                Assert.IsTrue(editor.IsEnabled);
+                Assert.AreEqual(0, a.ScreenLayers.GetArrayLength()); Assert.AreEqual(0, b.ScreenLayers.GetArrayLength());
+            }
+        }
+        finally { window.Close(); }
+    }
+
     [TestMethod]
     public void SnapsToScreenAndOtherImageCentersAndCanBeBypassed()
     {

@@ -36,3 +36,5 @@ gui.darkgrey_rpg.no_tasks=没有进行中的任务
 gui.darkgrey_rpg.objective_complete=目标已完成
 gui.darkgrey_rpg.waiting_objective=等待目标激活
 gui.darkgrey_rpg.task_help=Esc 关闭 / 滚轮浏览
+
+key.darkgrey_rpg.settings=设置

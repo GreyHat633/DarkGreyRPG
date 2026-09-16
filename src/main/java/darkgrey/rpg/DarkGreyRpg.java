@@ -18,6 +18,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import darkgrey.rpg.command.CommandDarkGreyRpg;
 import darkgrey.rpg.config.RpgConfiguration;
+import darkgrey.rpg.config.RpgRuntimeDirectories;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.entitytools.forge.EntityToolsRuntime;
 import darkgrey.rpg.live.LiveBridgeController;
@@ -66,12 +67,19 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        configuration = RpgConfiguration.load(event.getSuggestedConfigurationFile());
+        File gameDirectory = event.getModConfigurationDirectory()
+            .getParentFile();
+        RpgRuntimeDirectories runtimeDirectories = RpgRuntimeDirectories.prepare(gameDirectory);
+        for (String conflict : runtimeDirectories.migrationConflicts())
+            LOG.warn("Preserved colliding legacy DarkGrey RPG runtime path: {}", conflict);
+        configuration = RpgConfiguration
+            .load(runtimeDirectories.configurationFile(event.getSuggestedConfigurationFile()));
         File projectDirectory = configuration.resolveProjectDirectory(event.getModConfigurationDirectory());
 
         projectRepository = new ProjectRepository(projectDirectory);
         storyPackageLoader = new StoryPackageLoader(
-            configuration.resolveStoryPackageDirectory(event.getModConfigurationDirectory()));
+            configuration.resolveStoryPackageDirectory(event.getModConfigurationDirectory()),
+            runtimeDirectories.cacheDirectory());
         canonicalSessionManager = new CanonicalSessionForgeManager(projectRepository);
         canonicalTaskManager = new CanonicalTaskForgeManager(projectRepository);
         canonicalStoryManager = new CanonicalStoryForgeManager(

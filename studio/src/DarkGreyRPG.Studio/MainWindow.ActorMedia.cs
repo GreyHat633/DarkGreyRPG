@@ -14,7 +14,7 @@ public partial class MainWindow
         var variant = Equals(button.Tag, "variant");
         var name = actor.PortraitVariantName;
         if (variant && !ValidatePortraitName(actor, name)) return;
-        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "图片|*.png;*.jpg;*.jpeg", CheckFileExists = true };
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = ProjectMediaStore.ImageFileFilter, CheckFileExists = true };
         if (dialog.ShowDialog(this) != true) return;
         button.IsEnabled = false;
         try

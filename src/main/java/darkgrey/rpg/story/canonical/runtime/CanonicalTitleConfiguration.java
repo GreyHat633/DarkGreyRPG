@@ -12,8 +12,14 @@ public final class CanonicalTitleConfiguration {
     public final double fadeIn;
     public final double stay;
     public final double fadeOut;
+    public final boolean waitForCompletion;
 
     public CanonicalTitleConfiguration(String main, String subtitle, double fadeIn, double stay, double fadeOut) {
+        this(main, subtitle, fadeIn, stay, fadeOut, true);
+    }
+
+    public CanonicalTitleConfiguration(String main, String subtitle, double fadeIn, double stay, double fadeOut,
+        boolean waitForCompletion) {
         if (main == null || main.trim()
             .isEmpty() || main.length() > 1024 || subtitle == null || subtitle.length() > 1024)
             throw new IllegalArgumentException("Invalid title text");
@@ -25,6 +31,7 @@ public final class CanonicalTitleConfiguration {
         this.fadeIn = fadeIn;
         this.stay = stay;
         this.fadeOut = fadeOut;
+        this.waitForCompletion = waitForCompletion;
     }
 
     public double duration() {
@@ -39,13 +46,19 @@ public final class CanonicalTitleConfiguration {
     }
 
     public static CanonicalTitleConfiguration parse(Map<String, JsonElement> properties) {
-        if (properties.size() != 5) throw new IllegalArgumentException("Unexpected title properties");
+        for (String key : properties.keySet())
+            if (!java.util.Arrays.asList("main", "subtitle", "fade_in", "stay", "fade_out", "wait_for_completion")
+                .contains(key)) throw new IllegalArgumentException("Unexpected title property: " + key);
+        JsonElement wait = properties.get("wait_for_completion");
+        if (wait != null && (!wait.isJsonPrimitive() || !wait.getAsJsonPrimitive()
+            .isBoolean())) throw new IllegalArgumentException("Invalid title wait_for_completion");
         return new CanonicalTitleConfiguration(
             text(properties, "main"),
             text(properties, "subtitle"),
             number(properties, "fade_in"),
             number(properties, "stay"),
-            number(properties, "fade_out"));
+            number(properties, "fade_out"),
+            wait == null || wait.getAsBoolean());
     }
 
     private static String text(Map<String, JsonElement> properties, String key) {

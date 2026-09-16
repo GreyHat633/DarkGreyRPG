@@ -20,6 +20,7 @@ import darkgrey.rpg.project.packages.LoadedStoryPackage;
 public final class CanonicalMediaServer {
 
     private static final Map<EntityPlayerMP, CanonicalSessionFrame> FRAMES = new WeakHashMap<EntityPlayerMP, CanonicalSessionFrame>();
+    private static final Map<EntityPlayerMP, String> PORTRAITS = new WeakHashMap<EntityPlayerMP, String>();
     private static final Map<EntityPlayerMP, long[]> RATES = new WeakHashMap<EntityPlayerMP, long[]>();
     private static final int MEDIA_WORKER_THREADS = 2;
     private static final int MEDIA_WORKER_QUEUE = 64;
@@ -46,12 +47,32 @@ public final class CanonicalMediaServer {
     private CanonicalMediaServer() {}
 
     public static void present(EntityPlayerMP player, CanonicalSessionFrame frame) {
+        StoryMediaServer.presentFrame(player, frame);
+        String portrait = retainedPortrait(FRAMES.get(player), frame, PORTRAITS.get(player));
+        if (portrait == null) PORTRAITS.remove(player);
+        else PORTRAITS.put(player, portrait);
         FRAMES.put(player, frame);
+    }
+
+    static String retainedPortrait(CanonicalSessionFrame previous, CanonicalSessionFrame frame, String portrait) {
+        if (frame.getKind() == CanonicalSessionFrame.Kind.LINE) return frame.getPortraitRef();
+        if (frame.getKind() == CanonicalSessionFrame.Kind.CHOICE && previous != null
+            && previous.getTransportId() == frame.getTransportId()
+            && previous.getStoryId()
+                .equals(frame.getStoryId())
+            && previous.getSessionResourceId()
+                .equals(frame.getSessionResourceId()))
+            return portrait;
+        return null;
     }
 
     public static void close(EntityPlayerMP player, long transportId) {
         CanonicalSessionFrame frame = FRAMES.get(player);
-        if (frame != null && frame.getTransportId() == transportId) FRAMES.remove(player);
+        if (frame != null && frame.getTransportId() == transportId) {
+            FRAMES.remove(player);
+            PORTRAITS.remove(player);
+            StoryMediaServer.clearFrame(player, frame.getStoryId());
+        }
     }
 
     public static void enqueue(final EntityPlayerMP player, final CanonicalMediaRequest request) {
@@ -81,6 +102,7 @@ public final class CanonicalMediaServer {
 
     /** Revoke presentation capabilities and stop client media when their package retires. */
     public static void retireStories(java.util.Set<String> storyIds) {
+        StoryMediaServer.retireStories(storyIds);
         java.util.Iterator<Map.Entry<EntityPlayerMP, CanonicalSessionFrame>> entries = FRAMES.entrySet()
             .iterator();
         while (entries.hasNext()) {
@@ -92,6 +114,7 @@ public final class CanonicalMediaServer {
             EntityPlayerMP player = entry.getKey();
             CanonicalSessionFrame frame = entry.getValue();
             entries.remove();
+            PORTRAITS.remove(player);
             if (player != null && player.playerNetServerHandler != null) DialogueNetwork.CHANNEL.sendTo(
                 new darkgrey.rpg.network.message.canonical.CanonicalSessionClose(
                     frame.getTransportId(),
@@ -113,14 +136,9 @@ public final class CanonicalMediaServer {
             IN_FLIGHT.decrementAndGet();
             return;
         }
-        CanonicalSessionFrame frame = FRAMES.get(player);
         String ref = request.getMediaRef();
         LoadedStoryPackage packageSource = null;
-        if (frame != null
-            && (ref.equals(frame.getPortraitRef()) || ref.equals(frame.getVoiceRef())
-                || frame.getPresentation()
-                    .contains(ref))
-            && DarkGreyRpg.getStoryPackageLoader() != null) {
+        if (isAuthorized(player, ref) && DarkGreyRpg.getStoryPackageLoader() != null) {
             for (LoadedStoryPackage story : DarkGreyRpg.getStoryPackageLoader()
                 .getPackages()
                 .values())
@@ -178,10 +196,10 @@ public final class CanonicalMediaServer {
     private static boolean isAuthorized(EntityPlayerMP player, String ref) {
         CanonicalSessionFrame frame = FRAMES.get(player);
         return player != null && player.playerNetServerHandler != null
-            && frame != null
-            && (ref.equals(frame.getPortraitRef()) || ref.equals(frame.getVoiceRef())
-                || frame.getPresentation()
-                    .contains(ref));
+            && (StoryMediaServer.authorizes(player, ref)
+                || frame != null && (ref.equals(PORTRAITS.get(player)) || ref.equals(frame.getVoiceRef())
+                    || frame.getPresentation()
+                        .contains(ref)));
     }
 
     private static CanonicalMediaChunk unavailable(CanonicalMediaRequest request) {

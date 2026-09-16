@@ -18,14 +18,27 @@ internal sealed class ScreenLayerEditorState
     public int Selection { get; private set; }
     public event EventHandler? Changed;
 
+    internal static string MetadataPath(string root, string resource, string node)
+        => Path.Combine(root, "resources", "editor", "screen-layers", Hash(resource + "\n" + node) + ".json");
+
+    internal static void Reload(GraphEditorHostViewModel host)
+    {
+        if (!Hosts.TryGetValue(host, out var states)) return;
+        foreach (var state in states.Values)
+        {
+            state._snapshots = state._path is not null && File.Exists(state._path)
+                ? JsonSerializer.Deserialize<Dictionary<string, string[]>>(File.ReadAllText(state._path)) ?? new() : new();
+            state.Changed?.Invoke(state, EventArgs.Empty);
+        }
+    }
+
     public static ScreenLayerEditorState For(CanonicalNodeInspectorViewModel inspector, string? root)
     {
         var nodes = Hosts.GetOrCreateValue(inspector.Host);
         if (!nodes.TryGetValue(inspector.NodeId, out var state)) nodes[inspector.NodeId] = state = new();
         if (root is not null && state._path is null)
         {
-            var key = Hash(inspector.Host.AuthoringResourceKey + "\n" + inspector.NodeId);
-            state._path = Path.Combine(root, "resources", "editor", "screen-layers", key + ".json");
+            state._path = MetadataPath(root, inspector.Host.AuthoringResourceKey, inspector.NodeId);
             try
             {
                 if (File.Exists(state._path))

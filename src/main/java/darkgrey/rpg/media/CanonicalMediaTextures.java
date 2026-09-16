@@ -3,6 +3,9 @@ package darkgrey.rpg.media;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,6 +33,8 @@ public final class CanonicalMediaTextures {
 
     private static final Map<String, ResourceLocation> READY = new HashMap<String, ResourceLocation>();
     private static final Map<String, Double> ASPECTS = new HashMap<String, Double>();
+    private static final Map<String, Long> LAST_USED = new HashMap<String, Long>();
+    private static final Map<String, Long> PIXELS = new HashMap<String, Long>();
     private static final Set<String> PENDING = new HashSet<String>();
     private static final Set<String> FAILED = new HashSet<String>();
     private static final ExecutorService DECODER = new ThreadPoolExecutor(
@@ -49,6 +54,9 @@ public final class CanonicalMediaTextures {
         });
     private static long generation;
     private static int decodeLimit = 2048;
+    private static final int MAX_WARM_TEXTURES = 24;
+    private static final long MAX_WARM_PIXELS = 16777216L;
+    private static final long WARM_TEXTURE_NANOS = 30L * 1000000000L;
 
     static int decodeLimitForCount(int count) {
         return Math.min(2048, (int) Math.sqrt(16777216.0 / Math.max(1, count)));
@@ -56,10 +64,9 @@ public final class CanonicalMediaTextures {
 
     public static void configureImageCount(int count) {
         int next = decodeLimitForCount(count);
-        if (next != decodeLimit) {
-            clear();
-            decodeLimit = next;
-        }
+        // Existing textures are content-hash keyed and remain valid when the active
+        // frame's aggregate decode limit changes. New decodes use the new limit.
+        decodeLimit = next;
     }
 
     private CanonicalMediaTextures() {}
@@ -67,13 +74,28 @@ public final class CanonicalMediaTextures {
     public static ResourceLocation get(final String ref) {
         if (ref == null) return null;
         ResourceLocation existing = READY.get(ref);
-        if (existing != null) return existing;
+        if (existing != null) {
+            LAST_USED.put(ref, System.nanoTime());
+            return existing;
+        }
         final Path path = CanonicalMediaClient.ready(ref);
         if (path == null || PENDING.contains(ref) || FAILED.contains(ref)) return null;
-        final long epoch = generation;
         final int limit = decodeLimit;
-        PENDING.add(ref);
+        return enqueueDecode(ref, path, limit, true);
+    }
+
+    /** Decodes a verified local portrait before a Session opens; upload stays on the client thread. */
+    public static void prewarm(final String ref, final Path path) {
+        if (ref == null || path == null || READY.containsKey(ref) || PENDING.contains(ref) || FAILED.contains(ref))
+            return;
+        enqueueDecode(ref, path, 512, false);
+    }
+
+    private static ResourceLocation enqueueDecode(final String ref, final Path path, final int limit,
+        final boolean requireActive) {
+        final long epoch = generation;
         try {
+            PENDING.add(ref);
             DECODER.execute(new Runnable() {
 
                 @Override
@@ -96,7 +118,7 @@ public final class CanonicalMediaTextures {
                                 FAILED.add(ref);
                                 return;
                             }
-                            if (CanonicalMediaClient.ready(ref) == null) {
+                            if (requireActive && CanonicalMediaClient.ready(ref) == null) {
                                 image.flush();
                                 return;
                             }
@@ -107,6 +129,8 @@ public final class CanonicalMediaTextures {
                                     new DynamicTexture(image));
                             READY.put(ref, texture);
                             ASPECTS.put(ref, (double) image.getWidth() / image.getHeight());
+                            LAST_USED.put(ref, System.nanoTime());
+                            PIXELS.put(ref, (long) image.getWidth() * image.getHeight());
                             image.flush();
                         }
                     });
@@ -147,18 +171,56 @@ public final class CanonicalMediaTextures {
     }
 
     public static void releaseInactive() {
+        long now = System.nanoTime();
         Iterator<Map.Entry<String, ResourceLocation>> iterator = READY.entrySet()
             .iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, ResourceLocation> entry = iterator.next();
-            if (CanonicalMediaClient.ready(entry.getKey()) == null) {
+            Long used = LAST_USED.get(entry.getKey());
+            if (CanonicalMediaClient.ready(entry.getKey()) == null
+                && !CanonicalMediaClient.isWarmPortrait(entry.getKey())
+                && used != null
+                && now - used.longValue() >= WARM_TEXTURE_NANOS) remove(iterator, entry);
+        }
+        long pixels = 0L;
+        for (String ref : READY.keySet()) {
+            Long value = PIXELS.get(ref);
+            if (value != null) pixels += value.longValue();
+        }
+        if (READY.size() <= MAX_WARM_TEXTURES && pixels <= MAX_WARM_PIXELS) return;
+        ArrayList<String> inactive = new ArrayList<String>();
+        for (String ref : READY.keySet()) if (CanonicalMediaClient.ready(ref) == null) inactive.add(ref);
+        Collections.sort(inactive, new Comparator<String>() {
+
+            @Override
+            public int compare(String left, String right) {
+                return Long.compare(LAST_USED.get(left), LAST_USED.get(right));
+            }
+        });
+        for (String ref : inactive) {
+            if (READY.size() <= MAX_WARM_TEXTURES && pixels <= MAX_WARM_PIXELS) break;
+            ResourceLocation texture = READY.remove(ref);
+            if (texture != null) {
                 Minecraft.getMinecraft()
                     .getTextureManager()
-                    .deleteTexture(entry.getValue());
-                ASPECTS.remove(entry.getKey());
-                iterator.remove();
+                    .deleteTexture(texture);
+                ASPECTS.remove(ref);
+                LAST_USED.remove(ref);
+                Long value = PIXELS.remove(ref);
+                if (value != null) pixels -= value.longValue();
             }
         }
+    }
+
+    private static void remove(Iterator<Map.Entry<String, ResourceLocation>> iterator,
+        Map.Entry<String, ResourceLocation> entry) {
+        Minecraft.getMinecraft()
+            .getTextureManager()
+            .deleteTexture(entry.getValue());
+        ASPECTS.remove(entry.getKey());
+        LAST_USED.remove(entry.getKey());
+        PIXELS.remove(entry.getKey());
+        iterator.remove();
     }
 
     public static void clear() {
@@ -168,6 +230,8 @@ public final class CanonicalMediaTextures {
             .deleteTexture(texture);
         READY.clear();
         ASPECTS.clear();
+        LAST_USED.clear();
+        PIXELS.clear();
         PENDING.clear();
         FAILED.clear();
     }

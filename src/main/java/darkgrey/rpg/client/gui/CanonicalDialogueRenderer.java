@@ -13,6 +13,10 @@ import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
 /** Stateless drawing shared by foreground and render-only underlay. */
 public final class CanonicalDialogueRenderer {
 
+    private static long portraitWaitStarted;
+    private static long portraitTransport = -1;
+    private static String waitingPortrait;
+
     private CanonicalDialogueRenderer() {}
 
     private static void drawPortrait(net.minecraft.util.ResourceLocation texture, int x, int y, int size,
@@ -46,23 +50,35 @@ public final class CanonicalDialogueRenderer {
         int top = layout.top;
         int right = layout.right;
         int bottom = layout.bottom;
+        String speaker = CanonicalSessionClientController.getVisibleSpeaker();
+        String text = CanonicalSessionClientController.getVisibleText();
+        String portraitRef = speaker.isEmpty() ? null : CanonicalSessionClientController.getVisiblePortraitRef();
+        net.minecraft.util.ResourceLocation portrait = portraitRef == null ? null
+            : darkgrey.rpg.media.CanonicalMediaTextures.get(portraitRef);
+        if (portraitTransport != frame.getTransportId() || !java.util.Objects.equals(waitingPortrait, portraitRef)) {
+            portraitTransport = frame.getTransportId();
+            waitingPortrait = portraitRef;
+            portraitWaitStarted = System.nanoTime();
+        }
+        // Warmed portraits are ready on the first frame. Allow a short decode grace period,
+        // but a missing/corrupt/remote image must never hide the dialogue indefinitely.
+        if (portraitRef != null && portrait == null && System.nanoTime() - portraitWaitStarted < 150000000L)
+            return scrollLine;
         Gui.drawRect(left, top, right, bottom, 0xCC161616);
         Gui.drawRect(left, top, right, top + 1, 0xFFC0C0C0);
         Gui.drawRect(left, bottom - 1, right, bottom, 0xFF888888);
         Gui.drawRect(left, top, left + 1, bottom, 0xFF888888);
         Gui.drawRect(right - 1, top, right, bottom, 0xFF888888);
-        String speaker = CanonicalSessionClientController.getVisibleSpeaker();
-        String text = CanonicalSessionClientController.getVisibleText();
-        net.minecraft.util.ResourceLocation portrait = speaker.isEmpty() ? null
-            : darkgrey.rpg.media.CanonicalMediaTextures.get(frame.getPortraitRef());
         int textLeft = left + 8;
-        if (portrait != null) {
-            drawPortrait(
+        if (portraitRef != null) {
+            if (portrait != null) drawPortrait(
                 portrait,
                 left + 8,
                 top + 8,
                 layout.portraitSize,
-                darkgrey.rpg.media.CanonicalMediaTextures.aspect(frame.getPortraitRef()));
+                darkgrey.rpg.media.CanonicalMediaTextures.aspect(portraitRef));
+            else Gui
+                .drawRect(left + 8, top + 8, left + 8 + layout.portraitSize, top + 8 + layout.portraitSize, 0x55333333);
             textLeft = layout.textLeft;
         }
         int textWidth = right - textLeft - 8;

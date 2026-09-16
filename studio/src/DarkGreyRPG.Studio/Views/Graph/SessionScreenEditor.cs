@@ -44,7 +44,12 @@ public sealed class SessionScreenEditor : UserControl
 
     public static readonly DependencyProperty ProjectDirectoryProperty =
         DependencyProperty.Register(nameof(ProjectDirectory), typeof(string), typeof(SessionScreenEditor),
-            new PropertyMetadata(null, (owner, _) => ((SessionScreenEditor)owner).Refresh()));
+            new PropertyMetadata(null, (owner, _) => ((SessionScreenEditor)owner).ResetProjectImages()));
+
+    private void ResetProjectImages()
+    {
+        _generation++; _images.Clear(); _loading.Clear(); CancelGesture(); Refresh();
+    }
 
     public string? ProjectDirectory { get => (string?)GetValue(ProjectDirectoryProperty); set => SetValue(ProjectDirectoryProperty, value); }
 
@@ -92,8 +97,8 @@ public sealed class SessionScreenEditor : UserControl
         var panel = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
         panel.Children.Add(new TextBlock { Text = "完整画面（空列表清除画面）" });
         var buttons = new UniformGrid { Columns = 2, Margin = new Thickness(0, 2, 0, 4) };
-        var add = new Button { Content = "添加图片", HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 3, 0) };
-        var remove = new Button { Content = "移除图片", HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3, 0, 0, 0) };
+        var add = new Button { Content = "添加", HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 3, 0) };
+        var remove = new Button { Content = "移除", HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3, 0, 0, 0) };
         add.Click += Import;
         remove.Click += (_, _) => RemoveSelected();
         buttons.Children.Add(add);
@@ -193,6 +198,7 @@ public sealed class SessionScreenEditor : UserControl
         SetCardExpanded(false);
         panel.Children.Add(card); panel.Children.Add(_error); Content = panel;
 
+        Loaded += (_, _) => { Refresh(false); Draw(); };
         DataContextChanged += (_, _) =>
         {
             var nextInspector = DataContext as CanonicalNodeInspectorViewModel;
@@ -501,29 +507,46 @@ public sealed class SessionScreenEditor : UserControl
 
     private static JsonArray CloneLayers(JsonArray source) => JsonNode.Parse(source.ToJsonString())!.AsArray();
 
+    public static ScreenLayerGeometry InitialImageGeometry(int width, int height)
+    {
+        if (width <= 0 || height <= 0) throw new InvalidDataException("图片尺寸无效。");
+        var scale = Math.Min(CanvasWidth * 0.75 / width, CanvasHeight * 0.75 / height);
+        var w = width * scale / CanvasWidth;
+        var h = height * scale / CanvasHeight;
+        return new((1 - w) / 2, (1 - h) / 2, w, h, 0, 0);
+    }
+
     private async void Import(object sender, RoutedEventArgs args)
     {
         if (_inspector?.IsScreen != true || ProjectDirectory is not { } root || _layers.Count >= MaximumLayers) return;
-        var owner = _inspector;
-        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "图片|*.png;*.jpg;*.jpeg", CheckFileExists = true };
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = ProjectMediaStore.ImageFileFilter, CheckFileExists = true };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+        var tools = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+        await ImportImageSelectionAsync(dialog.FileName, () => new ProjectMediaStore(root, Path.Combine(tools, "ffmpeg.exe"), Path.Combine(tools, "ffprobe.exe"))
+            .ImportImageAsync(dialog.FileName));
+    }
+
+    internal async Task ImportImageSelectionAsync(string fileName, Func<Task<ImportedMedia>> import)
+    {
+        if (_inspector?.IsScreen != true || ProjectDirectory is not { } root || _layers.Count >= MaximumLayers) return;
+        var owner = _inspector;
+        var generation = _generation;
         SetCurrentValue(IsEnabledProperty, false);
         try
         {
-            var tools = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
-            var media = await new ProjectMediaStore(root, Path.Combine(tools, "ffmpeg.exe"), Path.Combine(tools, "ffprobe.exe"))
-                .ImportImageAsync(dialog.FileName);
-            if (_inspector != owner) return;
+            var media = await import();
+            if (_inspector != owner || ProjectDirectory != root || generation != _generation || !IsLoaded || _layers.Count >= MaximumLayers) return;
+            var geometry = InitialImageGeometry(media.PixelWidth, media.PixelHeight);
             _layers.Add(new JsonObject
             {
-                ["media_ref"] = media.MediaRef, ["x"] = 0.25, ["y"] = 0.125, ["width"] = 0.5,
-                ["height"] = 0.75, ["anchor_x"] = 0, ["anchor_y"] = 0, ["z"] = _layers.Count
+                ["media_ref"] = media.MediaRef, ["x"] = geometry.X, ["y"] = geometry.Y, ["width"] = geometry.Width,
+                ["height"] = geometry.Height, ["anchor_x"] = 0, ["anchor_y"] = 0, ["z"] = _layers.Count
             });
-            _names.Add(Path.GetFileNameWithoutExtension(dialog.FileName));
+            _names.Add(Path.GetFileNameWithoutExtension(fileName));
             Commit(); _list.SelectedIndex = _layers.Count - 1;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or Win32Exception)
-        { _error.Text = exception.Message; }
+        catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException or Win32Exception or JsonException or InvalidOperationException or NotSupportedException)
+        { if (_inspector == owner && ProjectDirectory == root && generation == _generation) _error.Text = "图片导入失败：" + exception.Message; }
         finally { SetCurrentValue(IsEnabledProperty, true); }
     }
 
@@ -753,11 +776,12 @@ public sealed class SessionScreenEditor : UserControl
                 var image = new BitmapImage(); image.BeginInit(); image.CacheOption = BitmapCacheOption.OnLoad;
                 image.DecodePixelWidth = (int)CanvasWidth; image.StreamSource = stream; image.EndInit(); image.Freeze(); return image;
             });
-            if (generation == _generation)
+            await Dispatcher.InvokeAsync(() =>
             {
+                if (generation != _generation || ProjectDirectory != root) return;
                 _images[media] = bitmap;
-                if (!_dragging) { Refresh(false); Draw(); }
-            }
+                if (IsLoaded && !_dragging) { Refresh(false); Draw(); }
+            });
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or NotSupportedException or FileFormatException) { }
     }

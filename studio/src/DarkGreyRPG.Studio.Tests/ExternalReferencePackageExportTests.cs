@@ -28,7 +28,7 @@ public sealed class ExternalReferencePackageExportTests
         var destination = Environment.GetEnvironmentVariable("DGR_B4_EXTERNAL_EXPORTS");
         if (string.IsNullOrEmpty(destination)) return;
         var path = Path.GetFullPath(destination);
-        if (!path.StartsWith("E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\", StringComparison.OrdinalIgnoreCase))
+        if (!path.StartsWith("E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("External fixture artifacts must stay in repository .tooling.");
         Directory.CreateDirectory(path);
         File.Copy(providerArchive, Path.Combine(path, "provider.dgrs"), true);
@@ -120,7 +120,7 @@ public sealed class ExternalReferencePackageExportTests
         var destination = Environment.GetEnvironmentVariable("DGR_B4_CASE_ARCHIVE");
         if (string.IsNullOrWhiteSpace(destination)) return;
         var path = Path.GetFullPath(destination);
-        Assert.IsTrue(path.StartsWith("E:\\Java\\MinecraftMod\\DarkGrey_RPG\\.tooling\\", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(path.StartsWith("E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\", StringComparison.OrdinalIgnoreCase));
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.Copy(archive, path, true);
     }

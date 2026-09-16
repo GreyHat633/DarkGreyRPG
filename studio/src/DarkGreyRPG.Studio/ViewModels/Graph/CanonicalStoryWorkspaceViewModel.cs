@@ -218,7 +218,7 @@ public sealed class CanonicalStoryFolderViewModel : ObservableObject
 /// graph; Actor selection is Inspector-only, while Session/Task require an
 /// explicit open action to replace the middle graph temporarily.
 /// </summary>
-public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDisposable
+public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject, IDisposable
 {
     private CanonicalGraphResourceEditorViewModel _activeEditor;
     private ICanonicalStoryTreeItem? _selectedTreeItem;
@@ -490,6 +490,7 @@ public sealed class CanonicalStoryWorkspaceViewModel : ObservableObject, IDispos
 
     /// <summary>Node Inspector projection for the currently selected graph node.</summary>
     public string? MediaProjectDirectory { get; set; }
+    public CanonicalGraphClipboard Clipboard { get; set; } = new();
     public CanonicalNodeInspectorViewModel? NodeInspector => _nodeInspector;
     public Action<CanonicalStoryActorItem>? EditActorPortraitRequested { get; set; }
     public Func<CanonicalStoryActorItem, ActorEditorViewModel?>? PortraitEditorFactory { get; set; }

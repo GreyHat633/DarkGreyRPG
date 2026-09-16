@@ -118,9 +118,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     }
 
     private void sendContinue() {
-        awaitingServer = true;
-        setButtonsEnabled(false);
-        CanonicalSessionClientController.sendContinue();
+        awaitingServer = CanonicalSessionClientController.sendContinue();
+        setButtonsEnabled(!awaitingServer);
     }
 
     private void sendChoice(String optionId) {
@@ -173,6 +172,21 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         darkgrey.rpg.media.CanonicalSessionScene.draw(width, height);
         scrollLine = CanonicalDialogueRenderer.draw(fontRendererObj, width, height, frame, scrollLine, awaitingServer);
+        if (frame.getKind() == CanonicalSessionFrame.Kind.CHOICE && !frame.getText()
+            .isEmpty()) {
+            CanonicalDialogueLayout layout = new CanonicalDialogueLayout(width, height);
+            int visible = Math.min(
+                layout.choicesPerPage,
+                frame.getChoices()
+                    .size() - choiceOffset);
+            String prompt = fontRendererObj.trimStringToWidth(frame.getText(), layout.choiceWidth);
+            drawCenteredString(
+                fontRendererObj,
+                prompt,
+                width / 2,
+                Math.max(2, layout.choiceTop(visible) - 14),
+                0xffffff);
+        }
         super.drawScreen(mouseX, mouseY, partialTicks);
         for (Object object : buttonList) {
             GuiButton button = (GuiButton) object;
@@ -223,7 +237,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             source.getText(),
             source.getChoices(),
             source.getPortraitRef(),
-            source.getVoiceRef())
+            source.getVoiceRef(),
+            source.getVoiceVolume()).withTextSpeed(source.getTextSpeed())
                 .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice());
     }
 }

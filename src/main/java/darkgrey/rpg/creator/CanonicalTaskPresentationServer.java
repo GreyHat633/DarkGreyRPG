@@ -44,12 +44,16 @@ public final class CanonicalTaskPresentationServer {
         long generation = source.getPresentationGeneration();
         boolean worldChanged = state.dimension != player.dimension || state.source != source;
         if (!force && !worldChanged && state.generation == generation && state.project == project) return;
-        NBTTagCompound data = CanonicalTaskUiProjection.project(
-            DarkGreyRpg.getCanonicalTaskManager()
-                .getJournal(player));
-        if (force || worldChanged || !data.equals(state.previous)) {
+        java.util.List<darkgrey.rpg.task.journal.CanonicalTaskJournalEntry> journal = DarkGreyRpg
+            .getCanonicalTaskManager()
+            .getJournal(player);
+        net.minecraft.nbt.NBTTagList events = state.notifications
+            .update(journal, worldChanged || state.project != project);
+        NBTTagCompound data = CanonicalTaskUiProjection.project(journal);
+        if (force || worldChanged || !data.equals(state.previous) || events.tagCount() > 0) {
             state.previous = (NBTTagCompound) data.copy();
             state.revision = ++nextRevision;
+            data.setTag("notifications", events);
             data.setLong("revision", state.revision);
             data.setInteger("dimension", player.dimension);
             DialogueNetwork.CHANNEL.sendTo(new CreatorSnapshot(1, data), player);
@@ -88,6 +92,7 @@ public final class CanonicalTaskPresentationServer {
             this.player = new WeakReference<EntityPlayerMP>(player);
         }
 
+        final CanonicalTaskNotifications notifications = new CanonicalTaskNotifications();
         long generation = -1;
         long revision;
         int lastSubmitTick = Integer.MIN_VALUE;

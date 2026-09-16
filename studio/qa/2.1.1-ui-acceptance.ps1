@@ -1,4 +1,4 @@
-param([string]$RepositoryRoot = "E:\Java\MinecraftMod\DarkGrey_RPG")
+param([string]$RepositoryRoot = "E:\Java\MinecraftMod\DarkGreyRPG")
 
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient

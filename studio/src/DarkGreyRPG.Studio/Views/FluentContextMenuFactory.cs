@@ -78,7 +78,7 @@ internal static class FluentContextMenuFactory
             "适应全部节点" => "\uE9D2",
             "实际大小" => "\uE91B",
             "重置视图" => "\uE72C",
-            "添加节点" => "\uE710",
+            "添加" => "\uE710",
             _ when header.StartsWith("打开", StringComparison.Ordinal) => "\uE8A7",
             _ when header.StartsWith("查看", StringComparison.Ordinal) => "\uE890",
             _ when header.StartsWith("定位", StringComparison.Ordinal) => "\uE81D",

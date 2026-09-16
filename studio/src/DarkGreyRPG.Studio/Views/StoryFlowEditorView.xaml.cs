@@ -882,7 +882,7 @@ public partial class StoryFlowEditorView : UserControl
     private ContextMenu CreateCanvasContextMenu()
     {
         var menu = FluentContextMenuFactory.Create(GraphCanvas);
-        var add = FluentContextMenuFactory.CreateSubmenu("添加节点");
+        var add = FluentContextMenuFactory.CreateSubmenu("添加");
         foreach (var category in NodeCategoryOrder)
         {
             var definitions = StoryNodeDefinitionRegistry.Definitions

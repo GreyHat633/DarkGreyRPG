@@ -1,11 +1,10 @@
 package darkgrey.rpg.client.gui;
 
-import java.io.File;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 
 import darkgrey.rpg.DarkGreyRpg;
+import darkgrey.rpg.config.RpgRuntimeDirectories;
 
 /** Connects pure window geometry to local preferences at open/release/close boundaries. */
 final class UtilityWindowChrome extends Gui {
@@ -25,9 +24,10 @@ final class UtilityWindowChrome extends Gui {
         }
     }
 
-    private static UtilityWindowSettings settings() {
+    static UtilityWindowSettings settings() {
         return new UtilityWindowSettings(
-            new File(Minecraft.getMinecraft().mcDataDir, "config/darkgrey-rpg-windows.properties"));
+            RpgRuntimeDirectories.prepare(Minecraft.getMinecraft().mcDataDir)
+                .settingsFile());
     }
 
     static void drawGrip(UtilityWindowGeometry geometry) {
@@ -40,6 +40,9 @@ final class UtilityWindowChrome extends Gui {
                     drawRect(px, cy, px + 2, cy + 2, DgrUiPalette.SECONDARY);
                     drawRect(cx, py, cx + 2, py + 2, DgrUiPalette.SECONDARY);
                 }
+                // Complete the shared triangular six-dot grip (the corner is drawn twice above).
+                int innerX = cx - sx * 3, innerY = cy - sy * 3;
+                drawRect(innerX, innerY, innerX + 2, innerY + 2, DgrUiPalette.SECONDARY);
             }
         }
     }

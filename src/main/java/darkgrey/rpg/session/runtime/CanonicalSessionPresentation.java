@@ -24,6 +24,7 @@ public final class CanonicalSessionPresentation {
         false,
         0,
         0,
+        1,
         Collections.<Layer>emptyList());
     private final long revision;
     private final long musicRevision;
@@ -31,10 +32,11 @@ public final class CanonicalSessionPresentation {
     private final boolean loop;
     private final double fadeIn;
     private final double fadeOut;
+    private final double musicVolume;
     private final List<Layer> layers;
 
     private CanonicalSessionPresentation(long revision, long musicRevision, String musicRef, boolean loop,
-        double fadeIn, double fadeOut, List<Layer> layers) {
+        double fadeIn, double fadeOut, double musicVolume, List<Layer> layers) {
         if (revision < 0 || musicRevision < 0 || musicRevision > revision) throw invalid("revision");
         this.revision = revision;
         this.musicRevision = musicRevision;
@@ -42,6 +44,7 @@ public final class CanonicalSessionPresentation {
         this.loop = loop;
         this.fadeIn = fadeIn;
         this.fadeOut = fadeOut;
+        this.musicVolume = musicVolume;
         this.layers = Collections.unmodifiableList(new ArrayList<Layer>(layers));
     }
 
@@ -69,6 +72,10 @@ public final class CanonicalSessionPresentation {
         return fadeOut;
     }
 
+    public double getMusicVolume() {
+        return musicVolume;
+    }
+
     public List<Layer> getLayers() {
         return layers;
     }
@@ -85,7 +92,7 @@ public final class CanonicalSessionPresentation {
         for (Map.Entry<String, JsonElement> entry : node.getProperties()
             .entrySet()) properties.add(entry.getKey(), entry.getValue());
         if ("music".equals(node.getType())) {
-            keys(properties, "operation", "media_ref", "loop", "fade_in", "fade_out");
+            keysAllowOptional(properties, "volume", "operation", "media_ref", "loop", "fade_in", "fade_out");
             String operation = text(properties, "operation");
             if (!"play".equals(operation) && !"stop".equals(operation)) throw invalid("music operation");
             JsonElement media = properties.get("media_ref");
@@ -102,6 +109,7 @@ public final class CanonicalSessionPresentation {
                 repeat.getAsBoolean(),
                 number(properties, "fade_in", 0, 60),
                 number(properties, "fade_out", 0, 60),
+                numberOptional(properties, "volume", 0, 1, 1),
                 layers);
         }
         if ("screen".equals(node.getType())) {
@@ -113,6 +121,7 @@ public final class CanonicalSessionPresentation {
                 loop,
                 fadeIn,
                 fadeOut,
+                musicVolume,
                 parseLayers(properties.get("layers")));
         }
         throw invalid("node type");
@@ -126,6 +135,7 @@ public final class CanonicalSessionPresentation {
         json.addProperty("loop", loop);
         json.addProperty("fade_in", fadeIn);
         json.addProperty("fade_out", fadeOut);
+        json.addProperty("volume", musicVolume);
         JsonArray array = new JsonArray();
         for (Layer layer : layers) array.add(layer.toJson());
         json.add("layers", array);
@@ -137,7 +147,16 @@ public final class CanonicalSessionPresentation {
         JsonElement parsed = new JsonParser().parse(value);
         if (!parsed.isJsonObject()) throw invalid("snapshot object");
         JsonObject json = parsed.getAsJsonObject();
-        keys(json, "revision", "music_revision", "media_ref", "loop", "fade_in", "fade_out", "layers");
+        keysAllowOptional(
+            json,
+            "volume",
+            "revision",
+            "music_revision",
+            "media_ref",
+            "loop",
+            "fade_in",
+            "fade_out",
+            "layers");
         long revision = integer(json, "revision");
         long musicRevision = integer(json, "music_revision");
         String ref = json.get("media_ref")
@@ -153,6 +172,7 @@ public final class CanonicalSessionPresentation {
             loop.getAsBoolean(),
             number(json, "fade_in", 0, 60),
             number(json, "fade_out", 0, 60),
+            numberOptional(json, "volume", 0, 1, 1),
             parseLayers(json.get("layers")));
     }
 
@@ -187,6 +207,21 @@ public final class CanonicalSessionPresentation {
         if (object.entrySet()
             .size() != names.length) throw invalid("unexpected properties");
         for (String name : names) if (!object.has(name)) throw invalid("missing " + name);
+    }
+
+    private static void keysAllowOptional(JsonObject object, String optional, String... names) {
+        if (object.entrySet()
+            .size() != names.length
+            && object.entrySet()
+                .size() != names.length + 1)
+            throw invalid("unexpected properties");
+        for (String name : names) if (!object.has(name)) throw invalid("missing " + name);
+        if (object.has(optional) && object.get(optional)
+            .isJsonNull()) throw invalid(optional);
+    }
+
+    private static double numberOptional(JsonObject object, String name, double min, double max, double fallback) {
+        return object.has(name) ? number(object, name, min, max) : fallback;
     }
 
     private static String text(JsonObject object, String name) {

@@ -23,7 +23,7 @@ public sealed class RewardContextMenu0331Tests
         using var editor = new CanonicalGraphResourceEditorViewModel(store.Tasks.Load("task"));
         var view = new CanonicalGraphEditorView { Host = editor.Host };
         var menu = view.CreateCanvasContextMenu(new Point(320, 180));
-        var add = menu.Items.OfType<MenuItem>().Single(item => (string)item.Header == "添加节点");
+        var add = menu.Items.OfType<MenuItem>().Single(item => (string)item.Header == "添加");
         var task = add.Items.OfType<MenuItem>().Single(item => (string)item.Header == "任务");
         var reward = task.Items.OfType<MenuItem>().Single(item => (string)item.Header == "奖励");
         Assert.IsTrue(reward.IsEnabled);

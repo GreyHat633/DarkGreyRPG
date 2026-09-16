@@ -16,6 +16,40 @@ public final class CanonicalSessionClientModelProbe {
     private CanonicalSessionClientModelProbe() {}
 
     public static void main(String[] args) {
+        DialoguePreferences.setSpeed(60);
+        require(DialoguePreferences.resolve(-1) == 60, "global speed selected");
+        require(DialoguePreferences.resolve(0) == 0, "zero override stays immediate");
+        require(DialoguePreferences.resolve(120) == 120, "custom override wins");
+        CanonicalSessionFrame inherited = line(10L, "story_a", "node_inherit").withTextSpeed(-1);
+        ByteBuf inheritedBytes = Unpooled.buffer();
+        inherited.toBytes(inheritedBytes);
+        CanonicalSessionFrame decodedInherited = new CanonicalSessionFrame();
+        decodedInherited.fromBytes(inheritedBytes);
+        inheritedBytes.release();
+        require(decodedInherited.getTextSpeed() == -1, "global speed sentinel survives network");
+        DialoguePreferences.setSpeed(30);
+        DialogueTextReveal reveal = new DialogueTextReveal();
+        reveal.begin("中😀文\n末", 30, 0);
+        require(
+            reveal.visible(0)
+                .equals(""),
+            "starts empty");
+        require(
+            reveal.visible(70000000L)
+                .equals("中😀"),
+            "elapsed time and surrogate boundary");
+        require(reveal.finish(70000000L), "first click completes");
+        require(!reveal.finish(70000000L), "second click can advance");
+        reveal.begin("立即", 0, 0);
+        require(
+            reveal.visible(0)
+                .equals("立即"),
+            "zero means immediate");
+        reveal.begin("123456", 120, 0);
+        require(
+            reveal.visible(25000000L)
+                .equals("123"),
+            "120 characters per second");
         CanonicalSessionClientModel model = new CanonicalSessionClientModel();
         CanonicalSessionFrame line = line(11L, "story_a", "node_line");
         require(model.acceptFrame(line), "new frame accepted");
@@ -29,6 +63,12 @@ public final class CanonicalSessionClientModelProbe {
         line.fromBytes(changedBytes);
         changedBytes.release();
         require("node_line".equals(model.getCurrentNodeId()), "model detaches incoming frame");
+        CanonicalSessionFrame portraitLine = lineWithPortrait(11L, "story_a", "node_portrait");
+        require(model.acceptFrame(portraitLine), "portrait line accepted");
+        require(
+            "media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png"
+                .equals(model.getVisiblePortraitRef()),
+            "line portrait becomes visible context");
         require(!model.acceptFrame(line(12L, "story_a", "node_stale")), "transport fence");
         require(!model.acceptFrame(line(11L, "story_b", "node_other")), "Story fence");
 
@@ -44,6 +84,10 @@ public final class CanonicalSessionClientModelProbe {
         require(model.acceptFrame(emptyChoice), "promptless choice accepted");
         require("Text".equals(model.getVisibleText()), "promptless choice preserves visible line");
         require("Speaker".equals(model.getVisibleSpeaker()), "promptless choice preserves speaker");
+        require(
+            "media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png"
+                .equals(model.getVisiblePortraitRef()),
+            "promptless choice preserves portrait context");
         require(
             model.getText()
                 .isEmpty(),
@@ -68,11 +112,11 @@ public final class CanonicalSessionClientModelProbe {
                 new CanonicalSessionChoiceOption("option_alpha", "Alpha"),
                 new CanonicalSessionChoiceOption("option_omega", "Omega")));
         require(model.acceptFrame(choice), "matching choice accepted");
-        require("Pick".equals(model.getVisibleText()), "explicit prompt replaces visible line");
+        require("Text".equals(model.getVisibleText()), "choice preserves complete previous line");
         require(
             model.getVisibleSpeaker()
-                .isEmpty(),
-            "explicit prompt clears previous speaker");
+                .equals("Speaker"),
+            "choice preserves previous speaker");
         CanonicalSessionAction action = model.choiceAction("option_omega");
         require("option_omega".equals(action.getOptionId()), "stable option action");
         require("node_choice".equals(action.getCurrentNodeId()), "choice current node");
@@ -90,7 +134,8 @@ public final class CanonicalSessionClientModelProbe {
             model.getVisibleText()
                 .isEmpty()
                 && model.getVisibleSpeaker()
-                    .isEmpty(),
+                    .isEmpty()
+                && model.getVisiblePortraitRef() == null,
             "close clears presentation context");
         require(
             model.acceptFrame(
@@ -136,6 +181,20 @@ public final class CanonicalSessionClientModelProbe {
             "Speaker",
             "Text",
             Collections.<CanonicalSessionChoiceOption>emptyList());
+    }
+
+    private static CanonicalSessionFrame lineWithPortrait(long transportId, String storyId, String nodeId) {
+        return new CanonicalSessionFrame(
+            transportId,
+            storyId,
+            "session_a",
+            nodeId,
+            CanonicalSessionFrame.Kind.LINE,
+            "Speaker",
+            "Text",
+            Collections.<CanonicalSessionChoiceOption>emptyList(),
+            "media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png",
+            null);
     }
 
     private static void reject(Runnable action, String label) {

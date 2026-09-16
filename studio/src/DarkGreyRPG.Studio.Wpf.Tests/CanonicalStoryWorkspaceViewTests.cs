@@ -20,6 +20,24 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalStoryWorkspaceViewTests
 {
     [STATestMethod]
+    public void ClipboardUsesWorkspacePropertyEvenWithShellDataContext()
+    {
+        using var workspace = Workspace("story-a");
+        var session = workspace.SessionItems.Single();
+        Assert.IsTrue(session.Editor.Host.AddNode(GraphNodeFactory.Create(GraphScope.Session, "line", "copy-line")));
+        var view = Arrange(workspace);
+        view.DataContext = new object();
+        Assert.IsTrue(view.ActivateResourceItem(session));
+        Assert.IsTrue(view.GraphView.SelectNode("copy-line"));
+        int count = session.Editor.Host.Graph.Nodes.Count;
+        Assert.IsTrue(view.GraphView.CopySelectedNodes());
+        Assert.IsTrue(view.GraphView.PasteNodes(new Point(120, 80)));
+        Assert.AreEqual(count + 1, session.Editor.Host.Graph.Nodes.Count);
+        Assert.IsTrue(session.Editor.Host.Undo());
+        Assert.AreEqual(count, session.Editor.Host.Graph.Nodes.Count);
+    }
+
+    [STATestMethod]
     public void ThreeColumnViewBindsStoryHomeGraphByDefault()
     {
         using var workspace = Workspace("story-a");

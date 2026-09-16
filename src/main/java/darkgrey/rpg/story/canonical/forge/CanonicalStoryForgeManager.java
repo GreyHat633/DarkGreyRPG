@@ -2,8 +2,10 @@ package darkgrey.rpg.story.canonical.forge;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.entity.Entity;
@@ -56,6 +58,9 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
     /** Server-neutral aggregate seam used to verify coordinator routing without a Minecraft process. */
     public interface AggregateGateway {
 
+        /** Called only after a NEW/RESTART Story dispatch reaches its real aggregate start. */
+        default void storyStarted(CanonicalStoryDispatch dispatch) {}
+
         boolean startSession(String storyId, String placementId, boolean activationLogic);
 
         CanonicalTaskInstanceSnapshot startTask(String storyId, String placementId, String resourceId);
@@ -67,6 +72,10 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         }
 
         void cleanup(String storyId);
+
+        default void completed(String storyId) {
+            cleanup(storyId);
+        }
 
         void resetPreviousRun(String storyId);
     }
@@ -360,6 +369,16 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         AggregateGateway gateway = new AggregateGateway() {
 
             @Override
+            public void storyStarted(CanonicalStoryDispatch dispatch) {
+                if (dispatch == null || !isActualStart(dispatch)) return;
+                darkgrey.rpg.media.StoryMediaServer.storyStarted(
+                    routePlayer,
+                    dispatch.getSnapshot()
+                        .getStoryId(),
+                    dispatch.getStartDisposition());
+            }
+
+            @Override
             public boolean startSession(String storyId, String placementId, boolean activationLogic) {
                 return sessions.start(routePlayer, storyId, placementId, activationLogic);
             }
@@ -411,6 +430,14 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             }
 
             @Override
+            public void completed(String storyId) {
+                darkgrey.rpg.title.CanonicalTitleServer.clearWaitingStory(routePlayer, storyId);
+                sessions.cancelByStory(routePlayer, storyId);
+                tasks.cancelByStory(routePlayer, storyId);
+                darkgrey.rpg.media.StoryMediaServer.storyEnded(routePlayer, storyId);
+            }
+
+            @Override
             public void cleanup(String storyId) {
                 CanonicalStoryForgeManager.this.cleanup(routePlayer, storyId);
             }
@@ -446,6 +473,21 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         return context.data.getStorySnapshot(requirePlayerUuid(player), storyId);
     }
 
+    /** Reconciles media protection with already ACTIVE persisted Story roots after reconnect. */
+    public void synchronizeMedia(EntityPlayerMP player) {
+        try {
+            Context context = context(player);
+            UUID playerUuid = requirePlayerUuid(player);
+            Set<String> active = new LinkedHashSet<String>();
+            for (CanonicalStoryInstanceSnapshot snapshot : context.data.storySnapshots())
+                if (playerUuid.equals(snapshot.getPlayerUuid()) && snapshot.getRuntimeSnapshot()
+                    .getStatus() == CanonicalStoryStatus.ACTIVE) active.add(snapshot.getStoryId());
+            darkgrey.rpg.media.StoryMediaServer.restoreRunning(player, active);
+        } catch (RuntimeException exception) {
+            reportTriggerQueryFailure("media synchronization", exception);
+        }
+    }
+
     public boolean reset(EntityPlayerMP player, String storyId) {
         Context context = context(player);
         UUID playerUuid = requirePlayerUuid(player);
@@ -455,6 +497,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         tasks.discardByPlayerStory(player, storyId);
         context.data.discardByPlayerStory(playerUuid, storyId);
         actorChoices.forget(playerUuid);
+        darkgrey.rpg.media.StoryMediaServer.reset(player, storyId);
         return true;
     }
 
@@ -619,6 +662,10 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                 if (disposition == CanonicalStoryStartDisposition.REPEATABLE_RESTART) gateway.resetPreviousRun(
                     dispatch.getSnapshot()
                         .getStoryId());
+                // The Story Start checkpoint is committed before routing its first
+                // dispatch, including CONDITION and immediate TERMINATED paths.
+                // Restart cleanup must happen before publishing new protection.
+                if (isActualStart(dispatch)) gateway.storyStarted(dispatch);
                 CanonicalStoryDispatchKind kind = dispatch.getKind();
                 String storyId = dispatch.getSnapshot()
                     .getStoryId();
@@ -646,6 +693,11 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                 if (kind == CanonicalStoryDispatchKind.TITLE) {
                     if (!gateway.showTitle(dispatch))
                         throw new IllegalStateException("Title queue is unavailable or full");
+                    if (!darkgrey.rpg.story.canonical.runtime.CanonicalTitleConfiguration
+                        .parse(dispatch.getActionProperties()).waitForCompletion) {
+                        dispatch = service.completeTitle(playerUuid, storyId, dispatch.getPlacementId(), now());
+                        continue;
+                    }
                     return true;
                 }
                 if (kind == CanonicalStoryDispatchKind.ACTION) {
@@ -657,7 +709,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
                 if (kind == CanonicalStoryDispatchKind.CONDITION) return true;
 
                 if (kind == CanonicalStoryDispatchKind.TERMINATED) {
-                    gateway.cleanup(storyId);
+                    gateway.completed(storyId);
                     String terminalPort = CanonicalStoryRuntime
                         .restore(
                             service.storyResource(storyId),
@@ -751,6 +803,12 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         }
     }
 
+    private static boolean isActualStart(CanonicalStoryDispatch dispatch) {
+        CanonicalStoryStartDisposition disposition = dispatch == null ? null : dispatch.getStartDisposition();
+        return disposition == CanonicalStoryStartDisposition.NEW
+            || disposition == CanonicalStoryStartDisposition.REPEATABLE_RESTART;
+    }
+
     private static CanonicalStoryDispatch recoverTargetDispatch(UUID playerUuid, CanonicalStoryServerService service,
         CanonicalSessionSavedData data, String targetIdentity) {
         String[] parts = targetIdentity.split("\\u0000", -1);
@@ -794,6 +852,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         darkgrey.rpg.title.CanonicalTitleServer.clearStory(player, storyId);
         sessions.cancelByStory(player, storyId);
         tasks.cancelByStory(player, storyId);
+        darkgrey.rpg.media.StoryMediaServer.storyEnded(player, storyId);
     }
 
     private Context context(EntityPlayerMP player) {

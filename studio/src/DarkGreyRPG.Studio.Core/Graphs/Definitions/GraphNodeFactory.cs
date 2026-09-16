@@ -53,8 +53,17 @@ public static class GraphNodeFactory
             CanonicalTaskObjectiveSchema.InitializeDefault(node);
         if (scope == GraphScope.StoryFlow && string.Equals(type, CanonicalStoryActionSchema.NodeType, StringComparison.Ordinal))
             CanonicalStoryActionSchema.InitializeDefault(node);
+        if (scope == GraphScope.StoryFlow && type == "title")
+            node.Properties["wait_for_completion"] = JsonSerializer.SerializeToElement(true);
         if (scope == GraphScope.Task && type == "reward")
             node.Properties["entries"] = JsonSerializer.SerializeToElement(new[] { new { type = "item", item = "", amount = 1 } });
+        if (scope == GraphScope.Session && type == "line")
+        {
+            node.Properties["voice_volume"] = JsonSerializer.SerializeToElement(1d);
+            node.Properties["text_speed"] = JsonSerializer.SerializeToElement(30d);
+        }
+        if (scope == GraphScope.Session && type == "music")
+            node.Properties["volume"] = JsonSerializer.SerializeToElement(1d);
         return node;
     }
 
