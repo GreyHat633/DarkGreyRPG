@@ -29,7 +29,8 @@ public final class GuiDialogueSettings extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
         int x = geometry.x, y = geometry.y, w = geometry.width, h = geometry.height;
-        drawRect(x, y, x + w, y + h, 0xEE161616);
+        drawRect(x, y, x + w, y + h, DgrUiPalette.WINDOW_PANEL);
+        drawRect(x + 8, y + 32, x + w - 8, y + h - 14, DgrUiPalette.WINDOW_CONTENT);
         drawRect(x, y, x + w, y + 1, DgrUiPalette.SECONDARY);
         drawRect(x, y + h - 1, x + w, y + h, DgrUiPalette.SECONDARY);
         drawRect(x, y, x + 1, y + h, DgrUiPalette.SECONDARY);

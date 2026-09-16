@@ -18,6 +18,25 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class GraphInteraction0331Tests
 {
     [STATestMethod]
+    public void FreeWirePreviewNeverOvershootsInEitherDirectionOrNearTheAnchor()
+    {
+        var start = new Point(300, 200);
+        foreach (var end in new[] { new Point(30, 450), new Point(600, 10), new Point(301, 260), new Point(300, 200) })
+        {
+            var geometry = CanonicalGraphEditorView.DragWireGeometry(start, end);
+            var curve = (BezierSegment)geometry.Figures.Single().Segments.Single();
+            Assert.AreEqual(end, curve.Point3);
+            for (var step = 0; step <= 100; step++)
+            {
+                var t = step / 100d;
+                var u = 1 - t;
+                var x = u * u * u * start.X + 3 * u * u * t * curve.Point1.X + 3 * u * t * t * curve.Point2.X + t * t * t * end.X;
+                Assert.IsTrue(x >= Math.Min(start.X, end.X) - .001 && x <= Math.Max(start.X, end.X) + .001);
+            }
+        }
+    }
+
+    [STATestMethod]
     public void ParameterBlankHitRemainsDraggableWhileRenderedEditorControlsOwnPresses()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
@@ -128,6 +147,8 @@ public sealed class GraphInteraction0331Tests
         var to = view.PortVisuals.Single(port => port.NodeId == "target");
         var wire = view.ConnectionVisuals.Single();
         var hit = view.ConnectionHitTargets.Single();
+        Assert.IsTrue(view.NodeVisuals.All(node => Panel.GetZIndex(wire) > Panel.GetZIndex(node)));
+        Assert.IsFalse(wire.IsHitTestVisible, "The raised visual must not block ports or editors.");
         AssertPathMatchesAnchor(wire, from, start: true);
         AssertPathMatchesAnchor(wire, to, start: false);
         AssertPathMatchesAnchor(hit, from, start: true);

@@ -102,7 +102,7 @@ public sealed partial class ShellViewModel : ObservableObject
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
-        SaveCurrentResourceCommand = new RelayCommand(SaveCurrentResource, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanSave == true || ActiveEditor?.CanSave == true);
+        SaveCurrentResourceCommand = new RelayCommand(SaveAll, CanSaveAll);
         UndoCurrentCommand = new RelayCommand(UndoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanUndo == true || ActiveProjectGraphHost?.CanUndo == true || ActiveEditor?.UndoCommand.CanExecute(null) == true || CanUndoProjectNamespace() || CanUndoReference());
         RedoCurrentCommand = new RelayCommand(RedoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanRedo == true || ActiveProjectGraphHost?.CanRedo == true || ActiveEditor?.RedoCommand.CanExecute(null) == true || CanRedoReference());
         NewActorCommand = new RelayCommand(NewActor, CanCreateOrReferenceActor);
@@ -837,11 +837,11 @@ public sealed partial class ShellViewModel : ObservableObject
             if (canonicalResult == CanonicalOpenResult.Opened) return;
             if (canonicalResult == CanonicalOpenResult.Failed)
             {
-                SetCanonicalStoryWorkspace(null);
+                SetCanonicalStoryWorkspace(null, retainDrafts: true);
                 StoryWorkspace.CloseStory();
                 return;
             }
-            SetCanonicalStoryWorkspace(null);
+            SetCanonicalStoryWorkspace(null, retainDrafts: true);
             var story = project.Stories.LoadStory(selected.Id);
             var actors = project.Actors.ListActors();
             var descriptors = GetResourceDescriptors(project, story, _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id));
@@ -1860,18 +1860,18 @@ public sealed partial class ShellViewModel : ObservableObject
             or UnauthorizedAccessException
             or InvalidOperationException;
 
-    private void SetCanonicalStoryWorkspace(CanonicalStoryWorkspaceViewModel? workspace)
+    private void SetCanonicalStoryWorkspace(CanonicalStoryWorkspaceViewModel? workspace, bool retainDrafts = false)
     {
         if (ReferenceEquals(_canonicalStoryWorkspace, workspace)) return;
         if (_canonicalStoryWorkspace is not null)
         {
             _canonicalStoryWorkspace.PropertyChanged -= OnCanonicalStoryWorkspacePropertyChanged;
             Problems.RemoveSourceTree($"canonical/story/{_canonicalStoryWorkspace.StoryEditor.Id}");
-            if (workspace is not null && _canonicalStoryWorkspace.HasDirtyEditors)
+            if ((workspace is not null || retainDrafts) && _canonicalStoryWorkspace.HasDirtyEditors)
                 _retainedStoryWorkspaces[_canonicalStoryWorkspace.StoryEditor.Id] = _canonicalStoryWorkspace;
             else _canonicalStoryWorkspace.Dispose();
         }
-        if (workspace is null)
+        if (workspace is null && !retainDrafts)
         {
             foreach (var retained in _retainedStoryWorkspaces.Values) retained.Dispose();
             _retainedStoryWorkspaces.Clear();
@@ -2094,7 +2094,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (!TryLeaveCurrentEditor()) return;
         ClearAllEditorSelections();
-        SetCanonicalStoryWorkspace(null);
+        SetCanonicalStoryWorkspace(null, retainDrafts: true);
         StoryWorkspace.CloseStory();
         LoadStoryList();
         ProjectHome.ShowGraph();
@@ -2132,11 +2132,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private bool TryLeaveCurrentEditor()
     {
-        if (CanonicalStoryWorkspace?.HasDirtyEditors == true)
-        {
-            ReportWarning("故事仍有未保存的图；请逐个保存后再离开。", "canonical/story");
-            return false;
-        }
+        if (CanonicalStoryWorkspace is not null) return true;
         if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
         return TryLeaveRoute(StoryWorkspace.CurrentRoute);
     }
@@ -2527,15 +2523,6 @@ public sealed partial class ShellViewModel : ObservableObject
 
         try
         {
-            if (CanonicalStoryWorkspace is { HasDirtyEditors: true } workspace
-                && string.Equals(workspace.StoryEditor.Id, selected.Id, StringComparison.Ordinal))
-            {
-                ReportWarning(
-                    $"无法删除故事 '{selected.Id}'：请先保存或放弃未保存的编辑。",
-                    $"canonical/story/{selected.Id}");
-                return;
-            }
-
             var service = new CanonicalStoryLifecycleService(
                 _canonicalGraphStore,
                 project.Actors,
@@ -2561,12 +2548,23 @@ public sealed partial class ShellViewModel : ObservableObject
                     resourcesToDelete))
                 return;
 
-            foreach (var actorId in plan.ActorIds)
-                _projectService.ReleaseOpenActor(actorId);
-
             service.Delete(selected.Id);
+            foreach (var actorId in plan.ActorIds)
+                _projectService.ReleaseOpenActor(actorId, discardUnsavedChanges: true);
+            if (_retainedStoryWorkspaces.Remove(selected.Id, out var deletedDraft))
+                deletedDraft.Dispose();
             if (string.Equals(CanonicalStoryWorkspace?.StoryEditor.Id, selected.Id, StringComparison.Ordinal))
-                SetCanonicalStoryWorkspace(null);
+            {
+                // Discard only the deleted story; other story drafts remain in the project.
+                _canonicalStoryWorkspace!.PropertyChanged -= OnCanonicalStoryWorkspacePropertyChanged;
+                _canonicalStoryWorkspace.Dispose();
+                _canonicalStoryWorkspace = null;
+                SetCanonicalStoryWorkspaceVisible(false);
+                OnPropertyChanged(nameof(CanonicalStoryWorkspace));
+                OnPropertyChanged(nameof(HasCanonicalStoryWorkspace));
+                OnPropertyChanged(nameof(EffectiveResourceBrowserVisible));
+                RaiseCurrentEditorStates();
+            }
             LoadActorList();
             LoadStoryList();
             ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == selected.Id);
@@ -2780,6 +2778,9 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private bool TrySaveAll()
     {
+        var selectedResourceId = SelectedStoryResource?.Id;
+        var selectedActorId = SelectedStoryActor?.Id;
+        var promotingDraft = CurrentDialogue?.Document.IsNewDraft == true || CurrentQuest?.Document.IsNewDraft == true;
         foreach (var retained in _retainedStoryWorkspaces.Values.ToArray())
             if (!TrySaveAllCanonicalResources(retained)) return false;
         if (CanonicalStoryWorkspace is { } workspace)
@@ -2791,7 +2792,11 @@ public sealed partial class ShellViewModel : ObservableObject
             if (CurrentFlow?.IsDirty == true && !TrySaveCurrentFlow()) return false;
             if ((CurrentDialogue?.Document.IsNewDraft == true || CurrentQuest?.Document.IsNewDraft == true)
                 && !TrySaveCurrentStoryResource()) return false;
+            foreach (var actor in _projectService.OpenActorDocuments.Where(document => document.IsDirty).ToArray())
+                SaveOpenActor(actor);
             _projectService.SaveAll();
+            if (promotingDraft && CanonicalStoryWorkspace is null)
+                RefreshCurrentStory(selectedActorId, selectedResourceId);
             ReportSuccess("所有未保存的资源已写入磁盘。", "Project");
             SaveActorCommand.RaiseCanExecuteChanged();
             SaveCurrentResourceCommand.RaiseCanExecuteChanged();

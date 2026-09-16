@@ -256,7 +256,7 @@ public sealed class CanonicalStoryResourceShellTests
         shell.SaveCurrentResourceCommand.Execute(null);
 
         Assert.IsFalse(session.Editor.IsDirty);
-        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        Assert.IsFalse(workspace.StoryEditor.IsDirty);
         Assert.AreEqual("Renamed", workspace.StoryEditor.Host.Graph.Nodes
             .Single(node => node.Id == "session-placement").Ports.Single(port => port.Id == "accepted").DisplayName);
         Assert.HasCount(1, workspace.StoryEditor.Host.Graph.Connections);
@@ -293,7 +293,7 @@ public sealed class CanonicalStoryResourceShellTests
     }
 
     [TestMethod]
-    public void ConfirmedAggregatePortRemovalSavesChildAndLeavesStoryDirtyForExplicitSave()
+    public void ConfirmedAggregatePortRemovalSavesChildAndStoryTogether()
     {
         using var project = new CanonicalProjectFixture();
         project.AddOwnedSessionWithAggregate(includeConnection: true, connectLogicBoundary: true);
@@ -307,7 +307,7 @@ public sealed class CanonicalStoryResourceShellTests
         shell.SaveCurrentResourceCommand.Execute(null);
 
         Assert.IsFalse(session.Editor.IsDirty);
-        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        Assert.IsFalse(workspace.StoryEditor.IsDirty);
         Assert.IsEmpty(workspace.StoryEditor.Host.Graph.Connections);
         Assert.IsNotNull(workspace.StoryEditor.Host.Graph.Nodes.Single(node => node.Id == "session-placement")
             .Ports.SingleOrDefault(port => port.Id == "accepted"));

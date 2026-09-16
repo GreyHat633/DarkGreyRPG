@@ -158,7 +158,7 @@ public final class GuiCopierTemplates extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, 0xEE303030);
+        drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, DgrUiPalette.WINDOW_PANEL);
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + 2, 0xFF8C8C8C);
         drawCenteredString(
             fontRendererObj,

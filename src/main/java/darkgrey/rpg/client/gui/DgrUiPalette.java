@@ -5,8 +5,9 @@ public final class DgrUiPalette {
 
     private DgrUiPalette() {}
 
-    public static final int PANEL = 0xEE303030;
     public static final int WINDOW_PANEL = 0xEE161616;
+    public static final int PANEL = WINDOW_PANEL;
+    public static final int WINDOW_CONTENT = 0xCC202020;
     public static final int SUB_PANEL = 0xFF202020;
     public static final int BORDER = 0xFF888888;
     public static final int SELECTED_BORDER = 0xFFDDDDDD;

@@ -5,7 +5,7 @@
              xmlns:graphview="clr-namespace:DarkGreyRPG.Studio.Views.Graph"
              Width="232" MinHeight="92" Focusable="True" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
     <AdornerDecorator ClipToBounds="True">
-    <Border x:Name="NodeBorder" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6"
+    <Border x:Name="NodeBorder" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource TextFillColorSecondaryBrush}" BorderThickness="1" CornerRadius="6"
             Padding="0" AutomationProperties.AutomationId="CanonicalGraphNodeBorder">
         <Grid>
             <Grid.RowDefinitions>

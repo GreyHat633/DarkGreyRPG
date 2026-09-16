@@ -141,7 +141,7 @@ public partial class CanonicalGraphNodeControl : UserControl
         var control = (CanonicalGraphNodeControl)sender;
         if (control.NodeBorder is not null)
             control.NodeBorder.SetResourceReference(Border.BorderBrushProperty,
-                control.IsSelected ? "AccentFillColorDefaultBrush" : "CardStrokeColorDefaultBrush");
+                control.IsSelected ? "AccentFillColorDefaultBrush" : "TextFillColorSecondaryBrush");
     }
 
     private void RebuildPorts()

@@ -156,8 +156,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         drawRect(layout.panelLeft, layout.panelBottom - 1, layout.panelRight, layout.panelBottom, DgrUiPalette.BORDER);
         drawRect(layout.panelLeft, layout.panelTop, layout.panelLeft + 1, layout.panelBottom, DgrUiPalette.BORDER);
         drawRect(layout.panelRight - 1, layout.panelTop, layout.panelRight, layout.panelBottom, DgrUiPalette.BORDER);
-        drawRect(layout.listLeft, layout.listTop - 4, layout.listRight, layout.listBottom, 0xCC202020);
-        drawRect(layout.detailLeft, layout.detailTop - 4, layout.detailRight, layout.detailBottom, 0xCC202020);
+        drawRect(layout.listLeft, layout.listTop - 4, layout.listRight, layout.listBottom, DgrUiPalette.WINDOW_CONTENT);
+        drawRect(layout.detailLeft, layout.detailTop - 4, layout.detailRight, layout.detailBottom, DgrUiPalette.WINDOW_CONTENT);
         if (!layout.stacked) drawRect(
             layout.detailLeft - 5,
             layout.detailTop - 4,

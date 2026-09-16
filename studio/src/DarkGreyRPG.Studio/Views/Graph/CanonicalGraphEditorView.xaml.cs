@@ -756,6 +756,7 @@ public partial class CanonicalGraphEditorView : UserControl
         hit.PreviewMouseLeftButtonDown += ConnectionHit_OnPreviewMouseLeftButtonDown;
         var line = new Path { Data = geometry, StrokeThickness = style.StrokeThickness, Fill = null, IsHitTestVisible = false, Tag = connection };
         ApplyWireBrush(line, connection.InterfaceKind, selected);
+        Panel.SetZIndex(line, 10);
         GraphCanvas.Children.Insert(0, line);
         GraphCanvas.Children.Insert(1, hit);
         _connectionHits[hit] = connection;
@@ -1135,6 +1136,7 @@ public partial class CanonicalGraphEditorView : UserControl
                 Tag = "UncommittedCanonicalConnection",
             };
             ApplyWireBrush(wire, endpoint.InterfaceKind, selected: false);
+            Panel.SetZIndex(wire, 10);
             _draftWires.Add(wire);
             _transientWireVisuals.Add(wire);
             GraphCanvas.Children.Insert(0, wire);
@@ -1256,7 +1258,7 @@ public partial class CanonicalGraphEditorView : UserControl
                 var fixedPoint = _ports.TryGetValue(EndpointKey(fixedEndpoint.NodeId, fixedEndpoint.PortId), out var fixedPort)
                     ? fixedPort.GetAnchorPoint(GraphCanvas)
                     : _pointerStart;
-                var geometry = WireGeometry(fixedPoint, point);
+                var geometry = DragWireGeometry(fixedPoint, point);
                 _draftWires[index].Data = geometry;
                 if (_connectionVisuals.FirstOrDefault(pair => pair.Key.Connection.Equals(original)).Value.Hit is { } hit)
                     hit.Data = geometry;
@@ -1268,7 +1270,7 @@ public partial class CanonicalGraphEditorView : UserControl
             var startPort = _ports.TryGetValue(EndpointKey(visualStart.NodeId, visualStart.PortId), out var startWirePort)
                 ? startWirePort : null;
             var start = startPort?.GetAnchorPoint(GraphCanvas) ?? _pointerStart;
-            var geometry = WireGeometry(start, point);
+            var geometry = DragWireGeometry(start, point);
             _draftWires[0].Data = geometry;
             if (_wireOriginal is not null
                 && _connectionVisuals.FirstOrDefault(pair => pair.Key.Connection.Equals(_wireOriginal)).Value.Hit is { } hit)
@@ -2135,6 +2137,15 @@ public partial class CanonicalGraphEditorView : UserControl
     private static bool IsUsableViewportSize(Size size)
         => double.IsFinite(size.Width) && double.IsFinite(size.Height)
             && size.Width > 0 && size.Height > 0;
+
+    internal static PathGeometry DragWireGeometry(Point start, Point end)
+    {
+        // The free endpoint has no input/output tangent. Keep both controls
+        // between the endpoints so reverse and near-vertical drags cannot loop.
+        var dx = (end.X - start.X) * .45;
+        return new PathGeometry(new[] { new PathFigure(start, new[] { new BezierSegment(
+            new Point(start.X + dx, start.Y), new Point(end.X - dx, end.Y), end, true) }, false) });
+    }
 
     private static PathGeometry WireGeometry(Point start, Point end)
     {

@@ -251,10 +251,10 @@ public sealed class ProjectService
     /// Releases a clean cached Actor document before an external lifecycle
     /// service deletes the shared Actor file. Dirty documents fail closed.
     /// </summary>
-    public void ReleaseOpenActor(string id)
+    public void ReleaseOpenActor(string id, bool discardUnsavedChanges = false)
     {
         var document = FindOpenDocument(id);
-        EnsureCanDiscardOpenDocument(id, document, "release");
+        if (!discardUnsavedChanges) EnsureCanDiscardOpenDocument(id, document, "release");
         if (document is not null) UnregisterOpenDocument(document);
     }
 
