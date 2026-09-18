@@ -21,6 +21,7 @@ public final class CanonicalSessionClientController {
     public static void synchronizeWorld() {
         Minecraft mc = Minecraft.getMinecraft();
         if (world != mc.theWorld) {
+            DialogueHistoryClient.clearPending();
             if (mc.currentScreen == surface && surface != null) mc.displayGuiScreen(null);
             darkgrey.rpg.media.CanonicalSessionAudio.clear();
             darkgrey.rpg.media.CanonicalSessionScene.clear();
@@ -123,7 +124,9 @@ public final class CanonicalSessionClientController {
     }
 
     public static void sendChoice(String optionId) {
-        send(MODEL.choiceAction(optionId));
+        CanonicalSessionAction action = MODEL.choiceAction(optionId);
+        if (Minecraft.getMinecraft().currentScreen == surface) DialogueHistoryClient.choosing(MODEL.getFrame(), action);
+        send(action);
     }
 
     private static void send(CanonicalSessionAction action) {

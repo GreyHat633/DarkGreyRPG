@@ -3,7 +3,10 @@ package darkgrey.rpg.project.packages;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.List;
 

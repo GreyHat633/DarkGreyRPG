@@ -1,4 +1,5 @@
 dependencies {
+    implementation(project.files("libs/jlayer-1.0.1.jar"))
     // CustomNPC+ is an actual runtime requirement, but is not redistributed in
     // the DarkGrey_RPG jar. RFG deobfuscates the local 1.7.10 mod for dev use.
     compileOnly(rfg.deobf(project.files("libs/CustomNPC-Plus-1.11.1-fixed-v1.jar")))

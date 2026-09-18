@@ -29,7 +29,10 @@ public final class CanonicalTaskClientStore {
             || !data.hasKey("dimension", 3)
             || data.getInteger("dimension") != mc.thePlayer.dimension) return;
         long before = getRevision();
-        if (replace(data) && before >= 0) TaskNotificationCards.accept(data.getTagList("notifications", 10), System.nanoTime());
+        if (replace(data)) {
+            TaskTrackerClient.accept(data, before < 0);
+            if (before >= 0) TaskNotificationCards.accept(data.getTagList("notifications", 10), System.nanoTime());
+        }
     }
 
     public static synchronized boolean replace(NBTTagCompound data) {

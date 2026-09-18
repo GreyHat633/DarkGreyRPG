@@ -279,7 +279,7 @@ public final class CanonicalTaskJournalEntry {
         return 31 * result + objectiveRows.hashCode();
     }
 
-    static String identity(UUID playerUuid, String storyInstanceId, String taskNodePlacementId) {
+    public static String identity(UUID playerUuid, String storyInstanceId, String taskNodePlacementId) {
         return playerUuid.toString() + "\u0000" + storyInstanceId + "\u0000" + taskNodePlacementId;
     }
 

@@ -97,8 +97,8 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
         int panelHeight = Math.min(430, height - 30);
         int left = (width - panelWidth) / 2;
         int top = (height - panelHeight) / 2;
-        drawRect(left, top, left + panelWidth, top + panelHeight, 0xEE303030);
-        drawCenteredString(fontRendererObj, "有多个故事可供选择", width / 2, top + 12, 0xFFFFFF);
+        drawRect(left, top, left + panelWidth, top + panelHeight, DgrUiPalette.WINDOW_PANEL);
+        drawCenteredString(fontRendererObj, "有多个故事可供选择", width / 2, top + 12, DgrUiPalette.TEXT);
         List<CanonicalStoryChooserFrame.Option> options = frame.getOptions();
         int first = page * pageSize;
         int visible = Math.min(pageSize, options.size() - first);
@@ -109,7 +109,7 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
                 fontRendererObj.trimStringToWidth(option.getDisplayName(), panelWidth - 155),
                 left + 20,
                 y,
-                0xFFFFFF);
+                DgrUiPalette.TEXT);
             fontRendererObj.drawString(
                 option.getStatus()
                     .toUpperCase(java.util.Locale.ROOT),
@@ -118,10 +118,18 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
                 DgrUiPalette.SECONDARY);
             List<String> idLines = fontRendererObj
                 .listFormattedStringToWidth("ID: " + option.getStoryId(), Math.max(40, panelWidth - 155));
-            for (int line = 0; line < idLines.size(); line++) fontRendererObj
-                .drawString(idLines.get(line), left + 20, y + 24 + line * fontRendererObj.FONT_HEIGHT, 0xFFAAAAAA);
+            for (int line = 0; line < idLines.size(); line++) fontRendererObj.drawString(
+                idLines.get(line),
+                left + 20,
+                y + 24 + line * fontRendererObj.FONT_HEIGHT,
+                DgrUiPalette.SECONDARY);
         }
-        drawCenteredString(fontRendererObj, "第 " + (page + 1) + " 页", width / 2, top + panelHeight - 18, 0xFFAAAAAA);
+        drawCenteredString(
+            fontRendererObj,
+            "第 " + (page + 1) + " 页",
+            width / 2,
+            top + panelHeight - 18,
+            DgrUiPalette.SECONDARY);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 

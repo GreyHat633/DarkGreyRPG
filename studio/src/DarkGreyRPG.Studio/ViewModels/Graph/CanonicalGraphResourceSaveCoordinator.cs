@@ -64,6 +64,7 @@ public sealed class CanonicalGraphResourceSaveCoordinator
                     pair => pair.Key,
                     pair => new ProjectGraphNodeLayout { X = pair.Value.X, Y = pair.Value.Y },
                     StringComparer.Ordinal));
+            _layoutStore.SaveFrames(editor.Host.AuthoringResourceKey, editor.Host.FrameSnapshot());
             editor.MarkLayoutSaved();
         }
         return persisted;

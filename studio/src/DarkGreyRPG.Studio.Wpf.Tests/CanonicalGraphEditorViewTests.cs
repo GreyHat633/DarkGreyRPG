@@ -17,6 +17,58 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalGraphEditorViewTests
 {
     [STATestMethod]
+    public void AnimatedLineCollapsePreservesAllWireVisualsAndGeometry()
+    {
+        var host = new GraphEditorHostViewModel(new GraphDocument([
+            GraphNodeFactory.Create(GraphScope.Session, "line", "first"),
+            GraphNodeFactory.Create(GraphScope.Session, "line", "second"),
+            GraphNodeFactory.Create(GraphScope.Session, "line", "third")]), GraphScope.Session);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("first", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("second", "flow_in", GraphInterfaceKind.Flow)));
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("second", "flow_out", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("third", "flow_in", GraphInterfaceKind.Flow)));
+        var view = new CanonicalGraphEditorView(host);
+        var window = new Window { Content = view, Width = 1000, Height = 800, Left = -10000, Top = -10000, ShowInTaskbar = false };
+        try
+        {
+            window.Show();
+            PumpLayoutFrame();
+            var wires = view.ConnectionVisuals.ToArray();
+            var hits = view.ConnectionHitTargets.ToArray();
+            var geometry = wires.Select(wire => wire.Data).ToArray();
+            var body = Descendants<AnimatedLinePageBody>(view.NodeVisuals.First()).First();
+            var initialHeight = body.ActualHeight;
+            foreach (var expanded in new[] { false, true, false })
+            {
+                body.IsExpanded = expanded;
+                for (var frame = 0; frame < 20; frame++)
+                {
+                    PumpLayoutFrame();
+                    CollectionAssert.AreEqual(wires, view.ConnectionVisuals.ToArray());
+                    CollectionAssert.AreEqual(hits, view.ConnectionHitTargets.ToArray());
+                    for (var index = 0; index < wires.Length; index++)
+                    {
+                        Assert.AreSame(geometry[index], wires[index].Data);
+                        Assert.AreSame(wires[index].Data, hits.Single(hit => ReferenceEquals(hit.Tag, wires[index].Tag)).Data);
+                        Assert.AreEqual(Visibility.Visible, hits[index].Visibility);
+                    }
+                }
+                Assert.AreEqual(expanded ? initialHeight : 0, body.ActualHeight, 0.5);
+            }
+        }
+        finally { window.Close(); }
+    }
+
+    private static void PumpLayoutFrame()
+    {
+        var frame = new DispatcherFrame();
+        var timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(20) };
+        timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+        timer.Start();
+        Dispatcher.PushFrame(frame);
+    }
+
+    [STATestMethod]
     public void ReadOnlyGraphAllowsViewportAndNavigationButRejectsMutation()
     {
         var host = new GraphEditorHostViewModel(Graph(GraphScope.StoryFlow), GraphScope.StoryFlow);
@@ -913,13 +965,18 @@ public sealed class CanonicalGraphEditorViewTests
         var view = Arrange(host, ids.Dequeue);
 
         var menu = view.CreateCanvasContextMenu(new Point(73.5, 144.25));
-        Assert.HasCount(4, menu.Items);
+        Assert.HasCount(5, menu.Items);
+        var frameMenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "创建分组框"));
+        var graphBeforeFrame = host.Graph.ToJson();
+        frameMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Assert.HasCount(1, host.Frames);
+        Assert.AreEqual(graphBeforeFrame, host.Graph.ToJson());
         foreach (var header in new[] { "复制", "粘贴" })
         {
             var submenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, header));
             CollectionAssert.AreEqual(new[] { "节点", "参数" }, submenu.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
         }
-        var add = (MenuItem)menu.Items[0];
+        var add = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "添加"));
         Assert.AreEqual("添加", add.Header);
         CollectionAssert.AreEqual(
             new[] { "会话", "演出", "逻辑", "结束" },

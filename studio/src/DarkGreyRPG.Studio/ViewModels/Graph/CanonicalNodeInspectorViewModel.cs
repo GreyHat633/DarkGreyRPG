@@ -74,6 +74,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
         AddRewardEntryCommand = new RelayCommand(AddRewardEntry, () => IsTaskReward);
         AudioState.Changed += OnLineAudioStateChanged;
+        Selection.Changed += OnPageSelectionChanged;
         RefreshFromHost();
         if (_subscribeToHostChanges) _host.NodesChanged += HostOnNodesChanged;
         _host.PropertyChanged += HostOnPropertyChanged;
@@ -663,6 +664,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     public void Dispose()
     {
+        Selection.Changed -= OnPageSelectionChanged;
         if (_disposed) return;
         _disposed = true;
         foreach (var page in LinePages) page.Dispose();

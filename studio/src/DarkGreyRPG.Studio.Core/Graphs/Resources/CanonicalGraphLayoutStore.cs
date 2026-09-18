@@ -28,6 +28,20 @@ public sealed class CanonicalGraphLayoutStore
 
     public string LayoutPath { get; }
 
+    public IReadOnlyList<GraphCommentFrame> LoadFrames(string graphKey)
+        => ReadDocument()?.Frames?.GetValueOrDefault(graphKey)?.Where(frame => frame is not null && frame.IsValid).ToArray() ?? [];
+
+    public void SaveFrames(string graphKey, IEnumerable<GraphCommentFrame> frames)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(graphKey);
+        var document = ReadDocument() ?? new CanonicalGraphLayoutDocument();
+        document.Frames ??= new(StringComparer.Ordinal);
+        var members = new HashSet<string>(StringComparer.Ordinal);
+        document.Frames[graphKey] = frames.Where(frame => frame.IsValid).DistinctBy(frame => frame.Id)
+            .Select(frame => frame with { Members = frame.Members.Where(id => !string.IsNullOrWhiteSpace(id) && members.Add(id)).ToArray() }).ToList();
+        new AtomicFileWriter().Write(LayoutPath, JsonSerializer.Serialize(document, JsonOptions));
+    }
+
     /// <summary>Builds the stable sidecar key from kind and resource ID.</summary>
     public static string BuildGraphKey(GraphResourceKind resourceKind, string resourceId)
     {
@@ -169,6 +183,7 @@ public sealed class CanonicalGraphLayoutStore
 /// <summary>Schema-versioned root of the Studio-only canonical graph sidecar.</summary>
 public sealed class CanonicalGraphLayoutDocument
 {
+    public Dictionary<string, List<GraphCommentFrame>> Frames { get; set; } = new(StringComparer.Ordinal);
     public const int CurrentSchemaVersion = 1;
 
     [JsonPropertyName("schema_version")]

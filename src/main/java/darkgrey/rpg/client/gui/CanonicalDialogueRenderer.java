@@ -64,11 +64,12 @@ public final class CanonicalDialogueRenderer {
         // but a missing/corrupt/remote image must never hide the dialogue indefinitely.
         if (portraitRef != null && portrait == null && System.nanoTime() - portraitWaitStarted < 150000000L)
             return scrollLine;
-        Gui.drawRect(left, top, right, bottom, 0xCC161616);
-        Gui.drawRect(left, top, right, top + 1, 0xFFC0C0C0);
-        Gui.drawRect(left, bottom - 1, right, bottom, 0xFF888888);
-        Gui.drawRect(left, top, left + 1, bottom, 0xFF888888);
-        Gui.drawRect(right - 1, top, right, bottom, 0xFF888888);
+        darkgrey.rpg.client.session.DialogueHistoryClient.presented(frame, speaker, text);
+        Gui.drawRect(left, top, right, bottom, DgrUiPalette.dialoguePanel());
+        Gui.drawRect(left, top, right, top + 1, DgrUiPalette.SELECTED_BORDER);
+        Gui.drawRect(left, bottom - 1, right, bottom, DgrUiPalette.BORDER);
+        Gui.drawRect(left, top, left + 1, bottom, DgrUiPalette.BORDER);
+        Gui.drawRect(right - 1, top, right, bottom, DgrUiPalette.BORDER);
         int textLeft = left + 8;
         if (portraitRef != null) {
             if (portrait != null) drawPortrait(
@@ -82,26 +83,46 @@ public final class CanonicalDialogueRenderer {
             textLeft = layout.textLeft;
         }
         int textWidth = right - textLeft - 8;
+        double scale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
+        int wrapWidth = Math.max(1, (int) (textWidth / scale));
+        int lineHeight = (int) Math.ceil(font.FONT_HEIGHT * scale);
         int textTop = top + 7;
         if (!speaker.isEmpty()) {
-            font.drawString(font.trimStringToWidth(speaker, textWidth), textLeft, textTop, DgrUiPalette.TEXT);
-            textTop += font.FONT_HEIGHT + 5;
-            Gui.drawRect(textLeft, textTop, right - 8, textTop + 1, 0xFF888888);
+            drawText(font, font.trimStringToWidth(speaker, wrapWidth), textLeft, textTop, scale, DgrUiPalette.TEXT);
+            textTop += lineHeight + 5;
+            Gui.drawRect(textLeft, textTop, right - 8, textTop + 1, DgrUiPalette.BORDER);
             textTop += 5;
             text = "「" + text + "」";
         }
-        int textBottom = bottom - 15;
-        List<String> lines = font.listFormattedStringToWidth(text, textWidth);
-        int visibleLines = Math.max(1, (textBottom - textTop) / font.FONT_HEIGHT);
+        int textBottom = bottom - 25;
+        List<String> lines = font.listFormattedStringToWidth(text, wrapWidth);
+        int visibleLines = Math.max(1, (textBottom - textTop) / lineHeight);
         int maximumScroll = Math.max(0, lines.size() - visibleLines);
         scrollLine = Math.min(scrollLine, maximumScroll);
         for (int index = 0; index < visibleLines && index + scrollLine < lines.size(); index++) {
-            font.drawString(lines.get(index + scrollLine), textLeft, textTop + index * font.FONT_HEIGHT, 0xFFEEEEEE);
+            drawText(
+                font,
+                lines.get(index + scrollLine),
+                textLeft,
+                textTop + index * lineHeight,
+                scale,
+                DgrUiPalette.TEXT);
         }
         String hint = awaitingServer ? ""
             : maximumScroll > 0 ? I18n.format("gui.darkgrey_rpg.dialogue.scroll")
                 : frame.canContinue() ? I18n.format("gui.darkgrey_rpg.dialogue.continue") : "";
-        font.drawString(font.trimStringToWidth(hint, textWidth), textLeft, bottom - 11, 0xFFAAAAAA);
+        font.drawString(font.trimStringToWidth(hint, textWidth), textLeft, bottom - 11, DgrUiPalette.SECONDARY);
         return scrollLine;
+    }
+
+    public static void drawText(FontRenderer font, String text, int x, int y, double scale, int color) {
+        org.lwjgl.opengl.GL11.glPushMatrix();
+        try {
+            org.lwjgl.opengl.GL11.glTranslated(x, y, 0);
+            org.lwjgl.opengl.GL11.glScaled(scale, scale, 1);
+            font.drawString(text, 0, 0, color);
+        } finally {
+            org.lwjgl.opengl.GL11.glPopMatrix();
+        }
     }
 }

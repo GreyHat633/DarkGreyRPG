@@ -9,6 +9,65 @@ namespace DarkGreyRPG.Studio.ViewModels.Graph;
 public sealed partial class CanonicalNodeInspectorViewModel
 {
     public ObservableCollection<CanonicalLinePageViewModel> LinePages { get; } = [];
+    private static readonly ConditionalWeakTable<GraphEditorHostViewModel, Dictionary<string, LinePageSelection>> PageSelections = new();
+    private LinePageSelection Selection
+    {
+        get
+        {
+            var selections = PageSelections.GetOrCreateValue(_host);
+            if (!selections.TryGetValue(NodeId, out var selection)) selections[NodeId] = selection = new();
+            return selection;
+        }
+    }
+    public bool CanRemoveSelectedLinePages => Selection.Ids.Count > 0;
+    public string RemoveSelectedLinePagesHint => Selection.Ids.Count == 0 ? "请先选择台词；Ctrl 多选，Shift 连续选择"
+        : $"删除选中的 {Selection.Ids.Count} 句台词";
+    internal bool IsLinePageSelected(string id) => Selection.Ids.Contains(id);
+    public void ClearLinePageSelection()
+    {
+        if (Selection.Ids.Count == 0 && Selection.Anchor is null) return;
+        Selection.Ids.Clear();
+        Selection.Anchor = null;
+        Selection.Notify();
+    }
+    private void OnPageSelectionChanged(object? sender, EventArgs e)
+    {
+        foreach (var page in LinePages) page.RefreshSelection();
+        OnPropertyChanged(nameof(CanRemoveSelectedLinePages));
+        OnPropertyChanged(nameof(RemoveSelectedLinePagesHint));
+    }
+    public void SelectLinePage(string id, bool control = false, bool shift = false)
+    {
+        if (_disposed || !IsLine) return;
+        var ids = ReadLinePages().Select(p => p["page_id"].GetString()!).ToArray();
+        var index = Array.IndexOf(ids, id);
+        if (index < 0) return;
+        var anchor = Array.IndexOf(ids, Selection.Anchor);
+        if (shift && anchor >= 0)
+        {
+            if (!control) Selection.Ids.Clear();
+            for (var i = Math.Min(anchor, index); i <= Math.Max(anchor, index); i++) Selection.Ids.Add(ids[i]);
+        }
+        else
+        {
+            if (!control) Selection.Ids.Clear();
+            if (!control || !Selection.Ids.Remove(id)) Selection.Ids.Add(id);
+            Selection.Anchor = id;
+        }
+        Selection.Notify();
+    }
+    public bool RemoveSelectedLinePages()
+    {
+        if (_disposed || !IsLine) return false;
+        var pages = ReadLinePages();
+        var selected = pages.Where(p => Selection.Ids.Contains(p["page_id"].GetString()!)).ToArray();
+        if (selected.Length == 0) return false;
+        var index = pages.IndexOf(selected[0]);
+        pages.RemoveAll(p => Selection.Ids.Contains(p["page_id"].GetString()!));
+        if (!_host.SetNodeProperty(NodeId, "pages", JsonSerializer.SerializeToElement(pages))) return false;
+        if (pages.Count > 0) SelectLinePage(pages[Math.Min(index, pages.Count - 1)]["page_id"].GetString()!);
+        return true;
+    }
     private static readonly ConditionalWeakTable<GraphEditorHostViewModel, Dictionary<string, PageAudioGate>> PageAudioGates = new();
     internal PageAudioGate PageAudio(string id)
     {
@@ -37,13 +96,15 @@ public sealed partial class CanonicalNodeInspectorViewModel
             else if (LinePages.IndexOf(page) != i) LinePages.Move(LinePages.IndexOf(page), i);
             page.Project(data[i], i, data.Count);
         }
+        Selection.Ids.IntersectWith(ids);
+        if (!ids.Contains(Selection.Anchor)) Selection.Anchor = null;
+        Selection.Notify();
     }
 
     public string? AddLinePage()
     {
         if (_disposed || !IsLine) return null;
         var pages = ReadLinePages();
-        if (pages.Count == 0) return null;
         var id = Guid.NewGuid().ToString("N");
         pages.Add(CanonicalSessionLineSchema.CreatePage(id));
         return _host.SetNodeProperty(NodeId, "pages", JsonSerializer.SerializeToElement(pages)) ? id : null;
@@ -53,7 +114,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
     {
         if (_disposed || !IsLine) return false;
         var pages = ReadLinePages();
-        return pages.Count > 1 && pages.RemoveAll(p => p["page_id"].GetString() == id) == 1
+        return pages.RemoveAll(p => p["page_id"].GetString() == id) == 1
             && _host.SetNodeProperty(NodeId, "pages", JsonSerializer.SerializeToElement(pages));
     }
 
@@ -78,9 +139,18 @@ public sealed partial class CanonicalNodeInspectorViewModel
     }
 }
 
+internal sealed class LinePageSelection
+{
+    public HashSet<string> Ids { get; } = new(StringComparer.Ordinal);
+    public string? Anchor;
+    public event EventHandler? Changed;
+    public void Notify() => Changed?.Invoke(this, EventArgs.Empty);
+}
+
 internal sealed class PageAudioGate
 {
     public bool Open;
+    public bool Expanded = true;
     public event EventHandler? Changed;
     public void Notify() => Changed?.Invoke(this, EventArgs.Empty);
 }
@@ -97,13 +167,28 @@ public sealed class CanonicalLinePageViewModel : ObservableObject, IDisposable
     public string DragLabel => $"拖动第 {Order + 1} 句";
     public string RemoveLabel => $"删除第 {Order + 1} 句";
     public bool CanRemove { get; private set; }
+    public bool IsSelected => Owner.IsLinePageSelected(PageId);
+    internal void RefreshSelection() => OnPropertyChanged(nameof(IsSelected));
     internal CanonicalLinePageViewModel(CanonicalNodeInspectorViewModel owner, string id) { Owner = owner; PageId = id; _audio = owner.PageAudio(id); _audio.Changed += AudioChanged; }
-    private void AudioChanged(object? sender, EventArgs args) => OnPropertyChanged(nameof(AudioEnabled));
+    private void AudioChanged(object? sender, EventArgs args)
+    {
+        OnPropertyChanged(nameof(AudioEnabled));
+        OnPropertyChanged(nameof(IsExpanded));
+        OnPropertyChanged(nameof(ExpansionGlyph));
+        OnPropertyChanged(nameof(ExpansionLabel));
+    }
+    public bool IsExpanded
+    {
+        get => _audio.Expanded;
+        set { if (_audio.Expanded == value) return; _audio.Expanded = value; _audio.Notify(); }
+    }
+    public string ExpansionGlyph => IsExpanded ? "▲" : "▼";
+    public string ExpansionLabel => $"{(IsExpanded ? "收起" : "展开")}{Caption}";
     public void Dispose() => _audio.Changed -= AudioChanged;
     internal void Project(Dictionary<string, JsonElement> data, int order, int count)
     {
         _projecting = true;
-        try { _data = data; Order = order; CanRemove = count > 1; OnPropertyChanged(string.Empty); }
+        try { _data = data; Order = order; CanRemove = count > 0; OnPropertyChanged(string.Empty); }
         finally { _projecting = false; }
     }
     private string? String(string key) => _data.TryGetValue(key, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;

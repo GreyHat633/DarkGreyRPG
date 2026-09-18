@@ -1,3 +1,35 @@
+
+
+## Studio UI skill
+
+When changing Studio node property editors or Inspector layouts, read
+`.agents/skills/studio-node-ui/SKILL.md` for the project's multi-module card design rules.
+
+## Story media lifecycle skill
+
+When changing runtime story-package media preloading, cache admission, eviction,
+or media lifecycle, read `.agents/skills/story-media-lifecycle/SKILL.md`.
+
+## Studio delivery invariant
+
+Runtime-owned data belongs under `<Minecraft>/DarkGreyRPG`: `Project`,
+`StoryPackages`, `Cache`, and `Config`. Use PascalCase for new user-facing
+directory names. Migrate legacy default paths without overwriting data;
+preserve explicit external paths and persisted resource/mod identifiers.
+The development repository is `E:\Java\MinecraftMod\DarkGreyRPG`.
+
+- The single authoritative, user-runnable Studio delivery artifact is
+  `E:\Java\MinecraftMod\DarkGreyRPG\dist\DarkGreyRPGStudio\DarkGreyRPGStudio.exe`.
+- Every Studio update must publish or promote the newest self-contained Windows
+  x64 Release client to that exact path before the update may be reported as
+  delivered, published, or complete.
+- Acceptance candidates under `.tooling`, ordinary `bin\Release` outputs, and
+  versioned archive directories do not satisfy delivery by themselves.
+- After promotion, verify that the EXE exists at the authoritative path and
+  report its ProductVersion, file size, and SHA-256. If it is missing or stale,
+  the Studio update is not delivered.
+
+
 <!-- >>> Codex Agent Switch managed native worker routing >>> -->
 ## Codex Agent Switch managed native worker routing
 

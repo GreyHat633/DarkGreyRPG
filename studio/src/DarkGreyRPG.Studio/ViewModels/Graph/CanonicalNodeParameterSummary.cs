@@ -81,8 +81,8 @@ internal static class CanonicalNodeParameterSummary
     {
         var text = Read(properties, "text");
         var count = 1;
-        if (properties.TryGetValue("pages", out var pages) && pages.ValueKind == JsonValueKind.Array && pages.GetArrayLength() > 0)
-        { count = pages.GetArrayLength(); text = Read(pages[0], "text"); }
+        if (properties.TryGetValue("pages", out var pages) && pages.ValueKind == JsonValueKind.Array)
+        { count = pages.GetArrayLength(); text = count == 0 ? "（空台词，运行时跳过）" : Read(pages[0], "text"); }
         return $"说话者：{Read(properties, "speaker_actor_id")}{Environment.NewLine}台词（{count} 句）：{Shorten(text)}";
     }
 

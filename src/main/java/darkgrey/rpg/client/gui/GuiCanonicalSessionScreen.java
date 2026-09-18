@@ -21,10 +21,14 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     private static final int PREVIOUS_CHOICES_BUTTON = 2000;
     private static final int NEXT_CHOICES_BUTTON = 2001;
     private static final int CHOICE_BUTTON_BASE = 3000;
+    private static final int HISTORY_BUTTON = 1999;
 
     private CanonicalSessionFrame frame;
     private int scrollLine;
     private int choiceOffset;
+    private int visibleChoiceCount;
+    private int focusedChoice = -1;
+    private final java.util.List<Integer> choicePageHistory = new java.util.ArrayList<Integer>();
     private boolean awaitingServer;
     private final Map<Integer, String> choiceButtons = new HashMap<Integer, String>();
 
@@ -66,6 +70,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         frame = copy(updatedFrame);
         scrollLine = 0;
         choiceOffset = 0;
+        choicePageHistory.clear();
         awaitingServer = false;
         if (mc != null) initGui();
     }
@@ -75,41 +80,60 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         buttonList.clear();
         choiceButtons.clear();
         CanonicalDialogueLayout layout = new CanonicalDialogueLayout(width, height);
+        buttonList.add(new GuiRpgButton(HISTORY_BUTTON, layout.right - 48, layout.bottom - 22, 46, 20, "记录"));
         if (!frame.canContinue()) {
             List<CanonicalSessionChoiceOption> choices = frame.getChoices();
             choiceOffset = Math.min(choiceOffset, Math.max(0, choices.size() - 1));
-            int visible = Math.min(layout.choicesPerPage, choices.size() - choiceOffset);
-            int firstY = layout.choiceTop(visible);
+            int firstY = 22;
+            int available = Math.max(36, layout.top - 52);
+            visibleChoiceCount = 0;
             int choiceLeft = (width - layout.choiceWidth) / 2;
-            for (int index = 0; index < visible; index++) {
+            int used = 0;
+            for (int index = 0; index < choices.size() - choiceOffset; index++) {
                 CanonicalSessionChoiceOption option = choices.get(choiceOffset + index);
                 int id = CHOICE_BUTTON_BASE + index;
-                choiceButtons.put(id, option.getOptionId());
                 String label = option.getDisplayText();
-                if (fontRendererObj.getStringWidth(label) > layout.choiceWidth - 16)
-                    label = fontRendererObj.trimStringToWidth(label, layout.choiceWidth - 28) + "...";
-                buttonList.add(new GuiRpgButton(id, choiceLeft, firstY + index * 24, layout.choiceWidth, 20, label));
+                GuiWrappedChoiceButton button = new GuiWrappedChoiceButton(
+                    id,
+                    choiceLeft,
+                    firstY + used,
+                    layout.choiceWidth,
+                    available,
+                    label,
+                    fontRendererObj);
+                if (used > 0 && used + button.height > available) break;
+                choiceButtons.put(id, option.getOptionId());
+                buttonList.add(button);
+                used += button.height + 4;
+                visibleChoiceCount++;
             }
-            int pageY = firstY + visible * 24;
+            int pageY = firstY + used;
             if (choiceOffset > 0)
                 buttonList.add(new GuiRpgButton(PREVIOUS_CHOICES_BUTTON, choiceLeft, pageY, 60, 20, "<"));
-            if (choiceOffset + visible < choices.size()) buttonList
+            if (choiceOffset + visibleChoiceCount < choices.size()) buttonList
                 .add(new GuiRpgButton(NEXT_CHOICES_BUTTON, choiceLeft + layout.choiceWidth - 60, pageY, 60, 20, ">"));
         }
         setButtonsEnabled(!awaitingServer);
+        focusedChoice = Math.min(focusedChoice, visibleChoiceCount - 1);
+        updateChoiceFocus();
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
+        if (button.id == HISTORY_BUTTON && mc.currentScreen == this) {
+            mc.displayGuiScreen(new GuiDialogueHistory());
+            return;
+        }
         if (awaitingServer || mc.currentScreen != this) return;
         if (button.id == PREVIOUS_CHOICES_BUTTON) {
-            choiceOffset = Math.max(0, choiceOffset - new CanonicalDialogueLayout(width, height).choicesPerPage);
+            choiceOffset = choicePageHistory.isEmpty() ? 0 : choicePageHistory.remove(choicePageHistory.size() - 1);
             initGui();
         } else if (button.id == NEXT_CHOICES_BUTTON) {
+            choicePageHistory.add(choiceOffset);
             choiceOffset = Math.min(
                 frame.getChoices()
                     .size() - 1,
-                choiceOffset + new CanonicalDialogueLayout(width, height).choicesPerPage);
+                choiceOffset + visibleChoiceCount);
             initGui();
 
         } else if (choiceButtons.containsKey(button.id)) {
@@ -129,7 +153,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     }
 
     private void setButtonsEnabled(boolean enabled) {
-        for (Object object : buttonList) ((GuiButton) object).enabled = enabled;
+        for (Object object : buttonList)
+            ((GuiButton) object).enabled = ((GuiButton) object).id == HISTORY_BUTTON || enabled;
     }
 
     /** Minecraft 1.7 normally consumes GUI input before its keybinding loop. */
@@ -146,6 +171,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     @Override
     protected void keyTyped(char typedCharacter, int keyCode) {
         if (mc.currentScreen != this) return;
+        if (!frame.canContinue() && !awaitingServer && choiceKeyboard(keyCode)) return;
         if (keyCode == Keyboard.KEY_ESCAPE) {
             mc.displayGuiScreen(new net.minecraft.client.gui.GuiIngameMenu());
             if (mc.isSingleplayer() && !mc.getIntegratedServer()
@@ -158,12 +184,58 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             }
     }
 
+    private boolean choiceKeyboard(int key) {
+        // User-configured DGR bindings take precedence over reading navigation.
+        if (key == darkgrey.rpg.client.ClientQuestKeyHandler.settingsKeyCode()
+            || key == darkgrey.rpg.client.ClientQuestKeyHandler.historyKeyCode()) return false;
+        if (key == Keyboard.KEY_TAB || key == Keyboard.KEY_UP || key == Keyboard.KEY_DOWN) {
+            boolean backward = key == Keyboard.KEY_UP || key == Keyboard.KEY_TAB && isShiftKeyDown();
+            int next = focusedChoice < 0 ? (backward ? visibleChoiceCount - 1 : 0)
+                : focusedChoice + (backward ? -1 : 1);
+            if (next >= visibleChoiceCount && choiceOffset + visibleChoiceCount < frame.getChoices()
+                .size()) {
+                actionPerformed(new GuiButton(NEXT_CHOICES_BUTTON, 0, 0, ""));
+                focusedChoice = 0;
+            } else if (next < 0 && choiceOffset > 0) {
+                actionPerformed(new GuiButton(PREVIOUS_CHOICES_BUTTON, 0, 0, ""));
+                focusedChoice = visibleChoiceCount - 1;
+            } else focusedChoice = Math.max(0, Math.min(visibleChoiceCount - 1, next));
+            updateChoiceFocus();
+            return true;
+        }
+        if (focusedChoice < 0) return false;
+        for (Object object : buttonList) if (object instanceof GuiWrappedChoiceButton) {
+            GuiWrappedChoiceButton button = (GuiWrappedChoiceButton) object;
+            if (button.id != CHOICE_BUTTON_BASE + focusedChoice) continue;
+            if (key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) actionPerformed(button);
+            else if (key == Keyboard.KEY_PRIOR) button.scroll(-5);
+            else if (key == Keyboard.KEY_NEXT) button.scroll(5);
+            else if (key == Keyboard.KEY_HOME) button.scroll(-Integer.MAX_VALUE / 2);
+            else if (key == Keyboard.KEY_END) button.scroll(Integer.MAX_VALUE / 2);
+            else return false;
+            return true;
+        }
+        return false;
+    }
+
+    private void updateChoiceFocus() {
+        for (Object object : buttonList) if (object instanceof GuiWrappedChoiceButton) ((GuiWrappedChoiceButton) object)
+            .setKeyboardFocused(((GuiButton) object).id == CHOICE_BUTTON_BASE + focusedChoice);
+    }
+
     @Override
     public void handleMouseInput() {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
         int mouseX = Mouse.getEventX() * width / mc.displayWidth;
         int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (wheel != 0) for (Object object : buttonList) {
+            if (object instanceof GuiWrappedChoiceButton
+                && ((GuiWrappedChoiceButton) object).contains(mouseX, mouseY)) {
+                ((GuiWrappedChoiceButton) object).scroll(wheel < 0 ? 2 : -2);
+                return;
+            }
+        }
         if (wheel != 0 && new CanonicalDialogueLayout(width, height).containsDialogue(mouseX, mouseY))
             scrollLine = Math.max(0, scrollLine + (wheel < 0 ? 2 : -2));
     }
@@ -175,17 +247,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         if (frame.getKind() == CanonicalSessionFrame.Kind.CHOICE && !frame.getText()
             .isEmpty()) {
             CanonicalDialogueLayout layout = new CanonicalDialogueLayout(width, height);
-            int visible = Math.min(
-                layout.choicesPerPage,
-                frame.getChoices()
-                    .size() - choiceOffset);
             String prompt = fontRendererObj.trimStringToWidth(frame.getText(), layout.choiceWidth);
-            drawCenteredString(
-                fontRendererObj,
-                prompt,
-                width / 2,
-                Math.max(2, layout.choiceTop(visible) - 14),
-                0xffffff);
+            drawCenteredString(fontRendererObj, prompt, width / 2, 4, DgrUiPalette.TEXT);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
         for (Object object : buttonList) {
@@ -218,6 +281,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     protected void mouseClicked(int mouseX, int mouseY, int button) {
         if (mc.currentScreen != this) return;
         super.mouseClicked(mouseX, mouseY, button);
+        if (mc.currentScreen != this) return;
         if (button == 0 && !awaitingServer && frame.canContinue()) sendContinue();
     }
 

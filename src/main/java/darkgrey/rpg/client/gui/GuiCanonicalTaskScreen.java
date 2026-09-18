@@ -30,6 +30,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private String selectedTaskId;
     private int taskScroll;
     private int detailScroll;
+    private boolean completedView;
+    private String trackingMessage = "";
 
     private final UtilityWindowGeometry windowGeometry = new UtilityWindowGeometry(280, 180, 620, 300);
     private boolean geometryInitialized;
@@ -76,7 +78,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     }
 
     private NBTTagList tasks() {
-        return snapshot.getTagList("tasks", 10);
+        return snapshot.getTagList(completedView ? "completed_tasks" : "tasks", 10);
     }
 
     private static NBTTagCompound findTask(NBTTagList tasks, String id) {
@@ -103,6 +105,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         int mouseX = Mouse.getEventX() * width / mc.displayWidth;
         int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
         int amount = wheel < 0 ? 2 : -2;
+        if (darkgrey.rpg.client.TaskTrackerHud.scrollAt(mouseX, mouseY, amount)) return;
         if (layout.containsList(mouseX, mouseY)) taskScroll = Math.max(0, taskScroll + amount);
         else if (layout.containsDetail(mouseX, mouseY)) detailScroll = Math.max(0, detailScroll + amount);
     }
@@ -112,6 +115,22 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         if (windowGeometry.begin(mouseX, mouseY, button)) return;
         super.mouseClicked(mouseX, mouseY, button);
         if (button != 0) return;
+        CanonicalTaskLayout footer = layout();
+        if (mouseY >= footer.panelBottom - 19 && mouseY < footer.panelBottom - 2) {
+            if (mouseX >= footer.panelLeft + 8 && mouseX < footer.panelLeft + 120) {
+                completedView = !completedView;
+                selectedTaskId = null;
+                snapshotRevision = Long.MIN_VALUE;
+                refreshCache();
+                return;
+            }
+            if (!completedView && mouseX >= footer.panelRight - 148 && mouseX < footer.panelRight - 8) {
+                NBTTagCompound selected = findTask(tasks(), selectedTaskId);
+                if (selected != null)
+                    trackingMessage = darkgrey.rpg.client.TaskTrackerClient.toggle(selected) ? "" : "最多追踪3个任务，请先取消一个";
+                return;
+            }
+        }
         // Item submission is completed only by the server's real entity
         // interaction event. The journal has no remote-submit hit target.
         CanonicalTaskLayout layout = layout();
@@ -141,6 +160,26 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             DgrUiPalette.SELECTED_BORDER);
         drawList(layout, mouseX, mouseY);
         drawDetails(layout);
+        fontRendererObj.drawString(
+            completedView ? "查看进行中" : "查看已完成",
+            layout.panelLeft + 10,
+            layout.panelBottom - 14,
+            DgrUiPalette.TEXT);
+        if (!completedView) {
+            NBTTagCompound selected = findTask(tasks(), selectedTaskId);
+            boolean tracked = selected != null && darkgrey.rpg.client.TaskTrackerClient.selected()
+                .contains(darkgrey.rpg.client.TaskTrackerClient.identity(selected));
+            fontRendererObj.drawString(
+                (tracked ? "取消追踪" : "追踪") + "  "
+                    + darkgrey.rpg.client.TaskTrackerClient.selected()
+                        .size()
+                    + " / 3",
+                layout.panelRight - 140,
+                layout.panelBottom - 14,
+                DgrUiPalette.TEXT);
+        }
+        if (!trackingMessage.isEmpty())
+            fontRendererObj.drawString(trackingMessage, layout.panelLeft + 10, layout.panelTop - 12, DgrUiPalette.TEXT);
         UtilityWindowChrome.drawGrip(windowGeometry);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -157,7 +196,12 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         drawRect(layout.panelLeft, layout.panelTop, layout.panelLeft + 1, layout.panelBottom, DgrUiPalette.BORDER);
         drawRect(layout.panelRight - 1, layout.panelTop, layout.panelRight, layout.panelBottom, DgrUiPalette.BORDER);
         drawRect(layout.listLeft, layout.listTop - 4, layout.listRight, layout.listBottom, DgrUiPalette.WINDOW_CONTENT);
-        drawRect(layout.detailLeft, layout.detailTop - 4, layout.detailRight, layout.detailBottom, DgrUiPalette.WINDOW_CONTENT);
+        drawRect(
+            layout.detailLeft,
+            layout.detailTop - 4,
+            layout.detailRight,
+            layout.detailBottom,
+            DgrUiPalette.WINDOW_CONTENT);
         if (!layout.stacked) drawRect(
             layout.detailLeft - 5,
             layout.detailTop - 4,
@@ -172,7 +216,11 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         int visible = Math.max(1, (layout.listBottom - layout.listTop) / rowHeight);
         taskScroll = Math.min(taskScroll, Math.max(0, tasks.tagCount() - visible));
         if (tasks.tagCount() == 0) {
-            fontRendererObj.drawString("暂无进行中的任务", layout.listLeft + 8, layout.listTop + 20, 0xFFAAAAAA);
+            fontRendererObj.drawString(
+                completedView ? "暂无已完成任务" : "暂无进行中的任务",
+                layout.listLeft + 8,
+                layout.listTop + 20,
+                DgrUiPalette.SECONDARY);
             return;
         }
         for (int row = 0; row < visible && row + taskScroll < tasks.tagCount(); row++) {
@@ -197,7 +245,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private void drawDetails(CanonicalTaskLayout layout) {
         NBTTagCompound task = findTask(tasks(), selectedTaskId);
         if (task == null) {
-            fontRendererObj.drawString("选择一个任务查看详情", layout.detailLeft + 8, layout.detailTop + 8, 0xFFAAAAAA);
+            fontRendererObj
+                .drawString("选择一个任务查看详情", layout.detailLeft + 8, layout.detailTop + 8, DgrUiPalette.SECONDARY);
             return;
         }
         int contentWidth = Math.max(20, layout.detailRight - layout.detailLeft - 16);
@@ -215,27 +264,19 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             lines.addAll(fontRendererObj.listFormattedStringToWidth("阶段奖励待发，请为奖励腾出背包空间。", contentWidth));
             lines.add("");
         }
-        lines.add("当前目标");
+        if (completedView && task.hasKey("completion_count")) {
+            lines.add("完成次数：" + task.getLong("completion_count"));
+            lines.addAll(fontRendererObj.listFormattedStringToWidth("最近结果：" + task.getString("result"), contentWidth));
+        }
+        lines.add(completedView ? ("ERROR".equals(task.getString("status")) ? "任务失败" : "已完成目标") : "当前目标");
         NBTTagList objectives = task.getTagList("objectives", 10);
         if (objectives.tagCount() == 0) {
-            lines.add("暂无进行中的目标");
+            lines.add(completedView ? "此记录仅保留已结算摘要" : "暂无进行中的目标");
         } else {
             for (int index = 0; index < objectives.tagCount(); index++) {
                 NBTTagCompound objective = objectives.getCompoundTagAt(index);
-                List<String> wrapped = fontRendererObj
-                    .listFormattedStringToWidth("● " + value(objective, "text", "未命名目标"), contentWidth);
-                lines.addAll(wrapped);
-                int required = objective.getInteger("required");
-                int current = objective.getInteger("current");
-                if (required > 1 || current > 0) lines.add("  进度 " + current + " / " + required);
-                if (objective.getBoolean("submit")) {
-                    String actor = value(objective, "submit_actor", "指定角色");
-                    lines.add("  请与 " + actor + " 交互提交物品");
-                } else if (objective.hasKey("x") && objective.hasKey("y") && objective.hasKey("z")) {
-                    lines.add(
-                        "  坐标：" + objective
-                            .getInteger("x") + " / " + objective.getInteger("y") + " / " + objective.getInteger("z"));
-                }
+                for (String text : TaskObjectiveText.lines(objective))
+                    lines.addAll(fontRendererObj.listFormattedStringToWidth(text, contentWidth));
             }
         }
         int lineHeight = fontRendererObj.FONT_HEIGHT + 2;
@@ -257,7 +298,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     @Override
     protected void keyTyped(char character, int key) {
-        if (key == mc.gameSettings.keyBindInventory.getKeyCode()) {
+        if (key != 0 && (key == mc.gameSettings.keyBindInventory.getKeyCode()
+            || key == darkgrey.rpg.client.ClientQuestKeyHandler.journalKeyCode())) {
             mc.displayGuiScreen(null);
             return;
         }

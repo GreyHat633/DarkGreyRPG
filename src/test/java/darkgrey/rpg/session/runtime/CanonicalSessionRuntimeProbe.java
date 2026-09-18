@@ -113,12 +113,15 @@ public final class CanonicalSessionRuntimeProbe {
             runtime.snapshot()
                 .getLinePageIndex() == 0,
             "page cursor not reset after leaving node");
-        expectFailure(new Runnable() {
-
-            public void run() {
-                CanonicalSessionRuntime.start(pagedSession("[]"));
-            }
-        }, "session.line.pages");
+        CanonicalSessionRuntime empty = CanonicalSessionRuntime.start(pagedSession("[]"));
+        require(
+            empty.getCurrentStep()
+                .getKind() == CanonicalSessionStep.Kind.CHOICE,
+            "empty line must skip directly to the following choice");
+        require(
+            empty.snapshot()
+                .getLinePageIndex() == 0,
+            "empty line leaves no page cursor");
         expectFailure(new Runnable() {
 
             public void run() {

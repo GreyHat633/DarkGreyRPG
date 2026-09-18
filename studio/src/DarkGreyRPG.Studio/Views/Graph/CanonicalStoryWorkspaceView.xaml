@@ -108,6 +108,24 @@
                         </Button>
                     </StackPanel>
                 </Grid>
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <DockPanel><Button DockPanel.Dock="Right" Content="搜索" Click="Search_OnClick" Padding="6,3"/><TextBox x:Name="AuthoringSearchBox" ToolTip="搜索项目台词、选项、节点与引用" KeyDown="Search_OnKeyDown"/></DockPanel>
+                    <TextBlock Text="{Binding SearchStatus}" graph:AuthoringText.IsHelp="True"/>
+                    <ListBox ItemsSource="{Binding SearchResults}" MaxHeight="200"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             MouseDoubleClick="SearchResult_OnDoubleClick" KeyDown="SearchResult_OnKeyDown">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Path}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Snippet}" TextWrapping="Wrap" graph:AuthoringText.IsHelp="True"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding Folders}">
                         <ItemsControl.ItemTemplate>

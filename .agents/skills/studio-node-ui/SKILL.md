@@ -1,11 +1,21 @@
 ---
 name: studio-node-ui
-description: Design or change DarkGrey RPG Studio UI text hierarchy, node property editors and Inspector layouts, including helper text, input placeholders and repeated multi-field module cards.
+description: Design or change DarkGrey RPG Studio UI text hierarchy, node property editors, Inspector layouts and expand/collapse interactions, including helper text, input placeholders and repeated multi-field module cards.
 ---
 
 # Studio 节点属性 UI
 
 修改 Studio 节点内编辑区或 Inspector 时，先判断内容结构，再选择分组方式。
+
+## 折叠动画标准（适用于后续 Studio 折叠交互）
+
+用户已认可当前台词卡片的伸缩效果；后续新增或修改折叠交互，统一沿用此标准。参考 `studio/src/DarkGreyRPG.Studio/Views/Graph/AnimatedLinePageBody.cs`，优先复用其实现；需要通用化时保留相同表现。
+
+- 展开和收起均使用 **220 ms、CubicEase / EaseInOut** 的高度伸缩动画。按内容自然高度测量，通过显示区域高度及裁切渐进展开；文字、输入框和图标保持原始比例，不使用整体缩放挤压内容。
+- 动画途中再次点击，从当前显示进度平滑反向，不跳回起点、不排队播放。展开结束恢复完整自然高度，收起结束不残留正文占位或可点击的隐藏控件。
+- 初始化和卸载时直接同步最终状态；尊重 Windows 客户端动画设置，系统关闭动画时直接切换。
+- 节点内与 Inspector 使用一致的动画和状态语义。折叠导致布局变化时复用现有连线与点击区域，只更新端点变化的几何；禁止逐帧删除重建全部连线，也不能干扰正在进行的拖线手势。
+- 验证展开、收起、快速反向点击及不同内容高度；在有连线的画布实测动画过程，确认文字不变形、布局无跳跃、连线无闪烁。现有回归参考 `CanonicalGraphEditorViewTests.AnimatedLineCollapsePreservesAllWireVisualsAndGeometry` 与 `LinePagesAuthoringTests.AnimatedBodyReversesAndSettlesAtNaturalHeight`。
 
 ## 文字层级（适用于 Studio UI）
 

@@ -85,8 +85,8 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
         int panelHeight = Math.min(430, height - 30);
         int left = (width - panelWidth) / 2;
         int top = (height - panelHeight) / 2;
-        drawRect(left, top, left + panelWidth, top + panelHeight, 0xEE303030);
-        drawCenteredString(fontRendererObj, "选择要提交的任务目标", width / 2, top + 12, 0xFFFFFF);
+        drawRect(left, top, left + panelWidth, top + panelHeight, DgrUiPalette.WINDOW_PANEL);
+        drawCenteredString(fontRendererObj, "选择要提交的任务目标", width / 2, top + 12, DgrUiPalette.TEXT);
         List<CanonicalTaskSubmitChoiceFrame.Option> options = frame.getOptions();
         int visible = Math.min(options.size() - firstOption, pageSize());
         for (int row = 0; row < visible; row++) {
@@ -98,7 +98,7 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
                     panelWidth - 140),
                 left + 20,
                 y,
-                0xFFFFFF);
+                DgrUiPalette.TEXT);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

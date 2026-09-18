@@ -15,11 +15,13 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
 {
     private string _savedJson;
     private IReadOnlyDictionary<string, GraphEditorNodePosition> _savedLayout;
+    private string _savedFrames = "[]";
     private bool _disposed;
 
     public CanonicalGraphResourceEditorViewModel(
         GraphResourceEnvelope envelope,
-        IReadOnlyDictionary<string, GraphEditorNodePosition>? layout = null)
+        IReadOnlyDictionary<string, GraphEditorNodePosition>? layout = null,
+        IReadOnlyList<GraphCommentFrame>? frames = null)
     {
         ArgumentNullException.ThrowIfNull(envelope);
         var scope = GraphResourceScopeAdapter.GetScope(envelope.ResourceKind);
@@ -29,6 +31,8 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
             CanonicalTaskObjectiveSchema.NormalizeLegacyInteractRequired(Document.Graph);
         Host = new GraphEditorHostViewModel(Document.Graph, Document.Scope, layout);
         Host.AuthoringResourceKey = CanonicalGraphLayoutStore.BuildGraphKey(envelope.ResourceKind, envelope.Id);
+        Host.RestoreFrames(frames ?? []);
+        _savedFrames = SerializeFrames();
         _savedLayout = CreateLayoutSnapshot();
         UndoCommand = new RelayCommand(() => Host.Undo(), () => Host.CanUndo);
         RedoCommand = new RelayCommand(() => Host.Redo(), () => Host.CanRedo);
@@ -59,7 +63,8 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public GraphScope Scope => Document.Scope;
     public long GraphRevision => Host.GraphRevision;
     public bool IsGraphDirty => !string.Equals(_savedJson, SerializeCurrent(), StringComparison.Ordinal);
-    public bool IsLayoutDirty => !LayoutEquals(_savedLayout, CreateLayoutSnapshot());
+    private string SerializeFrames() => System.Text.Json.JsonSerializer.Serialize(Host.FrameSnapshot());
+    public bool IsLayoutDirty => !LayoutEquals(_savedLayout, CreateLayoutSnapshot()) || _savedFrames != SerializeFrames();
     public bool IsDirty => IsGraphDirty || IsLayoutDirty;
     public bool CanSave => IsLayoutDirty || (IsGraphDirty && ValidationIssues.Count == 0);
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
@@ -96,6 +101,7 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         ThrowIfDisposed();
         _savedJson = SerializeCurrent();
         _savedLayout = CreateLayoutSnapshot();
+        _savedFrames = SerializeFrames();
         NotifyWorkspaceState();
     }
 
@@ -110,6 +116,7 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     {
         ThrowIfDisposed();
         _savedLayout = CreateLayoutSnapshot();
+        _savedFrames = SerializeFrames();
         NotifyWorkspaceState();
     }
 

@@ -294,6 +294,10 @@ public final class CanonicalSessionRuntime {
                 continue;
             }
             if ("line".equals(type)) {
+                if (linePages(node).isEmpty()) {
+                    transitionFrom(node, "flow_out");
+                    continue;
+                }
                 if (lineEpoch == Long.MAX_VALUE) throw fail("session.line.epoch", "Line epoch exhausted.");
                 lineEpoch++;
                 currentStep = lineStep(node);
@@ -925,10 +929,7 @@ public final class CanonicalSessionRuntime {
             throw failure("session.line.property.unsupported", "Unsupported paged line property: " + key);
         optionalLineString(node, "speaker_actor_id");
         JsonElement pages = properties.get("pages");
-        if (pages == null || !pages.isJsonArray()
-            || pages.getAsJsonArray()
-                .size() == 0)
-            throw failure("session.line.pages", "Line pages must be a nonempty array.");
+        if (pages == null || !pages.isJsonArray()) throw failure("session.line.pages", "Line pages must be an array.");
         List<CanonicalGraphNode> result = new ArrayList<CanonicalGraphNode>();
         Set<String> ids = new HashSet<String>();
         for (JsonElement page : pages.getAsJsonArray()) {

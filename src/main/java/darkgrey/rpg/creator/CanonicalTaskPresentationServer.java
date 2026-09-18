@@ -43,13 +43,27 @@ public final class CanonicalTaskPresentationServer {
             .getSnapshot();
         long generation = source.getPresentationGeneration();
         boolean worldChanged = state.dimension != player.dimension || state.source != source;
-        if (!force && !worldChanged && state.generation == generation && state.project == project) return;
+        if (!force && !worldChanged
+            && state.generation == generation
+            && state.project == project
+            && player.ticksExisted % 10 != 0) return;
         java.util.List<darkgrey.rpg.task.journal.CanonicalTaskJournalEntry> journal = DarkGreyRpg
             .getCanonicalTaskManager()
             .getJournal(player);
         net.minecraft.nbt.NBTTagList events = state.notifications
             .update(journal, worldChanged || state.project != project);
-        NBTTagCompound data = CanonicalTaskUiProjection.project(journal);
+        NBTTagCompound data = CanonicalTaskUiProjection.project(journal, player);
+        net.minecraft.nbt.NBTTagList history = source.completedHistory(player.getUniqueID());
+        if (history.tagCount() > 0) {
+            net.minecraft.nbt.NBTTagList retained = data.getTagList("completed_tasks", 10);
+            for (int i = 0; i < retained.tagCount(); i++) if (!"SETTLED".equals(
+                retained.getCompoundTagAt(i)
+                    .getString("status")))
+                history.appendTag(
+                    retained.getCompoundTagAt(i)
+                        .copy());
+            data.setTag("completed_tasks", history);
+        }
         if (force || worldChanged || !data.equals(state.previous) || events.tagCount() > 0) {
             state.previous = (NBTTagCompound) data.copy();
             state.revision = ++nextRevision;

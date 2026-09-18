@@ -29,6 +29,11 @@ import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 public final class CanonicalTaskSavedData extends WorldSavedData {
 
     private long presentationGeneration;
+    private CanonicalTaskCompletionHistory completionHistory = new CanonicalTaskCompletionHistory();
+
+    public synchronized net.minecraft.nbt.NBTTagList completedHistory(UUID player) {
+        return completionHistory.forPlayer(player);
+    }
 
     public synchronized long getPresentationGeneration() {
         return presentationGeneration;
@@ -67,8 +72,13 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
     public static CanonicalTaskSavedData get(MapStorage storage) {
         if (storage == null) throw new IllegalArgumentException("MapStorage is required.");
         WorldSavedData loaded = storage.loadData(CanonicalTaskSavedData.class, DATA_NAME);
-        if (loaded instanceof CanonicalTaskSavedData) return (CanonicalTaskSavedData) loaded;
+        if (loaded instanceof CanonicalTaskSavedData) {
+            CanonicalTaskSavedData data = (CanonicalTaskSavedData) loaded;
+            data.completionHistory = CanonicalTaskCompletionHistory.get(storage);
+            return data;
+        }
         CanonicalTaskSavedData created = new CanonicalTaskSavedData();
+        created.completionHistory = CanonicalTaskCompletionHistory.get(storage);
         storage.setData(DATA_NAME, created);
         return created;
     }
@@ -130,6 +140,7 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
             index = replacementIndex;
         }
         bound = true;
+        captureCompletions();
     }
 
     public synchronized void restore(CanonicalTaskResourceResolver resolver) {
@@ -467,7 +478,31 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
     }
 
     private void markIfChanged(NBTTagCompound before) {
-        if (!before.equals(persistedState())) markDirty();
+        if (!before.equals(persistedState())) {
+            captureCompletions();
+            markDirty();
+        }
+    }
+
+    private void captureCompletions() {
+        if (!bound) return;
+        java.util.Set<String> live = new java.util.HashSet<String>();
+        for (CanonicalTaskInstanceSnapshot snapshot : store.snapshots()) {
+            live.add(
+                darkgrey.rpg.task.journal.CanonicalTaskJournalEntry.identity(
+                    snapshot.getPlayerUuid(),
+                    snapshot.getStoryInstanceId(),
+                    snapshot.getTaskNodePlacementId()));
+            if (snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.SETTLED) continue;
+            CanonicalTaskInstance instance = store
+                .get(snapshot.getPlayerUuid(), snapshot.getStoryInstanceId(), snapshot.getTaskNodePlacementId());
+            CanonicalGraphResource resource = instance.getRuntime()
+                .getResource();
+            for (darkgrey.rpg.task.journal.CanonicalTaskJournalEntry entry : darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+                .project(snapshot.getPlayerUuid(), java.util.Collections.singletonList(snapshot), id -> resource))
+                completionHistory.observe(entry);
+        }
+        completionHistory.retainObserved(live);
     }
 
     private static NBTTagCompound copy(NBTTagCompound value) {

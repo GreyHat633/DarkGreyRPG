@@ -42,6 +42,17 @@ public final class UtilityWindowSettings {
         return file;
     }
 
+    public String preference(String key) {
+        return properties.getProperty(key, "");
+    }
+
+    public void savePreference(String key, String value) {
+        if (!key.startsWith("tracking.")) throw new IllegalArgumentException("tracking preference required");
+        reloadFromDisk();
+        properties.setProperty(key, value);
+        saveAll();
+    }
+
     /**
      * Loads one independent window entry. Missing or malformed properties
      * fall back field-by-field to the geometry defaults.
@@ -84,6 +95,53 @@ public final class UtilityWindowSettings {
     public double dialogueSpeed() {
         double value = finiteDouble(properties.getProperty("dialogue.charactersPerSecond"), 30);
         return value >= 0 && value <= 120 ? value : 30;
+    }
+
+    public void loadPlayerPreferences() {
+        darkgrey.rpg.client.session.PlayerUiPreferences.Theme theme;
+        try {
+            theme = darkgrey.rpg.client.session.PlayerUiPreferences.Theme
+                .valueOf(properties.getProperty("ui.theme", "CHARCOAL"));
+        } catch (IllegalArgumentException invalid) {
+            theme = darkgrey.rpg.client.session.PlayerUiPreferences.Theme.CHARCOAL;
+        }
+        darkgrey.rpg.client.session.PlayerUiPreferences.setTheme(theme);
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setOpacity(finiteDouble(properties.getProperty("dialogue.opacity"), 0.8));
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setTextScale(finiteDouble(properties.getProperty("ui.textScale"), 1));
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setVoiceVolume(finiteDouble(properties.getProperty("audio.voice"), 1));
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setMusicVolume(finiteDouble(properties.getProperty("audio.sessionMusic"), 1));
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setGramophoneVolume(finiteDouble(properties.getProperty("audio.gramophone"), 1));
+        darkgrey.rpg.client.session.DialoguePreferences.setSpeed(dialogueSpeed());
+    }
+
+    public void savePlayerPreferences() {
+        reloadFromDisk();
+        properties.setProperty(
+            "ui.theme",
+            darkgrey.rpg.client.session.PlayerUiPreferences.theme()
+                .name());
+        properties.setProperty(
+            "dialogue.opacity",
+            Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.opacity()));
+        properties
+            .setProperty("ui.textScale", Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.textScale()));
+        properties
+            .setProperty("audio.voice", Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.voiceVolume()));
+        properties.setProperty(
+            "audio.sessionMusic",
+            Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.musicVolume()));
+        properties.setProperty(
+            "audio.gramophone",
+            Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.gramophoneVolume()));
+        properties.setProperty(
+            "dialogue.charactersPerSecond",
+            Double.toString(darkgrey.rpg.client.session.DialoguePreferences.speed()));
+        saveAll();
     }
 
     public void saveDialogueSpeed(double value) {

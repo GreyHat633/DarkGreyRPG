@@ -45,7 +45,14 @@ public partial class CanonicalGraphEditorView
             }
             void Redo() { resources.Redo(); try { metadata.Redo(); } catch { resources.Undo(); throw; } }
             void Undo() { metadata.Undo(); try { resources.Undo(); } catch { metadata.Redo(); throw; } }
-            host.CommitClipboardSnapshot(next, layout, Undo, Redo);
+            var frames = host.FrameSnapshot().Concat(clipboard.Frames.Select(frame => frame with
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                X = point.X + frame.X - minX + offset,
+                Y = point.Y + frame.Y - minY + offset,
+                Members = frame.Members.Where(ids.ContainsKey).Select(id => ids[id]).ToArray()
+            })).ToArray();
+            host.CommitClipboardSnapshot(next, layout, Undo, Redo, frames);
             clipboard.PasteCount++;
             return true;
         }

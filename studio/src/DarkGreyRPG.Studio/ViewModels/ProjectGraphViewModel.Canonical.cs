@@ -84,11 +84,14 @@ public sealed partial class ProjectGraphViewModel
         foreach (var id in _referencedStoryIds)
             if (layout?.Nodes.TryGetValue(id, out var position) == true) CanonicalHost.SetNodePosition(id, position.X, position.Y);
         CanonicalHost.GraphChanged += (_, _) => SaveCanonicalConnections();
+        var frameStore = string.IsNullOrWhiteSpace(directory) ? null : new CanonicalGraphLayoutStore(directory);
+        CanonicalHost.RestoreFrames(frameStore?.LoadFrames("project:atlas") ?? []);
         CanonicalHost.LayoutChanged += (_, _) =>
         {
             foreach (var node in CanonicalHost.Nodes)
                 Nodes.FirstOrDefault(n => n.Id == node.NodeId)?.SetPosition(node.X, node.Y);
             _layoutStore?.Save(CanonicalHost.Nodes.ToDictionary(node => node.NodeId, node => new ProjectGraphNodeLayout { X = node.X, Y = node.Y }));
+            frameStore?.SaveFrames("project:atlas", CanonicalHost.FrameSnapshot());
         };
     }
 

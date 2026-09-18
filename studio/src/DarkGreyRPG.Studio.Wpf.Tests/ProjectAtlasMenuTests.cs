@@ -12,7 +12,7 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class ProjectAtlasMenuTests
 {
     [STATestMethod]
-    public void ProjectCanvasMenuHasSingleAddStoryItemAndClickForwardsGraphPoint()
+    public void ProjectCanvasMenuKeepsAddStoryAndAddsEditorOnlyFrame()
     {
         var view = new CanonicalGraphEditorView(ProjectHost());
         Point? requestedPoint = null;
@@ -21,8 +21,9 @@ public sealed class ProjectAtlasMenuTests
 
         var menu = view.CreateCanvasContextMenu(graphPoint);
 
-        Assert.HasCount(1, menu.Items);
-        var addStory = (MenuItem)menu.Items[0];
+        Assert.HasCount(2, menu.Items);
+        Assert.IsTrue(menu.Items.OfType<MenuItem>().Any(item => Equals(item.Header, "创建分组框")));
+        var addStory = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "添加故事"));
         Assert.AreEqual("添加故事", addStory.Header);
         Assert.IsTrue(addStory.IsEnabled);
 
@@ -47,8 +48,9 @@ public sealed class ProjectAtlasMenuTests
 
         var menu = view.CreateCanvasContextMenu(new Point(12, 34));
 
-        Assert.HasCount(1, menu.Items);
-        var addStory = (MenuItem)menu.Items[0];
+        Assert.HasCount(2, menu.Items);
+        Assert.AreEqual(!isReadOnly, menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "创建分组框")).IsEnabled);
+        var addStory = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "添加故事"));
         Assert.AreEqual("添加故事", addStory.Header);
         Assert.AreEqual(expectedEnabled, addStory.IsEnabled);
     }
@@ -72,13 +74,13 @@ public sealed class ProjectAtlasMenuTests
 
         var menu = view.CreateCanvasContextMenu(new Point(12, 34));
 
-        Assert.HasCount(4, menu.Items);
+        Assert.HasCount(5, menu.Items);
         foreach (var header in new[] { "复制", "粘贴" })
         {
             var submenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, header));
             CollectionAssert.AreEqual(new[] { "节点", "参数" }, submenu.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
         }
-        var addNode = (MenuItem)menu.Items[0];
+        var addNode = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "添加"));
         Assert.AreEqual("添加", addNode.Header);
         Assert.IsFalse(menu.Items.OfType<MenuItem>().Any(item => Equals(item.Header, "添加故事")));
         Assert.IsTrue(addNode.Items.Count > 0);

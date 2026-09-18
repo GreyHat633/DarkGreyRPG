@@ -13,6 +13,21 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class SessionPagesTests
 {
     [TestMethod]
+    public void EmptyPagesSurviveSaveReloadAndClipboard()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        var graph = new GraphDocument([line]);
+        var edits = new GraphEditSession(graph, GraphScope.Session);
+        Assert.IsTrue(edits.SetNodeProperty("line", "pages", JsonSerializer.SerializeToElement(Array.Empty<object>())));
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", graph);
+        var restored = GraphResourceEnvelopeSerializer.Deserialize(GraphResourceEnvelopeSerializer.Serialize(envelope));
+        Assert.IsEmpty(CanonicalSessionLineSchema.ReadPages(restored.Graph!.Nodes.Single()));
+        var clipboard = new GraphClipboardSnapshot(GraphScope.Session, graph, ["line"]);
+        var pasted = clipboard.CloneForPaste(GraphScope.Session, out _).Nodes.Single();
+        Assert.IsEmpty(CanonicalSessionLineSchema.Validate(pasted));
+        Assert.IsEmpty(CanonicalSessionLineSchema.ReadPages(pasted));
+    }
+    [TestMethod]
     public void LegacySaveMigratesAllSettingsWithoutMutatingSource()
     {
         var line = new GraphNode("line", "line", "台词", [], new Dictionary<string, JsonElement>
@@ -41,7 +56,7 @@ public sealed class SessionPagesTests
     public void InvalidPagesAndDuplicateIdsAreRejected()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        foreach (var json in new[] { "[]", "null", "[null]", "[{\"page_id\":\"a\",\"text\":\"x\"},{\"page_id\":\"a\",\"text\":\"y\"}]", "[{\"page_id\":\"a\",\"text\":\"x\",\"text_speed\":121}]" })
+        foreach (var json in new[] { "null", "[null]", "[{\"page_id\":\"a\",\"text\":\"x\"},{\"page_id\":\"a\",\"text\":\"y\"}]", "[{\"page_id\":\"a\",\"text\":\"x\",\"text_speed\":121}]" })
         {
             line.Properties["pages"] = JsonDocument.Parse(json).RootElement.Clone();
             Assert.IsNotEmpty(CanonicalSessionLineSchema.Validate(line), json);
@@ -57,7 +72,7 @@ public sealed class SessionPagesTests
         var graph = new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "line", "line")]);
         var edits = new GraphEditSession(graph, GraphScope.Session);
         var before = graph.ToJson();
-        foreach (var json in new[] { "[]", "null", "[3]", "[{\"page_id\":\"a\",\"text\":1}]" })
+        foreach (var json in new[] { "null", "[3]", "[{\"page_id\":\"a\",\"text\":1}]" })
         {
             Assert.IsFalse(edits.SetNodeProperty("line", "pages", JsonDocument.Parse(json).RootElement.Clone()));
             Assert.AreEqual(before, graph.ToJson());

@@ -7,16 +7,16 @@ import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.config.RpgRuntimeDirectories;
 
 /** Connects pure window geometry to local preferences at open/release/close boundaries. */
-final class UtilityWindowChrome extends Gui {
+public final class UtilityWindowChrome extends Gui {
 
     private UtilityWindowChrome() {}
 
-    static void open(String key, UtilityWindowGeometry geometry, int width, int height, boolean initialized) {
+    public static void open(String key, UtilityWindowGeometry geometry, int width, int height, boolean initialized) {
         if (initialized) geometry.restore(width, height, geometry.snapshot());
         else settings().load(key, geometry, width, height);
     }
 
-    static void save(String key, UtilityWindowGeometry geometry, int width, int height) {
+    public static void save(String key, UtilityWindowGeometry geometry, int width, int height) {
         try {
             settings().save(key, geometry, width, height);
         } catch (RuntimeException failure) {
@@ -24,13 +24,13 @@ final class UtilityWindowChrome extends Gui {
         }
     }
 
-    static UtilityWindowSettings settings() {
+    public static UtilityWindowSettings settings() {
         return new UtilityWindowSettings(
             RpgRuntimeDirectories.prepare(Minecraft.getMinecraft().mcDataDir)
                 .settingsFile());
     }
 
-    static void drawGrip(UtilityWindowGeometry geometry) {
+    public static void drawGrip(UtilityWindowGeometry geometry) {
         for (int sx : new int[] { -1, 1 }) {
             for (int sy : new int[] { -1, 1 }) {
                 int cx = sx < 0 ? geometry.x + 3 : geometry.x + geometry.width - 4;

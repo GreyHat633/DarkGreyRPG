@@ -62,6 +62,20 @@ tasks.register<JavaExec>("b4NetworkDiscriminatorProbe") {
 val releaseVersion = providers.gradleProperty("modVersion").get()
 version = releaseVersion
 
+tasks.named<Jar>("jar") {
+    from(zipTree("libs/jlayer-1.0.1.jar")) { exclude("META-INF/**") }
+    from("libs/jlayer-license") { into("META-INF/licenses/jlayer") }
+}
+
+tasks.register<JavaExec>("gramophone0332Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.gramophone.Gramophone0332Probe")
+    if (providers.gradleProperty("gramophoneUrl").isPresent) {
+        args(providers.gradleProperty("gramophoneUrl").get(), layout.projectDirectory.dir(".tooling/0332-gramophone/audio").asFile.absolutePath)
+    }
+}
+
 tasks.withType<org.gradle.jvm.tasks.Jar>().configureEach {
     archiveVersion.set(releaseVersion)
 }
@@ -714,6 +728,27 @@ tasks.register<JavaExec>("smoothScroll0324Probe") {
     dependsOn(tasks.named("testClasses"))
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.client.gui.SmoothScroll0324Probe")
+}
+
+tasks.register<JavaExec>("playerPreferences0332Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.PlayerPreferences0332Probe")
+}
+
+tasks.register<JavaExec>("dialogueBacklog0332Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.session.DialogueBacklog0332Probe")
+}
+
+tasks.register<JavaExec>("taskTracking0332Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.TaskTracking0332Probe")
 }
 
 tasks.register<JavaExec>("utilityWindow0324Probe") {

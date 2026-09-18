@@ -11,6 +11,10 @@ import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
 public class CommonProxy {
 
+    public void acceptGramophone(darkgrey.rpg.gramophone.GramophonePacket packet) {}
+
+    public void acceptGramophoneMedia(darkgrey.rpg.gramophone.GramophoneMediaPacket packet) {}
+
     public boolean isCurrentClientConnection(Object connection) {
         return false;
     }

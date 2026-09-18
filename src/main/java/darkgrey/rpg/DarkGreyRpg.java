@@ -70,6 +70,9 @@ public final class DarkGreyRpg {
         File gameDirectory = event.getModConfigurationDirectory()
             .getParentFile();
         RpgRuntimeDirectories runtimeDirectories = RpgRuntimeDirectories.prepare(gameDirectory);
+        darkgrey.rpg.gramophone.GramophoneLocalServer.initialize(
+            runtimeDirectories.root()
+                .toPath());
         for (String conflict : runtimeDirectories.migrationConflicts())
             LOG.warn("Preserved colliding legacy DarkGrey RPG runtime path: {}", conflict);
         configuration = RpgConfiguration
@@ -115,6 +118,18 @@ public final class DarkGreyRpg {
         }
 
         ModItems.register();
+        cpw.mods.fml.common.registry.GameRegistry.registerBlock(
+            new darkgrey.rpg.gramophone.BlockGramophone(),
+            darkgrey.rpg.gramophone.ItemGramophone.class,
+            "gramophone");
+        cpw.mods.fml.common.registry.GameRegistry
+            .registerTileEntity(darkgrey.rpg.gramophone.TileGramophone.class, "darkgrey_rpg.gramophone");
+        darkgrey.rpg.gramophone.GramophoneNetwork.register();
+        darkgrey.rpg.gramophone.GramophoneServer gramophones = new darkgrey.rpg.gramophone.GramophoneServer();
+        MinecraftForge.EVENT_BUS.register(gramophones);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(gramophones);
         cpw.mods.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(this, new NominatorGuiHandler());
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
         MinecraftForge.EVENT_BUS.register(new EntityToolsRuntime());

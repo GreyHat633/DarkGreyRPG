@@ -244,7 +244,7 @@ public sealed class GraphEditorConnectionViewModel
 /// It projects the canonical document and routes all edits through the shared
 /// session/bridge pair.
 /// </summary>
-public sealed class GraphEditorHostViewModel : ObservableObject
+public sealed partial class GraphEditorHostViewModel : ObservableObject
 {
     private readonly GraphEditSession _session;
     private readonly GraphEditorCommandBridge _commandBridge;
@@ -395,11 +395,13 @@ public sealed class GraphEditorHostViewModel : ObservableObject
     }
 
     public void CommitClipboardSnapshot(GraphDocument graph, IReadOnlyDictionary<string, GraphEditorNodePosition> layout,
-        Action? undoResources = null, Action? redoResources = null)
+        Action? undoResources = null, Action? redoResources = null, IReadOnlyList<GraphCommentFrame>? frames = null)
     {
         var before = Graph.ToJson(); var after = graph.ToJson();
         var beforeLayout = _layout.ToDictionary(p => p.Key, p => p.Value);
         var afterLayout = layout.ToDictionary(p => p.Key, p => p.Value);
+        var beforeFrames = FrameSnapshot();
+        var afterFrames = frames?.ToArray() ?? beforeFrames;
         void Apply(string desired, IReadOnlyDictionary<string, GraphEditorNodePosition> positions, Action? applyResources,
             Action? revertResources, string previous, IReadOnlyDictionary<string, GraphEditorNodePosition> previousPositions)
         {
@@ -412,8 +414,8 @@ public sealed class GraphEditorHostViewModel : ObservableObject
                 throw;
             }
         }
-        EditMetadata(() => Apply(before, beforeLayout, undoResources, redoResources, after, afterLayout),
-            () => Apply(after, afterLayout, redoResources, undoResources, before, beforeLayout));
+        EditMetadata(() => { Apply(before, beforeLayout, undoResources, redoResources, after, afterLayout); RestoreFrames(beforeFrames); },
+            () => { Apply(after, afterLayout, redoResources, undoResources, before, beforeLayout); RestoreFrames(afterFrames); });
     }
 
     public void ApplyPersistedSnapshot(GraphDocument graph)

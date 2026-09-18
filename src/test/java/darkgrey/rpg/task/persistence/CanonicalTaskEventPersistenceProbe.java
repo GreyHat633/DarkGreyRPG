@@ -56,6 +56,7 @@ public final class CanonicalTaskEventPersistenceProbe {
         playerAndRetainedResourceIsolation(parallel);
         packageGenerationRetirement(parallel);
         playerStoryDiscardBoundAndPending(parallel, settled);
+        completionHistorySurvivesReset(settled);
         candidateBoundScale(many);
         System.out.println("TASK_EVENT_PERSISTENCE_PROBE_PASS");
         System.out.println("CANONICAL_TASK_GENERATION_RETIREMENT=PASS");
@@ -108,6 +109,59 @@ public final class CanonicalTaskEventPersistenceProbe {
             sequenceData.dispatch(PLAYER, CanonicalTaskEvent.interactActor("actor_7"), 3L)
                 .getChangedInstanceCount() == 1,
             "sequential next");
+    }
+
+    private static void completionHistorySurvivesReset(CanonicalGraphResource settled) {
+        CanonicalTaskSavedData data = new CanonicalTaskSavedData();
+        data.start(PLAYER, "repeat-story", "placement", settled, 1L);
+        require(
+            data.completedHistory(PLAYER)
+                .tagCount() == 0,
+            "active tasks are not archived");
+        data.dispatch(PLAYER, CanonicalTaskEvent.killEntity("slime"), 2L);
+        require(
+            data.completedHistory(PLAYER)
+                .getCompoundTagAt(0)
+                .getLong("completion_count") == 1,
+            "archive at real settlement");
+        data.bind(id -> settled);
+        require(
+            data.completedHistory(PLAYER)
+                .getCompoundTagAt(0)
+                .getLong("completion_count") == 1,
+            "bind does not count twice");
+        data.discardByPlayerStory(PLAYER, "repeat-story");
+        require(
+            data.size() == 0 && data.completedHistory(PLAYER)
+                .tagCount() == 1,
+            "reset keeps summary without runtime");
+        data.start(PLAYER, "repeat-story", "placement", settled, 1L);
+        data.dispatch(PLAYER, CanonicalTaskEvent.killEntity("slime"), 2L);
+        require(
+            data.completedHistory(PLAYER)
+                .getCompoundTagAt(0)
+                .getLong("completion_count") == 2,
+            "same-clock repeated settlement counted");
+        require(
+            data.completedHistory(OTHER)
+                .tagCount() == 0,
+            "archive player isolation");
+        CanonicalTaskCompletionHistory history = new CanonicalTaskCompletionHistory();
+        darkgrey.rpg.task.journal.CanonicalTaskJournalEntry entry = darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+            .project(PLAYER, data.snapshots(), id -> settled)
+            .get(0);
+        history.observe(entry);
+        net.minecraft.nbt.NBTTagCompound saved = new net.minecraft.nbt.NBTTagCompound();
+        history.writeToNBT(saved);
+        CanonicalTaskCompletionHistory restored = new CanonicalTaskCompletionHistory();
+        restored.readFromNBT(saved);
+        restored.observe(entry);
+        require(
+            restored.forPlayer(PLAYER)
+                .getCompoundTagAt(0)
+                .getLong("completion_count") == 1,
+            "history restore deduplicates");
+        System.out.println("TASK_COMPLETION_HISTORY_RESET_RESTART=PASS");
     }
 
     private static void collectAndInteract(CanonicalGraphResource collect, CanonicalGraphResource interact) {

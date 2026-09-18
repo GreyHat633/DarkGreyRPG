@@ -48,8 +48,8 @@ public static class CanonicalSessionLineSchema
             Invalid("speaker_actor_id", "说话角色必须为角色引用或空值。");
         if (node.Properties.TryGetValue("pages", out var pages))
         {
-            if (pages.ValueKind != JsonValueKind.Array || pages.GetArrayLength() == 0)
-            { Invalid("pages", "台词至少需要一句。"); return issues; }
+            if (pages.ValueKind != JsonValueKind.Array)
+            { Invalid("pages", "台词句子必须为数组。"); return issues; }
             var ids = new HashSet<string>(StringComparer.Ordinal);
             var index = 0;
             foreach (var page in pages.EnumerateArray())

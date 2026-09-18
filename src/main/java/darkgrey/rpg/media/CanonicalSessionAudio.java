@@ -70,7 +70,12 @@ public final class CanonicalSessionAudio {
             if (engine == null || !PINS.containsKey(channel)) return;
             SoundCategory category = channel.endsWith("voice") ? SoundCategory.PLAYERS : SoundCategory.MUSIC;
             try {
-                engine.setVolume(channel, value * Minecraft.getMinecraft().gameSettings.getSoundLevel(category));
+                float preference = (float) (channel.endsWith("voice")
+                    ? darkgrey.rpg.client.session.PlayerUiPreferences.voiceVolume()
+                    : darkgrey.rpg.client.session.PlayerUiPreferences.musicVolume());
+                engine.setVolume(
+                    channel,
+                    value * preference * Minecraft.getMinecraft().gameSettings.getSoundLevel(category));
             } catch (RuntimeException ignored) {}
         }
 

@@ -38,3 +38,6 @@ gui.darkgrey_rpg.waiting_objective=Waiting for objective
 gui.darkgrey_rpg.task_help=Esc: Close / Mouse wheel: Scroll
 
 key.darkgrey_rpg.settings=Settings
+
+key.darkgrey_rpg.history=Dialogue history
+tile.darkgrey_rpg.gramophone.name=Ambient Gramophone

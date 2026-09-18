@@ -1436,7 +1436,8 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
                 pair => pair.Key,
                 pair => new GraphEditorNodePosition(pair.Value.X, pair.Value.Y),
                 StringComparer.Ordinal);
-        return new CanonicalGraphResourceEditorViewModel(resource, positions);
+        return new CanonicalGraphResourceEditorViewModel(resource, positions,
+            layoutStore.LoadFrames(CanonicalGraphLayoutStore.BuildGraphKey(resource.ResourceKind, resource.Id)));
     }
 
     private IReadOnlyList<ICanonicalStoryTreeItem> AdaptEntries<TEntry, TItem>(
@@ -1550,6 +1551,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (sender is CanonicalGraphResourceEditorViewModel changed) _searchDocuments.Remove(changed);
         if (args.PropertyName is nameof(CanonicalGraphResourceEditorViewModel.IsDirty)
             or nameof(CanonicalGraphResourceEditorViewModel.CanSave))
             OnPropertyChanged(nameof(HasDirtyEditors));

@@ -357,6 +357,7 @@ public partial class CanonicalGraphEditorView : UserControl
     public ContextMenu CreateCanvasContextMenu(Point graphPoint)
     {
         var menu = FluentContextMenuFactory.Create(GraphCanvas);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem("创建分组框", () => CreateCommentFrame(graphPoint), !IsReadOnly));
         if (Host?.Scope == GraphScope.Project)
         {
             menu.Items.Add(FluentContextMenuFactory.CreateItem("添加故事",
@@ -559,6 +560,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private void HostLayoutChanged(object? sender, EventArgs args)
     {
         if (!ReferenceEquals(sender, _host)) return;
+        DrawCommentFrames();
         QueueLayoutGeometryRefresh();
     }
 
@@ -578,7 +580,8 @@ public partial class CanonicalGraphEditorView : UserControl
             if (_host is null || !_hostEventsAttached) return;
             GraphCanvas.UpdateLayout();
             IndexPorts();
-            RedrawConnections();
+            foreach (var connection in _connectionVisuals.Keys.ToArray())
+                RefreshConnectionGeometry(connection);
         }));
     }
 
@@ -651,6 +654,7 @@ public partial class CanonicalGraphEditorView : UserControl
         foreach (var node in _nodeVisuals.Keys) node.PropertyChanged -= NodePropertyChanged;
         foreach (var visual in _nodeVisuals.Values) DisposeNodeVisual(visual);
         GraphCanvas.Children.Clear();
+        _frameVisuals.Clear();
         _nodeVisuals.Clear();
         _ports.Clear();
         _connectionHits.Clear();
@@ -675,6 +679,7 @@ public partial class CanonicalGraphEditorView : UserControl
         GraphCanvas.UpdateLayout();
         IndexPorts();
         RedrawConnections();
+        DrawCommentFrames();
         ApplyViewport();
         NotifySelectionChanged(oldNode, oldConnection);
     }
@@ -778,12 +783,29 @@ public partial class CanonicalGraphEditorView : UserControl
                      string.Equals(pair.Key.FromNodeId, nodeId, StringComparison.Ordinal)
                      || string.Equals(pair.Key.ToNodeId, nodeId, StringComparison.Ordinal)).ToArray())
         {
-            if (!TryGetPort(pair.Key.FromNodeId, pair.Key.FromPortId, out var from)
-                || !TryGetPort(pair.Key.ToNodeId, pair.Key.ToPortId, out var to)) continue;
-            var geometry = WireGeometry(from.GetAnchorPoint(GraphCanvas), to.GetAnchorPoint(GraphCanvas));
-            pair.Value.Line.Data = geometry;
-            pair.Value.Hit.Data = geometry;
+            RefreshConnectionGeometry(pair.Key);
         }
+    }
+
+    private void RefreshConnectionGeometry(GraphEditorConnectionViewModel connection)
+    {
+        if (!_connectionVisuals.TryGetValue(connection, out var visual)
+            // A persisted wire can temporarily belong to the pointer gesture.
+            || _draftWires.Contains(visual.Line)
+            || !TryGetPort(connection.FromNodeId, connection.FromPortId, out var from)
+            || !TryGetPort(connection.ToNodeId, connection.ToPortId, out var to)) return;
+        var start = from.GetAnchorPoint(GraphCanvas);
+        var end = to.GetAnchorPoint(GraphCanvas);
+        if (!IsFinite(start) || !IsFinite(end)) return;
+        // Most size changes are below the ports. Leave these wires completely
+        // untouched, including their hit targets, while the body animates.
+        if (visual.Line.Data is PathGeometry current && current.Figures.Count == 1
+            && current.Figures[0].StartPoint == start
+            && current.Figures[0].Segments.LastOrDefault() is BezierSegment segment
+            && segment.Point3 == end) return;
+        var geometry = WireGeometry(start, end);
+        visual.Line.Data = geometry;
+        visual.Hit.Data = geometry;
     }
 
     private bool TryGetPort(string nodeId, string portId, out FlowPortControl port) => _ports.TryGetValue(EndpointKey(nodeId, portId), out port!);
@@ -820,6 +842,7 @@ public partial class CanonicalGraphEditorView : UserControl
             return;
         }
         if (e.ChangedButton != MouseButton.Left) return;
+        if (IsFrameInteraction(source)) return;
         if (IsReadOnly)
         {
             FocusGraphCanvas();
@@ -889,6 +912,7 @@ public partial class CanonicalGraphEditorView : UserControl
     {
         if (IsReadOnly) { e.Handled = true; return; }
         var source = e.OriginalSource as DependencyObject;
+        if (IsFrameInteraction(source)) return;
         // A blank-canvas menu must never be inherited by a node, port, or wire
         // hit target. Clear the previous transient menu before this boundary
         // check so a second right-click cannot reopen stale authoring actions.

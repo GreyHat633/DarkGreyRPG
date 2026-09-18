@@ -12,6 +12,7 @@ public sealed class CanonicalGraphClipboard
     public GraphClipboardSnapshot? Nodes { get; private set; }
     public GraphClipboardSnapshot? Parameters { get; private set; }
     public IReadOnlyDictionary<string, GraphEditorNodePosition> Layout { get; private set; } = new Dictionary<string, GraphEditorNodePosition>();
+    public IReadOnlyList<GraphCommentFrame> Frames { get; private set; } = [];
     public sealed record Resource(GraphResourceEnvelope Envelope, IReadOnlyDictionary<string, GraphEditorNodePosition> Layout,
         IReadOnlyDictionary<string, byte[]?>? ScreenMetadata = null);
     public IReadOnlyDictionary<string, byte[]?> NodeScreenMetadata { get; private set; } = new Dictionary<string, byte[]?>();
@@ -48,19 +49,23 @@ public sealed class CanonicalGraphClipboard
         else draft.CopyNodes(workspace.ActiveGraphHost, ids);
         draft.CaptureResources(workspace, parameters);
         if (parameters) { Parameters = draft.Parameters; ParameterResources = draft.ParameterResources; ParameterScreenMetadata = draft.ParameterScreenMetadata; }
-        else { Nodes = draft.Nodes; NodeResources = draft.NodeResources; NodeScreenMetadata = draft.NodeScreenMetadata; Layout = draft.Layout; PasteCount = 0; }
+        else { Nodes = draft.Nodes; NodeResources = draft.NodeResources; NodeScreenMetadata = draft.NodeScreenMetadata; Layout = draft.Layout; Frames = draft.Frames; PasteCount = 0; }
     }
     public void SetProject(string? project)
     {
         if (string.Equals(_project, project, StringComparison.OrdinalIgnoreCase)) return;
         _project = project; NodeResources = new Dictionary<(GraphResourceKind, string), Resource>(); ParameterResources = new Dictionary<(GraphResourceKind, string), Resource>(); Nodes = null; Parameters = null; Layout = new Dictionary<string, GraphEditorNodePosition>(); PasteCount = 0;
         NodeScreenMetadata = new Dictionary<string, byte[]?>(); ParameterScreenMetadata = new Dictionary<string, byte[]?>();
+        Frames = [];
     }
     public void CopyNodes(GraphEditorHostViewModel host, IEnumerable<string> ids)
     {
         var selected = ids.ToHashSet(StringComparer.Ordinal);
         Nodes = new(host.Scope, host.Graph, selected);
         Layout = host.Nodes.Where(n => selected.Contains(n.NodeId)).ToDictionary(n => n.NodeId, n => n.Position);
+        // Copy a group only with its complete explicit membership; partial selections stay ungrouped.
+        Frames = host.FrameSnapshot().Where(frame => frame.Members.Length > 0 && frame.Members.All(selected.Contains))
+            .Select(frame => frame with { Members = frame.Members.ToArray() }).ToArray();
         PasteCount = 0;
     }
     public void CopyParameters(GraphEditorHostViewModel host, string id) => Parameters = new(host.Scope, host.Graph, [id]);

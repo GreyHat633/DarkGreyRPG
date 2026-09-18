@@ -924,6 +924,48 @@ public sealed partial class ShellViewModel : ObservableObject
     private void ConfigureCanonicalResourceActions(CanonicalStoryWorkspaceViewModel workspace)
     {
         workspace.MediaProjectDirectory = ProjectDirectory;
+        var searchGate = new System.Threading.SemaphoreSlim(1, 1);
+        string? diskSignature = null;
+        IReadOnlyList<AuthoringSearchHit> diskDocuments = [];
+        workspace.ProjectSearch = async query =>
+        {
+            var searchStore = _canonicalGraphStore;
+            if (searchStore is null) return workspace.SearchLoaded(query);
+            // Disk reads and parsing belong to a worker. Never touch retained UI models there.
+            await searchGate.WaitAsync();
+            IReadOnlyList<AuthoringSearchHit> disk;
+            try
+            {
+                disk = await Task.Run(() =>
+                {
+                    var files = System.IO.Directory.EnumerateFiles(searchStore.ProjectDirectory, "*", System.IO.SearchOption.AllDirectories)
+                        .Where(path => path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".dgrs", StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(path => path, StringComparer.Ordinal).Select(path => new System.IO.FileInfo(path));
+                    var signature = string.Join("\n", files.Select(file => $"{file.FullName}|{file.Length}|{file.LastWriteTimeUtc.Ticks}"));
+                    if (signature != diskSignature)
+                    {
+                        var documents = new List<AuthoringSearchHit>();
+                        foreach (var story in searchStore.Stories.List())
+                        {
+                            using var unloaded = new CanonicalStoryWorkspaceViewModel(new CanonicalStoryWorkspaceLoader(searchStore).Load(story.Id), new CanonicalGraphLayoutStore(searchStore.ProjectDirectory));
+                            documents.AddRange(unloaded.SearchLoaded(""));
+                        }
+                        diskDocuments = documents;
+                        diskSignature = signature;
+                    }
+                    return CanonicalStoryWorkspaceViewModel.FilterSearchDocuments(diskDocuments, query);
+                });
+            }
+            finally { searchGate.Release(); }
+            var open = _retainedStoryWorkspaces.Values.Concat(CanonicalStoryWorkspace is { } active ? [active] : []).Distinct().ToDictionary(item => item.StoryEditor.Id);
+            var results = disk.Where(hit => !open.ContainsKey(hit.StoryId)).ToList();
+            foreach (var current in open.Values) results.AddRange(current.SearchLoaded(query));
+            return results;
+        };
+        workspace.ProjectSearchNavigate = hit =>
+        {
+            if (TryOpenCanonicalStory(hit.StoryId) == CanonicalOpenResult.Opened) CanonicalStoryWorkspace?.NavigateSearch(hit);
+        };
         _graphClipboard.SetProject(ProjectDirectory);
         workspace.Clipboard = _graphClipboard;
         workspace.OpenProjectWorkspaces = () => _retainedStoryWorkspaces.Values

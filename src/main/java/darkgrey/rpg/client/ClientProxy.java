@@ -18,6 +18,16 @@ import darkgrey.rpg.proxy.CommonProxy;
 public final class ClientProxy extends CommonProxy {
 
     @Override
+    public void acceptGramophone(darkgrey.rpg.gramophone.GramophonePacket packet) {
+        darkgrey.rpg.gramophone.GramophoneClient.accept(packet);
+    }
+
+    @Override
+    public void acceptGramophoneMedia(darkgrey.rpg.gramophone.GramophoneMediaPacket packet) {
+        darkgrey.rpg.gramophone.GramophoneLocalClient.accept(packet);
+    }
+
+    @Override
     public boolean isCurrentClientConnection(Object connection) {
         return connection != null && Minecraft.getMinecraft()
             .getNetHandler() == connection;
@@ -42,6 +52,11 @@ public final class ClientProxy extends CommonProxy {
 
     @Override
     public void registerClientDialogueNetwork() {
+        darkgrey.rpg.gramophone.GramophoneClient gramophone = new darkgrey.rpg.gramophone.GramophoneClient();
+        MinecraftForge.EVENT_BUS.register(gramophone);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(gramophone);
         // All discriminators are registered on both physical sides by DialogueNetwork.
         FMLCommonHandler.instance()
             .bus()

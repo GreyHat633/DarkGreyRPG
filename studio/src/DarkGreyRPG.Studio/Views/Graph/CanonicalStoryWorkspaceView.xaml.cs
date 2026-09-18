@@ -543,11 +543,13 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         if (args.NewValue is CanonicalStoryWorkspaceViewModel newWorkspace)
             newWorkspace.PropertyChanged += view.Workspace_OnPropertyChanged;
         view._appliedStoryNodeFocusSequence = 0;
+        view.QueueSearchFocus();
         view.QueueStoryNodeFocus();
     }
 
     private void Workspace_OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(CanonicalStoryWorkspaceViewModel.SearchTarget)) QueueSearchFocus();
         if (args.PropertyName == nameof(CanonicalStoryWorkspaceViewModel.ActiveGraphHost))
             Workspace?.ClearGraphSelection();
         if (args.PropertyName == nameof(CanonicalStoryWorkspaceViewModel.NodeInspector))

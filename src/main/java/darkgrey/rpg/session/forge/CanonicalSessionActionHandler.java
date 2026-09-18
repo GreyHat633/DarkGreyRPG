@@ -21,7 +21,10 @@ public final class CanonicalSessionActionHandler implements IMessageHandler<Cano
             @Override
             public void run() {
                 CanonicalSessionForgeManager manager = DarkGreyRpg.getCanonicalSessionManager();
-                if (manager != null) manager.handleAction(player, message);
+                if (manager != null && manager.handleAction(player, message)
+                    && message.getKind() == CanonicalSessionAction.Kind.CHOICE)
+                    darkgrey.rpg.network.DialogueNetwork.CHANNEL
+                        .sendTo(new darkgrey.rpg.network.message.canonical.CanonicalChoiceReceipt(message), player);
             }
         });
         return null;

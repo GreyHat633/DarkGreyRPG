@@ -38,3 +38,6 @@ gui.darkgrey_rpg.waiting_objective=等待目标激活
 gui.darkgrey_rpg.task_help=Esc 关闭 / 滚轮浏览
 
 key.darkgrey_rpg.settings=设置
+
+key.darkgrey_rpg.history=对话记录
+tile.darkgrey_rpg.gramophone.name=环境留声机
