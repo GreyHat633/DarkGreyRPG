@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Validation;
@@ -761,7 +761,7 @@ public sealed class GraphEditSession
             var candidate = Clone(node);
             candidate.Properties[property] = value.Clone();
             var lineIssues = CanonicalSessionLineSchema.Validate(candidate);
-            if (lineIssues.Count != 0) return Fail(lineIssues);
+            if (lineIssues.Any(issue => issue.Severity == ValidationSeverity.Error)) return Fail(lineIssues);
         }
 
         var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate"
@@ -1066,7 +1066,7 @@ public sealed class GraphEditSession
         candidate.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement(next);
         candidate.Properties.Remove("portrait_variant");
         var inputIssues = CanonicalSessionLineSchema.Validate(candidate);
-        if (inputIssues.Count != 0) return Fail(inputIssues);
+        if (inputIssues.Any(issue => issue.Severity == ValidationSeverity.Error)) return Fail(inputIssues);
         if (candidate.Properties.ContainsKey("pages"))
         {
             var pages = CanonicalSessionLineSchema.ReadPages(candidate);
@@ -1074,7 +1074,7 @@ public sealed class GraphEditSession
             candidate.Properties["pages"] = JsonSerializer.SerializeToElement(pages);
         }
         var issues = CanonicalSessionLineSchema.Validate(candidate);
-        if (issues.Count != 0) return Fail(issues);
+        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error)) return Fail(issues);
         var before = DeepClone(Document); node.Properties = candidate.Properties; Commit(before); return true;
     }
 

@@ -356,8 +356,8 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Builds the blank-canvas authoring menu without opening it.</summary>
     public ContextMenu CreateCanvasContextMenu(Point graphPoint)
     {
+        ClearSelection();
         var menu = FluentContextMenuFactory.Create(GraphCanvas);
-        menu.Items.Add(FluentContextMenuFactory.CreateItem("创建分组框", () => CreateCommentFrame(graphPoint), !IsReadOnly));
         if (Host?.Scope == GraphScope.Project)
         {
             menu.Items.Add(FluentContextMenuFactory.CreateItem("添加故事",
@@ -380,7 +380,11 @@ public partial class CanonicalGraphEditorView : UserControl
             add.Items.Add(group);
         }
         menu.Items.Add(add);
-        AddClipboardMenuItems(menu, null, graphPoint);
+        menu.Items.Add(new Separator());
+        var paste = FluentContextMenuFactory.CreateSubmenu("粘贴");
+        paste.Items.Add(FluentContextMenuFactory.CreateItem("节点", () => PasteNodes(graphPoint),
+            !IsReadOnly && Clipboard?.Nodes is not null));
+        menu.Items.Add(paste);
         return menu;
     }
 
@@ -404,8 +408,13 @@ public partial class CanonicalGraphEditorView : UserControl
         view.RestoreViewport(args.NewValue as GraphViewportState);
     }
 
+    private Window? _gestureWindow;
+    private void GestureWindow_Deactivated(object? sender, EventArgs args) => CancelPointerGesture();
+
     private void View_OnLoaded(object sender, RoutedEventArgs args)
     {
+        _gestureWindow = Window.GetWindow(this);
+        if (_gestureWindow is not null) _gestureWindow.Deactivated += GestureWindow_Deactivated;
         _viewportResizeTrackingEnabled = false;
         AttachHost(_host);
         RebuildGraph();
@@ -416,6 +425,8 @@ public partial class CanonicalGraphEditorView : UserControl
     private void View_OnUnloaded(object sender, RoutedEventArgs args)
     {
         _viewportResizeTrackingEnabled = false;
+        if (_gestureWindow is not null) _gestureWindow.Deactivated -= GestureWindow_Deactivated;
+        _gestureWindow = null;
         if (ViewportState is { } state) CaptureViewport(state);
         CancelPointerGesture();
         DetachHost(_host);
@@ -586,7 +597,7 @@ public partial class CanonicalGraphEditorView : UserControl
     }
 
     private void NodeVisualSizeChanged(object sender, SizeChangedEventArgs args)
-        => QueueLayoutGeometryRefresh();
+    { DrawCommentFrames(); QueueLayoutGeometryRefresh(); }
 
     private void DisposeNodeVisual(CanonicalGraphNodeControl visual)
     {
@@ -874,7 +885,7 @@ public partial class CanonicalGraphEditorView : UserControl
                 if (!_selectedNodes.Contains(node)) SelectNode(node);
                 return;
             }
-            var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            var controlPressed = IsAdditiveSelectionModifier(Keyboard.Modifiers);
             var wasSelectedWithPeers = !controlPressed && _selectedNodes.Contains(node) && _selectedNodes.Count > 1;
             if (controlPressed) ToggleNodeSelection(node);
             else if (!wasSelectedWithPeers) SelectNode(node);
@@ -896,8 +907,7 @@ public partial class CanonicalGraphEditorView : UserControl
         }
         FocusGraphCanvas();
         if (FindAncestor<Path>(source) is { Tag: GraphEditorConnectionViewModel }) return;
-        if (!BeginMarqueeSelection(e.GetPosition(GraphCanvas),
-                (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)) return;
+        if (!BeginMarqueeSelection(e.GetPosition(GraphCanvas), IsAdditiveSelectionModifier(Keyboard.Modifiers))) return;
         CanvasViewport.CaptureMouse();
         e.Handled = true;
     }
@@ -947,31 +957,27 @@ public partial class CanonicalGraphEditorView : UserControl
         ArgumentNullException.ThrowIfNull(node);
         if (!_selectedNodes.Contains(node) && !SelectNode(node))
             return FluentContextMenuFactory.Create(GraphCanvas);
-        var menu = FluentContextMenuFactory.Create(_nodeVisuals.TryGetValue(node, out var visual) ? visual : GraphCanvas);
-        menu.Items.Add(FluentContextMenuFactory.CreateItem(
-            "编辑",
-            () =>
-            {
-                if (_selectedNodes.Count == 1 && _selectedNodes.Contains(node))
-                    _ = RequestNodeEdit(node);
-            }));
+        return CreateSelectionContextMenu(node, _nodeVisuals.TryGetValue(node, out var visual) ? visual : GraphCanvas);
+    }
 
+    public static bool IsAdditiveSelectionModifier(ModifierKeys modifiers)
+        => (modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0;
+
+    private ContextMenu CreateSelectionContextMenu(GraphEditorNodeViewModel? node, FrameworkElement target)
+    {
+        var menu = FluentContextMenuFactory.Create(target);
+        var canOpen = node is not null && node.Type is "session" or "task" or "story" && _selectedNodes.Count == 1 && _selectedGroups.Count == 0;
+        menu.Items.Add(FluentContextMenuFactory.CreateItem("流程图", () => { if (node is not null) RequestNodeEdit(node); }, canOpen));
         AddClipboardMenuItems(menu, node, _contextGraphPoint);
-        var canDelete = Host is { } host && _selectedNodes.Any(selected =>
-            !GraphNodeDefinitionRegistry.TryGet(host.Scope, selected.Type, out var definition)
-                || !definition.NonDeletable && !definition.Required);
-        if (canDelete)
-        {
-            menu.Items.Add(FluentContextMenuFactory.CreateItem("删除",
-                () => DeleteCurrentSelection(confirmReferencedRemoval: true), critical: true));
-        }
+        AddGroupMenuItems(menu);
+        menu.Items.Add(FluentContextMenuFactory.CreateItem("删除", () => DeleteCurrentSelection(confirmReferencedRemoval: true), !IsReadOnly, critical: true));
         return menu;
     }
 
     public bool RequestNodeEdit(GraphEditorNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);
-        if (_selectedNodes.Count > 1) return false;
+        if (_selectedNodes.Count > 1 || node.Type is not ("session" or "task" or "story")) return false;
         if (!SelectNode(node)) return false;
         NodeEditRequested?.Invoke(node);
         return true;
@@ -992,6 +998,18 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void Root_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (_gPressed && (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt
+            || e.Key == Key.System || Keyboard.Modifiers != ModifierKeys.None))
+        {
+            ResetGroupGesture();
+            DrawCommentFrames();
+        }
+        if (e.Key == Key.G && !IsReadOnly && !IsEditableKeyboardSource(e.OriginalSource as DependencyObject)
+            && Keyboard.Modifiers == ModifierKeys.None && !_scissorsMode && _activeGroupThumb is null
+            && (_pointerState.Is(GraphPointerMode.Idle) || _pointerState.Is(GraphPointerMode.NodeDrag))) {
+            if (!e.IsRepeat) { _gPressed = true; _gUsedForDrag = false; UpdateGroupDrop(_lastGraphPointer); }
+            e.Handled = true; return;
+        }
         if (IsReadOnly) { e.Handled = e.Key != Key.Escape; return; }
         if (e.Key is Key.LeftShift or Key.RightShift && _pointerState.Is(GraphPointerMode.NodeDrag))
         {
@@ -1008,6 +1026,14 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void Root_OnPreviewKeyUp(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.G && _gPressed) {
+            var combine = !_gUsedForDrag && Keyboard.Modifiers == ModifierKeys.None
+                && _pointerState.Is(GraphPointerMode.Idle) && _activeGroupThumb is null
+                && !IsEditableKeyboardSource(e.OriginalSource as DependencyObject);
+            ResetGroupGesture();
+            if (combine) CombineSelected(); else DrawCommentFrames();
+            e.Handled = true; return;
+        }
         if (e.Key is Key.LeftShift or Key.RightShift)
         {
             ClearSplicePreview();
@@ -1427,6 +1453,7 @@ public partial class CanonicalGraphEditorView : UserControl
             return true;
         }
         if (IsEditableKeyboardSource(source)) return false;
+        if (key == Key.Delete && _selectedGroups.Count > 0) { DeleteSelectedGroups(); return true; }
         if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && Host?.Scope != GraphScope.Project)
         {
             if (key == Key.C) return CopySelectedNodes();
@@ -1492,6 +1519,7 @@ public partial class CanonicalGraphEditorView : UserControl
     public bool DeleteCurrentSelection(bool confirmReferencedRemoval = false)
     {
         if (IsReadOnly) return false;
+        if (_selectedGroups.Count > 0) return DeleteSelectedGroups();
         if (_host is null || _selectedNodes.Count == 0) return false;
         var selectedIds = _selectedNodes.Select(node => node.NodeId)
             .Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToArray();
@@ -1523,6 +1551,8 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Deterministically selects a materialized node for STA tests and hosts.</summary>
     public bool SelectNode(GraphEditorNodeViewModel? node)
     {
+        _selectedGroups.Clear();
+        DrawCommentFrames();
         var oldNode = _selectedNode;
         var oldConnection = _selectedConnection;
         if (node is null || !_nodeVisuals.ContainsKey(node))
@@ -1539,6 +1569,7 @@ public partial class CanonicalGraphEditorView : UserControl
     /// <summary>Selects unique materialized node IDs, optionally adding them to the current set.</summary>
     public bool SelectNodes(IEnumerable<string> nodeIds, bool additive = false)
     {
+        if (!additive) { _selectedGroups.Clear(); DrawCommentFrames(); }
         ArgumentNullException.ThrowIfNull(nodeIds);
         var requested = nodeIds.Where(id => !string.IsNullOrWhiteSpace(id))
             .Distinct(StringComparer.Ordinal).ToArray();
@@ -1571,6 +1602,7 @@ public partial class CanonicalGraphEditorView : UserControl
     public bool BeginMarqueeSelection(Point start, bool additive = false)
     {
         if (!IsFinite(start) || !_pointerState.Begin(GraphPointerMode.BoxSelect)) return false;
+        if (!additive) { _selectedGroups.Clear(); DrawCommentFrames(); }
         _pointerStart = start;
         _lastGraphPointer = start;
         _selectionBeforeMarquee = [.. _selectedNodes];
@@ -1639,6 +1671,8 @@ public partial class CanonicalGraphEditorView : UserControl
 
     public void ClearSelection()
     {
+        _selectedGroups.Clear();
+        DrawCommentFrames();
         var oldNode = _selectedNode;
         var oldConnection = _selectedConnection;
         ClearNodeSelection();
@@ -1806,6 +1840,7 @@ public partial class CanonicalGraphEditorView : UserControl
             return false;
         }
         _dragNode = node;
+        _groupDragBounds = new(_groupBounds, StringComparer.Ordinal);
         _pointerStart = start;
         _lastGraphPointer = start;
         _dragOrigins = _selectedNodes.ToDictionary(selected => selected,
@@ -1838,7 +1873,8 @@ public partial class CanonicalGraphEditorView : UserControl
         foreach (var (node, origin) in _dragOrigins)
             _host?.SetNodePosition(node.NodeId, Safe(origin.X + delta.X), Safe(origin.Y + delta.Y));
         _lastGraphPointer = _pointerStart + delta;
-        UpdateSplicePreview(_lastGraphPointer, shiftPressed && _selectedNodes.Count == 1);
+        UpdateGroupDrop(_lastGraphPointer);
+        UpdateSplicePreview(_lastGraphPointer, !_gPressed && shiftPressed && _selectedNodes.Count == 1);
         return true;
     }
 
@@ -2014,6 +2050,8 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void CancelPointerGesture(bool releaseCapture = true)
     {
+        _activeGroupThumb?.CancelDrag();
+        ResetGroupGesture();
         var canceledMode = _pointerState.Mode;
         var oldNode = _selectedNode;
         var oldConnection = _selectedConnection;
@@ -2054,12 +2092,19 @@ public partial class CanonicalGraphEditorView : UserControl
             if (releaseCapture && Mouse.Captured == CanvasViewport) Mouse.Capture(null);
             if (canceledMode == GraphPointerMode.BoxSelect) NotifySelectionChanged(oldNode, oldConnection);
         }
-        finally { _canceling = false; }
+        finally { _canceling = false; DrawCommentFrames(); }
     }
 
     private void EndPointerGesture()
     {
-        if (_pointerState.Is(GraphPointerMode.NodeDrag)) _ = _host?.CommitLayoutMove();
+        if (_pointerState.Is(GraphPointerMode.NodeDrag) && _host is not null) {
+            if (_gPressed && _gUsedForDrag && _nodeDragThresholdPassed) {
+                var before = _dragOrigins.ToDictionary(p => p.Key.NodeId, p => new GraphEditorNodePosition(p.Value.X, p.Value.Y));
+                var after = _dragOrigins.Keys.ToDictionary(n => n.NodeId, n => n.Position);
+                _host.CancelLayoutMove();
+                _host.CommitGroupMove(before, after, before.Keys, _groupDropTarget);
+            } else _host.CommitLayoutMove();
+        }
         if (_pointerState.Is(GraphPointerMode.BoxSelect))
             _selectionBeforeMarquee = [.. _selectedNodes];
         CancelPointerGesture();
@@ -2143,7 +2188,15 @@ public partial class CanonicalGraphEditorView : UserControl
             }
             return new[] { new Point(node.X, node.Y), new Point(node.X + width, node.Y + height) };
         });
+        DrawCommentFrames();
+        points = (points ?? []).Concat(_groupBounds.Values.SelectMany(bounds => new[] { bounds.TopLeft, bounds.BottomRight }));
         _viewportController.FitToBounds(points, new Size(CanvasViewport.ActualWidth, CanvasViewport.ActualHeight));
+        ApplyViewport();
+    }
+    public void FocusGroup(string id)
+    {
+        if (!SelectGroup(id) || !_groupBounds.TryGetValue(id, out var bounds)) return;
+        _viewportController.FitToBounds([bounds.TopLeft, bounds.BottomRight], new Size(CanvasViewport.ActualWidth, CanvasViewport.ActualHeight));
         ApplyViewport();
     }
     public void FocusNode(GraphEditorNodeViewModel node)

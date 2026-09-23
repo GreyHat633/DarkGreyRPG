@@ -14,8 +14,8 @@ public partial class CanonicalGraphEditorView
 
     public bool CopySelectedNodes()
     {
-        if (Host is not { Scope: not GraphScope.Project } host || Clipboard is not { } clipboard || _selectedNodes.Count == 0) return false;
-        try { clipboard.CopyFrom(ClipboardWorkspace!, _selectedNodes.Select(n => n.NodeId), false); return true; }
+        if (Host is not { Scope: not GraphScope.Project } host || Clipboard is not { } clipboard || _selectedNodes.Count == 0 && _selectedGroups.Count == 0) return false;
+        try { clipboard.CopyFrom(ClipboardWorkspace!, _selectedNodes.Select(n => n.NodeId), false, _selectedGroups); return true; }
         catch (Exception exception) { ClipboardMessage(exception.Message); return false; }
     }
 
@@ -45,9 +45,11 @@ public partial class CanonicalGraphEditorView
             }
             void Redo() { resources.Redo(); try { metadata.Redo(); } catch { resources.Undo(); throw; } }
             void Undo() { metadata.Undo(); try { resources.Undo(); } catch { metadata.Redo(); throw; } }
+            var groupIds = clipboard.Frames.ToDictionary(f => f.Id, _ => Guid.NewGuid().ToString("N"));
             var frames = host.FrameSnapshot().Concat(clipboard.Frames.Select(frame => frame with
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = groupIds[frame.Id],
+                Groups = frame.Groups.Where(groupIds.ContainsKey).Select(id => groupIds[id]).ToArray(),
                 X = point.X + frame.X - minX + offset,
                 Y = point.Y + frame.Y - minY + offset,
                 Members = frame.Members.Where(ids.ContainsKey).Select(id => ids[id]).ToArray()
@@ -98,7 +100,7 @@ public partial class CanonicalGraphEditorView
         var paste = FluentContextMenuFactory.CreateSubmenu("粘贴");
         if (point is { } location)
         {
-            copy.Items.Add(FluentContextMenuFactory.CreateItem("节点", () => CopySelectedNodes(), _selectedNodes.Count > 0));
+            copy.Items.Add(FluentContextMenuFactory.CreateItem("节点", () => CopySelectedNodes(), _selectedNodes.Count > 0 || _selectedGroups.Count > 0));
             paste.Items.Add(FluentContextMenuFactory.CreateItem("节点", () => PasteNodes(location), !IsReadOnly && Clipboard?.Nodes is not null));
         }
         copy.Items.Add(FluentContextMenuFactory.CreateItem("参数", () => { if (node is not null) CopyNodeParameters(node); }, node is not null && Host?.Scope != GraphScope.Project));

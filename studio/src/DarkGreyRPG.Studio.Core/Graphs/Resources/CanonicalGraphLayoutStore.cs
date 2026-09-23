@@ -29,7 +29,16 @@ public sealed class CanonicalGraphLayoutStore
     public string LayoutPath { get; }
 
     public IReadOnlyList<GraphCommentFrame> LoadFrames(string graphKey)
-        => ReadDocument()?.Frames?.GetValueOrDefault(graphKey)?.Where(frame => frame is not null && frame.IsValid).ToArray() ?? [];
+    {
+        var frames = ReadDocument()?.Frames?.GetValueOrDefault(graphKey)?.Where(frame => frame is not null && frame.IsValid).ToArray() ?? [];
+        if (frames.Length > 0 && File.Exists(LayoutPath))
+        {
+            var text = File.ReadAllText(LayoutPath);
+            var backup = LayoutPath + ".before-groups-0333.bak";
+            if (!text.Contains("\"groups\"", StringComparison.Ordinal) && !File.Exists(backup)) File.Copy(LayoutPath, backup, overwrite: false);
+        }
+        return frames;
+    }
 
     public void SaveFrames(string graphKey, IEnumerable<GraphCommentFrame> frames)
     {

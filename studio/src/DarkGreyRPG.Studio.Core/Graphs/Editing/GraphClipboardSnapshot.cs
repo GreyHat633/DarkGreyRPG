@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 
@@ -35,7 +35,7 @@ public sealed class GraphClipboardSnapshot
         {
             if (node.Type == "line")
             {
-                if (CanonicalSessionLineSchema.Validate(node).Count != 0)
+                if (CanonicalSessionLineSchema.HasErrors(node))
                     throw new InvalidOperationException("台词句子数据无效，无法粘贴。请先修复问题列表中的台词错误。");
                 var pages = CanonicalSessionLineSchema.ReadPages(node);
                 foreach (var page in pages) page["page_id"] = JsonSerializer.SerializeToElement($"page_{Guid.NewGuid():N}");

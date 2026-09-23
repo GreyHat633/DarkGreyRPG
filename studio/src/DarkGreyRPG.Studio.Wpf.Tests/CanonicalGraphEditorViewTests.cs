@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -86,7 +86,7 @@ public sealed class CanonicalGraphEditorViewTests
         var navigated = false;
         view.NodeEditRequested += _ => navigated = true;
         view.RequestNodeEdit(host.Nodes.Single(node => node.NodeId == "target"));
-        Assert.IsTrue(navigated);
+        Assert.IsFalse(navigated); // Ordinary action nodes have no child flow graph.
         Assert.AreEqual(before, host.Session.UndoCount);
     }
 
@@ -964,18 +964,17 @@ public sealed class CanonicalGraphEditorViewTests
         var host = new GraphEditorHostViewModel(Graph(GraphScope.Session), GraphScope.Session);
         var view = Arrange(host, ids.Dequeue);
 
+        Assert.IsTrue(view.SelectNode("source"));
+        var graphBeforeMenu = host.Graph.ToJson();
         var menu = view.CreateCanvasContextMenu(new Point(73.5, 144.25));
-        Assert.HasCount(5, menu.Items);
-        var frameMenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "创建分组框"));
-        var graphBeforeFrame = host.Graph.ToJson();
-        frameMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-        Assert.HasCount(1, host.Frames);
-        Assert.AreEqual(graphBeforeFrame, host.Graph.ToJson());
-        foreach (var header in new[] { "复制", "粘贴" })
-        {
-            var submenu = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, header));
-            CollectionAssert.AreEqual(new[] { "节点", "参数" }, submenu.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
-        }
+        Assert.IsEmpty(view.SelectedNodes);
+        Assert.IsEmpty(view.SelectedGroups);
+        Assert.AreEqual(graphBeforeMenu, host.Graph.ToJson());
+        CollectionAssert.AreEqual(new[] { "添加", "粘贴" },
+            menu.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
+        var paste = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "粘贴"));
+        CollectionAssert.AreEqual(new[] { "节点" }, paste.Items.OfType<MenuItem>().Select(item => (string)item.Header).ToArray());
+        Assert.IsFalse(paste.Items.OfType<MenuItem>().Single().IsEnabled);
         var add = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "添加"));
         Assert.AreEqual("添加", add.Header);
         CollectionAssert.AreEqual(
@@ -1160,7 +1159,7 @@ public sealed class CanonicalGraphEditorViewTests
         var menu = view.CreateNodeContextMenu(host.Nodes.Single(node => node.NodeId == "b"));
         CollectionAssert.AreEquivalent(new[] { "a", "b" },
             view.SelectedNodes.Select(node => node.NodeId).ToArray());
-        menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "编辑"))
+        menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "流程图"))
             .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         Assert.IsEmpty(edits);
         CollectionAssert.AreEquivalent(new[] { "a", "b" },
@@ -1177,9 +1176,10 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsTrue(view.SelectNodes(["a", "b"]));
         var singleMenu = view.CreateNodeContextMenu(host.Nodes.Single(node => node.NodeId == "c"));
         CollectionAssert.AreEqual(new[] { "c" }, view.SelectedNodes.Select(node => node.NodeId).ToArray());
-        singleMenu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "编辑"))
+        singleMenu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "流程图"))
             .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-        CollectionAssert.AreEqual(new[] { "c" }, edits);
+        Assert.IsEmpty(edits);
+        Assert.IsFalse(singleMenu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "流程图")).IsEnabled);
     }
 
     [STATestMethod]

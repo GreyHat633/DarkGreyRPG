@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -265,7 +265,11 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
     }
 
     private sealed record GraphHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
-        : HostHistoryEntry(DisplacedRedo);
+        : HostHistoryEntry(DisplacedRedo)
+    {
+        public IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? BeforeFrames { get; init; }
+        public IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? AfterFrames { get; init; }
+    }
 
     private sealed record EditorHistoryEntry(Action Undo, Action Redo, IReadOnlyList<HostHistoryEntry> DisplacedRedo)
         : HostHistoryEntry(DisplacedRedo);
@@ -646,7 +650,19 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         => ExecuteSession(() => _session.RemoveNode(nodeId, confirmReferencedRemoval));
 
     public bool RemoveNodes(IReadOnlyList<string> nodeIds, bool confirmReferencedRemoval = false)
-        => ExecuteSession(() => _session.RemoveNodes(nodeIds, confirmReferencedRemoval));
+        {
+        if (nodeIds.Any(RejectReadOnlySource)) return false;
+        var before = _frames.ToArray();
+        if (!ExecuteSession(() => _session.RemoveNodes(nodeIds, confirmReferencedRemoval))) return false;
+        var after = DarkGreyRPG.Studio.Core.Graphs.Resources.GraphGroupOperations.Clean(FrameSnapshot());
+        if (_undoHistory.TryPeek(out var entry) && entry is GraphHistoryEntry graphEntry)
+        {
+            _undoHistory.Pop();
+            _undoHistory.Push(graphEntry with { BeforeFrames = before, AfterFrames = after });
+        }
+        ApplyFrames(after);
+        return true;
+    }
 
     /// <summary>
     /// Resolves the dragged node's unique same-kind input and/or output and
@@ -1067,7 +1083,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var oldRedo = CanRedo;
         var result = entry switch
         {
-            GraphHistoryEntry => ApplyGraphHistory(_commandBridge.Undo, () => _commandBridge.LastValidationIssues),
+            GraphHistoryEntry graph => ApplyGraphHistory(_commandBridge.Undo, () => _commandBridge.LastValidationIssues, graph.BeforeFrames),
             LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.Before, publishChange: true),
             EditorHistoryEntry metadata => ApplyEditorHistory(metadata.Undo),
             _ => false,
@@ -1086,7 +1102,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var oldRedo = CanRedo;
         var result = entry switch
         {
-            GraphHistoryEntry => ApplyGraphHistory(_commandBridge.Redo, () => _commandBridge.LastValidationIssues),
+            GraphHistoryEntry graph => ApplyGraphHistory(_commandBridge.Redo, () => _commandBridge.LastValidationIssues, graph.AfterFrames),
             LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.After, publishChange: true),
             EditorHistoryEntry metadata => ApplyEditorHistory(metadata.Redo),
             _ => false,
@@ -1191,7 +1207,8 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
 
     private bool ApplyGraphHistory(
         Func<bool> command,
-        Func<IReadOnlyList<ValidationIssue>> issues)
+        Func<IReadOnlyList<ValidationIssue>> issues,
+        IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? frames = null)
     {
         var beforePorts = CapturePortSignatures();
         var beforeNodes = CaptureNodeSignatures();
@@ -1202,6 +1219,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
             return false;
         }
         Refresh(issues());
+        if (frames is not null) ApplyFrames(frames);
         PublishGraphChanged();
         PublishPortsChanged(beforePorts);
         PublishNodesChanged(beforeNodes);
