@@ -11,13 +11,31 @@ import darkgrey.rpg.content.ModCreativeTabs;
 
 public final class BlockGramophone extends BlockContainer {
 
+    public static int clientRenderId = -1;
+
     public BlockGramophone() {
         super(Material.wood);
         setBlockName("darkgrey_rpg.gramophone");
-        setBlockTextureName("jukebox_side");
+        setBlockTextureName("darkgrey_rpg:gramophone");
+        setBlockBounds(0.0625F, 0, 0.0625F, 0.9375F, 1, 0.9375F);
         setHardness(2);
         setResistance(6000000);
         setCreativeTab(ModCreativeTabs.DARKGREY_RPG);
+    }
+
+    @Override
+    public boolean isOpaqueCube() {
+        return false;
+    }
+
+    @Override
+    public boolean renderAsNormalBlock() {
+        return false;
+    }
+
+    @Override
+    public int getRenderType() {
+        return clientRenderId;
     }
 
     @Override
@@ -49,7 +67,10 @@ public final class BlockGramophone extends BlockContainer {
     @Override
     public void breakBlock(World world, int x, int y, int z, net.minecraft.block.Block block, int meta) {
         TileEntity tile = world.getTileEntity(x, y, z);
-        if (tile instanceof TileGramophone) GramophoneLocalServer.removed((TileGramophone) tile);
+        if (tile instanceof TileGramophone) {
+            GramophoneServer.remove((TileGramophone) tile);
+            GramophoneLocalServer.removed((TileGramophone) tile);
+        }
         super.breakBlock(world, x, y, z, block, meta);
     }
 

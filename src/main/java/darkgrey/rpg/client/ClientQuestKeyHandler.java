@@ -10,6 +10,21 @@ import cpw.mods.fml.common.gameevent.TickEvent;
 
 public final class ClientQuestKeyHandler {
 
+    private float lastVanillaMusicVolume = Float.NaN;
+
+    private void synchronizeVanillaMusicVolume() {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+        if (mc.gameSettings == null) return;
+        float volume = mc.gameSettings.getSoundLevel(net.minecraft.client.audio.SoundCategory.MUSIC);
+        if (Float.compare(volume, lastVanillaMusicVolume) == 0) return;
+        // 1.7.10 GameSettings notifies SoundManager before storing the new category value.
+        // Reapply after that write, so an already-playing vanilla track uses the actual slider value.
+        // SoundHandler limits this to its MUSIC category; DGR's independent sources are untouched.
+        mc.getSoundHandler()
+            .setSoundLevel(net.minecraft.client.audio.SoundCategory.MUSIC, volume);
+        lastVanillaMusicVolume = volume;
+    }
+
     private static final KeyBinding journalKey = new KeyBinding(
         "key.darkgrey_rpg.quest_journal",
         Keyboard.KEY_I,
@@ -46,6 +61,7 @@ public final class ClientQuestKeyHandler {
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) synchronizeVanillaMusicVolume();
         if (event.phase == TickEvent.Phase.END && historyKey.isPressed()) {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
             if (mc.thePlayer != null && (mc.currentScreen == null

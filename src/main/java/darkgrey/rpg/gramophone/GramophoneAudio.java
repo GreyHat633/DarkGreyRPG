@@ -110,9 +110,7 @@ public final class GramophoneAudio implements GramophonePlayback.Backend {
     @Override
     public void volume(float value) {
         Minecraft mc = Minecraft.getMinecraft();
-        gain = value * (float) PlayerUiPreferences.gramophoneVolume()
-            * mc.gameSettings.getSoundLevel(SoundCategory.MUSIC)
-            * mc.gameSettings.getSoundLevel(SoundCategory.MASTER);
+        gain = value * (float) PlayerUiPreferences.musicVolume() * mc.gameSettings.getSoundLevel(SoundCategory.MASTER);
     }
 
     @Override

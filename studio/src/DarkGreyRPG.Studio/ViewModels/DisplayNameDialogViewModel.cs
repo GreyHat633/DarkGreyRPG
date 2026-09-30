@@ -29,6 +29,7 @@ public sealed class DisplayNameDialogViewModel : ObservableObject
         set { if (SetProperty(ref _localId, value ?? string.Empty)) { OnPropertyChanged(nameof(ValidationText)); OnPropertyChanged(nameof(CanConfirm)); } }
     }
     public string ResourceLabel { get; }
+    public string NameLabel => ResourceLabel.Contains("角色") || ResourceLabel.Contains("物品") ? "资源名称" : "显示名称";
     public string Id { get; }
     public string Title => $"编辑{ResourceLabel}";
     public string IdentityText => $"{ResourceLabel} ID：{Id}";
@@ -48,6 +49,6 @@ public sealed class DisplayNameDialogViewModel : ObservableObject
     public string TagsText { get => _tagsText; set => SetProperty(ref _tagsText, value ?? string.Empty); }
     public IReadOnlyList<string> Tags => ResourceTagsInput.Parse(TagsText);
 
-    public string ValidationText => string.IsNullOrWhiteSpace(DisplayName) ? "显示名称不能为空。" : AllowIdentityEdit && NewId != Id && !DgrResourceId.IsFullId(NewId) ? "资源 ID 格式无效。" : string.Empty;
+    public string ValidationText => string.IsNullOrWhiteSpace(DisplayName) ? $"{NameLabel}不能为空。" : AllowIdentityEdit && NewId != Id && !DgrResourceId.IsFullId(NewId) ? "资源 ID 格式无效。" : string.Empty;
     public bool CanConfirm => ValidationText.Length == 0;
 }

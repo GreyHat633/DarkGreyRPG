@@ -231,6 +231,12 @@ public static class GraphNodeShapeValidator
                 || (node.Properties ?? []).ContainsKey(StoryStartSchema.RepeatPolicyProperty)))
             issues.AddRange(StoryStartSchema.Validate(node, compatibilityMode));
 
+        foreach (var property in node.Properties ?? [])
+        {
+            try { _ = DynamicContentText.ItemReferences(property.Value).ToArray(); }
+            catch (Exception error) when (error is System.Text.Json.JsonException or FormatException or InvalidOperationException or KeyNotFoundException)
+            { issues.Add(new("graph.dynamic_content.invalid", "动态内容无效：" + error.Message, property.Key, NodeId: node.Id)); }
+        }
         return issues;
     }
 

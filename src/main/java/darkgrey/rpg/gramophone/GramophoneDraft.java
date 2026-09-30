@@ -8,8 +8,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import net.minecraft.client.Minecraft;
-
 import darkgrey.rpg.network.MainThreadScheduler;
 
 /** One editor owns one draft and one preview source. Closing it never changes a server device. */
@@ -27,7 +25,7 @@ public final class GramophoneDraft {
             return t;
         });
     private final GuiGramophone owner;
-    private final Path directory;
+    private Path directory;
     private Future<?> future;
     private volatile boolean closed;
     private volatile int generation;
@@ -39,15 +37,13 @@ public final class GramophoneDraft {
     private boolean playing;
     private boolean resumeAfterSeek;
     private long startedAt;
+    private boolean preparing;
+    private String leaseKey;
+    private GramophoneClient.PreviewLease sharedLease;
 
     public GramophoneDraft(GuiGramophone owner) {
         this.owner = owner;
-        directory = Minecraft.getMinecraft().mcDataDir.toPath()
-            .resolve("DarkGreyRPG/Cache/Gramophone")
-            .resolve(
-                java.util.UUID.randomUUID()
-                    .toString());
-        GramophoneFiles.activate(directory);
+        directory = GramophoneClient.cacheDirectory();
     }
 
     public void choose() {
@@ -67,24 +63,62 @@ public final class GramophoneDraft {
     }
 
     public void online(String url) {
+        if (closed) return;
+        clear();
+        try {
+            String normalized = OnlineMusicSource.parse(url)
+                .canonical();
+            GramophonePacket config = new GramophonePacket();
+            config.source = normalized;
+            shared(config, url);
+            return;
+        } catch (IllegalArgumentException unresolved) { /* short links are normalized by the bounded IO worker */ }
         load(null, url);
+    }
+
+    public void saved(GramophonePacket config) {
+        if (closed || !config.source.startsWith("local:")) return;
+        shared(config, null);
+    }
+
+    private void shared(GramophonePacket config, String input) {
+        clear();
+        directory = GramophoneClient.cacheDirectory();
+        sharedLease = GramophoneClient.preview(config);
+        onlineInput = input;
+        canonical = config.source;
+        preparing = true;
+        label = "正在准备试听…";
+        tick();
+    }
+
+    public boolean preparing() {
+        return preparing;
+    }
+
+    public void cancelPreparation() {
+        clear();
+        label = "已取消试听准备";
     }
 
     private void load(Path local, String online) {
         if (closed) return;
         clear();
+        directory = GramophoneClient.cacheDirectory();
+        final Path workDirectory = directory;
         int ticket = ++generation;
         label = "正在检查音频…";
+        preparing = true;
         try {
             future = IO.submit(() -> {
                 Path target = null;
                 String normalizedSource = null;
                 try {
-                    GramophoneFiles.directory(directory);
+                    GramophoneFiles.directory(workDirectory);
                     if (local != null) {
                         if (!Files.isRegularFile(local) || Files.size(local) > OnlineMusicResolver.MAX_BYTES)
                             throw new IOException("请选择不超过 32 MiB 的 MP3 文件");
-                        target = Files.createTempFile(directory, "draft-", ".dgrmp3");
+                        target = Files.createTempFile(workDirectory, "draft-", ".dgrmp3");
                         try (java.io.InputStream input = Files.newInputStream(local);
                             java.io.OutputStream output = Files.newOutputStream(target)) {
                             byte[] buffer = new byte[16384];
@@ -102,30 +136,46 @@ public final class GramophoneDraft {
                         }
                     } else {
                         OnlineMusicSource resolved = OnlineMusicResolver.normalize(online);
-                        normalizedSource = resolved.canonical();
-                        target = OnlineMusicResolver.download(resolved, directory);
+                        MainThreadScheduler.scheduleClient(() -> {
+                            if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory))
+                                return;
+                            GramophonePacket config = new GramophonePacket();
+                            config.source = resolved.canonical();
+                            // Normalization is IO; admission and lease ownership remain on the client thread.
+                            future = null;
+                            shared(config, online);
+                        });
+                        return;
                     }
                     GramophoneMediaInfo info = GramophoneMediaInfo.inspect(target);
                     final String normalized = normalizedSource;
                     MainThreadScheduler.scheduleClient(() -> {
-                        if (closed || ticket != generation) {
+                        if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory)) {
                             GramophoneFiles.retire(info.path);
                             return;
                         }
-                        media = info;
+                        preparing = false;
+                        leaseKey = "preview:" + (normalized == null ? "local:" + info.hash : normalized);
+                        media = GramophoneClient.retainPreview(leaseKey, info);
                         label = local == null ? "在线试听已就绪"
                             : local.getFileName()
                                 .toString();
                         onlineInput = online;
                         canonical = normalized;
+                        if (local == null) toggle();
                     });
                 } catch (Exception e) {
                     GramophoneFiles.retire(target);
-                    MainThreadScheduler.scheduleClient(
-                        () -> { if (!closed && ticket == generation) label = "音频不可用：" + e.getMessage(); });
+                    MainThreadScheduler.scheduleClient(() -> {
+                        if (!closed && ticket == generation) {
+                            preparing = false;
+                            label = "音频不可用：" + e.getMessage();
+                        }
+                    });
                 }
             });
         } catch (java.util.concurrent.RejectedExecutionException e) {
+            preparing = false;
             label = "试听检查队列已满，请稍后重试";
         }
     }
@@ -176,6 +226,25 @@ public final class GramophoneDraft {
     }
 
     public void tick() {
+        if (!GramophoneClient.isCacheContext(directory)) {
+            clear();
+            directory = GramophoneClient.cacheDirectory();
+            label = "音频环境已重载，请重新试听";
+        }
+        if (preparing && sharedLease != null) {
+            try {
+                GramophoneMediaInfo ready = sharedLease.ready();
+                if (ready != null) {
+                    media = ready;
+                    preparing = false;
+                    label = "试听已就绪";
+                    toggle();
+                }
+            } catch (Exception exception) {
+                clear();
+                label = "音频不可用：" + exception.getMessage();
+            }
+        }
         if (preview == null) return;
         preview.volume(1);
         if (playing && !preview.playing() && System.nanoTime() - startedAt > TimeUnit.SECONDS.toNanos(1)) {
@@ -198,7 +267,14 @@ public final class GramophoneDraft {
         playing = false;
         resumeAfterSeek = false;
         position = 0;
-        if (media != null) GramophoneFiles.retire(media.path);
+        preparing = false;
+        if (sharedLease != null) sharedLease.close();
+        else if (media != null) {
+            if (leaseKey != null) GramophoneClient.releasePreview(leaseKey, media);
+            else GramophoneFiles.retire(media.path);
+        }
+        leaseKey = null;
+        sharedLease = null;
         media = null;
         onlineInput = null;
         canonical = null;
@@ -207,6 +283,5 @@ public final class GramophoneDraft {
     public void close() {
         closed = true;
         clear();
-        GramophoneFiles.release(directory);
     }
 }

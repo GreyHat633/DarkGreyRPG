@@ -37,7 +37,7 @@ public final class GramophoneLocalClient {
 
         final GramophoneMediaPacket request;
         final Object world = Minecraft.getMinecraft().theWorld;
-        final CompletableFuture<Path> future = new CompletableFuture<Path>();
+        final CompletableFuture<GramophoneMediaInfo> future = new CompletableFuture<GramophoneMediaInfo>();
         volatile Path path;
         int offset;
         long touched = System.nanoTime();
@@ -72,7 +72,7 @@ public final class GramophoneLocalClient {
         return packet;
     }
 
-    public static Future<Path> download(GramophonePacket config, Path directory) {
+    public static Future<GramophoneMediaInfo> download(GramophonePacket config, Path directory) {
         GramophoneMediaPacket request = packet(GramophoneMediaPacket.FETCH, config, config.source.substring(6));
         Download download = new Download(request);
         DOWNLOADS.put(request.token, download);
@@ -160,7 +160,7 @@ public final class GramophoneLocalClient {
                                     return;
                                 }
                                 DOWNLOADS.remove(packet.token);
-                                download.future.complete(download.path);
+                                download.future.complete(info);
                             });
                         } else MainThreadScheduler.scheduleClient(() -> {
                             if (!current(download)) {

@@ -166,7 +166,8 @@ public final class GuiDialogueScreen extends GuiScreen {
 
         drawRect(left, top, right, bottom, 0xF02B2F4A); // Deep Space bg
         drawRect(left, top, right, top + 2, 0xFF7D8CFF); // Deep Space Accent
-        drawCenteredString(fontRendererObj, frame.getDialogueId(), width / 2, top + 12, 0xAAEEF0FF); // Secondary text
+        darkgrey.rpg.client.gui.DgrUiText
+            .centered(fontRendererObj, frame.getDialogueId(), width / 2, top + 12, 0xAAEEF0FF); // Secondary text
 
         int textTop = top + 38;
         if (!frame.getSpeakerName()

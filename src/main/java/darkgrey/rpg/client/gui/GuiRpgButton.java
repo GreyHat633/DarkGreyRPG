@@ -6,6 +6,8 @@ import net.minecraft.client.gui.GuiButton;
 /** Bounded vanilla button interaction with the Dialogue panel palette. */
 public final class GuiRpgButton extends GuiButton {
 
+    public boolean selected;
+
     public GuiRpgButton(int id, int x, int y, int width, int height, String text) {
         super(id, x, y, width, height, text);
     }
@@ -17,19 +19,19 @@ public final class GuiRpgButton extends GuiButton {
             && mouseX < xPosition + width
             && mouseY >= yPosition
             && mouseY < yPosition + height;
-        int border = !enabled ? DgrUiPalette.DISABLED : hover ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.BORDER;
+        int border = !enabled ? DgrUiPalette.DISABLED
+            : hover || selected ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.BORDER;
         drawRect(xPosition, yPosition, xPosition + width, yPosition + height, border);
         drawRect(
             xPosition + 1,
             yPosition + 1,
             xPosition + width - 1,
             yPosition + height - 1,
-            hover ? DgrUiPalette.HOVER : DgrUiPalette.SUB_PANEL);
-        drawCenteredString(
-            mc.fontRenderer,
+            selected ? DgrUiPalette.SELECTED_FILL : hover ? DgrUiPalette.HOVER : DgrUiPalette.SUB_PANEL);
+        mc.fontRenderer.drawString(
             displayString,
-            xPosition + width / 2,
+            xPosition + (width - mc.fontRenderer.getStringWidth(displayString)) / 2,
             yPosition + (height - 8) / 2,
-            !enabled ? DgrUiPalette.DISABLED : hover ? DgrUiPalette.TEXT : DgrUiPalette.TEXT);
+            !enabled ? DgrUiPalette.DISABLED : DgrUiPalette.TEXT);
     }
 }

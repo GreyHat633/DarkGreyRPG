@@ -18,10 +18,12 @@ public final class GuiGramophone extends GuiScreen {
     private boolean initialized, enabled, redstone, showRange, local, confirming, uploading, seeking;
     private String status = "仅支持公开可完整播放的 QQ / 网易云单曲";
     private int left, top, panelWidth;
+    private int scroll;
     private GramophoneDraft draft;
 
     public GuiGramophone(GramophonePacket config) {
         this.config = config;
+        showRange = GramophoneClient.rangeShown(config);
         enabled = config.enabled;
         redstone = config.redstone;
         local = config.source.startsWith("local:");
@@ -65,20 +67,34 @@ public final class GuiGramophone extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         if (!showRange) drawDefaultBackground();
-        drawRect(
-            left,
-            top,
-            left + panelWidth,
-            top + geometry.height,
-            showRange ? (DgrUiPalette.WINDOW_PANEL & 0x00FFFFFF) | 0x70000000 : DgrUiPalette.WINDOW_PANEL);
-        drawCenteredString(fontRendererObj, "环境留声机", left + panelWidth / 2, top + 8, DgrUiPalette.TEXT);
+        drawRect(left, top, left + panelWidth, top + geometry.height, DgrUiPalette.WINDOW_PANEL);
+        darkgrey.rpg.client.gui.DgrUiText
+            .centered(fontRendererObj, "环境留声机", left + panelWidth / 2, top + 8, DgrUiPalette.TEXT);
+        scroll = Math.min(scroll, Math.max(0, 218 - (geometry.height - 36)));
+        net.minecraft.client.gui.ScaledResolution resolution = new net.minecraft.client.gui.ScaledResolution(
+            mc,
+            mc.displayWidth,
+            mc.displayHeight);
+        int factor = resolution.getScaleFactor();
+        org.lwjgl.opengl.GL11.glPushAttrib(org.lwjgl.opengl.GL11.GL_SCISSOR_BIT);
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
+        org.lwjgl.opengl.GL11.glScissor(
+            (left + 6) * factor,
+            mc.displayHeight - (top + geometry.height - 36) * factor,
+            (panelWidth - 12) * factor,
+            Math.max(0, geometry.height - 60) * factor);
+        org.lwjgl.opengl.GL11.glPushMatrix();
+        org.lwjgl.opengl.GL11.glTranslatef(0, -scroll, 0);
+        card(25, 82);
+        card(84, 136);
+        card(138, 178);
         button(left + 12, top + 30, 110, enabled ? "播放：开启" : "播放：关闭");
         button(left + 132, top + 30, panelWidth - 144, redstone ? "红石控制：开启" : "红石控制：关闭");
         fontRendererObj.drawString("范围（0–128）", left + 12, top + 65, DgrUiPalette.TEXT);
         radius.drawTextBox();
         button(left + 170, top + 59, panelWidth - 182, showRange ? "隐藏范围" : "显示范围");
         button(left + 12, top + 87, 100, local ? "来源：本地" : "来源：在线");
-        button(left + 122, top + 87, panelWidth - 134, local ? "导入 MP3" : "解析并准备试听");
+        if (local) button(left + 122, top + 87, panelWidth - 134, "导入 MP3");
         if (local) fontRendererObj.drawString(
             fontRendererObj.trimStringToWidth(
                 draft.media == null && config.source.startsWith("local:") ? "已保存本地音乐；可导入替换" : draft.label,
@@ -87,7 +103,7 @@ public final class GuiGramophone extends GuiScreen {
             top + 119,
             DgrUiPalette.TEXT);
         else source.drawTextBox();
-        button(left + 12, top + 142, 65, draft.playing() ? "暂停试听" : "播放试听");
+        button(left + 12, top + 142, 65, draft.preparing() ? "取消准备" : draft.playing() ? "暂停试听" : "▶ 试听");
         int waveLeft = left + 86, waveWidth = panelWidth - 98;
         drawRect(waveLeft, top + 139, waveLeft + waveWidth, top + 162, DgrUiPalette.SUB_PANEL);
         if (draft.media != null) {
@@ -111,6 +127,14 @@ public final class GuiGramophone extends GuiScreen {
             left + 12,
             top + 203,
             DgrUiPalette.SECONDARY);
+        org.lwjgl.opengl.GL11.glPopMatrix();
+        org.lwjgl.opengl.GL11.glPopAttrib();
+        drawRect(
+            left + 8,
+            top + geometry.height - 33,
+            left + panelWidth - 8,
+            top + geometry.height - 32,
+            DgrUiPalette.BORDER);
         int bottom = top + geometry.height - 28;
         button(left + 12, bottom, 64, "保存");
         button(left + 86, bottom, 78, "删除音乐");
@@ -124,6 +148,26 @@ public final class GuiGramophone extends GuiScreen {
             button(left + panelWidth - 90, top + 148, 70, "取消");
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    private void card(int start, int end) {
+        drawRect(left + 8, top + start, left + panelWidth - 8, top + end, DgrUiPalette.BORDER);
+        drawRect(left + 9, top + start + 1, left + panelWidth - 9, top + end - 1, DgrUiPalette.WINDOW_CONTENT);
+    }
+
+    @Override
+    public void handleMouseInput() {
+        super.handleMouseInput();
+        int wheel = org.lwjgl.input.Mouse.getEventDWheel();
+        int x = org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth;
+        int y = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (!confirming && wheel != 0
+            && x >= left + 6
+            && x < left + panelWidth - 6
+            && y >= top + 24
+            && y < top + geometry.height - 36)
+            scroll = Math
+                .max(0, Math.min(Math.max(0, 218 - (geometry.height - 36)), scroll - Integer.signum(wheel) * 20));
     }
 
     private static String time(double seconds) {
@@ -156,13 +200,23 @@ public final class GuiGramophone extends GuiScreen {
         }
         if (uploading) return;
         if (geometry.begin(x, y, button)) return;
+        if (y >= bottom && y < bottom + 20) {
+            if (x >= left + 12 && x < left + 76) save(false);
+            if (x >= left + 86 && x < left + 164) save(true);
+            return;
+        }
+        if (y < top + 24 || y >= top + geometry.height - 36) return;
+        y += scroll;
         if (!local) source.mouseClicked(x, y, button);
         radius.mouseClicked(x, y, button);
         if (y >= top + 30 && y < top + 50) {
             if (x >= left + 12 && x < left + 122) enabled = !enabled;
             if (x >= left + 132 && x < left + panelWidth - 12) redstone = !redstone;
         }
-        if (y >= top + 59 && y < top + 79 && x >= left + 170 && x < left + panelWidth - 12) showRange = !showRange;
+        if (y >= top + 59 && y < top + 79 && x >= left + 170 && x < left + panelWidth - 12) {
+            showRange = !showRange;
+            GramophoneClient.showRange(config, showRange);
+        }
         if (y >= top + 87 && y < top + 107) {
             if (x >= left + 12 && x < left + 112) {
                 local = !local;
@@ -171,20 +225,24 @@ public final class GuiGramophone extends GuiScreen {
             }
             if (x >= left + 122 && x < left + panelWidth - 12) {
                 if (local) draft.choose();
-                else draft.online(source.getText());
             }
         }
         if (y >= top + 139 && y < top + 164) {
-            if (x >= left + 12 && x < left + 77) draft.toggle();
+            if (x >= left + 12 && x < left + 77) {
+                if (draft.preparing()) draft.cancelPreparation();
+                else if (!local && (draft.media == null || !source.getText()
+                    .equals(draft.onlineInput)
+                    && !source.getText()
+                        .equals(draft.canonical)))
+                    draft.online(source.getText());
+                else if (local && draft.media == null && config.source.startsWith("local:")) draft.saved(config);
+                else draft.toggle();
+            }
             if (x >= left + 86 && x < left + panelWidth - 12) {
                 seeking = true;
                 draft.beginSeek();
                 seek(x);
             }
-        }
-        if (y >= bottom && y < bottom + 20) {
-            if (x >= left + 12 && x < left + 76) save(false);
-            if (x >= left + 86 && x < left + 164) save(true);
         }
     }
 
@@ -202,6 +260,10 @@ public final class GuiGramophone extends GuiScreen {
         } catch (NumberFormatException ignored) {
             return null;
         }
+    }
+
+    public String deviceKey() {
+        return config.key();
     }
 
     private GramophonePacket request(boolean delete) {
@@ -272,7 +334,11 @@ public final class GuiGramophone extends GuiScreen {
             mc.displayGuiScreen(null);
             return;
         }
-        if (!local) source.textboxKeyTyped(character, key);
+        if (!local) {
+            String before = source.getText();
+            source.textboxKeyTyped(character, key);
+            if (!before.equals(source.getText())) draft.clear();
+        }
         radius.textboxKeyTyped(character, key);
     }
 

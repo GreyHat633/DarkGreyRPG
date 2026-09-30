@@ -42,6 +42,20 @@ public sealed class ResourceRenameMap
         var graph = source.Graph ?? throw new InvalidOperationException("Resource graph is missing.");
         foreach (var node in graph.Nodes)
         {
+            foreach (var key in node.Properties.Keys.ToArray())
+                node.Properties[key] = Graphs.Definitions.DynamicContentText.Rewrite(node.Properties[key], ResolveDynamicItem, id => Resolve(DgrResourceKind.Actor, id));
+            if (source.ResourceKind == GraphResourceKind.Session && node.Type == "choice"
+                && node.Properties.TryGetValue("options", out var options))
+                foreach (var option in options.EnumerateArray())
+                {
+                    var text = option.GetProperty("display_text").GetString()!;
+                    foreach (var port in node.Ports)
+                    {
+                        if (port.Id == option.GetProperty("flow_port_id").GetString()) port.DisplayName = text;
+                        else if (port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Logic
+                            && port.Id == option.GetProperty("option_id").GetString()) port.DisplayName = "已选择：" + text;
+                    }
+                }
             CanonicalTaskRewardReferences.Rewrite(node, source.ResourceKind, Resolve);
             if (source.ResourceKind == GraphResourceKind.Story)
             {
@@ -78,7 +92,15 @@ public sealed class ResourceRenameMap
             }
         }
         return new(source.ResourceKind, Resolve(Kind(source.ResourceKind), source.Id), source.DisplayName, graph)
-            { SchemaVersion = source.SchemaVersion, Tags = source.Tags.ToArray(), TaskMetadata = source.TaskMetadata };
+            { SchemaVersion = source.SchemaVersion, Tags = source.Tags.ToArray(), TaskMetadata = source.TaskMetadata is null ? null
+                : new CanonicalTaskMetadata(Graphs.Definitions.DynamicContentText.Rewrite(JsonSerializer.SerializeToElement(source.TaskMetadata.Description), ResolveDynamicItem, id => Resolve(DgrResourceKind.Actor, id)).GetString()!) };
+    }
+
+    private string ResolveDynamicItem(string id)
+    {
+        var item = Resolve(DgrResourceKind.Item, id); var group = Resolve(DgrResourceKind.ItemGroup, id);
+        if (item != id && group != id && item != group) throw new InvalidOperationException($"Dynamic item '{id}' has ambiguous renames.");
+        return item != id ? item : group;
     }
 
     public CanonicalStoryMembershipManifest Rewrite(CanonicalStoryMembershipManifest source)

@@ -27,6 +27,7 @@ public final class DialogueNetwork {
     public static final int TASK_SUBMIT_CHOOSER_SELECTION_DISCRIMINATOR = 27;
     public static final int STORY_MEDIA_PLAN_DISCRIMINATOR = 28;
     public static final int CHOICE_RECEIPT_DISCRIMINATOR = 29;
+    public static final int PLAYER_INSPECTION_DISCRIMINATOR = 30;
 
     public static final SimpleNetworkWrapper CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel(DarkGreyRpg.MOD_ID);
     private static boolean registered;
@@ -35,6 +36,9 @@ public final class DialogueNetwork {
 
     public static synchronized void registerCommon() {
         if (registered) return;
+        // The codec maps a class to one discriminator; handlers are independently installed on each side.
+        CHANNEL.registerMessage(darkgrey.rpg.diagnostics.PlayerStatePacket.Server.class, darkgrey.rpg.diagnostics.PlayerStatePacket.class, PLAYER_INSPECTION_DISCRIMINATOR, Side.SERVER);
+        CHANNEL.registerMessage(darkgrey.rpg.diagnostics.PlayerStatePacket.Client.class, darkgrey.rpg.diagnostics.PlayerStatePacket.class, PLAYER_INSPECTION_DISCRIMINATOR, Side.CLIENT);
         CHANNEL.registerMessage(S2CQuestJournal.Handler.class, S2CQuestJournal.class, 3, Side.CLIENT);
         CHANNEL.registerMessage(C2SQuestJournalRequest.Handler.class, C2SQuestJournalRequest.class, 4, Side.SERVER);
         CHANNEL.registerMessage(CanonicalSessionActionHandler.class, CanonicalSessionAction.class, 5, Side.SERVER);

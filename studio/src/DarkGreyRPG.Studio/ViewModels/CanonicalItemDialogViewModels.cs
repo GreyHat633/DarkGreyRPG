@@ -125,7 +125,7 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
                 .ToList();
             if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
                 messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
-            if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("显示名称不能为空。");
+            if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("资源名称不能为空。");
             if (Tags.Any(string.IsNullOrWhiteSpace)) messages.Add("标签不能为空。");
             if (Tags.Count != Tags.Distinct(StringComparer.Ordinal).Count()) messages.Add("标签不能重复。");
             return string.Join(Environment.NewLine, messages);

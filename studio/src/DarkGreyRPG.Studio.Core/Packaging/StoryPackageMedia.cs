@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -30,7 +30,7 @@ internal static class StoryPackageMedia
             {
                 if (node.Type == "line")
                 {
-                    if (Graphs.Definitions.CanonicalSessionLineSchema.Validate(node).Count != 0)
+                    if (Graphs.Definitions.CanonicalSessionLineSchema.HasErrors(node))
                         throw new StoryPackageException("台词数据无效，无法确定全部媒体引用。");
                     foreach (var page in Graphs.Definitions.CanonicalSessionLineSchema.ReadPages(node))
                         if (page.TryGetValue("voice_ref", out var voice)) Add(voice);

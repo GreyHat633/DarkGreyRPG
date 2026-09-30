@@ -22,6 +22,7 @@ public final class PlayerPreferences0332Probe {
             source.setProperty("dialogue.opacity", "NaN");
             source.setProperty("audio.voice", "-1");
             source.setProperty("audio.sessionMusic", "0.5");
+            source.setProperty("audio.gramophone", "0");
             try (FileOutputStream out = new FileOutputStream(file)) {
                 source.store(out, "probe");
             }
@@ -34,9 +35,12 @@ public final class PlayerPreferences0332Probe {
             PlayerUiPreferences.setTextScale(1.5);
             PlayerUiPreferences.setOpacity(0);
             DialoguePreferences.setSpeed(0);
+            PlayerUiPreferences.setAutomatic(true);
             settings.savePlayerPreferences();
             PlayerUiPreferences.reset();
+            PlayerUiPreferences.setAutomatic(false);
             new UtilityWindowSettings(file).loadPlayerPreferences();
+            check(PlayerUiPreferences.automatic(), "automatic persists on disk");
             check(
                 PlayerUiPreferences.theme() == PlayerUiPreferences.Theme.WHITE
                     && PlayerUiPreferences.textScale() == 1.5,
@@ -54,6 +58,8 @@ public final class PlayerPreferences0332Probe {
                 persisted.load(in);
             }
             check("keep".equals(persisted.getProperty("unknown.future")), "unknown retained");
+            check(!persisted.containsKey("audio.gramophone"), "obsolete independent volume removed");
+            check("3.0".equals(persisted.getProperty("dialogue.autoWaitSeconds")), "wait default persisted");
             check("444".equals(persisted.getProperty("window.task.width")), "reset preserves window");
             check(PlayerUiPreferences.Theme.values().length == 3, "exactly three themes");
             System.out.println("PLAYER_PREFERENCES_0332=PASS");

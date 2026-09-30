@@ -107,6 +107,7 @@ public final class CanonicalMediaClient {
         PRELOAD.clear();
         RUNNING.clear();
         VISIBLE.clear();
+        CanonicalMediaTextures.updateDemand(java.util.Collections.<String>emptySet());
         if (packages != null) packages.suspend();
         Iterator<State> states = ACTIVE.values()
             .iterator();
@@ -313,9 +314,15 @@ public final class CanonicalMediaClient {
     }
 
     private static void completed(State state, Path path) {
+        MediaLatencyTrace.event("file_ready", state.ref + ":" + state.id, state.started, "verified");
         state.ready = path;
         state.waiting = false;
-        if (packages != null) packages.markReady(state.ref);
+        if (packages != null) {
+            packages.markReady(state.ref);
+            if (MediaLatencyTrace.ENABLED) for (StoryMediaCacheIndex.Entry entry : packages.entries())
+                if (entry.refs.contains(state.ref) && entry.isReady())
+                    MediaLatencyTrace.event("package_ready", entry.id, 0, "refs=" + entry.refs.size());
+        }
         journalDirty = true;
         packagesDirty = true;
     }
@@ -349,26 +356,17 @@ public final class CanonicalMediaClient {
         }
         if (connection == null) return;
         for (StoryMediaCacheIndex.Entry entry : downloading) {
-            boolean busy = false;
-            for (String ref : entry.refs) {
-                State state = ACTIVE.get(ref);
-                if (state != null && state.ready == null) {
-                    busy = true;
-                    break;
+            String next = MediaDownloadSelection
+                .next(entry.refs, VISIBLE, PRELOAD.contains(entry.id), System.nanoTime(), ACTIVE::get);
+            if (next != null) {
+                State pending = ACTIVE.get(next);
+                if (pending == null) activate(next, null);
+                else {
+                    ACTIVE.remove(next);
+                    retire(pending);
+                    activate(next, null);
                 }
             }
-            if (busy) continue;
-            String next = null;
-            for (String ref : entry.refs) {
-                State state = ACTIVE.get(ref);
-                if (state != null && state.ready != null) continue;
-                if (VISIBLE.contains(ref)) {
-                    next = ref;
-                    break;
-                }
-                if (next == null && PRELOAD.contains(entry.id)) next = ref;
-            }
-            if (next != null) activate(next, null);
         }
     }
 
@@ -456,7 +454,10 @@ public final class CanonicalMediaClient {
         for (String ref : refs) if (darkgrey.rpg.graph.canonical.CanonicalMediaReference.isImage(ref)) imageCount++;
         CanonicalMediaTextures.configureImageCount(imageCount);
         VISIBLE.clear();
+        CanonicalMediaTextures.updateDemand(java.util.Collections.<String>emptySet());
         VISIBLE.addAll(refs);
+        CanonicalMediaTextures.updateDemand(refs);
+        MediaLatencyTrace.event("frame_media", frame.getStoryId() + ":" + frame.getLineEpoch(), 0, refs.toString());
         packagesDirty = true;
         if (packages != null) packages.touch(scope + frame.getStoryId());
         // Admission and package concurrency also apply to visible media. The server
@@ -466,6 +467,7 @@ public final class CanonicalMediaClient {
 
     public static void clear() {
         VISIBLE.clear();
+        CanonicalMediaTextures.updateDemand(java.util.Collections.<String>emptySet());
         portraitTransportId = -1;
         portraitStoryId = null;
         portraitSessionResourceId = null;
@@ -511,6 +513,11 @@ public final class CanonicalMediaClient {
         cache().unpin(ref);
     }
 
+    static AutoCloseable readLease(String ref) {
+        final VerifiedMediaCache store = cache();
+        return store.pin(ref) ? () -> store.unpin(ref) : null;
+    }
+
     public static Path ready(String ref) {
         State state = ACTIVE.get(ref);
         return !VISIBLE.contains(ref) || state == null ? null : state.ready;
@@ -530,6 +537,8 @@ public final class CanonicalMediaClient {
 
     private static void check(final State state) {
         state.retired = false;
+        state.started = System.nanoTime();
+        MediaLatencyTrace.event("file_check", state.ref + ":" + state.id, 0, "begin");
         final VerifiedMediaCache store = cache();
         if (!state.pinned) {
             state.pinned = store.pin(state.ref);
@@ -548,6 +557,7 @@ public final class CanonicalMediaClient {
                     found = store.available(state.ref);
                     if (found) {
                         CACHE_HITS.incrementAndGet();
+                        MediaLatencyTrace.event("cache_hit", state.ref, state.started, "verified_disk");
 
                     } else found = importFromLocalPackage(state, store);
                 } catch (Exception ignored) {}
@@ -569,6 +579,12 @@ public final class CanonicalMediaClient {
     public static void tick() {
         synchronizeConnection();
         initializeIndex();
+        for (State state : ACTIVE.values()) {
+            if (state.ready == null && !state.working && !state.waiting && System.nanoTime() >= state.retryAt) {
+                packagesDirty = true;
+                break;
+            }
+        }
         pumpPackages();
         maintainJournal();
         CanonicalMediaTextures.releaseInactive();
@@ -576,25 +592,26 @@ public final class CanonicalMediaClient {
         for (State state : ACTIVE.values()) {
             if (state.ready != null) {
                 // Start image decode as soon as the verified file is available, rather than
-                // waiting for the renderer's first lookup. This keeps the panel and portrait
-                // ready on the same render tick without blocking the client thread.
+                // waiting for the renderer's first lookup. Uploads remain tick-budgeted.
                 if (VISIBLE.contains(state.ref)
                     && darkgrey.rpg.graph.canonical.CanonicalMediaReference.isImage(state.ref))
                     CanonicalMediaTextures.get(state.ref);
                 continue;
             }
             if (state.working) continue;
-            if (state.waiting && now - state.sentAt > 2000000000L) request(state);
-            else if (!state.waiting && now >= state.retryAt) check(state);
+            if (state.waiting) request(state);
+            // Deferred failures are selected by pumpPackages, not independently restarted here.
         }
     }
 
     private static void request(State state) {
         if (!current(state) || Minecraft.getMinecraft().theWorld == null) return;
         state.waiting = true;
-        state.sentAt = System.nanoTime();
-        NETWORK_REQUESTS.incrementAndGet();
-        DialogueNetwork.CHANNEL.sendToServer(new CanonicalMediaRequest(state.id, state.ref, state.offset));
+        for (int offset : state.window.requests(System.nanoTime())) {
+            NETWORK_REQUESTS.incrementAndGet();
+            MediaLatencyTrace.event("network_chunk", state.ref + ":" + state.id, 0, "offset=" + offset);
+            DialogueNetwork.CHANNEL.sendToServer(new CanonicalMediaRequest(state.id, state.ref, offset));
+        }
     }
 
     /**
@@ -609,6 +626,7 @@ public final class CanonicalMediaClient {
         boolean imported = importFromLocalPackage(source, state.ref, state.id, store);
         if (imported) {
             LOCAL_PACKAGE_HITS.incrementAndGet();
+            MediaLatencyTrace.event("local_import", state.ref, state.started, "verified_package");
         }
         return imported;
     }
@@ -666,55 +684,64 @@ public final class CanonicalMediaClient {
 
     public static void accept(final CanonicalMediaChunk chunk) {
         final State state = ACTIVE.get(chunk.getMediaRef());
-        if (state == null || state.id != chunk.getRequestId() || state.ready != null || state.working) return;
+        if (state == null || state.id != chunk.getRequestId() || state.ready != null || state.retired) return;
         if (chunk.getTotal() == 0) {
             fail(state);
             return;
         }
-        if (chunk.getOffset() != state.offset) return;
-        state.waiting = false;
+        try {
+            if (!state.window.accept(chunk)) return;
+        } catch (IllegalArgumentException invalid) {
+            fail(state);
+            return;
+        }
+        request(state);
+        drainWindow(state);
+    }
+
+    private static void drainWindow(final State state) {
+        if (state.working || state.retired) return;
+        final java.util.List<CanonicalMediaChunk> batch = state.window.take();
+        if (batch.isEmpty()) return;
+        final VerifiedMediaCache store = cache();
         state.working = true;
-        work(state, new Runnable() {
-
-            @Override
-            public void run() {
-                boolean completed = false;
-                Exception failure = null;
-                try {
-                    if (state.download == null) state.download = cache.begin(state.id, state.ref, chunk.getTotal());
-                    completed = state.download.accept(chunk);
-                } catch (Exception exception) {
-                    failure = exception;
-                    close(state);
+        work(state, () -> {
+            boolean complete = false;
+            boolean failed = false;
+            try {
+                for (CanonicalMediaChunk part : batch) {
+                    if (state.retired) break;
+                    if (state.download == null) state.download = store.begin(state.id, state.ref, part.getTotal());
+                    complete = state.download.accept(part);
                 }
-                final boolean done = completed;
-                final boolean failed = failure != null;
-                MainThreadScheduler.scheduleClient(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (!current(state)) return;
-                        state.working = false;
-                        if (failed) {
-                            fail(state);
-                            return;
-                        }
-                        if (done) completed(state, cache.path(state.ref));
-                        else {
-                            state.offset += CanonicalMediaChunk.CHUNK_BYTES;
-                            request(state);
-                        }
-                    }
-                });
+            } catch (Exception failure) {
+                failed = true;
+                close(state);
             }
+            final boolean done = complete, bad = failed;
+            MainThreadScheduler.scheduleClient(() -> {
+                if (!current(state) || state.retired) return;
+                state.working = false;
+                if (bad) {
+                    fail(state);
+                    return;
+                }
+                state.window.written();
+                if (done) completed(state, store.path(state.ref));
+                else {
+                    request(state);
+                    drainWindow(state);
+                }
+            });
         });
     }
 
     private static void fail(State state) {
         state.waiting = false;
         state.working = false;
-        state.offset = 0;
         state.retryAt = System.nanoTime() + 5000000000L;
+        packagesDirty = true;
+        MediaLatencyTrace.event("file_retry", state.ref + ":" + state.id, state.started, "backoff_5s");
         retire(state);
     }
 
@@ -734,14 +761,13 @@ public final class CanonicalMediaClient {
                 }
             });
         } catch (RejectedExecutionException exception) {
-            state.working = false;
-            state.waiting = false;
-            state.retryAt = System.nanoTime() + 5000000000L;
+            fail(state);
         }
     }
 
     private static void retire(final State state) {
         state.retired = true;
+        state.window.clear();
         RETIRED.add(state);
         if (state.pinned) {
             cache.unpin(state.ref);
@@ -770,15 +796,27 @@ public final class CanonicalMediaClient {
         state.download = null;
     }
 
-    private static final class State {
+    private static final class State implements MediaDownloadSelection.State {
+
+        public boolean ready() {
+            return ready != null;
+        }
+
+        public boolean busy() {
+            return working || waiting;
+        }
+
+        public long retryAt() {
+            return retryAt;
+        }
 
         volatile boolean retired;
         volatile boolean music;
         final long id;
         final String ref;
         final LoadedStoryPackage localPackage;
-        int offset;
-        long sentAt;
+        final MediaTransferWindow window = new MediaTransferWindow();
+        long started;
         long retryAt;
         boolean waiting;
         boolean working;

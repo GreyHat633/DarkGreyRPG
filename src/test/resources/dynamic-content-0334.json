@@ -1,0 +1,62 @@
+[
+  {
+    "input": "欢迎 {{player_name}}，〔玩家名称〕",
+    "expected": "欢迎 {{player_name}}，〔玩家名称〕"
+  },
+  {
+    "input": "\u001eDGR1\u001f[\"你好 \",{\"type\":\"player_name\"},\" 等级 \",{\"type\":\"player_level\"},\" 数量 \",{\"type\":\"item_count\",\"item_id\":\"demo:iron\"}]",
+    "expected": "你好 Alice 等级 12 数量 3"
+  },
+  {
+    "input": "\u001eDGR1\u001f[\"\\u001eDGR1\\u001fliteral\"]",
+    "expected": "\u001eDGR1\u001fliteral"
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\":\"player_name\",\"type\":\"player_level\"}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\":\"unknown\"}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\":\"item_count\",\"item_id\":\"\"}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\":\"player_name\",\"item_id\":\"demo:iron\"}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\":1}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[\"quote \\\" slash \\\\ newline\\n中文\"]",
+    "expected": "quote \" slash \\ newline\n中文"
+  },
+  {
+    "input": "\u001eDGR1\u001f[\"literal\"] trailing",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\": \"actor_name\", \"actor_id\": \"demo:actor\"}]",
+    "expected": "3"
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\": \"item_name\", \"item_id\": \"demo:item\"}]",
+    "expected": "3"
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\": \"actor_name\", \"item_id\": \"demo:item\"}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\": \"item_name\", \"actor_id\": \"demo:actor\"}]",
+    "invalid": true
+  },
+  {
+    "input": "\u001eDGR1\u001f[{\"type\": \"actor_name\", \"actor_id\": \"\"}]",
+    "invalid": true
+  }
+]

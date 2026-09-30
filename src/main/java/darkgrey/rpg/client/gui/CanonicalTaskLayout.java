@@ -42,7 +42,7 @@ final class CanonicalTaskLayout {
         stacked = panelWidth < 470 || compact;
 
         int contentTop = Math.min(panelBottom - 1, panelTop + 28);
-        int contentBottom = Math.max(contentTop, panelBottom - 20);
+        int contentBottom = Math.max(contentTop, panelBottom - 28);
         if (stacked) {
             int listHeight = Math.max(36, (contentBottom - contentTop) / 3);
             listLeft = panelLeft + 8;

@@ -11,18 +11,20 @@ import org.lwjgl.input.Mouse;
 import darkgrey.rpg.client.session.DialogueBacklog;
 import darkgrey.rpg.client.session.DialogueHistoryClient;
 import darkgrey.rpg.client.session.PlayerReadingContext;
-import darkgrey.rpg.client.session.PlayerUiPreferences;
 
 /** Read-only reading overlay; close restores the controller's existing foreground. */
 public final class GuiDialogueHistory extends GuiScreen {
 
     private int scroll;
     private int maximumScroll;
+    private final java.util.Set<Integer> speakerLines = new java.util.HashSet<Integer>();
     private final List<String> lines = new ArrayList<String>();
     private long layoutRevision = -1;
     private String layoutContext;
     private int layoutWidth;
     private double layoutScale;
+    private long fontRevision = -1;
+    private boolean unicode;
     private boolean firstLayout = true;
 
     @Override
@@ -31,18 +33,28 @@ public final class GuiDialogueHistory extends GuiScreen {
         int left = Math.max(8, width / 10), right = width - left;
         drawRect(left, 16, right, height - 16, DgrUiPalette.WINDOW_PANEL);
         fontRendererObj.drawString("对话记录", left + 12, 26, DgrUiPalette.TEXT);
-        double scale = PlayerUiPreferences.textScale();
+        double scale = DialogueFontDrawing.scale();
         int lineHeight = (int) Math.ceil(fontRendererObj.FONT_HEIGHT * scale) + 3;
         String context = PlayerReadingContext.current();
         long revision = DialogueHistoryClient.HISTORY.revision();
         int wrapWidth = Math.max(1, (int) ((right - left - 36) / scale));
         if (revision != layoutRevision || !java.util.Objects.equals(context, layoutContext)
             || wrapWidth != layoutWidth
-            || scale != layoutScale) {
+            || scale != layoutScale
+            || fontRevision != darkgrey.rpg.client.ClientResourceRevision.current()
+            || unicode != fontRendererObj.getUnicodeFlag()) {
             lines.clear();
+            speakerLines.clear();
             for (DialogueBacklog.Entry entry : DialogueHistoryClient.HISTORY.entries(context)) {
-                String text = (entry.speaker.isEmpty() ? "" : entry.speaker + "：\n") + entry.text;
-                lines.addAll(fontRendererObj.listFormattedStringToWidth(text, wrapWidth));
+                if (!entry.speaker.isEmpty()) {
+                    for (String name : (List<String>) fontRendererObj
+                        .listFormattedStringToWidth(entry.speaker, wrapWidth)) {
+                        speakerLines.add(lines.size());
+                        lines.add(name);
+                    }
+                }
+                String text = entry.speaker.isEmpty() ? entry.text : "「" + entry.text + "」";
+                lines.addAll(fontRendererObj.listFormattedStringToWidth(text, wrapWidth - 8));
                 lines.add("");
             }
             if (lines.isEmpty()) lines.add("暂无对话记录");
@@ -50,6 +62,8 @@ public final class GuiDialogueHistory extends GuiScreen {
             layoutContext = context;
             layoutWidth = wrapWidth;
             layoutScale = scale;
+            fontRevision = darkgrey.rpg.client.ClientResourceRevision.current();
+            unicode = fontRendererObj.getUnicodeFlag();
         }
         int count = Math.max(1, (height - 82) / lineHeight);
         maximumScroll = Math.max(0, lines.size() - count);
@@ -58,8 +72,13 @@ public final class GuiDialogueHistory extends GuiScreen {
             firstLayout = false;
         }
         scroll = Math.min(scroll, maximumScroll);
-        for (int i = 0; i < count && i + scroll < lines.size(); i++) CanonicalDialogueRenderer
-            .drawText(fontRendererObj, lines.get(i + scroll), left + 12, 44 + i * lineHeight, scale, DgrUiPalette.TEXT);
+        for (int i = 0; i < count && i + scroll < lines.size(); i++) CanonicalDialogueRenderer.drawText(
+            fontRendererObj,
+            lines.get(i + scroll),
+            left + (speakerLines.contains(i + scroll) ? 12 : 20),
+            44 + i * lineHeight,
+            scale,
+            speakerLines.contains(i + scroll) ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.TEXT);
         fontRendererObj.drawString("滚轮阅读 · ESC 返回", left + 12, height - 30, DgrUiPalette.SECONDARY);
         if (maximumScroll > 0) {
             int rail = height - 88, thumb = Math.max(6, rail * count / lines.size());

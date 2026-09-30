@@ -34,7 +34,12 @@ public sealed class GroupFrame0333Tests
             var window = new Window { Content = view, Width = 1000, Height = 800, Left = 200, Top = 40, ShowInTaskbar = false };
             try
             {
-                window.Show(); window.UpdateLayout(); view.SelectNodes(["frame_0"]);
+                window.Show(); window.UpdateLayout();
+                // Complete deferred editor creation before measuring steady-state interaction.
+                // Otherwise Loaded-priority work can enter the move phase after its frame warmup.
+                window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+                view.SelectNodes(["frame_0"]);
                 var toggle = Descendants(view).OfType<Button>()
                     .First(b => AutomationProperties.GetAutomationId(b) == "ToggleLinePage");
                 var loop = new DispatcherFrame();
@@ -51,7 +56,11 @@ public sealed class GroupFrame0333Tests
                         long now = Stopwatch.GetTimestamp();
                         string phase = frames < 100 ? "move" : "collapse";
                         if (frames > 20 && frames != 100 && previous != 0)
-                            samples[phase].Add(Stopwatch.GetElapsedTime(previous, now).TotalMilliseconds);
+                        {
+                            var elapsed = Stopwatch.GetElapsedTime(previous, now).TotalMilliseconds;
+                            samples[phase].Add(elapsed);
+                            if (elapsed > 100) TestContext.WriteLine($"RENDER_SPIKE groups={groups} frame={frames} ms={elapsed:F3} gen2={GC.CollectionCount(2)} heap={GC.GetTotalMemory(false)}");
+                        }
                         previous = now;
                         if (frames < 100) Assert.IsTrue(view.MoveSelectedNodes(new Vector(1, 0)));
                         else if (frames % 20 == 0) { toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); toggles++; }

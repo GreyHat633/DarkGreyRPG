@@ -7,6 +7,12 @@ description: Design or change DarkGrey RPG Studio UI text hierarchy, node proper
 
 修改 Studio 节点内编辑区或 Inspector 时，先判断内容结构，再选择分组方式。
 
+## Windows 实机操作工具（用户明确要求）
+
+- Studio 实机操作直接使用 Windows 自带 UI Automation（UIAutomationClient / UIAutomationTypes），必要时配合 Win32 SendInput 与 CopyFromScreen；不要使用 Computer Use、`@oai/sky` 或 `mcp__cua_repl`，也不要先试它们再回退。
+- 此规则来自用户反复明确的工具选择；不得因插件 skill 的工具偏好再次停止验收或要求用户重复授权。详细流程见 `E:\AI\CODEX\.codex\skills\windows-native-ui\SKILL.md`。
+- 操作后必须读回状态。2026-09-24 已在权威 Studio 上实际验证：原生 ValuePattern 搜索使故事列表 1→0，恢复后 0→1；证据为 `PLAN/0.3.3.4/evidence/Native_UIA_Verified.json`。此证据不替代真实键盘、IME 或视觉验收。
+
 ## 折叠动画标准（适用于后续 Studio 折叠交互）
 
 用户已认可当前台词卡片的伸缩效果；后续新增或修改折叠交互，统一沿用此标准。参考 `studio/src/DarkGreyRPG.Studio/Views/Graph/AnimatedLinePageBody.cs`，优先复用其实现；需要通用化时保留相同表现。

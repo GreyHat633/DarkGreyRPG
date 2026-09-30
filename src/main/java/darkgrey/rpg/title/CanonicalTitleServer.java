@@ -44,10 +44,17 @@ public final class CanonicalTitleServer {
                 dispatch.getPlacementId(),
                 dispatch.getSnapshot()
                     .getActivationTime(),
-                CanonicalTitleConfiguration.parse(dispatch.getActionProperties()),
+                resolveTitle(player, CanonicalTitleConfiguration.parse(dispatch.getActionProperties())),
                 completed));
         tick(player);
         return true;
+    }
+
+    private static CanonicalTitleConfiguration resolveTitle(EntityPlayerMP player, CanonicalTitleConfiguration title) {
+        return new CanonicalTitleConfiguration(
+            darkgrey.rpg.session.forge.DynamicContentResolver.resolve(title.main, player),
+            darkgrey.rpg.session.forge.DynamicContentResolver.resolve(title.subtitle, player),
+            title.fadeIn, title.stay, title.fadeOut, title.waitForCompletion);
     }
 
     public static synchronized void tick(EntityPlayerMP player) {

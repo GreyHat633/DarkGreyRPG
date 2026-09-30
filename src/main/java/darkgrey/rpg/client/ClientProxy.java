@@ -16,6 +16,12 @@ import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 import darkgrey.rpg.proxy.CommonProxy;
 
 public final class ClientProxy extends CommonProxy {
+    @Override public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (kind == 0) minecraft.displayGuiScreen(new darkgrey.rpg.client.gui.GuiPlayerStateInspection());
+        else if (minecraft.currentScreen instanceof darkgrey.rpg.client.gui.GuiPlayerStateInspection)
+            ((darkgrey.rpg.client.gui.GuiPlayerStateInspection) minecraft.currentScreen).accept(request, data);
+    }
 
     @Override
     public void acceptGramophone(darkgrey.rpg.gramophone.GramophonePacket packet) {
@@ -52,6 +58,8 @@ public final class ClientProxy extends CommonProxy {
 
     @Override
     public void registerClientDialogueNetwork() {
+        ClientResourceRevision.register();
+        darkgrey.rpg.gramophone.GramophoneRenderer.register();
         darkgrey.rpg.gramophone.GramophoneClient gramophone = new darkgrey.rpg.gramophone.GramophoneClient();
         MinecraftForge.EVENT_BUS.register(gramophone);
         FMLCommonHandler.instance()

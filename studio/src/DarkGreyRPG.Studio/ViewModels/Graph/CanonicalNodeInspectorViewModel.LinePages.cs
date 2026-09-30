@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -79,7 +79,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
     private List<Dictionary<string, JsonElement>> ReadLinePages()
     {
         var node = _host.Graph.Nodes.FirstOrDefault(n => n.Id == NodeId);
-        if (node is null || CanonicalSessionLineSchema.Validate(node).Count != 0) return [];
+        if (node is null || CanonicalSessionLineSchema.HasErrors(node)) return [];
         return CanonicalSessionLineSchema.ReadPages(node).ToList();
     }
 
@@ -116,6 +116,27 @@ public sealed partial class CanonicalNodeInspectorViewModel
         var pages = ReadLinePages();
         return pages.RemoveAll(p => p["page_id"].GetString() == id) == 1
             && _host.SetNodeProperty(NodeId, "pages", JsonSerializer.SerializeToElement(pages));
+    }
+
+    public string? InsertLinePageAfter(string currentId)
+    {
+        if (_disposed || !IsLine) return null;
+        var pages = ReadLinePages();
+        var index = pages.FindIndex(p => p["page_id"].GetString() == currentId);
+        if (index < 0) return null;
+        var id = Guid.NewGuid().ToString("N");
+        pages.Insert(index + 1, CanonicalSessionLineSchema.CreatePage(id));
+        return _host.SetNodeProperty(NodeId, "pages", JsonSerializer.SerializeToElement(pages)) ? id : null;
+    }
+
+    public bool RemoveEmptyLinePage(string id)
+    {
+        if (_disposed || !IsLine) return false;
+        var pages = ReadLinePages();
+        var page = pages.FirstOrDefault(p => p["page_id"].GetString() == id);
+        if (pages.Count <= 1 || page is null || page["text"].GetString() != "") return false;
+        pages.Remove(page);
+        return _host.SetNodeProperty(NodeId, "pages", JsonSerializer.SerializeToElement(pages));
     }
 
     public bool ReorderLinePage(string id, int index)
@@ -188,12 +209,15 @@ public sealed class CanonicalLinePageViewModel : ObservableObject, IDisposable
     internal void Project(Dictionary<string, JsonElement> data, int order, int count)
     {
         _projecting = true;
-        try { _data = data; Order = order; CanRemove = count > 0; OnPropertyChanged(string.Empty); }
+        try { _data = data; _capacity = null; Order = order; CanRemove = count > 0; OnPropertyChanged(string.Empty); }
         finally { _projecting = false; }
     }
     private string? String(string key) => _data.TryGetValue(key, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
     private double Number(string key, double fallback) => _data.TryGetValue(key, out var p) && p.ValueKind == JsonValueKind.Number && p.TryGetDouble(out var n) ? n : fallback;
     private void Set(string key, object? value) { if (!_projecting) Owner.SetPageProperty(PageId, key, value); }
+    private DialogueCapacityProfile.Result? _capacity;
+    public DialogueCapacityProfile.Result Capacity => _capacity ??= DialogueCapacityProfile.Measure(Text);
+    public void UpdateCapacityDraft(string text) { _capacity = DialogueCapacityProfile.Measure(text); OnPropertyChanged(nameof(Capacity)); }
     public string Text { get => String("text") ?? ""; set => Set("text", value); }
     public bool HasSpeaker => Owner.HasLineSpeaker;
     public IReadOnlyList<SessionPortraitOption> PortraitOptions => Owner.PortraitVariantOptions;
@@ -202,6 +226,7 @@ public sealed class CanonicalLinePageViewModel : ObservableObject, IDisposable
     public string? PortraitMediaRef => PortraitVariant is { } name ? PortraitActor?.PortraitSource.PortraitVariants?.FirstOrDefault(p => p.Name == name)?.MediaRef : PortraitActor?.PortraitSource.DefaultPortraitRef;
     public bool CustomSpeed { get => _data.TryGetValue("custom_text_speed", out var p) && p.ValueKind == JsonValueKind.True; set => Set("custom_text_speed", value); }
     public double Speed { get => Number("text_speed", 30); set { if (double.IsFinite(value) && value >= 0 && value <= 120) Set("text_speed", value); } }
+    public double SpeedPosition { get => Speed == 0 ? 120 : Speed - 1; set => Speed = Math.Round(value) >= 120 ? 0 : Math.Clamp(Math.Round(value) + 1, 1, 120); }
     public string? VoiceRef => String("voice_ref");
     public bool AudioEnabled { get => VoiceRef is not null || _audio.Open; set { _audio.Open = value; if (!value) SetVoice(null); _audio.Notify(); } }
     public double Volume { get => Number("voice_volume", 1); set { if (double.IsFinite(value) && value >= 0 && value <= 1) Set("voice_volume", value); } }

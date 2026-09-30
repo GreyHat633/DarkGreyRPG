@@ -149,16 +149,17 @@ public final class GuiNominatorEntity extends GuiScreen {
     public void drawScreen(int mx, int my, float partial) {
         drawDefaultBackground();
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, DgrUiPalette.PANEL);
-        drawCenteredString(fontRendererObj, "实体指名器", panelLeft + panelWidth / 2, panelTop + 8, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText
+            .centered(fontRendererObj, "实体指名器", panelLeft + panelWidth / 2, panelTop + 8, DgrUiPalette.TEXT);
         browser.draw(mx, my);
         String binding = "当前实体：" + (individual == null ? "" : individual) + " " + currentGroups;
-        drawString(
+        DgrUiText.left(
             fontRendererObj,
             fontRendererObj.trimStringToWidth(binding, panelWidth - 108),
             panelLeft + 8,
             panelTop + panelHeight - 71,
             DgrUiPalette.SECONDARY);
-        drawString(
+        DgrUiText.left(
             fontRendererObj,
             fontRendererObj.trimStringToWidth(controls.message, panelWidth - 16),
             panelLeft + 8,

@@ -26,12 +26,12 @@
   </Style>
  </UserControl.Resources>
  <StackPanel Visibility="{Binding IsLine, Converter={StaticResource BoolVisibility}}">
-  <StackPanel Orientation="Horizontal" Margin="0,10,0,5"><TextBlock Text="台词文本" VerticalAlignment="Center"/><Button Content="+" Margin="8,0,0,0" Padding="6,1" Click="Add_OnClick" ToolTip="新增一句台词" AutomationProperties.AutomationId="AddLinePage"/><Button Content="−" Margin="4,0,0,0" Padding="6,1" Click="RemoveSelected_OnClick" IsEnabled="{Binding CanRemoveSelectedLinePages}" ToolTip="{Binding RemoveSelectedLinePagesHint}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="删除选中台词" AutomationProperties.AutomationId="RemoveSelectedLinePages"/></StackPanel>
+  <StackPanel Orientation="Horizontal" Margin="0,10,0,5"><TextBlock Text="台词文本" VerticalAlignment="Center"/><Button Content="+" Margin="8,0,0,0" Padding="6,1" Click="Add_OnClick" ToolTip="新增一句台词" AutomationProperties.AutomationId="AddLinePage"/><Button Content="−" Margin="4,0,0,0" Padding="6,1" Click="RemoveSelected_OnClick" IsEnabled="{Binding CanRemoveSelectedLinePages}" ToolTip="{Binding RemoveSelectedLinePagesHint}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="删除选中台词" AutomationProperties.AutomationId="RemoveSelectedLinePages"/><Button x:Name="DynamicInsert" Content="动态内容" Margin="4,0,0,0" Padding="6,1" Focusable="False" IsEnabled="False" Click="DynamicInsert_OnClick" AutomationProperties.AutomationId="InsertLineDynamicContent"/></StackPanel>
   <ItemsControl x:Name="Pages" Background="Transparent" ItemsSource="{Binding LinePages}">
    <ItemsControl.ItemTemplate><DataTemplate>
     <Border x:Name="LinePageCard" CornerRadius="4" Padding="8" Margin="0,0,0,10">
      <Border.Style><Style TargetType="Border">
-      <Setter Property="BorderThickness" Value="1"/><Setter Property="BorderBrush" Value="{DynamicResource TextFillColorSecondaryBrush}"/><Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/><Setter Property="BorderBrush" Value="#727272"/><Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
       <Style.Triggers><DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/></DataTrigger></Style.Triggers>
      </Style></Border.Style>
      <StackPanel>
@@ -40,15 +40,15 @@
        <Button Content="{Binding Caption}" Style="{StaticResource PageHeaderButton}" Margin="2,0,0,0" Click="Toggle_OnClick" ToolTip="{Binding ExpansionLabel}" AutomationProperties.Name="{Binding ExpansionLabel}" AutomationProperties.AutomationId="ToggleLinePage"/>
       </DockPanel>
       <graph:AnimatedLinePageBody IsExpanded="{Binding IsExpanded}"><StackPanel>
-      <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="48" AutomationProperties.AutomationId="LinePageText"/>
-      <Expander Header="本句设置" Margin="0,6,0,0" IsExpanded="False"><StackPanel>
+      <graph:DynamicContentEditor Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=Explicit}" ShowInsertButton="False" CapacityText="{Binding Capacity.Caption}" CapacityHint="{Binding Capacity.Warning}" AcceptsReturn="False" MinHeight="48" BodyKeyDown="DynamicText_OnKeyDown" AutomationProperties.AutomationId="LinePageText"/>
+      <Expander Header="详细设置" Margin="0,6,0,0" IsExpanded="False"><StackPanel>
        <StackPanel Visibility="{Binding HasSpeaker, Converter={StaticResource BoolVisibility}}">
         <TextBlock Text="头像" Margin="0,4,0,3"/>
         <ComboBox ItemsSource="{Binding PortraitOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectedValue="{Binding PortraitVariant, Mode=TwoWay}"/>
         <views:PortraitPreviewControl Margin="0,6,0,0" MediaRef="{Binding PortraitMediaRef}" Actor="{Binding PortraitActor}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
        </StackPanel>
        <CheckBox Content="自定义显示速度" IsChecked="{Binding CustomSpeed}" Margin="0,6,0,0"/>
-       <StackPanel Visibility="{Binding CustomSpeed, Converter={StaticResource BoolVisibility}}"><TextBlock Text="显示速度（字/秒）" Margin="0,4,0,0"/><Grid Margin="0,4,0,6"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="56"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Speed}" Margin="0,0,6,0"/><TextBox Grid.Column="1" Text="{Binding Speed, UpdateSourceTrigger=LostFocus}" graph:NumericDrag.Minimum="0" graph:NumericDrag.Maximum="120" graph:NumericDrag.Step="1"/></Grid></StackPanel>
+       <StackPanel Visibility="{Binding CustomSpeed, Converter={StaticResource BoolVisibility}}"><TextBlock Text="显示速度（字/秒）" Margin="0,4,0,0"/><Grid Margin="0,4,0,6"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="56"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding SpeedPosition}" Margin="0,0,6,0"/><TextBox Grid.Column="1" Text="{Binding Speed, UpdateSourceTrigger=LostFocus}" graph:NumericDrag.Minimum="0" graph:NumericDrag.Maximum="120" graph:NumericDrag.Step="1"/></Grid></StackPanel>
        <CheckBox Content="语音/音效" IsChecked="{Binding AudioEnabled}" Margin="0,6,0,0"/>
        <StackPanel Visibility="{Binding AudioEnabled, Converter={StaticResource BoolVisibility}}">
         <UniformGrid Columns="2" Margin="0,5,0,0"><Button Content="导入" Margin="0,0,3,0" Click="Import_OnClick"/><Button Content="移除" Margin="3,0,0,0" Click="RemoveVoice_OnClick"/></UniformGrid>

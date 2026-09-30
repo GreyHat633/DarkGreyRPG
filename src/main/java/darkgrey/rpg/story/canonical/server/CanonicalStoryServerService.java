@@ -285,6 +285,8 @@ public final class CanonicalStoryServerService {
                 .getExternalLogicInputs());
         for (darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection connection : project
             .getCanonicalStoryLogicConnections()) {
+            if (connection.getInterfaceKind() != darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.LOGIC)
+                continue;
             if (!storyId.equals(connection.getTargetStoryId())) continue;
             CanonicalStoryInstanceSnapshot source = data.getStorySnapshot(playerUuid, connection.getSourceStoryId());
             Boolean value = source == null ? null

@@ -98,7 +98,8 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
         int left = (width - panelWidth) / 2;
         int top = (height - panelHeight) / 2;
         drawRect(left, top, left + panelWidth, top + panelHeight, DgrUiPalette.WINDOW_PANEL);
-        drawCenteredString(fontRendererObj, "有多个故事可供选择", width / 2, top + 12, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText
+            .centered(fontRendererObj, "有多个故事可供选择", width / 2, top + 12, DgrUiPalette.TEXT);
         List<CanonicalStoryChooserFrame.Option> options = frame.getOptions();
         int first = page * pageSize;
         int visible = Math.min(pageSize, options.size() - first);
@@ -124,7 +125,7 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
                 y + 24 + line * fontRendererObj.FONT_HEIGHT,
                 DgrUiPalette.SECONDARY);
         }
-        drawCenteredString(
+        darkgrey.rpg.client.gui.DgrUiText.centered(
             fontRendererObj,
             "第 " + (page + 1) + " 页",
             width / 2,

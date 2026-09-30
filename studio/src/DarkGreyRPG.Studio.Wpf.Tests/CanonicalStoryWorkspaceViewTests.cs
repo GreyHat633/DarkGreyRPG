@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -176,35 +176,35 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
-    public void StoryStartRepeatableCheckboxesShareCanonicalProjection()
+    public void StoryStartRepeatModesShareCanonicalProjection()
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
         var view = Arrange(workspace);
         var visual = Descendants<CanonicalGraphNodeControl>(view).Single();
-        var inlineToggle = Descendants<CheckBox>(visual).Single(control =>
-            AutomationProperties.GetAutomationId(control) == "InlineStartRepeatableToggle");
+        var inlineToggle = Descendants<ComboBox>(visual).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "InlineStartRepeatMode");
 
         Assert.IsTrue(view.GraphView.SelectNode("start"));
         view.UpdateLayout();
-        var inspectorToggle = Descendants<CheckBox>(view).Single(control =>
-            AutomationProperties.GetAutomationId(control) == "StoryStartRepeatableToggle");
-        Assert.AreEqual("可重复", inlineToggle.Content);
-        Assert.AreEqual("可重复", inspectorToggle.Content);
-        Assert.AreEqual(false, inlineToggle.IsChecked);
-        Assert.AreEqual(false, inspectorToggle.IsChecked);
+        var inspectorToggle = Descendants<ComboBox>(view).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "StoryStartRepeatMode");
+        Assert.AreEqual(4, inlineToggle.Items.Count);
+        Assert.AreEqual(4, inspectorToggle.Items.Count);
+        Assert.AreEqual("once", inlineToggle.SelectedValue);
+        Assert.AreEqual("once", inspectorToggle.SelectedValue);
 
-        inlineToggle.IsChecked = true;
+        inlineToggle.SelectedValue = "cooldown";
         view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        Assert.AreEqual(true, inlineToggle.IsChecked);
-        Assert.AreEqual(true, inspectorToggle.IsChecked);
+        Assert.AreEqual("cooldown", inlineToggle.SelectedValue);
+        Assert.AreEqual("cooldown", inspectorToggle.SelectedValue);
         Assert.AreEqual(StoryStartSchema.Repeatable,
             workspace.StoryEditor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
 
-        inspectorToggle.IsChecked = false;
+        inspectorToggle.SelectedValue = "once";
         view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        Assert.AreEqual(false, inlineToggle.IsChecked);
+        Assert.AreEqual("once", inlineToggle.SelectedValue);
         Assert.AreEqual(StoryStartSchema.Once,
             workspace.StoryEditor.Host.Graph.Nodes.Single().Properties[StoryStartSchema.RepeatPolicyProperty].GetString());
     }
@@ -662,19 +662,19 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.IsTrue(view.GraphView.SelectNode("line-1"));
         view.UpdateLayout();
 
-        var draft = Descendants<TextBox>(view)
+        var draft = Descendants<DynamicContentEditor>(view)
             .First(textBox => string.Equals(
-                textBox.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path.Path,
+                textBox.GetBindingExpression(DynamicContentEditor.TextProperty)?.ParentBinding.Path.Path,
                 "Text",
                 StringComparison.Ordinal));
-        var binding = draft.GetBindingExpression(TextBox.TextProperty)!;
-        Assert.AreEqual(System.Windows.Data.UpdateSourceTrigger.LostFocus,
+        var binding = draft.GetBindingExpression(DynamicContentEditor.TextProperty)!;
+        Assert.AreEqual(System.Windows.Data.UpdateSourceTrigger.Explicit,
             binding.ParentBinding.UpdateSourceTrigger);
         var beforeRevision = workspace.ActiveEditor.GraphRevision;
 
         for (var index = 1; index <= 20; index++)
         {
-            draft.Text = new string('字', index);
+            draft.Body.SelectAll(); draft.Body.Selection.Text = new string('字', index);
             Assert.AreEqual(beforeRevision, workspace.ActiveEditor.GraphRevision,
                 $"Draft character {index} must not mutate canonical state.");
         }
@@ -702,16 +702,16 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.IsTrue(view.GraphView.SelectNode("line-1"));
         view.UpdateLayout();
 
-        var draft = Descendants<TextBox>(view)
+        var draft = Descendants<DynamicContentEditor>(view)
             .First(textBox => string.Equals(
-                textBox.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path.Path,
+                textBox.GetBindingExpression(DynamicContentEditor.TextProperty)?.ParentBinding.Path.Path,
                 "Text",
                 StringComparison.Ordinal));
         var beforeRevision = workspace.ActiveEditor.GraphRevision;
         var beforeUndo = workspace.ActiveGraphHost.Session.UndoCount;
-        draft.Text = "焦点仍在输入框的最后一个字";
+        draft.Body.SelectAll(); draft.Body.Selection.Text = "焦点仍在输入框的最后一个字";
 
-        DarkGreyRPG.Studio.MainWindow.FlushFocusedDraft(draft);
+        DarkGreyRPG.Studio.MainWindow.FlushFocusedDraft(draft.Body);
 
         Assert.AreEqual(beforeRevision + 1, workspace.ActiveEditor.GraphRevision);
         Assert.AreEqual(beforeUndo + 1, workspace.ActiveGraphHost.Session.UndoCount);
@@ -777,7 +777,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
 
         var actor = Descendants<ComboBox>(view).Single(control =>
             AutomationProperties.GetAutomationId(control) == "SessionLineActorSelector");
-        var text = Descendants<TextBox>(view).Single(control =>
+        var text = Descendants<DynamicContentEditor>(view).Single(control =>
             AutomationProperties.GetAutomationId(control) == "LinePageText" && ReferenceEquals(((CanonicalLinePageViewModel)control.DataContext).Owner, workspace.NodeInspector));
         Assert.AreEqual(Visibility.Visible, actor.Visibility);
         Assert.AreEqual(Visibility.Visible, text.Visibility);

@@ -10,6 +10,25 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class LinePagesAuthoringTests
 {
+    [TestMethod]
+    public void CapacityWarningKeepsPagesEditableAndSynchronizesBothInspectors()
+    {
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var first = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        using var second = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+        first.AddLinePage();
+        var text = new string('W', 1000);
+        first.LinePages[0].Text = text;
+        Assert.AreEqual(text, second.LinePages[0].Text);
+        Assert.IsTrue(second.LinePages[0].Capacity.Over);
+        first.LinePages[0].Text = "short";
+        Assert.AreEqual("short", second.LinePages[0].Text);
+        Assert.IsFalse(second.LinePages[0].Capacity.Over);
+        Assert.IsTrue(editor.Host.Undo());
+        Assert.AreEqual(text, first.LinePages[0].Text);
+    }
+
     [STATestMethod]
     public void AnimatedBodyReversesAndSettlesAtNaturalHeight()
     {

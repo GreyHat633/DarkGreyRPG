@@ -9,6 +9,7 @@ public final class CanonicalTaskClientStore {
     private static Object world;
     private static long revision = -1;
     private static NBTTagCompound snapshot = empty();
+    private static final java.util.Map<String, Long> pendingSince = new java.util.HashMap<String, Long>();
 
     private CanonicalTaskClientStore() {}
 
@@ -17,6 +18,7 @@ public final class CanonicalTaskClientStore {
             world = currentWorld;
             revision = -1;
             snapshot = empty();
+            pendingSince.clear();
             TaskNotificationCards.clear();
         }
     }
@@ -59,12 +61,28 @@ public final class CanonicalTaskClientStore {
             }
         }
         snapshot = (NBTTagCompound) data.copy();
+        java.util.Set<String> pending = new java.util.HashSet<String>();
+        for (int i = 0; i < tasks.tagCount(); i++) {
+            NBTTagCompound task = tasks.getCompoundTagAt(i);
+            if (task.getBoolean("pending_rewards")) {
+                String key = task.getString("tracking_id");
+                pending.add(key);
+                if (!pendingSince.containsKey(key)) pendingSince.put(key, System.nanoTime());
+            }
+        }
+        pendingSince.keySet()
+            .retainAll(pending);
         revision = data.getLong("revision");
         return true;
     }
 
     public static synchronized long getRevision() {
         return revision;
+    }
+
+    public static synchronized boolean delayedReward(String identity) {
+        Long since = pendingSince.get(identity);
+        return since != null && System.nanoTime() - since > 3000000000L;
     }
 
     public static synchronized NBTTagCompound getSnapshot() {

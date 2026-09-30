@@ -74,7 +74,7 @@ public sealed class CanonicalActorIdentityDialogViewModel : ObservableObject
                 .Where(issue => issue.Severity == ValidationSeverity.Error).Select(issue => issue.Message).ToList();
             if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
                 errors.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
-            if (string.IsNullOrWhiteSpace(DisplayName)) errors.Add("显示名称不能为空。");
+            if (string.IsNullOrWhiteSpace(DisplayName)) errors.Add("资源名称不能为空。");
             if (Tags.Count != Tags.Distinct(StringComparer.Ordinal).Count()) errors.Add("标签不能重复。");
             return string.Join(Environment.NewLine, errors);
         }

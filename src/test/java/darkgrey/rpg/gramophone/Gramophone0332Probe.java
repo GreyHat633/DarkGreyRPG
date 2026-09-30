@@ -34,6 +34,8 @@ public final class Gramophone0332Probe {
     }
 
     public static void main(String[] args) throws Exception {
+        GramophoneRemovalProbe.run();
+        GramophoneRangeMetadataProbe.run();
         GramophoneStorageProbe.run();
         check(GramophonePlayback.contains(0, 0, -1, 0, 0, 0, -.1, .9, .9), "negative floor/R0");
         check(!GramophonePlayback.contains(0, 0, -1, 0, 0, 0, 0, 0, 0), "boundary outside");

@@ -27,12 +27,26 @@ public final class CanonicalSessionServerService {
 
     private final ProjectSnapshot project;
     private final CanonicalSessionSavedData savedData;
+    public interface TextResolver { String resolve(UUID player, String template); }
+    private final TextResolver textResolver;
 
     public CanonicalSessionServerService(ProjectSnapshot project, CanonicalSessionSavedData savedData) {
+        this(project, savedData, new TextResolver() {
+            @Override public String resolve(UUID player, String template) {
+                return darkgrey.rpg.session.runtime.DynamicContentText.resolve(template,
+                    new darkgrey.rpg.session.runtime.DynamicContentText.Resolver() {
+                        @Override public String resolve(String type, String item) { return "数据不可用"; }
+                    });
+            }
+        });
+    }
+
+    public CanonicalSessionServerService(ProjectSnapshot project, CanonicalSessionSavedData savedData, TextResolver resolver) {
         if (project == null || savedData == null)
             throw new IllegalArgumentException("Session service inputs required.");
         this.project = project;
         this.savedData = savedData;
+        this.textResolver = resolver;
         if (!savedData.isBound()) savedData.bind(new CanonicalSessionResourceResolver() {
 
             @Override
@@ -238,7 +252,7 @@ public final class CanonicalSessionServerService {
                 step.getNodeId(),
                 CanonicalSessionFrame.Kind.LINE,
                 actor == null ? "" : actor.getDisplayName(),
-                step.getText(),
+                displayText(snapshot, "line", step.getText()),
                 java.util.Collections.<CanonicalSessionChoiceOption>emptyList(),
                 actor == null ? null
                     : actor.getPortraits()
@@ -248,7 +262,7 @@ public final class CanonicalSessionServerService {
         }
         java.util.ArrayList<CanonicalSessionChoiceOption> choices = new java.util.ArrayList<CanonicalSessionChoiceOption>();
         for (darkgrey.rpg.session.runtime.CanonicalSessionChoiceOption option : step.getOptions())
-            choices.add(new CanonicalSessionChoiceOption(option.getOptionId(), option.getDisplayText()));
+            choices.add(new CanonicalSessionChoiceOption(option.getOptionId(), displayText(snapshot, "option:" + option.getOptionId(), option.getDisplayText())));
         return new CanonicalSessionFrame(
             snapshot.getTransportId(),
             snapshot.getStoryId(),
@@ -256,8 +270,15 @@ public final class CanonicalSessionServerService {
             step.getNodeId(),
             CanonicalSessionFrame.Kind.CHOICE,
             "",
-            step.getPrompt(),
+            displayText(snapshot, "prompt", step.getPrompt()),
             choices);
+    }
+
+    private String displayText(final CanonicalSessionInstanceSnapshot snapshot, String slot, final String template) {
+        if (template == null || !template.startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX)) return template;
+        return savedData.presentationText(snapshot, slot, new java.util.function.Supplier<String>() {
+            @Override public String get() { return textResolver.resolve(snapshot.getPlayerUuid(), template); }
+        });
     }
 
     private Binding resolveBinding(String storyId, String placementId) {

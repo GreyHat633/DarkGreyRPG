@@ -385,8 +385,8 @@ public sealed class CanonicalGraphEditorViewTests
         Assert.IsNotNull(editor);
         Assert.IsNull(view.SelectedNode);
 
-        var textBox = Descendants<TextBox>(visual).Single(control =>
-            AutomationProperties.GetAutomationId(control) == "LinePageText");
+        var textBox = Descendants<DynamicContentEditor>(visual).Single(control =>
+            AutomationProperties.GetAutomationId(control) == "LinePageText").Body;
         Assert.IsTrue(visual.IsParameterInteractionSource(textBox));
         Assert.IsFalse(visual.IsHeaderDragSource(textBox));
         editor.LineText = "直接编辑";

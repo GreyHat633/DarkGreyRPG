@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -21,6 +21,7 @@ public partial class CanonicalStoryWorkspaceView
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
         {
             if (!ReferenceEquals(Workspace, workspace) || !ReferenceEquals(workspace!.SearchTarget, hit)) return;
+            if (hit.GroupId is { } groupId) { WorkspaceGraph.FocusGroup(groupId); return; }
             var node = workspace.ActiveGraphHost.Nodes.FirstOrDefault(candidate => candidate.NodeId == hit.NodeId);
             if (node is null) return;
             WorkspaceGraph.FocusNode(node);

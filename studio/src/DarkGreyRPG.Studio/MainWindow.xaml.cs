@@ -128,6 +128,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     internal static void FlushFocusedDraft(IInputElement? focusedElement)
     {
+        if (focusedElement is System.Windows.Controls.RichTextBox rich)
+            Views.Graph.LinePagesEditor.Ancestor<Views.Graph.DynamicContentEditor>(rich)?.Commit();
         if (focusedElement is TextBox textBox)
             textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
     }

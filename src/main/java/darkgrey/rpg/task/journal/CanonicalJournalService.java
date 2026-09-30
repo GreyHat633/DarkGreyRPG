@@ -29,7 +29,11 @@ public final class CanonicalJournalService {
 
     /** Returns the canonical Task journal through the existing wire DTO adapter. */
     public List<QuestJournalEntry> getJournal(EntityPlayerMP player) {
-        return CanonicalTaskLegacyJournalAdapter.adapt(canonicalTaskManager.getJournal(player));
+        List<QuestJournalEntry> result = new java.util.ArrayList<QuestJournalEntry>();
+        for (CanonicalTaskJournalEntry entry : canonicalTaskManager.getJournal(player))
+            result.add(CanonicalTaskLegacyJournalAdapter.adapt(entry,
+                text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player)));
+        return java.util.Collections.unmodifiableList(result);
     }
 
     public List<QuestJournalEntry> journal(EntityPlayerMP player) {

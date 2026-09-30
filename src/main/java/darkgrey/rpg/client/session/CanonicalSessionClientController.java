@@ -25,6 +25,7 @@ public final class CanonicalSessionClientController {
             if (mc.currentScreen == surface && surface != null) mc.displayGuiScreen(null);
             darkgrey.rpg.media.CanonicalSessionAudio.clear();
             darkgrey.rpg.media.CanonicalSessionScene.clear();
+            darkgrey.rpg.client.gui.CanonicalDialogueRenderer.clear();
             MODEL.clear();
             darkgrey.rpg.media.CanonicalMediaClient.clear();
             surface = null;
@@ -37,6 +38,8 @@ public final class CanonicalSessionClientController {
         Minecraft minecraft = Minecraft.getMinecraft();
         if (minecraft.theWorld == null || minecraft.thePlayer == null || !MODEL.acceptFrame(frame)) return;
         CanonicalSessionFrame accepted = MODEL.getFrame();
+        darkgrey.rpg.media.MediaLatencyTrace
+            .frame(accepted.getStoryId() + ":" + accepted.getTransportId() + ":" + accepted.getLineEpoch());
         darkgrey.rpg.media.CanonicalMediaClient.present(accepted);
         darkgrey.rpg.media.CanonicalSessionAudio.present(accepted);
         darkgrey.rpg.media.CanonicalSessionScene.present(accepted);
@@ -55,6 +58,12 @@ public final class CanonicalSessionClientController {
         darkgrey.rpg.media.CanonicalMediaClient.tick();
         darkgrey.rpg.media.CanonicalSessionAudio.tick();
         Minecraft mc = Minecraft.getMinecraft();
+        if (MODEL.autoDue(
+            surface != null && mc.currentScreen == surface
+                && org.lwjgl.opengl.Display.isActive()
+                && mc.thePlayer != null
+                && mc.thePlayer.getHealth() > 0,
+            System.nanoTime())) sendContinue();
         if (surface != null && mc.currentScreen == surface && mc.thePlayer != null && mc.thePlayer.getHealth() <= 0) {
             mc.displayGuiScreen(null); // Vanilla resolves null to its usable death screen.
             return;
@@ -92,6 +101,7 @@ public final class CanonicalSessionClientController {
         if (!MODEL.acceptClose(close)) return;
         darkgrey.rpg.media.CanonicalSessionAudio.clear();
         darkgrey.rpg.media.CanonicalSessionScene.clear();
+        darkgrey.rpg.client.gui.CanonicalDialogueRenderer.clear();
         darkgrey.rpg.media.CanonicalMediaClient.clear();
         surface = null;
         Minecraft minecraft = Minecraft.getMinecraft();
@@ -106,13 +116,18 @@ public final class CanonicalSessionClientController {
     }
 
     public static boolean sendContinue() {
-        if (MODEL.finishVisibleText()) return false;
+        if (Minecraft.getMinecraft().currentScreen != surface || surface == null) return false;
+        if (MODEL.advanceDisplayPage()) return MODEL.awaitingServer();
         send(MODEL.continueAction());
         return true;
     }
 
     public static String getVisibleText() {
         return MODEL.getVisibleText();
+    }
+
+    public static CanonicalSessionClientModel presentationModel() {
+        return MODEL;
     }
 
     public static String getVisibleSpeaker() {
@@ -124,7 +139,9 @@ public final class CanonicalSessionClientController {
     }
 
     public static void sendChoice(String optionId) {
+        if (MODEL.awaitingServer() || Minecraft.getMinecraft().currentScreen != surface) return;
         CanonicalSessionAction action = MODEL.choiceAction(optionId);
+        MODEL.awaitChoice();
         if (Minecraft.getMinecraft().currentScreen == surface) DialogueHistoryClient.choosing(MODEL.getFrame(), action);
         send(action);
     }

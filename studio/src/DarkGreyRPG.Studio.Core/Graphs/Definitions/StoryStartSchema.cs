@@ -108,6 +108,13 @@ public static class StoryStartSchema
         var issues = new List<ValidationIssue>();
         if (!string.Equals(node.Type, "start", StringComparison.Ordinal)) return issues;
 
+        if (node.Properties.TryGetValue("repeat_condition", out var condition))
+        {
+            try { StoryRepeatCondition.Parse(condition); }
+            catch (Exception error) when (error is FormatException or InvalidOperationException or KeyNotFoundException or OverflowException)
+            { issues.Add(Issue("graph.story.start.repeat_condition.invalid", error.Message, "properties.repeat_condition", node.Id)); }
+        }
+
         if (node.Properties.TryGetValue(RepeatPolicyProperty, out var policy))
         {
             if (policy.ValueKind != JsonValueKind.String)

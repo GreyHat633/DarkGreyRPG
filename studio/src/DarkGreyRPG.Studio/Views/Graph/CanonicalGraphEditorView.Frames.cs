@@ -241,7 +241,7 @@ public partial class CanonicalGraphEditorView
         while (source is not null)
         {
             if (source is FrameworkElement element && _frameVisuals.Contains(element)) return true;
-            source = VisualTreeHelper.GetParent(source);
+            source = LinePagesEditor.InputParent(source);
         }
         return false;
     }

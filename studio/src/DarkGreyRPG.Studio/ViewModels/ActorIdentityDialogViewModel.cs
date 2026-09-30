@@ -93,7 +93,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
                 messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
             if (IsDisplayNameVisible && string.IsNullOrWhiteSpace(DisplayName))
             {
-                messages.Add("显示名称不能为空。");
+                messages.Add("资源名称不能为空。");
             }
 
             return string.Join(Environment.NewLine, messages);

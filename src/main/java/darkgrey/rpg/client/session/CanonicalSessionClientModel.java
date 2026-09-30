@@ -18,12 +18,22 @@ public final class CanonicalSessionClientModel {
     private String visibleSpeaker = "";
     /** Portrait context for the currently visible line, retained while a choice frame is shown. */
     private String visiblePortraitRef;
+    private DialogueDisplayPages displayPages;
+    private String layoutKey;
+    private int displayPage;
+    private boolean awaiting;
+    private long autoStarted;
 
     public synchronized void clear() {
         frame = null;
         visibleText = "";
         visibleSpeaker = "";
         visiblePortraitRef = null;
+        displayPages = null;
+        layoutKey = null;
+        displayPage = 0;
+        awaiting = false;
+        autoStarted = 0;
     }
 
     public synchronized boolean acceptFrame(CanonicalSessionFrame update) {
@@ -40,6 +50,12 @@ public final class CanonicalSessionClientModel {
             return false;
         boolean newLine = update.getKind() == CanonicalSessionFrame.Kind.LINE
             && (frame == null || frame.getLineEpoch() != update.getLineEpoch()
+                || frame.getKind() != CanonicalSessionFrame.Kind.LINE
+                || !frame.getCurrentNodeId()
+                    .equals(update.getCurrentNodeId()));
+        boolean newChoice = update.getKind() == CanonicalSessionFrame.Kind.CHOICE
+            && (frame == null || frame.getKind() != CanonicalSessionFrame.Kind.CHOICE
+                || frame.getLineEpoch() != update.getLineEpoch()
                 || !frame.getCurrentNodeId()
                     .equals(update.getCurrentNodeId()));
         if (update.getKind() == CanonicalSessionFrame.Kind.LINE || frame == null) {
@@ -49,9 +65,22 @@ public final class CanonicalSessionClientModel {
         // Choice packets intentionally carry no line media. Keep the current portrait
         // visible until the next line explicitly replaces it.
         if (update.getKind() == CanonicalSessionFrame.Kind.LINE) visiblePortraitRef = update.getPortraitRef();
-        if (newLine) reveal.begin(visibleText, DialoguePreferences.resolve(update.getTextSpeed()), System.nanoTime());
-        else if (update.getKind() == CanonicalSessionFrame.Kind.CHOICE) {
-            reveal.begin(visibleText, 0, System.nanoTime());
+        if (newLine) {
+            displayPages = null;
+            layoutKey = null;
+            displayPage = 0;
+            awaiting = false;
+            autoStarted = 0;
+            reveal.begin(visibleText, DialoguePreferences.resolve(update.getTextSpeed()), System.nanoTime());
+        } else if (newChoice) {
+            awaiting = false;
+            autoStarted = 0;
+            if (displayPages != null) {
+                reveal.begin(
+                    visibleText.substring(displayPages.start(displayPage), displayPages.end(displayPage)),
+                    0,
+                    System.nanoTime());
+            } else reveal.begin(visibleText, 0, System.nanoTime());
         }
         frame = copy(update);
         return true;
@@ -67,10 +96,7 @@ public final class CanonicalSessionClientModel {
             || !frame.getStoryId()
                 .equals(close.getStoryId()))
             return false;
-        frame = null;
-        visibleText = "";
-        visibleSpeaker = "";
-        visiblePortraitRef = null;
+        clear();
         return true;
     }
 
@@ -122,7 +148,105 @@ public final class CanonicalSessionClientModel {
 
     /** Presentation context only; the authoritative frame and outgoing actions stay unchanged. */
     public synchronized String getVisibleText() {
+        if (frame != null && frame.getKind() == CanonicalSessionFrame.Kind.LINE)
+            reveal.speed(DialoguePreferences.resolve(frame.getTextSpeed()), System.nanoTime());
         return frame == null ? "" : reveal.visible(System.nanoTime());
+    }
+
+    public synchronized void layout(String key, double width, int rows, DialogueDisplayPages.Metrics metrics) {
+        if (frame == null || key.equals(layoutKey)) return;
+        int start = displayPages == null ? 0 : displayPages.start(displayPage);
+        int shown = start + getVisibleText().length();
+        displayPages = DialogueDisplayPages.measure(visibleText, width, rows, metrics);
+        displayPage = displayPages.pageAt(start);
+        layoutKey = key;
+        beginDisplayPage();
+        reveal.retain(shown - displayPages.start(displayPage));
+    }
+
+    private void beginDisplayPage() {
+        reveal.begin(
+            visibleText.substring(displayPages.start(displayPage), displayPages.end(displayPage)),
+            frame.getKind() == CanonicalSessionFrame.Kind.LINE ? DialoguePreferences.resolve(frame.getTextSpeed()) : 0,
+            System.nanoTime());
+        autoStarted = 0;
+    }
+
+    public synchronized List<String> getDisplayLines() {
+        List<String> result = new ArrayList<String>();
+        if (displayPages == null) {
+            result.add(getVisibleText());
+            return result;
+        }
+        int shown = displayPages.start(displayPage) + getVisibleText().length();
+        int first = displayPage * displayPages.linesPerPage;
+        for (int i = first; i < Math.min(displayPages.lines.size(), first + displayPages.linesPerPage); i++) {
+            DialogueDisplayPages.Line line = displayPages.lines.get(i);
+            result.add(
+                line.format + visibleText.substring(line.start, Math.max(line.start, Math.min(line.end, shown)))
+                    .replace("\r", "")
+                    .replace("\n", ""));
+        }
+        return result;
+    }
+
+    /** True means this advance was handled locally; no network/audio action is permitted. */
+    public synchronized boolean advanceDisplayPage() {
+        autoStarted = 0;
+        if (awaiting || frame == null || !frame.canContinue()) return true;
+        if (finishVisibleText()) return true;
+        if (displayPages != null && displayPage + 1 < displayPages.pageCount()) {
+            displayPage++;
+            beginDisplayPage();
+            return true;
+        }
+        awaiting = true;
+        return false;
+    }
+
+    public synchronized boolean displayTextComplete() {
+        if (frame == null) return false;
+        int length = displayPages == null ? visibleText.length()
+            : displayPages.end(displayPage) - displayPages.start(displayPage);
+        return getVisibleText().length() >= length;
+    }
+
+    public synchronized boolean awaitingServer() {
+        return awaiting;
+    }
+
+    public synchronized void awaitChoice() {
+        awaiting = true;
+        autoStarted = 0;
+    }
+
+    public synchronized boolean automatic() {
+        return PlayerUiPreferences.automatic();
+    }
+
+    public synchronized void toggleAutomatic() {
+        PlayerUiPreferences.setAutomatic(!PlayerUiPreferences.automatic());
+        autoStarted = 0;
+    }
+
+    public synchronized void pauseAutomatic() {
+        autoStarted = 0;
+    }
+
+    public synchronized boolean autoDue(boolean foreground, long now) {
+        if (!foreground || !automatic()
+            || awaiting
+            || frame == null
+            || !frame.canContinue()
+            || displayPages == null
+            || getVisibleText().length() < displayPages.end(displayPage) - displayPages.start(displayPage)) {
+            autoStarted = 0;
+            return false;
+        }
+        if (autoStarted == 0) autoStarted = now;
+        if (now - autoStarted < PlayerUiPreferences.autoWaitSeconds() * 1000000000.0) return false;
+        autoStarted = 0;
+        return true;
     }
 
     public synchronized boolean finishVisibleText() {

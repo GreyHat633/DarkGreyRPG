@@ -235,7 +235,7 @@ public final class GuiNominatorInventory extends GuiContainer {
             guiTop + top + 1,
             guiLeft + operationLeft + 83,
             guiTop + bottom - 1,
-            0xFF161616);
+            DgrUiPalette.SUB_PANEL);
     }
 
     @Override

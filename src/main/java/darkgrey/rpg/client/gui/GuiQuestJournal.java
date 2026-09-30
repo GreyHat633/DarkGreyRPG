@@ -78,7 +78,8 @@ public final class GuiQuestJournal extends GuiScreen {
         drawRect(left + 8, top + 58, left + PANEL_WIDTH - 8, top + panelHeight - 38, DgrUiPalette.SUB_PANEL); // Inner
                                                                                                               // dark
                                                                                                               // panel
-        drawCenteredString(fontRendererObj, "任务追踪", width / 2, top + 10, DgrUiPalette.TEXT); // Light title
+        darkgrey.rpg.client.gui.DgrUiText.centered(fontRendererObj, "任务追踪", width / 2, top + 10, DgrUiPalette.TEXT); // Light
+                                                                                                                     // title
 
         List<String> lines = buildLines();
         int y = top + 66 - scrollOffset;

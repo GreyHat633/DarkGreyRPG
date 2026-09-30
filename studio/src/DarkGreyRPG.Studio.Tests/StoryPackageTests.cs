@@ -11,6 +11,37 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class StoryPackageTests
 {
     [TestMethod]
+    [DataRow("")]
+    [DataRow("  \t")]
+    public void BlankLineDraftCanSaveButExportPreservesPreviousOutput(string text)
+    {
+        using var project = new TestProjectDirectory();
+        var store = new CanonicalProjectGraphStore(project.Root);
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "intro", "Intro",
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "empty_line");
+        var page = CanonicalSessionLineSchema.CreatePage("draft");
+        page["text"] = JsonSerializer.SerializeToElement(text);
+        line.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { page });
+        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "talk", "Talk",
+            new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "start", "start"), line])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("intro",
+            new CanonicalStoryMembershipSet { Sessions = ["talk"] }));
+        var output = Path.Combine(project.Root, "output");
+        Directory.CreateDirectory(Path.Combine(output, "resources"));
+        var previous = Path.Combine(output, "resources", "previous.json");
+        File.WriteAllText(previous, "previous package");
+
+        var error = Assert.ThrowsExactly<StoryPackageException>(() =>
+            new StoryPackageExporter(project.Root).Build("intro", output));
+
+        StringAssert.Contains(error.Message, "empty_line");
+        StringAssert.Contains(error.Message, "第 1 句");
+        Assert.AreEqual("previous package", File.ReadAllText(previous));
+        Assert.IsTrue(File.Exists(store.Sessions.GetPath("talk")));
+    }
+
+    [TestMethod]
     public void BuildRejectsLegacyEnterStoryBeforeChangingOutput()
     {
         using var project = new TestProjectDirectory();

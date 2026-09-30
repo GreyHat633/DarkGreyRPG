@@ -6,4 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\schema\dialogue-capacity-profile.json" LogicalName="DialogueCapacityProfile.json" />
+  </ItemGroup>
 </Project>

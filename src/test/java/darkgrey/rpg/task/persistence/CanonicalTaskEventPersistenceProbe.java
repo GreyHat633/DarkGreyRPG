@@ -135,6 +135,12 @@ public final class CanonicalTaskEventPersistenceProbe {
             data.size() == 0 && data.completedHistory(PLAYER)
                 .tagCount() == 1,
             "reset keeps summary without runtime");
+        require(
+            data.completedHistory(PLAYER)
+                .getCompoundTagAt(0)
+                .getTagList("objectives", 10)
+                .tagCount() == 1,
+            "completed goal survives runtime removal");
         data.start(PLAYER, "repeat-story", "placement", settled, 1L);
         data.dispatch(PLAYER, CanonicalTaskEvent.killEntity("slime"), 2L);
         require(
@@ -161,6 +167,93 @@ public final class CanonicalTaskEventPersistenceProbe {
                 .getCompoundTagAt(0)
                 .getLong("completion_count") == 1,
             "history restore deduplicates");
+        net.minecraft.nbt.NBTTagCompound archived = restored.forPlayer(PLAYER)
+            .getCompoundTagAt(0);
+        net.minecraft.nbt.NBTTagCompound goal = archived.getTagList("objectives", 10)
+            .getCompoundTagAt(0);
+        require(
+            goal.getString("text")
+                .equals(
+                    entry.getObjectives()
+                        .get(0)
+                        .getDescription())
+                && goal.getInteger("current") == goal.getInteger("required"),
+            "actual completed goal retained");
+        archived.setString("result", "dynamic_port_opaque_internal_id");
+        List<String> display = darkgrey.rpg.client.gui.TaskObjectiveText.completedLines(archived);
+        require(
+            display.toString()
+                .contains(goal.getString("text"))
+                && !display.toString()
+                    .contains("dynamic_port_opaque_internal_id"),
+            "readable history hides result id");
+
+        net.minecraft.nbt.NBTTagCompound legacy = (net.minecraft.nbt.NBTTagCompound) saved.copy();
+        legacy.getTagList("summaries", 10)
+            .getCompoundTagAt(0)
+            .setTag("objectives", new net.minecraft.nbt.NBTTagList());
+        restored.readFromNBT(legacy);
+        require(
+            darkgrey.rpg.client.gui.TaskObjectiveText.completedLines(
+                restored.forPlayer(PLAYER)
+                    .getCompoundTagAt(0))
+                .toString()
+                .contains("未保存具体目标"),
+            "unrecoverable old record is explicit");
+        restored.observe(entry);
+        require(
+            restored.forPlayer(PLAYER)
+                .getCompoundTagAt(0)
+                .getLong("completion_count") == 1
+                && restored.forPlayer(PLAYER)
+                    .getCompoundTagAt(0)
+                    .getTagList("objectives", 10)
+                    .tagCount() == 1,
+            "matching legacy record backfills without recount");
+        legacy.getTagList("summaries", 10)
+            .getCompoundTagAt(0)
+            .setString("result", "different_result");
+        restored.readFromNBT(legacy);
+        restored.observe(entry);
+        require(
+            restored.forPlayer(PLAYER)
+                .getCompoundTagAt(0)
+                .getTagList("objectives", 10)
+                .tagCount() == 0,
+            "unmatched old result is not invented");
+        List<darkgrey.rpg.task.journal.CanonicalTaskJournalObjectiveRow> route = new ArrayList<>(entry.getObjectives());
+        route.add(
+            new darkgrey.rpg.task.journal.CanonicalTaskJournalObjectiveRow(
+                "other-route",
+                "未走的支线",
+                "kill_entity",
+                CanonicalTaskObjectiveStatus.INACTIVE,
+                0,
+                1,
+                false,
+                "未走的支线"));
+        CanonicalTaskCompletionHistory actualRoute = new CanonicalTaskCompletionHistory();
+        actualRoute.observe(
+            new darkgrey.rpg.task.journal.CanonicalTaskJournalEntry(
+                entry.getPlayerUuid(),
+                entry.getStoryInstanceId(),
+                entry.getTaskNodePlacementId(),
+                entry.getTaskResourceId(),
+                entry.getTitle(),
+                entry.getStatus(),
+                entry.getActivationTime(),
+                entry.getSettlementTime(),
+                entry.getSettledResultSlot(),
+                entry.getPublicLogicState(),
+                route,
+                entry.getDescription()));
+        require(
+            actualRoute.forPlayer(PLAYER)
+                .getCompoundTagAt(0)
+                .getTagList("objectives", 10)
+                .tagCount() == 1,
+            "unvisited branch is not recorded as completed");
+        System.out.println("TASK_COMPLETION_READABLE_GOALS_COMPATIBILITY=PASS");
         System.out.println("TASK_COMPLETION_HISTORY_RESET_RESTART=PASS");
     }
 

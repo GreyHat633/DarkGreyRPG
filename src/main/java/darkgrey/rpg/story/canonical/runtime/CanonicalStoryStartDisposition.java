@@ -6,6 +6,9 @@ public enum CanonicalStoryStartDisposition {
     NEW,
     ALREADY_ACTIVE,
     ONCE_TERMINAL,
+    ERROR_TERMINAL,
+    REPEAT_WAITING,
+    INVALID_REPEAT_TIME,
     REPEATABLE_RESTART;
 
     public boolean isEligible() {

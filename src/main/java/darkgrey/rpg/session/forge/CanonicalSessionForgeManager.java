@@ -247,7 +247,7 @@ public final class CanonicalSessionForgeManager {
                 return project.getCanonicalStory(storyId);
             }
         });
-        return new ServiceContext(project, savedData, new CanonicalSessionServerService(project, savedData));
+        return new ServiceContext(project, savedData, new CanonicalSessionServerService(project, savedData, DynamicContentResolver.forProject(project)));
     }
 
     /** Completion acceptance is the durable precondition for sending Close. */
@@ -298,7 +298,7 @@ public final class CanonicalSessionForgeManager {
             if (trustedPlayerUuid == null || project == null || savedData == null || operation == null)
                 throw new IllegalArgumentException("Trusted Session probe inputs are required.");
             CanonicalSessionDispatch dispatch = operation
-                .dispatch(new CanonicalSessionServerService(project, savedData), trustedPlayerUuid);
+                .dispatch(new CanonicalSessionServerService(project, savedData, DynamicContentResolver.forProject(project)), trustedPlayerUuid);
             routeAccepted(sender, routePlayer, dispatch, project, savedData, storyContinuationListener);
             return true;
         } catch (RuntimeException exception) {

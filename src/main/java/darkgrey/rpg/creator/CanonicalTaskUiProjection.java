@@ -31,7 +31,9 @@ public final class CanonicalTaskUiProjection {
             NBTTagCompound task = new NBTTagCompound();
             task.setString("id", entry.getIdentity());
             task.setString("title", entry.getTitle());
-            task.setString("description", entry.getDescription());
+            task.setString(
+                "description",
+                darkgrey.rpg.session.forge.DynamicContentResolver.resolve(entry.getDescription(), player));
             task.setString("story", entry.getStoryInstanceId());
             task.setString("placement", entry.getTaskNodePlacementId());
             task.setLong("activation", entry.getActivationTime());
@@ -54,20 +56,30 @@ public final class CanonicalTaskUiProjection {
                         && row.getStatus() == CanonicalTaskObjectiveStatus.COMPLETED))
                     continue;
                 NBTTagCompound objective = new NBTTagCompound();
-                objective.setString("text", row.getDescription());
+                objective.setString(
+                    "text",
+                    darkgrey.rpg.session.forge.DynamicContentResolver.resolve(row.getDescription(), player));
                 objective.setString("id", row.getObjectiveId());
                 objective.setString("type", row.getObjectiveType());
                 objective.setBoolean("submit", "submit_item".equals(row.getObjectiveType()));
                 objective.setInteger("current", row.getCurrent());
                 objective.setInteger("required", row.getRequired());
-                if (resource != null && row.getStatus() == CanonicalTaskObjectiveStatus.ACTIVE
-                    && ("collect_item".equals(row.getObjectiveType())
-                        || "submit_item".equals(row.getObjectiveType()))) {
+                if (resource != null && row.getStatus() == CanonicalTaskObjectiveStatus.ACTIVE) objective.setTag(
+                    "reward_preview",
+                    TaskRewardPreview.project(
+                        resource,
+                        row.getObjectiveId(),
+                        darkgrey.rpg.item.identity.ItemIdentitySavedData.get()));
+                if (resource != null && ("collect_item".equals(row.getObjectiveType())
+                    || "submit_item".equals(row.getObjectiveType()))) {
                     for (darkgrey.rpg.graph.canonical.CanonicalGraphNode node : resource.getGraph()
                         .getNodes()) {
                         if (node.getId()
                             .equals(row.getObjectiveId())) {
-                            objective.setInteger(
+                            objective.setTag(
+                                "item_preview",
+                                TaskItemPreview.project(node, darkgrey.rpg.item.identity.ItemIdentitySavedData.get()));
+                            if (row.getStatus() == CanonicalTaskObjectiveStatus.ACTIVE) objective.setInteger(
                                 "held_count",
                                 darkgrey.rpg.task.forge.CanonicalTaskInventory.count(
                                     player.inventory.mainInventory,

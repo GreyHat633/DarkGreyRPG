@@ -19,6 +19,7 @@ public final class CanonicalPresentationBridge {
         if (event.phase != TickEvent.Phase.END) return;
         CanonicalTaskClientStore.synchronizeWorld(Minecraft.getMinecraft().theWorld);
         CanonicalSessionClientController.restoreForeground();
+        darkgrey.rpg.media.CanonicalMediaTextures.tickUploads();
         darkgrey.rpg.title.CanonicalTitleClient.tick();
     }
 
@@ -36,8 +37,6 @@ public final class CanonicalPresentationBridge {
     public void afterGui(GuiScreenEvent.DrawScreenEvent.Post event) {
         darkgrey.rpg.title.CanonicalTitleClient.draw();
         darkgrey.rpg.client.TaskNotificationCards.draw();
-        if (event.gui instanceof darkgrey.rpg.client.gui.GuiCanonicalTaskScreen)
-            darkgrey.rpg.client.TaskTrackerHud.draw();
     }
 
     @SubscribeEvent

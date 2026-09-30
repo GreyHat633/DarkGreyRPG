@@ -45,7 +45,7 @@ public final class CanonicalStoryForgeActionExecutor implements CanonicalStoryFo
             return true;
         }
         if (CanonicalStoryActionConfiguration.SEND_MESSAGE.equals(configuration.getType())) {
-            ChatMessages.info(player, configuration.getMessage());
+            ChatMessages.info(player, darkgrey.rpg.session.forge.DynamicContentResolver.resolve(configuration.getMessage(), player));
             return true;
         }
         return CanonicalStoryInstantActions.apply(player, configuration);

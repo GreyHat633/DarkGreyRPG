@@ -16,7 +16,7 @@
         <TextBlock Grid.Row="1" Margin="0,6,0,0" TextWrapping="Wrap"
                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Explanation}" />
         <TextBox Grid.Row="3" Padding="9,6" AutomationProperties.Name="搜索角色"
-                 ToolTip="按 ID、显示名称或标签搜索" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                 ToolTip="按 ID、资源名称或标签搜索" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
         <Grid Grid.Row="5">
             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding EmptyText}">

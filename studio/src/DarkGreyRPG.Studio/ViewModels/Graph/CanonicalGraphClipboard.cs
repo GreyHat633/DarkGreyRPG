@@ -42,11 +42,11 @@ public sealed class CanonicalGraphClipboard
         else { NodeResources = result; NodeScreenMetadata = screenMetadata; }
     }
     public int PasteCount { get; set; }
-    public void CopyFrom(CanonicalStoryWorkspaceViewModel workspace, IEnumerable<string> ids, bool parameters)
+    public void CopyFrom(CanonicalStoryWorkspaceViewModel workspace, IEnumerable<string> ids, bool parameters, IEnumerable<string>? groups = null)
     {
         var draft = new CanonicalGraphClipboard();
         if (parameters) draft.CopyParameters(workspace.ActiveGraphHost, ids.Single());
-        else draft.CopyNodes(workspace.ActiveGraphHost, ids);
+        else draft.CopyNodes(workspace.ActiveGraphHost, ids, groups);
         draft.CaptureResources(workspace, parameters);
         if (parameters) { Parameters = draft.Parameters; ParameterResources = draft.ParameterResources; ParameterScreenMetadata = draft.ParameterScreenMetadata; }
         else { Nodes = draft.Nodes; NodeResources = draft.NodeResources; NodeScreenMetadata = draft.NodeScreenMetadata; Layout = draft.Layout; Frames = draft.Frames; PasteCount = 0; }
@@ -58,14 +58,16 @@ public sealed class CanonicalGraphClipboard
         NodeScreenMetadata = new Dictionary<string, byte[]?>(); ParameterScreenMetadata = new Dictionary<string, byte[]?>();
         Frames = [];
     }
-    public void CopyNodes(GraphEditorHostViewModel host, IEnumerable<string> ids)
+    public void CopyNodes(GraphEditorHostViewModel host, IEnumerable<string> ids, IEnumerable<string>? groups = null)
     {
         var selected = ids.ToHashSet(StringComparer.Ordinal);
+        var selectedGroups = GraphGroupOperations.DescendantGroups(host.Frames, groups ?? []);
+        selected.UnionWith(GraphGroupOperations.DescendantNodes(host.Frames, selectedGroups));
         Nodes = new(host.Scope, host.Graph, selected);
         Layout = host.Nodes.Where(n => selected.Contains(n.NodeId)).ToDictionary(n => n.NodeId, n => n.Position);
         // Copy a group only with its complete explicit membership; partial selections stay ungrouped.
-        Frames = host.FrameSnapshot().Where(frame => frame.Members.Length > 0 && frame.Members.All(selected.Contains))
-            .Select(frame => frame with { Members = frame.Members.ToArray() }).ToArray();
+        Frames = host.FrameSnapshot().Where(frame => selectedGroups.Contains(frame.Id))
+            .Select(frame => frame with { Members = frame.Members.ToArray(), Groups = frame.Groups.ToArray() }).ToArray();
         PasteCount = 0;
     }
     public void CopyParameters(GraphEditorHostViewModel host, string id) => Parameters = new(host.Scope, host.Graph, [id]);

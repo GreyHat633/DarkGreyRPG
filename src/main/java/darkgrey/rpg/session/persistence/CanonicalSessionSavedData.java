@@ -43,6 +43,30 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     private CanonicalStoryInstanceStore storyStore = new CanonicalStoryInstanceStore();
     private List<CanonicalStoryPendingContinuation> continuations = new java.util.ArrayList<CanonicalStoryPendingContinuation>();
     private NBTTagCompound pendingRaw;
+    private NBTTagCompound presentationTexts = new NBTTagCompound();
+
+    /** Only the current author-page presentation per live transport is retained, never an event history. */
+    public synchronized String presentationText(CanonicalSessionInstanceSnapshot snapshot, String slot,
+        java.util.function.Supplier<String> resolve) {
+        requireBound();
+        String key = Long.toString(snapshot.getTransportId());
+        String stamp = snapshot.getPlayerUuid() + ":" + snapshot.getRuntimeSnapshot().getCurrentNodeId() + ":"
+            + snapshot.getRuntimeSnapshot().getLineEpoch() + ":" + snapshot.getRuntimeSnapshot().getLinePageIndex();
+        NBTTagCompound entry = presentationTexts.getCompoundTag(key);
+        if (!stamp.equals(entry.getString("stamp"))) { entry = new NBTTagCompound(); entry.setString("stamp", stamp); }
+        NBTTagCompound values = entry.getCompoundTag("values");
+        if (values.hasKey(slot, 8)) return values.getString(slot);
+        String text = resolve.get();
+        if (text == null || text.length() > 131072) text = "数据不可用";
+        values.setString(slot, text); entry.setTag("values", values); presentationTexts.setTag(key, entry);
+        Set<String> active = new HashSet<String>();
+        for (CanonicalSessionInstanceSnapshot current : store.snapshots())
+            if (current.getRuntimeSnapshot().getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE)
+                active.add(Long.toString(current.getTransportId()));
+        for (String old : new HashSet<String>(presentationTexts.func_150296_c())) if (!active.contains(old)) presentationTexts.removeTag(old);
+        markDirty();
+        return text;
+    }
     private boolean bound = true;
     private boolean pendingLegacy;
     private CanonicalSessionResourceResolver boundSessionResolver;
@@ -73,9 +97,13 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public static CanonicalSessionSavedData get(MapStorage storage) {
         if (storage == null) throw new IllegalArgumentException("MapStorage is required.");
         WorldSavedData loaded = storage.loadData(CanonicalSessionSavedData.class, DATA_NAME);
-        if (loaded instanceof CanonicalSessionSavedData) return (CanonicalSessionSavedData) loaded;
+        if (loaded instanceof CanonicalSessionSavedData) {
+            darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, loaded);
+            return (CanonicalSessionSavedData) loaded;
+        }
         CanonicalSessionSavedData created = new CanonicalSessionSavedData();
         storage.setData(DATA_NAME, created);
+        darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, created);
         return created;
     }
 
@@ -270,7 +298,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime)
             .snapshot();
         // Candidate creation validates the trigger first. Failed starts must retain previous-run children.
-        if (restart) {
+        if (restart && result.getActivationTime() == activationTime
+            && result.getActivationTime() != storyStore.getSnapshot(playerUuid, resource.getId()).getActivationTime()) {
             store.cancelByStory(playerUuid, resource.getId());
             continuations = withoutContinuation(playerUuid, resource.getId());
         }
@@ -899,6 +928,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Session NBT is required.");
         // Keep the exact detached payload before any strict validation or resolver lookup.
         pendingRaw = copy(root);
+        presentationTexts = (NBTTagCompound) root.getCompoundTag("presentation_texts").copy();
         bound = false;
         pendingLegacy = !root.hasKey(CanonicalSessionWorldStateNbtCodec.SESSIONS_KEY)
             && !root.hasKey(CanonicalSessionWorldStateNbtCodec.CONTINUATIONS_KEY);
@@ -924,6 +954,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             terminalRouteTargets);
         else if (pendingRaw != null) output = copy(pendingRaw);
         else output = new CanonicalSessionInstanceStore().writeToNbt();
+        if (bound && !presentationTexts.hasNoTags()) output.setTag("presentation_texts", presentationTexts.copy());
         for (String key : new java.util.HashSet<String>(root.func_150296_c())) root.removeTag(key);
         for (String key : output.func_150296_c()) root.setTag(
             key,

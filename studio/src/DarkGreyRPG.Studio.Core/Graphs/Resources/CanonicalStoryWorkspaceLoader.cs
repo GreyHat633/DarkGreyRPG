@@ -147,6 +147,27 @@ public sealed class CanonicalStoryWorkspaceLoader
             storyId,
             issues);
 
+        var declaredItems = items.Select(item => item.Id).Concat(itemGroups.Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
+        var declaredActors = actors.Select(actor => actor.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var graph in sessions.Concat(tasks).Where(entry => entry.Resource is not null).Select(entry => entry.Resource!).Prepend(story))
+        {
+            void Check(System.Text.Json.JsonElement value, string field, string? nodeId)
+            {
+                try
+                {
+                    foreach (var id in Definitions.DynamicContentText.ItemReferences(value).Distinct(StringComparer.Ordinal))
+                        if (!declaredItems.Contains(id)) issues.Add(new("graph.dynamic_content.item_missing", $"动态内容引用未声明物品 '{id}'。", field, NodeId: nodeId));
+                    foreach (var id in Definitions.DynamicContentText.ActorReferences(value).Distinct(StringComparer.Ordinal))
+                        if (!declaredActors.Contains(id)) issues.Add(new("graph.dynamic_content.actor_missing", $"动态内容引用未声明角色 '{id}'。", field, NodeId: nodeId));
+                }
+                catch (Exception error) when (error is System.Text.Json.JsonException or FormatException or InvalidOperationException or KeyNotFoundException)
+                { issues.Add(new("graph.dynamic_content.invalid", "动态内容无效：" + error.Message, field, NodeId: nodeId)); }
+            }
+            foreach (var node in graph.Graph!.Nodes)
+                foreach (var property in node.Properties) Check(property.Value, property.Key, node.Id);
+            if (graph.TaskMetadata is { } metadata) Check(System.Text.Json.JsonSerializer.SerializeToElement(metadata.Description), "description", null);
+        }
+
         return new CanonicalStoryWorkspaceSnapshot(story, membership, actors, items, itemGroups, sessions, tasks, issues);
     }
 

@@ -49,6 +49,8 @@ public final class CanonicalStoryEventAdapter {
 
     @SubscribeEvent
     public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.player instanceof EntityPlayerMP)
+            darkgrey.rpg.diagnostics.PlayerNameIndex.record((EntityPlayerMP) event.player);
         if (event.player instanceof EntityPlayerMP) stories.recoverPendingRoutes((EntityPlayerMP) event.player);
     }
 
@@ -57,6 +59,8 @@ public final class CanonicalStoryEventAdapter {
         if (event.player == null) return;
         if (event.player instanceof EntityPlayerMP)
             darkgrey.rpg.media.StoryMediaServer.unload((EntityPlayerMP) event.player);
+        if (event.player instanceof EntityPlayerMP)
+            darkgrey.rpg.media.CanonicalMediaServer.disconnected((EntityPlayerMP) event.player);
         regions.forget(event.player.getUniqueID());
         stories.forgetActorChoices(event.player.getUniqueID());
     }

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Validation;
 
@@ -6,6 +6,8 @@ namespace DarkGreyRPG.Studio.Core.Graphs.Definitions;
 
 public static class CanonicalSessionLineSchema
 {
+    public static bool HasErrors(GraphNode node) => Validate(node).Any(issue => issue.Severity == ValidationSeverity.Error);
+
     private static readonly string[] PageFields = ["text", "portrait_variant", "voice_ref", "voice_volume", "text_speed", "custom_text_speed"];
 
     public static Dictionary<string, JsonElement> CreatePage(string? pageId = null) => new(StringComparer.Ordinal)
@@ -72,6 +74,10 @@ public static class CanonicalSessionLineSchema
         void ValidatePage(IDictionary<string, JsonElement> fields, string path)
         {
             if (!fields.TryGetValue("text", out var text) || text.ValueKind != JsonValueKind.String) Invalid(path + "text", "台词正文必须为文本。");
+            else {
+                var capacity = DialogueCapacityProfile.Measure(text.GetString() ?? "");
+                if (capacity.Over) issues.Add(new("graph.session.line.capacity", capacity.Warning, path + "text", ValidationSeverity.Warning, node.Id));
+            }
             if (fields.TryGetValue("portrait_variant", out var variant) && variant.ValueKind != JsonValueKind.Null
                 && (variant.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(variant.GetString()))) Invalid(path + "portrait_variant", "头像变体名称必须为非空文本。");
             if (fields.TryGetValue("voice_ref", out var voice) && voice.ValueKind != JsonValueKind.Null

@@ -11,6 +11,56 @@ import io.netty.buffer.Unpooled;
 /** Exercises real file commits, recovery, reference protection, decoder, and hostile packet lengths. */
 public final class GramophoneStorageProbe {
 
+    private static void sharedPreviewLease(GramophoneMediaInfo info) throws Exception {
+        Class<?> type = Class.forName("darkgrey.rpg.gramophone.GramophoneClient$Media");
+        java.lang.reflect.Constructor<?> mediaConstructor = type.getDeclaredConstructor();
+        mediaConstructor.setAccessible(true);
+        Object media = mediaConstructor.newInstance();
+        java.lang.reflect.Field pins = type.getDeclaredField("pins");
+        pins.setAccessible(true);
+        pins.setInt(media, 2);
+        java.lang.reflect.Field futureField = type.getDeclaredField("future");
+        futureField.setAccessible(true);
+        java.util.concurrent.CompletableFuture<Path> transfer = new java.util.concurrent.CompletableFuture<Path>();
+        futureField.set(media, transfer);
+        java.lang.reflect.Constructor<?> constructor = GramophoneClient.PreviewLease.class
+            .getDeclaredConstructor(String.class, type);
+        constructor.setAccessible(true);
+        GramophoneClient.PreviewLease first = (GramophoneClient.PreviewLease) constructor.newInstance("probe", media);
+        GramophoneClient.PreviewLease second = (GramophoneClient.PreviewLease) constructor.newInstance("probe", media);
+        require(first.ready() == null, "inflight media stays asynchronous");
+        first.close();
+        first.close();
+        require(pins.getInt(media) == 1 && !transfer.isCancelled(), "closing preview preserves another consumer");
+        java.lang.reflect.Field metadata = type.getDeclaredField("preview");
+        metadata.setAccessible(true);
+        metadata.set(media, info);
+        transfer.complete(info.path);
+        require(second.ready() == info && second.ready() == info, "shared metadata reused without reinspection");
+        second.close();
+        require(pins.getInt(media) == 0 && Files.isRegularFile(info.path), "idle completed media survives close");
+        Object pending = mediaConstructor.newInstance();
+        pins.setInt(pending, 1);
+        java.util.concurrent.CompletableFuture<Path> abandoned = new java.util.concurrent.CompletableFuture<Path>();
+        futureField.set(pending, abandoned);
+        GramophoneClient.PreviewLease last = (GramophoneClient.PreviewLease) constructor.newInstance("pending", pending);
+        last.close();
+        require(abandoned.isCancelled(), "last consumer cancels abandoned transfer");
+        Object failed = mediaConstructor.newInstance();
+        pins.setInt(failed, 1);
+        java.util.concurrent.CompletableFuture<Path> unavailable = new java.util.concurrent.CompletableFuture<Path>();
+        unavailable.completeExceptionally(new java.io.IOException("temporary source failure"));
+        futureField.set(failed, unavailable);
+        GramophoneClient.PreviewLease failure = (GramophoneClient.PreviewLease) constructor.newInstance("failed", failed);
+        try { failure.ready(); throw new AssertionError("Expected source failure"); }
+        catch (java.io.IOException expected) { require(expected.getMessage().contains("temporary source failure"), "preserve cause"); }
+        failure.close();
+        java.lang.reflect.Field discarded = type.getDeclaredField("discarded");
+        discarded.setAccessible(true);
+        require(discarded.getBoolean(failed), "failed idle cache is discarded so reopening can retry");
+        System.out.println("GRAMOPHONE_SHARED_PREVIEW_LEASE=PASS");
+    }
+
     private static void require(boolean value, String label) {
         if (!value) throw new AssertionError(label);
     }
@@ -26,6 +76,8 @@ public final class GramophoneStorageProbe {
             Files.copy(input, tone);
         }
         GramophoneMediaInfo info = GramophoneMediaInfo.inspect(tone);
+        sharedPreviewLease(info);
+        GramophoneCachePolicyProbe.run(info);
         require(
             info.seconds > 1.9 && info.seconds < 2.3 && info.bytes > 0 && info.envelope.length == 256,
             "streaming media inspection");

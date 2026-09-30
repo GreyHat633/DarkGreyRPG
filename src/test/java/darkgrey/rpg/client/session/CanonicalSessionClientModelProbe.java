@@ -164,9 +164,22 @@ public final class CanonicalSessionClientModelProbe {
             require(layout.left == size[0] / 20, "five percent horizontal safe margin");
             require(layout.top > size[1] / 2 && layout.bottom < size[1], "bottom dialogue");
             require(layout.textWidth > 0, "positive text width");
+            require(layout.portraitSize <= (layout.right - layout.left - 16) * .22f, "portrait width bounded");
             require(
-                layout.choiceTop(layout.choicesPerPage) + layout.choicesPerPage * 24 + 20 < layout.top,
-                "choices and paging never overlap dialogue");
+                layout.portraitTop() >= layout.bodyTop()
+                    && layout.portraitTop() + layout.portraitSize <= layout.bottom - 6,
+                "portrait inside body");
+            require(
+                Math.abs(
+                    (layout.portraitTop() - layout.bodyTop())
+                        - (layout.bottom - 6 - layout.portraitTop() - layout.portraitSize))
+                    <= 1,
+                "portrait vertically centered");
+            if (size[0] == 320) require(layout.portraitSize == 48, "standard capacity geometry unchanged");
+            if (size[1] >= 540) require(layout.portraitSize > 64, "large layout has no fixed portrait cap");
+            require(
+                layout.bodyTop() > layout.top && layout.bodyBottom() < layout.bottom,
+                "body leaves separate header and footer areas");
             require(layout.containsDialogue(layout.left, layout.top), "dialogue edge clickable");
             require(!layout.containsDialogue(layout.right, layout.top), "right outside excluded");
             require(!layout.containsDialogue(size[0] / 2, layout.top - 1), "world click excluded");

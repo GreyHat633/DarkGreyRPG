@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+    <None Include="../../../src/test/resources/dynamic-content-0334.json" Link="dynamic-content-0334.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

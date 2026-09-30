@@ -1100,12 +1100,15 @@ public sealed partial class ShellViewModel : ObservableObject
                     }
                     var next = rename.DisplayName;
                     if (next is null || (string.Equals(next.Trim(), actor.DisplayName, StringComparison.Ordinal) && (rename.Tags is null || rename.Tags.SequenceEqual(actor.Actor.Tags)))) return;
+                    var resourcePath = project.Actors.GetActorPath(actor.Id);
+                    var resourceBefore = File.ReadAllBytes(resourcePath);
                     var document = project.Actors.LoadActor(actor.Id);
                     document.DisplayName = next.Trim();
                     document.SetTags(rename.Tags ?? actor.Actor.Tags);
                     project.Actors.SaveActor(document);
                     LoadActorList();
                     ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, actor.Id);
+                    RecordResourceNameChange(resourcePath, resourceBefore);
                     ReportSuccess($"{label} '{actor.Id}' 已编辑。", $"canonical/actor/{actor.Id}");
                     return;
                 }
@@ -1123,6 +1126,8 @@ public sealed partial class ShellViewModel : ObservableObject
                     var next = rename.DisplayName;
                     if (next is null || (string.Equals(next.Trim(), itemResource.DisplayName, StringComparison.Ordinal) && (rename.Tags is null || rename.Tags.SequenceEqual(itemResource.Tags)))) return;
                     var repository = new ItemRepository(project.ProjectDirectory);
+                    var resourcePath = isIndividual ? repository.GetItemPath(itemResource.Id) : repository.GetGroupPath(itemResource.Id);
+                    var resourceBefore = File.ReadAllBytes(resourcePath);
                     if (isIndividual)
                     {
                         var original = repository.LoadItem(itemResource.Id);
@@ -1146,6 +1151,7 @@ public sealed partial class ShellViewModel : ObservableObject
                         });
                     }
                     ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, itemResource.Id);
+                    RecordResourceNameChange(resourcePath, resourceBefore);
                     ReportSuccess($"{label} '{itemResource.Id}' 已编辑。", $"canonical/item/{itemResource.Id}");
                     return;
                 }

@@ -33,7 +33,7 @@
           </Style.Triggers>
         </Style>
       </StackPanel.Style>
-      <CheckBox Content="可重复" IsChecked="{Binding IsRepeatable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="InlineStartRepeatableToggle" AutomationProperties.Name="Story Start repeatable" />
+      <graph:StoryRepeatEditor ModeAutomationId="InlineStartRepeatMode" />
       <Grid Margin="0,12,0,3">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
@@ -301,9 +301,9 @@
         </Style>
       </TextBlock.Style>
     </TextBlock>
-    <TextBox graph:TextInputWatermark.Text="输入聊天消息" Text="{Binding StoryActionMessage, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.AutomationId="InlineActionMessage">
-      <TextBox.Style>
-        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+    <graph:DynamicContentEditor Text="{Binding StoryActionMessage, Mode=TwoWay, UpdateSourceTrigger=Explicit}" AcceptsReturn="True" AutomationProperties.AutomationId="InlineActionMessage">
+      <graph:DynamicContentEditor.Style>
+        <Style TargetType="graph:DynamicContentEditor">
           <Setter Property="Visibility" Value="Collapsed" />
           <Style.Triggers>
             <DataTrigger Binding="{Binding IsSendMessageAction}" Value="True">
@@ -311,8 +311,8 @@
             </DataTrigger>
           </Style.Triggers>
         </Style>
-      </TextBox.Style>
-    </TextBox>
+      </graph:DynamicContentEditor.Style>
+    </graph:DynamicContentEditor>
     <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding StoryActionMessageError}" TextWrapping="Wrap" />
     <StackPanel Margin="0,8,0,0">
       <StackPanel.Style>
@@ -491,9 +491,9 @@
         </Style>
       </StackPanel.Style>
       <TextBlock Text="主标题" />
-      <TextBox graph:TextInputWatermark.Text="输入主标题" Text="{Binding TitleMain, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <graph:DynamicContentEditor Text="{Binding TitleMain, Mode=TwoWay, UpdateSourceTrigger=Explicit}" />
       <TextBlock Text="副标题（可选）" />
-      <TextBox graph:TextInputWatermark.Text="输入副标题（可选）" Text="{Binding TitleSubtitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+      <graph:DynamicContentEditor Text="{Binding TitleSubtitle, Mode=TwoWay, UpdateSourceTrigger=Explicit}" />
       <TextBlock Text="淡入（秒）" />
       <TextBox graph:NumericDrag.Step="0.1" graph:NumericDrag.Minimum="0" Text="{Binding TitleFadeIn, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
       <TextBlock Text="停留（秒）" />
@@ -527,9 +527,9 @@
         </Style>
       </TextBlock.Style>
     </TextBlock>
-    <TextBox graph:TextInputWatermark.Text="输入选项提示" Text="{Binding ChoicePrompt, Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
-      <TextBox.Style>
-        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+    <graph:DynamicContentEditor Text="{Binding ChoicePrompt, Mode=TwoWay, UpdateSourceTrigger=Explicit}">
+      <graph:DynamicContentEditor.Style>
+        <Style TargetType="graph:DynamicContentEditor">
           <Setter Property="Visibility" Value="Collapsed" />
           <Style.Triggers>
             <DataTrigger Binding="{Binding IsChoice}" Value="True">
@@ -537,8 +537,8 @@
             </DataTrigger>
           </Style.Triggers>
         </Style>
-      </TextBox.Style>
-    </TextBox>
+      </graph:DynamicContentEditor.Style>
+    </graph:DynamicContentEditor>
     <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ChoicePromptError}" TextWrapping="Wrap" />
     <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
       <StackPanel.Style>
@@ -554,7 +554,7 @@
       <TextBlock FontWeight="SemiBold" Text="选项" />
       <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
     </StackPanel>
-<graph:ReorderEntriesEditor ItemsSource="{Binding ChoiceOptions}" />
+<graph:ReorderEntriesEditor IsDynamicContent="True" ItemsSource="{Binding ChoiceOptions}" />
     <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
       <StackPanel.Style>
         <Style TargetType="StackPanel">

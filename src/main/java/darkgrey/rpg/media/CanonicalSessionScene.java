@@ -18,6 +18,7 @@ import darkgrey.rpg.session.runtime.CanonicalSessionPresentation.Layer;
 public final class CanonicalSessionScene {
 
     private static List<Layer> layers = Collections.emptyList();
+    private static final java.util.Map<Integer, Layer> displayed = new java.util.HashMap<Integer, Layer>();
 
     private CanonicalSessionScene() {}
 
@@ -25,6 +26,7 @@ public final class CanonicalSessionScene {
         layers = new ArrayList<Layer>(
             frame.getPresentation()
                 .getLayers());
+
         Collections.sort(layers, new Comparator<Layer>() {
 
             @Override
@@ -32,10 +34,23 @@ public final class CanonicalSessionScene {
                 return Integer.compare(a.z, b.z);
             }
         });
+        displayed.entrySet()
+            .removeIf(
+                entry -> entry.getKey() >= layers.size() || !sameSlot(entry.getValue(), layers.get(entry.getKey())));
+    }
+
+    private static boolean sameSlot(Layer a, Layer b) {
+        return a.z == b.z && a.x == b.x
+            && a.y == b.y
+            && a.width == b.width
+            && a.height == b.height
+            && a.anchorX == b.anchorX
+            && a.anchorY == b.anchorY;
     }
 
     public static void clear() {
         layers = Collections.emptyList();
+        displayed.clear();
     }
 
     public static void draw(int width, int height) {
@@ -47,8 +62,12 @@ public final class CanonicalSessionScene {
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             GL11.glDisable(GL11.GL_DEPTH_TEST);
             GL11.glColor4f(1, 1, 1, 1);
-            for (Layer layer : layers) {
+            for (int index = 0; index < layers.size(); index++) {
+                Layer layer = layers.get(index);
                 ResourceLocation texture = CanonicalMediaTextures.get(layer.mediaRef);
+                if (texture != null) displayed.put(index, layer);
+                else if (displayed.containsKey(index))
+                    texture = CanonicalMediaTextures.get(displayed.get(index).mediaRef);
                 if (texture == null) continue;
                 Minecraft.getMinecraft()
                     .getTextureManager()

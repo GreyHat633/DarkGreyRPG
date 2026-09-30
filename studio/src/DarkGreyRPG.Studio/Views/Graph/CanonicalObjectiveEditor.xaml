@@ -10,7 +10,7 @@
   <BooleanToVisibilityConverter x:Key="VisibleWhen"/>
  </UserControl.Resources>
  <StackPanel Visibility="{Binding IsObjective, Converter={StaticResource VisibleWhen}}">
-  <TextBlock Text="目标描述"/><TextBox graph:TextInputWatermark.Text="描述玩家需要完成的目标" x:Name="Description" Text="{Binding ObjectiveDescription, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap"/>
+  <TextBlock Text="目标描述"/><graph:DynamicContentEditor x:Name="Description" Text="{Binding ObjectiveDescription, UpdateSourceTrigger=Explicit}"/>
   <TextBlock graph:AuthoringText.IsHelp="True" Text="玩家将在游戏中看到的目标文字。" TextWrapping="Wrap"/>
   <TextBlock Style="{StaticResource {x:Type TextBlock}}" Text="{Binding ObjectiveDescriptionError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
   <TextBlock Text="目标类型" Margin="0,6,0,2"/><ComboBox x:Name="TypeSelector" ItemsSource="{Binding ObjectiveTypeOptions}" SelectedItem="{Binding SelectedObjectiveType, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>

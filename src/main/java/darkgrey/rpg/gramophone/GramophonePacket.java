@@ -7,7 +7,7 @@ import io.netty.buffer.ByteBuf;
 
 public final class GramophonePacket implements IMessage {
 
-    public static final int STATE = 0, BEGIN = 1, END = 2, OPEN = 3, SAVE = 4, DELETE = 5, RESULT = 6;
+    public static final int STATE = 0, BEGIN = 1, END = 2, OPEN = 3, SAVE = 4, DELETE = 5, RESULT = 6, REMOVED = 7;
     public int operation, dimension, x, y, z, radius = 16;
     public long revision;
     public String instance = "", source = "", status = "";

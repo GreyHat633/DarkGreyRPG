@@ -13,6 +13,8 @@ import net.minecraft.world.storage.MapStorage;
 
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus;
 import darkgrey.rpg.task.journal.CanonicalTaskJournalEntry;
+import darkgrey.rpg.task.journal.CanonicalTaskJournalObjectiveRow;
+import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 
 /** Read-only completion summaries, separate from task execution and reward receipts. */
 public final class CanonicalTaskCompletionHistory extends WorldSavedData {
@@ -47,7 +49,6 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
         if (entry.getStatus() != CanonicalTaskInstanceStatus.SETTLED) return;
         String identity = entry.getIdentity();
         Long seen = observed.get(identity);
-        if (seen != null && seen.longValue() == entry.getActivationTime()) return;
         String key = part(
             entry.getPlayerUuid()
                 .toString())
@@ -55,8 +56,26 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
             + part(entry.getTaskNodePlacementId())
             + part(entry.getTaskResourceId());
         NBTTagCompound previous = groups.get(key);
+        if (seen != null && seen.longValue() == entry.getActivationTime()) {
+            // A matching retained runtime can repair an old summary without counting it again.
+            // Never reconstruct a historical route from the current authoring definition alone.
+            if (previous != null && previous.getTagList("objectives", 10)
+                .tagCount() == 0
+                && previous.getLong("settlement") == entry.getSettlementTime()
+                    .longValue()
+                && previous.getString("result")
+                    .equals(entry.getSettledResultSlot())) {
+                NBTTagList objectives = completedObjectives(entry);
+                if (objectives.tagCount() > 0) {
+                    previous.setTag("objectives", objectives);
+                    markDirty();
+                }
+            }
+            return;
+        }
         NBTTagCompound row = new NBTTagCompound();
         row.setString("id", "history:" + key);
+        row.setString("task_resource_id", entry.getTaskResourceId());
         row.setString(
             "player",
             entry.getPlayerUuid()
@@ -69,10 +88,24 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
         row.setLong(
             "completion_count",
             previous == null ? 1 : Math.min(Long.MAX_VALUE - 1, previous.getLong("completion_count")) + 1);
-        row.setTag("objectives", new NBTTagList());
+        row.setTag("objectives", completedObjectives(entry));
         groups.put(key, row);
         observed.put(identity, entry.getActivationTime());
         markDirty();
+    }
+
+    private static NBTTagList completedObjectives(CanonicalTaskJournalEntry entry) {
+        NBTTagList result = new NBTTagList();
+        for (CanonicalTaskJournalObjectiveRow objective : entry.getObjectives()) {
+            if (objective.getStatus() != CanonicalTaskObjectiveStatus.COMPLETED) continue;
+            NBTTagCompound row = new NBTTagCompound();
+            row.setString("text", objective.getDescription());
+            row.setString("type", objective.getObjectiveType());
+            row.setInteger("current", objective.getCurrent());
+            row.setInteger("required", objective.getRequired());
+            result.appendTag(row);
+        }
+        return result;
     }
 
     /** Removed runtime identities can occur again even in the same clock millisecond. */

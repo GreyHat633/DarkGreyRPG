@@ -74,12 +74,14 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         WorldSavedData loaded = storage.loadData(CanonicalTaskSavedData.class, DATA_NAME);
         if (loaded instanceof CanonicalTaskSavedData) {
             CanonicalTaskSavedData data = (CanonicalTaskSavedData) loaded;
+            darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, data);
             data.completionHistory = CanonicalTaskCompletionHistory.get(storage);
             return data;
         }
         CanonicalTaskSavedData created = new CanonicalTaskSavedData();
         created.completionHistory = CanonicalTaskCompletionHistory.get(storage);
         storage.setData(DATA_NAME, created);
+        darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, created);
         return created;
     }
 

@@ -21,31 +21,83 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
     private final CanonicalTaskSubmitChoiceFrame frame;
     private boolean submitted;
     private int firstOption;
+    private final java.util.Map<Integer, ItemSlotStrip> strips = new java.util.HashMap<Integer, ItemSlotStrip>();
+
+    private int rowHeight() {
+        int result = 80;
+        for (int i = 0; i < frame.getOptions()
+            .size(); i++) {
+            int progressHeight = fontRendererObj.listFormattedStringToWidth(progress(i), contentWidth())
+                .size() * fontRendererObj.FONT_HEIGHT;
+            result = Math.max(
+                result,
+                18 + strips.get(i)
+                    .height(contentWidth()) + 6 + progressHeight + 12);
+        }
+        return result;
+    }
+
+    private int contentWidth() {
+        return Math.max(24, Math.min(520, width - 30) - 140);
+    }
+
+    private String progress(int index) {
+        net.minecraft.nbt.NBTTagCompound preview = frame.getOptions()
+            .get(index)
+            .getPreview();
+        return (preview.getBoolean("group") ? "以下任意物品，合计需要 " + preview.getInteger("required") + " 个 · " : "") + "持有 "
+            + preview.getInteger("held")
+            + " / 需要 "
+            + preview.getInteger("required");
+    }
 
     private int pageSize() {
-        return Math.max(1, (Math.min(430, height - 30) - 80) / 42);
+        return Math.max(1, (Math.min(430, height - 30) - 80) / rowHeight());
+    }
+
+    private int panelHeight() {
+        return Math.min(
+            height - 30,
+            80 + Math.min(
+                frame.getOptions()
+                    .size() - firstOption,
+                pageSize()) * rowHeight());
     }
 
     public GuiCanonicalTaskSubmitChooser(CanonicalTaskSubmitChoiceFrame frame) {
         if (frame == null) throw new IllegalArgumentException("Task submit chooser frame is required.");
         this.frame = frame;
+        for (int i = 0; i < frame.getOptions()
+            .size(); i++) {
+            net.minecraft.nbt.NBTTagCompound preview = frame.getOptions()
+                .get(i)
+                .getPreview();
+            if (!preview.hasKey("items")) {
+                net.minecraft.nbt.NBTTagList items = new net.minecraft.nbt.NBTTagList();
+                net.minecraft.nbt.NBTTagCompound missing = new net.minecraft.nbt.NBTTagCompound();
+                missing.setString("error", "此候选没有物品展示数据");
+                items.appendTag(missing);
+                preview.setTag("items", items);
+            }
+            strips.put(i, new ItemSlotStrip(preview, true));
+        }
     }
 
     @Override
     public void initGui() {
         buttonList.clear();
         List<CanonicalTaskSubmitChoiceFrame.Option> options = frame.getOptions();
-        int panelWidth = Math.min(700, width - 30);
+        int panelWidth = Math.min(520, width - 30);
         int left = (width - panelWidth) / 2;
-        int top = (height - Math.min(430, height - 30)) / 2;
-        int rowHeight = 42;
+        int top = (height - panelHeight()) / 2;
+        int rowHeight = rowHeight();
         firstOption = Math.max(0, Math.min(firstOption, ((options.size() - 1) / pageSize()) * pageSize()));
         int visible = Math.min(options.size() - firstOption, pageSize());
         for (int row = 0; row < visible; row++) buttonList.add(
             new GuiButton(
                 OPTION_BASE + firstOption + row,
                 left + panelWidth - 112,
-                top + 38 + row * rowHeight,
+                top + 60 + row * rowHeight,
                 96,
                 20,
                 "提交"));
@@ -81,16 +133,18 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        int panelWidth = Math.min(700, width - 30);
-        int panelHeight = Math.min(430, height - 30);
+        int panelWidth = Math.min(520, width - 30);
+        int panelHeight = panelHeight();
         int left = (width - panelWidth) / 2;
         int top = (height - panelHeight) / 2;
         drawRect(left, top, left + panelWidth, top + panelHeight, DgrUiPalette.WINDOW_PANEL);
-        drawCenteredString(fontRendererObj, "选择要提交的任务目标", width / 2, top + 12, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText
+            .centered(fontRendererObj, "选择要提交的任务目标", width / 2, top + 12, DgrUiPalette.TEXT);
         List<CanonicalTaskSubmitChoiceFrame.Option> options = frame.getOptions();
         int visible = Math.min(options.size() - firstOption, pageSize());
+        List<String> tooltip = null;
         for (int row = 0; row < visible; row++) {
-            int y = top + 38 + row * 42;
+            int y = top + 38 + row * rowHeight();
             fontRendererObj.drawString(
                 fontRendererObj.trimStringToWidth(
                     options.get(firstOption + row)
@@ -99,8 +153,34 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
                 left + 20,
                 y,
                 DgrUiPalette.TEXT);
+            ItemSlotStrip strip = strips.get(firstOption + row);
+            int stripHeight = strip.height(contentWidth());
+            strip.draw(left + 20, y + 18, contentWidth(), y + 18, y + 18 + stripHeight, mouseX, mouseY);
+            if (strip.tooltip != null) tooltip = strip.tooltip;
+            fontRendererObj.drawSplitString(
+                progress(firstOption + row),
+                left + 20,
+                y + 24 + stripHeight,
+                contentWidth(),
+                DgrUiPalette.SECONDARY);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
+        if (tooltip != null) drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
+    }
+
+    @Override
+    protected void mouseClicked(int x, int y, int button) {
+        if (button == 0) for (int i = firstOption; i < Math.min(
+            frame.getOptions()
+                .size(),
+            firstOption + pageSize()); i++) {
+                ItemSlotStrip strip = strips.get(i);
+                if (strip.moreAt(x, y)) {
+                    mc.displayGuiScreen(new GuiItemCandidates(this, strip.source()));
+                    return;
+                }
+            }
+        super.mouseClicked(x, y, button);
     }
 
     @Override

@@ -303,14 +303,16 @@ public partial class CanonicalStoryWorkspaceView : UserControl
 
         _resourceDragItem = null;
         var data = new DataObject(ResourceDragFormat, item);
+        var effect = DragDropEffects.None;
         try
         {
-            _ = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link | DragDropEffects.Move);
+            effect = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link | DragDropEffects.Move);
         }
         finally
         {
             CancelResourceDragPreview();
             ClearResourceReorderPreview();
+            DynamicContentEditor.NotifyResourceDragFinished(effect != DragDropEffects.None);
         }
         args.Handled = true;
     }

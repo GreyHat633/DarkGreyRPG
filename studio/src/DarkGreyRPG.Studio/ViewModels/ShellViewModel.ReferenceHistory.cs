@@ -8,7 +8,7 @@ namespace DarkGreyRPG.Studio.ViewModels;
 
 public sealed partial class ShellViewModel
 {
-    private sealed record ReferenceHistory(string Project, long Sequence, IReadOnlyList<NamespaceFileChange> Changes);
+    private sealed record ReferenceHistory(string Project, long Sequence, IReadOnlyList<NamespaceFileChange> Changes, string Label = "引用");
     private readonly Stack<ReferenceHistory> _referenceUndo = [];
     private readonly Stack<ReferenceHistory> _referenceRedo = [];
     private long _referenceRedoEpoch;
@@ -44,6 +44,16 @@ public sealed partial class ShellViewModel
         RedoCurrentCommand.RaiseCanExecuteChanged();
     }
 
+    private void RecordResourceNameChange(string path, byte[] before)
+    {
+        var after = File.ReadAllBytes(path);
+        if (before.SequenceEqual(after)) return;
+        _referenceUndo.Push(new(Path.GetFullPath(ProjectDirectory), EditHistoryClock.Next(),
+            [new NamespaceFileChange(Path.GetRelativePath(ProjectDirectory, path), before, after)], "资源编辑"));
+        _referenceRedo.Clear();
+        UndoCurrentCommand.RaiseCanExecuteChanged(); RedoCurrentCommand.RaiseCanExecuteChanged();
+    }
+
     private bool TryUndoReference()
     {
         if (!CanUndoReference()) return false;
@@ -57,7 +67,8 @@ public sealed partial class ShellViewModel
             _referenceRedo.Push(entry);
             RefreshOfflineWorkspace();
             _referenceRedoEpoch = EditHistoryClock.Current;
-            ReportSuccess("已撤销引用操作。", "引用");
+            if (entry.Label == "资源编辑") LoadActorList();
+            ReportSuccess($"已撤销{entry.Label}操作。", entry.Label);
         }
         catch (Exception exception) { ReportFailure("撤销引用操作", exception); }
         return true;
@@ -79,7 +90,8 @@ public sealed partial class ShellViewModel
                 _referenceRedo.Pop();
                 _referenceUndo.Push(entry);
                 RefreshOfflineWorkspace();
-                ReportSuccess("已重做引用操作。", "引用");
+                if (entry.Label == "资源编辑") LoadActorList();
+                ReportSuccess($"已重做{entry.Label}操作。", entry.Label);
             }
             catch (Exception exception) { ReportFailure("重做引用操作", exception); }
         }

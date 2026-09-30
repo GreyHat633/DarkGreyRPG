@@ -13,6 +13,34 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class SessionPagesTests
 {
     [TestMethod]
+    public void CapacityWarningAllowsEditClipboardSaveAndPackageExport()
+    {
+        using var project = new TestProjectDirectory();
+        var text = new string('W', 1000);
+        var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
+        var graph = new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "start", "start"), line]);
+        var page = CanonicalSessionLineSchema.CreatePage("long-page");
+        page["text"] = JsonSerializer.SerializeToElement(text);
+        var edits = new GraphEditSession(graph, GraphScope.Session);
+        Assert.IsTrue(edits.SetNodeProperty("line", "pages", JsonSerializer.SerializeToElement(new[] { page })));
+        Assert.IsTrue(edits.ChangeSessionSpeaker("line", "npc"));
+        Assert.IsTrue(edits.ChangeSessionSpeaker("line", null));
+        var pasted = new GraphClipboardSnapshot(GraphScope.Session, graph, ["line"]).CloneForPaste(GraphScope.Session, out _).Nodes.Single();
+        Assert.AreEqual(text, CanonicalSessionLineSchema.ReadPages(pasted).Single()["text"].GetString());
+        var store = new CanonicalProjectGraphStore(project.Root);
+        store.Stories.Create(new(GraphResourceKind.Story, "story", "Story", new([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Sessions.Create(new(GraphResourceKind.Session, "session", "Session", graph));
+        store.Memberships.Create(new("story") { OwnedResources = new() { Sessions = ["session"] } });
+        var package = Path.Combine(project.Root, "over-capacity.dgrs");
+        new DgrsStoryPackageExporter(project.Root).Build("story", package);
+        Assert.IsTrue(File.Exists(package));
+        using var archive = System.IO.Compression.ZipFile.OpenRead(package);
+        Assert.IsTrue(archive.Entries.Where(e => e.FullName.EndsWith(".json")).Any(e => {
+            using var reader = new StreamReader(e.Open()); return reader.ReadToEnd().Contains(text, StringComparison.Ordinal);
+        }));
+    }
+
+    [TestMethod]
     public void EmptyPagesSurviveSaveReloadAndClipboard()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
@@ -49,7 +77,10 @@ public sealed class SessionPagesTests
         foreach (var field in line.Properties.Where(p => p.Key != "speaker_actor_id"))
             Assert.IsTrue(JsonElement.DeepEquals(field.Value, page[field.Key]), field.Key);
         Assert.AreEqual("line:page:0", page["page_id"].GetString());
-        Assert.IsEmpty(CanonicalSessionLineSchema.Validate(saved));
+        var warning = CanonicalSessionLineSchema.Validate(saved).Single();
+        Assert.AreEqual("graph.session.line.capacity", warning.Code);
+        Assert.AreEqual(DarkGreyRPG.Studio.Core.Validation.ValidationSeverity.Warning, warning.Severity);
+        Assert.AreEqual("pages[0].text", warning.Field);
     }
 
     [TestMethod]
@@ -185,6 +216,7 @@ public sealed class SessionPagesTests
         line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("npc");
         var pages = new[] { CanonicalSessionLineSchema.CreatePage(), CanonicalSessionLineSchema.CreatePage() };
         pages[1]["portrait_variant"] = JsonSerializer.SerializeToElement("missing_later_variant");
+        foreach (var page in pages) page["text"] = JsonSerializer.SerializeToElement("Portrait validation sample.");
         line.Properties["pages"] = JsonSerializer.SerializeToElement(pages);
         var end = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
         end.Properties["port_id"] = JsonSerializer.SerializeToElement("done");

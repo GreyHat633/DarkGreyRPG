@@ -124,6 +124,7 @@ public sealed class CanonicalStoryResourceShellTests
     }
 
     [TestMethod]
+    [DoNotParallelize]
     public void DisplayNameOnlyRenamePreservesIdentityOwnershipAndSynchronizesGraphAggregates()
     {
         using var project = new CanonicalProjectFixture();
@@ -161,6 +162,11 @@ public sealed class CanonicalStoryResourceShellTests
 
         Assert.IsTrue(workspace.RequestRename(workspace.ActorItems.Single()));
         Assert.IsTrue(workspace.RequestRename(workspace.ItemItems.Single()));
+        shell.UndoCurrentCommand.Execute(null);
+        Assert.AreEqual("Item", workspace.ItemItems.Single().DisplayName);
+        Assert.AreEqual("Renamed Actor", workspace.ActorItems.Single().DisplayName);
+        shell.RedoCurrentCommand.Execute(null);
+        Assert.AreEqual("Renamed Item", workspace.ItemItems.Single().DisplayName);
         Assert.IsTrue(workspace.RequestRename(workspace.SessionItems.Single()));
         Assert.IsTrue(workspace.RequestRename(workspace.TaskItems.Single()));
 

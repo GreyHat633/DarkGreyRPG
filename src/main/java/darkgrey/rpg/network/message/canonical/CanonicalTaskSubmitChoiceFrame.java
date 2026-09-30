@@ -21,6 +21,7 @@ public final class CanonicalTaskSubmitChoiceFrame implements IMessage {
 
     public static final int MAX_OPTIONS = 256;
     private static final int MAX_TEXT_BYTES = 2048;
+    private static final int PREVIEW_MAGIC = 0x44475249;
     private long token;
     private List<Option> options = Collections.emptyList();
 
@@ -46,7 +47,23 @@ public final class CanonicalTaskSubmitChoiceFrame implements IMessage {
             if (!identities.add(identity)) throw invalid("duplicate choice");
             decoded.add(new Option(identity, display));
         }
-        if (buffer.isReadable()) throw invalid("trailing bytes");
+        if (buffer.isReadable()) {
+            if (buffer.readableBytes() < 8 || buffer.readInt() != PREVIEW_MAGIC) throw invalid("preview header");
+            int length = buffer.readInt();
+            if (length < 1 || length > 1048576 || length != buffer.readableBytes()) throw invalid("preview length");
+            byte[] bytes = new byte[length];
+            buffer.readBytes(bytes);
+            try {
+                net.minecraft.nbt.NBTTagCompound root = net.minecraft.nbt.CompressedStreamTools
+                    .func_152457_a(bytes, new net.minecraft.nbt.NBTSizeTracker(2097152));
+                net.minecraft.nbt.NBTTagList previews = root.getTagList("previews", 10);
+                if (previews.tagCount() != count) throw invalid("preview count");
+                for (int i = 0; i < count; i++) decoded
+                    .set(i, new Option(decoded.get(i).identity, decoded.get(i).display, previews.getCompoundTagAt(i)));
+            } catch (java.io.IOException e) {
+                throw invalid("preview data");
+            }
+        }
         validate(decodedToken, decoded);
         token = decodedToken;
         options = detached(decoded);
@@ -60,6 +77,25 @@ public final class CanonicalTaskSubmitChoiceFrame implements IMessage {
         for (Option option : options) {
             write(buffer, option.identity);
             write(buffer, option.display);
+        }
+        boolean hasPreview = false;
+        for (Option option : options) hasPreview |= !option.preview.hasNoTags();
+        if (hasPreview) {
+            net.minecraft.nbt.NBTTagCompound root = new net.minecraft.nbt.NBTTagCompound();
+            net.minecraft.nbt.NBTTagList previews = new net.minecraft.nbt.NBTTagList();
+            for (Option option : options) previews.appendTag(option.getPreview());
+            root.setTag("previews", previews);
+            try {
+                byte[] bytes = net.minecraft.nbt.CompressedStreamTools.compress(root);
+                if (bytes.length > 1048576) throw invalid("preview too large");
+                net.minecraft.nbt.CompressedStreamTools
+                    .func_152457_a(bytes, new net.minecraft.nbt.NBTSizeTracker(2097152));
+                buffer.writeInt(PREVIEW_MAGIC);
+                buffer.writeInt(bytes.length);
+                buffer.writeBytes(bytes);
+            } catch (java.io.IOException e) {
+                throw invalid("preview data");
+            }
         }
     }
 
@@ -91,12 +127,22 @@ public final class CanonicalTaskSubmitChoiceFrame implements IMessage {
 
         private final String identity;
         private final String display;
+        private final net.minecraft.nbt.NBTTagCompound preview;
 
         public Option(String identity, String display) {
+            this(identity, display, new net.minecraft.nbt.NBTTagCompound());
+        }
+
+        public Option(String identity, String display, net.minecraft.nbt.NBTTagCompound preview) {
+            this.preview = (net.minecraft.nbt.NBTTagCompound) preview.copy();
             require(identity, "identity");
             require(display, "display");
             this.identity = identity;
             this.display = display;
+        }
+
+        public net.minecraft.nbt.NBTTagCompound getPreview() {
+            return (net.minecraft.nbt.NBTTagCompound) preview.copy();
         }
 
         public String getIdentity() {

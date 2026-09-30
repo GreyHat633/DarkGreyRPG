@@ -20,4 +20,14 @@ public final class DialoguePreferences {
     public static double resolve(double override) {
         return override == -1 ? speed : override;
     }
+
+    /** UI positions 0..120 represent 1..120 characters/s, then instant. */
+    public static double sliderPosition() {
+        return speed == 0 ? 120 : speed - 1;
+    }
+
+    public static void setSliderPosition(double position) {
+        int step = (int) Math.round(Math.max(0, Math.min(120, position)));
+        setSpeed(step == 120 ? 0 : step + 1);
+    }
 }

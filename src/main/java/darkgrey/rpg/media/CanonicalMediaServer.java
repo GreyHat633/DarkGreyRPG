@@ -24,6 +24,28 @@ public final class CanonicalMediaServer {
     private static final Map<EntityPlayerMP, long[]> RATES = new WeakHashMap<EntityPlayerMP, long[]>();
     private static final int MEDIA_WORKER_THREADS = 2;
     private static final int MEDIA_WORKER_QUEUE = 64;
+    private static final MediaTransferReaders READERS = new MediaTransferReaders();
+    private static final java.util.concurrent.ScheduledExecutorService READER_CLEANUP = java.util.concurrent.Executors
+        .newSingleThreadScheduledExecutor(task -> {
+            Thread thread = new Thread(task, "DGR-media-reader-cleanup");
+            thread.setDaemon(true);
+            return thread;
+        });
+    static {
+        READER_CLEANUP.scheduleWithFixedDelay(() -> READERS.expire(), 1, 1, TimeUnit.SECONDS);
+    }
+
+    public static void disconnected(EntityPlayerMP player) {
+        final String owner = owner(player);
+        READER_CLEANUP.execute(() -> READERS.releaseOwner(owner));
+        FRAMES.remove(player);
+        PORTRAITS.remove(player);
+    }
+
+    private static String owner(EntityPlayerMP player) {
+        return player.getUniqueID() + ":" + System.identityHashCode(player);
+    }
+
     private static final java.util.concurrent.atomic.AtomicInteger IN_FLIGHT = new java.util.concurrent.atomic.AtomicInteger();
     private static final ThreadPoolExecutor MEDIA_WORKER = new ThreadPoolExecutor(
         MEDIA_WORKER_THREADS,
@@ -84,7 +106,8 @@ public final class CanonicalMediaServer {
                 rate = new long[] { now, 0 };
                 RATES.put(player, rate);
             }
-            if (++rate[1] > 32) return;
+            // Up to three 8-chunk windows; retain a bounded 8 MiB/s request ceiling.
+            if (++rate[1] > 256) return;
         }
         if (!reserveRequest()) return;
         darkgrey.rpg.network.MainThreadScheduler.scheduleServer(new Runnable() {
@@ -161,9 +184,8 @@ public final class CanonicalMediaServer {
                         CanonicalMediaChunk chunk;
                         try {
                             chunk = source == null || !sourceLease ? unavailable(request)
-                                : source
-                                    .readMediaChunk(request.getRequestId(), request.getMediaRef(), request.getOffset());
-                        } catch (RuntimeException failure) {
+                                : READERS.read(owner(player), source, request);
+                        } catch (java.io.IOException | RuntimeException failure) {
                             chunk = null;
                         }
                         final CanonicalMediaChunk response = chunk == null ? unavailable(request) : chunk;
@@ -176,6 +198,7 @@ public final class CanonicalMediaServer {
                                 try {
                                     if (isAuthorized(player, request.getMediaRef()))
                                         DialogueNetwork.CHANNEL.sendTo(response, player);
+                                    else READER_CLEANUP.execute(() -> READERS.releaseOwner(owner(player)));
                                 } finally {
                                     IN_FLIGHT.decrementAndGet();
                                 }

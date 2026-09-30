@@ -30,7 +30,13 @@ public final class GramophoneServer {
     }
 
     public static void remove(TileGramophone tile) {
-        if (tile.getWorldObj() != null && !tile.getWorldObj().isRemote) LOADED.remove(tile);
+        World world = tile.getWorldObj();
+        if (world == null || world.isRemote || !LOADED.remove(tile)) return;
+        GramophonePacket removed = tile.rangeSnapshot();
+        removed.operation = GramophonePacket.REMOVED;
+        // Include listeners outside the watch/proximity radius; identity prevents removing a replacement.
+        for (Object player : world.playerEntities)
+            if (player instanceof EntityPlayerMP) GramophoneNetwork.CHANNEL.sendTo(removed, (EntityPlayerMP) player);
     }
 
     public static boolean allowed(EntityPlayer player) {
@@ -121,6 +127,13 @@ public final class GramophoneServer {
         if (event.phase != TickEvent.Phase.END || event.world.isRemote || event.world.getTotalWorldTime() % 10 != 0)
             return;
         GramophoneLocalServer.tick();
+        for (TileGramophone tile : new java.util.ArrayList<TileGramophone>(LOADED)) {
+            if (tile.getWorldObj() == event.world
+                && (tile.isInvalid() || !event.world.blockExists(tile.xCoord, tile.yCoord, tile.zCoord)
+                    || !(event.world.getBlock(tile.xCoord, tile.yCoord, tile.zCoord) instanceof BlockGramophone)
+                    || event.world.getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord) != tile))
+                remove(tile);
+        }
         for (TileGramophone tile : LOADED) if (tile.getWorldObj() == event.world && !tile.isInvalid()
             && !tile.ready
             && !tile.restoring

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -15,7 +15,7 @@ internal static class SessionPortraitPackageValidation
             var session = GraphResourceEnvelopeSerializer.Deserialize(File.ReadAllText(Path.Combine(root, path)));
             foreach (var node in session.Graph?.Nodes ?? [])
             {
-                if (node.Type == "line" && Graphs.Definitions.CanonicalSessionLineSchema.Validate(node).Count != 0)
+                if (node.Type == "line" && Graphs.Definitions.CanonicalSessionLineSchema.HasErrors(node))
                     throw new StoryPackageException($"台词 {node.Id} 的句子数据无效。");
                 if (node.Type != "line" || !node.Properties.TryGetValue("speaker_actor_id", out var speaker)
                     || speaker.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(speaker.GetString())) continue;

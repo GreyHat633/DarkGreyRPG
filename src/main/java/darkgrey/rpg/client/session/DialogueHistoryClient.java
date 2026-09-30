@@ -7,8 +7,10 @@ public final class DialogueHistoryClient {
     public static final DialogueBacklog HISTORY = new DialogueBacklog();
     private static darkgrey.rpg.network.message.canonical.CanonicalSessionAction pending;
     private static String pendingText;
+    private static String pendingSpeaker;
     private static String pendingContext;
     private static String pendingIdentity;
+    private static String lastPresentedIdentity, lastPresentedContext;
 
     private DialogueHistoryClient() {}
 
@@ -24,9 +26,13 @@ public final class DialogueHistoryClient {
             + frame.getLineEpoch();
     }
 
-    public static void presented(CanonicalSessionFrame frame, String speaker, String shownText) {
-        if (frame.getKind() == CanonicalSessionFrame.Kind.LINE)
-            HISTORY.upsert(PlayerReadingContext.current(), identity(frame), speaker, shownText);
+    public static void presented(CanonicalSessionFrame frame, String speaker) {
+        if (frame.getKind() != CanonicalSessionFrame.Kind.LINE) return;
+        String context = PlayerReadingContext.current(), identity = identity(frame);
+        if (context == null || context.equals(lastPresentedContext) && identity.equals(lastPresentedIdentity)) return;
+        HISTORY.upsert(context, identity, speaker, frame.getText());
+        lastPresentedContext = context;
+        lastPresentedIdentity = identity;
     }
 
     public static void choosing(CanonicalSessionFrame frame,
@@ -36,6 +42,9 @@ public final class DialogueHistoryClient {
                 .equals(action.getOptionId())) continue;
             pending = action;
             pendingText = option.getDisplayText();
+            pendingSpeaker = net.minecraft.client.Minecraft.getMinecraft()
+                .getSession()
+                .getUsername();
             pendingContext = PlayerReadingContext.current();
             pendingIdentity = identity(frame) + "/choice";
             return;
@@ -52,13 +61,14 @@ public final class DialogueHistoryClient {
             || !pending.getOptionId()
                 .equals(action.getOptionId())
             || !java.util.Objects.equals(pendingContext, PlayerReadingContext.current())) return;
-        HISTORY.upsert(pendingContext, pendingIdentity, "我选择", pendingText);
+        HISTORY.upsert(pendingContext, pendingIdentity, pendingSpeaker, pendingText);
         clearPending();
     }
 
     public static void clearPending() {
         pending = null;
         pendingText = null;
+        pendingSpeaker = null;
         pendingContext = null;
         pendingIdentity = null;
     }

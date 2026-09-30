@@ -8,5 +8,7 @@ public partial class ReorderEntriesEditor : UserControl
 {
     public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable), typeof(ReorderEntriesEditor));
     public IEnumerable? ItemsSource { get => (IEnumerable?)GetValue(ItemsSourceProperty); set => SetValue(ItemsSourceProperty, value); }
+    public static readonly DependencyProperty IsDynamicContentProperty = DependencyProperty.Register(nameof(IsDynamicContent), typeof(bool), typeof(ReorderEntriesEditor), new PropertyMetadata(false));
+    public bool IsDynamicContent { get => (bool)GetValue(IsDynamicContentProperty); set => SetValue(IsDynamicContentProperty, value); }
     public ReorderEntriesEditor() => InitializeComponent();
 }

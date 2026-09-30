@@ -10,6 +10,7 @@ import darkgrey.rpg.nominator.NominatorCatalog;
 import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
 public class CommonProxy {
+    public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {}
 
     public void acceptGramophone(darkgrey.rpg.gramophone.GramophonePacket packet) {}
 

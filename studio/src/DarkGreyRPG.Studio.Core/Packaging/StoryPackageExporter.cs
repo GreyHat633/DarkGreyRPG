@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Projects;
@@ -31,6 +32,8 @@ public sealed class StoryPackageExporter
             throw new StoryPackageException($"Story '{storyId}' was not found in either the legacy or canonical Story repository.");
 
         EnsurePackageableStory(storyId, legacyStory, canonicalStory);
+        EnsurePackageableSessionText(canonicalStore, storyId);
+        EnsureDynamicReferences(canonicalStore, storyId);
         var root = Path.GetFullPath(outputDirectory);
         Directory.CreateDirectory(root);
         // The output directory is the package boundary. Remove only files and
@@ -110,6 +113,51 @@ public sealed class StoryPackageExporter
 
     public StoryPackageBuildResult Export(string storyId, string outputDirectory, string packageVersion = "1.0.0")
         => Build(storyId, outputDirectory, packageVersion);
+
+    private static void EnsureDynamicReferences(CanonicalProjectGraphStore store, string storyId)
+    {
+        if (!File.Exists(store.Memberships.GetPath(storyId))) return;
+        var membership = store.Memberships.Load(storyId);
+        var actors = membership.OwnedResources.Actors.Concat(membership.ReferencedResources.Actors).ToHashSet(StringComparer.Ordinal);
+        var items = membership.OwnedResources.Items.Concat(membership.ReferencedResources.Items)
+            .Concat(membership.OwnedResources.ItemGroups).Concat(membership.ReferencedResources.ItemGroups).ToHashSet(StringComparer.Ordinal);
+        var files = membership.OwnedResources.Sessions.Concat(membership.ReferencedResources.Sessions).Select(store.Sessions.GetPath)
+            .Concat(membership.OwnedResources.Tasks.Concat(membership.ReferencedResources.Tasks).Select(store.Tasks.GetPath))
+            .Append(store.Stories.GetPath(storyId));
+        foreach (var path in files.Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            using var json = JsonDocument.Parse(File.ReadAllText(path));
+            foreach (var id in DynamicContentText.ItemReferences(json.RootElement))
+                if (!items.Contains(id)) throw new StoryPackageException($"动态内容引用了未声明物品 '{id}'：{path}");
+            foreach (var id in DynamicContentText.ActorReferences(json.RootElement))
+                if (!actors.Contains(id)) throw new StoryPackageException($"动态内容引用了未声明角色 '{id}'：{path}");
+        }
+    }
+
+    // Empty drafts remain editable and saveable, but the runtime rejects them.
+    // Check before touching output so a failed export preserves the previous package.
+    private static void EnsurePackageableSessionText(CanonicalProjectGraphStore store, string storyId)
+    {
+        if (!File.Exists(store.Memberships.GetPath(storyId))) return;
+        var membership = store.Memberships.Load(storyId);
+        foreach (var id in membership.OwnedResources.Sessions.Concat(membership.ReferencedResources.Sessions)
+                     .Distinct(StringComparer.Ordinal))
+        {
+            if (!File.Exists(store.Sessions.GetPath(id))) continue;
+            var session = store.Sessions.Load(id);
+            var graph = session.Graph ?? throw new StoryPackageException($"会话 '{id}' 缺少节点图，不能导出。");
+            foreach (var node in graph.Nodes.Where(node => node.Type == "line"))
+            {
+                var pages = CanonicalSessionLineSchema.ReadPages(node);
+                if (pages.Count == 0)
+                    throw new StoryPackageException($"会话 '{id}' 的台词节点 '{node.Id}' 至少需要一句正文，不能导出空台词。");
+                for (var index = 0; index < pages.Count; index++)
+                    if (!pages[index].TryGetValue("text", out var text)
+                        || text.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(text.GetString()))
+                        throw new StoryPackageException($"会话 '{id}' 的台词节点 '{node.Id}' 第 {index + 1} 句正文不能为空，请填写后再导出。");
+            }
+        }
+    }
 
     private static void EnsurePackageableStory(
         string storyId,

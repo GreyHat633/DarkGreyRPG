@@ -25,6 +25,10 @@ public final class CanonicalTaskLegacyJournalAdapter {
     private CanonicalTaskLegacyJournalAdapter() {}
 
     public static QuestJournalEntry adapt(CanonicalTaskJournalEntry entry) {
+        return adapt(entry, text -> text);
+    }
+
+    public static QuestJournalEntry adapt(CanonicalTaskJournalEntry entry, java.util.function.UnaryOperator<String> resolveText) {
         if (entry == null) throw new IllegalArgumentException("Canonical Task Journal entry is required.");
         CanonicalTaskInstanceStatus canonicalStatus = entry.getStatus();
         QuestStatus status;
@@ -37,11 +41,14 @@ public final class CanonicalTaskLegacyJournalAdapter {
 
         String identity = requireSafeText(entry.getIdentity(), "Canonical Task identity");
         String questId = transportQuestId(identity);
-        String description = description(entry, status);
+        String description = description(resolveText.apply(entry.getDescription()));
         List<String> objectives = new ArrayList<String>();
         for (CanonicalTaskJournalObjectiveRow row : entry.getObjectiveRows()) {
             if (row.getRuntimeStatus() != CanonicalTaskObjectiveStatus.ACTIVE) continue;
-            objectives.add(safe(requireSafeText(row.getDisplayLine(), "Canonical Task objective")));
+            String line = row.getDisplayLine();
+            if (row.getDescription().startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX))
+                line = line.replace(row.getDescription(), resolveText.apply(row.getDescription()));
+            objectives.add(safe(requireSafeText(line, "Canonical Task objective")));
         }
         return new QuestJournalEntry(
             questId,
@@ -122,9 +129,9 @@ public final class CanonicalTaskLegacyJournalAdapter {
         return result;
     }
 
-    private static String description(CanonicalTaskJournalEntry entry, QuestStatus status) {
+    private static String description(String description) {
         StringBuilder text = new StringBuilder();
-        for (char c : entry.getDescription()
+        for (char c : description
             .toCharArray()) text.append((c < 0x20 && c != '\n' && c != '\r' && c != '\t') || c == 0x7f ? '?' : c);
         return text.toString();
     }

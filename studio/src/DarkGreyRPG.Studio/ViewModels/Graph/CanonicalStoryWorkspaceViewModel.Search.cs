@@ -1,11 +1,11 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
 namespace DarkGreyRPG.Studio.ViewModels.Graph;
 
 public sealed record AuthoringSearchHit(string StoryId, GraphResourceKind Kind, string ResourceId, string? NodeId,
-    string? PageId, string? OptionId, string Path, string Snippet);
+    string? PageId, string? OptionId, string Path, string Snippet, string? GroupId = null);
 
 public sealed partial class CanonicalStoryWorkspaceViewModel
 {
@@ -47,15 +47,20 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
             int first = results.Count;
             var referenceItem = SessionItems.Concat(TaskItems).FirstOrDefault(candidate => ReferenceEquals(candidate.Editor, editor));
             string origin = referenceItem?.IsReadOnly == true ? " [只读引用]" : referenceItem?.IsReferenced == true ? " [共享引用]" : "";
-            void Add(string text, string suffix, string? node = null, string? page = null, string? option = null)
+            void Add(string text, string suffix, string? node = null, string? page = null, string? option = null, string? group = null)
             {
+                if (text.StartsWith(Core.Graphs.Definitions.DynamicContentText.Prefix, StringComparison.Ordinal))
+                {
+                    try { text = Core.Graphs.Definitions.DynamicContentText.Display(text); }
+                    catch { text = "〔动态内容无效〕"; }
+                }
                 if (string.IsNullOrWhiteSpace(text)) return;
                 results.Add(new(StoryEditor.Id, editor.ResourceKind, editor.Id, node, page, option,
-                    $"{StoryEditor.DisplayName} > {editor.DisplayName}{origin} > {suffix}", text));
+                    $"{StoryEditor.DisplayName} > {editor.DisplayName}{origin} > {suffix}", text, group));
             }
             Add(editor.DisplayName, "资源名称");
             Add(editor.TaskDescription, "任务说明");
-            foreach (var frame in editor.Host.Frames) Add(frame.Title, "分组注释");
+            foreach (var frame in editor.Host.Frames) Add(frame.Title, "组合", group: frame.Id);
             foreach (var node in editor.Document.Graph.Nodes)
             {
                 var label = node.DisplayName ?? node.Type;

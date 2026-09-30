@@ -67,9 +67,38 @@ tasks.named<Jar>("jar") {
     from("libs/jlayer-license") { into("META-INF/licenses/jlayer") }
 }
 
+tasks.register<JavaExec>("repeat0334Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.runtime.Repeat0334Probe")
+}
+
+tasks.register<JavaExec>("inspection0334Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.diagnostics.Inspection0334Probe")
+}
+
+tasks.register<JavaExec>("inspectionBoundary0334Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.diagnostics.InspectionBoundary0334Probe")
+}
+
+tasks.register<JavaExec>("inspectionClient0334Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath + configurations.detachedConfiguration(
+        dependencies.create("org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209"),
+        dependencies.create("org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209")
+    )
+    mainClass.set("darkgrey.rpg.diagnostics.InspectionClient0334Probe")
+}
+
 tasks.register<JavaExec>("gramophone0332Probe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
+    // The isolated cache-policy probe reflects client types without launching a game window.
+    classpath += sourceSets.main.get().compileClasspath
     mainClass.set("darkgrey.rpg.gramophone.Gramophone0332Probe")
     if (providers.gradleProperty("gramophoneUrl").isPresent) {
         args(providers.gradleProperty("gramophoneUrl").get(), layout.projectDirectory.dir(".tooling/0332-gramophone/audio").asFile.absolutePath)
@@ -737,6 +766,13 @@ tasks.register<JavaExec>("playerPreferences0332Probe") {
     mainClass.set("darkgrey.rpg.client.gui.PlayerPreferences0332Probe")
 }
 
+tasks.register<JavaExec>("dialogue0333Probe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.session.Dialogue0333Probe")
+}
+
 tasks.register<JavaExec>("dialogueBacklog0332Probe") {
     group = "verification"
     dependsOn(tasks.named("testClasses"))
@@ -883,4 +919,24 @@ tasks.register<JavaExec>("packageRuntimeMigrationPlanProbe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.project.packages.PackageRuntimeMigrationPlanProbe")
     args(layout.projectDirectory.dir(".tmp").asFile.absolutePath)
+}
+tasks.register<JavaExec>("mediaLatency0334Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.MediaLatency0334Probe")
+    args(layout.buildDirectory.dir("media-latency-0334").get().asFile.absolutePath)
+}
+tasks.register<JavaExec>("mediaQueue0334Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.MediaQueue0334Probe")
+}
+
+tasks.register<JavaExec>("mediaTransferWindowProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.MediaTransferWindowProbe")
 }

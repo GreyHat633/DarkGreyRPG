@@ -68,6 +68,26 @@ public final class CanonicalTaskJournalProjector {
 
     public static List<CanonicalTaskJournalEntry> project(UUID playerUuid,
         List<CanonicalTaskInstanceSnapshot> snapshots, CanonicalTaskResourceResolver resolver) {
+        return project(playerUuid, snapshots, resolver, false);
+    }
+
+    /** Presentation boundary: retain an explicit diagnostic for an unavailable old definition. */
+    public static List<CanonicalTaskJournalEntry> projectForDisplay(UUID playerUuid,
+        List<CanonicalTaskInstanceSnapshot> snapshots, CanonicalTaskResourceResolver resolver) {
+        return project(playerUuid, snapshots, resolver, true);
+    }
+
+    /** Pending persistence remains untouched when its definitions cannot be bound. */
+    public static List<CanonicalTaskJournalEntry> projectUnavailable(UUID playerUuid,
+        net.minecraft.nbt.NBTTagCompound pending, String code) {
+        List<CanonicalTaskJournalEntry> result = new ArrayList<CanonicalTaskJournalEntry>();
+        for (CanonicalTaskInstanceSnapshot snapshot : darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec.decode(pending))
+            if (playerUuid.equals(snapshot.getPlayerUuid())) result.add(unavailable(snapshot, code));
+        return Collections.unmodifiableList(result);
+    }
+
+    private static List<CanonicalTaskJournalEntry> project(UUID playerUuid,
+        List<CanonicalTaskInstanceSnapshot> snapshots, CanonicalTaskResourceResolver resolver, boolean forDisplay) {
         if (playerUuid == null) throw new IllegalArgumentException("Player UUID is required.");
         if (snapshots == null) throw new IllegalArgumentException("Task snapshots are required.");
         if (resolver == null) throw new IllegalArgumentException("Task resource resolver is required.");
@@ -81,7 +101,15 @@ public final class CanonicalTaskJournalProjector {
             String identity = CanonicalTaskJournalEntry
                 .identity(snapshot.getPlayerUuid(), snapshot.getStoryInstanceId(), snapshot.getTaskNodePlacementId());
             if (!identities.add(identity)) throw new IllegalArgumentException("Duplicate TaskInstance identity.");
-            result.add(projectOne(snapshot, resolver));
+            try {
+                result.add(projectOne(snapshot, resolver));
+            } catch (darkgrey.rpg.graph.canonical.CanonicalGraphResourceException error) {
+                if (!forDisplay) throw error;
+                result.add(unavailable(snapshot, error.getCode()));
+            } catch (IllegalArgumentException error) {
+                if (!forDisplay) throw error;
+                result.add(unavailable(snapshot, "task.projection.unavailable"));
+            }
         }
         Collections.sort(result, new Comparator<CanonicalTaskJournalEntry>() {
 
@@ -94,6 +122,15 @@ public final class CanonicalTaskJournalProjector {
             }
         });
         return Collections.unmodifiableList(result);
+    }
+
+    private static CanonicalTaskJournalEntry unavailable(CanonicalTaskInstanceSnapshot snapshot, String code) {
+        // Never reinterpret old progress using new authoring data or mutate the persisted instance.
+        return new CanonicalTaskJournalEntry(snapshot.getPlayerUuid(), snapshot.getStoryInstanceId(),
+            snapshot.getTaskNodePlacementId(), snapshot.getTaskResourceId(), snapshot.getTaskResourceId(),
+            snapshot.getStatus(), snapshot.getActivationTime(), snapshot.getSettlementTime(), null,
+            Collections.<String, Boolean>emptyMap(), Collections.<CanonicalTaskJournalObjectiveRow>emptyList(),
+            "任务定义或存档不匹配，目标暂不可用。请恢复匹配的故事包。诊断：" + code);
     }
 
     public static List<CanonicalTaskJournalEntry> project(String playerUuid,

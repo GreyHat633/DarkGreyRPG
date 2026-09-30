@@ -163,6 +163,7 @@ public final class CanonicalTaskForgeManager {
         Context context = context(player);
         UUID uuid = requirePlayerUuid(player);
         java.util.List<CanonicalTaskSubmitChoiceStore.Candidate> candidates = new ArrayList<CanonicalTaskSubmitChoiceStore.Candidate>();
+        java.util.Map<String, net.minecraft.nbt.NBTTagCompound> previews = new java.util.HashMap<String, net.minecraft.nbt.NBTTagCompound>();
         for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
             if (!uuid.equals(snapshot.getPlayerUuid())
                 || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
@@ -185,6 +186,25 @@ public final class CanonicalTaskForgeManager {
                 String description = node.getProperties()
                     .get("description")
                     .getAsString();
+                net.minecraft.nbt.NBTTagCompound preview = darkgrey.rpg.creator.TaskItemPreview
+                    .project(node, darkgrey.rpg.item.identity.ItemIdentitySavedData.get());
+                preview.setInteger(
+                    "required",
+                    node.getProperties()
+                        .get("required")
+                        .getAsInt());
+                preview.setInteger(
+                    "held",
+                    CanonicalTaskInventory.count(
+                        player.inventory.mainInventory,
+                        node,
+                        darkgrey.rpg.item.identity.ItemIdentitySavedData.get()));
+                previews.put(
+                    snapshot.getStoryInstanceId() + "\u0000"
+                        + snapshot.getTaskNodePlacementId()
+                        + "\u0000"
+                        + node.getId(),
+                    preview);
                 candidates.add(
                     new CanonicalTaskSubmitChoiceStore.Candidate(
                         snapshot.getStoryInstanceId(),
@@ -192,7 +212,7 @@ public final class CanonicalTaskForgeManager {
                         node.getId(),
                         requiredActor,
                         snapshot.getActivationTime(),
-                        title + "：" + description));
+                        title + "：" + darkgrey.rpg.session.forge.DynamicContentResolver.resolve(description, player)));
             }
         }
         if (candidates.isEmpty()) return false;
@@ -211,7 +231,12 @@ public final class CanonicalTaskForgeManager {
                         + candidate.getPlacementId()
                         + "\u0000"
                         + candidate.getObjectiveId(),
-                    candidate.getDisplayName()));
+                    candidate.getDisplayName(),
+                    previews.get(
+                        candidate.getStoryId() + "\u0000"
+                            + candidate.getPlacementId()
+                            + "\u0000"
+                            + candidate.getObjectiveId())));
             DialogueNetwork.CHANNEL.sendTo(new CanonicalTaskSubmitChoiceFrame(choice.getToken(), options), player);
             return true;
         }
@@ -475,7 +500,7 @@ public final class CanonicalTaskForgeManager {
     public List<CanonicalTaskJournalEntry> journal(EntityPlayerMP player) {
         Context context = context(player);
         return CanonicalTaskJournalProjector
-            .project(requirePlayerUuid(player), context.data.snapshots(), context.resolver);
+            .projectForDisplay(requirePlayerUuid(player), context.data.snapshots(), context.resolver);
     }
 
     public List<CanonicalTaskJournalEntry> journalSnapshot(EntityPlayerMP player) {

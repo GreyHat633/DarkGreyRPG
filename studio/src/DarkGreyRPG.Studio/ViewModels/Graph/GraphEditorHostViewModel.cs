@@ -982,6 +982,8 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
 
     public bool SetStoryStartRepeatPolicy(string nodeId, string repeatPolicy)
         => ExecuteSession(() => _session.SetStoryStartRepeatPolicy(nodeId, repeatPolicy));
+    public bool SetStoryStartRepeatConfiguration(string nodeId, string repeatPolicy, JsonElement condition)
+        => ExecuteSession(() => _session.SetStoryStartRepeatConfiguration(nodeId, repeatPolicy, condition));
 
     public bool ChangeObjectiveType(string nodeId, string? type, string? actorId = null)
         => ExecuteSession(() => _session.ChangeObjectiveType(nodeId, type, actorId));

@@ -46,9 +46,20 @@ public static class NamespaceProjectValidator
             {
                 // Explicit external references may be unavailable in this authoring project.
                 if (!graphs.TryGetValue(graphKey, out var graph)) continue;
+                var dynamicFields = graph.Graph!.Nodes.SelectMany(node => node.Properties.Values).ToList();
+                if (graph.TaskMetadata is { } taskMetadata) dynamicFields.Add(JsonSerializer.SerializeToElement(taskMetadata.Description));
+                foreach (var id in dynamicFields.SelectMany(DynamicContentText.ActorReferences))
+                    if (!declared.Contains(new(DgrResourceKind.Actor, id))) throw new InvalidDataException($"动态内容引用未声明角色 '{id}'。");
+                if (graph.TaskMetadata is { } metadata)
+                    foreach (var id in DynamicContentText.ItemReferences(metadata.Description))
+                        if (!declared.Contains(new(DgrResourceKind.Item, id)) && !declared.Contains(new(DgrResourceKind.ItemGroup, id)))
+                            throw new InvalidDataException($"任务说明动态内容引用未声明物品 '{id}'。");
                 foreach (var node in graph.Graph!.Nodes)
                 {
                     CanonicalTaskRewardReferences.Validate(node, graph.ResourceKind, declared);
+                    foreach (var id in node.Properties.Values.SelectMany(Graphs.Definitions.DynamicContentText.ItemReferences))
+                        if (!declared.Contains(new(DgrResourceKind.Item, id)) && !declared.Contains(new(DgrResourceKind.ItemGroup, id)))
+                            throw new InvalidDataException($"动态内容引用未声明物品 '{id}'。");
                     void Require(string field, DgrResourceKind kind, bool legacyTarget = false, bool allowItemGroup = false)
                     {
                         if (!node.Properties.TryGetValue(field, out var value) || value.ValueKind != JsonValueKind.String) return;

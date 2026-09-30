@@ -63,6 +63,20 @@ public final class TaskNotificationsPlanProbe {
                 .tagCount() == 1,
             "task failure");
         clientChecks();
+        CanonicalTaskNotifications dynamic = new CanonicalTaskNotifications();
+        dynamic.update(Collections.<CanonicalTaskJournalEntry>emptyList(), true);
+        String template = darkgrey.rpg.session.runtime.DynamicContentText.PREFIX + "[\"Collect for \",{\"type\":\"player_name\"}]";
+        CanonicalTaskJournalEntry dynamicTask = task(CanonicalTaskInstanceStatus.ACTIVE, CanonicalTaskObjectiveStatus.ACTIVE, 0, template);
+        NBTTagList resolved = dynamic.update(Collections.singletonList(dynamicTask), false,
+            text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Alice"));
+        require("Collect for Alice".equals(resolved.getCompoundTagAt(1).getString("text")), "notification resolves dynamic description");
+        darkgrey.rpg.quest.runtime.QuestJournalEntry legacy = darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter.adapt(dynamicTask,
+            text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Alice"));
+        require("Collect for Alice".equals(legacy.getDescription()), "legacy journal resolves description before stripping controls");
+        require("Collect for Alice".equals(legacy.getObjectiveLines().get(0)), "legacy journal resolves objective description");
+        require(dynamic.update(Collections.singletonList(dynamicTask), false,
+            text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Changed")).tagCount() == 0,
+            "dynamic value changes alone never notify");
         System.out.println("TASK_NOTIFICATIONS_PLAN_PROBE=PASS");
     }
 
@@ -193,6 +207,11 @@ public final class TaskNotificationsPlanProbe {
 
     private static CanonicalTaskJournalEntry task(CanonicalTaskInstanceStatus status,
         CanonicalTaskObjectiveStatus objective, int count) {
+        return task(status, objective, count, "Collect");
+    }
+
+    private static CanonicalTaskJournalEntry task(CanonicalTaskInstanceStatus status,
+        CanonicalTaskObjectiveStatus objective, int count, String description) {
         return new CanonicalTaskJournalEntry(
             PLAYER,
             "story",
@@ -207,13 +226,13 @@ public final class TaskNotificationsPlanProbe {
             Collections.singletonList(
                 new CanonicalTaskJournalObjectiveRow(
                     "objective",
-                    "Collect",
+                    description,
                     "collect_item",
                     objective,
                     count,
                     2,
                     true,
-                    "Collect")));
+                    description)), description);
     }
 
     private static void require(boolean value, String message) {

@@ -17,6 +17,12 @@ public final class GuiWrappedChoiceButton extends GuiButton {
     private final int visibleLines;
     private int scroll;
     private boolean keyboardFocused;
+    private boolean presentationOnly;
+
+    public void presentationOnly() {
+        presentationOnly = true;
+        enabled = false;
+    }
 
     public void setKeyboardFocused(boolean focused) {
         keyboardFocused = focused;
@@ -62,7 +68,7 @@ public final class GuiWrappedChoiceButton extends GuiButton {
             xPosition + 8,
             yPosition + 6 + i * lineHeight,
             scale,
-            enabled ? DgrUiPalette.TEXT : DgrUiPalette.DISABLED);
+            enabled || presentationOnly ? DgrUiPalette.TEXT : DgrUiPalette.DISABLED);
         if (lines.size() > visibleLines) {
             mc.fontRenderer.drawString(
                 "滚轮阅读  " + (scroll + 1) + "–" + Math.min(lines.size(), scroll + visibleLines) + " / " + lines.size(),

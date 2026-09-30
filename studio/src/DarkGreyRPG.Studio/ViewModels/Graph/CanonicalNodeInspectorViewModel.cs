@@ -903,6 +903,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
         _repeatPolicy = current.Properties.TryGetValue(StoryStartSchema.RepeatPolicyProperty, out var repeat)
             && repeat.ValueKind == JsonValueKind.String ? repeat.GetString() ?? StoryStartSchema.Once : StoryStartSchema.Once;
+        RefreshRepeat(current);
         var desiredTriggers = new List<CanonicalStoryStartTriggerViewModel>();
         if (IsStoryStart)
         {

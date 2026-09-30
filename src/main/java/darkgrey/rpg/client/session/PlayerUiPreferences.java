@@ -14,7 +14,16 @@ public final class PlayerUiPreferences {
     private static double textScale = 1;
     private static double voiceVolume = 1;
     private static double musicVolume = 1;
-    private static double gramophoneVolume = 1;
+    private static double autoWaitSeconds = 3;
+    private static boolean automatic;
+
+    public static boolean automatic() {
+        return automatic;
+    }
+
+    public static void setAutomatic(boolean value) {
+        automatic = value;
+    }
 
     private PlayerUiPreferences() {}
 
@@ -38,8 +47,8 @@ public final class PlayerUiPreferences {
         return musicVolume;
     }
 
-    public static double gramophoneVolume() {
-        return gramophoneVolume;
+    public static double autoWaitSeconds() {
+        return autoWaitSeconds;
     }
 
     public static void setTheme(Theme value) {
@@ -62,14 +71,16 @@ public final class PlayerUiPreferences {
         musicVolume = unit(value, 1);
     }
 
-    public static void setGramophoneVolume(double value) {
-        gramophoneVolume = unit(value, 1);
+    public static void setAutoWaitSeconds(double value) {
+        autoWaitSeconds = Double.isNaN(value) || Double.isInfinite(value) || value < 1 || value > 10 ? 3
+            : Math.round(value * 2) / 2.0;
     }
 
     public static void reset() {
         theme = Theme.CHARCOAL;
         opacity = 0.8;
-        textScale = voiceVolume = musicVolume = gramophoneVolume = 1;
+        textScale = voiceVolume = musicVolume = 1;
+        autoWaitSeconds = 3;
         DialoguePreferences.setSpeed(30);
     }
 

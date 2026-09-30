@@ -1510,6 +1510,18 @@ public sealed class GraphEditSession
     public bool SetStoryStartRepeatMode(string nodeId, string repeatPolicy)
         => SetStoryStartRepeatPolicy(nodeId, repeatPolicy);
 
+    public bool SetStoryStartRepeatConfiguration(string nodeId, string repeatPolicy, JsonElement condition)
+    {
+        if (!TryResolveStoryStart(nodeId, out var node, out _, out var issues)) return Fail(issues);
+        if (!StoryStartSchema.SupportedRepeatPolicies.Contains(repeatPolicy, StringComparer.Ordinal)) return false;
+        var parsed = StoryRepeatCondition.Parse(condition);
+        if (parsed.Error is not null) return false;
+        var before = DeepClone(Document);
+        node!.Properties[StoryStartSchema.RepeatPolicyProperty] = JsonSerializer.SerializeToElement(repeatPolicy);
+        node.Properties["repeat_condition"] = condition.Clone();
+        return CommitValidatedStoryStart(before, node);
+    }
+
     private bool TryResolveStoryStart(string nodeId, out GraphNode? node,
         out List<StoryStartTriggerSlot>? slots, out IReadOnlyList<ValidationIssue> issues)
     {
@@ -2178,6 +2190,8 @@ public sealed class GraphEditorSession
         => _inner.RemoveStoryStartTriggerSlot(nodeId, portId, confirmReferencedRemoval);
     public bool SetStoryStartRepeatPolicy(string nodeId, string repeatPolicy)
         => _inner.SetStoryStartRepeatPolicy(nodeId, repeatPolicy);
+    public bool SetStoryStartRepeatConfiguration(string nodeId, string repeatPolicy, JsonElement condition)
+        => _inner.SetStoryStartRepeatConfiguration(nodeId, repeatPolicy, condition);
     public bool SetStoryStartRepeatMode(string nodeId, string repeatPolicy)
         => _inner.SetStoryStartRepeatMode(nodeId, repeatPolicy);
     public bool Undo() => _inner.Undo();

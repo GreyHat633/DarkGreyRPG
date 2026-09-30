@@ -15,6 +15,35 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class InlineLayout0331Tests
 {
     [STATestMethod]
+    public void NarrativeInputPreviewsKeepTheirLayoutBeforeLazyBodyCreation()
+    {
+        foreach (var definition in GraphNodeDefinitionRegistry.All.Where(d => !d.CompatibilityOnly && d.Scope != GraphScope.Project))
+        {
+            var kind = definition.Scope switch { GraphScope.Session => GraphResourceKind.Session, GraphScope.Task => GraphResourceKind.Task, _ => GraphResourceKind.Story };
+            var node = GraphNodeFactory.Create(definition.Scope, definition.Type, "node");
+            using var editor = new CanonicalGraphResourceEditorViewModel(new(kind, "resource", "Resource", new([node])));
+            using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
+            var view = new CanonicalInlineNodeEditorControl { Width = 210, Editor = inspector };
+            Layout(view);
+            var fields = Descendants(view).OfType<DynamicContentEditor>().Where(field => Presented(field, view)).ToArray();
+            if (definition.Type == "title") Assert.HasCount(2, fields, "Both title inputs must remain present");
+            foreach (var field in fields)
+            {
+                Assert.IsGreaterThanOrEqualTo(28d, field.DesiredSize.Height, $"{definition.Type}: input has collapsed");
+                Assert.IsFalse(field.ShowInsertButton);
+                var preview = Descendants(field).OfType<TextBlock>().First(t => t.MinHeight == 28);
+                Assert.AreEqual(Visibility.Visible, preview.Visibility, $"{definition.Type}: inherited empty-label style hid input");
+            }
+        }
+        static bool Presented(DependencyObject value, DependencyObject root)
+        {
+            for (var current = value; current is not null && current != root; current = VisualTreeHelper.GetParent(current))
+                if (current is UIElement element && element.Visibility != Visibility.Visible) return false;
+            return true;
+        }
+    }
+
+    [STATestMethod]
     public void AllAuthorableNodeKindsDoNotReserveRowsForEmptyMessages()
     {
         foreach (var definition in GraphNodeDefinitionRegistry.All.Where(d => !d.CompatibilityOnly && d.Scope != GraphScope.Project))

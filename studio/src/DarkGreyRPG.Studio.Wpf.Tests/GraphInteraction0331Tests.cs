@@ -43,8 +43,9 @@ public sealed class GraphInteraction0331Tests
         var host = new GraphEditorHostViewModel(new GraphDocument([line]), GraphScope.Session);
         var view = Arrange(host);
         var visual = view.NodeVisuals.Single();
-        var textBox = Descendants<TextBox>(visual).Single(control =>
-            System.Windows.Automation.AutomationProperties.GetAutomationId(control) == "LinePageText");
+        var textBox = Descendants<DynamicContentEditor>(visual).Single(control =>
+            System.Windows.Automation.AutomationProperties.GetAutomationId(control) == "LinePageText").Body;
+        view.UpdateLayout(); // The detached fixture explicitly realizes the lazily-created rich editor.
         var textHit = VisualTreeHelper.HitTest(visual, textBox.TranslatePoint(
             new Point(Math.Max(1, textBox.ActualWidth / 2), Math.Max(1, textBox.ActualHeight / 2)), visual))?.VisualHit as DependencyObject;
         Assert.IsNotNull(textHit, "The rendered TextBox must be hit-testable.");

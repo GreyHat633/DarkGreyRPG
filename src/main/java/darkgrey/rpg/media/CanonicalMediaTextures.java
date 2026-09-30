@@ -26,8 +26,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.util.ResourceLocation;
 
-import darkgrey.rpg.network.MainThreadScheduler;
-
 /** Decodes off-thread; creates/releases GPU textures only on the client thread. */
 public final class CanonicalMediaTextures {
 
@@ -52,7 +50,16 @@ public final class CanonicalMediaTextures {
                 return thread;
             }
         });
-    private static long generation;
+    private static volatile long generation;
+    private static long uploadTick;
+    private static volatile Set<String> demand = Collections.emptySet();
+    private static final MediaUploadBudget BUDGET = new MediaUploadBudget();
+    private static final java.util.concurrent.ConcurrentLinkedQueue<Decoded> UPLOADS = new java.util.concurrent.ConcurrentLinkedQueue<Decoded>();
+
+    public static void updateDemand(Set<String> refs) {
+        demand = Collections.unmodifiableSet(new HashSet<String>(refs));
+    }
+
     private static int decodeLimit = 2048;
     private static final int MAX_WARM_TEXTURES = 24;
     private static final long MAX_WARM_PIXELS = 16777216L;
@@ -81,65 +88,108 @@ public final class CanonicalMediaTextures {
         final Path path = CanonicalMediaClient.ready(ref);
         if (path == null || PENDING.contains(ref) || FAILED.contains(ref)) return null;
         final int limit = decodeLimit;
-        return enqueueDecode(ref, path, limit, true);
+        return enqueueDecode(ref, path, limit);
     }
 
-    /** Decodes a verified local portrait before a Session opens; upload stays on the client thread. */
-    public static void prewarm(final String ref, final Path path) {
-        if (ref == null || path == null || READY.containsKey(ref) || PENDING.contains(ref) || FAILED.contains(ref))
-            return;
-        enqueueDecode(ref, path, 512, false);
-    }
-
-    private static ResourceLocation enqueueDecode(final String ref, final Path path, final int limit,
-        final boolean requireActive) {
+    private static ResourceLocation enqueueDecode(final String ref, final Path path, final int limit) {
         final long epoch = generation;
+        final long reserved = (long) limit * limit;
+        if (!demand.contains(ref) || !BUDGET.reserve(reserved)) return null;
+        final AutoCloseable lease = CanonicalMediaClient.readLease(ref);
+        if (lease == null) {
+            BUDGET.release(reserved);
+            return null;
+        }
+        final long queued = System.nanoTime();
         try {
             PENDING.add(ref);
-            DECODER.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    BufferedImage decoded = null;
+            DECODER.execute(() -> {
+                BufferedImage image = null;
+                boolean failed = false;
+                try {
+                    if (epoch == generation && demand.contains(ref)) {
+                        MediaLatencyTrace.event("decode_queue", ref, queued, "begin");
+                        long start = System.nanoTime();
+                        image = decode(path, limit);
+                        MediaLatencyTrace.event("decode", ref, start, "limit=" + limit);
+                    }
+                } catch (Exception failure) {
+                    failed = true;
+                    MediaLatencyTrace.event(
+                        "decode_failed",
+                        ref,
+                        queued,
+                        failure.getClass()
+                            .getSimpleName());
+                } finally {
                     try {
-                        decoded = decode(path, limit);
+                        lease.close();
                     } catch (Exception ignored) {}
-                    final BufferedImage image = decoded;
-                    MainThreadScheduler.scheduleClient(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            if (epoch != generation) {
-                                if (image != null) image.flush();
-                                return;
-                            }
-                            PENDING.remove(ref);
-                            if (image == null) {
-                                FAILED.add(ref);
-                                return;
-                            }
-                            if (requireActive && CanonicalMediaClient.ready(ref) == null) {
-                                image.flush();
-                                return;
-                            }
-                            ResourceLocation texture = Minecraft.getMinecraft()
-                                .getTextureManager()
-                                .getDynamicTextureLocation(
-                                    "dgr_media_" + ref.substring(6, 70),
-                                    new DynamicTexture(image));
-                            READY.put(ref, texture);
-                            ASPECTS.put(ref, (double) image.getWidth() / image.getHeight());
-                            LAST_USED.put(ref, System.nanoTime());
-                            PIXELS.put(ref, (long) image.getWidth() * image.getHeight());
-                            image.flush();
-                        }
-                    });
                 }
+                UPLOADS.add(new Decoded(ref, epoch, reserved, image, failed, queued));
             });
         } catch (RejectedExecutionException exception) {
             PENDING.remove(ref);
+            BUDGET.release(reserved);
+            try {
+                lease.close();
+            } catch (Exception ignored) {}
         }
         return null;
+    }
+
+    /** Called exactly once from ClientTick END, never from a frame/renderer lookup. */
+    public static void tickUploads() {
+        uploadTick++;
+        Decoded value;
+        while ((value = UPLOADS.poll()) != null) {
+            boolean current = value.epoch == generation;
+            if (current) PENDING.remove(value.ref);
+            boolean upload = current && demand.contains(value.ref)
+                && CanonicalMediaClient.ready(value.ref) != null
+                && value.image != null;
+            try {
+                if (!upload) {
+                    if (current && value.failed) FAILED.add(value.ref);
+                    MediaLatencyTrace.event("decode_discard", value.ref, value.queued, "stale_or_failed");
+                    continue;
+                }
+                long start = System.nanoTime();
+                ResourceLocation texture = Minecraft.getMinecraft()
+                    .getTextureManager()
+                    .getDynamicTextureLocation(
+                        "dgr_media_" + value.ref.substring(6, 70),
+                        new DynamicTexture(value.image));
+                READY.put(value.ref, texture);
+                ASPECTS.put(value.ref, (double) value.image.getWidth() / value.image.getHeight());
+                LAST_USED.put(value.ref, System.nanoTime());
+                PIXELS.put(value.ref, (long) value.image.getWidth() * value.image.getHeight());
+                MediaLatencyTrace
+                    .event("upload", value.ref, start, "tick=" + uploadTick + " pending=" + BUDGET.count());
+                MediaLatencyTrace.event("image_ready", value.ref, value.queued, "uploaded");
+            } finally {
+                if (value.image != null) value.image.flush();
+                BUDGET.release(value.reserved);
+            }
+            if (upload) break;
+        }
+    }
+
+    private static final class Decoded {
+
+        final String ref;
+        final long epoch, reserved, queued;
+        final BufferedImage image;
+        final boolean failed;
+
+        Decoded(String ref, long epoch, long reserved, BufferedImage image, boolean failed, long queued) {
+            this.ref = ref;
+            this.epoch = epoch;
+            this.reserved = reserved;
+            this.image = image;
+            this.failed = failed;
+            this.queued = queued;
+        }
     }
 
     public static double aspect(String ref) {
@@ -201,6 +251,7 @@ public final class CanonicalMediaTextures {
             if (READY.size() <= MAX_WARM_TEXTURES && pixels <= MAX_WARM_PIXELS) break;
             ResourceLocation texture = READY.remove(ref);
             if (texture != null) {
+                MediaLatencyTrace.event("texture_release", ref, 0, "capacity");
                 Minecraft.getMinecraft()
                     .getTextureManager()
                     .deleteTexture(texture);
@@ -214,6 +265,7 @@ public final class CanonicalMediaTextures {
 
     private static void remove(Iterator<Map.Entry<String, ResourceLocation>> iterator,
         Map.Entry<String, ResourceLocation> entry) {
+        MediaLatencyTrace.event("texture_release", entry.getKey(), 0, "idle_30s");
         Minecraft.getMinecraft()
             .getTextureManager()
             .deleteTexture(entry.getValue());
@@ -225,6 +277,12 @@ public final class CanonicalMediaTextures {
 
     public static void clear() {
         generation++;
+        demand = Collections.emptySet();
+        Decoded discarded;
+        while ((discarded = UPLOADS.poll()) != null) {
+            if (discarded.image != null) discarded.image.flush();
+            BUDGET.release(discarded.reserved);
+        }
         for (ResourceLocation texture : READY.values()) Minecraft.getMinecraft()
             .getTextureManager()
             .deleteTexture(texture);

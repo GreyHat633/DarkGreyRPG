@@ -236,7 +236,7 @@ public partial class CanonicalGraphNodeControl : UserControl
             var flowPort = CreatePort(flowPorts[flowPortId]!);
             var optionLabel = new TextBlock
             {
-                Text = displayText,
+                Text = ReadablePortLabel(displayText),
                 MaxWidth = ChoiceOptionLabelMaxWidth,
                 Margin = new Thickness(0, 0, ChoiceOptionLabelRightInset, 0),
                 TextTrimming = TextTrimming.CharacterEllipsis,
@@ -245,7 +245,7 @@ public partial class CanonicalGraphNodeControl : UserControl
                 TextAlignment = TextAlignment.Left,
                 FontSize = 11,
                 IsHitTestVisible = false,
-                ToolTip = displayText,
+                ToolTip = ReadablePortLabel(displayText),
             };
             optionLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
 
@@ -335,7 +335,7 @@ public partial class CanonicalGraphNodeControl : UserControl
             NodeId = Node?.NodeId ?? string.Empty,
             PortId = item.PortId,
             PortName = item.PortId,
-            DisplayName = item.DisplayName,
+            DisplayName = ReadablePortLabel(item.DisplayName),
             InterfaceKind = item.InterfaceKind,
             IsInput = item.IsInput,
             // Occupy the complete half of the fixed-width node and align the
@@ -353,6 +353,15 @@ public partial class CanonicalGraphNodeControl : UserControl
         AutomationProperties.SetName(port, $"{port.NodeId} {direction}端口 {id} ({port.InterfaceKind})");
         _portControls.Add(port);
         return port;
+    }
+
+    private static string ReadablePortLabel(string text)
+    {
+        const string legacyPrefix = "已选择：";
+        var prefix = text.StartsWith(legacyPrefix, StringComparison.Ordinal) ? legacyPrefix : "";
+        try { return prefix + DynamicContentText.Display(text[prefix.Length..]); }
+        catch (Exception error) when (error is JsonException or FormatException or InvalidOperationException or KeyNotFoundException)
+        { return prefix + "〔动态内容无效〕"; }
     }
 
     private void UpdatePortAutomation()

@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundCategory;
 import net.minecraft.client.audio.SoundManager;
 
 import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
@@ -33,6 +32,7 @@ public final class CanonicalSessionAudio {
         public boolean play(String channel, String ref, boolean loop, float initialVolume) {
             Path path = CanonicalMediaClient.ready(ref);
             if (engine == null || path == null || !CanonicalMediaClient.pin(ref)) return false;
+            long started = System.nanoTime();
             stop(channel);
             try {
                 engine.newStreamingSource(
@@ -52,6 +52,7 @@ public final class CanonicalSessionAudio {
                 // play is queued; music is faded in by SessionAudioPlayback on the same tick.
                 volume(channel, initialVolume);
                 engine.play(channel);
+                MediaLatencyTrace.event("audio_prepare", ref, started, "play_commands_queued");
                 return true;
             } catch (Exception exception) {
                 org.apache.logging.log4j.LogManager.getLogger(CanonicalSessionAudio.class)
@@ -68,14 +69,12 @@ public final class CanonicalSessionAudio {
         @Override
         public void volume(String channel, float value) {
             if (engine == null || !PINS.containsKey(channel)) return;
-            SoundCategory category = channel.endsWith("voice") ? SoundCategory.PLAYERS : SoundCategory.MUSIC;
             try {
                 float preference = (float) (channel.endsWith("voice")
                     ? darkgrey.rpg.client.session.PlayerUiPreferences.voiceVolume()
                     : darkgrey.rpg.client.session.PlayerUiPreferences.musicVolume());
-                engine.setVolume(
-                    channel,
-                    value * preference * Minecraft.getMinecraft().gameSettings.getSoundLevel(category));
+                // SoundManager applies MASTER globally to this same Paulscode engine.
+                engine.setVolume(channel, value * preference);
             } catch (RuntimeException ignored) {}
         }
 

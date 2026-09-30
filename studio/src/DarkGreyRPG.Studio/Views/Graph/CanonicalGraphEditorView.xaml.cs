@@ -2287,7 +2287,7 @@ public partial class CanonicalGraphEditorView : UserControl
         GraphSelectionChanged?.Invoke(this, args);
     }
     private static T? FindAncestor<T>(DependencyObject? source) where T : DependencyObject
-    { while (source is not null) { if (source is T match) return match; source = VisualTreeHelper.GetParent(source); } return null; }
+        => LinePagesEditor.Ancestor<T>(source);
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
     { for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++) { var child = VisualTreeHelper.GetChild(parent, i); if (child is T item) yield return item; foreach (var nested in FindVisualChildren<T>(child)) yield return nested; } }
 }

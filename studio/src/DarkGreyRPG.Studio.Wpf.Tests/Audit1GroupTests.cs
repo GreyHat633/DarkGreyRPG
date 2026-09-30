@@ -72,12 +72,14 @@ public sealed class Audit1GroupTests
             var groupMenu = (ContextMenu)typeof(CanonicalGraphEditorView).GetMethod("CreateSelectionContextMenu", Private)!.Invoke(view, [null, target])!;
             CollectionAssert.AreEqual(new[] { "流程图", "复制", "粘贴", "组合", "删除" }, groupMenu.Items.OfType<MenuItem>().Select(i => (string)i.Header).ToArray());
             var colors = groupMenu.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "组合")).Items.OfType<MenuItem>().Single(i => Equals(i.Header, "修改颜色"));
-            var color = colors.Items.OfType<MenuItem>().First(i => i.Header.ToString() == "紫色"); color.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-            Assert.AreEqual("#B68ACC", host.Frames.Single().Color);
+            // Initial group colors are random; choose a different color so Undo targets this edit.
+            var targetColor = frame.Color == "#B68ACC" ? GraphCommentFrame.Palette[0] : "#B68ACC";
+            var color = colors.Items.OfType<MenuItem>().First(i => i.Header.ToString() == (frame.Color == "#B68ACC" ? "蓝色" : "紫色")); color.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            Assert.AreEqual(targetColor, host.Frames.Single().Color);
             Assert.IsTrue(host.Undo()); Assert.AreEqual(frame.Color, host.Frames.Single().Color);
             Assert.IsTrue(host.Redo());
             var store = new CanonicalGraphLayoutStore(path); store.SaveFrames("story:x", host.Frames);
-            Assert.AreEqual("#B68ACC", new CanonicalGraphLayoutStore(path).LoadFrames("story:x").Single().Color);
+            Assert.AreEqual(targetColor, new CanonicalGraphLayoutStore(path).LoadFrames("story:x").Single().Color);
             var edits = 0; view.NodeEditRequested += _ => edits++;
             var flow = view.CreateNodeContextMenu(host.Nodes.Single(n => n.NodeId == "s")).Items.OfType<MenuItem>().Single(i => Equals(i.Header, "流程图"));
             Assert.IsTrue(flow.IsEnabled); flow.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Assert.AreEqual(1, edits);

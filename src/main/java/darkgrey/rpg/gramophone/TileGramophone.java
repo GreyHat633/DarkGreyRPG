@@ -15,9 +15,66 @@ public final class TileGramophone extends TileEntity {
     public boolean redstone;
     public String source = "";
     public boolean ready;
+    public boolean rangeMetadataReady;
+
+    /** Visual metadata is chunk-scoped, independent of the audio proximity index. */
+    public GramophonePacket rangeSnapshot() {
+        GramophonePacket packet = new GramophonePacket();
+        packet.dimension = worldObj.provider.dimensionId;
+        packet.x = xCoord;
+        packet.y = yCoord;
+        packet.z = zCoord;
+        packet.instance = instance;
+        packet.radius = radius;
+        packet.revision = revision;
+        return packet;
+    }
+
+    @Override
+    public net.minecraft.network.Packet getDescriptionPacket() {
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("instance", instance);
+        tag.setInteger("radius", radius);
+        tag.setLong("revision", revision);
+        return new net.minecraft.network.play.server.S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, tag);
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.NetworkManager manager,
+        net.minecraft.network.play.server.S35PacketUpdateTileEntity packet) {
+        NBTTagCompound tag = packet.func_148857_g();
+        int value = tag.getInteger("radius");
+        String id = tag.getString("instance");
+        if (value < 0 || value > GramophoneServer.MAX_RADIUS || !tag.hasKey("radius")) return;
+        try {
+            UUID.fromString(id);
+        } catch (IllegalArgumentException invalid) {
+            return;
+        }
+        instance = id;
+        radius = value;
+        revision = Math.max(0, tag.getLong("revision"));
+        rangeMetadataReady = true;
+    }
+
     public boolean restoring;
     public long retryRestore;
     public String recoveryError = "正在恢复设备配置…";
+
+    @Override
+    @cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+    public net.minecraft.util.AxisAlignedBB getRenderBoundingBox() {
+        // Include unsaved editor previews too; the client tile does not own the server configuration.
+        int r = GramophoneServer.MAX_RADIUS;
+        return net.minecraft.util.AxisAlignedBB
+            .getBoundingBox(xCoord - r, yCoord - r, zCoord - r, xCoord + r + 1, yCoord + r + 1, zCoord + r + 1);
+    }
+
+    @Override
+    @cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+    public double getMaxRenderDistanceSquared() {
+        return 512.0 * 512.0;
+    }
 
     @Override
     public boolean canUpdate() {

@@ -1,0 +1,5 @@
+gradle.projectsEvaluated {
+    rootProject.spotless.java {
+        target 'src/main/java/darkgrey/rpg/diagnostics/*.java', 'src/main/java/darkgrey/rpg/client/gui/GuiPlayerStateInspection.java', 'src/main/java/darkgrey/rpg/session/runtime/DynamicContentText.java', 'src/main/java/darkgrey/rpg/session/forge/DynamicContentResolver.java', 'src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRepeatCondition.java', 'src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRepeatEligibility.java', 'src/test/java/darkgrey/rpg/diagnostics/Inspection0334Probe.java', 'src/test/java/darkgrey/rpg/story/canonical/runtime/Repeat0334Probe.java'
+    }
+}

@@ -137,7 +137,8 @@ public final class CreatorInspectClient {
                 for (int i = 0; i < lines.length; i++) {
                     int half = mc.fontRenderer.getStringWidth(lines[i]) / 2;
                     Gui.drawRect(-half - 2, i * 10 - 1, half + 2, i * 10 + 9, 0xA0000000);
-                    mc.fontRenderer.drawString(lines[i], -half, i * 10, darkgrey.rpg.client.gui.DgrUiPalette.TEXT);
+                    mc.fontRenderer
+                        .drawString(lines[i], -half, i * 10, darkgrey.rpg.client.gui.DgrUiPalette.WORLD_LABEL_TEXT);
                 }
             } finally {
                 GL11.glPopMatrix();

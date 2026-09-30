@@ -105,6 +105,50 @@ public final class Task0331RuntimeProbe {
             decoded.getToken() == 9L && decoded.getOptions()
                 .size() == 2,
             "Choice frame roundtrip");
+        net.minecraft.nbt.NBTTagCompound preview = new net.minecraft.nbt.NBTTagCompound();
+        preview.setInteger("held", 7);
+        preview.setInteger("required", 12);
+        darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceFrame.Option iconOption = new darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceFrame.Option(
+            "a",
+            "Task",
+            preview);
+        preview.setInteger("held", 999);
+        require(
+            iconOption.getPreview()
+                .getInteger("held") == 7,
+            "Preview must detach producer data");
+        encoded.clear();
+        new darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceFrame(10L, Arrays.asList(iconOption))
+            .toBytes(encoded);
+        decoded.fromBytes(encoded.copy());
+        require(
+            decoded.getToken() == 10L && decoded.getOptions()
+                .get(0)
+                .getPreview()
+                .getInteger("required") == 12,
+            "Preview roundtrip retains authority token");
+        decoded.getOptions()
+            .get(0)
+            .getPreview()
+            .setInteger("held", 123);
+        require(
+            decoded.getOptions()
+                .get(0)
+                .getPreview()
+                .getInteger("held") == 7,
+            "Preview access is detached");
+        io.netty.buffer.ByteBuf trailing = encoded.copy();
+        trailing.writeByte(1);
+        try {
+            new darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceFrame().fromBytes(trailing);
+            throw new AssertionError("Trailing preview accepted");
+        } catch (IllegalArgumentException expected) {}
+        io.netty.buffer.ByteBuf truncated = encoded.copy();
+        truncated.writerIndex(truncated.writerIndex() - 1);
+        try {
+            new darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceFrame().fromBytes(truncated);
+            throw new AssertionError("Truncated preview accepted");
+        } catch (IllegalArgumentException expected) {}
         darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceSelection selection = new darkgrey.rpg.network.message.canonical.CanonicalTaskSubmitChoiceSelection(
             9L,
             1);

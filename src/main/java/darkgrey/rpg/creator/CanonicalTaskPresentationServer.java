@@ -47,13 +47,36 @@ public final class CanonicalTaskPresentationServer {
             && state.generation == generation
             && state.project == project
             && player.ticksExisted % 10 != 0) return;
-        java.util.List<darkgrey.rpg.task.journal.CanonicalTaskJournalEntry> journal = DarkGreyRpg
-            .getCanonicalTaskManager()
-            .getJournal(player);
-        net.minecraft.nbt.NBTTagList events = state.notifications
-            .update(journal, worldChanged || state.project != project);
+        java.util.List<darkgrey.rpg.task.journal.CanonicalTaskJournalEntry> journal;
+        try {
+            journal = DarkGreyRpg.getCanonicalTaskManager()
+                .getJournal(player);
+        } catch (darkgrey.rpg.graph.canonical.CanonicalGraphResourceException error) {
+            if (!source.hasPendingData()) throw error;
+            journal = darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+                .projectUnavailable(player.getUniqueID(), source.getPendingRaw(), error.getCode());
+        } catch (IllegalArgumentException error) {
+            if (!source.hasPendingData()) throw error;
+            journal = darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+                .projectUnavailable(player.getUniqueID(), source.getPendingRaw(), "task.data.unavailable");
+        }
+        net.minecraft.nbt.NBTTagList events = state.notifications.update(
+            journal,
+            worldChanged || state.project != project,
+            text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player));
         NBTTagCompound data = CanonicalTaskUiProjection.project(journal, player);
-        net.minecraft.nbt.NBTTagList history = source.completedHistory(player.getUniqueID());
+        net.minecraft.nbt.NBTTagList history = new net.minecraft.nbt.NBTTagList();
+        net.minecraft.nbt.NBTTagList stored = source.completedHistory(player.getUniqueID());
+        for (int i = 0; i < stored.tagCount(); i++) {
+            history.appendTag(
+                CanonicalTaskHistoryProjection.project(
+                    stored.getCompoundTagAt(i),
+                    id -> darkgrey.rpg.DarkGreyRpg.getProjectRepository()
+                        .getSnapshot()
+                        .getCanonicalTask(id),
+                    text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player),
+                    darkgrey.rpg.item.identity.ItemIdentitySavedData.get()));
+        }
         if (history.tagCount() > 0) {
             net.minecraft.nbt.NBTTagList retained = data.getTagList("completed_tasks", 10);
             for (int i = 0; i < retained.tagCount(); i++) if (!"SETTLED".equals(

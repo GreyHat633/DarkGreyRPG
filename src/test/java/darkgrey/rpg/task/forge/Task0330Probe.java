@@ -182,6 +182,39 @@ public final class Task0330Probe {
             .getNodes()
             .get(0);
         final darkgrey.rpg.item.identity.ItemIdentitySavedData identities = new darkgrey.rpg.item.identity.ItemIdentitySavedData();
+        net.minecraft.nbt.NBTTagCompound beforePreview = new net.minecraft.nbt.NBTTagCompound();
+        identities.writeToNBT(beforePreview);
+        net.minecraft.nbt.NBTTagCompound preview = darkgrey.rpg.creator.TaskItemPreview.project(objective, identities);
+        require(
+            preview.getTagList("items", 10)
+                .getCompoundTagAt(0)
+                .hasKey("stack", 10),
+            "Registry item preview must use an actual stack");
+        preview.getTagList("items", 10)
+            .getCompoundTagAt(0)
+            .getCompoundTag("stack")
+            .setInteger("Damage", 123);
+        require(
+            darkgrey.rpg.creator.TaskItemPreview.project(objective, identities)
+                .getTagList("items", 10)
+                .getCompoundTagAt(0)
+                .getCompoundTag("stack")
+                .getInteger("Damage") == 0,
+            "Preview must be detached");
+        net.minecraft.nbt.NBTTagCompound afterPreview = new net.minecraft.nbt.NBTTagCompound();
+        identities.writeToNBT(afterPreview);
+        require(beforePreview.equals(afterPreview), "Projection cannot mutate item bindings or their revision");
+        CanonicalGraphNode missing = task("collect_item", ",\"required\":5,\"item\":\"missing:item\",\"metadata\":{}")
+            .getGraph()
+            .getNodes()
+            .get(0);
+        require(
+            darkgrey.rpg.creator.TaskItemPreview.project(missing, identities)
+                .getTagList("items", 10)
+                .getCompoundTagAt(0)
+                .hasKey("error"),
+            "Missing item must retain a placeholder reason");
+        System.out.println("TASK_ITEM_PREVIEW_DETACHED_READ_ONLY_AND_MISSING=PASS");
         net.minecraft.item.ItemStack[] insufficient = { new net.minecraft.item.ItemStack(apple, 2),
             new net.minecraft.item.ItemStack(apple, 2) };
         require(

@@ -160,25 +160,25 @@ public final class GuiCopierTemplates extends GuiScreen {
         drawDefaultBackground();
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, DgrUiPalette.WINDOW_PANEL);
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + 2, 0xFF8C8C8C);
-        drawCenteredString(
+        darkgrey.rpg.client.gui.DgrUiText.centered(
             fontRendererObj,
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier"),
             panelLeft + panelWidth / 2,
             panelTop + 10,
             DgrUiPalette.TEXT);
-        if (pendingDelete >= 0) drawCenteredString(
+        if (pendingDelete >= 0) darkgrey.rpg.client.gui.DgrUiText.centered(
             fontRendererObj,
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier_delete_warning"),
             panelLeft + panelWidth / 2,
             panelTop + 21,
             DgrUiPalette.TEXT);
-        if (templates.isEmpty()) drawCenteredString(
+        if (templates.isEmpty()) darkgrey.rpg.client.gui.DgrUiText.centered(
             fontRendererObj,
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier_empty"),
             panelLeft + panelWidth / 2,
             panelTop + panelHeight / 2,
             0xFFCCCCCC);
-        else if (templates.size() > visibleRows()) drawString(
+        else if (templates.size() > visibleRows()) DgrUiText.left(
             fontRendererObj,
             net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.copier_scroll"),
             panelLeft + 8,

@@ -19,6 +19,11 @@ public final class CanonicalTaskNotifications {
     private Map<String, CanonicalTaskJournalEntry> previous;
 
     public NBTTagList update(List<CanonicalTaskJournalEntry> journal, boolean initial) {
+        return update(journal, initial, text -> text);
+    }
+
+    public NBTTagList update(List<CanonicalTaskJournalEntry> journal, boolean initial,
+        java.util.function.UnaryOperator<String> resolveText) {
         Map<String, CanonicalTaskJournalEntry> next = new LinkedHashMap<String, CanonicalTaskJournalEntry>();
         NBTTagList events = new NBTTagList();
         for (CanonicalTaskJournalEntry task : journal) {
@@ -52,6 +57,11 @@ public final class CanonicalTaskNotifications {
             }
         }
         previous = next;
+        // Compare canonical status first; changed dynamic values must never create events.
+        for (int i = 0; i < events.tagCount(); i++) {
+            NBTTagCompound event = events.getCompoundTagAt(i);
+            event.setString("text", resolveText.apply(event.getString("text")));
+        }
         return events;
     }
 

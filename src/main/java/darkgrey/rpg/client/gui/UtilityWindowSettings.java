@@ -47,7 +47,8 @@ public final class UtilityWindowSettings {
     }
 
     public void savePreference(String key, String value) {
-        if (!key.startsWith("tracking.")) throw new IllegalArgumentException("tracking preference required");
+        if (!key.startsWith("tracking.") && !key.startsWith("gramophone.range."))
+            throw new IllegalArgumentException("local preference required");
         reloadFromDisk();
         properties.setProperty(key, value);
         saveAll();
@@ -115,7 +116,9 @@ public final class UtilityWindowSettings {
         darkgrey.rpg.client.session.PlayerUiPreferences
             .setMusicVolume(finiteDouble(properties.getProperty("audio.sessionMusic"), 1));
         darkgrey.rpg.client.session.PlayerUiPreferences
-            .setGramophoneVolume(finiteDouble(properties.getProperty("audio.gramophone"), 1));
+            .setAutoWaitSeconds(finiteDouble(properties.getProperty("dialogue.autoWaitSeconds"), 3));
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setAutomatic(Boolean.parseBoolean(properties.getProperty("dialogue.automatic", "false")));
         darkgrey.rpg.client.session.DialoguePreferences.setSpeed(dialogueSpeed());
     }
 
@@ -135,9 +138,13 @@ public final class UtilityWindowSettings {
         properties.setProperty(
             "audio.sessionMusic",
             Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.musicVolume()));
+        properties.remove("audio.gramophone");
         properties.setProperty(
-            "audio.gramophone",
-            Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.gramophoneVolume()));
+            "dialogue.automatic",
+            Boolean.toString(darkgrey.rpg.client.session.PlayerUiPreferences.automatic()));
+        properties.setProperty(
+            "dialogue.autoWaitSeconds",
+            Double.toString(darkgrey.rpg.client.session.PlayerUiPreferences.autoWaitSeconds()));
         properties.setProperty(
             "dialogue.charactersPerSecond",
             Double.toString(darkgrey.rpg.client.session.DialoguePreferences.speed()));
