@@ -264,8 +264,8 @@ public sealed class LocalAudioPreviewService : IDisposable
 
     private static LocalAudioPreviewService CreateDefault()
     {
-        var tools = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg", "ffmpeg.exe");
-        var temp = Path.Combine(Path.GetTempPath(), "DarkGreyRPGStudio");
+        var tools = Path.Combine(StudioStoragePaths.Default.MediaTools, "ffmpeg.exe");
+        var temp = StudioStoragePaths.Default.Temp;
         return new LocalAudioPreviewService(tools, temp);
     }
 

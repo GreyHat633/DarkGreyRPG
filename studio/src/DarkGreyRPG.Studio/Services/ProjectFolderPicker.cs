@@ -8,7 +8,8 @@ public sealed class ProjectFolderPicker : IProjectFolderPicker
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "选择 DarkGrey RPG 项目目录",
+            Title = "打开项目（外部项目将复制到本地）",
+            InitialDirectory = StudioStoragePaths.Default.Projects,
             Multiselect = false,
         };
 

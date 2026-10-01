@@ -2,26 +2,21 @@ using System.IO;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Validation;
 using DarkGreyRPG.Studio.Core.Projects;
+using DarkGreyRPG.Studio.Services;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
 public sealed class ProjectCreationDialogViewModel : ObservableObject
 {
-    private string _parentDirectory;
-    private string _projectFolderName;
     private string _fullDestination;
     private string _id;
     private string _displayName;
 
     private ProjectCreationDialogViewModel(
-        string parentDirectory,
-        string projectFolderName,
         string fullDestination,
         string id,
         string displayName)
     {
-        _parentDirectory = parentDirectory;
-        _projectFolderName = projectFolderName;
         _fullDestination = fullDestination;
         _id = id;
         _displayName = displayName;
@@ -33,30 +28,6 @@ public sealed class ProjectCreationDialogViewModel : ObservableObject
     public string ActionText => "创建项目";
 
     public RelayCommand ApplySuggestionCommand { get; }
-
-    public string ParentDirectory
-    {
-        get => _parentDirectory;
-        set
-        {
-            if (SetProperty(ref _parentDirectory, value ?? string.Empty))
-            {
-                RaiseDestinationProperties();
-            }
-        }
-    }
-
-    public string ProjectFolderName
-    {
-        get => _projectFolderName;
-        set
-        {
-            if (SetProperty(ref _projectFolderName, value ?? string.Empty))
-            {
-                RaiseDestinationProperties();
-            }
-        }
-    }
 
     public string FullDestination
     {
@@ -95,33 +66,8 @@ public sealed class ProjectCreationDialogViewModel : ObservableObject
         }
     }
 
-    public string DestinationDirectory
-    {
-        get
-        {
-            var fullDestination = FullDestination.Trim();
-            if (fullDestination.Length > 0)
-            {
-                return TryGetFullPath(fullDestination, out var fullPath) ? fullPath : string.Empty;
-            }
-
-            var parent = ParentDirectory.Trim();
-            var folderName = ProjectFolderName.Trim();
-            if (parent.Length == 0 || folderName.Length == 0)
-            {
-                return string.Empty;
-            }
-
-            try
-            {
-                return Path.GetFullPath(Path.Combine(parent, folderName));
-            }
-            catch (Exception exception) when (exception is ArgumentException or IOException or NotSupportedException)
-            {
-                return string.Empty;
-            }
-        }
-    }
+    public string DestinationDirectory => TryGetFullPath(FullDestination.Trim(), out var fullPath)
+        ? fullPath : string.Empty;
 
     public string NormalizedSuggestion => ProjectIdentity.IsValid(Id) ? Id : ActorValidator.NormalizeId(Id);
 
@@ -152,61 +98,39 @@ public sealed class ProjectCreationDialogViewModel : ObservableObject
     public static ProjectCreationDialogViewModel ForCreate(string? initialParentDirectory = null)
     {
         var parent = string.IsNullOrWhiteSpace(initialParentDirectory)
-            ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            ? StudioStoragePaths.Default.Projects
             : initialParentDirectory.Trim();
-        return new(parent, "Project", string.Empty, "DarkGreyRPGProject", "DarkGrey RPG 项目");
+        var destination = Path.Combine(Path.GetFullPath(parent), "Project");
+        for (var suffix = 2; Directory.Exists(destination) || File.Exists(destination); suffix++)
+            destination = Path.Combine(Path.GetFullPath(parent), "Project_" + suffix);
+        return new(destination, "DarkGreyRPGProject", "DarkGrey RPG 项目");
     }
 
     private void ApplySuggestion() => Id = NormalizedSuggestion;
 
     private IReadOnlyList<string> GetDestinationValidationMessages()
     {
-        if (FullDestination.Trim().Length > 0)
-        {
-            return TryGetFullPath(FullDestination.Trim(), out _)
-                ? []
-                : ["完整目标路径无效。"];
-        }
-
-        var messages = new List<string>();
-        if (string.IsNullOrWhiteSpace(ParentDirectory))
-        {
-            messages.Add("父文件夹不能为空。");
-        }
-        else if (!TryGetFullPath(ParentDirectory.Trim(), out _))
-        {
-            messages.Add("父文件夹路径无效。");
-        }
-
-        if (string.IsNullOrWhiteSpace(ProjectFolderName))
-        {
-            messages.Add("项目文件夹名不能为空。");
-        }
-        else if (!IsValidFolderName(ProjectFolderName.Trim()))
-        {
-            messages.Add("项目文件夹名必须是单个有效的文件夹名。");
-        }
-
-        return messages;
-    }
-
-    private static bool IsValidFolderName(string folderName)
-    {
-        if (folderName is "." or ".." || Path.IsPathRooted(folderName))
-        {
-            return false;
-        }
-
-        return folderName.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 &&
-               folderName.IndexOf(Path.DirectorySeparatorChar) < 0 &&
-               folderName.IndexOf(Path.AltDirectorySeparatorChar) < 0;
+        if (string.IsNullOrWhiteSpace(FullDestination)) return ["项目路径不能为空。"];
+        return TryGetFullPath(FullDestination.Trim(), out _) ? [] : ["请填写有效的完整项目路径。"];
     }
 
     private static bool TryGetFullPath(string path, out string fullPath)
     {
         try
         {
+            if (!Path.IsPathFullyQualified(path))
+            {
+                fullPath = string.Empty;
+                return false;
+            }
             fullPath = Path.GetFullPath(path);
+            var root = Path.GetPathRoot(fullPath)!;
+            var segments = fullPath[root.Length..].Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Any(segment => segment.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+            {
+                fullPath = string.Empty;
+                return false;
+            }
             return true;
         }
         catch (Exception exception) when (exception is ArgumentException or IOException or NotSupportedException)

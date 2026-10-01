@@ -104,7 +104,7 @@ public sealed class OfflinePackageDialogs : IOfflinePackageDialogs
             OfflinePackageDialogKind.Reference => _settingsService?.Load().LastReferenceDirectory,
             _ => null,
         };
-        return DgrsExportPathPicker.ResolveInitialDirectory(remembered, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+        return DgrsExportPathPicker.ResolveInitialDirectory(remembered, StudioStoragePaths.Default.Exports);
     }
 
     private void RememberDirectory(OfflinePackageDialogKind? kind, string selectedPath)

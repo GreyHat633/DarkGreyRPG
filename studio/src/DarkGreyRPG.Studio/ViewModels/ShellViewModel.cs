@@ -25,6 +25,7 @@ namespace DarkGreyRPG.Studio.ViewModels;
 public sealed partial class ShellViewModel : ObservableObject
 {
     private readonly ProjectService _projectService;
+    private readonly PortableProjectStore? _portableProjects;
     private readonly IProjectFolderPicker _projectFolderPicker;
     private readonly IActorWorkspaceDialogs _actorWorkspaceDialogs;
     private readonly IResourceWorkspaceDialogs _resourceWorkspaceDialogs;
@@ -75,9 +76,11 @@ public sealed partial class ShellViewModel : ObservableObject
         IDgrsExportPathPicker? dgrsExportPathPicker = null,
         DarkGreyRPG.Studio.Settings.ISettingsService? namespaceSettings = null,
         INamespaceDialogs? namespaceDialogs = null,
-        IOfflinePackageDialogs? offlinePackageDialogs = null)
+        IOfflinePackageDialogs? offlinePackageDialogs = null,
+        PortableProjectStore? portableProjects = null)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
+        _portableProjects = portableProjects;
         _projectFolderPicker = projectFolderPicker ?? throw new ArgumentNullException(nameof(projectFolderPicker));
         _actorWorkspaceDialogs = actorWorkspaceDialogs ?? new NullActorWorkspaceDialogs();
         _projectWorkspaceDialogs = projectWorkspaceDialogs ?? new NullProjectWorkspaceDialogs();
@@ -626,10 +629,14 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private bool OpenProjectFromDirectory(string projectDirectory, bool isRestore)
     {
-        if (!PrepareLegacyProjectCompatibility(projectDirectory)) return false;
-        if (!PrepareProjectNamespace(projectDirectory)) return false;
         try
         {
+            if (_portableProjects is not null)
+            {
+                projectDirectory = _portableProjects.PrepareOpen(projectDirectory, isRestore);
+            }
+            if (!PrepareLegacyProjectCompatibility(projectDirectory)) return false;
+            if (!PrepareProjectNamespace(projectDirectory)) return false;
             var firstProject = _projectService.CurrentProject is null;
             var project = _projectService.OpenProject(projectDirectory);
             if (firstProject)
@@ -680,7 +687,8 @@ public sealed partial class ShellViewModel : ObservableObject
             return true;
         }
         catch (Exception exception) when (
-            exception is ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
+            exception is IOException or UnauthorizedAccessException or JsonException
+                or ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
                 or StoryRepositoryException or StoryNotFoundException or StoryDataException)
         {
             if (isRestore)
@@ -706,9 +714,9 @@ public sealed partial class ShellViewModel : ObservableObject
 
         var initialNamespace = RequestInitialNamespace();
         if (_namespaceSettings is not null && initialNamespace is null) return;
-        var initialParent = _projectService.CurrentProject is null
+        var initialParent = _portableProjects?.Paths.Projects ?? (_projectService.CurrentProject is null
             ? null
-            : Directory.GetParent(_projectService.CurrentProject.ProjectDirectory)?.FullName;
+            : Directory.GetParent(_projectService.CurrentProject.ProjectDirectory)?.FullName);
         var request = _projectWorkspaceDialogs.RequestCreate(initialParent);
         if (request is null)
         {
@@ -717,6 +725,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
         try
         {
+            _portableProjects?.ValidateCreationDestination(request.ProjectDirectory);
             var project = _projectService.CreateProject(
                 request.ProjectDirectory,
                 request.Id,
@@ -748,6 +757,11 @@ public sealed partial class ShellViewModel : ObservableObject
             RaiseWorkspaceCommandStates();
             RefreshProblems();
             ReportSuccess("项目已创建，可开始新建故事。", "Project");
+            try { _portableProjects?.RememberCreatedProject(project.ProjectDirectory); }
+            catch (DarkGreyRPG.Studio.Settings.SettingsPersistenceException exception)
+            {
+                ReportWarning("项目已创建，但保存自选项目位置失败：" + exception.Message, "Settings");
+            }
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
         {
@@ -2949,7 +2963,8 @@ public sealed partial class ShellViewModel : ObservableObject
         var story = ProjectHome.SelectedStory;
         if (project is null || story is null) return;
 
-        var suggestedDirectory = Path.Combine(project.ProjectDirectory, "build", "story_packages");
+        var suggestedDirectory = _portableProjects?.Paths.Exports
+            ?? Path.Combine(project.ProjectDirectory, "build", "story_packages");
         var output = _dgrsExportPathPicker.PickExportPath(story.Id, suggestedDirectory);
         if (string.IsNullOrWhiteSpace(output)) return;
 

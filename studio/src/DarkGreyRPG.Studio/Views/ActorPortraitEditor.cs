@@ -225,7 +225,7 @@ public sealed class ActorPortraitEditor : UserControl
     private ProjectMediaStore CreateStore()
     {
         if (string.IsNullOrWhiteSpace(ProjectDirectory)) throw new InvalidOperationException("未设置项目目录。");
-        var tools = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+        var tools = Services.StudioStoragePaths.Default.MediaTools;
         return new ProjectMediaStore(ProjectDirectory, Path.Combine(tools, "ffmpeg.exe"), Path.Combine(tools, "ffprobe.exe"));
     }
 

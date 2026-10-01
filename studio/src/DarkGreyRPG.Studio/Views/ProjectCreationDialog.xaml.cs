@@ -19,24 +19,6 @@ public partial class ProjectCreationDialog : Window
         }
     }
 
-    private void BrowseParent_OnClick(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not ProjectCreationDialogViewModel viewModel)
-        {
-            return;
-        }
-
-        var dialog = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "选择项目父文件夹",
-            Multiselect = false,
-        };
-        if (dialog.ShowDialog(this) == true)
-        {
-            viewModel.ParentDirectory = dialog.FolderName;
-        }
-    }
-
     private void BrowseDestination_OnClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ProjectCreationDialogViewModel viewModel)
@@ -46,12 +28,20 @@ public partial class ProjectCreationDialog : Window
 
         var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "选择项目完整目标文件夹",
+            Title = "选择项目保存文件夹",
             Multiselect = false,
+            InitialDirectory = FindExistingDirectory(viewModel.DestinationDirectory),
         };
         if (dialog.ShowDialog(this) == true)
         {
             viewModel.FullDestination = dialog.FolderName;
         }
+    }
+
+    private static string FindExistingDirectory(string path)
+    {
+        while (!string.IsNullOrEmpty(path) && !System.IO.Directory.Exists(path))
+            path = System.IO.Path.GetDirectoryName(path) ?? string.Empty;
+        return path;
     }
 }

@@ -69,7 +69,7 @@ public sealed class DgrsExportPathPicker : IDgrsExportPathPicker
             catch (NotSupportedException) { }
         }
 
-        foreach (var candidate in new[] { fallbackDirectory, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) })
+        foreach (var candidate in new[] { fallbackDirectory, StudioStoragePaths.Default.Exports })
         {
             if (string.IsNullOrWhiteSpace(candidate)) continue;
             try
@@ -84,7 +84,7 @@ public sealed class DgrsExportPathPicker : IDgrsExportPathPicker
             catch (NotSupportedException) { }
         }
 
-        return Environment.CurrentDirectory;
+        return StudioStoragePaths.Default.Root;
     }
 
     private static string ResolveMovedDirectory(string path)

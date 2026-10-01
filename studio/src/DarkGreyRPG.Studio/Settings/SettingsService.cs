@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
+using DarkGreyRPG.Studio.Services;
 
 namespace DarkGreyRPG.Studio.Settings;
 
@@ -12,15 +13,14 @@ public sealed class SettingsService : ISettingsService
 {
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
 
-    private const string SettingsDirectoryName = "DarkGreyRPG";
-    private const string StudioDirectoryName = "Studio";
-    private const string SettingsFileName = "settings.json";
+    private readonly StudioStoragePaths _paths;
 
-    public SettingsService(string? settingsPath = null)
+    public SettingsService(string? settingsPath = null, StudioStoragePaths? storagePaths = null)
     {
-        SettingsPath = string.IsNullOrWhiteSpace(settingsPath)
-            ? GetDefaultSettingsPath()
-            : settingsPath;
+        _paths = storagePaths ?? (string.IsNullOrWhiteSpace(settingsPath)
+            ? StudioStoragePaths.Default
+            : new StudioStoragePaths(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!));
+        SettingsPath = string.IsNullOrWhiteSpace(settingsPath) ? _paths.Settings : Path.GetFullPath(settingsPath);
     }
 
     public string SettingsPath { get; }
@@ -84,12 +84,22 @@ public sealed class SettingsService : ISettingsService
                 throw new IOException("The settings path has no parent directory.");
             }
 
+            StudioStoragePaths.EnsureNoDirectoryLinks(directory);
             Directory.CreateDirectory(directory);
 
             // A previous interrupted write must not become the next saved file.
             DeleteTemporaryFileIfPresent(temporaryPath);
 
-            var persistedSettings = Normalize(settings);
+            var normalized = Normalize(settings);
+            var persistedSettings = normalized with
+            {
+                LastProject = PersistPath(normalized.LastProject),
+                RecentProjects = normalized.RecentProjects.Select(path => PersistPath(path)!).ToArray(),
+                ExternalProjects = normalized.ExternalProjects.Select(path => PersistPath(path)!).ToArray(),
+                LastExportDirectory = PersistPath(normalized.LastExportDirectory),
+                LastImportDirectory = PersistPath(normalized.LastImportDirectory),
+                LastReferenceDirectory = PersistPath(normalized.LastReferenceDirectory),
+            };
             var json = JsonSerializer.Serialize(persistedSettings, SerializerOptions);
             File.WriteAllText(temporaryPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
@@ -109,22 +119,13 @@ public sealed class SettingsService : ISettingsService
         }
     }
 
-    private static string GetDefaultSettingsPath()
-    {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            SettingsDirectoryName,
-            StudioDirectoryName,
-            SettingsFileName);
-    }
-
     private static StudioSettings CreateDefaultSettings() => new()
     {
         SchemaVersion = StudioSettings.CurrentSchemaVersion,
-        Theme = ThemePreference.System,
+        Theme = ThemePreference.Dark,
     };
 
-    private static StudioSettings Normalize(StudioSettings settings) => settings with
+    private StudioSettings Normalize(StudioSettings settings) => settings with
     {
         SchemaVersion = StudioSettings.CurrentSchemaVersion,
         WindowWidth = NormalizeDimension(settings.WindowWidth, 900, 7680, StudioSettings.DefaultWindowWidth),
@@ -132,13 +133,21 @@ public sealed class SettingsService : ISettingsService
         ResourceBrowserWidth = NormalizeDimension(settings.ResourceBrowserWidth, 180, 400, StudioSettings.DefaultResourceBrowserWidth),
         StoryResourceLibraryWidth = NormalizeDimension(settings.StoryResourceLibraryWidth, StudioSettings.StoryResourceLibraryMinWidth, StudioSettings.StoryResourceLibraryMaxWidth, StudioSettings.DefaultStoryResourceLibraryWidth),
         BottomPanelHeight = NormalizeDimension(settings.BottomPanelHeight, 120, 520, StudioSettings.DefaultBottomPanelHeight),
-        LastProject = string.IsNullOrWhiteSpace(settings.LastProject)
-            ? null
-            : Path.GetFullPath(settings.LastProject.Trim()),
+        LastProject = ResolvePath(settings.LastProject),
         RecentProjects = NormalizeRecentProjects(settings.RecentProjects),
+        ExternalProjects = NormalizeRecentProjects(settings.ExternalProjects, int.MaxValue),
+        LastExportDirectory = ResolvePath(settings.LastExportDirectory),
+        LastImportDirectory = ResolvePath(settings.LastImportDirectory),
+        LastReferenceDirectory = ResolvePath(settings.LastReferenceDirectory),
     };
 
-    private static IReadOnlyList<string> NormalizeRecentProjects(IEnumerable<string>? recentProjects)
+    private string? ResolvePath(string? path) => string.IsNullOrWhiteSpace(path)
+        ? null : Path.GetFullPath(path.Trim(), _paths.Root);
+
+    private string? PersistPath(string? path) => path is null ? null
+        : _paths.Contains(path) ? Path.GetRelativePath(_paths.Root, path) : path;
+
+    private IReadOnlyList<string> NormalizeRecentProjects(IEnumerable<string>? recentProjects, int maximumCount = 10)
     {
         if (recentProjects is null)
         {
@@ -158,7 +167,7 @@ public sealed class SettingsService : ISettingsService
             string fullPath;
             try
             {
-                fullPath = Path.GetFullPath(projectPath.Trim());
+                fullPath = ResolvePath(projectPath)!;
             }
             catch (ArgumentException)
             {
@@ -175,7 +184,7 @@ public sealed class SettingsService : ISettingsService
             }
 
             normalized.Add(fullPath);
-            if (normalized.Count == 10)
+            if (normalized.Count == maximumCount)
             {
                 break;
             }

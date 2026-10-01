@@ -5,7 +5,7 @@ using DarkGreyRPG.Studio.Views;
 
 namespace DarkGreyRPG.Studio.Services;
 
-public sealed class ProjectWorkspaceDialogs(Func<Window?> ownerProvider) : IProjectWorkspaceDialogs
+public sealed class ProjectWorkspaceDialogs(Func<Window?> ownerProvider, StudioStoragePaths? paths = null) : IProjectWorkspaceDialogs
 {
     public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges()
     {
@@ -21,7 +21,7 @@ public sealed class ProjectWorkspaceDialogs(Func<Window?> ownerProvider) : IProj
 
     public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null)
     {
-        var viewModel = ProjectCreationDialogViewModel.ForCreate(initialParentDirectory);
+        var viewModel = ProjectCreationDialogViewModel.ForCreate(initialParentDirectory ?? paths?.Projects);
         var dialog = new ProjectCreationDialog(viewModel) { Owner = ownerProvider() };
         if (dialog.ShowDialog() != true || !viewModel.CanConfirm)
         {

@@ -667,7 +667,7 @@ public sealed class SessionScreenEditor : UserControl
         if (_inspector?.IsScreen != true || ProjectDirectory is not { } root || _layers.Count >= MaximumLayers) return;
         var dialog = new Microsoft.Win32.OpenFileDialog { Filter = ProjectMediaStore.ImageFileFilter, CheckFileExists = true };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
-        var tools = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+        var tools = Services.StudioStoragePaths.Default.MediaTools;
         await ImportImageSelectionAsync(dialog.FileName, () => new ProjectMediaStore(root, Path.Combine(tools, "ffmpeg.exe"), Path.Combine(tools, "ffprobe.exe"))
             .ImportImageAsync(dialog.FileName));
     }

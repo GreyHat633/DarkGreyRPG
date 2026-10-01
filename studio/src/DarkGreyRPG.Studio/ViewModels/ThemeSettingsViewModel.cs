@@ -24,7 +24,7 @@ public sealed class ThemeSettingsViewModel : ObservableObject
         }
         catch (SettingsPersistenceException exception)
         {
-            _selectedTheme = ThemePreference.System;
+            _selectedTheme = ThemePreference.Dark;
             PersistenceError = exception.Message;
         }
 
@@ -80,7 +80,7 @@ public sealed class ThemeSettingsViewModel : ObservableObject
     public StudioSettings CurrentSettings => _settings;
 
     private static ThemePreference Normalize(ThemePreference preference) =>
-        Enum.IsDefined(preference) ? preference : ThemePreference.System;
+        Enum.IsDefined(preference) ? preference : ThemePreference.Dark;
 
     private void PersistTheme(ThemePreference preference)
     {

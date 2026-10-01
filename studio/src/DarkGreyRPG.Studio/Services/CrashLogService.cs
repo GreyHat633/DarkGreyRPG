@@ -18,28 +18,27 @@ public sealed class CrashLogService : ICrashLogService
     public CrashLogService(
         string? settingsPath = null,
         Func<DateTimeOffset>? clock = null,
-        string? applicationVersion = null)
+        string? applicationVersion = null,
+        string? logsDirectory = null)
     {
         var effectiveSettingsPath = string.IsNullOrWhiteSpace(settingsPath)
-            ? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "DarkGreyRPG",
-                "Studio",
-                "settings.json")
+            ? StudioStoragePaths.Default.Settings
             : settingsPath;
 
         try
         {
             var fullSettingsPath = Path.GetFullPath(effectiveSettingsPath);
             var settingsDirectory = Path.GetDirectoryName(fullSettingsPath);
-            LogsDirectory = string.IsNullOrWhiteSpace(settingsDirectory)
+            LogsDirectory = logsDirectory is not null ? Path.GetFullPath(logsDirectory)
+                : string.IsNullOrWhiteSpace(settingsPath) ? StudioStoragePaths.Default.Logs
+                : string.IsNullOrWhiteSpace(settingsDirectory)
                 ? Path.Combine(AppContext.BaseDirectory, "logs")
                 : Path.Combine(settingsDirectory, "logs");
         }
         catch (Exception exception) when (
             exception is ArgumentException or NotSupportedException or IOException)
         {
-            LogsDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
+            LogsDirectory = StudioStoragePaths.Default.Logs;
         }
 
         _clock = clock ?? (() => DateTimeOffset.Now);
@@ -62,6 +61,7 @@ public sealed class CrashLogService : ICrashLogService
 
         try
         {
+            StudioStoragePaths.EnsureNoDirectoryLinks(LogsDirectory);
             Directory.CreateDirectory(LogsDirectory);
             var timestamp = _clock();
             var fileName = $"crash-{timestamp:yyyyMMdd-HHmmssfff}.log";

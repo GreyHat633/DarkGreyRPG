@@ -19,7 +19,7 @@ public partial class MainWindow
         button.IsEnabled = false;
         try
         {
-            var toolRoot = Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+            var toolRoot = Services.StudioStoragePaths.Default.MediaTools;
             var store = new ProjectMediaStore(shell.ProjectDirectory, Path.Combine(toolRoot, "ffmpeg.exe"), Path.Combine(toolRoot, "ffprobe.exe"));
             var imported = await store.ImportImageAsync(dialog.FileName);
             if (variant)

@@ -28,7 +28,7 @@
 
   <ItemGroup>
     <Content Include="..\..\..\.tooling\media-tools\ffmpeg\ffmpeg.exe;..\..\..\.tooling\media-tools\ffmpeg\ffprobe.exe;..\..\..\.tooling\media-tools\ffmpeg\LICENSE;..\..\..\.tooling\media-tools\ffmpeg\README.txt">
-      <Link>media-tools\ffmpeg\%(Filename)%(Extension)</Link>
+      <Link>Tools\FFmpeg\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>

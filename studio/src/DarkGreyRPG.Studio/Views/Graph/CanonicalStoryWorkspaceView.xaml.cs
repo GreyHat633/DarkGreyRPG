@@ -33,7 +33,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         button.IsEnabled = false;
         try
         {
-            var tools = System.IO.Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+            var tools = Services.StudioStoragePaths.Default.MediaTools;
             var store = new DarkGreyRPG.Studio.Core.Media.ProjectMediaStore(projectRoot,
                 System.IO.Path.Combine(tools, "ffmpeg.exe"), System.IO.Path.Combine(tools, "ffprobe.exe"));
             var result = await store.ImportAudioAsync(dialog.FileName);

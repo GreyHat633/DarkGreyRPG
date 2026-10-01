@@ -31,9 +31,22 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        var settingsService = new SettingsService(
-            Environment.GetEnvironmentVariable("DARKGREYRPG_STUDIO_SETTINGS_PATH"));
-        _crashLogService = new CrashLogService(settingsService.SettingsPath);
+        var paths = StudioStoragePaths.Default;
+        try
+        {
+            paths.Initialize();
+            Environment.SetEnvironmentVariable("TEMP", paths.Temp);
+            Environment.SetEnvironmentVariable("TMP", paths.Temp);
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show($"Studio 无法写入本地数据目录：{paths.Data}\n请将完整程序文件夹移到可写位置后重试。\n{exception.Message}",
+                "Studio 本地数据目录不可用", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+            return;
+        }
+        var settingsService = new SettingsService(storagePaths: paths);
+        _crashLogService = new CrashLogService(logsDirectory: paths.Logs);
         RegisterGlobalExceptionHandlers();
         var themeSettings = new ThemeSettingsViewModel(settingsService, ApplyTheme);
         _mainWindow = new MainWindow(themeSettings, settingsService, _crashLogService);

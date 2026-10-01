@@ -17,7 +17,7 @@ public sealed record StudioSettings
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
 
     [JsonPropertyName("theme")]
-    public ThemePreference Theme { get; init; } = ThemePreference.System;
+    public ThemePreference Theme { get; init; } = ThemePreference.Dark;
 
     [JsonPropertyName("global_namespace")]
     public string? GlobalNamespace { get; init; }
@@ -45,6 +45,10 @@ public sealed record StudioSettings
 
     [JsonPropertyName("recent_projects")]
     public IReadOnlyList<string> RecentProjects { get; init; } = Array.Empty<string>();
+
+    // Explicitly created outside Data/Projects; opening these must retain their location.
+    [JsonPropertyName("external_projects")]
+    public IReadOnlyList<string> ExternalProjects { get; init; } = Array.Empty<string>();
 
     [JsonPropertyName("last_export_directory")]
     public string? LastExportDirectory { get; init; }

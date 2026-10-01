@@ -24,14 +24,14 @@ public sealed class SettingsServiceTests
     }
 
     [TestMethod]
-    public void DefaultSettingsPath_ResolvesToAppDataDarkGreyRpgStudioSettingsJson()
+    public void DefaultSettingsPath_IsLocalToThisStudioCopy()
     {
         var service = new SettingsService();
 
         var expected = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "DarkGreyRPG",
-            "Studio",
+            AppContext.BaseDirectory,
+            "Data",
+            "Config",
             "settings.json");
 
         Assert.AreEqual(expected, service.SettingsPath);
@@ -48,7 +48,7 @@ public sealed class SettingsServiceTests
             var settings = service.Load();
 
             Assert.AreEqual(StudioSettings.CurrentSchemaVersion, settings.SchemaVersion);
-            Assert.AreEqual(ThemePreference.System, settings.Theme);
+            Assert.AreEqual(ThemePreference.Dark, settings.Theme);
         }
         finally
         {
@@ -192,7 +192,7 @@ public sealed class SettingsServiceTests
             var loaded = service.Load();
 
             CollectionAssert.AreEqual(
-                new[] { Path.GetFullPath(relativeProject), Path.GetFullPath(absoluteProject) },
+                new[] { Path.GetFullPath(relativeProject, directory), Path.GetFullPath(absoluteProject) },
                 loaded.RecentProjects.ToArray());
         }
         finally
@@ -411,7 +411,7 @@ public sealed class SettingsServiceTests
 
             var settings = new SettingsService(settingsPath).Load();
 
-            Assert.AreEqual(ThemePreference.System, settings.Theme);
+            Assert.AreEqual(ThemePreference.Dark, settings.Theme);
             Assert.AreEqual(StudioSettings.CurrentSchemaVersion, settings.SchemaVersion);
         }
         finally
@@ -431,7 +431,7 @@ public sealed class SettingsServiceTests
 
             var settings = new SettingsService(settingsPath).Load();
 
-            Assert.AreEqual(ThemePreference.System, settings.Theme);
+            Assert.AreEqual(ThemePreference.Dark, settings.Theme);
         }
         finally
         {
@@ -449,7 +449,7 @@ public sealed class SettingsServiceTests
 
             var settings = new SettingsService(settingsPath).Load();
 
-            Assert.AreEqual(ThemePreference.System, settings.Theme);
+            Assert.AreEqual(ThemePreference.Dark, settings.Theme);
             Assert.AreEqual(StudioSettings.CurrentSchemaVersion, settings.SchemaVersion);
         }
         finally
@@ -468,7 +468,7 @@ public sealed class SettingsServiceTests
 
             var settings = new SettingsService(settingsPath).Load();
 
-            Assert.AreEqual(ThemePreference.System, settings.Theme);
+            Assert.AreEqual(ThemePreference.Dark, settings.Theme);
             Assert.AreEqual(StudioSettings.CurrentSchemaVersion, settings.SchemaVersion);
         }
         finally
@@ -487,7 +487,7 @@ public sealed class SettingsServiceTests
 
             var settings = new SettingsService(settingsPath).Load();
 
-            Assert.AreEqual(ThemePreference.System, settings.Theme);
+            Assert.AreEqual(ThemePreference.Dark, settings.Theme);
         }
         finally
         {

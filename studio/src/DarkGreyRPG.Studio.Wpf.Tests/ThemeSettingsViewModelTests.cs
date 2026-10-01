@@ -82,7 +82,7 @@ public sealed class ThemeSettingsViewModelTests
     }
 
     [TestMethod]
-    public void LoadFailure_UsesSystemThemeAndExposesReadableError()
+    public void LoadFailure_UsesDarkThemeAndExposesReadableError()
     {
         var service = new RecordingSettingsService(ThemePreference.Dark)
         {
@@ -92,8 +92,8 @@ public sealed class ThemeSettingsViewModelTests
 
         var viewModel = new ThemeSettingsViewModel(service, applied.Add);
 
-        Assert.AreEqual(ThemePreference.System, viewModel.SelectedTheme);
-        CollectionAssert.AreEqual(new[] { ThemePreference.System }, applied);
+        Assert.AreEqual(ThemePreference.Dark, viewModel.SelectedTheme);
+        CollectionAssert.AreEqual(new[] { ThemePreference.Dark }, applied);
         Assert.IsTrue(viewModel.HasPersistenceError);
         StringAssert.Contains(viewModel.PersistenceError, "Unable to load theme settings.");
     }

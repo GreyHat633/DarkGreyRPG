@@ -48,7 +48,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             new ProjectService(),
             new ProjectFolderPicker(),
             new ActorWorkspaceDialogs(() => this),
-            new ProjectWorkspaceDialogs(() => this),
+            new ProjectWorkspaceDialogs(() => this, StudioStoragePaths.Default),
             new ResourceWorkspaceDialogs(() => this),
             new FlowWorkspaceDialogs(() => this),
             crashLogService ?? new CrashLogService(settingsService.SettingsPath),
@@ -57,7 +57,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             dgrsExportPathPicker: new DgrsExportPathPicker(() => this, settingsService),
             namespaceSettings: settingsService,
             namespaceDialogs: new NamespaceDialogs(() => this),
-            offlinePackageDialogs: new OfflinePackageDialogs(() => this, settingsService));
+            offlinePackageDialogs: new OfflinePackageDialogs(() => this, settingsService),
+            portableProjects: new PortableProjectStore(StudioStoragePaths.Default));
         DataContext = _shell;
         _shell.Toast.PropertyChanged += Toast_OnPropertyChanged;
         _shell.PropertyChanged += Shell_OnPropertyChanged;
@@ -317,6 +318,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             e.Cancel = true;
             return;
         }
+
+        LocalAudioPreviewService.StopShared();
 
         try
         {

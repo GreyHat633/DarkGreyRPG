@@ -200,7 +200,7 @@ public partial class LinePagesEditor : UserControl
         button.IsEnabled = false;
         try
         {
-            var tools = System.IO.Path.Combine(AppContext.BaseDirectory, "media-tools", "ffmpeg");
+            var tools = Services.StudioStoragePaths.Default.MediaTools;
             var store = new Core.Media.ProjectMediaStore(root, System.IO.Path.Combine(tools, "ffmpeg.exe"), System.IO.Path.Combine(tools, "ffprobe.exe"));
             var result = await store.ImportAudioAsync(dialog.FileName);
             if (workspace.MediaProjectDirectory == root && page.Owner.LinePages.Contains(page)) page.SetVoice(result.MediaRef);

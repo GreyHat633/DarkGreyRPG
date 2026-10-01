@@ -9,7 +9,6 @@ public sealed class ProjectCreationDialogViewModelTests
     public void UppercaseProjectIdIsAcceptedWithoutNormalization()
     {
         var viewModel = ProjectCreationDialogViewModel.ForCreate(AppContext.BaseDirectory);
-        viewModel.ProjectFolderName = Guid.NewGuid().ToString("N");
         viewModel.Id = "TestProject2";
         Assert.IsTrue(viewModel.CanConfirm, viewModel.ValidationText);
         Assert.IsFalse(viewModel.HasSuggestion);
@@ -20,38 +19,39 @@ public sealed class ProjectCreationDialogViewModelTests
     public void RequiresDestinationIdentityAndDisplayName()
     {
         var viewModel = ProjectCreationDialogViewModel.ForCreate(string.Empty);
-        viewModel.ParentDirectory = string.Empty;
-        viewModel.ProjectFolderName = string.Empty;
+        viewModel.FullDestination = string.Empty;
         viewModel.Id = string.Empty;
         viewModel.DisplayName = string.Empty;
 
         Assert.IsFalse(viewModel.CanConfirm);
-        StringAssert.Contains(viewModel.ValidationText, "父文件夹");
-        StringAssert.Contains(viewModel.ValidationText, "项目文件夹名");
+        StringAssert.Contains(viewModel.ValidationText, "项目路径");
         StringAssert.Contains(viewModel.ValidationText, "项目 ID");
         StringAssert.Contains(viewModel.ValidationText, "显示名称");
     }
 
     [TestMethod]
-    public void ParentAndFolderNameProduceAbsoluteDestination()
+    public void DefaultPathIsFilledInAndCanBeReplacedByAnExternalLocation()
     {
         var parent = Path.Combine(Path.GetTempPath(), "darkgrey-project-tests");
         var viewModel = ProjectCreationDialogViewModel.ForCreate(parent);
-        viewModel.ProjectFolderName = "new-project";
-
-        Assert.AreEqual(Path.GetFullPath(Path.Combine(parent, "new-project")), viewModel.DestinationDirectory);
+        Assert.AreEqual(Path.GetFullPath(Path.Combine(parent, "Project")), viewModel.FullDestination);
+        var external = Path.Combine(Path.GetTempPath(), "自选位置", "My Project");
+        viewModel.FullDestination = external;
+        Assert.AreEqual(Path.GetFullPath(external), viewModel.DestinationDirectory);
         Assert.IsTrue(viewModel.CanConfirm);
     }
 
     [TestMethod]
-    public void FullDestinationCanReplaceParentAndFolderName()
+    public void DefaultDestinationAvoidsExistingProjectsAndFiles()
     {
-        var viewModel = ProjectCreationDialogViewModel.ForCreate(string.Empty);
-        var destination = Path.Combine(Path.GetTempPath(), "full-destination");
-        viewModel.FullDestination = destination;
-
-        Assert.AreEqual(Path.GetFullPath(destination), viewModel.DestinationDirectory);
-        Assert.IsTrue(viewModel.CanConfirm);
+        var parent = Path.Combine(Path.GetTempPath(), "ProjectCreation", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(parent, "Project"));
+        File.WriteAllText(Path.Combine(parent, "Project_2"), "occupied");
+        try
+        {
+            Assert.AreEqual(Path.Combine(parent, "Project_3"), ProjectCreationDialogViewModel.ForCreate(parent).FullDestination);
+        }
+        finally { Directory.Delete(parent, true); }
     }
 
     [TestMethod]
@@ -72,12 +72,15 @@ public sealed class ProjectCreationDialogViewModelTests
     }
 
     [TestMethod]
-    public void InvalidProjectFolderNameIsRejected()
+    public void RelativeOrMalformedProjectPathIsRejected()
     {
         var viewModel = ProjectCreationDialogViewModel.ForCreate(Path.GetTempPath());
-        viewModel.ProjectFolderName = "nested\\project";
-
-        Assert.IsFalse(viewModel.CanConfirm);
-        StringAssert.Contains(viewModel.ValidationText, "项目文件夹名");
+        foreach (var path in new[] { "relative-project", "..\\project", "E:\\invalid\0path", "E:\\invalid<name", "E:\\invalid|name" })
+        {
+            viewModel.FullDestination = path;
+            Assert.IsFalse(viewModel.CanConfirm, path);
+            Assert.AreEqual(string.Empty, viewModel.DestinationDirectory);
+            StringAssert.Contains(viewModel.ValidationText, "项目路径");
+        }
     }
 }
