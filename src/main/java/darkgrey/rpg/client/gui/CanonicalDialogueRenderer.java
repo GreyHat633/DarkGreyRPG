@@ -65,7 +65,7 @@ public final class CanonicalDialogueRenderer {
         }
         if (portraitRef == null) displayedPortrait = null;
         else if (portrait != null) displayedPortrait = portraitRef;
-        else if (displayedPortrait != null) portrait = darkgrey.rpg.media.CanonicalMediaTextures.get(displayedPortrait);
+        else if (!portraitRef.equals(displayedPortrait)) displayedPortrait = null;
         darkgrey.rpg.client.session.DialogueHistoryClient.presented(frame, speaker);
         Gui.drawRect(left, top, right, bottom, DgrUiPalette.dialoguePanel());
         Gui.drawRect(left, top, right, top + 1, DgrUiPalette.SELECTED_BORDER);

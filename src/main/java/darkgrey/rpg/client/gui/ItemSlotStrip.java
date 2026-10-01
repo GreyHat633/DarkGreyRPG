@@ -18,11 +18,10 @@ public final class ItemSlotStrip {
 
     private static final RenderItem RENDERER = new RenderItem();
     private final NBTTagCompound source;
-    private final NBTTagList items;
+    private NBTTagList items;
     private final boolean collapsed;
     private final List<ItemStack> stacks = new ArrayList<ItemStack>();
     public List<String> tooltip;
-    private int moreX, moreY, moreWidth;
 
     public ItemSlotStrip(NBTTagCompound source, boolean collapsed) {
         this.source = (NBTTagCompound) source.copy();
@@ -52,7 +51,7 @@ public final class ItemSlotStrip {
     }
 
     private int count() {
-        return collapsed ? Math.min(4, items.tagCount()) : items.tagCount();
+        return collapsed ? Math.min(1, items.tagCount()) : items.tagCount();
     }
 
     private String experience(NBTTagCompound row) {
@@ -84,14 +83,27 @@ public final class ItemSlotStrip {
             }
             x += w + 4;
         }
-        return rows * 24 + (collapsed && items.tagCount() > 4 ? 16 : 0) + (source.hasKey("notice") ? 14 : 0);
+        return rows * 24 + (source.hasKey("notice") ? 14 : 0);
     }
 
     public void draw(int left, int top, int width, int clipTop, int clipBottom, int mouseX, int mouseY) {
         Minecraft mc = Minecraft.getMinecraft();
         tooltip = null;
-        moreWidth = 0;
         int x = left, y = top;
+        if (collapsed && source.getBoolean("group") && top >= clipTop && top + 20 <= clipBottom) {
+            if (mouseX >= 0 && mouseY >= 0) ItemCandidatePopover.offer(source, left, top, mouseX, mouseY);
+            boolean freeze = false;
+            NBTTagCompound candidate = darkgrey.rpg.client.TaskPresentationPages.candidate(source, freeze);
+            if (candidate != null && (items.tagCount() != 1 || !items.getCompoundTagAt(0)
+                .equals(candidate))) {
+                items = new NBTTagList();
+                items.appendTag(candidate);
+                stacks.clear();
+                stacks.add(
+                    candidate.hasKey("stack", 10) ? ItemStack.loadItemStackFromNBT(candidate.getCompoundTag("stack"))
+                        : null);
+            }
+        }
         for (int i = 0; i < count(); i++) {
             int w = cellWidth(i);
             if (x > left && x + w > left + width) {
@@ -102,16 +114,6 @@ public final class ItemSlotStrip {
             x += w + 4;
         }
         y += count() == 0 ? 0 : 24;
-        if (collapsed && items.tagCount() > 4) {
-            String text = "查看全部（" + items.tagCount() + "）";
-            if (y >= clipTop && y + 12 <= clipBottom) {
-                moreX = left;
-                moreY = y;
-                moreWidth = mc.fontRenderer.getStringWidth(text);
-                mc.fontRenderer.drawString(text, left, y, DgrUiPalette.TEXT);
-            }
-            y += 16;
-        }
         if (source.hasKey("notice") && y >= clipTop && y + 12 <= clipBottom) {
             mc.fontRenderer.drawString("部分候选未展开 · 悬停查看", left, y, DgrUiPalette.SECONDARY);
             if (mouseX >= left && mouseX < left + width && mouseY >= y && mouseY < y + 12)
@@ -177,13 +179,11 @@ public final class ItemSlotStrip {
                 }
                 if (!tooltip.isEmpty()) tooltip.set(0, stack.getRarity().rarityColor + tooltip.get(0));
             } else tooltip.add(row.hasKey("error") ? row.getString("error") : "物品未绑定或已缺失");
-            if (amount > 0) tooltip.add("§7" + (signed < 0 ? "扣除数量：" : "数量：") + amount);
-            if (!row.getString("match")
-                .isEmpty()) tooltip.add("§7" + row.getString("match"));
+
         }
     }
 
     public boolean moreAt(int x, int y) {
-        return moreWidth > 0 && x >= moreX && x < moreX + moreWidth && y >= moreY && y < moreY + 14;
+        return false; // Compatibility for older surfaces; candidate interaction belongs to the popover.
     }
 }

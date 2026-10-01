@@ -614,13 +614,39 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;
 
+    private GraphSelectionChangedEventArgs? _pendingMarqueeSelection;
+    private bool _marqueeInspectorQueued;
     private void WorkspaceGraph_OnSelectionChanged(object? sender, GraphSelectionChangedEventArgs args)
     {
         if (Workspace is null) return;
-        if (args.Kind == GraphSelectionKind.Node)
-            _ = Workspace.SelectGraphNode(args.Node);
-        else
+        if (!args.IsMarquee && args.Kind is not (GraphSelectionKind.Node or GraphSelectionKind.MultipleNodes))
+        {
+            _pendingMarqueeSelection = null;
             Workspace.ClearGraphSelection();
+            return;
+        }
+        if (args.IsMarquee)
+        {
+            _pendingMarqueeSelection = args;
+            if (_marqueeInspectorQueued) return;
+            _marqueeInspectorQueued = true;
+            Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
+            {
+                _marqueeInspectorQueued = false;
+                var latest = _pendingMarqueeSelection; _pendingMarqueeSelection = null;
+                if (latest is not null) ApplyInspectorSelection(latest);
+            }));
+        }
+        else { _pendingMarqueeSelection = null; ApplyInspectorSelection(args); }
+    }
+    private void ApplyInspectorSelection(GraphSelectionChangedEventArgs args)
+    {
+        if (Workspace is null) return;
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        int before = Workspace.InspectorCreationCount;
+        Workspace.SelectGraphNodes(args.Kind == GraphSelectionKind.Node && args.Node is not null ? [args.Node]
+            : args.Kind == GraphSelectionKind.MultipleNodes ? args.Nodes : []);
+        SelectionDiagnostics.Record(args.IsMarquee, Workspace.InspectorTitle, before, Workspace.InspectorCreationCount, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
     }
 
     private void WorkspaceGraph_OnNodeEditRequested(GraphEditorNodeViewModel node)

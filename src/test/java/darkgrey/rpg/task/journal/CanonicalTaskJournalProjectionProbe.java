@@ -202,24 +202,47 @@ public final class CanonicalTaskJournalProjectionProbe {
                 resolver(
                     Collections
                         .singletonMap(parallel.getId(), resource("parallel", 3, false, "Changed fingerprint")))));
-        CanonicalTaskJournalEntry unavailable = CanonicalTaskJournalProjector.projectForDisplay(player,
-            Collections.singletonList(activeSnapshot), resolver(Collections.singletonMap(parallel.getId(),
-                resource("parallel", 3, false, "Changed fingerprint")))).get(0);
-        require(unavailable.getStatus() == activeSnapshot.getStatus() && unavailable.getObjectives().isEmpty(),
+        CanonicalTaskJournalEntry unavailable = CanonicalTaskJournalProjector
+            .projectForDisplay(
+                player,
+                Collections.singletonList(activeSnapshot),
+                resolver(
+                    Collections.singletonMap(parallel.getId(), resource("parallel", 3, false, "Changed fingerprint"))))
+            .get(0);
+        require(
+            unavailable.getStatus() == activeSnapshot.getStatus() && unavailable.getObjectives()
+                .isEmpty(),
             "changed definition preserves snapshot status without inventing new objective progress");
-        require(unavailable.getDescription().contains("task.snapshot.resource"),
+        require(
+            unavailable.getDescription()
+                .contains("task.snapshot.resource"),
             "changed definition remains diagnosable instead of crashing presentation");
-        require(CanonicalTaskJournalProjector.projectForDisplay(player, Collections.singletonList(activeSnapshot),
-            resolver(Collections.<String, CanonicalGraphResource>emptyMap())).get(0).getDescription()
-                .contains("task.projection.unavailable"), "removed definition remains visible as unavailable");
-        net.minecraft.nbt.NBTTagCompound pending = darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec.encode(
-            Collections.singletonList(activeSnapshot));
+        require(
+            CanonicalTaskJournalProjector
+                .projectForDisplay(
+                    player,
+                    Collections.singletonList(activeSnapshot),
+                    resolver(Collections.<String, CanonicalGraphResource>emptyMap()))
+                .get(0)
+                .getDescription()
+                .contains("task.projection.unavailable"),
+            "removed definition remains visible as unavailable");
+        net.minecraft.nbt.NBTTagCompound pending = darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec
+            .encode(Collections.singletonList(activeSnapshot));
         net.minecraft.nbt.NBTTagCompound originalPending = (net.minecraft.nbt.NBTTagCompound) pending.copy();
-        List<CanonicalTaskJournalEntry> pendingDisplay = CanonicalTaskJournalProjector.projectUnavailable(player, pending, "task.snapshot.resource");
-        require(pendingDisplay.size() == 1 && pendingDisplay.get(0).getObjectives().isEmpty()
-            && pendingDisplay.get(0).getStatus() == activeSnapshot.getStatus(), "unbound data remains diagnostic and does not invent completion");
+        List<CanonicalTaskJournalEntry> pendingDisplay = CanonicalTaskJournalProjector
+            .projectUnavailable(player, pending, "task.snapshot.resource");
+        require(
+            pendingDisplay.size() == 1 && pendingDisplay.get(0)
+                .getObjectives()
+                .isEmpty()
+                && pendingDisplay.get(0)
+                    .getStatus() == activeSnapshot.getStatus(),
+            "unbound data remains diagnostic and does not invent completion");
         require(pending.equals(originalPending), "display fallback preserves pending persistence bytes");
-        require(CanonicalTaskJournalProjector.projectUnavailable(other, pending, "task.snapshot.resource").isEmpty(),
+        require(
+            CanonicalTaskJournalProjector.projectUnavailable(other, pending, "task.snapshot.resource")
+                .isEmpty(),
             "unbound display still filters player identity");
         expectFailure(
             single(
@@ -462,41 +485,92 @@ public final class CanonicalTaskJournalProjectionProbe {
     }
 
     private static void rewardPreview() {
-        CanonicalGraphNode first = node("first", "reward", Collections.<CanonicalGraphPort>emptyList(),
-            Collections.singletonMap("entries", new JsonParser().parse("[{\"type\":\"xp\",\"amount\":-7},{\"type\":\"xp\",\"amount\":0},{\"type\":\"item\",\"item\":\"coin\",\"amount\":3}]")));
-        CanonicalGraphNode second = node("second", "reward", Collections.<CanonicalGraphPort>emptyList(),
+        CanonicalGraphNode first = node(
+            "first",
+            "reward",
+            Collections.<CanonicalGraphPort>emptyList(),
+            Collections.singletonMap(
+                "entries",
+                new JsonParser().parse(
+                    "[{\"type\":\"xp\",\"amount\":-7},{\"type\":\"xp\",\"amount\":0},{\"type\":\"item\",\"item\":\"coin\",\"amount\":3}]")));
+        CanonicalGraphNode second = node(
+            "second",
+            "reward",
+            Collections.<CanonicalGraphPort>emptyList(),
             Collections.singletonMap("entries", new JsonParser().parse("[{\"type\":\"xp\",\"amount\":11}]")));
-        CanonicalGraphNode hidden = node("hidden", "reward", Collections.<CanonicalGraphPort>emptyList(),
+        CanonicalGraphNode hidden = node(
+            "hidden",
+            "reward",
+            Collections.<CanonicalGraphPort>emptyList(),
             Collections.singletonMap("entries", new JsonParser().parse("[{\"type\":\"xp\",\"amount\":999}]")));
-        CanonicalGraphResource resource = new CanonicalGraphResource(1, CanonicalGraphResourceKind.TASK, "preview", "Preview",
-            new CanonicalGraph(java.util.Arrays.asList(first, second, hidden), java.util.Arrays.asList(
-                edge("objective", "logic_status", "second", "logic_in"),
-                edge("objective", "logic_status", "first", "logic_in"),
-                edge("objective", "logic_status", "first", "logic_in"),
-                edge("objective", "logic_status", "and", "logic_in"),
-                edge("and", "logic_out", "hidden", "logic_in"))));
-        net.minecraft.nbt.NBTTagList rows = darkgrey.rpg.creator.TaskRewardPreview.project(resource, "objective", new darkgrey.rpg.item.identity.ItemIdentitySavedData());
+        CanonicalGraphResource resource = new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "preview",
+            "Preview",
+            new CanonicalGraph(
+                java.util.Arrays.asList(first, second, hidden),
+                java.util.Arrays.asList(
+                    edge("objective", "logic_status", "second", "logic_in"),
+                    edge("objective", "logic_status", "first", "logic_in"),
+                    edge("objective", "logic_status", "first", "logic_in"),
+                    edge("objective", "logic_status", "and", "logic_in"),
+                    edge("and", "logic_out", "hidden", "logic_in"))));
+        net.minecraft.nbt.NBTTagList rows = darkgrey.rpg.creator.TaskRewardPreview
+            .project(resource, "objective", new darkgrey.rpg.item.identity.ItemIdentitySavedData());
         require(rows.tagCount() == 3, "direct rewards omit zero, duplicate edges, and downstream logic rewards");
-        require(rows.getCompoundTagAt(0).getInteger("amount") == -7 && rows.getCompoundTagAt(2).getInteger("amount") == 11,
+        require(
+            rows.getCompoundTagAt(0)
+                .getInteger("amount") == -7
+                && rows.getCompoundTagAt(2)
+                    .getInteger("amount") == 11,
             "stable authored reward order and signed XP");
-        require(rows.getCompoundTagAt(1).getInteger("amount") == 3 && !rows.getCompoundTagAt(1).hasKey("stack"),
+        require(
+            rows.getCompoundTagAt(1)
+                .getInteger("amount") == 3
+                && !rows.getCompoundTagAt(1)
+                    .hasKey("stack"),
             "unbound item never invents an item identity");
-        require(darkgrey.rpg.creator.TaskRewardPreview.project(resource, "other", new darkgrey.rpg.item.identity.ItemIdentitySavedData()).tagCount() == 0,
+        require(
+            darkgrey.rpg.creator.TaskRewardPreview
+                .project(resource, "other", new darkgrey.rpg.item.identity.ItemIdentitySavedData())
+                .tagCount() == 0,
             "unrelated objectives do not reveal rewards");
-        CanonicalGraphNode actualObjective = node("objective", "objective",
+        CanonicalGraphNode actualObjective = node(
+            "objective",
+            "objective",
             Arrays.asList(port("logic_status", false, 0)),
             objective("kill_entity", 3, "entity", "Pig"));
-        Map<String, JsonElement> activeProperties = new LinkedHashMap<String, JsonElement>(actualObjective.getProperties());
+        Map<String, JsonElement> activeProperties = new LinkedHashMap<String, JsonElement>(
+            actualObjective.getProperties());
         activeProperties.put("prerequisite_enabled", new JsonParser().parse("false"));
         actualObjective = node("objective", "objective", actualObjective.getPorts(), activeProperties);
-        CanonicalGraphNode actualReward = node("reward", "reward", Arrays.asList(port("logic_in", true, 0)), second.getProperties());
-        CanonicalGraphResource valid = new CanonicalGraphResource(1, CanonicalGraphResourceKind.TASK, "valid_preview", "Valid Preview",
-            new CanonicalGraph(Arrays.asList(actualObjective, actualReward,
-                node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty())),
-                Arrays.asList(edge("objective", "logic_status", "reward", "logic_in"),
+        CanonicalGraphNode actualReward = node(
+            "reward",
+            "reward",
+            Arrays.asList(port("logic_in", true, 0)),
+            second.getProperties());
+        CanonicalGraphResource valid = new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "valid_preview",
+            "Valid Preview",
+            new CanonicalGraph(
+                Arrays.asList(
+                    actualObjective,
+                    actualReward,
+                    node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty())),
+                Arrays.asList(
+                    edge("objective", "logic_status", "reward", "logic_in"),
                     edge("objective", "logic_status", "settle", "result"))));
-        require(darkgrey.rpg.task.runtime.CanonicalTaskRuntime.start(valid).isActive(), "preview fixture passes the runtime port contract");
-        require(darkgrey.rpg.creator.TaskRewardPreview.project(valid, "objective", new darkgrey.rpg.item.identity.ItemIdentitySavedData()).tagCount() == 1,
+        require(
+            darkgrey.rpg.task.runtime.CanonicalTaskRuntime.start(valid)
+                .isActive(),
+            "preview fixture passes the runtime port contract");
+        require(
+            darkgrey.rpg.creator.TaskRewardPreview
+                .project(valid, "objective", new darkgrey.rpg.item.identity.ItemIdentitySavedData())
+                .tagCount() == 1,
             "runtime-valid objective exposes its direct reward");
         System.out.println("TASK_DIRECT_REWARD_PREVIEW=PASS");
     }

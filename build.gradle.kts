@@ -2,6 +2,13 @@ plugins {
     id("com.gtnewhorizons.gtnhconvention")
 }
 
+tasks.register<JavaExec>("construction0335Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.Construction0335Probe")
+}
+
 tasks.register<JavaExec>("namespacedResourceLoadingProbe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath

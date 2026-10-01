@@ -43,7 +43,8 @@ public final class GramophoneStorageProbe {
         pins.setInt(pending, 1);
         java.util.concurrent.CompletableFuture<Path> abandoned = new java.util.concurrent.CompletableFuture<Path>();
         futureField.set(pending, abandoned);
-        GramophoneClient.PreviewLease last = (GramophoneClient.PreviewLease) constructor.newInstance("pending", pending);
+        GramophoneClient.PreviewLease last = (GramophoneClient.PreviewLease) constructor
+            .newInstance("pending", pending);
         last.close();
         require(abandoned.isCancelled(), "last consumer cancels abandoned transfer");
         Object failed = mediaConstructor.newInstance();
@@ -51,9 +52,17 @@ public final class GramophoneStorageProbe {
         java.util.concurrent.CompletableFuture<Path> unavailable = new java.util.concurrent.CompletableFuture<Path>();
         unavailable.completeExceptionally(new java.io.IOException("temporary source failure"));
         futureField.set(failed, unavailable);
-        GramophoneClient.PreviewLease failure = (GramophoneClient.PreviewLease) constructor.newInstance("failed", failed);
-        try { failure.ready(); throw new AssertionError("Expected source failure"); }
-        catch (java.io.IOException expected) { require(expected.getMessage().contains("temporary source failure"), "preserve cause"); }
+        GramophoneClient.PreviewLease failure = (GramophoneClient.PreviewLease) constructor
+            .newInstance("failed", failed);
+        try {
+            failure.ready();
+            throw new AssertionError("Expected source failure");
+        } catch (java.io.IOException expected) {
+            require(
+                expected.getMessage()
+                    .contains("temporary source failure"),
+                "preserve cause");
+        }
         failure.close();
         java.lang.reflect.Field discarded = type.getDeclaredField("discarded");
         discarded.setAccessible(true);

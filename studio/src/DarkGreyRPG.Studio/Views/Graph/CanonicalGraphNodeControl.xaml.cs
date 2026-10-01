@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -163,17 +163,22 @@ public partial class CanonicalGraphNodeControl : UserControl
         OutputPortsPanel.RowDefinitions.Clear();
         ChoicePortsPanel.Children.Clear();
         ChoicePortsPanel.RowDefinitions.Clear();
+        ChoicePortsPanel.ColumnDefinitions.Clear();
         ChoicePortsPanel.Visibility = Visibility.Collapsed;
         OutputPortsPanel.Visibility = Visibility.Visible;
         _portControls.Clear();
-        foreach (var item in Node.Inputs) AddPort(InputPortsPanel, item);
+        InputPortsPanel.Visibility = Visibility.Visible;
         _choiceOptionRows.Clear();
         if (!TryBuildChoiceRows())
         {
+            foreach (var item in Node.Inputs) AddPort(InputPortsPanel, item);
             foreach (var item in Node.Outputs) AddPort(OutputPortsPanel, item);
             return;
         }
 
+        InputPortsPanel.Visibility = Visibility.Collapsed;
+        Grid.SetColumn(ChoicePortsPanel, 0);
+        Grid.SetColumnSpan(ChoicePortsPanel, 2);
         OutputPortsPanel.Visibility = Visibility.Collapsed;
         ChoicePortsPanel.Visibility = Visibility.Visible;
     }
@@ -228,6 +233,19 @@ public partial class CanonicalGraphNodeControl : UserControl
             .Where(pair => pair.Value is not null)
             .ToDictionary(pair => pair.Key, pair => CreatePort(pair.Value!), StringComparer.Ordinal);
 
+        ChoicePortsPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 0 });
+        ChoicePortsPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+        ChoicePortsPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 0 });
+        var inputRow = 0;
+        void AddChoiceInput(FlowPortControl input)
+        {
+            input.Height = ChoiceOutputGroupHeight;
+            input.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+            Grid.SetRow(input, inputRow++);
+            ChoicePortsPanel.Children.Add(input);
+        }
+        foreach (var input in Node.Inputs.Where(p => p.InterfaceKind == GraphInterfaceKind.Flow))
+            AddChoiceInput(CreatePort(input));
         foreach (var (optionId, displayText, flowPortId) in parsed)
         {
             // New authoring is Flow-only: one compact stable-ID row per option.
@@ -240,6 +258,7 @@ public partial class CanonicalGraphNodeControl : UserControl
                 MaxWidth = ChoiceOptionLabelMaxWidth,
                 Margin = new Thickness(0, 0, ChoiceOptionLabelRightInset, 0),
                 TextTrimming = TextTrimming.CharacterEllipsis,
+                TextWrapping = TextWrapping.NoWrap,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 TextAlignment = TextAlignment.Left,
@@ -258,26 +277,33 @@ public partial class CanonicalGraphNodeControl : UserControl
             {
                 Width = ChoiceOutputGroupWidth,
                 Height = ChoiceOutputGroupHeight,
-                Margin = new Thickness(0, 0, 0, ChoiceOutputGroupGap),
+                Margin = new Thickness(0),
+                Background = Brushes.Transparent,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
             group.Children.Add(flowPort);
             group.Children.Add(optionLabel);
 
-            var row = new Grid
+            Grid.SetColumn(group, 2);
+            Grid.SetRow(group, _choiceOptionRows.Count);
+            ChoicePortsPanel.Children.Add(group);
+            var option = options.EnumerateArray().First(e => e.GetProperty("option_id").GetString() == optionId);
+            if (TryReadString(option, "condition_port_id", out var conditionId)
+                && Node.Inputs.FirstOrDefault(p => p.PortId == conditionId) is { } condition)
             {
-                MinHeight = ChoiceOutputGroupHeight + ChoiceOutputGroupGap,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            row.Children.Add(group);
-            ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Grid.SetRow(row, ChoicePortsPanel.RowDefinitions.Count - 1);
-            ChoicePortsPanel.Children.Add(row);
+                var input = CreatePort(condition);
+                input.DisplayName = ReadablePortLabel(displayText);
+                input.ToolTip = input.DisplayName;
+                AddChoiceInput(input);
+            }
+            group.ToolTip = ReadablePortLabel(displayText);
             _choiceOptionRows.Add(new ChoiceOptionRow(
                 _choiceOptionRows.Count, optionId, displayText, flowPortId,
                 legacyLogicControls.GetValueOrDefault(optionId), flowPort, group, optionLabel));
         }
+        for (var index = 0; index < Math.Max(inputRow, parsed.Count); index++)
+            ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(ChoicePortRowHeight) });
 
         if (legacyLogicControls.Count != 0)
         {
@@ -292,6 +318,7 @@ public partial class CanonicalGraphNodeControl : UserControl
             AutomationProperties.SetAutomationId(heading, $"CanonicalChoiceLegacyLogic_{Node.NodeId}");
             ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             Grid.SetRow(heading, ChoicePortsPanel.RowDefinitions.Count - 1);
+            Grid.SetColumn(heading, 2);
             ChoicePortsPanel.Children.Add(heading);
 
             foreach (var option in parsed)
@@ -301,6 +328,7 @@ public partial class CanonicalGraphNodeControl : UserControl
                 legacyPort.HorizontalContentAlignment = HorizontalAlignment.Right;
                 ChoicePortsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 Grid.SetRow(legacyPort, ChoicePortsPanel.RowDefinitions.Count - 1);
+                Grid.SetColumn(legacyPort, 2);
                 ChoicePortsPanel.Children.Add(legacyPort);
             }
         }
@@ -318,15 +346,13 @@ public partial class CanonicalGraphNodeControl : UserControl
         return !string.IsNullOrWhiteSpace(value);
     }
 
-    // The node is 232 DIP wide with 7 DIP margins on both sides and two equal
-    // output/input columns. Keeping the Choice group at the output-column
-    // width makes its right edge—and therefore both endpoint anchors—stable
-    // even when an option label is very long.
-    private const double ChoiceOutputGroupWidth = 108d;
-    private const double ChoiceOptionLabelMaxWidth = 82d;
+    // The fixed-width node has two equal columns separated by an 8 DIP gutter.
+    // Inputs and outputs use independent compact rows with stable edge anchors.
+    private const double ChoiceOutputGroupWidth = 104d;
+    private const double ChoiceOptionLabelMaxWidth = 78d;
     private const double ChoiceOptionLabelRightInset = 22d;
     private const double ChoiceOutputGroupHeight = 20d;
-    private const double ChoiceOutputGroupGap = 12d;
+    private const double ChoicePortRowHeight = 24d;
 
     private FlowPortControl CreatePort(GraphEditorPortViewModel item)
     {

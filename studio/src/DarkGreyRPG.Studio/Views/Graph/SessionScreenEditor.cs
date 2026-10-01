@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DarkGreyRPG.Studio.Core.Media;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Views.Graph;
@@ -60,6 +61,11 @@ public sealed class SessionScreenEditor : UserControl
     private readonly TextBlock _cardTitle = new() { FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 8) };
     private readonly Button _cardHeader = new() { Tag = "screen-layer-properties-header", HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
     private readonly StackPanel _cardContent = new();
+    private readonly AnimatedLinePageBody _cardBody = new();
+    private readonly AnimationSequenceEditor _animation = new();
+    private readonly AnimatedLinePageBody _propertiesBody = new();
+    private readonly FoldHeader _propertiesHeader = new() { Title = "属性", IsChecked = true };
+    private readonly ToggleButton _previewButton = new() { Content = "预览", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, ToolTip = "预览整个画面" };
     private readonly Dictionary<TextBox, string> _projectedText = new();
     private readonly List<System.Windows.Shapes.Line> _guides = [];
     private JsonArray _layers = [];
@@ -85,6 +91,71 @@ public sealed class SessionScreenEditor : UserControl
     private int _listPointerIndex = -1;
     private int _listReorderIndex = -1;
 
+    private readonly System.Windows.Threading.DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private IReadOnlyList<ScreenTransitionPreview.Sprite>? _previewFrom, _previewTo;
+    private string _previewType = "none", _previewDirection = "left";
+    private double _previewDuration;
+    private bool _previewPerLayer;
+    private ScreenLayerEffect _previewFallback = ScreenLayerEffect.None;
+    private long _previewStarted, _previewPrepare;
+    private sealed record PreviewSource(string? Id, string Name);
+
+    private void StopPreview() { _previewTimer.Stop(); _previewFrom = _previewTo = null; _previewButton.IsChecked = false; if (IsLoaded) Draw(); }
+    private void PlayPreview()
+    {
+        if (_inspector?.IsScreen != true) return;
+        CancelGesture();
+        var sources = PreviewSources();
+        var source = sources.Count == 1 ? sources[0] : null;
+        if (sources.Count > 1)
+        {
+            var picker = new ListBox { Margin = new Thickness(12), DisplayMemberPath = "Name", ItemsSource = sources.Select((n, i) => new PreviewSource(n.Id, $"画面 {i + 1} · {PreviewImageName(n.Properties["layers"])}")), SelectedIndex = 0 };
+            var confirm = new Button { Content = "预览", Margin = new Thickness(12), IsDefault = true };
+            var panel = new DockPanel(); DockPanel.SetDock(confirm, Dock.Bottom); panel.Children.Add(confirm); panel.Children.Add(picker);
+            var dialog = new Window { Title = "选择衔接画面", Owner = Window.GetWindow(this), Width = 400, Height = 300, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = panel };
+            confirm.Click += (_, _) => dialog.DialogResult = true;
+            if (dialog.ShowDialog() != true) { StopPreview(); return; }
+            source = sources.First(n => n.Id == ((PreviewSource)picker.SelectedItem).Id);
+        }
+        _previewButton.IsChecked = true;
+        _previewFrom = source is null ? [] : ScreenTransitionPreview.Layers(ScreenMorphKeys.Upgrade(source.Properties["layers"], source.Id));
+        if (source is not null)
+        {
+            var sourceEffect = source.Properties.TryGetValue("transition", out var effect) ? ScreenLayerEffect.Read(effect) : ScreenLayerEffect.None;
+            _previewFrom = ScreenLayerAnimation.Sample([], _previewFrom, sourceEffect, ScreenLayerAnimation.Duration([], _previewFrom, sourceEffect));
+        }
+        _previewTo = ScreenTransitionPreview.Layers(ScreenMorphKeys.Upgrade(_inspector.ScreenLayers, _inspector.NodeId));
+        _previewType = _inspector.SelectedTransition?.Id ?? "none"; _previewDirection = _inspector.SelectedTransitionDirection?.Id ?? "left";
+        _previewFallback = new(_previewType, _previewDirection, _inspector.TransitionDuration);
+        _previewPerLayer = true;
+        _previewDuration = _previewPerLayer ? ScreenLayerAnimation.Duration(_previewFrom, _previewTo, _previewFallback) : _inspector.TransitionDuration;
+        _previewPrepare = System.Diagnostics.Stopwatch.GetTimestamp(); _previewStarted = 0;
+        _previewTimer.Start(); Draw();
+    }
+    private void DrawPreview()
+    {
+        if (_previewTo is null || _previewFrom is null) return;
+        long now = System.Diagnostics.Stopwatch.GetTimestamp();
+        var refs = _previewFrom.Concat(_previewTo).Select(s => s.Media).Distinct().ToArray();
+        foreach (var media in refs) if (!_images.ContainsKey(media)) LoadImage(media);
+        if (_previewStarted == 0 && (refs.All(_images.ContainsKey) || System.Diagnostics.Stopwatch.GetElapsedTime(_previewPrepare, now).TotalSeconds >= 3)) _previewStarted = now;
+        double p = _previewStarted == 0 ? 0 : _previewDuration <= 0 ? 1 : System.Diagnostics.Stopwatch.GetElapsedTime(_previewStarted, now).TotalSeconds / _previewDuration;
+        _canvas.Children.Clear();
+        var samples = _previewPerLayer ? ScreenLayerAnimation.Sample(_previewFrom, _previewTo, _previewFallback, p * _previewDuration) : ScreenTransitionPreview.Sample(_previewFrom, _previewTo, _previewType, _previewDirection, p);
+        foreach (var s in samples)
+        {
+            if (s.Alpha <= 0 || s.ClipWidth <= 0 || s.ClipHeight <= 0) continue;
+            double x = s.X * CanvasWidth, y = s.Y * CanvasHeight;
+            var visual = new Border { Width = s.Width * CanvasWidth, Height = s.Height * CanvasHeight, Opacity = Math.Clamp(s.Alpha, 0, 1), Background = Brushes.DimGray, IsHitTestVisible = false };
+            if (_images.TryGetValue(s.Media, out var image)) visual.Child = new Image { Source = image, Stretch = Stretch.Fill };
+            visual.Clip = new RectangleGeometry(new Rect(s.ClipX * CanvasWidth - x, s.ClipY * CanvasHeight - y, s.ClipWidth * CanvasWidth, s.ClipHeight * CanvasHeight));
+            Place(visual, x, y);
+        }
+        if (_dialogue.IsChecked == true) DrawDialogueReference();
+        if (_choice.IsChecked == true) DrawChoiceReference();
+        if (p >= 1 || !_previewPerLayer && _previewType == "none") StopPreview();
+    }
+
     public SessionScreenEditor()
     {
         SetResourceReference(ForegroundProperty, "TextFillColorPrimaryBrush");
@@ -95,7 +166,7 @@ public sealed class SessionScreenEditor : UserControl
         System.Windows.Automation.AutomationProperties.SetName(_cardHeader, "图片属性");
         PreviewKeyDown += OnPreviewKeyDown;
         var panel = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
-        panel.Children.Add(new TextBlock { Text = "完整画面（空列表清除画面）" });
+        panel.Children.Add(new TextBlock { Text = "图片" });
         var buttons = new UniformGrid { Columns = 2, Margin = new Thickness(0, 2, 0, 4) };
         var add = new Button { Content = "添加", HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 3, 0) };
         var remove = new Button { Content = "移除", HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3, 0, 0, 0) };
@@ -112,6 +183,7 @@ public sealed class SessionScreenEditor : UserControl
         _list.SelectionChanged += (_, _) =>
         {
             if (_projecting) return;
+            StopPreview();
             _state?.Select(_list.SelectedIndex);
             ProjectSelection();
         };
@@ -125,7 +197,7 @@ public sealed class SessionScreenEditor : UserControl
             _listReorderIndex = -1;
         };
         panel.Children.Add(_list);
-        var ordering = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 4, 0, 0) };
+        var ordering = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         void AddOrderButton(string glyph, string label, int delta)
         {
             var button = new Button { Content = glyph, ToolTip = label, MinWidth = 32, Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(4, 0, 0, 0) };
@@ -135,7 +207,14 @@ public sealed class SessionScreenEditor : UserControl
         }
         AddOrderButton("▲", "上移", -1);
         AddOrderButton("▼", "下移", 1);
-        panel.Children.Add(ordering);
+        var imageToolbar = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+        imageToolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        imageToolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        System.Windows.Automation.AutomationProperties.SetName(_previewButton, "预览");
+        imageToolbar.Children.Add(_previewButton);
+        Grid.SetColumn(ordering, 1);
+        imageToolbar.Children.Add(ordering);
+        panel.Children.Add(imageToolbar);
 
 
         panel.Children.Add(new Viewbox
@@ -147,6 +226,9 @@ public sealed class SessionScreenEditor : UserControl
         overlays.Children.Add(_dialogue);
         overlays.Children.Add(_choice);
         panel.Children.Add(overlays);
+        _previewButton.Click += (_, _) => { if (_previewButton.IsChecked == true) PlayPreview(); else StopPreview(); };
+        _previewTimer.Tick += (_, _) => DrawPreview();
+        Unloaded += (_, _) => { _previewTimer.Stop(); _previewFrom = _previewTo = null; _previewButton.IsChecked = false; };
         _dialogue.Checked += (_, _) => Draw(); _dialogue.Unchecked += (_, _) => Draw();
         _choice.Checked += (_, _) => Draw(); _choice.Unchecked += (_, _) => Draw();
 
@@ -191,16 +273,25 @@ public sealed class SessionScreenEditor : UserControl
             _fields.Add(pair.Item1, box);
             grid.Children.Add(box);
         }
-        _cardContent.Children.Add(grid);
+        var attributes = new StackPanel(); attributes.Children.Add(grid);
+        _propertiesBody.Child = attributes; _propertiesBody.IsExpanded = true;
+        var propertyContent = new StackPanel(); propertyContent.Children.Add(_propertiesHeader); propertyContent.Children.Add(_propertiesBody);
+        _cardContent.Children.Add(AnimationSequenceEditor.SectionCard(propertyContent));
+        _propertiesHeader.Click += (_, _) => SetSections(!_propertiesBody.IsExpanded, _animation.IsExpanded);
+        _animation.ExpansionChanged += expanded => SetSections(_propertiesBody.IsExpanded, expanded);
         var help = new TextBlock { Text = "位置 X/Y 表示图片左上角；位置和尺寸以画面宽高为单位，1 表示整个画面。图层越大越靠前。拖动时自动对齐边缘和中心，按 Alt 暂停吸附。", Margin = new Thickness(0, 6, 0, 0) };
-        AuthoringText.SetIsHelp(help, true); _cardContent.Children.Add(help);
-        properties.Children.Add(_cardContent);
+        AuthoringText.SetIsHelp(help, true); attributes.Children.Add(help);
+        _cardContent.Children.Add(_animation);
+        _animation.Edited += EditAnimation;
+        _animation.SelectionChanged += index => _state?.SelectAnimation(AnimationLayerKey, index);
+        _cardBody.Child = _cardContent; properties.Children.Add(_cardBody);
         SetCardExpanded(false);
         panel.Children.Add(card); panel.Children.Add(_error); Content = panel;
 
         Loaded += (_, _) => { Refresh(false); Draw(); };
         DataContextChanged += (_, _) =>
         {
+            _previewTimer.Stop(); _previewFrom = _previewTo = null; _previewButton.IsChecked = false;
             var nextInspector = DataContext as CanonicalNodeInspectorViewModel;
             var differentNode = _inspector is null || nextInspector is null
                 || !ReferenceEquals(_inspector.Host, nextInspector.Host) || _inspector.NodeId != nextInspector.NodeId;
@@ -210,19 +301,60 @@ public sealed class SessionScreenEditor : UserControl
             if (_inspector is not null) _inspector.PropertyChanged += Changed;
             _state = _inspector is null ? null : ScreenLayerEditorState.For(_inspector, ProjectDirectory);
             if (_state is not null) _state.Changed += SharedStateChanged;
-            if (differentNode) SetCardExpanded(false);
+            if (differentNode) { SetCardExpanded(_state?.IsExpanded ?? false); SetSections(_state?.PropertiesExpanded ?? true, _state?.AnimationExpanded ?? false); }
             _generation++; _images.Clear(); _loading.Clear(); CancelGesture(); Refresh();
         };
+    }
+
+    private void SetSections(bool properties, bool animation)
+    {
+        _propertiesBody.IsExpanded = properties; _propertiesHeader.IsChecked = properties;
+        _animation.IsExpanded = animation; _state?.SetSections(properties, animation);
+    }
+
+    private List<DarkGreyRPG.Studio.Core.Graphs.GraphNode> PreviewSources()
+    {
+        if (_inspector is null || !_layers.OfType<JsonObject>().Any(layer => layer["morph_duration"] is JsonValue value && double.TryParse(value.ToJsonString(), CultureInfo.InvariantCulture, out var seconds) && seconds > 0)) return [];
+        var graph = _inspector.Host.Graph; var visited = new HashSet<string> { _inspector.NodeId };
+        var pending = new Queue<string>(); pending.Enqueue(_inspector.NodeId);
+        var result = new List<DarkGreyRPG.Studio.Core.Graphs.GraphNode>();
+        while (pending.TryDequeue(out var target))
+            foreach (var edge in graph.Connections.Where(e => e.ToNodeId == target && e.InterfaceKind == DarkGreyRPG.Studio.Core.Graphs.GraphInterfaceKind.Flow))
+            {
+                if (!visited.Add(edge.FromNodeId)) continue;
+                var node = graph.Nodes.FirstOrDefault(n => n.Id == edge.FromNodeId);
+                if (node?.Type == "screen") result.Add(node); else if (node is not null) pending.Enqueue(node.Id);
+            }
+        return result;
     }
 
     private void UpdateCardTitle() => _cardTitle.Text = (_cardExpanded ? "▾ " : "▸ ")
         + (Selected is null ? "图片属性（未选择图片）" : $"图片属性 · {_names.ElementAtOrDefault(_list.SelectedIndex)}");
 
+    private string PreviewImageName(JsonElement layers)
+    {
+        var array = JsonNode.Parse(layers.GetRawText())!.AsArray();
+        return _state?.Names(array, ProjectDirectory).FirstOrDefault() ?? "空白";
+    }
+
+    private ScreenLayerEffect AnimationFallback => new(_inspector?.SelectedTransition?.Id ?? "none", _inspector?.SelectedTransitionDirection?.Id ?? "left", _inspector?.TransitionDuration ?? .5);
+    private void EditAnimation(JsonObject value)
+    {
+        if (_projecting || Selected is not { } layer) return;
+        var normalized = ScreenAnimationSequence.Normalize(layer, AnimationFallback);
+        normalized["animations"] = value["animations"]!.DeepClone();
+        normalized["morph_duration"] = value["morph_duration"]!.DeepClone();
+        if (JsonNode.DeepEquals(layer, normalized)) return;
+        _layers[_list.SelectedIndex] = normalized;
+        Commit();
+    }
+
     private void SetCardExpanded(bool expanded)
     {
         _cardExpanded = expanded;
         UpdateCardTitle();
-        _cardContent.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        _cardBody.IsExpanded = expanded;
+        _state?.SetExpanded(expanded);
         _cardHeader.SetValue(System.Windows.Automation.AutomationProperties.HelpTextProperty, expanded ? "收起图片属性" : "展开图片属性");
     }
 
@@ -277,7 +409,7 @@ public sealed class SessionScreenEditor : UserControl
 
     private void Changed(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(CanonicalNodeInspectorViewModel.ScreenLayers) && !_dragging) Refresh();
+        if (args.PropertyName == nameof(CanonicalNodeInspectorViewModel.ScreenLayers) && !_dragging) { StopPreview(); Refresh(); }
     }
 
     private void Refresh(bool readModel = true)
@@ -292,6 +424,9 @@ public sealed class SessionScreenEditor : UserControl
 
     private void SharedStateChanged(object? sender, EventArgs args)
     {
+        SetCardExpanded(_state?.IsExpanded ?? false);
+        SetSections(_state?.PropertiesExpanded ?? true, _state?.AnimationExpanded ?? false);
+        StopPreview();
         if (!_dragging) Refresh();
     }
 
@@ -309,10 +444,20 @@ public sealed class SessionScreenEditor : UserControl
 
     private JsonObject? Selected => _list.SelectedIndex >= 0 && _list.SelectedIndex < _layers.Count
         ? _layers[_list.SelectedIndex]?.AsObject() : null;
+    private string AnimationLayerKey => Selected?["morph_key"]?.GetValue<string>() ?? _list.SelectedIndex.ToString(CultureInfo.InvariantCulture);
+
+    public void NavigateLayer(int index)
+    {
+        if (index < 0 || index >= _layers.Count) return;
+        _list.SelectedIndex = index; _list.ScrollIntoView(_list.SelectedItem); _list.BringIntoView();
+    }
 
     private void ProjectSelection(bool redraw = true)
     {
         UpdateCardTitle();
+        if (_state is not null) _animation.BindSession(_state.AnimationSession(AnimationLayerKey));
+        _animation.Project(Selected is { } animationLayer ? ScreenAnimationSequence.Normalize(animationLayer, AnimationFallback) : new JsonObject(), Selected is not null);
+        _animation.Select(_state?.AnimationSelection(AnimationLayerKey) ?? -1);
         _name.IsEnabled = Selected is not null;
         _name.Text = _names.ElementAtOrDefault(_list.SelectedIndex) ?? "";
         foreach (var pair in _fields)
@@ -379,6 +524,7 @@ public sealed class SessionScreenEditor : UserControl
 
     private void Commit()
     {
+        for (int i = 0; i < _layers.Count; i++) _layers[i] = ScreenAnimationSequence.Normalize(_layers[i]!.AsObject(), AnimationFallback);
         if (_inspector is not null && _state is not null)
         {
             var before = JsonNode.Parse(_inspector.ScreenLayers.GetRawText())!.AsArray();
@@ -539,7 +685,7 @@ public sealed class SessionScreenEditor : UserControl
             var geometry = InitialImageGeometry(media.PixelWidth, media.PixelHeight);
             _layers.Add(new JsonObject
             {
-                ["media_ref"] = media.MediaRef, ["x"] = geometry.X, ["y"] = geometry.Y, ["width"] = geometry.Width,
+                ["morph_key"] = Guid.NewGuid().ToString("N"), ["media_ref"] = media.MediaRef, ["x"] = geometry.X, ["y"] = geometry.Y, ["width"] = geometry.Width,
                 ["height"] = geometry.Height, ["anchor_x"] = 0, ["anchor_y"] = 0, ["z"] = _layers.Count
             });
             _names.Add(Path.GetFileNameWithoutExtension(fileName));
@@ -552,6 +698,7 @@ public sealed class SessionScreenEditor : UserControl
 
     private void Draw()
     {
+        if (_previewTo is not null) { DrawPreview(); return; }
         _canvas.Children.Clear();
         _guides.Clear();
         foreach (var entry in _layers.Select((node, index) => (node: node!.AsObject(), index)).OrderBy(item => Number(item.node, "z")))

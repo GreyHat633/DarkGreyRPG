@@ -380,6 +380,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
             @Override
             public boolean startSession(String storyId, String placementId, boolean activationLogic) {
+                if (sessions.refreshWaiting(routePlayer, storyId, placementId)) return true;
                 return sessions.start(routePlayer, storyId, placementId, activationLogic);
             }
 

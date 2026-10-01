@@ -563,8 +563,11 @@ public final class CanonicalSessionWorldStateNbtCodec {
             if (!tag.hasKey("presentation_texts", COMPOUND)) throw malformed("presentation_texts");
             NBTTagCompound presentations = tag.getCompoundTag("presentation_texts");
             for (String transport : presentations.func_150296_c()) {
-                try { if (Long.parseLong(transport) <= 0) throw malformed("presentation transport"); }
-                catch (NumberFormatException invalid) { throw malformed("presentation transport"); }
+                try {
+                    if (Long.parseLong(transport) <= 0) throw malformed("presentation transport");
+                } catch (NumberFormatException invalid) {
+                    throw malformed("presentation transport");
+                }
                 requireType(presentations, transport, COMPOUND);
                 NBTTagCompound entry = presentations.getCompoundTag(transport);
                 requireKeys(entry, set("stamp", "values"), "presentation entry");
@@ -572,11 +575,14 @@ public final class CanonicalSessionWorldStateNbtCodec {
                 if (stamp.length() > 1024) throw malformed("presentation stamp");
                 requireType(entry, "values", COMPOUND);
                 NBTTagCompound values = entry.getCompoundTag("values");
-                if (values.func_150296_c().size() > 256) throw malformed("presentation slots");
+                if (values.func_150296_c()
+                    .size() > 256) throw malformed("presentation slots");
                 for (String slot : values.func_150296_c()) {
-                    if (!"line".equals(slot) && !"prompt".equals(slot) && !slot.startsWith("option:")) throw malformed("presentation slot");
+                    if (!"line".equals(slot) && !"prompt".equals(slot) && !slot.startsWith("option:"))
+                        throw malformed("presentation slot");
                     requireType(values, slot, STRING);
-                    if (slot.length() > 1024 || values.getString(slot).length() > 131072) throw malformed("presentation value");
+                    if (slot.length() > 1024 || values.getString(slot)
+                        .length() > 131072) throw malformed("presentation value");
                 }
             }
         }

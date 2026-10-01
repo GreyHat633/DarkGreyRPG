@@ -65,17 +65,41 @@ public final class TaskNotificationsPlanProbe {
         clientChecks();
         CanonicalTaskNotifications dynamic = new CanonicalTaskNotifications();
         dynamic.update(Collections.<CanonicalTaskJournalEntry>emptyList(), true);
-        String template = darkgrey.rpg.session.runtime.DynamicContentText.PREFIX + "[\"Collect for \",{\"type\":\"player_name\"}]";
-        CanonicalTaskJournalEntry dynamicTask = task(CanonicalTaskInstanceStatus.ACTIVE, CanonicalTaskObjectiveStatus.ACTIVE, 0, template);
-        NBTTagList resolved = dynamic.update(Collections.singletonList(dynamicTask), false,
+        String template = darkgrey.rpg.session.runtime.DynamicContentText.PREFIX
+            + "[\"Collect for \",{\"type\":\"player_name\"}]";
+        CanonicalTaskJournalEntry dynamicTask = task(
+            CanonicalTaskInstanceStatus.ACTIVE,
+            CanonicalTaskObjectiveStatus.ACTIVE,
+            0,
+            template);
+        NBTTagList resolved = dynamic.update(
+            Collections.singletonList(dynamicTask),
+            false,
             text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Alice"));
-        require("Collect for Alice".equals(resolved.getCompoundTagAt(1).getString("text")), "notification resolves dynamic description");
-        darkgrey.rpg.quest.runtime.QuestJournalEntry legacy = darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter.adapt(dynamicTask,
-            text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Alice"));
-        require("Collect for Alice".equals(legacy.getDescription()), "legacy journal resolves description before stripping controls");
-        require("Collect for Alice".equals(legacy.getObjectiveLines().get(0)), "legacy journal resolves objective description");
-        require(dynamic.update(Collections.singletonList(dynamicTask), false,
-            text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Changed")).tagCount() == 0,
+        require(
+            "Collect for Alice".equals(
+                resolved.getCompoundTagAt(1)
+                    .getString("text")),
+            "notification resolves dynamic description");
+        darkgrey.rpg.quest.runtime.QuestJournalEntry legacy = darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter
+            .adapt(
+                dynamicTask,
+                text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Alice"));
+        require(
+            "Collect for Alice".equals(legacy.getDescription()),
+            "legacy journal resolves description before stripping controls");
+        require(
+            "Collect for Alice".equals(
+                legacy.getObjectiveLines()
+                    .get(0)),
+            "legacy journal resolves objective description");
+        require(
+            dynamic
+                .update(
+                    Collections.singletonList(dynamicTask),
+                    false,
+                    text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Changed"))
+                .tagCount() == 0,
             "dynamic value changes alone never notify");
         System.out.println("TASK_NOTIFICATIONS_PLAN_PROBE=PASS");
     }
@@ -232,7 +256,8 @@ public final class TaskNotificationsPlanProbe {
                     count,
                     2,
                     true,
-                    description)), description);
+                    description)),
+            description);
     }
 
     private static void require(boolean value, String message) {

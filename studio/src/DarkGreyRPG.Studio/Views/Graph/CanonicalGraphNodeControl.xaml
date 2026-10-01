@@ -25,8 +25,8 @@
                 </Grid.ColumnDefinitions>
                 <Grid x:Name="InputPortsPanel" Grid.Column="0" />
                 <Grid x:Name="OutputPortsPanel" Grid.Column="1" />
-                <!-- New Choice options use one Flow-only row. Retained legacy
-                     Logic endpoints render in a separate compatibility group. -->
+                <!-- Choice inputs and outputs occupy independent compact columns.
+                     Retained Logic outputs use a separate compatibility group. -->
                 <Grid x:Name="ChoicePortsPanel" Grid.Column="1" Visibility="Collapsed" />
             </Grid>
             <Expander x:Name="ParameterInteractiveZone" Grid.Row="2" Margin="7,0,7,7" Header="参数" IsExpanded="True"

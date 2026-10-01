@@ -1,6 +1,8 @@
 package darkgrey.rpg.media;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import darkgrey.rpg.network.message.canonical.CanonicalMediaChunk;
 

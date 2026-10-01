@@ -12,7 +12,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 
 import darkgrey.rpg.client.gui.TaskObjectiveText;
-import darkgrey.rpg.graph.canonical.*;
+import darkgrey.rpg.graph.canonical.CanonicalGraph;
+import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
+import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
+import darkgrey.rpg.graph.canonical.CanonicalGraphPort;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceLoader;
+import darkgrey.rpg.graph.canonical.CanonicalTaskMetadata;
 
 public final class TaskHistoryReferenceProbe {
 

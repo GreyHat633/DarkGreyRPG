@@ -84,7 +84,7 @@ public sealed class GraphNodeShapeValidatorTests
             if (role.Scope == GraphScope.Task && role.NodeType == "objective") node.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
             if (role.Scope == GraphScope.Session && role.NodeType == "choice")
             {
-                SessionChoiceSchema.InitializeDefault(node, "option_1", "flow_1");
+                SessionChoiceSchema.InitializeLegacy(node, "option_1", "flow_1");
                 Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, role.Scope));
                 continue;
             }
@@ -121,7 +121,7 @@ public sealed class GraphNodeShapeValidatorTests
     public void SessionChoiceRequiresFlowPortsAndValidatesRetainedLegacyLogicPorts()
     {
         var node = Node(GraphScope.Session, "choice");
-        SessionChoiceSchema.InitializeDefault(node, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(node, "option_1", "flow_1");
         Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, GraphScope.Session));
 
         node.Ports.Add(new("option_1", "Desynchronized", false, GraphInterfaceKind.Logic, 0));

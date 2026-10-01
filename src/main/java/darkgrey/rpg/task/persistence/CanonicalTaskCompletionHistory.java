@@ -81,6 +81,7 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
             entry.getPlayerUuid()
                 .toString());
         row.setString("title", entry.getTitle());
+        darkgrey.rpg.creator.TaskStoryPresentation.fill(row, entry.getStoryInstanceId());
         row.setString("description", entry.getDescription());
         row.setString("status", "SETTLED");
         row.setString("result", entry.getSettledResultSlot());
@@ -117,7 +118,13 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
     public synchronized NBTTagList forPlayer(UUID player) {
         NBTTagList result = new NBTTagList();
         for (NBTTagCompound row : groups.values()) if (player.toString()
-            .equals(row.getString("player"))) result.appendTag(row.copy());
+            .equals(row.getString("player"))) {
+                // A legacy save may load before its story packages. Persist labels once they become available.
+                NBTTagCompound before = (NBTTagCompound) row.copy();
+                darkgrey.rpg.creator.TaskStoryPresentation.recover(row);
+                if (!before.equals(row)) markDirty();
+                result.appendTag(row.copy());
+            }
         return result;
     }
 
@@ -152,6 +159,7 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
                 .copy();
             String group = row.getString("group");
             row.removeTag("group");
+            darkgrey.rpg.creator.TaskStoryPresentation.recover(row);
             if (group.isEmpty() || row.getLong("completion_count") <= 0)
                 throw new IllegalArgumentException("Invalid completion summary");
             UUID.fromString(row.getString("player"));

@@ -30,7 +30,7 @@ public final class CanonicalPresentationBridge {
             CanonicalSessionClientController.drawUnderlay(event.partialTicks);
         darkgrey.rpg.title.CanonicalTitleClient.draw();
         darkgrey.rpg.client.TaskNotificationCards.draw();
-        if (Minecraft.getMinecraft().currentScreen == null) darkgrey.rpg.client.TaskTrackerHud.draw();
+        darkgrey.rpg.client.TaskTrackerHud.draw();
     }
 
     @SubscribeEvent

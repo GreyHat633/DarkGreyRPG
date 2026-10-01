@@ -280,7 +280,9 @@ public final class CommandDarkGreyRpg extends CommandBase {
     private void processDebug(ICommandSender sender, String[] arguments) {
         if (arguments.length == 1 && sender instanceof EntityPlayerMP) {
             if (!sender.canCommandSenderUseCommand(2, "dgr")) throw new WrongUsageException("需要管理员权限。");
-            darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(new darkgrey.rpg.diagnostics.PlayerStatePacket(0, 0, new net.minecraft.nbt.NBTTagCompound()), (EntityPlayerMP) sender);
+            darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(
+                new darkgrey.rpg.diagnostics.PlayerStatePacket(0, 0, new net.minecraft.nbt.NBTTagCompound()),
+                (EntityPlayerMP) sender);
             return;
         }
         String usage = "/dgr debug <player dimension <online_player> <-1|0|1>|nominator clear_type_group <entity_type> <group_id>|item <bind_exact|bind_exact_group|bind_fuzzy> <id>|story <start|set_logic|state> [online_player] ...|task <start|emit_kill|state> [online_player] ...|cnpc <bind_nearest <npc_id>|bind_group_nearest <group_id>|list_nearby>|storage <interact_nearest|release_here|status>>";
@@ -1166,18 +1168,19 @@ public final class CommandDarkGreyRpg extends CommandBase {
     @SuppressWarnings("rawtypes")
     public List addTabCompletionOptions(ICommandSender sender, String[] arguments) {
         if (arguments.length == 1) {
-            List<String> roots = new ArrayList<String>(Arrays.asList(
-                "inspect",
-                "status",
-                "reload",
-                "actor",
-                "dialogue",
-                "quest",
-                "story",
-                "session",
-                "task",
-                "dimension",
-                "buff"));
+            List<String> roots = new ArrayList<String>(
+                Arrays.asList(
+                    "inspect",
+                    "status",
+                    "reload",
+                    "actor",
+                    "dialogue",
+                    "quest",
+                    "story",
+                    "session",
+                    "task",
+                    "dimension",
+                    "buff"));
             if (sender.canCommandSenderUseCommand(2, "dgr")) roots.add("debug");
             return getListOfStringsFromIterableMatchingLastWord(arguments, roots);
         }

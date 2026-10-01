@@ -29,6 +29,7 @@ public sealed class CanonicalAggregateNodeFactoryTests
         Assert.AreEqual(GraphInterfaceKind.Logic, candidate.Ports[1].InterfaceKind);
         Assert.IsTrue(candidate.Ports.Skip(2).All(port => port.IsOutput));
         Assert.IsTrue(GraphNodeShapeValidator.IsValid(candidate, GraphScope.StoryFlow));
+        AssertDirectionOrdersAreUnique(candidate);
         Assert.AreEqual(before, source.ToJson());
         Assert.IsEmpty(target.Nodes);
     }
@@ -48,6 +49,7 @@ public sealed class CanonicalAggregateNodeFactoryTests
         Assert.AreEqual(GraphInterfaceKind.Flow, result.Candidate.Ports[1].InterfaceKind);
         Assert.AreEqual(GraphInterfaceKind.Logic, result.Candidate.Ports[2].InterfaceKind);
         Assert.IsTrue(GraphNodeShapeValidator.IsValid(result.Candidate, GraphScope.StoryFlow));
+        AssertDirectionOrdersAreUnique(result.Candidate);
     }
 
     [TestMethod]
@@ -95,5 +97,12 @@ public sealed class CanonicalAggregateNodeFactoryTests
         Assert.IsFalse(result.IsSuccess);
         Assert.IsNull(result.Candidate);
         CollectionAssert.Contains(result.Issues.Select(issue => issue.Code).ToArray(), code);
+    }
+
+    private static void AssertDirectionOrdersAreUnique(GraphNode node)
+    {
+        foreach (var ports in node.Ports.GroupBy(port => port.IsInput))
+            Assert.AreEqual(ports.Count(), ports.Select(port => port.Order).Distinct().Count(),
+                "Story runtime rejects duplicate orders even when Flow and Logic kinds differ.");
     }
 }

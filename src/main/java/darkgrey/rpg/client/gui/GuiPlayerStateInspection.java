@@ -66,10 +66,16 @@ public final class GuiPlayerStateInspection extends GuiScreen {
         ((GuiButton) buttonList.get(1)).enabled = !loading && page > 0;
         ((GuiButton) buttonList.get(2)).enabled = !loading
             && (page + 1) * PlayerStateInspection.PAGE_SIZE < snapshot.getInteger("total");
-        buttonList.add(new GuiRpgButton(4, geometry.x + geometry.width - 100, geometry.y + geometry.height - 27, 88, 20,
-            technicalExpanded ? "收起技术详情" : "技术详情"));
-        ((GuiButton) buttonList.get(3)).enabled = selected < rows().tagCount()
-            && rows().getCompoundTagAt(selected).hasKey("summary", 9);
+        buttonList.add(
+            new GuiRpgButton(
+                4,
+                geometry.x + geometry.width - 100,
+                geometry.y + geometry.height - 27,
+                88,
+                20,
+                technicalExpanded ? "收起技术详情" : "技术详情"));
+        ((GuiButton) buttonList.get(3)).enabled = selected < rows().tagCount() && rows().getCompoundTagAt(selected)
+            .hasKey("summary", 9);
     }
 
     private void query(int targetPage) {
@@ -120,7 +126,11 @@ public final class GuiPlayerStateInspection extends GuiScreen {
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button.id == 4) { technicalExpanded = !technicalExpanded; detailScroll = 0; layoutButtons(); }
+        if (button.id == 4) {
+            technicalExpanded = !technicalExpanded;
+            detailScroll = 0;
+            layoutButtons();
+        }
         if (button.id == 1) query(0);
         if (button.id == 2 && page > 0) query(page - 1);
         if (button.id == 3 && (page + 1) * PlayerStateInspection.PAGE_SIZE < snapshot.getInteger("total"))
@@ -206,10 +216,11 @@ public final class GuiPlayerStateInspection extends GuiScreen {
             for (Object line : fontRendererObj.listFormattedStringToWidth(detail.getStringTagAt(i), Math.max(80, wrap)))
                 lines.add((String) line);
         if (technicalExpanded && row.hasKey("summary", 9)) {
-            lines.add(""); lines.add("技术详情");
+            lines.add("");
+            lines.add("技术详情");
             NBTTagList raw = row.getTagList("details", 8);
-            for (int i = 0; i < raw.tagCount(); i++)
-                for (Object line : fontRendererObj.listFormattedStringToWidth(raw.getStringTagAt(i), Math.max(80, wrap))) lines.add((String) line);
+            for (int i = 0; i < raw.tagCount(); i++) for (Object line : fontRendererObj
+                .listFormattedStringToWidth(raw.getStringTagAt(i), Math.max(80, wrap))) lines.add((String) line);
         }
         return lines;
     }
@@ -262,8 +273,13 @@ public final class GuiPlayerStateInspection extends GuiScreen {
             DgrUiPalette.SUB_PANEL);
         for (int i = detailScroll; i < Math.min(lines.size(), detailScroll + detailVisible()); i++) {
             String line = lines.get(i);
-            boolean heading = java.util.Arrays.asList("当前情况", "正在等待什么", "再次启动条件", "发现的问题", "技术详情").contains(line);
-            fontRendererObj.drawString((heading ? "\u00a7l" : "") + line, geometry.x + nav + 12, top + (i - detailScroll) * 12, DgrUiPalette.TEXT);
+            boolean heading = java.util.Arrays.asList("当前情况", "正在等待什么", "再次启动条件", "发现的问题", "技术详情")
+                .contains(line);
+            fontRendererObj.drawString(
+                (heading ? "\u00a7l" : "") + line,
+                geometry.x + nav + 12,
+                top + (i - detailScroll) * 12,
+                DgrUiPalette.TEXT);
         }
         fontRendererObj.drawString(
             "第 " + (page + 1) + " 页",

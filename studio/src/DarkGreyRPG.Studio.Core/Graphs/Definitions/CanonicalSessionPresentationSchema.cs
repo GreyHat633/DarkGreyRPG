@@ -32,13 +32,49 @@ public static class CanonicalSessionPresentationSchema
         }
         else if (node.Type == "screen")
         {
-            if (node.Properties.Count != 1 || !node.Properties.TryGetValue("layers", out var layers)
+            if (node.Properties.Keys.Any(k => k is not ("layers" or "transition")) || !node.Properties.TryGetValue("layers", out var layers)
                 || layers.ValueKind != JsonValueKind.Array || layers.GetArrayLength() > 32) { Invalid("layers"); return issues; }
             string[] fields = ["media_ref", "x", "y", "width", "height", "anchor_x", "anchor_y", "z"];
+            if (node.Properties.TryGetValue("transition", out var transition))
+            {
+                if (transition.ValueKind != JsonValueKind.Object || !transition.EnumerateObject().Select(p => p.Name).Order().SequenceEqual(new[] { "direction", "duration", "type" })
+                    || transition.GetProperty("type").ValueKind != JsonValueKind.String || transition.GetProperty("type").GetString() is not ("none" or "fade" or "slide" or "wipe" or "random_lines" or "morph")
+                    || transition.GetProperty("direction").ValueKind != JsonValueKind.String || transition.GetProperty("direction").GetString() is not ("left" or "right" or "up" or "down" or "horizontal" or "vertical")
+                    || !Number(transition.GetProperty("duration"), 0, 60)) Invalid("transition");
+                else if (transition.GetProperty("type").GetString() is "slide" or "wipe"
+                    && transition.GetProperty("direction").GetString() is not ("left" or "right" or "up" or "down")) Invalid("transition.direction");
+                else if (transition.GetProperty("type").GetString() == "random_lines"
+                    && transition.GetProperty("direction").GetString() is not ("horizontal" or "vertical")) Invalid("transition.direction");
+            }
+            if (System.Text.Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(layers)) > 30000) issues.Add(new("graph.session.presentation.budget", "画面动画数据超出传输容量，请减少图片或动画步骤。", "layers", NodeId: node.Id));
+            var morphKeys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var layer in layers.EnumerateArray())
             {
-                if (layer.ValueKind != JsonValueKind.Object || layer.EnumerateObject().Count() != fields.Length
-                    || !layer.EnumerateObject().Select(p => p.Name).ToHashSet(StringComparer.Ordinal).SetEquals(fields)) { Invalid("layers"); continue; }
+                if (layer.ValueKind != JsonValueKind.Object
+                    || !layer.EnumerateObject().Select(p => p.Name).Where(n => n is not ("morph_key" or "enter" or "exit" or "animations" or "morph_duration")).ToHashSet(StringComparer.Ordinal).SetEquals(fields)
+                    || layer.EnumerateObject().Count() != fields.Length + new[] { "morph_key", "enter", "exit", "animations", "morph_duration" }.Count(name => layer.TryGetProperty(name, out _))) { Invalid("layers"); continue; }
+                foreach (var effectName in new[] { "enter", "exit" })
+                    if (layer.TryGetProperty(effectName, out var effect))
+                    {
+                        var proxy = new GraphNode("effect", "screen", "画面", [], new Dictionary<string, JsonElement> { ["layers"] = JsonSerializer.SerializeToElement(Array.Empty<object>()), ["transition"] = effect });
+                        if (Validate(proxy).Count > 0 || effectName == "exit" && effect.TryGetProperty("type", out var effectType) && effectType.GetString() == "morph") Invalid(effectName);
+                    }
+                if (layer.TryGetProperty("morph_duration", out var morph) && !Number(morph, 0, 60)) Invalid("morph_duration");
+                if (layer.TryGetProperty("animations", out var sequence))
+                {
+                    if (layer.TryGetProperty("enter", out _) || layer.TryGetProperty("exit", out _)) Invalid("animations");
+                    if (sequence.ValueKind != JsonValueKind.Array) Invalid("animations");
+                    else foreach (var step in sequence.EnumerateArray())
+                    {
+                        if (step.ValueKind != JsonValueKind.Object || !step.EnumerateObject().Select(p => p.Name).Order().SequenceEqual(new[] { "delay", "direction", "duration", "kind", "type" })
+                            || step.GetProperty("kind").ValueKind != JsonValueKind.String || step.GetProperty("kind").GetString() is not ("enter" or "exit")
+                            || !Number(step.GetProperty("delay"), 0, 60)) { Invalid("animations"); continue; }
+                        var effect = JsonSerializer.SerializeToElement(new { type = step.GetProperty("type"), direction = step.GetProperty("direction"), duration = step.GetProperty("duration") });
+                        var proxy = new GraphNode("effect", "screen", "画面", [], new Dictionary<string, JsonElement> { ["layers"] = JsonSerializer.SerializeToElement(Array.Empty<object>()), ["transition"] = effect });
+                        if (Validate(proxy).Count > 0 || step.GetProperty("type").GetString() is "none" or "morph") Invalid("animations");
+                    }
+                }
+                if (layer.TryGetProperty("morph_key", out var key) && (key.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(key.GetString()) || key.GetString()!.Length > 96 || !morphKeys.Add(key.GetString()!))) Invalid("morph_key");
                 var media = layer.GetProperty("media_ref");
                 if (media.ValueKind != JsonValueKind.String || !MediaReference.IsImage(media.GetString())) Invalid("media_ref");
                 foreach (var field in new[] { "x", "y" }) if (!Number(layer.GetProperty(field), -2, 3)) Invalid(field);

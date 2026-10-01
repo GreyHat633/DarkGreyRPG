@@ -84,10 +84,10 @@ public final class DynamicContentResolver {
             if (now >= nextWarning) {
                 nextWarning = now + 60000;
                 darkgrey.rpg.DarkGreyRpg.LOG.warn(
-                    "Dynamic content could not be resolved; showing unavailable marker (further warnings limited to once per minute).",
+                    "Dynamic content projection failed; author text was preserved (further warnings limited to once per minute).",
                     invalid);
             }
-            return "〔动态内容不可用〕";
+            throw invalid;
         }
     }
 }

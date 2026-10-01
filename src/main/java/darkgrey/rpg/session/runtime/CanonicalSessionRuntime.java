@@ -193,6 +193,9 @@ public final class CanonicalSessionRuntime {
                 return true;
             }
         }
+        if (changed && currentStep != null && currentStep.getKind() == CanonicalSessionStep.Kind.CHOICE)
+            currentStep = CanonicalSessionStep
+                .choice(currentNodeId, optionalString(currentNode(), "prompt"), parseChoiceOptions(currentNode()));
         return false;
     }
 
@@ -235,7 +238,7 @@ public final class CanonicalSessionRuntime {
         CanonicalSessionChoiceOption selected = null;
         for (CanonicalSessionChoiceOption option : parseChoiceOptions(node)) if (option.getOptionId()
             .equals(optionId)) selected = option;
-        if (selected == null) throw fail("session.choice.unknown", "Unknown choice option_id '" + optionId + "'.");
+        if (selected == null || !selected.isEnabled()) return currentStep;
         selectedOptionIds.add(selected.getOptionId());
         selectedChoiceNodeIds.add(node.getId());
         selectedChoiceOptions.put(node.getId(), selected.getOptionId());
@@ -304,6 +307,8 @@ public final class CanonicalSessionRuntime {
                 return;
             }
             if ("choice".equals(type)) {
+                if (lineEpoch == Long.MAX_VALUE) throw fail("session.choice.epoch", "Choice epoch exhausted.");
+                lineEpoch++;
                 currentStep = CanonicalSessionStep
                     .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
                 return;
@@ -558,6 +563,12 @@ public final class CanonicalSessionRuntime {
                 "Choice option_id is duplicated: " + option.getOptionId());
             CanonicalGraphPort flow = ports.remove(option.getFlowPortId());
             CanonicalGraphPort logic = ports.remove(option.getOptionId());
+            if (option.getConditionPortId() != null) {
+                CanonicalGraphPort condition = ports.remove(option.getConditionPortId());
+                if (condition == null || !condition.isInput()
+                    || condition.getKind() != CanonicalGraphInterfaceKind.LOGIC)
+                    throw failure("session.choice.condition.mapping", "Choice condition must map to one Logic input.");
+            }
             if (flow == null)
                 throw failure("session.choice.option.mapping", "Choice Flow outputs must map one-to-one to options.");
             if (!flow.isOutput() || flow.getKind() != CanonicalGraphInterfaceKind.FLOW)
@@ -882,7 +893,8 @@ public final class CanonicalSessionRuntime {
                 throw failure("session.choice.option.type", "Each choice option must be a JSON object.");
             JsonObject object = item.getAsJsonObject();
             if (object.entrySet()
-                .size() != 3 || !object.has("option_id")
+                .size() != (object.has("condition_port_id") ? (object.has("condition_enabled") ? 7 : 6) : 3)
+                || !object.has("option_id")
                 || !object.has("display_text")
                 || !object.has("flow_port_id"))
                 throw failure(
@@ -892,7 +904,33 @@ public final class CanonicalSessionRuntime {
             String text = optionString(object, "display_text");
             String flow = optionString(object, "flow_port_id");
             if (!ids.add(id)) throw failure("session.choice.option.duplicate", "Choice option_id is duplicated: " + id);
-            result.add(new CanonicalSessionChoiceOption(id, text, flow));
+            String condition = object.has("condition_port_id") ? optionString(object, "condition_port_id") : null;
+            String behavior = condition == null ? "hide" : optionString(object, "unavailable_behavior");
+            String hint = "";
+            if (condition != null) {
+                JsonElement hintValue = object.get("unavailable_hint");
+                if ((!"hide".equals(behavior) && !"disable".equals(behavior)) || hintValue == null
+                    || !hintValue.isJsonPrimitive()
+                    || !hintValue.getAsJsonPrimitive()
+                        .isString()
+                    || hintValue.getAsString()
+                        .startsWith(DynamicContentText.PREFIX))
+                    throw failure("session.choice.condition.fields", "Invalid Choice false behavior or literal hint.");
+                hint = hintValue.getAsString();
+                if (condition.equals(id) || condition.equals(flow))
+                    throw failure("session.choice.condition.collision", "Choice identities must be distinct.");
+            }
+            if (object.has("condition_enabled") && (!object.get("condition_enabled")
+                .isJsonPrimitive()
+                || !object.getAsJsonPrimitive("condition_enabled")
+                    .isBoolean()))
+                throw failure("session.choice.condition.enabled", "Invalid condition enabled flag.");
+            boolean conditionEnabled = object.has("condition_enabled") ? object.get("condition_enabled")
+                .getAsBoolean() : condition != null && logicIncoming(node, condition) != null;
+            if (conditionEnabled && (condition == null || logicIncoming(node, condition) == null))
+                throw failure("session.choice.condition.unconnected", "Enabled prerequisite requires a connection.");
+            boolean enabled = !conditionEnabled || logicInputValue(node, condition);
+            result.add(new CanonicalSessionChoiceOption(id, text, flow, condition, behavior, hint, enabled));
         }
         if (result.isEmpty())
             throw failure("session.choice.options.empty", "Choice options must contain at least one option.");

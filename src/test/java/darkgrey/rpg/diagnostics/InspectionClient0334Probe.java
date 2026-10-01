@@ -3,10 +3,12 @@ package darkgrey.rpg.diagnostics;
 import java.lang.reflect.Field;
 
 import net.minecraft.nbt.NBTTagCompound;
+
 import darkgrey.rpg.client.gui.GuiPlayerStateInspection;
 
 /** Exercises the production GUI response receiver, without rendering or a fake network transport. */
 public final class InspectionClient0334Probe {
+
     public static void main(String[] args) throws Exception {
         GuiPlayerStateInspection screen = new GuiPlayerStateInspection();
         pending(screen, 1);
@@ -24,7 +26,8 @@ public final class InspectionClient0334Probe {
         screen.accept(2, response("duplicate"));
         check(screen, "second", false);
         // The actual receiver must reject late results after timeout has cleared loading.
-        pending(screen, 3); field("loading").setBoolean(screen, false);
+        pending(screen, 3);
+        field("loading").setBoolean(screen, false);
         screen.accept(3, response("late after timeout"));
         check(screen, "second", false);
         GuiPlayerStateInspection reopened = new GuiPlayerStateInspection();
@@ -41,20 +44,32 @@ public final class InspectionClient0334Probe {
             reopened.accept(i - 1, response("old after current"));
             check(reopened, "current-" + i, false);
         }
-        System.out.println("InspectionClient0334Probe PASS: production GUI receiver stale/future/duplicate/timeout/reopened isolation and detached copy; 10000 rapid reordered cycles ms="
-            + (System.nanoTime() - started) / 1000000.0 + "; excludes socket and rendering");
+        System.out.println(
+            "InspectionClient0334Probe PASS: production GUI receiver stale/future/duplicate/timeout/reopened isolation and detached copy; 10000 rapid reordered cycles ms="
+                + (System.nanoTime() - started) / 1000000.0
+                + "; excludes socket and rendering");
     }
+
     private static Field field(String name) throws Exception {
-        Field field = GuiPlayerStateInspection.class.getDeclaredField(name); field.setAccessible(true); return field;
+        Field field = GuiPlayerStateInspection.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
     }
+
     private static void pending(GuiPlayerStateInspection screen, long request) throws Exception {
-        field("request").setLong(screen, request); field("loading").setBoolean(screen, true);
+        field("request").setLong(screen, request);
+        field("loading").setBoolean(screen, true);
     }
+
     private static NBTTagCompound response(String name) {
-        NBTTagCompound data = new NBTTagCompound(); data.setString("name", name); return data;
+        NBTTagCompound data = new NBTTagCompound();
+        data.setString("name", name);
+        return data;
     }
+
     private static void check(GuiPlayerStateInspection screen, String name, boolean loading) throws Exception {
         if (!name.equals(((NBTTagCompound) field("snapshot").get(screen)).getString("name"))
-            || field("loading").getBoolean(screen) != loading) throw new AssertionError("Response correlation: " + name);
+            || field("loading").getBoolean(screen) != loading)
+            throw new AssertionError("Response correlation: " + name);
     }
 }

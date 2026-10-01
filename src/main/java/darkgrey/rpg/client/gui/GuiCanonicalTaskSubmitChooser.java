@@ -127,11 +127,13 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
 
     @Override
     protected void keyTyped(char typedCharacter, int keyCode) {
+        if (keyCode == Keyboard.KEY_ESCAPE && ItemCandidatePopover.escape()) return;
         if (keyCode == Keyboard.KEY_ESCAPE) submit(-1);
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        ItemCandidatePopover.begin();
         drawDefaultBackground();
         int panelWidth = Math.min(520, width - 30);
         int panelHeight = panelHeight();
@@ -165,11 +167,15 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
                 DgrUiPalette.SECONDARY);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
-        if (tooltip != null) drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
+        List<String> popupTooltip = ItemCandidatePopover.draw(width, height, mouseX, mouseY);
+        if (popupTooltip != null) drawHoveringText(popupTooltip, mouseX, mouseY, fontRendererObj);
+        else if (tooltip != null && !ItemCandidatePopover.contains(mouseX, mouseY))
+            drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
     }
 
     @Override
     protected void mouseClicked(int x, int y, int button) {
+        if (ItemCandidatePopover.click(x, y, button)) return;
         if (button == 0) for (int i = firstOption; i < Math.min(
             frame.getOptions()
                 .size(),
@@ -186,6 +192,20 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
     @Override
     public boolean doesGuiPauseGame() {
         return false;
+    }
+
+    @Override
+    public void handleMouseInput() {
+        int x = org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth;
+        int y = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (ItemCandidatePopover.wheel(x, y, org.lwjgl.input.Mouse.getEventDWheel())) return;
+        super.handleMouseInput();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        ItemCandidatePopover.close();
+        super.onGuiClosed();
     }
 
     private void submit(int index) {

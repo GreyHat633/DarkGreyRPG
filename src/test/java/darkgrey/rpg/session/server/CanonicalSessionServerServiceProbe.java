@@ -303,23 +303,53 @@ public final class CanonicalSessionServerServiceProbe {
     private static ProjectSnapshot project(boolean actor, boolean member, String resourceId) {
         return project(actor, member, resourceId, resourceId, "actor_a");
     }
+
     private static void dynamicPresentationSurvivesRestart() {
         ProjectSnapshot project = project(true, true, "dynamic_session");
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
-        final int[] value = { 12 }; final int[] calls = { 0 };
+        final int[] value = { 12 };
+        final int[] calls = { 0 };
         CanonicalSessionServerService.TextResolver resolver = new CanonicalSessionServerService.TextResolver() {
-            public String resolve(UUID player, String template) { calls[0]++; return player.equals(PLAYER) ? Integer.toString(value[0]) : "99"; }
+
+            public String resolve(UUID player, String template) {
+                calls[0]++;
+                return player.equals(PLAYER) ? Integer.toString(value[0]) : "99";
+            }
         };
         CanonicalSessionServerService service = new CanonicalSessionServerService(project, data, resolver);
-        require("12".equals(service.start(PLAYER, "story_a", "place_a").getFrame().getText()), "initial dynamic value");
+        require(
+            "12".equals(
+                service.start(PLAYER, "story_a", "place_a")
+                    .getFrame()
+                    .getText()),
+            "initial dynamic value");
         value[0] = 45;
-        require("12".equals(service.resume(PLAYER, "story_a").getFrame().getText()) && calls[0] == 1, "resend keeps author-page snapshot");
+        require(
+            "12".equals(
+                service.resume(PLAYER, "story_a")
+                    .getFrame()
+                    .getText())
+                && calls[0] == 1,
+            "resend keeps author-page snapshot");
         UUID other = UUID.fromString("00000000-0000-0000-0000-000000000002");
-        require("99".equals(service.start(other, "story_a", "place_a").getFrame().getText()), "players have separate snapshots");
-        NBTTagCompound stored = new NBTTagCompound(); data.writeToNBT(stored);
-        CanonicalSessionSavedData restored = new CanonicalSessionSavedData(); restored.readFromNBT(stored);
+        require(
+            "99".equals(
+                service.start(other, "story_a", "place_a")
+                    .getFrame()
+                    .getText()),
+            "players have separate snapshots");
+        NBTTagCompound stored = new NBTTagCompound();
+        data.writeToNBT(stored);
+        CanonicalSessionSavedData restored = new CanonicalSessionSavedData();
+        restored.readFromNBT(stored);
         CanonicalSessionServerService restarted = new CanonicalSessionServerService(project, restored, resolver);
-        require("12".equals(restarted.resume(PLAYER, "story_a").getFrame().getText()) && calls[0] == 2, "restart keeps resolved presentation");
+        require(
+            "12".equals(
+                restarted.resume(PLAYER, "story_a")
+                    .getFrame()
+                    .getText())
+                && calls[0] == 2,
+            "restart keeps resolved presentation");
         System.out.println("DYNAMIC_AUTHOR_PAGE_RESEND_RESTART_PLAYER_ISOLATION=PASS");
     }
 
@@ -487,8 +517,10 @@ public final class CanonicalSessionServerServiceProbe {
             ports(out("flow_out", false), out("logic_out", true)),
             props());
         Map<String, JsonElement> lineProps = props("speaker_actor_id", actorId, "text", "Hello");
-        if ("dynamic_session".equals(id)) lineProps.put("text", new com.google.gson.JsonPrimitive(
-            darkgrey.rpg.session.runtime.DynamicContentText.PREFIX + "[{\"type\":\"player_level\"}]"));
+        if ("dynamic_session".equals(id)) lineProps.put(
+            "text",
+            new com.google.gson.JsonPrimitive(
+                darkgrey.rpg.session.runtime.DynamicContentText.PREFIX + "[{\"type\":\"player_level\"}]"));
         if ("pages_session".equals(id)) {
             lineProps.remove("text");
             lineProps.put(

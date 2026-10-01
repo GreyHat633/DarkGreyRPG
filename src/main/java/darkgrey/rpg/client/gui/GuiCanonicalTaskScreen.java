@@ -32,6 +32,28 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private int taskScroll;
     private int detailScroll;
     private boolean completedView;
+    private static Object sessionConnection;
+    private static final java.util.Set<String> expandedStories = new java.util.LinkedHashSet<String>();
+    private static String rememberedTask;
+    private static int rememberedScroll, rememberedDetailScroll;
+    private static boolean rememberedCompleted;
+    private static String rememberedHistoryContext, rememberedDetailTask;
+    private static NBTTagList rememberedHistoryRows;
+    private static NBTTagCompound rememberedHistoryPage, rememberedDetailPage, rememberedDetailRecord;
+    private static int rememberedHistoryCursor, rememberedDetailCursor;
+    private NBTTagList historyRows = new NBTTagList();
+    private NBTTagCompound detailRecord;
+    private boolean historyLoading = true, detailLoading;
+    private String historyContextKey;
+    private int detailHeight;
+    private boolean historyFailed, detailFailed;
+    private int historyCursor;
+    private NBTTagCompound historyPage;
+
+    private final List<Integer> historyCursors = new ArrayList<Integer>(), detailCursors = new ArrayList<Integer>();
+    private int detailCursor;
+    private String detailTaskId;
+    private NBTTagCompound detailPage;
     private GuiRpgButton completedButton, trackingButton;
     private String trackingMessage = "";
     private String detailCacheKey;
@@ -42,6 +64,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
         final String text;
         final ItemSlotStrip items;
+        String objectiveId;
+        int top, bottom;
 
         DetailBlock(String text) {
             this.text = text;
@@ -72,6 +96,35 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         UtilityWindowChrome.open("task", windowGeometry, width, height, geometryInitialized);
         geometryInitialized = true;
         updateWindowGeometry();
+        if (sessionConnection != mc.getNetHandler()) {
+            sessionConnection = mc.getNetHandler();
+            expandedStories.clear();
+            rememberedTask = null;
+            rememberedScroll = rememberedDetailScroll = 0;
+            rememberedCompleted = false;
+            rememberedHistoryRows = null;
+            rememberedHistoryPage = rememberedDetailPage = rememberedDetailRecord = null;
+            rememberedHistoryContext = rememberedDetailTask = null;
+        }
+        if (snapshotRevision == Long.MIN_VALUE) {
+            selectedTaskId = rememberedTask;
+            taskScroll = rememberedScroll;
+            detailScroll = rememberedDetailScroll;
+            completedView = rememberedCompleted;
+            String currentHistory = darkgrey.rpg.client.TaskPresentationPages
+                .identity(darkgrey.rpg.client.TaskPresentationPages.historyContext());
+            if (completedView && currentHistory.equals(rememberedHistoryContext) && rememberedHistoryRows != null) {
+                historyContextKey = rememberedHistoryContext;
+                historyRows = (NBTTagList) rememberedHistoryRows.copy();
+                historyPage = rememberedHistoryPage;
+                historyCursor = rememberedHistoryCursor;
+                historyLoading = historyPage == null;
+                detailTaskId = rememberedDetailTask;
+                detailPage = rememberedDetailPage;
+                detailRecord = rememberedDetailRecord == null ? null : (NBTTagCompound) rememberedDetailRecord.copy();
+                detailCursor = rememberedDetailCursor;
+            }
+        }
         refreshCache();
         completedButton = new GuiRpgButton(1, 0, 0, 80, 20, "已完成");
         trackingButton = new GuiRpgButton(2, 0, 0, 116, 20, "追踪");
@@ -97,6 +150,41 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     }
 
     private void refreshCache() {
+        if (completedView) {
+            NBTTagCompound context = darkgrey.rpg.client.TaskPresentationPages.historyContext();
+            String key = darkgrey.rpg.client.TaskPresentationPages.identity(context);
+            if (!key.equals(historyContextKey)) {
+                historyContextKey = key;
+                historyRows = new NBTTagList();
+                historyCursor = 0;
+                historyPage = null;
+                historyLoading = true;
+                detailRecord = null;
+                detailTaskId = null;
+            }
+            if (historyLoading) {
+                NBTTagCompound page = darkgrey.rpg.client.TaskPresentationPages.page(context, historyCursor);
+                if (page != null && page.getBoolean("restart")) {
+                    historyContextKey = null;
+                    return;
+                }
+                if (page != null && page.hasKey("error")) {
+                    trackingMessage = page.getString("error");
+                    historyLoading = false;
+                    historyFailed = true;
+                } else if (page != null) {
+                    for (int i = 0; i < page.getTagList("rows", 10)
+                        .tagCount(); i++) {
+                        NBTTagCompound row = page.getTagList("rows", 10)
+                            .getCompoundTagAt(i);
+                        if (findTask(historyRows, taskId(row)) == null) historyRows.appendTag(row.copy());
+                    }
+                    historyPage = page;
+                    historyLoading = false;
+                    detailCacheKey = null;
+                }
+            }
+        }
         long revision = CanonicalTaskClientStore.getRevision();
         if (revision == snapshotRevision) return;
         NBTTagCompound next = CanonicalTaskClientStore.getSnapshot();
@@ -104,7 +192,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         snapshotRevision = revision;
         NBTTagList tasks = tasks();
         if (selectedTaskId != null && findTask(tasks, selectedTaskId) != null) return;
-        selectedTaskId = tasks.tagCount() == 0 ? null : taskId(tasks.getCompoundTagAt(0));
+        if (completedView && historyLoading) return;
+        selectedTaskId = null;
         taskScroll = 0;
         detailScroll = 0;
     }
@@ -114,7 +203,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     }
 
     private NBTTagList tasks() {
-        return snapshot.getTagList(completedView ? "completed_tasks" : "tasks", 10);
+        return completedView ? historyRows : snapshot.getTagList("tasks", 10);
     }
 
     private static NBTTagCompound findTask(NBTTagList tasks, String id) {
@@ -133,6 +222,9 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     @Override
     public void handleMouseInput() {
+        int popupX = Mouse.getEventX() * width / mc.displayWidth;
+        int popupY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+
         super.handleMouseInput();
         if (windowGeometry.active()) return;
         int wheel = Mouse.getEventDWheel();
@@ -140,17 +232,62 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         CanonicalTaskLayout layout = layout();
         int mouseX = Mouse.getEventX() * width / mc.displayWidth;
         int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (ItemCandidatePopover.wheel(mouseX, mouseY, wheel)) return;
         int amount = wheel < 0 ? 2 : -2;
-        if (layout.containsList(mouseX, mouseY)) taskScroll = Math.max(0, taskScroll + amount);
-        else if (layout.containsDetail(mouseX, mouseY)) detailScroll = Math.max(0, detailScroll + amount * 12);
+        if (layout.containsList(mouseX, mouseY)) {
+            taskScroll = Math.max(0, taskScroll + amount);
+            int visible = Math.max(1, (layout.listBottom - layout.listTop) / (listRowHeight(layout)));
+            if (amount > 0 && completedView
+                && taskScroll + visible >= TaskStoryRows.flatten(tasks(), expandedStories)
+                    .size() - 2
+                && historyPage != null
+                && historyPage.getInteger("next") < historyPage.getInteger("total")) {
+                historyCursor = historyPage.getInteger("next");
+                historyLoading = true;
+            }
+        } else if (layout.containsDetail(mouseX, mouseY)) {
+            detailScroll = Math.max(0, detailScroll + amount * 12);
+            if (amount > 0 && completedView
+                && detailScroll + layout.detailBottom - layout.detailTop >= detailHeight - 24
+                && detailPage != null
+                && detailPage.getInteger("next") < detailPage.getInteger("total")) {
+                detailCursor = detailPage.getInteger("next");
+                detailLoading = true;
+            }
+        }
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int button) {
+
+        if (ItemCandidatePopover.click(mouseX, mouseY, button)) return;
         if (windowGeometry.begin(mouseX, mouseY, button)) return;
         super.mouseClicked(mouseX, mouseY, button);
         if (button != 0) return;
+        if ((historyFailed || detailFailed) && mouseY >= layout().panelBottom - 24
+            && mouseX >= layout().panelLeft + 94
+            && mouseX < layout().panelRight - 120) {
+            NBTTagCompound context = darkgrey.rpg.client.TaskPresentationPages.historyContext();
+            if (detailFailed) {
+                context.setInteger("operation", 3);
+                context.setString("history", detailTaskId);
+                darkgrey.rpg.client.TaskPresentationPages.retry(context, detailCursor);
+                detailLoading = true;
+            } else {
+                darkgrey.rpg.client.TaskPresentationPages.retry(context, historyCursor);
+                historyLoading = true;
+            }
+            historyFailed = detailFailed = false;
+            trackingMessage = "";
+            return;
+        }
         if (layout().containsDetail(mouseX, mouseY)) {
+            for (DetailBlock block : cachedDetails)
+                if (block.objectiveId != null && mouseY >= block.top && mouseY < block.bottom) {
+                    NBTTagCompound selected = findTask(tasks(), selectedTaskId);
+                    if (selected != null) darkgrey.rpg.client.TaskTrackerClient.focus(selected, block.objectiveId);
+                    return;
+                }
             for (DetailBlock block : cachedDetails) if (block.items != null && block.items.moreAt(mouseX, mouseY)) {
                 mc.displayGuiScreen(new GuiItemCandidates(this, block.items.source()));
                 return;
@@ -160,19 +297,40 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         // interaction event. The journal has no remote-submit hit target.
         CanonicalTaskLayout layout = layout();
         if (!layout.containsList(mouseX, mouseY)) return;
-        int rowHeight = layout.stacked ? STACKED_ROW_HEIGHT : ROW_HEIGHT;
+        int rowHeight = listRowHeight(layout);
         int row = (mouseY - layout.listTop) / rowHeight;
         if (row >= Math.max(1, (layout.listBottom - layout.listTop) / rowHeight)) return;
         int index = taskScroll + row;
-        NBTTagList tasks = tasks();
-        if (index < 0 || index >= tasks.tagCount()) return;
-        String id = taskId(tasks.getCompoundTagAt(index));
+        List<NBTTagCompound> rows = TaskStoryRows.flatten(tasks(), expandedStories);
+        if (index < 0 || index >= rows.size()) return;
+        NBTTagCompound rowData = rows.get(index);
+        if (rowData.getBoolean("story_header")) {
+            String story = TaskStoryRows.key(rowData);
+            if (!expandedStories.add(story)) {
+                expandedStories.remove(story);
+                NBTTagCompound selected = findTask(tasks(), selectedTaskId);
+                if (selected != null && TaskStoryRows.key(selected)
+                    .equals(story)) {
+                    selectedTaskId = null;
+                    detailCacheKey = null;
+                    cachedDetails.clear();
+                    detailScroll = detailHeight = 0;
+                    ItemCandidatePopover.close();
+                    detailRecord = null;
+                    detailTaskId = null;
+                }
+            }
+            return;
+        }
+        String id = taskId(rowData);
         if (!id.equals(selectedTaskId)) detailScroll = 0;
+        if (!id.equals(selectedTaskId)) ItemCandidatePopover.close();
         selectedTaskId = id;
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+
         refreshCache();
         CanonicalTaskLayout layout = layout();
         drawDefaultBackground();
@@ -184,13 +342,21 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             layout.panelTop + 9,
             DgrUiPalette.SELECTED_BORDER);
         drawList(layout, mouseX, mouseY);
+        ItemCandidatePopover.begin();
         drawDetails(layout, mouseX, mouseY);
         updateFooterButtons();
         if (!trackingMessage.isEmpty())
             fontRendererObj.drawString(trackingMessage, layout.panelLeft + 10, layout.panelTop - 12, DgrUiPalette.TEXT);
         UtilityWindowChrome.drawGrip(windowGeometry);
         super.drawScreen(mouseX, mouseY, partialTicks);
+        List<String> candidateTooltip = ItemCandidatePopover.draw(width, height, mouseX, mouseY);
+        if (candidateTooltip != null) itemTooltip = candidateTooltip;
         if (itemTooltip != null) drawHoveringText(itemTooltip, mouseX, mouseY, fontRendererObj);
+        if (historyFailed || detailFailed) fontRendererObj
+            .drawString("加载失败，点击重试", layout.panelLeft + 96, layout.panelBottom - 18, DgrUiPalette.SECONDARY);
+        else if (historyLoading && completedView || detailLoading && selectedTaskId != null)
+            fontRendererObj.drawString("正在加载…", layout.panelLeft + 96, layout.panelBottom - 18, DgrUiPalette.SECONDARY);
+
     }
 
     private void updateFooterButtons() {
@@ -216,8 +382,20 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     @Override
     protected void actionPerformed(GuiButton button) {
+        if (!button.enabled) return;
         if (button.id == 1) {
             completedView = !completedView;
+            historyFailed = detailFailed = false;
+            detailLoading = false;
+            taskScroll = detailScroll = 0;
+            ItemCandidatePopover.close();
+            historyCursor = 0;
+            historyRows = new NBTTagList();
+            historyContextKey = null;
+            historyLoading = true;
+            historyCursors.clear();
+            historyPage = null;
+            detailCacheKey = null;
             selectedTaskId = null;
             trackingMessage = "";
             snapshotRevision = Long.MIN_VALUE;
@@ -256,12 +434,19 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             DgrUiPalette.BORDER);
     }
 
+    private int listRowHeight(CanonicalTaskLayout layout) {
+        return Math.max(
+            layout.stacked ? STACKED_ROW_HEIGHT : ROW_HEIGHT,
+            (int) Math.ceil(fontRendererObj.FONT_HEIGHT * darkgrey.rpg.client.session.PlayerUiPreferences.textScale())
+                + 10);
+    }
+
     private void drawList(CanonicalTaskLayout layout, int mouseX, int mouseY) {
-        NBTTagList tasks = tasks();
-        int rowHeight = layout.stacked ? STACKED_ROW_HEIGHT : ROW_HEIGHT;
+        List<NBTTagCompound> tasks = TaskStoryRows.flatten(tasks(), expandedStories);
+        int rowHeight = listRowHeight(layout);
         int visible = Math.max(1, (layout.listBottom - layout.listTop) / rowHeight);
-        taskScroll = Math.min(taskScroll, Math.max(0, tasks.tagCount() - visible));
-        if (tasks.tagCount() == 0) {
+        taskScroll = Math.min(taskScroll, Math.max(0, tasks.size() - visible));
+        if (tasks.size() == 0) {
             fontRendererObj.drawString(
                 completedView ? "暂无已完成任务" : "暂无进行中的任务",
                 layout.listLeft + 8,
@@ -269,9 +454,9 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                 DgrUiPalette.SECONDARY);
             return;
         }
-        for (int row = 0; row < visible && row + taskScroll < tasks.tagCount(); row++) {
+        for (int row = 0; row < visible && row + taskScroll < tasks.size(); row++) {
             int index = row + taskScroll;
-            NBTTagCompound task = tasks.getCompoundTagAt(index);
+            NBTTagCompound task = tasks.get(index);
             int top = layout.listTop + row * rowHeight;
             String id = taskId(task);
             boolean selected = id.equals(selectedTaskId);
@@ -280,11 +465,34 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                 drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
             else if (hovered)
                 drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
-            int color = selected ? DgrUiPalette.TEXT : DgrUiPalette.TEXT;
+            boolean story = task.getBoolean("story_header");
+            if (story && !hovered)
+                drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.SUB_PANEL);
+            double textScale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
             String title = task.getString("title");
             if (title.length() == 0) title = "未命名任务";
-            title = fontRendererObj.trimStringToWidth(title, layout.listRight - layout.listLeft - 22);
-            fontRendererObj.drawString((selected ? "▶ " : "  ") + title, layout.listLeft + 8, top + 5, color);
+            int titleX = layout.listLeft + (story ? 22 : 28);
+            title = fontRendererObj
+                .trimStringToWidth(title, Math.max(1, (int) ((layout.listRight - titleX - 8) / textScale)));
+            int textY = top + (rowHeight - (int) Math.ceil(fontRendererObj.FONT_HEIGHT * textScale)) / 2;
+            if (story) fontRendererObj.drawString(
+                expandedStories.contains(TaskStoryRows.key(task)) ? "▾" : "▸",
+                layout.listLeft + 8,
+                top + (rowHeight - fontRendererObj.FONT_HEIGHT) / 2,
+                DgrUiPalette.TEXT);
+            else if (selected) drawRect(
+                layout.listLeft + 14,
+                top + 4,
+                layout.listLeft + 16,
+                top + rowHeight - 6,
+                DgrUiPalette.SELECTED_BORDER);
+            CanonicalDialogueRenderer.drawText(
+                fontRendererObj,
+                title,
+                titleX,
+                textY,
+                textScale,
+                story ? DgrUiPalette.STORY_TEXT : DgrUiPalette.TEXT);
         }
     }
 
@@ -293,9 +501,61 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         NBTTagCompound task = findTask(tasks(), selectedTaskId);
         if (task == null) {
             cachedDetails.clear();
+            detailCacheKey = null;
+            detailHeight = 0;
+            detailScroll = 0;
             fontRendererObj
                 .drawString("选择一个任务查看详情", layout.detailLeft + 8, layout.detailTop + 8, DgrUiPalette.SECONDARY);
             return;
+        }
+        if (completedView) {
+            if (!taskId(task).equals(detailTaskId)) {
+                detailTaskId = taskId(task);
+                detailRecord = null;
+                detailLoading = true;
+                detailFailed = false;
+                detailCursor = 0;
+                detailCursors.clear();
+                detailPage = null;
+                detailCacheKey = null;
+            }
+            NBTTagCompound context = darkgrey.rpg.client.TaskPresentationPages.historyContext();
+            context.setInteger("operation", 3);
+            context.setString("history", detailTaskId);
+            if (detailRecord == null || detailLoading) {
+                NBTTagCompound page = darkgrey.rpg.client.TaskPresentationPages.page(context, detailCursor);
+                if (page != null && page.getBoolean("restart")) {
+                    historyContextKey = null;
+                    return;
+                }
+                if (page != null && page.hasKey("error")) {
+                    trackingMessage = page.getString("error");
+                    detailLoading = false;
+                    detailFailed = true;
+                } else if (page != null && page.hasKey("record", 10)) {
+                    NBTTagCompound record = page.getCompoundTag("record");
+                    if (detailCursor == 0 || detailRecord == null) detailRecord = (NBTTagCompound) record.copy();
+                    else {
+                        String field = "current_definition".equals(record.getString("content_source"))
+                            ? "reference_objectives"
+                            : "objectives";
+                        NBTTagList items = detailRecord.getTagList(field, 10), next = record.getTagList(field, 10);
+                        for (int i = 0; i < next.tagCount(); i++) items.appendTag(
+                            next.getCompoundTagAt(i)
+                                .copy());
+                        detailRecord.setTag(field, items);
+                    }
+                    detailPage = page;
+                    detailLoading = false;
+                    detailCacheKey = null;
+                }
+            }
+            if (detailRecord == null) {
+                fontRendererObj
+                    .drawString("正在读取目标…", layout.detailLeft + 8, layout.detailTop + 8, DgrUiPalette.SECONDARY);
+                return;
+            }
+            task = detailRecord;
         }
         int contentWidth = Math.max(20, layout.detailRight - layout.detailLeft - 16);
         String cacheKey = snapshotRevision + ":"
@@ -367,7 +627,10 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                     detailText(blocks, completedView ? "此记录仅保留已结算摘要" : "暂无进行中的目标", contentWidth);
                 for (int index = 0; index < objectives.tagCount(); index++) {
                     NBTTagCompound objective = objectives.getCompoundTagAt(index);
+                    int headingStart = blocks.size();
                     detailText(blocks, "● " + objective.getString("text"), contentWidth);
+                    for (int heading = headingStart; heading < blocks.size(); heading++)
+                        blocks.get(heading).objectiveId = objective.getString("id");
                     String type = objective.getString("type");
                     if ("collect_item".equals(type) || "submit_item".equals(type)) {
                         NBTTagCompound preview = objective.getCompoundTag("item_preview");
@@ -411,9 +674,20 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         }
         int total = 0, lineHeight = fontRendererObj.FONT_HEIGHT + 2;
         for (DetailBlock block : cachedDetails) total += blockHeight(block, contentWidth);
+        detailHeight = total;
         detailScroll = Math.min(detailScroll, Math.max(0, total - (layout.detailBottom - layout.detailTop)));
         int y = layout.detailTop - detailScroll;
         for (DetailBlock block : cachedDetails) {
+            block.top = Math.max(y, layout.detailTop);
+            block.bottom = Math.min(y + blockHeight(block, contentWidth), layout.detailBottom);
+            if (block.objectiveId != null
+                && block.objectiveId.equals(darkgrey.rpg.client.TaskTrackerClient.focused(task)))
+                drawRect(
+                    layout.detailLeft + 4,
+                    block.top,
+                    layout.detailRight - 4,
+                    Math.max(block.top, block.bottom),
+                    DgrUiPalette.HOVER);
             if (block.items != null) {
                 int slotsWidth = slotsWidth(block, contentWidth);
                 block.items
@@ -467,6 +741,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     @Override
     protected void keyTyped(char character, int key) {
+        if (key == 1 && ItemCandidatePopover.escape()) return;
         if (key != 0 && (key == mc.gameSettings.keyBindInventory.getKeyCode()
             || key == darkgrey.rpg.client.ClientQuestKeyHandler.journalKeyCode())) {
             mc.displayGuiScreen(null);
@@ -497,6 +772,19 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
     @Override
     public void onGuiClosed() {
+        ItemCandidatePopover.close();
+        rememberedTask = selectedTaskId;
+        rememberedScroll = taskScroll;
+        rememberedDetailScroll = detailScroll;
+        rememberedCompleted = completedView;
+        rememberedHistoryContext = historyContextKey;
+        rememberedHistoryRows = (NBTTagList) historyRows.copy();
+        rememberedHistoryPage = historyPage;
+        rememberedHistoryCursor = historyCursor;
+        rememberedDetailTask = detailTaskId;
+        rememberedDetailPage = detailPage;
+        rememberedDetailRecord = detailRecord;
+        rememberedDetailCursor = detailCursor;
         windowGeometry.end();
         if (geometryInitialized) UtilityWindowChrome.save("task", windowGeometry, width, height);
         super.onGuiClosed();

@@ -152,7 +152,9 @@ public sealed class SessionScreenEditor0331Tests
             var reopenedEditor = new SessionScreenEditor { ProjectDirectory=root, DataContext=reopenedInspector };
             panel.Children.Add(reopenedEditor); window.UpdateLayout();
             Assert.IsTrue(Descendants<ListBox>(reopenedEditor).Single().Items[1].ToString()!.Contains("前景人物"));
-            Assert.AreEqual(8,inspector.ScreenLayers[0].EnumerateObject().Count(),"Names must not change Runtime schema.");
+            Assert.AreEqual(11,inspector.ScreenLayers[0].EnumerateObject().Count(),"Geometry, morph identity and animation configuration are persisted; names remain metadata.");
+            Assert.IsTrue(inspector.ScreenLayers[0].TryGetProperty("animations", out _));
+            Assert.IsFalse(inspector.ScreenLayers[0].TryGetProperty("name", out _));
         }
         finally { window.Close(); }
     }

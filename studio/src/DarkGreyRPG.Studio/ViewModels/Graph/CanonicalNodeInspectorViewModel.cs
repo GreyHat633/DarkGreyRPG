@@ -572,6 +572,12 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public bool RenameChoiceOption(string optionId, string displayText)
         => IsChoice && Execute(() => _host.RenameSessionChoiceOption(NodeId, optionId, displayText));
 
+    public bool SetChoiceConditionEnabled(string optionId, bool enabled)
+        => IsChoice && Execute(() => _host.SetSessionChoiceConditionEnabled(NodeId, optionId, enabled));
+
+    public bool SetChoiceCondition(string optionId, string behavior, string hint)
+        => IsChoice && Execute(() => _host.SetSessionChoiceCondition(NodeId, optionId, behavior, hint));
+
     public bool ReorderChoiceOption(string optionId, int order)
         => IsChoice && Execute(() => _host.ReorderSessionChoiceOption(NodeId, optionId, order));
 
@@ -599,7 +605,12 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         => option is not null && RemoveChoiceOption(option.OptionId);
 
     public bool AddChoiceOption(string displayText = "新选项")
-        => IsChoice && Execute(() => _host.AddSessionChoiceOption(NodeId, displayText));
+    {
+        var before = ChoiceOptions.Select(o => o.OptionId).ToHashSet();
+        if (!IsChoice || !Execute(() => _host.AddSessionChoiceOption(NodeId, displayText))) return false;
+        foreach (var option in ChoiceOptions.Where(o => !before.Contains(o.OptionId))) option.IsExpanded = true;
+        return true;
+    }
 
     public bool AddTaskResultSlot(string? displayName = null)
         => IsTaskSettle && Execute(() => _host.AddDynamicPort(
@@ -998,6 +1009,8 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
                 var row = ChoiceOptions.FirstOrDefault(item => item.OptionId == id);
                 if (row is null) { row = new(this, id, displayText.GetString() ?? string.Empty, index); ChoiceOptions.Insert(index, row); }
                 else { if (ChoiceOptions.IndexOf(row) != index) ChoiceOptions.Move(ChoiceOptions.IndexOf(row), index); row.Project(displayText.GetString() ?? string.Empty, index); }
+                row.ProjectEnabled(SessionChoiceSchema.ConditionEnabled(option, _host.Graph, NodeId));
+                row.ProjectCondition(option.TryGetProperty("unavailable_behavior", out var mode) ? mode.GetString()! : "hide", option.TryGetProperty("unavailable_hint", out var hint) ? hint.GetString()! : "");
                 index++;
             }
         }
@@ -1586,12 +1599,27 @@ public sealed class CanonicalChoiceOptionViewModel : ObservableObject
     private readonly CanonicalNodeInspectorViewModel _owner;
     private string _displayText;
     private int _order;
+    private bool _disable;
+    private readonly ChoiceOptionEditorState _editorState;
+    private string _hint = "";
+    public bool IsConditionExpanded { get => _editorState.IsExpanded; set => _editorState.IsExpanded = value; }
+    public bool IsExpanded { get => _editorState.IsExpanded; set => _editorState.IsExpanded = value; }
+    private void ExpansionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args) { OnPropertyChanged(nameof(IsConditionExpanded)); OnPropertyChanged(nameof(IsExpanded)); }
+    private bool _conditionEnabled;
+    public bool ConditionEnabled { get => _conditionEnabled; set { if (_conditionEnabled != value) _owner.SetChoiceConditionEnabled(OptionId, value); } }
+    internal void ProjectEnabled(bool enabled) { _conditionEnabled = enabled; OnPropertyChanged(nameof(ConditionEnabled)); }
+    public string Caption => $"选项 {Order + 1}";
+    public bool DisableWhenFalse { get => _disable; set { if (_disable != value) _owner.SetChoiceCondition(OptionId, value ? "disable" : "hide", _hint); } }
+    public string UnavailableHint { get => _hint; set { if (_hint != value) _owner.SetChoiceCondition(OptionId, _disable ? "disable" : "hide", value); } }
+    internal void ProjectCondition(string behavior, string hint) { _disable = behavior == "disable"; _hint = hint; OnPropertyChanged(nameof(DisableWhenFalse)); OnPropertyChanged(nameof(UnavailableHint)); }
 
     internal CanonicalChoiceOptionViewModel(CanonicalNodeInspectorViewModel owner, string optionId,
         string displayText, int order)
     {
         _owner = owner;
         OptionId = optionId;
+        _editorState = ChoiceOptionEditorState.For(owner.Host, owner.NodeId, optionId, order == 0);
+        System.ComponentModel.PropertyChangedEventManager.AddHandler(_editorState, ExpansionChanged, nameof(ChoiceOptionEditorState.IsExpanded));
         _displayText = displayText;
         _order = order;
         RemoveCommand = new RelayCommand(() => _owner.RemoveChoiceOption(this));
@@ -1625,6 +1653,7 @@ public sealed class CanonicalChoiceOptionViewModel : ObservableObject
         internal set
         {
             if (!SetProperty(ref _order, value)) return;
+            OnPropertyChanged(nameof(Caption));
             MoveUpCommand.RaiseCanExecuteChanged();
             MoveDownCommand.RaiseCanExecuteChanged();
         }

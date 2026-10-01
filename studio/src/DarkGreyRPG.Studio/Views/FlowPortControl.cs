@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,6 +10,8 @@ namespace DarkGreyRPG.Studio.Views;
 
 public sealed class FlowPortControl : Button
 {
+    public static readonly DependencyProperty IsConditionInactiveProperty = DependencyProperty.Register(nameof(IsConditionInactive), typeof(bool), typeof(FlowPortControl), new PropertyMetadata(false, OnVisualPropertyChanged));
+    public bool IsConditionInactive { get => (bool)GetValue(IsConditionInactiveProperty); set => SetValue(IsConditionInactiveProperty, value); }
     private const double AnchorSlotSize = 20d;
     private FrameworkElement? _anchor;
     private Grid? _anchorHitTarget;
@@ -119,7 +121,7 @@ public sealed class FlowPortControl : Button
                     : AnchorSlotSize / 2;
             return TranslatePoint(new Point(anchorX, controlHeight / 2), relativeTo);
         }
-        return _anchor.TranslatePoint(new Point(_anchor.ActualWidth / 2, _anchor.ActualHeight / 2), relativeTo);
+        return _anchorHitTarget!.TranslatePoint(new Point(AnchorSlotSize / 2, AnchorSlotSize / 2), relativeTo);
     }
 
     private static void OnVisualPropertyChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args) =>
@@ -149,6 +151,8 @@ public sealed class FlowPortControl : Button
             var label = new TextBlock
             {
                 Text = EffectiveDisplayName,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                TextWrapping = TextWrapping.NoWrap,
                 Margin = new Thickness(5, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
                 FontSize = 11,
@@ -162,6 +166,8 @@ public sealed class FlowPortControl : Button
             var label = new TextBlock
             {
                 Text = EffectiveDisplayName,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                TextWrapping = TextWrapping.NoWrap,
                 Margin = new Thickness(0, 0, 5, 0),
                 VerticalAlignment = VerticalAlignment.Center,
                 FontSize = 11,
@@ -213,8 +219,8 @@ public sealed class FlowPortControl : Button
                     new(half, size),
                     new(0, half),
                 },
-                Fill = highlighted ? new SolidColorBrush(Color.FromRgb(255, 224, 138)) : new SolidColorBrush(Color.FromRgb(245, 181, 61)),
-                Stroke = highlighted ? new SolidColorBrush(Color.FromRgb(190, 125, 15)) : new SolidColorBrush(Color.FromRgb(255, 218, 125)),
+                Fill = IsConditionInactive ? Brushes.Gray : highlighted ? new SolidColorBrush(Color.FromRgb(255, 224, 138)) : new SolidColorBrush(Color.FromRgb(245, 181, 61)),
+                Stroke = IsConditionInactive ? Brushes.DarkGray : highlighted ? new SolidColorBrush(Color.FromRgb(190, 125, 15)) : new SolidColorBrush(Color.FromRgb(255, 218, 125)),
                 StrokeThickness = highlighted ? 2 : 1,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import darkgrey.rpg.session.runtime.CanonicalSessionPresentation;
 import io.netty.buffer.ByteBuf;
 
 /** Author-facing Session frame. Server-only identity and Story outputs are intentionally absent. */
@@ -20,6 +21,28 @@ public final class CanonicalSessionFrame implements IMessage {
     private darkgrey.rpg.session.runtime.CanonicalSessionPresentation presentation = darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY;
     private long lineEpoch;
     private boolean playVoice;
+    private boolean screenPlayback;
+    private long projectionRevision;
+
+    public long getProjectionRevision() {
+        return projectionRevision;
+    }
+
+    public CanonicalSessionFrame withProjectionRevision(long value) {
+        if (value < 0) throw CanonicalSessionNetworkCodec.invalid("projection revision");
+        projectionRevision = value;
+        return this;
+    }
+
+    public boolean shouldPlayScreen() {
+        return screenPlayback;
+    }
+
+    public CanonicalSessionFrame withScreenPlayback(boolean value) {
+        screenPlayback = value;
+        return this;
+    }
+
     private double voiceVolume = 1;
     private double textSpeed = 30;
 
@@ -65,6 +88,8 @@ public final class CanonicalSessionFrame implements IMessage {
         copy.presentation = state;
         copy.lineEpoch = epoch;
         copy.playVoice = voice && kind == Kind.LINE && voiceRef != null;
+        copy.screenPlayback = voice;
+        copy.projectionRevision = projectionRevision;
         return copy;
     }
 
@@ -153,7 +178,9 @@ public final class CanonicalSessionFrame implements IMessage {
             String display = CanonicalSessionNetworkCodec
                 .readField(buffer, "display_text", CanonicalSessionNetworkCodec.MAX_OPTION_TEXT_BYTES);
             CanonicalSessionNetworkCodec.requireUnique(id, ids);
-            decodedChoices.add(new CanonicalSessionChoiceOption(id, display));
+            int enabled = CanonicalSessionNetworkCodec.readEnum(buffer, 2, "enabled");
+            String hint = CanonicalSessionNetworkCodec.readOptionalField(buffer, "hint", 2048);
+            decodedChoices.add(new CanonicalSessionChoiceOption(id, display, enabled == 1, hint));
         }
         String decodedPortrait = CanonicalSessionNetworkCodec.readOptionalField(buffer, "portrait_ref", 80);
         String decodedVoice = CanonicalSessionNetworkCodec.readOptionalField(buffer, "voice_ref", 80);
@@ -161,7 +188,9 @@ public final class CanonicalSessionFrame implements IMessage {
         decodedVoice = decodedVoice.isEmpty() ? null : decodedVoice;
         validateMedia(decodedKind, decodedSpeaker, decodedPortrait, decodedVoice);
         darkgrey.rpg.session.runtime.CanonicalSessionPresentation decodedPresentation = darkgrey.rpg.session.runtime.CanonicalSessionPresentation
-            .fromJson(CanonicalSessionNetworkCodec.readField(buffer, "presentation", 16384));
+            .fromJson(
+                CanonicalSessionNetworkCodec
+                    .readField(buffer, "presentation", CanonicalSessionPresentation.MAX_JSON_CHARS));
         if (buffer.readableBytes() < 9) throw CanonicalSessionNetworkCodec.invalid("truncated presentation state");
         long decodedEpoch = buffer.readLong();
         int decodedPlay = buffer.readUnsignedByte();
@@ -169,13 +198,18 @@ public final class CanonicalSessionFrame implements IMessage {
             || (decodedPlay == 1 && (decodedKind != Kind.LINE || decodedVoice == null)))
             throw CanonicalSessionNetworkCodec.invalid("invalid voice state");
         // Older frames omitted gain; retain their full-volume behavior.
-        if (buffer.readableBytes() != 0 && buffer.readableBytes() != 8 && buffer.readableBytes() != 16)
-            throw CanonicalSessionNetworkCodec.invalid("invalid voice volume length");
+        if (buffer.readableBytes() != 0 && buffer.readableBytes() != 8
+            && buffer.readableBytes() != 16
+            && buffer.readableBytes() != 17
+            && buffer.readableBytes() != 25) throw CanonicalSessionNetworkCodec.invalid("invalid voice volume length");
         double decodedVoiceVolume = buffer.isReadable() ? buffer.readDouble() : 1;
         if (Double.isNaN(decodedVoiceVolume) || Double.isInfinite(decodedVoiceVolume)
             || decodedVoiceVolume < 0
             || decodedVoiceVolume > 1) throw CanonicalSessionNetworkCodec.invalid("invalid voice volume");
         withTextSpeed(buffer.isReadable() ? buffer.readDouble() : 30);
+        screenPlayback = buffer.isReadable()
+            && CanonicalSessionNetworkCodec.readEnum(buffer, 2, "screen playback") == 1;
+        withProjectionRevision(buffer.isReadable() ? buffer.readLong() : 0);
         CanonicalSessionNetworkCodec.requireNoTrailingBytes(buffer);
         presentation = decodedPresentation;
         lineEpoch = decodedEpoch;
@@ -229,16 +263,21 @@ public final class CanonicalSessionFrame implements IMessage {
                 choice.getDisplayText(),
                 "display_text",
                 CanonicalSessionNetworkCodec.MAX_OPTION_TEXT_BYTES);
+            buffer.writeBoolean(choice.isEnabled());
+            CanonicalSessionNetworkCodec.writeOptionalField(buffer, choice.getHint(), "hint", 2048);
         }
         validateMedia(kind, speaker, portraitRef, voiceRef);
         CanonicalSessionNetworkCodec
             .writeOptionalField(buffer, portraitRef == null ? "" : portraitRef, "portrait_ref", 80);
         CanonicalSessionNetworkCodec.writeOptionalField(buffer, voiceRef == null ? "" : voiceRef, "voice_ref", 80);
-        CanonicalSessionNetworkCodec.writeField(buffer, presentation.toJson(), "presentation", 16384);
+        CanonicalSessionNetworkCodec
+            .writeField(buffer, presentation.toJson(), "presentation", CanonicalSessionPresentation.MAX_JSON_CHARS);
         buffer.writeLong(lineEpoch);
         buffer.writeBoolean(playVoice);
         buffer.writeDouble(voiceVolume);
         buffer.writeDouble(textSpeed);
+        buffer.writeBoolean(screenPlayback);
+        buffer.writeLong(projectionRevision);
     }
 
     public String getPortraitRef() {
@@ -346,7 +385,5 @@ public final class CanonicalSessionFrame implements IMessage {
         }
         if (kind != Kind.CHOICE && !choices.isEmpty())
             throw CanonicalSessionNetworkCodec.invalid(kind.name() + " cannot carry choices");
-        if (kind == Kind.CHOICE && choices.isEmpty())
-            throw CanonicalSessionNetworkCodec.invalid("CHOICE requires choices");
     }
 }

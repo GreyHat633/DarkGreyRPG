@@ -28,7 +28,8 @@ public final class CanonicalTaskLegacyJournalAdapter {
         return adapt(entry, text -> text);
     }
 
-    public static QuestJournalEntry adapt(CanonicalTaskJournalEntry entry, java.util.function.UnaryOperator<String> resolveText) {
+    public static QuestJournalEntry adapt(CanonicalTaskJournalEntry entry,
+        java.util.function.UnaryOperator<String> resolveText) {
         if (entry == null) throw new IllegalArgumentException("Canonical Task Journal entry is required.");
         CanonicalTaskInstanceStatus canonicalStatus = entry.getStatus();
         QuestStatus status;
@@ -46,7 +47,8 @@ public final class CanonicalTaskLegacyJournalAdapter {
         for (CanonicalTaskJournalObjectiveRow row : entry.getObjectiveRows()) {
             if (row.getRuntimeStatus() != CanonicalTaskObjectiveStatus.ACTIVE) continue;
             String line = row.getDisplayLine();
-            if (row.getDescription().startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX))
+            if (row.getDescription()
+                .startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX))
                 line = line.replace(row.getDescription(), resolveText.apply(row.getDescription()));
             objectives.add(safe(requireSafeText(line, "Canonical Task objective")));
         }
@@ -131,8 +133,8 @@ public final class CanonicalTaskLegacyJournalAdapter {
 
     private static String description(String description) {
         StringBuilder text = new StringBuilder();
-        for (char c : description
-            .toCharArray()) text.append((c < 0x20 && c != '\n' && c != '\r' && c != '\t') || c == 0x7f ? '?' : c);
+        for (char c : description.toCharArray())
+            text.append((c < 0x20 && c != '\n' && c != '\r' && c != '\t') || c == 0x7f ? '?' : c);
         return text.toString();
     }
 

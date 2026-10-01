@@ -278,21 +278,18 @@ public final class CanonicalSessionNetworkCodecProbe {
                     Arrays.asList(new CanonicalSessionChoiceOption("id", "text")));
             }
         }, "LINE choice object");
-        reject(new Runnable() {
-
-            @Override
-            public void run() {
-                new CanonicalSessionFrame(
-                    1L,
-                    "story",
-                    "resource",
-                    "node",
-                    CanonicalSessionFrame.Kind.CHOICE,
-                    "",
-                    "text",
-                    Collections.<CanonicalSessionChoiceOption>emptyList());
-            }
-        }, "empty CHOICE object");
+        require(
+            new CanonicalSessionFrame(
+                1L,
+                "story",
+                "resource",
+                "node",
+                CanonicalSessionFrame.Kind.CHOICE,
+                "",
+                "text",
+                Collections.<CanonicalSessionChoiceOption>emptyList()).getChoices()
+                    .isEmpty(),
+            "all-hidden choice must remain a waiting presentation");
         reject(new Runnable() {
 
             @Override

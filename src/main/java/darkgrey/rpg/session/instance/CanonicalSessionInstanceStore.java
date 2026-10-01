@@ -34,6 +34,17 @@ public final class CanonicalSessionInstanceStore {
 
     public synchronized CanonicalSessionInstance start(UUID playerUuid, String storyId, String aggregatePlacementId,
         CanonicalGraphResource resource, boolean activationLogic) {
+        return start(
+            playerUuid,
+            storyId,
+            aggregatePlacementId,
+            resource,
+            activationLogic,
+            Collections.<String, Boolean>emptyMap());
+    }
+
+    public synchronized CanonicalSessionInstance start(UUID playerUuid, String storyId, String aggregatePlacementId,
+        CanonicalGraphResource resource, boolean activationLogic, Map<String, Boolean> inputs) {
         validateIdentity(playerUuid, storyId, aggregatePlacementId);
         if (resource == null) throw new IllegalArgumentException("Session resource is required.");
         Key key = new Key(playerUuid, storyId);
@@ -46,7 +57,7 @@ public final class CanonicalSessionInstanceStore {
             storyId,
             aggregatePlacementId,
             id,
-            CanonicalSessionRuntime.start(resource, activationLogic));
+            CanonicalSessionRuntime.start(resource, activationLogic, inputs));
         instances.put(key, instance);
         nextTransportId = id + 1L;
         return instance;

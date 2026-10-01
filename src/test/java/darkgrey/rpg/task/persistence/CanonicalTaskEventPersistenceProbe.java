@@ -57,9 +57,116 @@ public final class CanonicalTaskEventPersistenceProbe {
         packageGenerationRetirement(parallel);
         playerStoryDiscardBoundAndPending(parallel, settled);
         completionHistorySurvivesReset(settled);
+        sampledSettlementHistoryIsTransactional(settled);
         candidateBoundScale(many);
         System.out.println("TASK_EVENT_PERSISTENCE_PROBE_PASS");
         System.out.println("CANONICAL_TASK_GENERATION_RETIREMENT=PASS");
+        System.out.println("CANONICAL_TASK_SAMPLED_SETTLEMENT_HISTORY=PASS");
+    }
+
+    private static void sampledSettlementHistoryIsTransactional(CanonicalGraphResource settled) {
+        List<CanonicalGraphNode> submitNodes = new ArrayList<CanonicalGraphNode>();
+        for (CanonicalGraphNode node : settled.getGraph()
+            .getNodes()) {
+            if (!"objective".equals(node.getType())) {
+                submitNodes.add(node);
+                continue;
+            }
+            Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>(node.getProperties());
+            properties.put("objective_type", json(CanonicalTaskEvent.SUBMIT_ITEM));
+            properties.remove("entity");
+            properties.put("item", json("iron"));
+            properties.put("actor_id", json("clerk"));
+            properties.put("metadata", new JsonParser().parse("{}"));
+            submitNodes.add(node(node.getId(), node.getType(), node.getPorts(), properties));
+        }
+        settled = new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "sampled_submit",
+            "sampled_submit",
+            new CanonicalGraph(
+                submitNodes,
+                settled.getGraph()
+                    .getConnections()));
+        Map<String, String> submitted = new LinkedHashMap<String, String>();
+        submitted.put("item", "iron");
+        submitted.put("actor_id", "clerk");
+        CanonicalTaskEvent submitEvent = new CanonicalTaskEvent(CanonicalTaskEvent.SUBMIT_ITEM, submitted, 1);
+        CanonicalTaskSavedData data = new CanonicalTaskSavedData();
+        data.start(PLAYER, "sampled", "placement", settled, 10L);
+        final int[] effects = new int[2];
+        try {
+            data.sampleObjective(
+                PLAYER,
+                "sampled",
+                "placement",
+                "kill",
+                submitEvent,
+                11L,
+                new CanonicalTaskSavedData.ObjectiveCommit() {
+
+                    public void commit() {
+                        throw new IllegalStateException("injected inventory commit failure");
+                    }
+
+                    public void rollback() {
+                        effects[1]++;
+                    }
+                });
+            throw new AssertionError("sampled commit failure was accepted");
+        } catch (IllegalStateException expected) {
+            require(
+                expected.getMessage()
+                    .contains("injected"),
+                "unexpected sampled failure");
+        }
+        require(
+            effects[1] == 1 && data.completedHistory(PLAYER)
+                .tagCount() == 0,
+            "failed commit archived completion");
+        require(
+            data.getSnapshot(PLAYER, "sampled", "placement")
+                .getStatus() == CanonicalTaskInstanceStatus.ACTIVE,
+            "failed commit changed runtime");
+        CanonicalTaskSavedData.ObjectiveCommit commit = new CanonicalTaskSavedData.ObjectiveCommit() {
+
+            public void commit() {
+                effects[0]++;
+            }
+
+            public void rollback() {
+                effects[1]++;
+            }
+        };
+        require(
+            data.sampleObjective(PLAYER, "sampled", "placement", "kill", submitEvent, 12L, commit)
+                .getStatus() == CanonicalTaskInstanceStatus.SETTLED,
+            "sampled settlement failed");
+        net.minecraft.nbt.NBTTagCompound archived = data.completedHistory(PLAYER)
+            .getCompoundTagAt(0);
+        require(
+            data.completedHistory(PLAYER)
+                .tagCount() == 1 && archived.getLong("completion_count") == 1,
+            "sampled completion was not archived exactly once");
+        require(
+            archived.getTagList("objectives", 10)
+                .getCompoundTagAt(0)
+                .getInteger("current") == 1,
+            "sampled history lost actual objective progress");
+        require(
+            data.sampleObjective(PLAYER, "sampled", "placement", "kill", submitEvent, 13L, commit) == null
+                && effects[0] == 1,
+            "duplicate interaction committed again");
+        require(
+            data.completedHistory(OTHER)
+                .tagCount() == 0,
+            "sampled history crossed player identity");
+        data.discardByPlayerStory(PLAYER, "sampled");
+        require(
+            data.completedHistory(PLAYER)
+                .tagCount() == 1,
+            "sampled history lost on retirement");
     }
 
     private static void parallelAndDuplicate(CanonicalGraphResource parallel, CanonicalGraphResource sequential) {

@@ -5,7 +5,7 @@ using DarkGreyRPG.Studio.Core.Graphs.Resources;
 namespace DarkGreyRPG.Studio.ViewModels.Graph;
 
 public sealed record AuthoringSearchHit(string StoryId, GraphResourceKind Kind, string ResourceId, string? NodeId,
-    string? PageId, string? OptionId, string Path, string Snippet, string? GroupId = null);
+    string? PageId, string? OptionId, string Path, string Snippet, string? GroupId = null, string? FieldPath = null);
 
 public sealed partial class CanonicalStoryWorkspaceViewModel
 {
@@ -113,13 +113,25 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
     public void NavigateSearch(AuthoringSearchHit hit)
     {
         if (hit.StoryId != StoryEditor.Id) { ProjectSearchNavigate?.Invoke(hit); return; }
+        if (hit.FieldPath?.StartsWith("actor:", StringComparison.Ordinal) == true)
+        { var actor = ActorItems.FirstOrDefault(a => a.Id == hit.FieldPath[6..]); if (actor is not null) SelectTreeItem(actor); return; }
+        if (hit.FieldPath?.StartsWith("membership:", StringComparison.Ordinal) == true)
+        {
+            var parts = hit.FieldPath.Split(':', 3);
+            ICanonicalStoryTreeItem? item = parts[1] is "actor" or "actor_group" ? ActorItems.FirstOrDefault(a => a.Id == parts[2])
+                : parts[1] is "item" or "item_group" ? ItemItems.FirstOrDefault(i => i.Id == parts[2])
+                : SessionItems.Concat(TaskItems).FirstOrDefault(g => g.Id == parts[2]);
+            if (item is not null) SelectTreeItem(item); return;
+        }
         var editor = Editors.FirstOrDefault(candidate => candidate.ResourceKind == hit.Kind && candidate.Id == hit.ResourceId);
         if (editor is null) return;
         if (ReferenceEquals(editor, StoryEditor)) ReturnToStory();
         else
         {
             var item = SessionItems.Concat(TaskItems).FirstOrDefault(candidate => ReferenceEquals(candidate.Editor, editor));
-            if (item is null || !OpenGraphResource(item) || item.IsReadOnly) return;
+            if (item is null) return;
+            if (item.IsReadOnly) { ActiveEditor = item.Editor; ClearGraphSelection(); InspectorSelection = item.Editor; }
+            else if (!OpenGraphResource(item)) return;
         }
         SearchTarget = null;
         SearchTarget = hit;

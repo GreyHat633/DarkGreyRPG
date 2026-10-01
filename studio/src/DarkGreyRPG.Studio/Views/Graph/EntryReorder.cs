@@ -89,6 +89,7 @@ public static class EntryReorder
             if (result != DragDropEffects.Move || committed is not { } index || index == oldIndex) return;
             switch (source)
             {
+                case AnimationStepRow animation: animation.MoveTo(index); break;
                 case CanonicalLinePageViewModel page: page.Move(index); break;
                 case CanonicalChoiceOptionViewModel choice: choice.MoveTo(index); break;
                 case CanonicalTaskResultSlotViewModel resultSlot: resultSlot.MoveTo(index); break;

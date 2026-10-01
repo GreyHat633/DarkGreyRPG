@@ -1,16 +1,11 @@
 package darkgrey.rpg.creator;
 
-import java.util.List;
-
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
-import darkgrey.rpg.item.identity.ItemGroupMember;
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
-import darkgrey.rpg.item.identity.ItemMatchMode;
 import darkgrey.rpg.item.identity.ItemStackDefinition;
 import darkgrey.rpg.task.forge.CanonicalTaskInventory;
 
@@ -38,27 +33,16 @@ public final class TaskItemPreview {
     }
 
     public static NBTTagCompound project(CanonicalGraphNode objective, ItemIdentitySavedData bindings) {
-        NBTTagCompound result = new NBTTagCompound();
-        NBTTagList rows = new NBTTagList();
-        String id = objective.getProperties()
-            .get("item")
-            .getAsString();
-        List<ItemGroupMember> members = bindings.getGroup(id);
-        result.setBoolean("group", !members.isEmpty());
-        ItemStackDefinition individual = bindings.getItem(id);
-        if (individual != null) add(rows, individual, false, objective, bindings);
-        Object vanilla = Item.itemRegistry.getObject(id);
-        if (vanilla instanceof Item) add(rows, new ItemStackDefinition(id, 0, null), true, objective, bindings);
-        for (ItemGroupMember member : members) {
-            add(rows, member.getDefinition(), member.getMatchMode() == ItemMatchMode.FUZZY, objective, bindings);
-        }
-        if (rows.tagCount() == 0) {
-            NBTTagCompound missing = new NBTTagCompound();
-            missing.setString("error", "物品未绑定、已缺失或没有符合条件的候选");
-            rows.appendTag(missing);
-        }
-        result.setTag("items", rows);
-        return result;
+        return TaskCandidateIndex.summary(objective, bindings);
+    }
+
+    public static void context(NBTTagCompound preview, String story, String placement, String objective,
+        long activation, int dimension) {
+        preview.setString("story", story);
+        preview.setString("placement", placement);
+        preview.setString("objective", objective);
+        preview.setLong("activation", activation);
+        preview.setInteger("dimension", dimension);
     }
 
     private static void add(NBTTagList rows, ItemStackDefinition definition, boolean fuzzy,

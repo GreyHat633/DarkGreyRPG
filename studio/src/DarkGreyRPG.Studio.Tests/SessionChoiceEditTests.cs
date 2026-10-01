@@ -11,7 +11,7 @@ public sealed class SessionChoiceEditTests
     [TestMethod]
     public void AddRenameAndReorderKeepFlowOnlyOptionsAndStableIdsSynchronized()
     {
-        var ids = new Queue<string>(["option_2", "flow_2"]);
+        var ids = new Queue<string>(["option_2", "flow_2", "condition_2"]);
         var choice = Choice();
         var flowTarget = Line("flow_target");
         var graph = new GraphDocument([choice, flowTarget]);
@@ -44,7 +44,7 @@ public sealed class SessionChoiceEditTests
     [TestMethod]
     public void RemoveRequiresConfirmationForFlowReferenceAndIsAtomic()
     {
-        var ids = new Queue<string>(["option_2", "flow_2"]);
+        var ids = new Queue<string>(["option_2", "flow_2", "condition_2"]);
         var choice = Choice();
         var flowTarget = Line("flow_target");
         var graph = new GraphDocument([choice, flowTarget]);
@@ -97,7 +97,7 @@ public sealed class SessionChoiceEditTests
     private static GraphNode Choice()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeDefault(node, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(node, "option_1", "flow_1");
         return node;
     }
 
@@ -132,7 +132,7 @@ public sealed class SessionChoiceEditTests
     [TestMethod]
     public void LegacyLogicPortAndConnectionRemainLosslessWhileNewOptionsStayFlowOnly()
     {
-        var ids = new Queue<string>(["option_2", "flow_2"]);
+        var ids = new Queue<string>(["option_2", "flow_2", "condition_2"]);
         var choice = Choice();
         choice.Ports.Add(new("option_1", "已选择：选项 1", false, GraphInterfaceKind.Logic, 0));
         var logicTarget = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic_target");

@@ -199,7 +199,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void ChoiceOptionsUseFlowOnlySemanticCommandsAndHideStableIdsFromDisplay()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
@@ -242,7 +242,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void ReferencedChoiceRemoveFailsClosedAndRetainsOption()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
         choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
         {
             new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
@@ -337,7 +337,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void MinimumChoiceOptionValidationDoesNotRequestConfirmation()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
         using var editor = ChoiceEditor(choice);
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "choice"));
@@ -658,7 +658,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     private static GraphNode ReferencedChoice(string nodeId, bool includeReference)
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", nodeId);
-        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
         choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
         {
             new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },

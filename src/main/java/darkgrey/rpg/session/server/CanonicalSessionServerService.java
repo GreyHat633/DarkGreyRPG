@@ -25,23 +25,37 @@ import darkgrey.rpg.session.runtime.CanonicalSessionStep;
 /** Server-neutral orchestration and presentation boundary for canonical Sessions. */
 public final class CanonicalSessionServerService {
 
+    private static final java.util.concurrent.atomic.AtomicLong PROJECTIONS = new java.util.concurrent.atomic.AtomicLong();
+
     private final ProjectSnapshot project;
     private final CanonicalSessionSavedData savedData;
-    public interface TextResolver { String resolve(UUID player, String template); }
+
+    public interface TextResolver {
+
+        String resolve(UUID player, String template);
+    }
+
     private final TextResolver textResolver;
 
     public CanonicalSessionServerService(ProjectSnapshot project, CanonicalSessionSavedData savedData) {
         this(project, savedData, new TextResolver() {
-            @Override public String resolve(UUID player, String template) {
-                return darkgrey.rpg.session.runtime.DynamicContentText.resolve(template,
-                    new darkgrey.rpg.session.runtime.DynamicContentText.Resolver() {
-                        @Override public String resolve(String type, String item) { return "数据不可用"; }
+
+            @Override
+            public String resolve(UUID player, String template) {
+                return darkgrey.rpg.session.runtime.DynamicContentText
+                    .resolve(template, new darkgrey.rpg.session.runtime.DynamicContentText.Resolver() {
+
+                        @Override
+                        public String resolve(String type, String item) {
+                            return "数据不可用";
+                        }
                     });
             }
         });
     }
 
-    public CanonicalSessionServerService(ProjectSnapshot project, CanonicalSessionSavedData savedData, TextResolver resolver) {
+    public CanonicalSessionServerService(ProjectSnapshot project, CanonicalSessionSavedData savedData,
+        TextResolver resolver) {
         if (project == null || savedData == null)
             throw new IllegalArgumentException("Session service inputs required.");
         this.project = project;
@@ -68,8 +82,15 @@ public final class CanonicalSessionServerService {
         boolean activationLogic) {
         Binding binding = resolveBinding(storyId, aggregatePlacementId);
         validateActors(binding);
-        CanonicalSessionInstanceSnapshot snapshot = savedData
-            .start(playerUuid, storyId, aggregatePlacementId, binding.session, activationLogic);
+        CanonicalSessionInstanceSnapshot snapshot = savedData.start(
+            playerUuid,
+            storyId,
+            aggregatePlacementId,
+            binding.session,
+            activationLogic,
+            initialStoryInputs(playerUuid, storyId));
+        applyStoryInputs(playerUuid, storyId);
+        snapshot = savedData.getSnapshot(playerUuid, storyId);
         return projectSnapshot(snapshot, binding, true);
     }
 
@@ -82,6 +103,7 @@ public final class CanonicalSessionServerService {
     }
 
     public CanonicalSessionDispatch resume(UUID playerUuid, String storyId) {
+        applyStoryInputs(playerUuid, storyId);
         CanonicalSessionInstanceSnapshot snapshot = savedData.getSnapshot(playerUuid, storyId);
         if (snapshot == null) throw new IllegalStateException("Session instance does not exist.");
         Binding binding = resolveBinding(snapshot.getStoryId(), snapshot.getAggregatePlacementId());
@@ -107,6 +129,7 @@ public final class CanonicalSessionServerService {
         if (playerUuid == null || action == null) throw new IllegalArgumentException("Session action is required.");
         if (expectedStoryId == null || !expectedStoryId.equals(action.getStoryId()))
             throw new IllegalStateException("Session action Story does not match server context.");
+        applyStoryInputs(playerUuid, expectedStoryId);
         CanonicalSessionInstanceSnapshot before = savedData.getSnapshot(playerUuid, expectedStoryId);
         if (before == null) throw new IllegalStateException("Session instance does not exist.");
         Binding binding = resolveBinding(before.getStoryId(), before.getAggregatePlacementId());
@@ -150,7 +173,42 @@ public final class CanonicalSessionServerService {
         if (after == null) throw new IllegalStateException("Session instance disappeared after action.");
         // The returned step is intentionally not used as authority; SavedData is re-read for projection.
 
-        return projectSnapshot(after, binding, true);
+        boolean accepted = after.getRuntimeSnapshot()
+            .getSelectedOptionIds()
+            .size()
+            > before.getRuntimeSnapshot()
+                .getSelectedOptionIds()
+                .size();
+        return projectSnapshot(after, binding, action.getKind() != CanonicalSessionAction.Kind.CHOICE || accepted);
+    }
+
+    public CanonicalSessionDispatch refresh(UUID playerUuid, String storyId) {
+        CanonicalSessionDispatch dispatch = resume(playerUuid, storyId);
+        if (dispatch.getFrame() != null) dispatch.getFrame()
+            .withScreenPlayback(true);
+        return dispatch;
+    }
+
+    private void applyStoryInputs(UUID player, String story) {
+        darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot parent = savedData
+            .getStorySnapshot(player, story);
+        if (parent == null || parent.getRuntimeSnapshot()
+            .getWaitKind() != darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.SESSION) return;
+        CanonicalSessionInstanceSnapshot child = savedData.getSnapshot(player, story);
+        if (child != null && child.getAggregatePlacementId()
+            .equals(
+                parent.getRuntimeSnapshot()
+                    .getCurrentNodeId()))
+            savedData.updateSessionLogic(player, story, savedData.getStorySessionLogicInputs(player, story));
+    }
+
+    private java.util.Map<String, Boolean> initialStoryInputs(UUID player, String story) {
+        darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot parent = savedData
+            .getStorySnapshot(player, story);
+        return parent == null || parent.getRuntimeSnapshot()
+            .getWaitKind() != darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind.SESSION
+                ? java.util.Collections.<String, Boolean>emptyMap()
+                : savedData.getStorySessionLogicInputs(player, story);
     }
 
     public CanonicalSessionDispatch handleAction(UUID playerUuid, CanonicalSessionAction action) {
@@ -207,7 +265,8 @@ public final class CanonicalSessionServerService {
                     "",
                     "",
                     java.util.Collections.<CanonicalSessionChoiceOption>emptyList())
-                        .withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), false));
+                        .withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), playVoice)
+                        .withProjectionRevision(PROJECTIONS.incrementAndGet()));
         }
         CanonicalSessionStep step = savedData.getCurrentStep(snapshot.getPlayerUuid(), snapshot.getStoryId());
         if (step == null || blank(
@@ -221,7 +280,8 @@ public final class CanonicalSessionServerService {
             if (step.getKind() != CanonicalSessionStep.Kind.LINE && step.getKind() != CanonicalSessionStep.Kind.CHOICE)
                 throw new IllegalStateException("Active Session snapshot has an incoherent step.");
             return CanonicalSessionDispatch.frame(
-                frame(snapshot, step).withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), playVoice));
+                frame(snapshot, step).withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), playVoice)
+                    .withProjectionRevision(PROJECTIONS.incrementAndGet()));
         }
         if (status != CanonicalSessionStatus.COMPLETED || step.getKind() != CanonicalSessionStep.Kind.END
             || blank(step.getEndPortId())
@@ -251,7 +311,10 @@ public final class CanonicalSessionServerService {
                 snapshot.getSessionResourceId(),
                 step.getNodeId(),
                 CanonicalSessionFrame.Kind.LINE,
-                actor == null ? "" : actor.getDisplayName(),
+                SessionTextLimit.require(
+                    actor == null ? "" : actor.getDisplayName(),
+                    snapshot.getStoryId() + "/" + step.getNodeId() + "/speaker",
+                    256),
                 displayText(snapshot, "line", step.getText()),
                 java.util.Collections.<CanonicalSessionChoiceOption>emptyList(),
                 actor == null ? null
@@ -261,8 +324,15 @@ public final class CanonicalSessionServerService {
                 step.getVoiceVolume()).withTextSpeed(step.getTextSpeed());
         }
         java.util.ArrayList<CanonicalSessionChoiceOption> choices = new java.util.ArrayList<CanonicalSessionChoiceOption>();
-        for (darkgrey.rpg.session.runtime.CanonicalSessionChoiceOption option : step.getOptions())
-            choices.add(new CanonicalSessionChoiceOption(option.getOptionId(), displayText(snapshot, "option:" + option.getOptionId(), option.getDisplayText())));
+        for (darkgrey.rpg.session.runtime.CanonicalSessionChoiceOption option : step.getOptions()) {
+            String text = displayText(snapshot, "option:" + option.getOptionId(), option.getDisplayText());
+            String hint = SessionTextLimit.require(
+                option.getHint(),
+                snapshot.getStoryId() + "/" + step.getNodeId() + "/hint:" + option.getOptionId(),
+                2048);
+            if (option.isVisible())
+                choices.add(new CanonicalSessionChoiceOption(option.getOptionId(), text, option.isEnabled(), hint));
+        }
         return new CanonicalSessionFrame(
             snapshot.getTransportId(),
             snapshot.getStoryId(),
@@ -275,9 +345,23 @@ public final class CanonicalSessionServerService {
     }
 
     private String displayText(final CanonicalSessionInstanceSnapshot snapshot, String slot, final String template) {
-        if (template == null || !template.startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX)) return template;
+        if (template == null || !template.startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX))
+            return SessionTextLimit.require(
+                template,
+                snapshot.getStoryId() + "/"
+                    + snapshot.getSessionResourceId()
+                    + "/"
+                    + snapshot.getRuntimeSnapshot()
+                        .getCurrentNodeId()
+                    + "/"
+                    + slot,
+                slot.startsWith("option:") || slot.startsWith("hint:") ? 2048 : 32767);
         return savedData.presentationText(snapshot, slot, new java.util.function.Supplier<String>() {
-            @Override public String get() { return textResolver.resolve(snapshot.getPlayerUuid(), template); }
+
+            @Override
+            public String get() {
+                return textResolver.resolve(snapshot.getPlayerUuid(), template);
+            }
         });
     }
 

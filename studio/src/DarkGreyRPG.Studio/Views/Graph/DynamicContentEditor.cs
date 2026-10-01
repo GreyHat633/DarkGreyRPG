@@ -61,6 +61,22 @@ public sealed class DynamicContentEditor : UserControl
     private bool _bodyQueued;
     private readonly Button _insert = new() { Content = "＋ 动态内容", Visibility = Visibility.Collapsed, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(5, 2, 5, 2) };
     private readonly TextBlock _error = new() { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _risk = new() { TextWrapping = TextWrapping.Wrap };
+    private void UpdateRisk()
+    {
+        if (DataContext is not CanonicalChoiceOptionViewModel) { _risk.Text = ""; _risk.Visibility = Visibility.Collapsed; return; }
+        try
+        {
+            var budget = DynamicTextBudget.Measure(Text,
+                id => (Workspace?.ActorItems ?? Owner?.ActorItems)?.FirstOrDefault(p => p.Id == id)?.DisplayName,
+                id => Items.FirstOrDefault(p => p.Id == id)?.DisplayName);
+            _risk.Text = budget.Caption; _risk.ToolTip = budget.Detail;
+            _risk.Visibility = string.IsNullOrEmpty(budget.Caption) ? Visibility.Collapsed : Visibility.Visible;
+            _risk.Foreground = budget.Bytes >= budget.Maximum * .9 || budget.Unknown ? Brushes.OrangeRed : null;
+            if (_risk.Foreground is null) _risk.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        }
+        catch (Exception error) when (error is System.Text.Json.JsonException or FormatException or InvalidOperationException or KeyNotFoundException) { _risk.Text = "动态内容格式无效"; _risk.Visibility = Visibility.Visible; }
+    }
     private bool _projecting, _publishing, _composing;
     private bool _restoringDraft;
     private readonly Stack<string> _draftUndo = new(), _draftRedo = new();
@@ -91,7 +107,8 @@ public sealed class DynamicContentEditor : UserControl
         };
         _textSurface.Children.Add(_preview); _textSurface.Children.Add(_capacity);
         AuthoringText.SetIsHelp(_capacity, true); UpdateCapacity();
-        _panel.Children.Add(_insert); _panel.Children.Add(_textSurface); _panel.Children.Add(_error); Content = _panel;
+        AuthoringText.SetIsHelp(_risk, true);
+        _panel.Children.Add(_insert); _panel.Children.Add(_textSurface); _panel.Children.Add(_risk); _panel.Children.Add(_error); Content = _panel;
         _insert.Click += (_, _) => OpenPicker(null);
         IsVisibleChanged += (_, _) =>
         {
@@ -190,6 +207,7 @@ public sealed class DynamicContentEditor : UserControl
     };
     private void RefreshLabels()
     {
+        UpdateRisk();
         if (_body is null) { Project(); return; }
         foreach (var atom in Body.Document.Blocks.OfType<Paragraph>().SelectMany(p => p.Inlines.OfType<InlineUIContainer>()))
             if (atom.Child is Button button && TokenPart(button) is { } part) button.Content = "{" + Label(part) + "}";
@@ -247,6 +265,7 @@ public sealed class DynamicContentEditor : UserControl
     }
     private void Project()
     {
+        UpdateRisk();
         if (_publishing) return;
         if (_body is null)
         {
@@ -330,6 +349,7 @@ public sealed class DynamicContentEditor : UserControl
         _publishing = true;
         try { SetCurrentValue(TextProperty, value); }
         finally { _publishing = false; }
+        UpdateRisk();
         if (DataContext is CanonicalLinePageViewModel page) page.UpdateCapacityDraft(value);
     }
     private void Copy(bool cut)

@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -247,7 +247,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     public void ChoiceOptionRemovalConfirmationIsInjectedAtViewBoundary()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
         choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
         {
             new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
@@ -312,14 +312,14 @@ public sealed class CanonicalStoryWorkspaceViewTests
                 Assert.AreSame(row.FlowOutput, row.OutputGroup.Children[0]);
                 Assert.AreSame(row.DisplayLabel, row.OutputGroup.Children[1]);
                 Assert.AreEqual(row.DisplayText, row.DisplayLabel.Text);
-                Assert.AreEqual(108d, row.OutputGroup.Width);
+                Assert.AreEqual(104d, row.OutputGroup.Width);
                 Assert.AreEqual(TextAlignment.Left, row.DisplayLabel.TextAlignment);
                 Assert.AreEqual(HorizontalAlignment.Right, row.DisplayLabel.HorizontalAlignment);
-                Assert.AreEqual(82d, row.DisplayLabel.MaxWidth);
+                Assert.AreEqual(78d, row.DisplayLabel.MaxWidth);
                 Assert.AreEqual(22d, row.DisplayLabel.Margin.Right);
                 Assert.AreEqual(11d, row.DisplayLabel.FontSize);
                 Assert.AreEqual(20d, row.OutputGroup.Height);
-                Assert.AreEqual(12d, row.OutputGroup.Margin.Bottom);
+                Assert.AreEqual(0d, row.OutputGroup.Margin.Bottom);
                 Assert.AreEqual(0, Grid.GetRow(row.FlowOutput));
             }
 
@@ -331,7 +331,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
             {
                 var betweenGroups = visual.ChoiceOptionRows[1].FlowOutput.GetAnchorPoint(visual).Y
                     - visual.ChoiceOptionRows[0].FlowOutput.GetAnchorPoint(visual).Y;
-                Assert.IsGreaterThanOrEqualTo(20d, betweenGroups);
+                Assert.AreEqual(24d, betweenGroups, .01);
             }
         }
     }
@@ -868,7 +868,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     private static CanonicalStoryWorkspaceViewModel ChoiceWorkspace(int count)
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeDefault(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
         var options = new List<object> { new { option_id = "option_1", display_text = "短选项 1", flow_port_id = "flow_1" } };
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "短选项 1";
         for (var index = 2; index <= count; index++)

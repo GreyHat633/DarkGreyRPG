@@ -36,9 +36,32 @@ public final class DialogueNetwork {
 
     public static synchronized void registerCommon() {
         if (registered) return;
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.TaskPresentationPage.Server.class,
+            darkgrey.rpg.network.message.canonical.TaskPresentationPage.class,
+            32,
+            Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.TaskPresentationPage.Client.class,
+            darkgrey.rpg.network.message.canonical.TaskPresentationPage.class,
+            32,
+            Side.CLIENT);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalSessionNotice.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalSessionNotice.class,
+            31,
+            Side.CLIENT);
         // The codec maps a class to one discriminator; handlers are independently installed on each side.
-        CHANNEL.registerMessage(darkgrey.rpg.diagnostics.PlayerStatePacket.Server.class, darkgrey.rpg.diagnostics.PlayerStatePacket.class, PLAYER_INSPECTION_DISCRIMINATOR, Side.SERVER);
-        CHANNEL.registerMessage(darkgrey.rpg.diagnostics.PlayerStatePacket.Client.class, darkgrey.rpg.diagnostics.PlayerStatePacket.class, PLAYER_INSPECTION_DISCRIMINATOR, Side.CLIENT);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.diagnostics.PlayerStatePacket.Server.class,
+            darkgrey.rpg.diagnostics.PlayerStatePacket.class,
+            PLAYER_INSPECTION_DISCRIMINATOR,
+            Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.diagnostics.PlayerStatePacket.Client.class,
+            darkgrey.rpg.diagnostics.PlayerStatePacket.class,
+            PLAYER_INSPECTION_DISCRIMINATOR,
+            Side.CLIENT);
         CHANNEL.registerMessage(S2CQuestJournal.Handler.class, S2CQuestJournal.class, 3, Side.CLIENT);
         CHANNEL.registerMessage(C2SQuestJournalRequest.Handler.class, C2SQuestJournalRequest.class, 4, Side.SERVER);
         CHANNEL.registerMessage(CanonicalSessionActionHandler.class, CanonicalSessionAction.class, 5, Side.SERVER);

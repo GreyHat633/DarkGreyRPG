@@ -14,7 +14,14 @@ public static class SessionChoiceSchema
     public const string PromptProperty = "prompt";
     public const string OptionsProperty = "options";
 
-    public static void InitializeDefault(GraphNode node, string optionId, string flowPortId)
+    public static void InitializeLegacy(GraphNode node, string optionId, string flowPortId)
+    {
+        InitializeDefault(node, optionId, flowPortId);
+        node.Ports.RemoveAll(p => p.IsInput && p.InterfaceKind == GraphInterfaceKind.Logic);
+        node.Properties[OptionsProperty] = JsonSerializer.SerializeToElement(new[] { new { option_id = optionId, display_text = "选项 1", flow_port_id = flowPortId } });
+    }
+
+    public static void InitializeDefault(GraphNode node, string optionId, string flowPortId, string? conditionPortId = null)
     {
         ArgumentNullException.ThrowIfNull(node);
         if (!string.Equals(node.Type, "choice", StringComparison.Ordinal))
@@ -30,15 +37,25 @@ public static class SessionChoiceSchema
         node.Properties[PromptProperty] = JsonSerializer.SerializeToElement(string.Empty);
         node.Properties[OptionsProperty] = JsonSerializer.SerializeToElement(new[]
         {
-            new Dictionary<string, string>(StringComparer.Ordinal)
+            new Dictionary<string, object>(StringComparer.Ordinal)
             {
                 ["option_id"] = optionId,
                 ["display_text"] = displayText,
                 ["flow_port_id"] = flowPortId,
+                ["condition_port_id"] = conditionPortId ?? Guid.NewGuid().ToString("N"),
+                ["unavailable_behavior"] = "hide",
+                ["unavailable_hint"] = "",
+                ["condition_enabled"] = false,
             },
         });
         node.Ports.Add(new(flowPortId, displayText, false, GraphInterfaceKind.Flow, 0));
+        var condition = node.Properties[OptionsProperty][0].GetProperty("condition_port_id").GetString()!;
+        node.Ports.Add(new(condition, $"条件 · {displayText}", true, GraphInterfaceKind.Logic, 0));
     }
+
+    public static bool ConditionEnabled(JsonElement option, GraphDocument graph, string nodeId)
+        => option.TryGetProperty("condition_enabled", out var enabled) ? enabled.ValueKind == JsonValueKind.True
+            : option.TryGetProperty("condition_port_id", out var port) && graph.Connections.Any(c => c.ToNodeId == nodeId && c.ToPortId == port.GetString());
 
     public static IReadOnlyList<ValidationIssue> Validate(GraphNode node)
     {
@@ -66,7 +83,7 @@ public static class SessionChoiceSchema
             }
 
             var names = element.EnumerateObject().Select(property => property.Name).ToArray();
-            if (names.Length != 3
+            if ((names.Length != 3 && names.Length != 6 && names.Length != 7)
                 || !names.Contains("option_id", StringComparer.Ordinal)
                 || !names.Contains("display_text", StringComparer.Ordinal)
                 || !names.Contains("flow_port_id", StringComparer.Ordinal))
@@ -75,6 +92,22 @@ public static class SessionChoiceSchema
                     "Session Choice options require exactly option_id, display_text, and flow_port_id.", field, node.Id));
                 index++;
                 continue;
+            }
+
+            if (names.Length >= 6)
+            {
+                if (names.Length == 7 && (!element.TryGetProperty("condition_enabled", out var enabled) || enabled.ValueKind is not (JsonValueKind.True or JsonValueKind.False)))
+                    issues.Add(Issue("graph.session.choice.condition.enabled", "前置条件启用状态必须为布尔值。", field, node.Id));
+                var condition = ReadString(element, "condition_port_id");
+                var mode = ReadString(element, "unavailable_behavior");
+                if (condition is null || mode is not ("hide" or "disable")
+                    || !element.TryGetProperty("unavailable_hint", out var hint) || hint.ValueKind != JsonValueKind.String
+                    || hint.GetString()!.StartsWith(DynamicContentText.Prefix, StringComparison.Ordinal))
+                    issues.Add(Issue("graph.session.choice.condition.fields", "Choice condition requires a stable input, hide/disable behavior, and a literal hint.", field, node.Id));
+                var input = node.Ports.Where(port => port.Id == condition).ToArray();
+                if (input.Length != 1 || !input[0].IsInput || input[0].InterfaceKind != GraphInterfaceKind.Logic
+                    || input[0].Order != index || input[0].DisplayName != $"条件 · {ReadString(element, "display_text")}")
+                    issues.Add(Issue("graph.session.choice.condition.mapping", "Choice condition input mapping is invalid.", field, node.Id));
             }
 
             var optionId = ReadString(element, "option_id");
@@ -107,6 +140,11 @@ public static class SessionChoiceSchema
         var ports = (node.Ports ?? []).Where(port => port is not null).ToArray();
         var flowOutputs = ports.Where(port => port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Flow).ToArray();
         var logicOutputs = ports.Where(port => port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Logic).ToArray();
+        var expectedConditions = optionsElement.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("condition_port_id", out _)).Select(e => ReadString(e, "condition_port_id")).ToArray();
+        if (expectedConditions.Distinct().Count() != expectedConditions.Length || ports.Count(p => p.IsInput && p.InterfaceKind == GraphInterfaceKind.Logic) != expectedConditions.Length)
+            issues.Add(Issue("graph.session.choice.condition.count", "Choice condition inputs must map one-to-one.", "ports", node.Id));
+        if (expectedConditions.Any(id => id is not null && (optionIds.Contains(id) || flowPortIds.Contains(id))))
+            issues.Add(Issue("graph.session.choice.port_id.collision", "Choice condition identity must differ from option and Flow identities.", "ports", node.Id));
         ValidatePorts(options.Select(option => (option.FlowPortId, option.DisplayText)).ToArray(), flowOutputs,
             GraphInterfaceKind.Flow, issues, node.Id);
         ValidateLegacyLogicPorts(options, logicOutputs, issues, node.Id);

@@ -1,12 +1,18 @@
 package darkgrey.rpg.project.packages;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.zip.*;
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Random;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import darkgrey.rpg.media.MediaTransferReaders;
-import darkgrey.rpg.network.message.canonical.*;
+import darkgrey.rpg.network.message.canonical.CanonicalMediaChunk;
+import darkgrey.rpg.network.message.canonical.CanonicalMediaRequest;
 
 /** Compares the previous production chunk path against the new leased reader path. */
 public final class MediaLatency0334Probe {

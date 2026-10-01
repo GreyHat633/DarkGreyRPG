@@ -29,6 +29,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     private int choiceOffset;
     private int visibleChoiceCount;
     private int focusedChoice = -1;
+    private String focusedOption;
     private final java.util.List<Integer> choicePageHistory = new java.util.ArrayList<Integer>();
     private boolean awaitingServer;
     private final Map<Integer, String> choiceButtons = new HashMap<Integer, String>();
@@ -75,6 +76,24 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         if (!same) {
             choiceOffset = 0;
             choicePageHistory.clear();
+            focusedOption = null;
+        }
+        if (same && focusedOption != null) {
+            int selected = -1;
+            for (int i = 0; i < frame.getChoices()
+                .size(); i++)
+                if (frame.getChoices()
+                    .get(i)
+                    .getOptionId()
+                    .equals(focusedOption)
+                    && frame.getChoices()
+                        .get(i)
+                        .isEnabled())
+                    selected = i;
+            if (selected >= 0 && (selected < choiceOffset || selected >= choiceOffset + visibleChoiceCount)) {
+                choiceOffset = selected;
+                choicePageHistory.clear();
+            }
         }
         awaitingServer = CanonicalSessionClientController.presentationModel()
             .awaitingServer();
@@ -120,7 +139,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             for (int index = 0; index < choices.size() - choiceOffset; index++) {
                 CanonicalSessionChoiceOption option = choices.get(choiceOffset + index);
                 int id = CHOICE_BUTTON_BASE + index;
-                String label = option.getDisplayText();
+                String label = option.getDisplayText() + (option.isEnabled() || option.getHint()
+                    .isEmpty() ? "" : "\n" + option.getHint());
                 GuiWrappedChoiceButton button = new GuiWrappedChoiceButton(
                     id,
                     choiceLeft,
@@ -152,11 +172,23 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
                 .automatic();
         setButtonsEnabled(!awaitingServer);
         focusedChoice = Math.min(focusedChoice, visibleChoiceCount - 1);
+        if (focusedOption != null) {
+            focusedChoice = -1;
+            for (int i = 0; i < visibleChoiceCount; i++) if (frame.getChoices()
+                .get(choiceOffset + i)
+                .getOptionId()
+                .equals(focusedOption)
+                && frame.getChoices()
+                    .get(choiceOffset + i)
+                    .isEnabled())
+                focusedChoice = i;
+        }
         updateChoiceFocus();
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
+        if (!button.enabled) return;
         if (button.id == AUTO_BUTTON && mc.currentScreen == this) {
             CanonicalSessionClientController.presentationModel()
                 .toggleAutomatic();
@@ -205,6 +237,12 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     private void setButtonsEnabled(boolean enabled) {
         for (Object object : buttonList) ((GuiButton) object).enabled = ((GuiButton) object).id != PROMPT_BLOCK
             && (((GuiButton) object).id == HISTORY_BUTTON || enabled);
+        for (Object object : buttonList) {
+            GuiButton button = (GuiButton) object;
+            if (!choiceButtons.containsKey(button.id)) continue;
+            for (CanonicalSessionChoiceOption option : frame.getChoices()) if (option.getOptionId()
+                .equals(choiceButtons.get(button.id))) button.enabled &= option.isEnabled();
+        }
     }
 
     /** Minecraft 1.7 normally consumes GUI input before its keybinding loop. */
@@ -240,16 +278,28 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             || key == darkgrey.rpg.client.ClientQuestKeyHandler.historyKeyCode()) return false;
         if (key == Keyboard.KEY_TAB || key == Keyboard.KEY_UP || key == Keyboard.KEY_DOWN) {
             boolean backward = key == Keyboard.KEY_UP || key == Keyboard.KEY_TAB && isShiftKeyDown();
-            int next = focusedChoice < 0 ? (backward ? visibleChoiceCount - 1 : 0)
-                : focusedChoice + (backward ? -1 : 1);
-            if (next >= visibleChoiceCount && choiceOffset + visibleChoiceCount < frame.getChoices()
-                .size()) {
-                actionPerformed(new GuiButton(NEXT_CHOICES_BUTTON, 0, 0, ""));
-                focusedChoice = 0;
-            } else if (next < 0 && choiceOffset > 0) {
-                actionPerformed(new GuiButton(PREVIOUS_CHOICES_BUTTON, 0, 0, ""));
-                focusedChoice = visibleChoiceCount - 1;
-            } else focusedChoice = Math.max(0, Math.min(visibleChoiceCount - 1, next));
+            int count = frame.getChoices()
+                .size();
+            int current = focusedChoice < 0 ? (backward ? count : -1) : choiceOffset + focusedChoice;
+            int selected = -1;
+            for (int step = 1; step <= count; step++) {
+                int next = (current + (backward ? -step : step) + count) % count;
+                if (frame.getChoices()
+                    .get(next)
+                    .isEnabled()) {
+                    selected = next;
+                    break;
+                }
+            }
+            if (selected >= 0 && (selected < choiceOffset || selected >= choiceOffset + visibleChoiceCount)) {
+                choiceOffset = selected;
+                choicePageHistory.clear();
+                focusedOption = frame.getChoices()
+                    .get(selected)
+                    .getOptionId();
+                initGui();
+            }
+            focusedChoice = selected < 0 ? -1 : selected - choiceOffset;
             updateChoiceFocus();
             return true;
         }
@@ -269,6 +319,11 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     }
 
     private void updateChoiceFocus() {
+        focusedOption = focusedChoice < 0 || choiceOffset + focusedChoice >= frame.getChoices()
+            .size() ? null
+                : frame.getChoices()
+                    .get(choiceOffset + focusedChoice)
+                    .getOptionId();
         for (Object object : buttonList) if (object instanceof GuiWrappedChoiceButton) ((GuiWrappedChoiceButton) object)
             .setKeyboardFocused(((GuiButton) object).id == CHOICE_BUTTON_BASE + focusedChoice);
     }
@@ -305,6 +360,11 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         }
         CanonicalDialogueRenderer.draw(fontRendererObj, width, height, frame, awaitingServer);
         super.drawScreen(mouseX, mouseY, partialTicks);
+        if (frame.getKind() == CanonicalSessionFrame.Kind.CHOICE) {
+            boolean any = false;
+            for (CanonicalSessionChoiceOption option : frame.getChoices()) any |= option.isEnabled();
+            if (!any) drawCenteredString(fontRendererObj, "当前没有可选项", width / 2, 6, DgrUiPalette.SECONDARY);
+        }
         if (mouseX >= speakerLayout.speakerLeft(CanonicalSessionClientController.getVisiblePortraitRef() != null)
             && mouseX < speakerLayout.speakerLeft(CanonicalSessionClientController.getVisiblePortraitRef() != null)
                 + speakerLayout.speakerWidth(CanonicalSessionClientController.getVisiblePortraitRef() != null)
@@ -383,6 +443,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             source.getPortraitRef(),
             source.getVoiceRef(),
             source.getVoiceVolume()).withTextSpeed(source.getTextSpeed())
-                .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice());
+                .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice())
+                .withScreenPlayback(source.shouldPlayScreen())
+                .withProjectionRevision(source.getProjectionRevision());
     }
 }

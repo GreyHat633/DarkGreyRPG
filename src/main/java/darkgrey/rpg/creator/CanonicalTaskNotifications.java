@@ -18,6 +18,12 @@ public final class CanonicalTaskNotifications {
 
     private Map<String, CanonicalTaskJournalEntry> previous;
 
+    public CanonicalTaskNotifications detached() {
+        CanonicalTaskNotifications copy = new CanonicalTaskNotifications();
+        copy.previous = previous == null ? null : new LinkedHashMap<String, CanonicalTaskJournalEntry>(previous);
+        return copy;
+    }
+
     public NBTTagList update(List<CanonicalTaskJournalEntry> journal, boolean initial) {
         return update(journal, initial, text -> text);
     }

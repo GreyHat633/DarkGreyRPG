@@ -387,10 +387,11 @@ public final class CanonicalTaskForgeProbe {
                 type.equals("net.minecraftforge.event.entity.living.LivingDeathEvent")
                     || type.equals("net.minecraftforge.event.entity.player.EntityItemPickupEvent")
                     || type.equals("net.minecraftforge.event.entity.player.EntityInteractEvent")
-                    || type.equals("cpw.mods.fml.common.gameevent.TickEvent$PlayerTickEvent"),
+                    || type.equals("cpw.mods.fml.common.gameevent.TickEvent$PlayerTickEvent")
+                    || type.equals("cpw.mods.fml.common.gameevent.PlayerEvent$PlayerLoggedOutEvent"),
                 "event handler type");
         }
-        require(handlers == 3, "exactly three task handlers; inventory is sampled after pickup");
+        require(handlers == 4, "three task handlers plus logout cleanup; inventory is sampled after pickup");
     }
 
     private static void worldLogicLifecycle() {

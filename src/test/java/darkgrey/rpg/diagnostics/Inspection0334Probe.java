@@ -67,7 +67,9 @@ public final class Inspection0334Probe {
         if (!rows.get(0)
             .toString()
             .contains("未通过结构校验")) throw new AssertionError("Malformed record hidden");
-        if (!rows.get(0).toString().contains("所属 Story 资源缺失")) throw new AssertionError("Missing owner hidden");
+        if (!rows.get(0)
+            .toString()
+            .contains("所属 Story 资源缺失")) throw new AssertionError("Missing owner hidden");
         PlayerStatePacket packet = new PlayerStatePacket(2, 42, rows.get(0));
         io.netty.buffer.ByteBuf buffer = Unpooled.buffer();
         packet.toBytes(buffer);
@@ -95,7 +97,8 @@ public final class Inspection0334Probe {
             NBTTagCompound large = new NBTTagCompound();
             NBTTagList many = new NBTTagList();
             for (int i = 0; i < 10000; i++) {
-                NBTTagCompound row = (NBTTagCompound) records.getCompoundTagAt(0).copy();
+                NBTTagCompound row = (NBTTagCompound) records.getCompoundTagAt(0)
+                    .copy();
                 row.setString("player_uuid", (i < 1000 ? player : new UUID(0, i + 1)).toString());
                 row.setString("task_node_placement_id", "scale-" + i);
                 many.appendTag(row);
@@ -113,10 +116,18 @@ public final class Inspection0334Probe {
             }
             if (!large.equals(unchanged)) throw new AssertionError("Scale query mutated source");
             java.util.Arrays.sort(samples);
-            System.out.println("INSPECTION_SCALE records=10000 target=1000 other_players=9000 n=30 median_ms="
-                + samples[15] + " p95_ms=" + samples[28] + " max_ms=" + samples[29]
-                + " used_heap=" + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
-                + " excludes disk decompression, network and GUI");
+            System.out.println(
+                "INSPECTION_SCALE records=10000 target=1000 other_players=9000 n=30 median_ms=" + samples[15]
+                    + " p95_ms="
+                    + samples[28]
+                    + " max_ms="
+                    + samples[29]
+                    + " used_heap="
+                    + (Runtime.getRuntime()
+                        .totalMemory()
+                        - Runtime.getRuntime()
+                            .freeMemory())
+                    + " excludes disk decompression, network and GUI");
         }
         System.out.println(
             "Inspection0334Probe PASS: detached read, malformed record retention, placement separation, player isolation, bounded packet roundtrip, dynamic text");
@@ -127,52 +138,162 @@ public final class Inspection0334Probe {
         com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
         properties.put("repeat_policy", parser.parse("\"repeatable\""));
         properties.put("repeat_condition", parser.parse("{\"type\":\"cooldown\",\"value\":1,\"unit\":\"hours\"}"));
-        properties.put("triggers", parser.parse("[{\"port_id\":\"entry\",\"display_name\":\"进入故事\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]"));
-        darkgrey.rpg.graph.canonical.CanonicalGraphPort port = new darkgrey.rpg.graph.canonical.CanonicalGraphPort("entry", "进入故事",
-            darkgrey.rpg.graph.canonical.CanonicalGraphPortDirection.OUTPUT, darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.FLOW, 0);
-        darkgrey.rpg.graph.canonical.CanonicalGraphNode start = new darkgrey.rpg.graph.canonical.CanonicalGraphNode("start_raw_id", "start", "开始", java.util.Collections.singletonList(port), properties);
-        darkgrey.rpg.graph.canonical.CanonicalGraphResource story = new darkgrey.rpg.graph.canonical.CanonicalGraphResource(1,
-            darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind.STORY, "raw_story_id", "酒馆聊天",
-            new darkgrey.rpg.graph.canonical.CanonicalGraph(java.util.Collections.singletonList(start), java.util.Collections.<darkgrey.rpg.graph.canonical.CanonicalGraphConnection>emptyList()));
+        properties.put(
+            "triggers",
+            parser.parse(
+                "[{\"port_id\":\"entry\",\"display_name\":\"进入故事\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]"));
+        darkgrey.rpg.graph.canonical.CanonicalGraphPort port = new darkgrey.rpg.graph.canonical.CanonicalGraphPort(
+            "entry",
+            "进入故事",
+            darkgrey.rpg.graph.canonical.CanonicalGraphPortDirection.OUTPUT,
+            darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.FLOW,
+            0);
+        darkgrey.rpg.graph.canonical.CanonicalGraphNode start = new darkgrey.rpg.graph.canonical.CanonicalGraphNode(
+            "start_raw_id",
+            "start",
+            "开始",
+            java.util.Collections.singletonList(port),
+            properties);
+        darkgrey.rpg.graph.canonical.CanonicalGraphResource story = new darkgrey.rpg.graph.canonical.CanonicalGraphResource(
+            1,
+            darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind.STORY,
+            "raw_story_id",
+            "酒馆聊天",
+            new darkgrey.rpg.graph.canonical.CanonicalGraph(
+                java.util.Collections.singletonList(start),
+                java.util.Collections.<darkgrey.rpg.graph.canonical.CanonicalGraphConnection>emptyList()));
         NBTTagCompound record = new NBTTagCompound(), runtime = new NBTTagCompound();
-        runtime.setString("status", "TERMINATED"); runtime.setString("repeat_policy", "repeatable"); runtime.setString("wait_kind", "NONE");
-        runtime.setString("current_node_id", "start_raw_id"); record.setTag("runtime", runtime); record.setLong("terminal_time", 100000L);
-        java.time.Clock late = java.time.Clock.fixed(java.time.Instant.ofEpochMilli(4000000L), java.time.ZoneOffset.UTC);
-        NBTTagCompound before = (NBTTagCompound)record.copy();
-        String summary = PlayerStateSummary.build("Story", record, story, ProjectSnapshot.empty(), "服务器当前状态", java.util.Collections.<String>emptyList(), late).toString();
-        if (!summary.contains("故事已正常结束") || !summary.contains("已可再次启动") || summary.contains("NONE")
-            || summary.contains("raw_id") || summary.contains("可再次启动时间") || !before.equals(record)) throw new AssertionError("Readable terminal summary: " + summary);
-        String waiting = PlayerStateSummary.build("Story", record, story, ProjectSnapshot.empty(), "存档", java.util.Collections.<String>emptyList(),
-            java.time.Clock.fixed(java.time.Instant.ofEpochMilli(200000L), java.time.ZoneOffset.UTC)).toString();
-        if (!waiting.contains("尚在冷却") || !waiting.contains("可再次启动时间")) throw new AssertionError("Cooldown summary: " + waiting);
-        runtime.setString("status", "ACTIVE"); runtime.setString("wait_kind", "CONDITION");
-        String active = PlayerStateSummary.build("Story", record, story, ProjectSnapshot.empty(), "存档", java.util.Collections.<String>emptyList(), late).toString();
+        runtime.setString("status", "TERMINATED");
+        runtime.setString("repeat_policy", "repeatable");
+        runtime.setString("wait_kind", "NONE");
+        runtime.setString("current_node_id", "start_raw_id");
+        record.setTag("runtime", runtime);
+        record.setLong("terminal_time", 100000L);
+        java.time.Clock late = java.time.Clock
+            .fixed(java.time.Instant.ofEpochMilli(4000000L), java.time.ZoneOffset.UTC);
+        NBTTagCompound before = (NBTTagCompound) record.copy();
+        String summary = PlayerStateSummary
+            .build(
+                "Story",
+                record,
+                story,
+                ProjectSnapshot.empty(),
+                "服务器当前状态",
+                java.util.Collections.<String>emptyList(),
+                late)
+            .toString();
+        if (!summary.contains("故事已正常结束") || !summary.contains("已可再次启动")
+            || summary.contains("NONE")
+            || summary.contains("raw_id")
+            || summary.contains("可再次启动时间")
+            || !before.equals(record)) throw new AssertionError("Readable terminal summary: " + summary);
+        String waiting = PlayerStateSummary
+            .build(
+                "Story",
+                record,
+                story,
+                ProjectSnapshot.empty(),
+                "存档",
+                java.util.Collections.<String>emptyList(),
+                java.time.Clock.fixed(java.time.Instant.ofEpochMilli(200000L), java.time.ZoneOffset.UTC))
+            .toString();
+        if (!waiting.contains("尚在冷却") || !waiting.contains("可再次启动时间"))
+            throw new AssertionError("Cooldown summary: " + waiting);
+        runtime.setString("status", "ACTIVE");
+        runtime.setString("wait_kind", "CONDITION");
+        String active = PlayerStateSummary
+            .build(
+                "Story",
+                record,
+                story,
+                ProjectSnapshot.empty(),
+                "存档",
+                java.util.Collections.<String>emptyList(),
+                late)
+            .toString();
         if (!active.contains("等待节点条件满足") || !active.contains("当前步骤：开始")) throw new AssertionError(active);
-        runtime.setString("wait_kind", "SESSION"); runtime.setString("wait_resource_id", "missing_session_id");
-        String missingWait = PlayerStateSummary.build("Story", record, story, ProjectSnapshot.empty(), "存档", java.util.Collections.<String>emptyList(), late).toString();
-        if (!missingWait.contains("等待的会话或任务资源缺失") || missingWait.contains("missing_session_id")) throw new AssertionError(missingWait);
+        runtime.setString("wait_kind", "SESSION");
+        runtime.setString("wait_resource_id", "missing_session_id");
+        String missingWait = PlayerStateSummary
+            .build(
+                "Story",
+                record,
+                story,
+                ProjectSnapshot.empty(),
+                "存档",
+                java.util.Collections.<String>emptyList(),
+                late)
+            .toString();
+        if (!missingWait.contains("等待的会话或任务资源缺失") || missingWait.contains("missing_session_id"))
+            throw new AssertionError(missingWait);
         runtime.setString("status", "ERROR");
-        String error = PlayerStateSummary.build("Story", record, null, ProjectSnapshot.empty(), "存档", java.util.Collections.<String>emptyList(), late).toString();
+        String error = PlayerStateSummary
+            .build(
+                "Story",
+                record,
+                null,
+                ProjectSnapshot.empty(),
+                "存档",
+                java.util.Collections.<String>emptyList(),
+                late)
+            .toString();
         if (!error.contains("资源已缺失") || !error.contains("没有保存具体原因")) throw new AssertionError(error);
-        runtime.setString("status", "TERMINATED"); runtime.setString("repeat_policy", "once");
-        String once = PlayerStateSummary.build("Story", record, story, ProjectSnapshot.empty(), "存档", java.util.Collections.<String>emptyList(), late).toString();
+        runtime.setString("status", "TERMINATED");
+        runtime.setString("repeat_policy", "once");
+        String once = PlayerStateSummary
+            .build(
+                "Story",
+                record,
+                story,
+                ProjectSnapshot.empty(),
+                "存档",
+                java.util.Collections.<String>emptyList(),
+                late)
+            .toString();
         if (!once.contains("不允许重复")) throw new AssertionError(once);
         java.util.Map<String, com.google.gson.JsonElement> goalProperties = new java.util.LinkedHashMap<String, com.google.gson.JsonElement>();
-        goalProperties.put("description", parser.parse("\"击败三只史莱姆\"")); goalProperties.put("required", parser.parse("3"));
-        darkgrey.rpg.graph.canonical.CanonicalGraphNode goal = new darkgrey.rpg.graph.canonical.CanonicalGraphNode("raw_goal_id", "objective", "目标",
-            java.util.Collections.<darkgrey.rpg.graph.canonical.CanonicalGraphPort>emptyList(), goalProperties);
-        darkgrey.rpg.graph.canonical.CanonicalGraphResource task = new darkgrey.rpg.graph.canonical.CanonicalGraphResource(1,
-            darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind.TASK, "raw_task_id", "清理史莱姆",
-            new darkgrey.rpg.graph.canonical.CanonicalGraph(java.util.Collections.singletonList(goal), java.util.Collections.<darkgrey.rpg.graph.canonical.CanonicalGraphConnection>emptyList()));
-        NBTTagCompound taskRecord = new NBTTagCompound(), objective = new NBTTagCompound(), progress = new NBTTagCompound();
-        taskRecord.setString("status", "ACTIVE"); objective.setString("key", "raw_goal_id"); objective.setString("value", "ACTIVE");
-        progress.setString("key", "raw_goal_id"); progress.setInteger("value", 1);
-        NBTTagList objectives = new NBTTagList(), counts = new NBTTagList(); objectives.appendTag(objective); counts.appendTag(progress);
-        taskRecord.setTag("objective_statuses", objectives); taskRecord.setTag("progress", counts);
-        NBTTagCompound taskBefore = (NBTTagCompound)taskRecord.copy();
-        String taskSummary = PlayerStateSummary.build("Task", taskRecord, task, ProjectSnapshot.empty(), "离线存档", java.util.Collections.<String>emptyList(), late).toString();
+        goalProperties.put("description", parser.parse("\"击败三只史莱姆\""));
+        goalProperties.put("required", parser.parse("3"));
+        darkgrey.rpg.graph.canonical.CanonicalGraphNode goal = new darkgrey.rpg.graph.canonical.CanonicalGraphNode(
+            "raw_goal_id",
+            "objective",
+            "目标",
+            java.util.Collections.<darkgrey.rpg.graph.canonical.CanonicalGraphPort>emptyList(),
+            goalProperties);
+        darkgrey.rpg.graph.canonical.CanonicalGraphResource task = new darkgrey.rpg.graph.canonical.CanonicalGraphResource(
+            1,
+            darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind.TASK,
+            "raw_task_id",
+            "清理史莱姆",
+            new darkgrey.rpg.graph.canonical.CanonicalGraph(
+                java.util.Collections.singletonList(goal),
+                java.util.Collections.<darkgrey.rpg.graph.canonical.CanonicalGraphConnection>emptyList()));
+        NBTTagCompound taskRecord = new NBTTagCompound(), objective = new NBTTagCompound(),
+            progress = new NBTTagCompound();
+        taskRecord.setString("status", "ACTIVE");
+        objective.setString("key", "raw_goal_id");
+        objective.setString("value", "ACTIVE");
+        progress.setString("key", "raw_goal_id");
+        progress.setInteger("value", 1);
+        NBTTagList objectives = new NBTTagList(), counts = new NBTTagList();
+        objectives.appendTag(objective);
+        counts.appendTag(progress);
+        taskRecord.setTag("objective_statuses", objectives);
+        taskRecord.setTag("progress", counts);
+        NBTTagCompound taskBefore = (NBTTagCompound) taskRecord.copy();
+        String taskSummary = PlayerStateSummary
+            .build(
+                "Task",
+                taskRecord,
+                task,
+                ProjectSnapshot.empty(),
+                "离线存档",
+                java.util.Collections.<String>emptyList(),
+                late)
+            .toString();
         if (!taskSummary.contains("击败三只史莱姆 · 进行中 · 1 / 3") || !taskSummary.contains("清理史莱姆")
-            || taskSummary.contains("raw_goal_id") || !taskBefore.equals(taskRecord)) throw new AssertionError(taskSummary);
+            || taskSummary.contains("raw_goal_id")
+            || !taskBefore.equals(taskRecord)) throw new AssertionError(taskSummary);
         System.out.println("READABLE_OP_SUMMARY=PASS");
     }
 }

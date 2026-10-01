@@ -54,7 +54,10 @@ public final class CanonicalTitleServer {
         return new CanonicalTitleConfiguration(
             darkgrey.rpg.session.forge.DynamicContentResolver.resolve(title.main, player),
             darkgrey.rpg.session.forge.DynamicContentResolver.resolve(title.subtitle, player),
-            title.fadeIn, title.stay, title.fadeOut, title.waitForCompletion);
+            title.fadeIn,
+            title.stay,
+            title.fadeOut,
+            title.waitForCompletion);
     }
 
     public static synchronized void tick(EntityPlayerMP player) {

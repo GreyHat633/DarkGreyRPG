@@ -252,6 +252,7 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
             if (effect != null) effect.commit();
             store.replaceExisting(staged);
             index.reindex(staged.snapshot(), resource);
+            captureCompletions();
             markDirty();
             return staged.snapshot();
         } catch (RuntimeException failure) {

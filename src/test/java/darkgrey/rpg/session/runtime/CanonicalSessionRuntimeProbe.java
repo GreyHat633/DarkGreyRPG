@@ -637,16 +637,14 @@ public final class CanonicalSessionRuntimeProbe {
             edge("start", "flow_out", "choice", "flow_in"),
             edge("choice", "flow_yes", "end", "flow_in"));
         final CanonicalSessionRuntime validChoiceRuntime = CanonicalSessionRuntime.start(validChoice);
-        expectFailure(new Runnable() {
-
-            @Override
-            public void run() {
-                validChoiceRuntime.choose("unknown");
-            }
-        }, "session.choice.unknown");
+        String beforeInvalidChoice = validChoiceRuntime.snapshot()
+            .getCurrentNodeId();
+        validChoiceRuntime.choose("unknown");
         require(
-            validChoiceRuntime.getStatus() == CanonicalSessionStatus.FAILED,
-            "failed choice did not enter FAILED state");
+            validChoiceRuntime.getStatus() == CanonicalSessionStatus.ACTIVE && beforeInvalidChoice.equals(
+                validChoiceRuntime.snapshot()
+                    .getCurrentNodeId()),
+            "unknown or stale choice must preserve the waiting session");
 
         CanonicalGraphResource duplicateFlowPort = session(
             node("start", "start", startPorts(), empty()),

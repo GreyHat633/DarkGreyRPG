@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Validation;
@@ -1146,12 +1146,13 @@ public sealed class GraphEditSession
 
         var optionId = AllocateDynamicPortId();
         var flowPortId = AllocateDynamicPortId();
-        if (optionId is null || flowPortId is null)
+        var conditionPortId = AllocateDynamicPortId();
+        if (optionId is null || flowPortId is null || conditionPortId is null)
             return Fail([ChoiceIssue("graph.session.choice.port_id.unavailable",
                 "Two unique opaque IDs are required for a Session Choice option.", "ports", nodeId)]);
 
         var before = DeepClone(Document);
-        options!.Add(new(optionId, displayText, flowPortId, HasLegacyLogicOutput: false));
+        options!.Add(new(optionId, displayText, flowPortId, HasLegacyLogicOutput: false, conditionPortId));
         ApplySessionChoiceOptions(node!, options);
         return CommitValidatedChoice(before, node!);
     }
@@ -1220,6 +1221,7 @@ public sealed class GraphEditSession
 
         var option = options[index];
         var removedPortIds = new HashSet<string>([option.OptionId, option.FlowPortId], StringComparer.Ordinal);
+        if (option.ConditionPortId is not null) removedPortIds.Add(option.ConditionPortId);
         var references = (Document.Connections ?? []).Where(connection => connection is not null
             && ((string.Equals(connection.FromNodeId, nodeId, StringComparison.Ordinal)
                     && removedPortIds.Contains(connection.FromPortId))
@@ -1774,7 +1776,10 @@ public sealed class GraphEditSession
                 (choiceNode.Ports ?? []).Any(port => port is not null
                     && port.IsOutput
                     && port.InterfaceKind == GraphInterfaceKind.Logic
-                    && string.Equals(port.Id, element.GetProperty("option_id").GetString(), StringComparison.Ordinal))))
+                    && string.Equals(port.Id, element.GetProperty("option_id").GetString(), StringComparison.Ordinal)),
+                element.TryGetProperty("condition_port_id", out var condition) ? condition.GetString() : null,
+                element.TryGetProperty("unavailable_behavior", out var behavior) ? behavior.GetString()! : "hide",
+                element.TryGetProperty("unavailable_hint", out var hint) ? hint.GetString()! : "", SessionChoiceSchema.ConditionEnabled(element, Document, nodeId)))
             .ToList();
         issues = [];
         return true;
@@ -1783,18 +1788,23 @@ public sealed class GraphEditSession
     private static void ApplySessionChoiceOptions(GraphNode node, IReadOnlyList<SessionChoiceOptionState> options)
     {
         node.Properties[SessionChoiceSchema.OptionsProperty] = JsonSerializer.SerializeToElement(options.Select(option =>
-            new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            var fields = new Dictionary<string, object>(StringComparer.Ordinal)
             {
                 ["option_id"] = option.OptionId,
                 ["display_text"] = option.DisplayText,
                 ["flow_port_id"] = option.FlowPortId,
-            }).ToArray());
+            };
+            if (option.ConditionPortId is not null) { fields["condition_port_id"] = option.ConditionPortId; fields["unavailable_behavior"] = option.Behavior; fields["unavailable_hint"] = option.Hint; fields["condition_enabled"] = option.Enabled; }
+            return fields;
+        }).ToArray());
         var flowInput = node.Ports.Single(port => string.Equals(port.Id, "flow_in", StringComparison.Ordinal));
         node.Ports = [Clone(flowInput)];
         for (var index = 0; index < options.Count; index++)
         {
             var option = options[index];
             node.Ports.Add(new(option.FlowPortId, option.DisplayText, false, GraphInterfaceKind.Flow, index));
+            if (option.ConditionPortId is not null) node.Ports.Add(new(option.ConditionPortId, $"条件 · {option.DisplayText}", true, GraphInterfaceKind.Logic, index));
             if (option.HasLegacyLogicOutput)
                 node.Ports.Add(new(option.OptionId, $"已选择：{option.DisplayText}", false, GraphInterfaceKind.Logic, index));
         }
@@ -1810,6 +1820,31 @@ public sealed class GraphEditSession
         }
         Commit(before);
         return true;
+    }
+
+    public bool SetSessionChoiceConditionEnabled(string nodeId, string optionId, bool enabled)
+    {
+        if (!TryResolveSessionChoice(nodeId, out var node, out var options, out var issues)) return Fail(issues);
+        var index = options!.FindIndex(o => o.OptionId == optionId);
+        if (index < 0) return false;
+        var before = DeepClone(Document);
+        options[index] = options[index] with { Enabled = enabled, ConditionPortId = options[index].ConditionPortId ?? AllocateDynamicPortId() };
+        if (!enabled) Document.Connections.RemoveAll(edge => edge.ToNodeId == nodeId && edge.ToPortId == options[index].ConditionPortId);
+        ApplySessionChoiceOptions(node!, options);
+        return CommitValidatedChoice(before, node!);
+    }
+
+    public bool SetSessionChoiceCondition(string nodeId, string optionId, string behavior, string hint)
+    {
+        if (!TryResolveSessionChoice(nodeId, out var node, out var options, out var issues)) return Fail(issues);
+        var index = options!.FindIndex(option => option.OptionId == optionId);
+        if (index < 0 || behavior is not ("hide" or "disable") || hint.StartsWith(DynamicContentText.Prefix, StringComparison.Ordinal)) return Fail([]);
+        var before = DeepClone(Document);
+        var condition = options[index].ConditionPortId ?? AllocateDynamicPortId();
+        if (condition is null) return Fail([]);
+        options[index] = options[index] with { ConditionPortId = condition, Behavior = behavior, Hint = hint };
+        ApplySessionChoiceOptions(node!, options);
+        return CommitValidatedChoice(before, node!);
     }
 
     private static ValidationIssue ChoiceIssue(string code, string message, string field, string nodeId)
@@ -2086,7 +2121,7 @@ public sealed class GraphEditSession
         string OptionId,
         string DisplayText,
         string FlowPortId,
-        bool HasLegacyLogicOutput);
+        bool HasLegacyLogicOutput, string? ConditionPortId = null, string Behavior = "hide", string Hint = "", bool Enabled = false);
 }
 
 /// <summary>Short alias for consumers that call the object an editor session.</summary>

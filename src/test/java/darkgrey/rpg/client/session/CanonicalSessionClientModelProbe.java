@@ -16,6 +16,7 @@ public final class CanonicalSessionClientModelProbe {
     private CanonicalSessionClientModelProbe() {}
 
     public static void main(String[] args) {
+        closedTransportCannotResurrect();
         verifySameNodePages();
         DialoguePreferences.setSpeed(60);
         require(DialoguePreferences.resolve(-1) == 60, "global speed selected");
@@ -145,7 +146,7 @@ public final class CanonicalSessionClientModelProbe {
         require(
             model.acceptFrame(
                 new CanonicalSessionFrame(
-                    7L,
+                    12L,
                     "story_new",
                     "session_a",
                     "choice",
@@ -158,7 +159,7 @@ public final class CanonicalSessionClientModelProbe {
             model.getVisibleText()
                 .isEmpty(),
             "new session cannot inherit old text");
-        require(model.acceptClose(new CanonicalSessionClose(7L, "story_new")), "new close");
+        require(model.acceptClose(new CanonicalSessionClose(12L, "story_new")), "new close");
         for (int[] size : new int[][] { { 320, 240 }, { 427, 240 }, { 640, 360 }, { 960, 540 }, { 1920, 1080 } }) {
             CanonicalDialogueLayout layout = new CanonicalDialogueLayout(size[0], size[1]);
             require(layout.left == size[0] / 20, "five percent horizontal safe margin");
@@ -185,8 +186,23 @@ public final class CanonicalSessionClientModelProbe {
             require(!layout.containsDialogue(size[0] / 2, layout.top - 1), "world click excluded");
         }
         System.out.println("CANONICAL_DIALOGUE_PRESENTATION_PROBE=PASS");
-        require(model.acceptFrame(line(7L, "story_new", "new_line")), "new identity accepted");
+        require(model.acceptFrame(line(13L, "story_new", "new_line")), "new identity accepted");
         System.out.println("CANONICAL_SESSION_CLIENT_MODEL_PROBE=PASS");
+    }
+
+    private static void closedTransportCannotResurrect() {
+        CanonicalSessionClientModel model = new CanonicalSessionClientModel();
+        CanonicalSessionFrame retired = line(11L, "story_a", "node_line");
+        require(model.acceptFrame(retired), "cancel fixture line accepted");
+        require(model.acceptClose(new CanonicalSessionClose(11L, "story_a")), "matching cancellation accepted");
+        require(!model.acceptFrame(retired) && !model.isActive(), "closed transport resurrected old line");
+        require(!model.acceptFrame(line(10L, "story_a", "node_old")), "older transport resurrected after close");
+        require(model.acceptFrame(line(12L, "story_a", "node_new")), "new transport rejected after cancellation");
+        require(
+            !model.acceptClose(new CanonicalSessionClose(11L, "story_a")) && model.isActive(),
+            "stale close cancelled newer Session");
+        model.clear();
+        require(model.acceptFrame(retired), "new world did not reset transport fence");
     }
 
     private static CanonicalSessionFrame line(long transportId, String storyId, String nodeId) {

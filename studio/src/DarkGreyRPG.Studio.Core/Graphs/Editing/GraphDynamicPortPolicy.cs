@@ -48,6 +48,7 @@ public static class GraphDynamicPortPolicy
         // only when loading 0.3.1.4 compatibility content and remain protected
         // from generic dynamic-port editing.
         new(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1, false),
+        new(GraphScope.Session, "choice", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),

@@ -16,6 +16,24 @@ internal sealed class ScreenLayerEditorState
     private Dictionary<string, string[]> _snapshots = new();
     private string? _path;
     public int Selection { get; private set; }
+    public bool IsExpanded { get; private set; }
+    public bool PropertiesExpanded { get; private set; } = true;
+    public bool AnimationExpanded { get; private set; }
+    private readonly Dictionary<string, AnimationSessionState> _animationSessions = new();
+    public AnimationSessionState AnimationSession(string layer) { if (!_animationSessions.TryGetValue(layer, out var state)) _animationSessions[layer] = state = new(); return state; }
+    private readonly Dictionary<string, int> _animationSelection = new();
+    public int AnimationSelection(string layer) => _animationSelection.GetValueOrDefault(layer, -1);
+    public void SelectAnimation(string layer, int index)
+    {
+        if (AnimationSelection(layer) == index) return;
+        _animationSelection[layer] = index; Changed?.Invoke(this, EventArgs.Empty);
+    }
+    public void SetSections(bool properties, bool animation)
+    {
+        if (PropertiesExpanded == properties && AnimationExpanded == animation) return;
+        PropertiesExpanded = properties; AnimationExpanded = animation; Changed?.Invoke(this, EventArgs.Empty);
+    }
+    public void SetExpanded(bool expanded) { if (IsExpanded == expanded) return; IsExpanded = expanded; Changed?.Invoke(this, EventArgs.Empty); }
     public event EventHandler? Changed;
 
     internal static string MetadataPath(string root, string resource, string node)
@@ -52,7 +70,7 @@ internal sealed class ScreenLayerEditorState
     public void Select(int index)
     {
         if (Selection == index) return;
-        Selection = index; Changed?.Invoke(this, EventArgs.Empty);
+        _animationSelection.Clear(); Selection = index; Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public string[] Names(JsonArray layers, string? root)

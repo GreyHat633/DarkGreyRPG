@@ -92,7 +92,8 @@ public final class PlayerStateInspection {
         return result;
     }
 
-    private static void collectContinuations(List<NBTTagCompound> rows, NBTTagCompound root, UUID player, ProjectSnapshot project) {
+    private static void collectContinuations(List<NBTTagCompound> rows, NBTTagCompound root, UUID player,
+        ProjectSnapshot project) {
         NBTTagList pending = root.getTagList("continuations", 10);
         for (int i = 0; i < pending.tagCount(); i++) {
             NBTTagCompound entry = pending.getCompoundTagAt(i);
@@ -145,7 +146,10 @@ public final class PlayerStateInspection {
                 : "Session".equals(kind) ? project.getCanonicalSession(resourceId)
                     : project.getCanonicalTask(resourceId);
             NBTTagCompound row = new NBTTagCompound();
-            row.setString("title", ("Story".equals(kind) ? "故事" : "Session".equals(kind) ? "会话" : "任务") + " · " + PlayerStateSummary.resourceName(resource));
+            row.setString(
+                "title",
+                ("Story".equals(kind) ? "故事" : "Session".equals(kind) ? "会话" : "任务") + " · "
+                    + PlayerStateSummary.resourceName(resource));
             List<String> lines = new ArrayList<String>();
             lines.add("数据来源：" + source);
             lines.add("资源：" + resourceId);
@@ -156,18 +160,28 @@ public final class PlayerStateInspection {
             add(lines, "Placement", record, "task_node_placement_id");
             if (!"Story".equals(kind)) {
                 String owner = record.getString("Session".equals(kind) ? "story_id" : "story_instance_id");
-                String placement = record.getString("Session".equals(kind) ? "aggregate_placement_id" : "task_node_placement_id");
+                String placement = record
+                    .getString("Session".equals(kind) ? "aggregate_placement_id" : "task_node_placement_id");
                 CanonicalGraphResource story = project.getCanonicalStory(owner);
                 if (story == null) lines.add("异常：所属 Story 资源缺失，保留原记录。");
                 else {
                     darkgrey.rpg.graph.canonical.CanonicalGraphNode matched = null;
-                    for (darkgrey.rpg.graph.canonical.CanonicalGraphNode node : story.getGraph().getNodes())
-                        if (node.getId().equals(placement)) matched = node;
+                    for (darkgrey.rpg.graph.canonical.CanonicalGraphNode node : story.getGraph()
+                        .getNodes())
+                        if (node.getId()
+                            .equals(placement)) matched = node;
                     if (matched == null) lines.add("异常：所属 Story 中的 Placement 节点缺失，保留原记录。");
-                    else if (!kind.toLowerCase(java.util.Locale.ROOT).equals(matched.getType())
-                        || !matched.getProperties().containsKey("resource_id")
-                        || !matched.getProperties().get("resource_id").isJsonPrimitive()
-                        || !resourceId.equals(matched.getProperties().get("resource_id").getAsString()))
+                    else if (!kind.toLowerCase(java.util.Locale.ROOT)
+                        .equals(matched.getType())
+                        || !matched.getProperties()
+                            .containsKey("resource_id")
+                        || !matched.getProperties()
+                            .get("resource_id")
+                            .isJsonPrimitive()
+                        || !resourceId.equals(
+                            matched.getProperties()
+                                .get("resource_id")
+                                .getAsString()))
                         lines.add("异常：Placement 类型或关联资源与记录不一致，保留原记录。");
                 }
             }
@@ -205,7 +219,8 @@ public final class PlayerStateInspection {
                     lines.add(
                         "服务器时区：" + darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatCondition.getServerZone()
                             .getId());
-                    if (eligibility.nextEligibleAt != null && eligibility.nextEligibleAt.longValue() > System.currentTimeMillis())
+                    if (eligibility.nextEligibleAt != null
+                        && eligibility.nextEligibleAt.longValue() > System.currentTimeMillis())
                         lines.add("下次可用：" + time(eligibility.nextEligibleAt.longValue()));
                 } catch (RuntimeException invalid) {
                     lines.add("重复资格：配置或时间记录无法解释。");
@@ -224,7 +239,9 @@ public final class PlayerStateInspection {
                 lines.add("异常：该条记录未通过结构校验；以上仅为可读字段。未进行修复或恢复执行。");
             }
             lines.add("说明：快照不能证明历史崩溃原因。");
-            row.setTag("summary", PlayerStateSummary.build(kind, record, resource, project, source, lines, java.time.Clock.systemUTC()));
+            row.setTag(
+                "summary",
+                PlayerStateSummary.build(kind, record, resource, project, source, lines, java.time.Clock.systemUTC()));
             NBTTagList details = new NBTTagList();
             for (String line : lines) {
                 if (details.tagCount() >= 100) break;

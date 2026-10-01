@@ -50,23 +50,39 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         java.util.function.Supplier<String> resolve) {
         requireBound();
         String key = Long.toString(snapshot.getTransportId());
-        String stamp = snapshot.getPlayerUuid() + ":" + snapshot.getRuntimeSnapshot().getCurrentNodeId() + ":"
-            + snapshot.getRuntimeSnapshot().getLineEpoch() + ":" + snapshot.getRuntimeSnapshot().getLinePageIndex();
+        String stamp = snapshot.getPlayerUuid() + ":"
+            + snapshot.getRuntimeSnapshot()
+                .getCurrentNodeId()
+            + ":"
+            + snapshot.getRuntimeSnapshot()
+                .getLineEpoch()
+            + ":"
+            + snapshot.getRuntimeSnapshot()
+                .getLinePageIndex();
         NBTTagCompound entry = presentationTexts.getCompoundTag(key);
-        if (!stamp.equals(entry.getString("stamp"))) { entry = new NBTTagCompound(); entry.setString("stamp", stamp); }
+        if (!stamp.equals(entry.getString("stamp"))) {
+            entry = new NBTTagCompound();
+            entry.setString("stamp", stamp);
+        }
         NBTTagCompound values = entry.getCompoundTag("values");
-        if (values.hasKey(slot, 8)) return values.getString(slot);
-        String text = resolve.get();
-        if (text == null || text.length() > 131072) text = "数据不可用";
-        values.setString(slot, text); entry.setTag("values", values); presentationTexts.setTag(key, entry);
+        int maximum = slot.startsWith("option:") || slot.startsWith("hint:") ? 2048 : 32767;
+        String context = snapshot.getStoryId() + "/" + snapshot.getSessionResourceId() + "/" + stamp + "/" + slot;
+        if (values.hasKey(slot, 8))
+            return darkgrey.rpg.session.server.SessionTextLimit.require(values.getString(slot), context, maximum);
+        String text = darkgrey.rpg.session.server.SessionTextLimit.require(resolve.get(), context, maximum);
+        values.setString(slot, text);
+        entry.setTag("values", values);
+        presentationTexts.setTag(key, entry);
         Set<String> active = new HashSet<String>();
-        for (CanonicalSessionInstanceSnapshot current : store.snapshots())
-            if (current.getRuntimeSnapshot().getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE)
-                active.add(Long.toString(current.getTransportId()));
-        for (String old : new HashSet<String>(presentationTexts.func_150296_c())) if (!active.contains(old)) presentationTexts.removeTag(old);
+        for (CanonicalSessionInstanceSnapshot current : store.snapshots()) if (current.getRuntimeSnapshot()
+            .getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE)
+            active.add(Long.toString(current.getTransportId()));
+        for (String old : new HashSet<String>(presentationTexts.func_150296_c()))
+            if (!active.contains(old)) presentationTexts.removeTag(old);
         markDirty();
         return text;
     }
+
     private boolean bound = true;
     private boolean pendingLegacy;
     private CanonicalSessionResourceResolver boundSessionResolver;
@@ -299,7 +315,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             .snapshot();
         // Candidate creation validates the trigger first. Failed starts must retain previous-run children.
         if (restart && result.getActivationTime() == activationTime
-            && result.getActivationTime() != storyStore.getSnapshot(playerUuid, resource.getId()).getActivationTime()) {
+            && result.getActivationTime() != storyStore.getSnapshot(playerUuid, resource.getId())
+                .getActivationTime()) {
             store.cancelByStory(playerUuid, resource.getId());
             continuations = withoutContinuation(playerUuid, resource.getId());
         }
@@ -452,6 +469,32 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         requireStoryBound();
         return requireStoryInstance(storyStore, playerUuid, storyId).getRuntime()
             .getSessionActivationLogic();
+    }
+
+    public synchronized Map<String, Boolean> getStorySessionLogicInputs(UUID playerUuid, String storyId) {
+        requireStoryBound();
+        return requireStoryInstance(storyStore, playerUuid, storyId).getRuntime()
+            .getSessionLogicInputs();
+    }
+
+    public synchronized boolean updateSessionLogic(final UUID playerUuid, final String storyId,
+        final Map<String, Boolean> values) {
+        return mutate(new Mutation<Boolean>() {
+
+            public Boolean run() {
+                CanonicalSessionInstance instance = store.get(playerUuid, storyId);
+                if (instance == null || !instance.isActive()) return Boolean.FALSE;
+                boolean changed = !instance.getRuntime()
+                    .getExternalLogicInputs()
+                    .equals(values);
+                for (Map.Entry<String, Boolean> entry : values.entrySet()) instance.getRuntime()
+                    .setLogicInput(
+                        entry.getKey(),
+                        entry.getValue()
+                            .booleanValue());
+                return Boolean.valueOf(changed);
+            }
+        });
     }
 
     /** Advances the Story cursor and consumes its durable Session handoff as one checkpoint. */
@@ -638,12 +681,24 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalSessionInstanceSnapshot start(UUID playerUuid, String storyId,
         String aggregatePlacementId, CanonicalGraphResource resource, boolean activationLogic) {
+        return start(
+            playerUuid,
+            storyId,
+            aggregatePlacementId,
+            resource,
+            activationLogic,
+            java.util.Collections.<String, Boolean>emptyMap());
+    }
+
+    public synchronized CanonicalSessionInstanceSnapshot start(final UUID playerUuid, final String storyId,
+        final String aggregatePlacementId, final CanonicalGraphResource resource, final boolean activationLogic,
+        final Map<String, Boolean> inputs) {
         ensureNoPendingContinuation(playerUuid, storyId);
         return mutate(new Mutation<CanonicalSessionInstanceSnapshot>() {
 
             @Override
             public CanonicalSessionInstanceSnapshot run() {
-                return store.start(playerUuid, storyId, aggregatePlacementId, resource, activationLogic)
+                return store.start(playerUuid, storyId, aggregatePlacementId, resource, activationLogic, inputs)
                     .snapshot();
             }
         });
@@ -928,7 +983,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Session NBT is required.");
         // Keep the exact detached payload before any strict validation or resolver lookup.
         pendingRaw = copy(root);
-        presentationTexts = (NBTTagCompound) root.getCompoundTag("presentation_texts").copy();
+        presentationTexts = (NBTTagCompound) root.getCompoundTag("presentation_texts")
+            .copy();
         bound = false;
         pendingLegacy = !root.hasKey(CanonicalSessionWorldStateNbtCodec.SESSIONS_KEY)
             && !root.hasKey(CanonicalSessionWorldStateNbtCodec.CONTINUATIONS_KEY);

@@ -300,6 +300,19 @@ public final class CanonicalStoryRuntime {
         return logicInputValue(currentNode(), "logic_in", new HashMap<String, Boolean>());
     }
 
+    /** Project only the existing public Logic inputs of the active Session placement. */
+    public Map<String, Boolean> getSessionLogicInputs() {
+        requireWait(CanonicalStoryWaitKind.SESSION);
+        Map<String, Boolean> values = new LinkedHashMap<String, Boolean>();
+        for (CanonicalGraphPort port : currentNode().getPorts())
+            if (port.isInput() && port.getKind() == CanonicalGraphInterfaceKind.LOGIC
+                && !"logic_in".equals(port.getId()))
+                values.put(
+                    port.getId(),
+                    Boolean.valueOf(logicInputValue(currentNode(), port.getId(), new HashMap<String, Boolean>())));
+        return values;
+    }
+
     public Map<String, JsonElement> getPendingActionProperties() {
         requireWait(CanonicalStoryWaitKind.ACTION);
         return currentNode().getProperties();

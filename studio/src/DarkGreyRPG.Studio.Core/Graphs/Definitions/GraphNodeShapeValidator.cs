@@ -263,6 +263,11 @@ public static class GraphNodeShapeValidator
             }
 
             issues.AddRange(Validate(node, scope, compatibilityMode));
+            if (node.Type == "choice" && node.Properties.TryGetValue("options", out var options) && options.ValueKind == System.Text.Json.JsonValueKind.Array)
+                foreach (var option in options.EnumerateArray().Where(o => o.ValueKind == System.Text.Json.JsonValueKind.Object))
+                    if (option.TryGetProperty("condition_enabled", out var enabled) && enabled.ValueKind == System.Text.Json.JsonValueKind.True
+                        && (!option.TryGetProperty("condition_port_id", out var port) || !graph.Connections.Any(c => c.ToNodeId == node.Id && c.ToPortId == port.GetString())))
+                        issues.Add(new("graph.session.choice.condition.unconnected", "已启用的前置条件尚未连接。", "options", NodeId: node.Id));
         }
 
         return issues;

@@ -1,7 +1,11 @@
 package darkgrey.rpg.gramophone;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.FutureTask;
 
 /** Identity and pending-download cleanup through the production removal path. */

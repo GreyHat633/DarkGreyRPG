@@ -41,7 +41,7 @@ public static class GraphAggregatePortProjection
             ports.Add(new GraphPort(LogicInputId, "逻辑输入", true, GraphInterfaceKind.Logic, 1));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
-        return ports;
+        return WithUniqueDirectionOrders(ports);
     }
 
     /// <summary>Projects a Session aggregate including named Logic inputs.</summary>
@@ -59,7 +59,7 @@ public static class GraphAggregatePortProjection
         ports.AddRange(ToInputPorts(inputs));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
-        return ports;
+        return WithUniqueDirectionOrders(ports);
     }
 
     public static IReadOnlyList<GraphPort> ProjectTask(
@@ -74,7 +74,7 @@ public static class GraphAggregatePortProjection
         var ports = new List<GraphPort> { new(FlowInputId, "流程输入", true, GraphInterfaceKind.Flow, 0) };
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
-        return ports;
+        return WithUniqueDirectionOrders(ports);
     }
 
     /// <summary>Projects a Task aggregate including named Logic inputs.</summary>
@@ -92,7 +92,7 @@ public static class GraphAggregatePortProjection
         ports.AddRange(ToInputPorts(inputs));
         ports.AddRange(ToOutputPorts(flow));
         ports.AddRange(ToOutputPorts(logic));
-        return ports;
+        return WithUniqueDirectionOrders(ports);
     }
 
     public static IReadOnlyList<GraphPort> ProjectSessionPorts(
@@ -211,6 +211,24 @@ public static class GraphAggregatePortProjection
     private static IEnumerable<GraphPort> ToOutputPorts(IEnumerable<GraphBoundary> boundaries)
         => boundaries.OrderBy(boundary => boundary.Order).ThenBy(boundary => boundary.PortId, StringComparer.Ordinal)
             .Select(boundary => new GraphPort(boundary.PortId, boundary.DisplayName, false, boundary.Kind, boundary.Order));
+
+    private static IReadOnlyList<GraphPort> WithUniqueDirectionOrders(List<GraphPort> ports)
+    {
+        // Child Flow and Logic boundaries have independent order spaces. The
+        // Story runtime requires one order space per direction on an aggregate.
+        // Keep already valid orders and stable IDs; shift only collisions.
+        foreach (var group in ports.GroupBy(port => port.IsInput))
+        {
+            var used = new HashSet<int>();
+            foreach (var port in group)
+            {
+                var order = port.Order;
+                while (!used.Add(order)) order = order == int.MaxValue ? 0 : order + 1;
+                port.Order = order;
+            }
+        }
+        return ports;
+    }
 
     private static IEnumerable<GraphPort> ToInputPorts(IEnumerable<GraphBoundary> boundaries)
         => boundaries.OrderBy(boundary => boundary.Order).ThenBy(boundary => boundary.PortId, StringComparer.Ordinal)

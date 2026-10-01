@@ -13,7 +13,11 @@ import net.minecraft.nbt.NBTTagString;
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.story.canonical.runtime.*;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatCondition;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatEligibility;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartConfiguration;
+import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
 
 /** Readable projection of recorded state, without restoring or executing a runtime. */
 final class PlayerStateSummary {

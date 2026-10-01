@@ -28,8 +28,13 @@ public final class RpgConfiguration {
         Configuration configuration = new Configuration(configurationFile);
         configuration.load();
 
-        String repeatZone = configuration.get("story", "repeat_time_zone", java.time.ZoneId.systemDefault().getId(),
-            "Server real-world timezone for Story repeat schedules (IANA zone ID).").getString();
+        String repeatZone = configuration.get(
+            "story",
+            "repeat_time_zone",
+            java.time.ZoneId.systemDefault()
+                .getId(),
+            "Server real-world timezone for Story repeat schedules (IANA zone ID).")
+            .getString();
         darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatCondition.configureServerZone(repeatZone);
 
         String directory = configuration

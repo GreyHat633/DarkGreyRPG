@@ -18,6 +18,17 @@ public final class TaskTrackerClient {
     private static String context;
     private static TaskTrackingSelection selection = new TaskTrackingSelection();
     private static long revision;
+    private static final java.util.Map<String, String> focusedObjectives = new java.util.HashMap<String, String>();
+
+    public static void focus(NBTTagCompound task, String objective) {
+        focusedObjectives.put(identity(task), objective);
+        revision++;
+    }
+
+    public static String focused(NBTTagCompound task) {
+        String value = focusedObjectives.get(identity(task));
+        return value == null ? "" : value;
+    }
 
     private TaskTrackerClient() {}
 
@@ -54,6 +65,7 @@ public final class TaskTrackerClient {
         String next = PlayerReadingContext.current();
         if (!java.util.Objects.equals(context, next)) {
             context = next;
+            focusedObjectives.clear();
             selection = new TaskTrackingSelection();
             revision++;
             if (next != null) for (String encoded : UtilityWindowChrome.settings()

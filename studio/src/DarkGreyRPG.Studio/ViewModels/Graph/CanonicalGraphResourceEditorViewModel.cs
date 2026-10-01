@@ -75,7 +75,15 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public RelayCommand RedoCommand { get; }
 
     /// <summary>Returns a detached envelope containing the current editor graph.</summary>
-    public GraphResourceEnvelope CreatePersistenceSnapshot() => Document.ToEnvelope();
+    public GraphResourceEnvelope CreatePersistenceSnapshot()
+    {
+        var envelope = Document.ToEnvelope();
+        var graph = envelope.Graph!;
+        foreach (var node in graph.Nodes.Where(n => n.Type == "screen"))
+            node.Properties["layers"] = ScreenMorphKeys.Upgrade(node.Properties["layers"], node.Id);
+        envelope.Graph = graph;
+        return envelope;
+    }
 
     public GraphResourceEnvelope CreateSnapshot() => CreatePersistenceSnapshot();
 

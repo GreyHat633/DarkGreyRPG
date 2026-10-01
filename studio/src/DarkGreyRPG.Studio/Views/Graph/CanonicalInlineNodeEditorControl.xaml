@@ -551,7 +551,7 @@
           </Style.Triggers>
         </Style>
       </StackPanel.Style>
-      <TextBlock FontWeight="SemiBold" Text="选项" />
+      <TextBlock FontWeight="SemiBold" Text="{Binding ChoiceOptions.Count, StringFormat='选项（{0}）'}" />
       <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
     </StackPanel>
 <graph:ReorderEntriesEditor IsDynamicContent="True" ItemsSource="{Binding ChoiceOptions}" />

@@ -81,8 +81,8 @@ public final class CanonicalTaskJournalProjector {
     public static List<CanonicalTaskJournalEntry> projectUnavailable(UUID playerUuid,
         net.minecraft.nbt.NBTTagCompound pending, String code) {
         List<CanonicalTaskJournalEntry> result = new ArrayList<CanonicalTaskJournalEntry>();
-        for (CanonicalTaskInstanceSnapshot snapshot : darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec.decode(pending))
-            if (playerUuid.equals(snapshot.getPlayerUuid())) result.add(unavailable(snapshot, code));
+        for (CanonicalTaskInstanceSnapshot snapshot : darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec
+            .decode(pending)) if (playerUuid.equals(snapshot.getPlayerUuid())) result.add(unavailable(snapshot, code));
         return Collections.unmodifiableList(result);
     }
 
@@ -126,10 +126,18 @@ public final class CanonicalTaskJournalProjector {
 
     private static CanonicalTaskJournalEntry unavailable(CanonicalTaskInstanceSnapshot snapshot, String code) {
         // Never reinterpret old progress using new authoring data or mutate the persisted instance.
-        return new CanonicalTaskJournalEntry(snapshot.getPlayerUuid(), snapshot.getStoryInstanceId(),
-            snapshot.getTaskNodePlacementId(), snapshot.getTaskResourceId(), snapshot.getTaskResourceId(),
-            snapshot.getStatus(), snapshot.getActivationTime(), snapshot.getSettlementTime(), null,
-            Collections.<String, Boolean>emptyMap(), Collections.<CanonicalTaskJournalObjectiveRow>emptyList(),
+        return new CanonicalTaskJournalEntry(
+            snapshot.getPlayerUuid(),
+            snapshot.getStoryInstanceId(),
+            snapshot.getTaskNodePlacementId(),
+            snapshot.getTaskResourceId(),
+            snapshot.getTaskResourceId(),
+            snapshot.getStatus(),
+            snapshot.getActivationTime(),
+            snapshot.getSettlementTime(),
+            null,
+            Collections.<String, Boolean>emptyMap(),
+            Collections.<CanonicalTaskJournalObjectiveRow>emptyList(),
             "任务定义或存档不匹配，目标暂不可用。请恢复匹配的故事包。诊断：" + code);
     }
 

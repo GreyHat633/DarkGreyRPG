@@ -13,8 +13,10 @@ public sealed class GraphClipboardSnapshot
     {
         Scope = scope;
         var ids = selected.ToHashSet(StringComparer.Ordinal);
-        _json = new GraphDocument(graph.Nodes.Where(n => ids.Contains(n.Id)),
-            graph.Connections.Where(c => ids.Contains(c.FromNodeId) && ids.Contains(c.ToNodeId))).ToJson();
+        var detached = GraphDocument.FromJson(new GraphDocument(graph.Nodes.Where(n => ids.Contains(n.Id)),
+            graph.Connections.Where(c => ids.Contains(c.FromNodeId) && ids.Contains(c.ToNodeId))).ToJson());
+        foreach (var node in detached.Nodes.Where(n => n.Type == "screen")) node.Properties["layers"] = ScreenMorphKeys.Upgrade(node.Properties["layers"], node.Id);
+        _json = detached.ToJson();
     }
     public GraphDocument Read() => GraphDocument.FromJson(_json);
 
@@ -44,6 +46,8 @@ public sealed class GraphClipboardSnapshot
             }
             var fixedIds = GraphNodeDefinitionRegistry.Get(target, node.Type)!.FixedPorts.Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
             var dynamicIds = node.Ports.Where(p => !fixedIds.Contains(p.Id)).Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
+            if (node.Type == "choice" && node.Properties.TryGetValue("options", out var options))
+                foreach (var option in options.EnumerateArray()) dynamicIds.Add(option.GetProperty("option_id").GetString()!);
             if (node.Properties.TryGetValue("port_id", out var boundary) && boundary.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(boundary.GetString())) dynamicIds.Add(boundary.GetString()!);
             var replacements = dynamicIds.ToDictionary(id => id, _ => $"port_{Guid.NewGuid():N}", StringComparer.Ordinal);
             foreach (var port in node.Ports)
@@ -76,7 +80,7 @@ public sealed class GraphClipboardSnapshot
         if (node is JsonObject obj)
             foreach (var property in obj.ToArray())
             {
-                if (property.Key is "port_id" or "id" && property.Value is JsonValue value
+                if (property.Key is "port_id" or "id" or "option_id" or "flow_port_id" or "condition_port_id" && property.Value is JsonValue value
                     && value.TryGetValue<string>(out var id) && ids.TryGetValue(id, out var mapped)) obj[property.Key] = mapped;
                 else Rewrite(property.Value, ids);
             }

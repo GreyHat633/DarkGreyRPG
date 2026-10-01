@@ -52,6 +52,7 @@ public sealed class ResourceRenameMap
                     foreach (var port in node.Ports)
                     {
                         if (port.Id == option.GetProperty("flow_port_id").GetString()) port.DisplayName = text;
+                        else if (port.IsInput && option.TryGetProperty("condition_port_id", out var condition) && port.Id == condition.GetString()) port.DisplayName = "条件 · " + text;
                         else if (port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Logic
                             && port.Id == option.GetProperty("option_id").GetString()) port.DisplayName = "已选择：" + text;
                     }

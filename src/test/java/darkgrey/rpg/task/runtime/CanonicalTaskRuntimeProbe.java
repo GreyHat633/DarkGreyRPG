@@ -23,6 +23,7 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 public final class CanonicalTaskRuntimeProbe {
 
     public static void main(String[] args) {
+        parallelTreasuresKeepIndependentSuccessors();
         canonical0310TaskSemantics();
         parallelSequentialAndTypes();
         priorityAndUnconnectedFalse();
@@ -33,6 +34,42 @@ public final class CanonicalTaskRuntimeProbe {
         immutableSnapshotRestore();
         malformedFailsClosed();
         System.out.println("TASK_RUNTIME_PROBE_PASS");
+    }
+
+    private static void parallelTreasuresKeepIndependentSuccessors() {
+        List<CanonicalGraphNode> nodes = new java.util.ArrayList<CanonicalGraphNode>();
+        List<CanonicalGraphConnection> edges = new java.util.ArrayList<CanonicalGraphConnection>();
+        nodes.add(node("activate", "activate", ports(out("logic_out", 0)), empty()));
+        nodes.add(node("settle", "settle", ports(in("done", 0)), empty()));
+        String[] items = { "emerald", "diamond", "lapis", "gold" };
+        for (String item : items) {
+            nodes.add(node(item, "objective", ports(out("logic_status", 0)), objective("collect_item", item, null, 1)));
+            Map<String, JsonElement> next = objective("interact_actor", item + "_actor", null, 1);
+            next.put("prerequisite_enabled", bool(true));
+            nodes.add(node(item + "_next", "objective", ports(in("prerequisite", 0), out("logic_status", 1)), next));
+            edges.add(edge(item, "logic_status", item + "_next", "prerequisite"));
+        }
+        CanonicalGraphResource resource = new CanonicalGraphResource(
+            1,
+            CanonicalGraphResourceKind.TASK,
+            "treasures",
+            "Treasures",
+            new CanonicalGraph(nodes, edges));
+        for (String winner : items) {
+            CanonicalTaskRuntime runtime = CanonicalTaskRuntime.start(resource);
+            require(
+                runtime.accept(CanonicalTaskEvent.collectItem(winner, metadata("grade", "raw"), 1)),
+                "Treasure completes");
+            for (String item : items) {
+                require(
+                    runtime.isObjectiveActive(item) == !item.equals(winner),
+                    "Other treasure objectives remain active");
+                require(
+                    runtime.isObjectiveActive(item + "_next") == item.equals(winner),
+                    "Only corresponding successor activates");
+            }
+            require(runtime.isActive(), "Completing one branch does not settle task");
+        }
     }
 
     private static void prerequisiteActivationSemantics() {

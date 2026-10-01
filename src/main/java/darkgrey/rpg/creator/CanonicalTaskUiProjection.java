@@ -34,7 +34,7 @@ public final class CanonicalTaskUiProjection {
             task.setString(
                 "description",
                 darkgrey.rpg.session.forge.DynamicContentResolver.resolve(entry.getDescription(), player));
-            task.setString("story", entry.getStoryInstanceId());
+            TaskStoryPresentation.fill(task, entry.getStoryInstanceId());
             task.setString("placement", entry.getTaskNodePlacementId());
             task.setLong("activation", entry.getActivationTime());
             task.setString("tracking_id", entry.getIdentity() + ":" + entry.getActivationTime());
@@ -76,9 +76,16 @@ public final class CanonicalTaskUiProjection {
                         .getNodes()) {
                         if (node.getId()
                             .equals(row.getObjectiveId())) {
-                            objective.setTag(
-                                "item_preview",
-                                TaskItemPreview.project(node, darkgrey.rpg.item.identity.ItemIdentitySavedData.get()));
+                            NBTTagCompound preview = TaskItemPreview
+                                .project(node, darkgrey.rpg.item.identity.ItemIdentitySavedData.get());
+                            if (player != null) TaskItemPreview.context(
+                                preview,
+                                entry.getStoryInstanceId(),
+                                entry.getTaskNodePlacementId(),
+                                row.getObjectiveId(),
+                                entry.getActivationTime(),
+                                player.dimension);
+                            objective.setTag("item_preview", preview);
                             if (row.getStatus() == CanonicalTaskObjectiveStatus.ACTIVE) objective.setInteger(
                                 "held_count",
                                 darkgrey.rpg.task.forge.CanonicalTaskInventory.count(

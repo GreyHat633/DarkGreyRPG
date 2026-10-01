@@ -170,7 +170,7 @@ public static class GraphNodeDefinitionRegistry
                     new GraphPropertyDefinition("loop", JsonValueKind.False, true, Json("false")), NumberProperty("fade_in", 0), NumberProperty("fade_out", 0)]),
             Node("screen", GraphScope.Session, "画面", "演出", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
-                properties: [ArrayProperty("layers")]),
+                properties: [ArrayProperty("layers"), ObjectProperty("transition")]),
             Node("choice", GraphScope.Session, "选择", "会话", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
                 properties: [StringProperty("prompt"), ArrayProperty("options")]),

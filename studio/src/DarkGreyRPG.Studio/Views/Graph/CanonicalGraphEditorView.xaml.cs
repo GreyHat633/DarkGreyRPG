@@ -60,6 +60,7 @@ public sealed class GraphSelectionChangedEventArgs : EventArgs
     public IReadOnlyList<GraphEditorNodeViewModel> Nodes { get; }
     public IReadOnlyList<GraphEditorNodeViewModel> SelectedNodes => Nodes;
     public bool IsClear => Kind == GraphSelectionKind.Clear;
+    public bool IsMarquee { get; internal set; }
 }
 
 /// <summary>
@@ -562,10 +563,28 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void HostGraphChanged(object? sender, EventArgs args)
     {
-        // Port changes are handled by HostPortsChanged after the affected node
-        // projection has been identified. Keep this notification lightweight.
+        // Enabling a condition changes the visible projection while preserving its stable schema ID.
+        var changed = new List<string>();
+        foreach (var (node, visual) in _nodeVisuals)
+            if (node.Type == "choice" && !visual.PortControls.Select(p => p.EffectivePortId).OrderBy(id => id)
+                .SequenceEqual(node.Inputs.Concat(node.Outputs).Select(p => p.PortId).OrderBy(id => id)))
+            { visual.RefreshPorts(); changed.Add(node.NodeId); }
         GraphCanvas.UpdateLayout();
-        IndexPorts();
+        if (changed.Count > 0)
+        {
+            IndexPorts();
+            // Undo can restore a wire before its previously hidden endpoint is projected.
+            foreach (var connection in _host!.Connections.Where(c => changed.Contains(c.FromNodeId) || changed.Contains(c.ToNodeId)))
+                AddConnectionVisual(connection);
+            foreach (var nodeId in changed) RedrawIncidentConnections(nodeId);
+        }
+        var inactive = InactiveConditionPorts();
+        foreach (var port in _ports.Values) port.IsConditionInactive = inactive.Contains(EndpointKey(port.NodeId, port.EffectivePortId));
+        foreach (var (connection, visual) in _connectionVisuals)
+        {
+            ApplyWireBrush(visual.Line, connection.InterfaceKind, ReferenceEquals(connection, _selectedConnection));
+            if (inactive.Contains(EndpointKey(connection.ToNodeId, connection.ToPortId))) visual.Line.Stroke = Brushes.Gray;
+        }
     }
 
     private void HostLayoutChanged(object? sender, EventArgs args)
@@ -724,9 +743,22 @@ public partial class CanonicalGraphEditorView : UserControl
         SynchronizeUniqueSelectedNode();
     }
 
+    private HashSet<string> InactiveConditionPorts()
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        if (_host is null) return result;
+        foreach (var node in _host.Graph.Nodes.Where(n => n?.Type == "choice"))
+            if (node.Properties.TryGetValue("options", out var options) && options.ValueKind == System.Text.Json.JsonValueKind.Array)
+                foreach (var option in options.EnumerateArray())
+                    if (option.ValueKind == System.Text.Json.JsonValueKind.Object && option.TryGetProperty("condition_port_id", out var port) && port.ValueKind == System.Text.Json.JsonValueKind.String && !SessionChoiceSchema.ConditionEnabled(option, _host.Graph, node.Id))
+                        result.Add(EndpointKey(node.Id, port.GetString()!));
+        return result;
+    }
+
     private void IndexPorts()
     {
         _ports.Clear();
+        var inactive = InactiveConditionPorts();
         var malformed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var pair in _nodeVisuals)
         {
@@ -734,6 +766,7 @@ public partial class CanonicalGraphEditorView : UserControl
             {
                 if (string.IsNullOrWhiteSpace(port.NodeId) || string.IsNullOrWhiteSpace(port.EffectivePortId)) continue;
                 SetPortAutomation(port);
+                port.IsConditionInactive = inactive.Contains(EndpointKey(port.NodeId, port.EffectivePortId));
                 var key = EndpointKey(port.NodeId, port.EffectivePortId);
                 if (malformed.Contains(key)) continue;
                 if (_ports.ContainsKey(key))
@@ -772,6 +805,7 @@ public partial class CanonicalGraphEditorView : UserControl
         hit.PreviewMouseLeftButtonDown += ConnectionHit_OnPreviewMouseLeftButtonDown;
         var line = new Path { Data = geometry, StrokeThickness = style.StrokeThickness, Fill = null, IsHitTestVisible = false, Tag = connection };
         ApplyWireBrush(line, connection.InterfaceKind, selected);
+        if (to.IsConditionInactive) line.Stroke = Brushes.Gray;
         Panel.SetZIndex(line, 10);
         GraphCanvas.Children.Insert(0, line);
         GraphCanvas.Children.Insert(1, hit);
@@ -1223,8 +1257,13 @@ public partial class CanonicalGraphEditorView : UserControl
         return false;
     }
 
-    private static void ApplyWireBrush(Shape shape, GraphInterfaceKind interfaceKind, bool selected)
+    private void ApplyWireBrush(Shape shape, GraphInterfaceKind interfaceKind, bool selected)
     {
+        if (shape.Tag is GraphEditorConnectionViewModel connection && TryGetPort(connection.ToNodeId, connection.ToPortId, out var target) && target.IsConditionInactive)
+        {
+            shape.Stroke = Brushes.Gray;
+            return;
+        }
         var resourceKey = selected
             ? "TextFillColorPrimaryBrush"
             : interfaceKind == GraphInterfaceKind.Flow
@@ -1638,7 +1677,7 @@ public partial class CanonicalGraphEditorView : UserControl
         var next = additive ? _selectedNodes.Concat(hits).Distinct().ToArray() : hits;
         SetNodeSelection(next);
         ClearConnectionSelection();
-        NotifySelectionChanged(oldNode, oldConnection);
+        NotifySelectionChanged(oldNode, oldConnection, isMarquee: true);
     }
 
     /// <summary>Moves the current selection by one finite graph-space delta.</summary>
@@ -2090,7 +2129,7 @@ public partial class CanonicalGraphEditorView : UserControl
             _wireGestureKind = GraphWireGestureKind.None;
             foreach (var port in _ports.Values) { port.IsConnecting = false; port.IsValidTarget = false; }
             if (releaseCapture && Mouse.Captured == CanvasViewport) Mouse.Capture(null);
-            if (canceledMode == GraphPointerMode.BoxSelect) NotifySelectionChanged(oldNode, oldConnection);
+            if (canceledMode == GraphPointerMode.BoxSelect) NotifySelectionChanged(oldNode, oldConnection, isMarquee: true);
         }
         finally { _canceling = false; DrawCommentFrames(); }
     }
@@ -2270,11 +2309,20 @@ public partial class CanonicalGraphEditorView : UserControl
         return dx * dx + dy * dy;
     }
 
+    private bool _inspectorSelectionDeferred;
+    private readonly HashSet<string> _lastNotifiedSelection = new(StringComparer.Ordinal);
+    private GraphEditorConnectionViewModel? _lastNotifiedConnection;
     private void NotifySelectionChanged(GraphEditorNodeViewModel? oldNode,
-        GraphEditorConnectionViewModel? oldConnection)
+        GraphEditorConnectionViewModel? oldConnection, bool isMarquee = false)
     {
+        isMarquee |= _pointerState.Is(GraphPointerMode.BoxSelect) && _marqueeThresholdPassed;
         if (ReferenceEquals(oldNode, _selectedNode) && ReferenceEquals(oldConnection, _selectedConnection)
-            && _selectedNodes.Count <= 1) return;
+            && _selectedNodes.Count <= 1 && !_inspectorSelectionDeferred) return;
+        if (_lastNotifiedSelection.SetEquals(_selectedNodes.Select(n => n.NodeId)) && ReferenceEquals(_lastNotifiedConnection, _selectedConnection)) return;
+        _lastNotifiedSelection.Clear();
+        foreach (var n in _selectedNodes) _lastNotifiedSelection.Add(n.NodeId);
+        _lastNotifiedConnection = _selectedConnection;
+        _inspectorSelectionDeferred = isMarquee;
         var args = _selectedNodes.Count > 1
             ? new GraphSelectionChangedEventArgs(GraphSelectionKind.MultipleNodes,
                 nodes: _selectedNodes.OrderBy(node => node.NodeId, StringComparer.Ordinal).ToArray())
@@ -2283,6 +2331,7 @@ public partial class CanonicalGraphEditorView : UserControl
             : _selectedConnection is { } connection
                 ? new GraphSelectionChangedEventArgs(GraphSelectionKind.Connection, connection: connection)
                 : new GraphSelectionChangedEventArgs(GraphSelectionKind.Clear);
+        args.IsMarquee = isMarquee;
         SelectionChanged?.Invoke(this, args);
         GraphSelectionChanged?.Invoke(this, args);
     }

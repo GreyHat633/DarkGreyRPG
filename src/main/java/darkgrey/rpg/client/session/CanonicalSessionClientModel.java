@@ -13,6 +13,7 @@ import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
 public final class CanonicalSessionClientModel {
 
     private CanonicalSessionFrame frame;
+    private long closedTransport = -1;
     private String visibleText = "";
     private final DialogueTextReveal reveal = new DialogueTextReveal();
     private String visibleSpeaker = "";
@@ -26,6 +27,7 @@ public final class CanonicalSessionClientModel {
 
     public synchronized void clear() {
         frame = null;
+        closedTransport = -1;
         visibleText = "";
         visibleSpeaker = "";
         visiblePortraitRef = null;
@@ -36,17 +38,29 @@ public final class CanonicalSessionClientModel {
         autoStarted = 0;
     }
 
+    public synchronized boolean reject(long transport, String story) {
+        if (frame == null || frame.getTransportId() != transport
+            || !frame.getStoryId()
+                .equals(story))
+            return false;
+        awaiting = false;
+        autoStarted = 0;
+        return true;
+    }
+
     public synchronized boolean acceptFrame(CanonicalSessionFrame update) {
-        if (update == null) return false;
+        if (update == null || update.getTransportId() <= closedTransport) return false;
         if (frame != null && (frame.getTransportId() != update.getTransportId() || !frame.getStoryId()
             .equals(update.getStoryId())
             || !frame.getSessionResourceId()
                 .equals(update.getSessionResourceId())))
             return false;
-        if (frame != null && (update.getLineEpoch() < frame.getLineEpoch() || update.getPresentation()
-            .getRevision()
-            < frame.getPresentation()
-                .getRevision()))
+        if (frame != null && (update.getProjectionRevision() < frame.getProjectionRevision()
+            || update.getLineEpoch() < frame.getLineEpoch()
+            || update.getPresentation()
+                .getRevision()
+                < frame.getPresentation()
+                    .getRevision()))
             return false;
         boolean newLine = update.getKind() == CanonicalSessionFrame.Kind.LINE
             && (frame == null || frame.getLineEpoch() != update.getLineEpoch()
@@ -83,6 +97,7 @@ public final class CanonicalSessionClientModel {
             } else reveal.begin(visibleText, 0, System.nanoTime());
         }
         frame = copy(update);
+        if (update.getKind() == CanonicalSessionFrame.Kind.CHOICE) awaiting = false;
         return true;
     }
 
@@ -96,7 +111,9 @@ public final class CanonicalSessionClientModel {
             || !frame.getStoryId()
                 .equals(close.getStoryId()))
             return false;
+        long retired = Math.max(closedTransport, close.getTransportId());
         clear();
+        closedTransport = retired;
         return true;
     }
 
@@ -287,6 +304,7 @@ public final class CanonicalSessionClientModel {
         if (frame.getKind() != CanonicalSessionFrame.Kind.CHOICE)
             throw new IllegalStateException("Canonical Session is not on a Choice.");
         for (CanonicalSessionChoiceOption choice : frame.getChoices()) {
+            if (!choice.isEnabled()) continue;
             if (choice.getOptionId()
                 .equals(optionId))
                 return new CanonicalSessionAction(
@@ -317,6 +335,8 @@ public final class CanonicalSessionClientModel {
             source.getPortraitRef(),
             source.getVoiceRef(),
             source.getVoiceVolume()).withTextSpeed(source.getTextSpeed())
-                .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice());
+                .withPresentation(source.getPresentation(), source.getLineEpoch(), source.shouldPlayVoice())
+                .withScreenPlayback(source.shouldPlayScreen())
+                .withProjectionRevision(source.getProjectionRevision());
     }
 }

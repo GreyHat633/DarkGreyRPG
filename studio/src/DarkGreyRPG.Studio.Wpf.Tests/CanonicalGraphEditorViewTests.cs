@@ -17,6 +17,40 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalGraphEditorViewTests
 {
     [STATestMethod]
+    public void LineDetailsAndNodeHeightAnimateTogetherWithoutReplacingWires()
+    {
+        var host = new GraphEditorHostViewModel(new GraphDocument([
+            GraphNodeFactory.Create(GraphScope.Session, "line", "first"), GraphNodeFactory.Create(GraphScope.Session, "line", "second")]), GraphScope.Session);
+        Assert.IsTrue(host.Connect(GraphEditorEndpoint.Output("first", "flow_out", GraphInterfaceKind.Flow), GraphEditorEndpoint.Input("second", "flow_in", GraphInterfaceKind.Flow)));
+        var view = new CanonicalGraphEditorView(host);
+        var window = new Window { Content = view, Width = 1000, Height = 900, Left = -10000, Top = -10000, ShowInTaskbar = false };
+        try
+        {
+            window.Show(); PumpLayoutFrame();
+            var node = view.NodeVisuals.First();
+            var header = Descendants<FoldHeader>(node).Single(h => h.Title == "详细设置");
+            var page = (CanonicalLinePageViewModel)header.DataContext;
+            var details = Descendants<AnimatedLinePageBody>(node).Single(body => System.Windows.Data.BindingOperations.GetBinding(body, AnimatedLinePageBody.IsExpandedProperty)?.Path.Path == "DetailsExpanded");
+            var baseHeight = node.ActualHeight;
+            var wires = view.ConnectionVisuals.ToArray();
+            bool intermediate = false;
+            foreach (bool expanded in new[] { true, false, true, false })
+            {
+                page.DetailsExpanded = expanded;
+                for (int frame = 0; frame < 16; frame++)
+                {
+                    PumpLayoutFrame();
+                    Assert.AreEqual(baseHeight + details.ActualHeight, node.ActualHeight, 2, "Node and detail body must grow in the same layout frame.");
+                    CollectionAssert.AreEqual(wires, view.ConnectionVisuals.ToArray());
+                    if (details.ActualHeight > 1 && details.ActualHeight < details.Child!.DesiredSize.Height - 1) intermediate = true;
+                }
+            }
+            if (SystemParameters.ClientAreaAnimation) Assert.IsTrue(intermediate);
+        }
+        finally { window.Close(); }
+    }
+
+    [STATestMethod]
     public void AnimatedLineCollapsePreservesAllWireVisualsAndGeometry()
     {
         var host = new GraphEditorHostViewModel(new GraphDocument([

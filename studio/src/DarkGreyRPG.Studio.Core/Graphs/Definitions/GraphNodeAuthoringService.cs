@@ -206,7 +206,7 @@ public sealed class GraphNodeAuthoringService
         }
         else if (scope == GraphScope.Session && nodeType == "choice")
         {
-            var dynamicIds = new string?[2];
+            var dynamicIds = new string?[3];
             Exception? sourceFailure = null;
             for (var index = 0; index < dynamicIds.Length; index++)
             {
@@ -227,7 +227,7 @@ public sealed class GraphNodeAuthoringService
             var generatedIssue = ValidateDynamicIds(candidate, dynamicIds!, nodeId);
             if (generatedIssue is not null)
                 return FailureIssue(generatedIssue);
-            try { SessionChoiceSchema.InitializeDefault(candidate, dynamicIds[0]!, dynamicIds[1]!); }
+            try { SessionChoiceSchema.InitializeDefault(candidate, dynamicIds[0]!, dynamicIds[1]!, dynamicIds[2]!); }
             catch (ArgumentException exception)
             {
                 return FailureIssue(new(

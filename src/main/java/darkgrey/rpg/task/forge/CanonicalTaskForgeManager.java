@@ -188,6 +188,13 @@ public final class CanonicalTaskForgeManager {
                     .getAsString();
                 net.minecraft.nbt.NBTTagCompound preview = darkgrey.rpg.creator.TaskItemPreview
                     .project(node, darkgrey.rpg.item.identity.ItemIdentitySavedData.get());
+                darkgrey.rpg.creator.TaskItemPreview.context(
+                    preview,
+                    snapshot.getStoryInstanceId(),
+                    snapshot.getTaskNodePlacementId(),
+                    node.getId(),
+                    snapshot.getActivationTime(),
+                    player.dimension);
                 preview.setInteger(
                     "required",
                     node.getProperties()

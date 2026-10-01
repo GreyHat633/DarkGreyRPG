@@ -38,6 +38,19 @@ public final class CanonicalTaskPresentationServer {
 
     public static void push(EntityPlayerMP player, boolean force) {
         State state = stateFor(player);
+        if (player.ticksExisted < state.retryTick) return;
+        try {
+            pushPrepared(player, force, state);
+        } catch (RuntimeException failure) {
+            state.retryTick = player.ticksExisted + 20;
+            if (player.ticksExisted >= state.diagnosticTick) {
+                state.diagnosticTick = player.ticksExisted + 200;
+                DarkGreyRpg.LOG.warn("Task presentation was not submitted; retry remains pending", failure);
+            }
+        }
+    }
+
+    private static void pushPrepared(EntityPlayerMP player, boolean force, State state) {
         CanonicalTaskSavedData source = CanonicalTaskSavedData.get(player);
         Object project = DarkGreyRpg.getProjectRepository()
             .getSnapshot();
@@ -60,41 +73,26 @@ public final class CanonicalTaskPresentationServer {
             journal = darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
                 .projectUnavailable(player.getUniqueID(), source.getPendingRaw(), "task.data.unavailable");
         }
-        net.minecraft.nbt.NBTTagList events = state.notifications.update(
+        CanonicalTaskNotifications notifications = state.notifications.detached();
+        net.minecraft.nbt.NBTTagList events = notifications.update(
             journal,
             worldChanged || state.project != project,
             text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player));
         NBTTagCompound data = CanonicalTaskUiProjection.project(journal, player);
-        net.minecraft.nbt.NBTTagList history = new net.minecraft.nbt.NBTTagList();
-        net.minecraft.nbt.NBTTagList stored = source.completedHistory(player.getUniqueID());
-        for (int i = 0; i < stored.tagCount(); i++) {
-            history.appendTag(
-                CanonicalTaskHistoryProjection.project(
-                    stored.getCompoundTagAt(i),
-                    id -> darkgrey.rpg.DarkGreyRpg.getProjectRepository()
-                        .getSnapshot()
-                        .getCanonicalTask(id),
-                    text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player),
-                    darkgrey.rpg.item.identity.ItemIdentitySavedData.get()));
-        }
-        if (history.tagCount() > 0) {
-            net.minecraft.nbt.NBTTagList retained = data.getTagList("completed_tasks", 10);
-            for (int i = 0; i < retained.tagCount(); i++) if (!"SETTLED".equals(
-                retained.getCompoundTagAt(i)
-                    .getString("status")))
-                history.appendTag(
-                    retained.getCompoundTagAt(i)
-                        .copy());
-            data.setTag("completed_tasks", history);
-        }
+        data.setLong("generation", source.getPresentationGeneration());
+        // Persisted completion records are projected only for an explicit history-page request.
         if (force || worldChanged || !data.equals(state.previous) || events.tagCount() > 0) {
-            state.previous = (NBTTagCompound) data.copy();
-            state.revision = ++nextRevision;
+            NBTTagCompound previous = (NBTTagCompound) data.copy();
+            long revision = ++nextRevision;
             data.setTag("notifications", events);
-            data.setLong("revision", state.revision);
+            data.setLong("revision", revision);
             data.setInteger("dimension", player.dimension);
-            DialogueNetwork.CHANNEL.sendTo(new CreatorSnapshot(1, data), player);
+            java.util.List<CreatorSnapshot> packets = TaskSnapshotTransport.encode(data);
+            for (CreatorSnapshot packet : packets) DialogueNetwork.CHANNEL.sendTo(packet, player);
+            state.previous = previous;
+            state.revision = revision;
         }
+        state.notifications = notifications;
         state.generation = source.getPresentationGeneration();
         state.source = source;
         state.project = project;
@@ -129,7 +127,9 @@ public final class CanonicalTaskPresentationServer {
             this.player = new WeakReference<EntityPlayerMP>(player);
         }
 
-        final CanonicalTaskNotifications notifications = new CanonicalTaskNotifications();
+        CanonicalTaskNotifications notifications = new CanonicalTaskNotifications();
+        int retryTick;
+        int diagnosticTick;
         long generation = -1;
         long revision;
         int lastSubmitTick = Integer.MIN_VALUE;

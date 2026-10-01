@@ -456,7 +456,9 @@ public final class CanonicalMediaClient {
         VISIBLE.clear();
         CanonicalMediaTextures.updateDemand(java.util.Collections.<String>emptySet());
         VISIBLE.addAll(refs);
-        CanonicalMediaTextures.updateDemand(refs);
+        VISIBLE.addAll(sceneRefs);
+        CanonicalMediaTextures.configureImageCount(imageCount + sceneRefs.size());
+        CanonicalMediaTextures.updateDemand(VISIBLE);
         MediaLatencyTrace.event("frame_media", frame.getStoryId() + ":" + frame.getLineEpoch(), 0, refs.toString());
         packagesDirty = true;
         if (packages != null) packages.touch(scope + frame.getStoryId());
@@ -466,6 +468,7 @@ public final class CanonicalMediaClient {
     }
 
     public static void clear() {
+        sceneRefs = java.util.Collections.emptySet();
         VISIBLE.clear();
         CanonicalMediaTextures.updateDemand(java.util.Collections.<String>emptySet());
         portraitTransportId = -1;
@@ -507,6 +510,18 @@ public final class CanonicalMediaClient {
 
     public static boolean pin(String ref) {
         return cache().pin(ref);
+    }
+
+    private static Set<String> sceneRefs = java.util.Collections.emptySet();
+
+    public static void sceneDemand(Set<String> refs) {
+        Set<String> old = sceneRefs;
+        sceneRefs = new HashSet<String>(refs);
+        VISIBLE.removeAll(old);
+        VISIBLE.addAll(refs);
+        if (portraitRef != null) VISIBLE.add(portraitRef);
+        CanonicalMediaTextures.configureImageCount(Math.max(1, VISIBLE.size()));
+        CanonicalMediaTextures.updateDemand(VISIBLE);
     }
 
     public static void unpin(String ref) {

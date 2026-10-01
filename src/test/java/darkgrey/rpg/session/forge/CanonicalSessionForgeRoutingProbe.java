@@ -122,14 +122,43 @@ public final class CanonicalSessionForgeRoutingProbe {
         require(!manager.start(null, "story", "placement"), "Missing player rejects Session start");
         require(!manager.resume(null, "story"), "Missing player rejects Session resume");
         require(!manager.handleAction(null, null), "Missing player and action are rejected");
+        cancellationClosesOnlyMatchingTransport();
         System.out.println("CANONICAL_SESSION_FORGE_ROUTING_PROBE=PASS");
         System.out.println("CANONICAL_SESSION_FORGE_IDENTITY_FAILURES=PASS");
+        System.out.println("CANONICAL_SESSION_CANCEL_CLOSE_ISOLATION=PASS");
+    }
+
+    private static void cancellationClosesOnlyMatchingTransport() {
+        ProjectSnapshot project = CanonicalSessionForgeProbeProject.create();
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        data.bind(id -> project.getCanonicalSession(id), id -> project.getCanonicalStory(id));
+        UUID other = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        long selected = data.start(PLAYER, "story_a", "placement", project.getCanonicalSession("session_a"))
+            .getTransportId();
+        data.start(other, "story_a", "placement", project.getCanonicalSession("session_a"));
+        data.start(PLAYER, "other_story", "placement", project.getCanonicalSession("session_a"));
+        RecordingSender sender = new RecordingSender();
+        require(
+            CanonicalSessionForgeManager.cancel(sender, null, PLAYER, "story_a", data),
+            "cancel removes selected child");
+        require(
+            sender.closes == 1 && sender.lastClose.getTransportId() == selected
+                && "story_a".equals(sender.lastClose.getStoryId()),
+            "cancel closes exact transport identity");
+        require(
+            data.getSnapshot(PLAYER, "story_a") == null && data.getSnapshot(other, "story_a") != null
+                && data.getSnapshot(PLAYER, "other_story") != null,
+            "cancel crossed player or Story identity");
+        require(
+            !CanonicalSessionForgeManager.cancel(sender, null, PLAYER, "story_a", data) && sender.closes == 1,
+            "repeat cancel sent another close");
     }
 
     private static final class RecordingSender implements CanonicalSessionForgeManager.Sender {
 
         private int frames;
         private int closes;
+        private CanonicalSessionClose lastClose;
         private final List<String> events = new ArrayList<String>();
 
         @Override
@@ -140,6 +169,7 @@ public final class CanonicalSessionForgeRoutingProbe {
         @Override
         public void sendClose(net.minecraft.entity.player.EntityPlayerMP player, CanonicalSessionClose close) {
             closes++;
+            lastClose = close;
             events.add("close");
         }
     }

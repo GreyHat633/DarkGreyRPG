@@ -966,6 +966,40 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             if (TryOpenCanonicalStory(hit.StoryId) == CanonicalOpenResult.Opened) CanonicalStoryWorkspace?.NavigateSearch(hit);
         };
+        var usageGate = new System.Threading.SemaphoreSlim(1, 1);
+        string? usageSignature = null;
+        IReadOnlyList<ResourceUsage> diskUsages = [];
+        workspace.ProjectUsage = async key =>
+        {
+            var store = _canonicalGraphStore;
+            if (store is null) return workspace.ScanLoadedUsages().Where(u => u.Key == key).ToArray();
+            await usageGate.WaitAsync();
+            IReadOnlyList<ResourceUsage> disk;
+            try
+            {
+                disk = await Task.Run(() =>
+                {
+                    var signature = string.Join("\n", System.IO.Directory.EnumerateFiles(store.ProjectDirectory, "*", System.IO.SearchOption.AllDirectories)
+                        .Where(p => p.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".dgrs", StringComparison.OrdinalIgnoreCase)).Order(StringComparer.Ordinal)
+                        .Select(p => new System.IO.FileInfo(p)).Select(f => $"{f.FullName}|{f.Length}|{f.LastWriteTimeUtc.Ticks}"));
+                    if (signature != usageSignature)
+                    {
+                        var usages = new List<ResourceUsage>();
+                        foreach (var story in store.Stories.List())
+                        {
+                            using var detached = new CanonicalStoryWorkspaceViewModel(new CanonicalStoryWorkspaceLoader(store).Load(story.Id));
+                            usages.AddRange(detached.ScanLoadedUsages());
+                        }
+                        diskUsages = usages; usageSignature = signature;
+                    }
+                    return diskUsages.Where(u => u.Key == key).ToArray();
+                });
+            }
+            finally { usageGate.Release(); }
+            if (!ReferenceEquals(store, _canonicalGraphStore)) return [];
+            var open = _retainedStoryWorkspaces.Values.Concat(CanonicalStoryWorkspace is { } active ? [active] : []).Distinct().ToDictionary(w => w.StoryEditor.Id);
+            return disk.Where(u => !open.ContainsKey(u.Location.StoryId)).Concat(open.Values.SelectMany(w => w.ScanLoadedUsages()).Where(u => u.Key == key)).ToArray();
+        };
         _graphClipboard.SetProject(ProjectDirectory);
         workspace.Clipboard = _graphClipboard;
         workspace.OpenProjectWorkspaces = () => _retainedStoryWorkspaces.Values

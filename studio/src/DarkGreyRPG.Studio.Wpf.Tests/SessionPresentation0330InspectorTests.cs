@@ -61,12 +61,14 @@ public sealed class SessionPresentation0330InspectorTests
         string image = "media/" + new string('b', 64) + ".png";
         var layers = JsonSerializer.SerializeToElement(new[] { new { media_ref = image, x = 0.5, y = 0.5, width = 0.5, height = 1, anchor_x = 0.5, anchor_y = 0.5, z = 0 } });
         Assert.IsTrue(inspector.SetScreenLayers(layers));
+        var committed = inspector.ScreenLayers.GetRawText();
+        Assert.IsFalse(string.IsNullOrEmpty(inspector.ScreenLayers[0].GetProperty("morph_key").GetString()));
         Assert.IsTrue(inspector.SetScreenLayers(JsonSerializer.SerializeToElement(Array.Empty<object>())));
         Assert.AreEqual(0, inspector.ScreenLayers.GetArrayLength());
         Assert.IsTrue(editor.Host.Undo());
-        Assert.AreEqual(layers.GetRawText(), inspector.ScreenLayers.GetRawText());
+        Assert.AreEqual(committed, inspector.ScreenLayers.GetRawText());
         using var invalid = JsonDocument.Parse(layers.GetRawText().Replace("\"width\":0.5", "\"width\":0"));
         Assert.IsFalse(inspector.SetScreenLayers(invalid.RootElement));
-        Assert.AreEqual(layers.GetRawText(), inspector.ScreenLayers.GetRawText());
+        Assert.AreEqual(committed, inspector.ScreenLayers.GetRawText());
     }
 }

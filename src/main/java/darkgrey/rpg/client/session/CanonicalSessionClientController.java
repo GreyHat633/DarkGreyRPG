@@ -40,9 +40,9 @@ public final class CanonicalSessionClientController {
         CanonicalSessionFrame accepted = MODEL.getFrame();
         darkgrey.rpg.media.MediaLatencyTrace
             .frame(accepted.getStoryId() + ":" + accepted.getTransportId() + ":" + accepted.getLineEpoch());
+        darkgrey.rpg.media.CanonicalSessionScene.present(accepted);
         darkgrey.rpg.media.CanonicalMediaClient.present(accepted);
         darkgrey.rpg.media.CanonicalSessionAudio.present(accepted);
-        darkgrey.rpg.media.CanonicalSessionScene.present(accepted);
         if (accepted.getKind() == CanonicalSessionFrame.Kind.PRESENTATION) {
             if (minecraft.currentScreen == surface && surface != null) minecraft.displayGuiScreen(null);
             surface = null;
@@ -113,6 +113,13 @@ public final class CanonicalSessionClientController {
 
     public static void close(CanonicalSessionClose close) {
         acceptClose(close);
+    }
+
+    public static void notice(long transport, String story) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (MODEL.reject(transport, story) && surface != null) surface.setFrame(MODEL.getFrame());
+        if (mc.thePlayer != null) mc.thePlayer
+            .addChatMessage(new net.minecraft.util.ChatComponentText("[DarkGrey RPG] 当前展示未能完成，请联系故事作者检查内容后重载。"));
     }
 
     public static boolean sendContinue() {

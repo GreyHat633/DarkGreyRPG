@@ -60,18 +60,19 @@ public final class CanonicalStoryServerServiceProbe {
     }
 
     private static void repeatEntryGates() {
-        String[] rules = {
-            "{\"type\":\"cooldown\",\"value\":1,\"unit\":\"hours\"}",
-            "{\"type\":\"scheduled\",\"period\":\"daily\",\"time\":\"00:00\"}"
-        };
+        String[] rules = { "{\"type\":\"cooldown\",\"value\":1,\"unit\":\"hours\"}",
+            "{\"type\":\"scheduled\",\"period\":\"daily\",\"time\":\"00:00\"}" };
         for (String rule : rules) for (int entry = 0; entry < 8; entry++) {
             ProjectSnapshot project = repeatEntryProject(rule);
             CanonicalSessionSavedData data = new CanonicalSessionSavedData();
             CanonicalStoryServerService service = new CanonicalStoryServerService(project, data);
-            CanonicalActorCandidate candidate = service.actorCandidates(PLAYER, Collections.singleton("bartender")).get(0);
+            CanonicalActorCandidate candidate = service.actorCandidates(PLAYER, Collections.singleton("bartender"))
+                .get(0);
             long now = System.currentTimeMillis();
             CanonicalStoryDispatch first = repeatEntry(service, entry, candidate, now - 200000000L);
-            check(first != null && data.getStorySnapshot(PLAYER, "repeat_gate") != null, "Entry did not start: " + entry);
+            check(
+                first != null && data.getStorySnapshot(PLAYER, "repeat_gate") != null,
+                "Entry did not start: " + entry);
             assertRepeatRequestsPreserve(service, data, candidate, now);
             service.setLogicInput(PLAYER, "repeat_gate", "finish", true, now);
             check(!service.isStartEligible(PLAYER, "repeat_gate"), "Future repeat was eligible: " + entry);
@@ -80,7 +81,12 @@ public final class CanonicalStoryServerServiceProbe {
             // Separate expired instance: no sleep or machine-clock changes are needed.
             CanonicalSessionSavedData expired = new CanonicalSessionSavedData();
             CanonicalStoryServerService ready = new CanonicalStoryServerService(project, expired);
-            repeatEntry(ready, entry, ready.actorCandidates(PLAYER, Collections.singleton("bartender")).get(0), now - 300000000L);
+            repeatEntry(
+                ready,
+                entry,
+                ready.actorCandidates(PLAYER, Collections.singleton("bartender"))
+                    .get(0),
+                now - 300000000L);
             ready.setLogicInput(PLAYER, "repeat_gate", "finish", true, now - 200000000L);
             net.minecraft.nbt.NBTTagCompound persisted = new net.minecraft.nbt.NBTTagCompound();
             expired.writeToNBT(persisted);
@@ -88,17 +94,21 @@ public final class CanonicalStoryServerServiceProbe {
             restored.readFromNBT(persisted);
             ready = new CanonicalStoryServerService(project, restored);
             check(ready.isStartEligible(PLAYER, "repeat_gate"), "Expired persisted repeat remained blocked");
-            CanonicalActorCandidate restart = ready.actorCandidates(PLAYER, Collections.singleton("bartender")).get(0);
+            CanonicalActorCandidate restart = ready.actorCandidates(PLAYER, Collections.singleton("bartender"))
+                .get(0);
             check(repeatEntry(ready, entry, restart, now) != null, "Eligible restart rejected: " + entry);
-            check(restored.getStorySnapshot(PLAYER, "repeat_gate").getActivationTime() == now, "Restart retained old activation");
+            check(
+                restored.getStorySnapshot(PLAYER, "repeat_gate")
+                    .getActivationTime() == now,
+                "Restart retained old activation");
             assertRepeatRequestsPreserve(ready, restored, restart, now + 1);
             restored.markStoryError(PLAYER, "repeat_gate", now + 2);
             assertRepeatRequestsPreserve(ready, restored, restart, now + 3);
         }
     }
 
-    private static void assertRepeatRequestsPreserve(CanonicalStoryServerService service, CanonicalSessionSavedData data,
-        CanonicalActorCandidate stale, long now) {
+    private static void assertRepeatRequestsPreserve(CanonicalStoryServerService service,
+        CanonicalSessionSavedData data, CanonicalActorCandidate stale, long now) {
         net.minecraft.nbt.NBTTagCompound before = new net.minecraft.nbt.NBTTagCompound();
         data.writeToNBT(before);
         for (int index = 0; index < 8; index++) repeatEntry(service, index, stale, now + index);
@@ -112,15 +122,30 @@ public final class CanonicalStoryServerServiceProbe {
     private static CanonicalStoryDispatch repeatEntry(CanonicalStoryServerService service, int entry,
         CanonicalActorCandidate candidate, long now) {
         switch (entry) {
-            case 0: return service.startByEntry(PLAYER, "repeat_gate", now);
-            case 1: return service.startByActor(PLAYER, "repeat_gate", "bartender", now);
-            case 2: return service.startByRegion(PLAYER, "repeat_gate", 0, 10D, 64D, 10D, now);
-            case 3: return service.startByLogic(PLAYER, "repeat_gate", Collections.singletonMap("launch", Boolean.TRUE), now);
-            case 4: return service.startByLogicTrigger(PLAYER, "repeat_gate", "logic", Collections.singletonMap("launch", Boolean.TRUE), now);
-            case 5: return service.startByFlow(PLAYER, "typed", "end", "repeat_gate", "boundary", now);
-            case 6: return service.startFlowFromTerminal(PLAYER, "typed", "end", now);
-            case 7: return service.executeActorCandidate(PLAYER, Collections.singleton("bartender"), candidate, now);
-            default: throw new AssertionError(entry);
+            case 0:
+                return service.startByEntry(PLAYER, "repeat_gate", now);
+            case 1:
+                return service.startByActor(PLAYER, "repeat_gate", "bartender", now);
+            case 2:
+                return service.startByRegion(PLAYER, "repeat_gate", 0, 10D, 64D, 10D, now);
+            case 3:
+                return service
+                    .startByLogic(PLAYER, "repeat_gate", Collections.singletonMap("launch", Boolean.TRUE), now);
+            case 4:
+                return service.startByLogicTrigger(
+                    PLAYER,
+                    "repeat_gate",
+                    "logic",
+                    Collections.singletonMap("launch", Boolean.TRUE),
+                    now);
+            case 5:
+                return service.startByFlow(PLAYER, "typed", "end", "repeat_gate", "boundary", now);
+            case 6:
+                return service.startFlowFromTerminal(PLAYER, "typed", "end", now);
+            case 7:
+                return service.executeActorCandidate(PLAYER, Collections.singleton("bartender"), candidate, now);
+            default:
+                throw new AssertionError(entry);
         }
     }
 
@@ -128,37 +153,90 @@ public final class CanonicalStoryServerServiceProbe {
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
         properties.put("repeat_policy", json("\"repeatable\""));
         properties.put("repeat_condition", json(rule));
-        properties.put("triggers", json("["
-            + "{\"port_id\":\"entry\",\"display_name\":\"Entry\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
-            + "{\"port_id\":\"actor\",\"display_name\":\"Actor\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"bartender\"},\"order\":1},"
-            + "{\"port_id\":\"region\",\"display_name\":\"Region\",\"trigger_type\":\"enter_region\",\"trigger_properties\":{\"dimension\":0,\"x\":10,\"y\":64,\"z\":10,\"radius\":2},\"order\":2},"
-            + "{\"port_id\":\"logic\",\"display_name\":\"Logic\",\"trigger_type\":\"logic\",\"trigger_properties\":{},\"logic_port_id\":\"launch_in\",\"order\":3},"
-            + "{\"port_id\":\"boundary\",\"display_name\":\"Boundary\",\"trigger_type\":\"flow_driven\",\"trigger_properties\":{},\"order\":4}]"));
-        CanonicalGraphNode start = node("start", "start", ports(flowOut("entry", "Entry", 0), flowOut("actor", "Actor", 1),
-            flowOut("region", "Region", 2), flowOut("logic", "Logic", 3), flowOut("boundary", "Boundary", 4), logicIn("launch_in", 5)), properties);
-        CanonicalGraphNode launch = node("launch", "logic_input", ports(logicOut("logic_out", 0)), props("port_id", "launch", "display_name", "Launch"));
-        CanonicalGraphNode finish = node("finish", "logic_input", ports(logicOut("logic_out", 0)), props("port_id", "finish", "display_name", "Finish"));
-        CanonicalGraphNode wait = node("wait", "condition", ports(flowIn("flow_in", 0), logicIn("logic_in", 1), flowOut("flow_true", "True", 2), flowOut("flow_false", "False", 3)), empty());
+        properties.put(
+            "triggers",
+            json(
+                "[" + "{\"port_id\":\"entry\",\"display_name\":\"Entry\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
+                    + "{\"port_id\":\"actor\",\"display_name\":\"Actor\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"bartender\"},\"order\":1},"
+                    + "{\"port_id\":\"region\",\"display_name\":\"Region\",\"trigger_type\":\"enter_region\",\"trigger_properties\":{\"dimension\":0,\"x\":10,\"y\":64,\"z\":10,\"radius\":2},\"order\":2},"
+                    + "{\"port_id\":\"logic\",\"display_name\":\"Logic\",\"trigger_type\":\"logic\",\"trigger_properties\":{},\"logic_port_id\":\"launch_in\",\"order\":3},"
+                    + "{\"port_id\":\"boundary\",\"display_name\":\"Boundary\",\"trigger_type\":\"flow_driven\",\"trigger_properties\":{},\"order\":4}]"));
+        CanonicalGraphNode start = node(
+            "start",
+            "start",
+            ports(
+                flowOut("entry", "Entry", 0),
+                flowOut("actor", "Actor", 1),
+                flowOut("region", "Region", 2),
+                flowOut("logic", "Logic", 3),
+                flowOut("boundary", "Boundary", 4),
+                logicIn("launch_in", 5)),
+            properties);
+        CanonicalGraphNode launch = node(
+            "launch",
+            "logic_input",
+            ports(logicOut("logic_out", 0)),
+            props("port_id", "launch", "display_name", "Launch"));
+        CanonicalGraphNode finish = node(
+            "finish",
+            "logic_input",
+            ports(logicOut("logic_out", 0)),
+            props("port_id", "finish", "display_name", "Finish"));
+        CanonicalGraphNode wait = node(
+            "wait",
+            "condition",
+            ports(
+                flowIn("flow_in", 0),
+                logicIn("logic_in", 1),
+                flowOut("flow_true", "True", 2),
+                flowOut("flow_false", "False", 3)),
+            empty());
         CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
         List<CanonicalGraphConnection> edges = new java.util.ArrayList<CanonicalGraphConnection>();
-        for (String port : Arrays.asList("entry", "actor", "region", "logic", "boundary")) edges.add(flow("start", port, "wait", "flow_in"));
+        for (String port : Arrays.asList("entry", "actor", "region", "logic", "boundary"))
+            edges.add(flow("start", port, "wait", "flow_in"));
         edges.add(logic("launch", "logic_out", "start", "launch_in"));
         edges.add(logic("finish", "logic_out", "wait", "logic_in"));
         edges.add(flow("wait", "flow_true", "end", "flow_in"));
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("repeat_gate", resource("repeat_gate", CanonicalGraphResourceKind.STORY, Arrays.asList(start, launch, finish, wait, end), edges));
-        stories.put("typed", resource("typed", CanonicalGraphResourceKind.STORY,
-            Arrays.asList(startNode("once",
-                "[{\"port_id\":\"entry\",\"display_name\":\"Entry\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]",
-                ports(flowOut("entry", "Entry", 0))), end),
-            Collections.singletonList(flow("start", "entry", "end", "flow_in"))));
-        return new ProjectSnapshot(new ProjectDefinition(1, "repeat-entry", "Repeat Entry"),
-            Collections.<String, ActorDefinition>emptyMap(), Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(), Collections.<String, StoryDefinition>emptyMap(),
-            new CanonicalProjectContent(stories, Collections.<String, CanonicalGraphResource>emptyMap(),
-                Collections.<String, CanonicalGraphResource>emptyMap(), Collections.<String, CanonicalStoryMembership>emptyMap(),
-                new darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph(Collections.singletonList(
-                    new darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection("typed", "end", "repeat_gate", "boundary", CanonicalGraphInterfaceKind.FLOW)))));
+        stories.put(
+            "repeat_gate",
+            resource(
+                "repeat_gate",
+                CanonicalGraphResourceKind.STORY,
+                Arrays.asList(start, launch, finish, wait, end),
+                edges));
+        stories.put(
+            "typed",
+            resource(
+                "typed",
+                CanonicalGraphResourceKind.STORY,
+                Arrays.asList(
+                    startNode(
+                        "once",
+                        "[{\"port_id\":\"entry\",\"display_name\":\"Entry\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0}]",
+                        ports(flowOut("entry", "Entry", 0))),
+                    end),
+                Collections.singletonList(flow("start", "entry", "end", "flow_in"))));
+        return new ProjectSnapshot(
+            new ProjectDefinition(1, "repeat-entry", "Repeat Entry"),
+            Collections.<String, ActorDefinition>emptyMap(),
+            Collections.<String, DialogueDefinition>emptyMap(),
+            Collections.<String, QuestDefinition>emptyMap(),
+            Collections.<String, StoryDefinition>emptyMap(),
+            new CanonicalProjectContent(
+                stories,
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalGraphResource>emptyMap(),
+                Collections.<String, CanonicalStoryMembership>emptyMap(),
+                new darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph(
+                    Collections.singletonList(
+                        new darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection(
+                            "typed",
+                            "end",
+                            "repeat_gate",
+                            "boundary",
+                            CanonicalGraphInterfaceKind.FLOW)))));
     }
 
     private static void packageUninstallClearsRuntimeInstances() {

@@ -164,7 +164,7 @@ public sealed class GraphNodeAuthoringServiceTests
     [TestMethod]
     public void SessionChoiceReceivesOneFlowOnlySemanticOptionWithoutMutatingGraph()
     {
-        var ids = new Queue<string>(["option_1", "flow_1"]);
+        var ids = new Queue<string>(["option_1", "flow_1", "condition_1"]);
         var sourceCalls = 0;
         var graph = new GraphDocument();
         var before = graph.ToJson();
@@ -176,13 +176,14 @@ public sealed class GraphNodeAuthoringServiceTests
         }).Create(graph, GraphScope.Session, "choice", "choice_1");
 
         Assert.IsTrue(result.IsSuccess, string.Join(",", result.Issues.Select(issue => issue.Code)));
-        Assert.AreEqual(2, sourceCalls);
+        Assert.AreEqual(3, sourceCalls);
         Assert.AreEqual(before, graph.ToJson());
         var candidate = result.Candidate!;
-        CollectionAssert.AreEqual(new[] { "flow_in", "flow_1" },
+        CollectionAssert.AreEqual(new[] { "flow_in", "flow_1", "condition_1" },
             candidate.Ports.Select(port => port.Id).ToArray());
         Assert.AreEqual("选项 1", candidate.Ports.Single(port => port.Id == "flow_1").DisplayName);
-        Assert.IsFalse(candidate.Ports.Any(port => port.InterfaceKind == GraphInterfaceKind.Logic));
+        Assert.IsTrue(candidate.Ports.Single(port => port.Id == "condition_1").IsInput);
+        Assert.IsFalse(candidate.Ports.Any(port => port.InterfaceKind == GraphInterfaceKind.Logic && port.IsOutput));
         var option = candidate.Properties["options"].EnumerateArray().Single();
         Assert.AreEqual("option_1", option.GetProperty("option_id").GetString());
         Assert.AreEqual("选项 1", option.GetProperty("display_text").GetString());

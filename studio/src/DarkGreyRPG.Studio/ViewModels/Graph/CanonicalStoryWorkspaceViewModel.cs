@@ -451,6 +451,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
             if (!SetProperty(ref _activeEditor, value)) return;
             OnPropertyChanged(nameof(ActiveGraphHost));
             OnPropertyChanged(nameof(CanEditActivePresentation));
+            OnPropertyChanged(nameof(IsActiveGraphReadOnly));
             OnPropertyChanged(nameof(IsStoryFlowActive));
             OnPropertyChanged(nameof(IsLocalGraphOpen));
             OnPropertyChanged(nameof(Breadcrumbs));
@@ -459,6 +460,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
     }
 
     public bool CanEditActivePresentation => IsWritableEditor(ActiveEditor);
+    public bool IsActiveGraphReadOnly => !CanEditActivePresentation;
     public GraphEditorHostViewModel ActiveGraphHost => ActiveEditor.Host;
     public bool IsStoryFlowActive => ReferenceEquals(ActiveEditor, StoryEditor);
     public bool IsLocalGraphOpen => !IsStoryFlowActive;
@@ -469,6 +471,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         {
             if (!SetProperty(ref _inspectorSelection, value)) return;
             OnPropertyChanged(nameof(InspectorTitle));
+            OnPropertyChanged(nameof(SelectedNodeNames));
             OnPropertyChanged(nameof(InspectorKindText));
             OnPropertyChanged(nameof(InspectorId));
             OnPropertyChanged(nameof(InspectorSaveStateText));
@@ -485,6 +488,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
             OnPropertyChanged(nameof(InspectorOwnershipText));
             OnPropertyChanged(nameof(InspectorReferenceBadge));
             OnPropertyChanged(nameof(InspectorSourceDetailsText));
+            SelectUsageContext();
         }
     }
 
@@ -523,8 +527,20 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
     }
     public CanonicalNodeInspectorViewModel? Inspector => _nodeInspector;
 
+    public sealed record SelectionSummary(string Title, string Names);
+    public string SelectedNodeNames => (InspectorSelection as SelectionSummary)?.Names ?? "";
+    public int InspectorCreationCount { get; private set; }
+    public void SelectGraphNodes(IReadOnlyList<GraphEditorNodeViewModel> nodes)
+    {
+        if (nodes.Count == 1) { SelectGraphNode(nodes[0]); return; }
+        DisposeNodeInspector();
+        OnPropertyChanged(nameof(NodeInspector)); OnPropertyChanged(nameof(Inspector));
+        InspectorSelection = new SelectionSummary(nodes.Count == 0 ? "未选中节点" : $"已选 {nodes.Count} 个节点", string.Join(Environment.NewLine, nodes.Select(n => n.DisplayName)));
+    }
+
     public string InspectorTitle => InspectorSelection switch
     {
+        SelectionSummary summary => summary.Title,
         CanonicalNodeInspectorViewModel node => node.DisplayName,
         CanonicalStoryActorItem actor => actor.DisplayName,
         CanonicalStoryItemItem item => item.DisplayName,
@@ -735,7 +751,10 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
             return false;
         }
 
+        if (_nodeInspector is { } existing && existing.NodeId == node.NodeId && ReferenceEquals(existing.Host, ActiveGraphHost))
+            return true;
         DisposeNodeInspector();
+        InspectorCreationCount++;
         _nodeInspector = new CanonicalNodeInspectorViewModel(ActiveGraphHost, node, ActorItems, ItemItems);
         _nodeInspector.PropertyChanged += OnNodeInspectorPropertyChanged;
         OnPropertyChanged(nameof(NodeInspector));
@@ -1223,6 +1242,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
 
     public void Dispose()
     {
+        ++_usageSequence; UsageResults.Clear(); UsageMedia.Clear(); ProjectUsage = null;
         if (_disposed) return;
         _disposed = true;
         DisposeNodeInspector();
@@ -1551,6 +1571,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (IsUsageExpanded && args.PropertyName is nameof(CanonicalGraphResourceEditorViewModel.GraphRevision) or nameof(CanonicalGraphResourceEditorViewModel.DisplayName)) _ = RefreshUsageAsync();
         if (sender is CanonicalGraphResourceEditorViewModel changed) _searchDocuments.Remove(changed);
         if (args.PropertyName is nameof(CanonicalGraphResourceEditorViewModel.IsDirty)
             or nameof(CanonicalGraphResourceEditorViewModel.CanSave))

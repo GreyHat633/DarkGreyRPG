@@ -272,6 +272,7 @@
             </Border>
             <Grid Grid.Row="1">
                 <graph:CanonicalGraphEditorView x:Name="WorkspaceGraph" Host="{Binding ActiveGraphHost}"
+                                                IsReadOnly="{Binding IsActiveGraphReadOnly}"
                                                 ViewportState="{Binding ActiveEditor.ViewportState}"
                                                 AllowDrop="True" DragOver="WorkspaceGraph_OnDragOver"
                                                 DragLeave="WorkspaceGraph_OnDragLeave" Drop="WorkspaceGraph_OnDrop"
@@ -341,6 +342,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               AutomationProperties.AutomationId="CanonicalInspectorScrollViewer"><AdornerDecorator>
                 <StackPanel>
+                <TextBlock Text="{Binding SelectedNodeNames}" TextWrapping="Wrap" AutomationProperties.AutomationId="SelectionSummaryNames"/>
                 <Expander Header="介绍说明" Foreground="{DynamicResource TextFillColorPrimaryBrush}" DataContext="{Binding NodeInspector}" IsExpanded="{Binding HelpExpanded, Mode=TwoWay}" Margin="0,0,0,10" AutomationProperties.AutomationId="CanonicalNodeHelp">
                     <Expander.Style><Style TargetType="Expander"><Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Expander.Style>
                     <TextBlock graph:AuthoringText.IsHelp="True" Text="{Binding HelpText}" TextWrapping="Wrap"/>
@@ -380,7 +382,7 @@
                              AutomationProperties.AutomationId="CanonicalTaskDescription" AutomationProperties.Name="任务说明"/>
                 </StackPanel>
                 <views:ActorPortraitEditor DataContext="{Binding InspectorPortraitEditor}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, ElementName=Root}"><views:ActorPortraitEditor.Style><Style TargetType="views:ActorPortraitEditor"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></views:ActorPortraitEditor.Style></views:ActorPortraitEditor>
-                <StackPanel DataContext="{Binding NodeInspector}">
+                <StackPanel DataContext="{Binding NodeInspector}" IsEnabled="{Binding Workspace.CanEditActivePresentation, ElementName=Root}">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -654,7 +656,7 @@
                                 <Style.Triggers><DataTrigger Binding="{Binding IsChoice}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                             </Style>
                         </StackPanel.Style>
-                        <TextBlock FontWeight="SemiBold" Text="选项" />
+                        <TextBlock FontWeight="SemiBold" Text="{Binding ChoiceOptions.Count, StringFormat='选项（{0}）'}" />
                         <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
                     </StackPanel>
 <graph:ReorderEntriesEditor IsDynamicContent="True" ItemsSource="{Binding ChoiceOptions}" />
@@ -679,8 +681,17 @@
   <TextBox graph:TextInputWatermark.Text="输入名称" Text="{Binding BoundaryDisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" ToolTip="修改名称不会改变现有连线。"/>
 </StackPanel>
                 </StackPanel>
+                <StackPanel Margin="0,12,0,0">
+                 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasUsageContext}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                 <graph:AnimatedSection Header="{Binding UsageTitle}" IsExpanded="{Binding IsUsageExpanded}" AutomationProperties.AutomationId="ResourceUsageExpand"><StackPanel>
+                  <TextBlock Text="{Binding UsageHelp}" graph:AuthoringText.IsHelp="True"/>
+                  <ListBox ItemsSource="{Binding UsageResults}" MaxHeight="240" ScrollViewer.HorizontalScrollBarVisibility="Disabled" PreviewMouseLeftButtonUp="Usage_OnClick" PreviewKeyDown="Usage_OnKeyDown" AutomationProperties.AutomationId="ResourceUsageResults">
+                   <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/></Style></ListBox.ItemContainerStyle>
+                   <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Caption}" TextWrapping="Wrap"/></DataTemplate></ListBox.ItemTemplate>
+                  </ListBox>
+                 </StackPanel></graph:AnimatedSection>
                 </StackPanel>
-                </AdornerDecorator></ScrollViewer>
+                </StackPanel></AdornerDecorator></ScrollViewer>
             </Grid>
         </Border>
     </Grid>

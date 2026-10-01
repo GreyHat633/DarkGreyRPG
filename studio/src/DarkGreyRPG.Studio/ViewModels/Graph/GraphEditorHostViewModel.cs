@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -181,13 +181,20 @@ public sealed class GraphEditorNodeViewModel : ObservableObject
         OnPropertyChanged(nameof(ParameterSummary));
         OnPropertyChanged(nameof(HasParameterSummary));
 
-        var ports = (node.Ports ?? []).Where(port => port is not null).ToArray();
+        var hiddenConditions = new HashSet<string>(StringComparer.Ordinal);
+        if (node.Type == "choice" && properties.TryGetValue("options", out var choices) && choices.ValueKind == JsonValueKind.Array)
+            foreach (var option in choices.EnumerateArray())
+                if (option.ValueKind == JsonValueKind.Object && option.TryGetProperty("condition_enabled", out var enabled) && enabled.ValueKind == JsonValueKind.False
+                    && option.TryGetProperty("condition_port_id", out var condition) && condition.ValueKind == JsonValueKind.String)
+                    hiddenConditions.Add(condition.GetString()!);
+        var ports = (node.Ports ?? []).Where(port => port is not null && !hiddenConditions.Contains(port.Id)).ToArray();
         var counts = ports.GroupBy(port => port.Id ?? string.Empty, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
         var nextInputs = new List<GraphEditorPortViewModel>();
         var nextOutputs = new List<GraphEditorPortViewModel>();
         var used = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var port in ports.OrderBy(port => port.Order).ThenBy(port => port.Id ?? string.Empty, StringComparer.Ordinal))
+        var fixedPortIds = GraphNodeDefinitionRegistry.Get(_scope, Type)?.FixedPorts.Select(port => port.Id).ToHashSet(StringComparer.Ordinal) ?? [];
+        foreach (var port in ports.OrderBy(port => fixedPortIds.Contains(port.Id) ? 0 : 1).ThenBy(port => port.Order).ThenBy(port => port.Id ?? string.Empty, StringComparer.Ordinal))
         {
             var id = port.Id ?? string.Empty;
             var canReuse = !string.IsNullOrWhiteSpace(id) && counts[id] == 1 && used.Add(id);
@@ -1011,6 +1018,12 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
 
     public bool RenameSessionChoiceOption(string nodeId, string optionId, string displayText)
         => ExecuteSession(() => _session.RenameSessionChoiceOption(nodeId, optionId, displayText));
+
+    public bool SetSessionChoiceConditionEnabled(string nodeId, string optionId, bool enabled)
+        => ExecuteSession(() => _session.SetSessionChoiceConditionEnabled(nodeId, optionId, enabled));
+
+    public bool SetSessionChoiceCondition(string nodeId, string optionId, string behavior, string hint)
+        => ExecuteSession(() => _session.SetSessionChoiceCondition(nodeId, optionId, behavior, hint));
 
     public bool ReorderSessionChoiceOption(string nodeId, string optionId, int order)
         => ExecuteSession(() => _session.ReorderSessionChoiceOption(nodeId, optionId, order));

@@ -51,9 +51,13 @@ public final class CanonicalStoryStartConfiguration {
             }
         if (start == null) throw failure("story.start.required", "Story Start node is missing.");
         Map<String, JsonElement> properties = start.getProperties();
-        requireExactKeys(properties.keySet(), properties.containsKey("repeat_condition")
-            ? set("repeat_policy", "triggers", "repeat_condition") : set("repeat_policy", "triggers"), "Story Start properties");
-        CanonicalStoryRepeatCondition repeatCondition = CanonicalStoryRepeatCondition.parse(properties.get("repeat_condition"));
+        requireExactKeys(
+            properties.keySet(),
+            properties.containsKey("repeat_condition") ? set("repeat_policy", "triggers", "repeat_condition")
+                : set("repeat_policy", "triggers"),
+            "Story Start properties");
+        CanonicalStoryRepeatCondition repeatCondition = CanonicalStoryRepeatCondition
+            .parse(properties.get("repeat_condition"));
         JsonElement repeat = properties.get("repeat_policy");
         if (repeat == null || !repeat.isJsonPrimitive()
             || !repeat.getAsJsonPrimitive()
@@ -116,7 +120,9 @@ public final class CanonicalStoryStartConfiguration {
         return repeatPolicy;
     }
 
-    public CanonicalStoryRepeatCondition getRepeatCondition() { return repeatCondition; }
+    public CanonicalStoryRepeatCondition getRepeatCondition() {
+        return repeatCondition;
+    }
 
     public List<Trigger> getTriggers() {
         return triggers;

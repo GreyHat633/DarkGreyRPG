@@ -41,7 +41,8 @@
       </DockPanel>
       <graph:AnimatedLinePageBody IsExpanded="{Binding IsExpanded}"><StackPanel>
       <graph:DynamicContentEditor Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=Explicit}" ShowInsertButton="False" CapacityText="{Binding Capacity.Caption}" CapacityHint="{Binding Capacity.Warning}" AcceptsReturn="False" MinHeight="48" BodyKeyDown="DynamicText_OnKeyDown" AutomationProperties.AutomationId="LinePageText"/>
-      <Expander Header="详细设置" Margin="0,6,0,0" IsExpanded="False"><StackPanel>
+       <graph:FoldHeader Title="详细设置" Margin="0,6,0,0" IsChecked="{Binding DetailsExpanded, Mode=TwoWay}"/>
+       <graph:AnimatedLinePageBody IsExpanded="{Binding DetailsExpanded}"><StackPanel>
        <StackPanel Visibility="{Binding HasSpeaker, Converter={StaticResource BoolVisibility}}">
         <TextBlock Text="头像" Margin="0,4,0,3"/>
         <ComboBox ItemsSource="{Binding PortraitOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectedValue="{Binding PortraitVariant, Mode=TwoWay}"/>
@@ -55,7 +56,7 @@
         <views:AudioPreviewControl MediaRef="{Binding VoiceRef}" Volume="{Binding VolumeDraft}" ProjectDirectory="{Binding Workspace.MediaProjectDirectory, RelativeSource={RelativeSource AncestorType={x:Type graph:CanonicalStoryWorkspaceView}}}"/>
         <DockPanel Margin="0,5,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding VolumeLabel}"/><TextBlock Text="音量"/></DockPanel><Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="{Binding VolumeDraft}" PreviewMouseLeftButtonUp="Volume_OnMouseUp" LostKeyboardFocus="Volume_OnLostFocus" PreviewKeyDown="Volume_OnKeyDown"/>
        </StackPanel>
-      </StackPanel></Expander>
+       </StackPanel></graph:AnimatedLinePageBody>
       </StackPanel></graph:AnimatedLinePageBody>
      </StackPanel>
     </Border>

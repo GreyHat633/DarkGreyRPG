@@ -91,10 +91,24 @@ public final class CanonicalSessionForgeManager {
         try {
             UUID playerUuid = requirePlayerUuid(player);
             ServiceContext context = context(player);
+            darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot beforeAction = context.savedData
+                .getSnapshot(playerUuid, action.getStoryId());
             CanonicalSessionDispatch dispatch = context.service.dispatch(playerUuid, action);
             send(player, dispatch, context.project, context.savedData);
+            if (action.getKind() == CanonicalSessionAction.Kind.CHOICE && beforeAction != null) {
+                darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot afterAction = context.savedData
+                    .getSnapshot(playerUuid, action.getStoryId());
+                if (afterAction != null && afterAction.getRuntimeSnapshot()
+                    .getSelectedOptionIds()
+                    .size()
+                    == beforeAction.getRuntimeSnapshot()
+                        .getSelectedOptionIds()
+                        .size())
+                    return false;
+            }
             return true;
         } catch (RuntimeException exception) {
+            notifyFailure(player, action.getStoryId());
             LOG.warn(
                 "Rejected canonical Session action for player {} and Story {}: {}",
                 safePlayer(player),
@@ -119,6 +133,7 @@ public final class CanonicalSessionForgeManager {
             send(player, dispatch, context.project, context.savedData);
             return true;
         } catch (RuntimeException exception) {
+            notifyFailure(player, storyId);
             LOG.warn(
                 "Could not start canonical Session for player {} and Story {}: {}",
                 safePlayer(player),
@@ -137,6 +152,7 @@ public final class CanonicalSessionForgeManager {
             send(player, dispatch, context.project, context.savedData);
             return true;
         } catch (RuntimeException exception) {
+            notifyFailure(player, storyId);
             LOG.warn(
                 "Could not resume canonical Session for player {} and Story {}: {}",
                 safePlayer(player),
@@ -197,6 +213,37 @@ public final class CanonicalSessionForgeManager {
         return handleAction(player, action);
     }
 
+    /** Existing Story Logic propagation can update a waiting child without reentry. */
+    public boolean refreshWaiting(EntityPlayerMP player, String storyId, String placement) {
+        ServiceContext context = context(player);
+        darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot child = context.savedData
+            .getSnapshot(player.getUniqueID(), storyId);
+        if (child == null || !placement.equals(child.getAggregatePlacementId())
+            || child.getRuntimeSnapshot()
+                .getStatus() != darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE)
+            return false;
+        boolean changed = context.savedData.updateSessionLogic(
+            player.getUniqueID(),
+            storyId,
+            context.savedData.getStorySessionLogicInputs(player.getUniqueID(), storyId));
+        if (changed)
+            send(player, context.service.refresh(player.getUniqueID(), storyId), context.project, context.savedData);
+        return true;
+    }
+
+    private void notifyFailure(EntityPlayerMP player, String storyId) {
+        if (player == null || storyId == null) return;
+        try {
+            darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot snapshot = context(player).savedData
+                .getSnapshot(player.getUniqueID(), storyId);
+            if (snapshot != null) DialogueNetwork.CHANNEL.sendTo(
+                new darkgrey.rpg.network.message.canonical.CanonicalSessionNotice(snapshot.getTransportId(), storyId),
+                player);
+        } catch (RuntimeException ignored) {
+            LOG.warn("Could not route Session diagnostic for Story {}", storyId);
+        }
+    }
+
     public synchronized void bindStoryContinuationListener(StoryContinuationListener listener) {
         if (listener == null) throw new IllegalArgumentException("Story continuation listener is required.");
         if (storyContinuationListener != null && storyContinuationListener != listener)
@@ -207,7 +254,16 @@ public final class CanonicalSessionForgeManager {
     public boolean cancelByStory(EntityPlayerMP player, String storyId) {
         UUID playerUuid = requirePlayerUuid(player);
         ServiceContext context = context(player);
-        return context.savedData.cancelStoryChildren(playerUuid, requireText(storyId, "Story ID"));
+        return cancel(sender, player, playerUuid, requireText(storyId, "Story ID"), context.savedData);
+    }
+
+    static boolean cancel(Sender sender, EntityPlayerMP player, UUID playerUuid, String storyId,
+        CanonicalSessionSavedData savedData) {
+        darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot snapshot = savedData
+            .getSnapshot(playerUuid, storyId);
+        boolean changed = savedData.cancelStoryChildren(playerUuid, storyId);
+        if (snapshot != null) sender.sendClose(player, new CanonicalSessionClose(snapshot.getTransportId(), storyId));
+        return changed;
     }
 
     private void send(EntityPlayerMP player, CanonicalSessionDispatch dispatch, ProjectSnapshot project,
@@ -247,7 +303,10 @@ public final class CanonicalSessionForgeManager {
                 return project.getCanonicalStory(storyId);
             }
         });
-        return new ServiceContext(project, savedData, new CanonicalSessionServerService(project, savedData, DynamicContentResolver.forProject(project)));
+        return new ServiceContext(
+            project,
+            savedData,
+            new CanonicalSessionServerService(project, savedData, DynamicContentResolver.forProject(project)));
     }
 
     /** Completion acceptance is the durable precondition for sending Close. */
@@ -297,8 +356,9 @@ public final class CanonicalSessionForgeManager {
         try {
             if (trustedPlayerUuid == null || project == null || savedData == null || operation == null)
                 throw new IllegalArgumentException("Trusted Session probe inputs are required.");
-            CanonicalSessionDispatch dispatch = operation
-                .dispatch(new CanonicalSessionServerService(project, savedData, DynamicContentResolver.forProject(project)), trustedPlayerUuid);
+            CanonicalSessionDispatch dispatch = operation.dispatch(
+                new CanonicalSessionServerService(project, savedData, DynamicContentResolver.forProject(project)),
+                trustedPlayerUuid);
             routeAccepted(sender, routePlayer, dispatch, project, savedData, storyContinuationListener);
             return true;
         } catch (RuntimeException exception) {

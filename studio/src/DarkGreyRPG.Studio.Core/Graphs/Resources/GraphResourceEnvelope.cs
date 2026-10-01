@@ -141,7 +141,10 @@ public static class GraphResourceEnvelopeSerializer
             var graph = envelope.SnapshotGraph()!;
             if (envelope.ResourceKind == GraphResourceKind.Story) LegacyStoryBoundaryUpgrade.Apply(graph);
             if (envelope.ResourceKind == GraphResourceKind.Session)
+            {
                 foreach (var node in graph.Nodes) Definitions.CanonicalSessionLineSchema.Normalize(node);
+                Definitions.ScreenAnimationSequence.NormalizeGraph(graph);
+            }
             JsonSerializer.Serialize(writer, graph, GraphSerializer.Options);
             writer.WriteEndObject();
         }
@@ -189,7 +192,10 @@ public static class GraphResourceEnvelopeSerializer
             RejectRetiredStandaloneNodes(kind, graph);
             if (kind == GraphResourceKind.Story) LegacyStoryBoundaryUpgrade.Apply(graph);
             if (kind == GraphResourceKind.Session)
+            {
                 foreach (var node in graph.Nodes) Definitions.CanonicalSessionLineSchema.Normalize(node);
+                Definitions.ScreenAnimationSequence.NormalizeGraph(graph);
+            }
             var tags = root.TryGetProperty("tags", out var tagsValue)
                 ? tagsValue.EnumerateArray().Select(tag => tag.ValueKind == JsonValueKind.String ? tag.GetString()! : throw new JsonException("Tags must be strings.")).ToArray() : [];
             return new GraphResourceEnvelope(kind, id, displayName, graph) { SchemaVersion = version, Tags = tags, TaskMetadata = CanonicalTaskMetadata.Read(root, kind) };

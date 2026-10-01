@@ -242,7 +242,7 @@ public final class SessionPresentation0330Probe {
         CanonicalSessionFrame decoded = new CanonicalSessionFrame();
         decoded.fromBytes(bytes);
         bytes.readerIndex(0);
-        bytes.writerIndex(bytes.writerIndex() - 16);
+        bytes.writerIndex(bytes.writerIndex() - 25);
         CanonicalSessionFrame legacy = new CanonicalSessionFrame();
         legacy.fromBytes(bytes);
         require(legacy.getVoiceVolume() == 1, "older network frames retain default gain");

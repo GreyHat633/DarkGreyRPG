@@ -17,6 +17,40 @@ public final class CanonicalTaskHistoryProjection {
 
     private CanonicalTaskHistoryProjection() {}
 
+    /** Every objective remains reachable through a byte-bounded detail page. */
+    public static NBTTagCompound details(NBTTagCompound projected, int cursor) {
+        String field = "current_definition".equals(projected.getString("content_source")) ? "reference_objectives"
+            : "objectives";
+        NBTTagList source = projected.getTagList(field, 10);
+        if (cursor < 0 || cursor > source.tagCount())
+            throw new IllegalArgumentException("Invalid history detail cursor");
+        NBTTagList rows = new NBTTagList();
+        int next = cursor, used = 0;
+        while (next < source.tagCount() && rows.tagCount() < 20) {
+            NBTTagCompound row = source.getCompoundTagAt(next);
+            int weight = TaskCandidateIndex.measured(row);
+            if (rows.tagCount() > 0 && used + weight > 65536) break;
+            if (weight > 65536) throw new IllegalArgumentException("History objective exceeds detail budget");
+            rows.appendTag(row.copy());
+            used += weight;
+            next++;
+        }
+        NBTTagCompound record = new NBTTagCompound();
+        for (Object name : projected.func_150296_c())
+            if (!"objectives".equals(name) && !"reference_objectives".equals(name)) record.setTag(
+                (String) name,
+                projected.getTag((String) name)
+                    .copy());
+        record.setTag(field, rows);
+        NBTTagCompound result = new NBTTagCompound();
+        result.setTag("record", record);
+        result.setInteger("next", next);
+        result.setInteger("total", source.tagCount());
+        if (TaskCandidateIndex.measured(result) > 100000)
+            throw new IllegalArgumentException("History metadata exceeds detail budget");
+        return result;
+    }
+
     public static String resourceId(NBTTagCompound row) {
         if (row.hasKey("task_resource_id", 8)) return row.getString("task_resource_id");
         String id = row.getString("id");
@@ -71,6 +105,7 @@ public final class CanonicalTaskHistoryProjection {
             if (!"objective".equals(node.getType())) continue;
             Map<String, JsonElement> properties = node.getProperties();
             NBTTagCompound goal = new NBTTagCompound();
+            goal.setString("objective_id", node.getId());
             String type = properties.get("objective_type")
                 .getAsString();
             goal.setString("type", type);

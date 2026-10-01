@@ -59,16 +59,27 @@ public final class CanonicalStoryInstanceStore {
         return startDisposition(playerUuid, storyId, java.time.Clock.systemUTC());
     }
 
-    public synchronized CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId, java.time.Clock clock) {
+    public synchronized CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId,
+        java.time.Clock clock) {
         CanonicalStoryInstance existing = get(playerUuid, storyId);
         if (existing == null) return CanonicalStoryStartDisposition.NEW;
         if (existing.isActive()) return CanonicalStoryStartDisposition.ALREADY_ACTIVE;
         try {
             return darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatEligibility.evaluate(
-                existing.getStatus(), existing.snapshot().getRuntimeSnapshot().getRepeatPolicy(), existing.getTerminalTime(),
-                darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatCondition.forResource(existing.getRuntime().getResource()), clock).disposition;
-        } catch (RuntimeException invalid) { return CanonicalStoryStartDisposition.INVALID_REPEAT_TIME; }
+                existing.getStatus(),
+                existing.snapshot()
+                    .getRuntimeSnapshot()
+                    .getRepeatPolicy(),
+                existing.getTerminalTime(),
+                darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatCondition.forResource(
+                    existing.getRuntime()
+                        .getResource()),
+                clock).disposition;
+        } catch (RuntimeException invalid) {
+            return CanonicalStoryStartDisposition.INVALID_REPEAT_TIME;
+        }
     }
+
     public synchronized CanonicalStoryInstanceSnapshot getSnapshot(UUID playerUuid, String storyId) {
         CanonicalStoryInstance instance = get(playerUuid, storyId);
         return instance == null ? null : instance.snapshot();

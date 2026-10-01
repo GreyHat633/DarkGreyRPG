@@ -1,0 +1,209 @@
+{
+  "timestamp": "2026-10-01T21:32:23.5408288+08:00",
+  "branch": "codex/0.3.3.5",
+  "base": "515b37485a8a7d065e4f74ed058f2bf4c2c9c8cf",
+  "product_version": "0.3.3.5",
+  "configuration": "self-contained Windows x64 Release",
+  "USER_ACCEPTED": false,
+  "RELEASE_READY": false,
+  "github_published": false,
+  "validation_summary": {
+    "scope": "预览按钮与选择端口布局调整",
+    "wpf_passed": 166,
+    "failed": 0,
+    "report": "PREVIEW_COMPACT_PORTS.md",
+    "native_mouse": "PASS",
+    "java_changed": false,
+    "full_manual_acceptance": false
+  },
+  "implementation": "预览移到图片排序栏左侧；选择输入和输出分别从顶端紧凑排列、24 DIP 行高、8 DIP 中间间距",
+  "artifacts": [
+    {
+      "role": "authoritative_studio",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+      "bytes": 142699734,
+      "sha256": "388106E49C7D2524F01AB513E4B3C39FA5090D595A226A199960D462FE8F11B4"
+    },
+    {
+      "role": "java_mod",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.5.jar",
+      "bytes": 1874444,
+      "sha256": "F211F39077D5FDE15FECF588D0B1A63D47B79D7E084907D7D27B64748CF71D38"
+    },
+    {
+      "role": "native_studio_export",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\SequenceReview.dgrs",
+      "bytes": 15937,
+      "sha256": "38F0E37E50CE51289B05884D3BED79526DB04F8A68ECAC27E06E09DEDAA16935"
+    }
+  ],
+  "prior_validation_summary": {
+    "csharp_unique_passed": 1096,
+    "csharp_skipped": 13,
+    "csharp_failed": 0,
+    "final_wpf_focused_passed": 30,
+    "final_wpf_focused_overlaps_full_suite": true,
+    "java_build_and_related_probes": "passed; JavaLiveFixAccepted.log and JavaLiveFixRegressionAccepted.log"
+  },
+  "current_tests": [
+    "evidence/preview-compact/PreviewCompactWpf.log",
+    "evidence/preview-compact/PreviewCompactPublish.log",
+    "evidence/preview-compact/Verified.json"
+  ],
+  "previous_ui_review_delivery": {
+    "timestamp": "2026-10-01T08:56:39.227826+08:00",
+    "artifacts": [
+      {
+        "role": "authoritative_studio",
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+        "bytes": 142627030,
+        "sha256": "F2A0C2A49CC60BABEBD0A69A5D5B4622ABC3661607AF694E7DF13084EF4DC46F"
+      },
+      {
+        "role": "java_mod",
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.5.jar",
+        "bytes": 1860438,
+        "sha256": "CF07F57F1DB8B8C97251FB65FD05F8F58D6EFA15BDB6478DF982D85C361A23FB"
+      },
+      {
+        "role": "native_studio_export",
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\UIReview-PerImage.dgrs",
+        "bytes": 15168,
+        "sha256": "05CF94844F95466C21F719DD32D3A47D1C2936C8A994FF0248955E34175F21AD"
+      },
+      {
+        "role": "installed_test_package",
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\Server\\DarkGreyRPG\\StoryPackages\\Native0335.dgrs",
+        "bytes": 15168,
+        "sha256": "05CF94844F95466C21F719DD32D3A47D1C2936C8A994FF0248955E34175F21AD"
+      }
+    ],
+    "validation_summary": {
+      "scope": "Nine screenshot-reported UI defects and per-image animation follow-up",
+      "wpf_broader_passed": 77,
+      "wpf_final_pointer_passed": 66,
+      "wpf_latest_controls_passed": 18,
+      "core_latest_passed": 6,
+      "test_counts_overlap": true,
+      "java_build_checkstyle_and_probes": "PASS: UIReviewJavaVerified.log",
+      "native_studio": "PASS on authoritative EXE",
+      "native_game": "independent per-image entering and exiting captured",
+      "report": "UI_REVIEW_FIX.md"
+    }
+  },
+  "prior_tests": [
+    {
+      "name": "CoreAggregateFinal",
+      "counters": {
+        "total": "482",
+        "executed": "470",
+        "passed": "470",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "report": "evidence/automated/CoreAggregateFinal.trx"
+    },
+    {
+      "name": "WpfFunctional",
+      "counters": {
+        "total": "625",
+        "executed": "624",
+        "passed": "624",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "report": "evidence/automated/WpfFunctional.trx"
+    },
+    {
+      "name": "WpfScaleIsolated",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "2",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "report": "evidence/automated/WpfScaleIsolated.trx"
+    },
+    {
+      "name": "WpfAggregateFinal",
+      "counters": {
+        "total": "30",
+        "executed": "30",
+        "passed": "30",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "report": "evidence/automated/WpfAggregateFinal.trx"
+    }
+  ],
+  "previous_polish_validation_summary": {
+    "scope": "Studio 编辑区精简与任务面板分组调整",
+    "core_passed": 6,
+    "wpf_passed": 82,
+    "failed": 0,
+    "java_build_checkstyle_and_probes": "PASS",
+    "report": "STUDIO_TASK_POLISH.md",
+    "full_manual_acceptance": false
+  },
+  "previous_card_task_validation_summary": {
+    "scope": "Studio 卡片交互与任务界面修正",
+    "wpf_passed": 94,
+    "failed": 0,
+    "java_build_checkstyle_and_probes": "PASS",
+    "report": "CARD_TASK_UI.md",
+    "full_manual_acceptance": false
+  },
+  "previous_ports_hud_validation_summary": {
+    "scope": "选择端口对齐与任务追踪卡片调整",
+    "wpf_passed": 105,
+    "failed": 0,
+    "java_build_checkstyle_and_probes": "PASS",
+    "report": "PORTS_HUD_UI.md",
+    "full_manual_acceptance": false
+  }
+}

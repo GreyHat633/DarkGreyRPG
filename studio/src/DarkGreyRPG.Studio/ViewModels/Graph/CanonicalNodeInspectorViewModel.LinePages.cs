@@ -172,6 +172,7 @@ internal sealed class PageAudioGate
 {
     public bool Open;
     public bool Expanded = true;
+    public bool DetailsExpanded;
     public event EventHandler? Changed;
     public void Notify() => Changed?.Invoke(this, EventArgs.Empty);
 }
@@ -193,6 +194,7 @@ public sealed class CanonicalLinePageViewModel : ObservableObject, IDisposable
     internal CanonicalLinePageViewModel(CanonicalNodeInspectorViewModel owner, string id) { Owner = owner; PageId = id; _audio = owner.PageAudio(id); _audio.Changed += AudioChanged; }
     private void AudioChanged(object? sender, EventArgs args)
     {
+        OnPropertyChanged(nameof(DetailsExpanded));
         OnPropertyChanged(nameof(AudioEnabled));
         OnPropertyChanged(nameof(IsExpanded));
         OnPropertyChanged(nameof(ExpansionGlyph));
@@ -203,6 +205,7 @@ public sealed class CanonicalLinePageViewModel : ObservableObject, IDisposable
         get => _audio.Expanded;
         set { if (_audio.Expanded == value) return; _audio.Expanded = value; _audio.Notify(); }
     }
+    public bool DetailsExpanded { get => _audio.DetailsExpanded; set { if (_audio.DetailsExpanded == value) return; _audio.DetailsExpanded = value; _audio.Notify(); } }
     public string ExpansionGlyph => IsExpanded ? "▲" : "▼";
     public string ExpansionLabel => $"{(IsExpanded ? "收起" : "展开")}{Caption}";
     public void Dispose() => _audio.Changed -= AudioChanged;

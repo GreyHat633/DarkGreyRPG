@@ -31,10 +31,13 @@ public static class DialogueCapacityProfile
             { return new(0, Safe, 1, true, false, true); }
         }
         // The supported standard modes share one conservative recommendation.
-        var a = Measure(text, Normal); var b = Measure(text, Unicode);
-        return a.Used >= b.Used ? a with { Unsupported = a.Unsupported || b.Unsupported, Dynamic = dynamic } : b with { Unsupported = a.Unsupported || b.Unsupported, Dynamic = dynamic };
+        var results = Profile.RootElement.GetProperty("geometries").EnumerateArray()
+            .SelectMany(shape => new[] { Measure(text, Normal, shape.GetProperty("wrap_width").GetInt32(), shape.GetProperty("safe").GetInt32()),
+                Measure(text, Unicode, shape.GetProperty("wrap_width").GetInt32(), shape.GetProperty("safe").GetInt32()) }).ToArray();
+        var worst = results.MaxBy(result => (double)result.Used / result.Maximum)!;
+        return worst with { Unsupported = results.Any(result => result.Unsupported), Dynamic = dynamic };
     }
-    private static Result Measure(string text, int[] advances)
+    private static Result Measure(string text, int[] advances, int width, int safe)
     {
         var breaks = StringInfo.ParseCombiningCharacters(text);
         int at = 0, row = 1, used = 0, budget = 0; bool bold = false, unsupported = false, newline = false;
@@ -54,15 +57,15 @@ public static class DialogueCapacityProfile
             for (int i = at; i < end; i++)
             {
                 if (text[i] is '\r' or '\n') { newline = linebreak = true; continue; }
-                var width = advances[text[i]];
-                if (width == 0 && !char.IsControl(text[i])) unsupported = true;
-                advance += width + (bold && width > 0 ? 1 : 0);
+                var advanceWidth = advances[text[i]];
+                if (advanceWidth == 0 && !char.IsControl(text[i])) unsupported = true;
+                advance += advanceWidth + (bold && advanceWidth > 0 ? 1 : 0);
             }
-            if (advance > Width) unsupported = true;
-            if (used > 0 && used + advance > Width || linebreak) { budget += Width; row++; used = 0; }
+            if (advance > width) unsupported = true;
+            if (used > 0 && used + advance > width || linebreak) { budget += width; row++; used = 0; }
             if (!linebreak) used += advance;
             at = end;
         }
-        return new(budget + used, Safe, row, unsupported, newline);
+        return new(budget + used, safe, row, unsupported, newline);
     }
 }

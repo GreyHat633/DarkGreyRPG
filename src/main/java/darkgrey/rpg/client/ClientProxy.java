@@ -16,7 +16,9 @@ import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 import darkgrey.rpg.proxy.CommonProxy;
 
 public final class ClientProxy extends CommonProxy {
-    @Override public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {
+
+    @Override
+    public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {
         Minecraft minecraft = Minecraft.getMinecraft();
         if (kind == 0) minecraft.displayGuiScreen(new darkgrey.rpg.client.gui.GuiPlayerStateInspection());
         else if (minecraft.currentScreen instanceof darkgrey.rpg.client.gui.GuiPlayerStateInspection)
