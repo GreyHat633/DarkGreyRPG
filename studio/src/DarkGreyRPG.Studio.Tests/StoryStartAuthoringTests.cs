@@ -9,6 +9,32 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class StoryStartAuthoringTests
 {
     [TestMethod]
+    public void EmptyActorDraftIsUndoableAndPersistentButExecutableValidationRemainsStrict()
+    {
+        var graph = new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "stable")]);
+        var session = new GraphEditSession(graph, GraphScope.StoryFlow, dynamicPortIdSource: () => "second");
+        Assert.IsTrue(session.SetStoryStartTriggerType("start", "stable", StoryStartSchema.ActorInteraction));
+        Assert.AreEqual("", StoryStartSchema.ReadTriggers(graph.Nodes.Single()).Single().TriggerProperties.GetProperty("actor_id").GetString());
+        Assert.IsTrue(session.Undo());
+        Assert.AreEqual(StoryStartSchema.RegionEntry, StoryStartSchema.ReadTriggers(graph.Nodes.Single()).Single().TriggerType);
+        Assert.IsTrue(session.Redo());
+        Assert.IsTrue(session.AddStoryStartTrigger("start", "第二项", StoryStartSchema.ActorInteraction));
+        Assert.IsTrue(session.ReorderStoryStartTrigger("start", "second", 0));
+        Assert.IsTrue(session.SetStoryStartRepeatPolicy("start", StoryStartSchema.Repeatable));
+        var reopened = GraphSerializer.Deserialize(GraphSerializer.Serialize(graph));
+        Assert.AreEqual("second", reopened.Nodes.Single().Ports.First().Id);
+        Assert.HasCount(2, StoryStartSchema.Validate(reopened.Nodes.Single()));
+        Assert.IsEmpty(StoryStartSchema.AllowDraftIssues(reopened.Nodes.Single(), StoryStartSchema.Validate(reopened.Nodes.Single())));
+        foreach (var value in new[] { JsonSerializer.SerializeToElement(" "), JsonSerializer.SerializeToElement<object?>(null), JsonSerializer.SerializeToElement(1) })
+        {
+            var before = graph.ToJson();
+            Assert.IsFalse(session.SetStoryStartTriggerProperties("start", "stable", new Dictionary<string, JsonElement> { ["actor_id"] = value }));
+            Assert.AreEqual(before, graph.ToJson());
+        }
+        Assert.IsFalse(StoryStartSchema.IsValid(reopened.Nodes.Single()));
+    }
+
+    [TestMethod]
     public void FactoryCreatesOneValidOpaqueDefaultTriggerAndOncePolicy()
     {
         var node = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque_start");

@@ -9,6 +9,26 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class CanonicalTaskObjectiveAuthoringTests
 {
     [TestMethod]
+    public void EmptyActorInteractionIsAnEditableDraftButNotAnExecutableObjective()
+    {
+        var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        var graph = new GraphDocument([objective]);
+        var session = new GraphEditSession(graph, GraphScope.Task);
+        Assert.IsTrue(session.ChangeObjectiveType("objective", CanonicalTaskObjectiveSchema.InteractActor));
+        Assert.AreEqual("", graph.Nodes.Single().Properties["actor_id"].GetString());
+        Assert.IsTrue(session.SetNodeProperty("objective", "description", JsonSerializer.SerializeToElement("交谈")));
+        Assert.IsEmpty(session.LastValidationIssues);
+        var reopened = GraphSerializer.Deserialize(GraphSerializer.Serialize(graph)).Nodes.Single();
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.Validate(reopened).Any(issue => issue.Code == "graph.objective.target.invalid"));
+        Assert.IsFalse(CanonicalTaskObjectiveSchema.TryInitializeType(reopened, CanonicalTaskObjectiveSchema.InteractActor, out _));
+        Assert.IsTrue(session.Undo());
+        Assert.IsTrue(session.Undo());
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.KillEntity, graph.Nodes.Single().Properties["objective_type"].GetString());
+        Assert.IsTrue(session.Redo());
+        Assert.AreEqual("", graph.Nodes.Single().Properties["actor_id"].GetString());
+    }
+
+    [TestMethod]
     public void FactoryCreatesUnselectedKillContract()
     {
         var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
@@ -92,7 +112,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
             Assert.IsFalse(session.SetNodeProperty("objective", property, value), property);
             Assert.AreEqual(before, graph.ToJson(), property);
         }
-        Assert.IsFalse(session.ChangeObjectiveType("objective", "interact_actor"));
+        Assert.IsFalse(session.ChangeObjectiveType("objective", "unsupported"));
         Assert.AreEqual("kill_entity", graph.Nodes.Single().Properties["objective_type"].GetString());
     }
 

@@ -82,6 +82,17 @@ public static class CanonicalTaskObjectiveSchema
         return true;
     }
 
+    /// <summary>Initialize an editor draft even before an actor resource exists.</summary>
+    public static bool TryInitializeDraftType(GraphNode node, string? type, string? actorId,
+        out IReadOnlyList<ValidationIssue> issues)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        issues = ValidateType(type, node.Id);
+        if (issues.Count != 0) return false;
+        InitializeType(node, type!, actorId);
+        return true;
+    }
+
     public static IReadOnlyList<ValidationIssue> Validate(GraphNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
@@ -296,9 +307,7 @@ public static class CanonicalTaskObjectiveSchema
                     properties[field] = JsonSerializer.SerializeToElement(field == "radius" ? 1 : 0);
                 break;
             case InteractActor:
-                if (string.IsNullOrWhiteSpace(actorId))
-                    throw new ArgumentException("An explicit actor ID is required for interact_actor.", nameof(actorId));
-                properties[ActorIdProperty] = JsonSerializer.SerializeToElement(actorId);
+                properties[ActorIdProperty] = JsonSerializer.SerializeToElement(actorId ?? UnselectedTarget);
                 break;
         }
     }

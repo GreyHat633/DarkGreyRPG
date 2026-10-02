@@ -105,7 +105,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     }
 
     [TestMethod]
-    public void InspectorUsesFirstAvailableActorOrFailsAtomically()
+    public void InspectorUsesFirstAvailableActorOrAllowsAnUnselectedDraft()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
@@ -122,11 +122,12 @@ public sealed class CanonicalTaskObjectiveInspectorTests
             GraphResourceKind.Task, "task-2", "Task", new GraphDocument([noActorObjective])));
         using var noActorInspector = new CanonicalNodeInspectorViewModel(noActorEditor.Host,
             noActorEditor.Host.Nodes.Single());
-        var before = noActorEditor.Host.Graph.ToJson();
         noActorInspector.SelectedObjectiveType = noActorInspector.ObjectiveTypeOptions.Single(item => item.Value == "interact_actor");
-        Assert.AreEqual(before, noActorEditor.Host.Graph.ToJson());
-        Assert.AreEqual("kill_entity", noActorInspector.ObjectiveType);
-        Assert.AreEqual(0, noActorEditor.Host.Session.UndoCount);
+        Assert.AreEqual("interact_actor", noActorInspector.ObjectiveType);
+        Assert.AreEqual("", noActorEditor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
+        Assert.IsEmpty(noActorInspector.ObjectiveActorOptions);
+        Assert.IsNull(noActorInspector.SelectedObjectiveActor);
+        Assert.AreEqual(1, noActorEditor.Host.Session.UndoCount);
     }
 
     [TestMethod]

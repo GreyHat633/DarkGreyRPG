@@ -103,7 +103,6 @@ public sealed class CanonicalTaskRewardEntryViewModel : ObservableObject
         {
             if (_projecting || value is null || value.Value == _type) return;
             var item = value.Value == "item" ? ItemOptions.FirstOrDefault()?.Id : null;
-            if (value.Value == "item" && item is null) { SetError("项目中没有可选物品，请先创建或引用物品。"); return; }
             var oldType = _type; var oldItem = _item;
             _type = value.Value; _item = item;
             if (!_owner.SaveRewardEntries()) { _type = oldType; _item = oldItem; }
@@ -116,7 +115,7 @@ public sealed class CanonicalTaskRewardEntryViewModel : ObservableObject
     public CanonicalResourceSelectionOption? SelectedItem
     {
         get => ItemOptions.FirstOrDefault(item => item.Id == _item)
-            ?? (_item is null ? null : new(_item, "缺失物品：" + _item, false));
+            ?? (string.IsNullOrEmpty(_item) ? null : new(_item, "缺失物品：" + _item, false));
         set
         {
             if (_projecting || !IsItem || value is null || value.Id == _item) return;

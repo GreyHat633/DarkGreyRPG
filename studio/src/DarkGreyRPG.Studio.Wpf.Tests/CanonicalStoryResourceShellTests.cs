@@ -124,6 +124,24 @@ public sealed class CanonicalStoryResourceShellTests
     }
 
     [TestMethod]
+    public void HomeInspectorClearsResourcesWithoutASelectedStoryAndRebuildsOnSelection()
+    {
+        using var project = new CanonicalProjectFixture();
+        new CanonicalStoryResourceLifecycleService(project.Store).CreateOwned("opening", GraphResourceKind.Session, "session", "Session");
+        var shell = project.OpenShell(new FakeCanonicalDialogs());
+        shell.CanonicalStoryWorkspace!.ActivateBreadcrumb(shell.CanonicalStoryWorkspace.Breadcrumbs[0]);
+        var story = shell.ProjectHome.SelectedStory!;
+        Assert.HasCount(4, shell.HomeResourceFolders);
+        shell.ProjectHome.SelectedStory = null;
+        Assert.IsEmpty(shell.HomeResourceFolders);
+        shell.ProjectHome.SelectedStory = story;
+        Assert.AreEqual("session", shell.HomeResourceFolders[2].Items.Single().Id);
+        shell.ProjectHome.ReplaceStories([]);
+        Assert.IsNull(shell.ProjectHome.SelectedStory);
+        Assert.IsEmpty(shell.HomeResourceFolders);
+    }
+
+    [TestMethod]
     [DoNotParallelize]
     public void DisplayNameOnlyRenamePreservesIdentityOwnershipAndSynchronizesGraphAggregates()
     {

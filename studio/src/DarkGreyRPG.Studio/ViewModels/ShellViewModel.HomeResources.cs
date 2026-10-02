@@ -24,6 +24,12 @@ public sealed partial class ShellViewModel
     private void RefreshHomeResourceFolders()
     {
         var storyId = ProjectHome.SelectedStory?.Id;
+        if (storyId is null)
+        {
+            HomeResourceFolders = [];
+            OnPropertyChanged(nameof(HomeResourceFolders));
+            return;
+        }
         CanonicalStoryWorkspaceViewModel? preview = null;
         try
         {

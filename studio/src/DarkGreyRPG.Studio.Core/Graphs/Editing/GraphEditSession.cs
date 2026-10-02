@@ -867,7 +867,7 @@ public sealed class GraphEditSession
             return true;
 
         var candidate = Clone(node);
-        if (!CanonicalTaskObjectiveSchema.TryInitializeType(candidate, type, actorId, out var typeIssues))
+        if (!CanonicalTaskObjectiveSchema.TryInitializeDraftType(candidate, type, actorId, out var typeIssues))
             return Fail(typeIssues);
         var shapeIssues = GraphNodeShapeValidator.Validate(candidate, GraphScope.Task);
         var authoringShapeIssues = AllowUnselectedObjectiveTarget(candidate, shapeIssues);
@@ -1570,7 +1570,7 @@ public sealed class GraphEditSession
 
     private bool CommitValidatedStoryStart(GraphDocument before, GraphNode node)
     {
-        var validation = StoryStartSchema.Validate(node, compatibilityMode: false);
+        var validation = StoryStartSchema.AllowDraftIssues(node, StoryStartSchema.Validate(node, compatibilityMode: false));
         if (validation.Count != 0)
         { ReplaceContents(before); return Fail(validation); }
         Commit(before); return true;

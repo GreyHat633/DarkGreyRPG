@@ -38,15 +38,15 @@ public static class StoryStartSchema
 
     public static IReadOnlyList<string> SupportedRepeatPolicies { get; } = [Once, Repeatable];
 
-    /// <summary>Returns a valid payload for a newly selected trigger type.</summary>
+    /// <summary>Returns an authoring payload; an empty actor ID awaits resource selection.</summary>
     public static IReadOnlyDictionary<string, JsonElement> DefaultTriggerProperties(
         string triggerType, string? actorId = null)
         => triggerType switch
         {
-            ActorInteraction when !string.IsNullOrWhiteSpace(actorId) =>
+            ActorInteraction =>
                 new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                 {
-                    [ActorIdProperty] = JsonSerializer.SerializeToElement(actorId.Trim()),
+                    [ActorIdProperty] = JsonSerializer.SerializeToElement(actorId?.Trim() ?? ""),
                 },
             RegionEntry => new Dictionary<string, JsonElement>(StringComparer.Ordinal)
             {
@@ -238,6 +238,30 @@ public static class StoryStartSchema
     }
 
     public static bool IsValid(GraphNode node) => Validate(node).Count == 0;
+
+    /// <summary>Allow only an explicitly unselected actor in editor transactions.</summary>
+    public static IReadOnlyList<ValidationIssue> AllowDraftIssues(GraphNode node, IReadOnlyList<ValidationIssue> issues)
+    {
+        var draftFields = new HashSet<string>(StringComparer.Ordinal);
+        if (node.Properties.TryGetValue(TriggersProperty, out var triggers) && triggers.ValueKind == JsonValueKind.Array)
+        {
+            var index = 0;
+            foreach (var trigger in triggers.EnumerateArray())
+            {
+                if (trigger.ValueKind == JsonValueKind.Object
+                    && ReadString(trigger, "trigger_type") == ActorInteraction
+                    && trigger.TryGetProperty("trigger_properties", out var properties)
+                    && properties.ValueKind == JsonValueKind.Object
+                    && properties.EnumerateObject().Count() == 1
+                    && properties.TryGetProperty(ActorIdProperty, out var actor)
+                    && actor.ValueKind == JsonValueKind.String && actor.GetString() == "")
+                    draftFields.Add($"properties.{TriggersProperty}[{index}].trigger_properties");
+                index++;
+            }
+        }
+        return issues.Where(issue => issue.Code != "graph.story.start.trigger.properties.value"
+            || !draftFields.Contains(issue.Field ?? "")).ToArray();
+    }
 
     public static bool IsValid(GraphNode node, bool compatibilityMode)
         => Validate(node, compatibilityMode).Count == 0;

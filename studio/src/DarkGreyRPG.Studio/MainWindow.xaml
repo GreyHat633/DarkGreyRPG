@@ -538,8 +538,8 @@
                             <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
                             <Border Grid.Column="2" Padding="16" Background="{DynamicResource LayerFillColorAltBrush}"
                                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
-                                <Grid><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel DataContext="{Binding ProjectHome.SelectedStory.Overview}">
-                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.SelectedReferencedPackage, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                                <Grid><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="HomeStoryInspectorContent" DataContext="{Binding ProjectHome.SelectedStory.Overview}">
+                                    <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.SelectedReferencedPackage, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger><DataTrigger Binding="{Binding DataContext.ProjectHome.SelectedStory, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                                     <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="故事详情" />
                                     <TextBlock Margin="0,4,0,0" FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}"
                                                TextWrapping="Wrap" AutomationProperties.Name="选中故事完整概览" />
