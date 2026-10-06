@@ -122,28 +122,18 @@ public sealed class StoryRepository
         ThrowIfInvalidNewId(baseId);
         if (FindStoryPath(baseId) is null) return baseId;
 
-        for (var suffix = 2; suffix < int.MaxValue; suffix++)
-        {
-            var candidate = $"{baseId}_{suffix}";
-            if (!File.Exists(GetStoryPath(candidate))) return candidate;
-        }
-
-        throw new StoryRepositoryException($"Could not allocate an available Story ID based on '{baseId}'.");
+        return StoryUid.Create(ListStories().Select(story => StoryUid.Parse(story.Id)).ToHashSet()).Value;
     }
 
     public string GetStoryPath(string id)
     {
         ValidateExistingId(id);
-        return FindStoryPath(id) ?? Path.Combine(StoriesDirectory, DgrResourceId.RelativeJsonPath(id));
+        return FindStoryPath(id) ?? Path.Combine(StoriesDirectory, StoryUid.Parse(id).Value + ".json");
     }
 
     private string? FindStoryPath(string id)
     {
-        if (!DgrResourceId.IsFullId(id))
-        {
-            var legacyPath = Path.Combine(StoriesDirectory, id + ".json");
-            return File.Exists(legacyPath) ? legacyPath : null;
-        }
+        ValidateExistingId(id);
         return CanonicalResourceFileSystem.FindUniquePath(
             StoriesDirectory,
             id,
@@ -158,8 +148,7 @@ public sealed class StoryRepository
         try
         {
             var resource = StorySerializer.Deserialize(File.ReadAllText(path));
-            if (!DgrResourceId.IsFullId(resource.Id)
-                && !string.Equals(Path.GetFileName(path), resource.Id + ".json", StringComparison.Ordinal))
+            if (!string.Equals(Path.GetFileName(path), resource.Id + ".json", StringComparison.Ordinal))
                 throw new StoryDataException($"Story file name must match its ID '{resource.Id}'.");
             return resource;
         }
@@ -170,17 +159,11 @@ public sealed class StoryRepository
 
     private static void ValidateExistingId(string id)
     {
-        var issues = ActorValidator.ValidateId(id, ActorIdPolicy.ExistingResource);
-        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
-            throw new StoryRepositoryException($"Invalid Story ID '{id}'.");
+        if (!StoryUid.IsValid(id)) throw new StoryRepositoryException($"Invalid Story UID '{id}'.");
     }
 
-    private static void ThrowIfInvalidNewId(string id)
-    {
-        var issues = ActorValidator.ValidateId(id, ActorIdPolicy.NewResource);
-        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
-            throw new StoryRepositoryException($"Invalid Story ID '{id}'.");
-    }
+    private static void ThrowIfInvalidNewId(string id) => ValidateExistingId(id);
+
 }
 
 public sealed class StoryNotFoundException : Exception

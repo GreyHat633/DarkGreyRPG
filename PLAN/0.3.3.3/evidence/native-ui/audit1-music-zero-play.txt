@@ -1,0 +1,7 @@
+action=play
+vanillaMusic=0.0
+dgrMusic=1.0
+screen=darkgrey.rpg.client.gui.GuiDialogueSettings
+previewCharacters=20.0
+previewHold=0.49945510000000004
+adjusting=false

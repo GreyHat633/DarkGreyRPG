@@ -1,0 +1,31 @@
+{
+  "Status": "IMPLEMENTED_VALIDATION_PARTIAL_NOT_USER_ACCEPTED",
+  "VerifiedAt": "2026-09-30T15:25:35.411022+08:00",
+  "StudioPath": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "ProductVersion": "0.3.3.4",
+  "StudioSize": 142501590,
+  "StudioSha256": "EDACAC74C138CBFFD44DB155AC97BC50BD7CBAF3E9EDDC2F7865A4A43F7D8D70",
+  "JarPath": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.4.jar",
+  "JarVersion": "0.3.3.4",
+  "JarSize": 1800727,
+  "JarSha256": "4BE0EB456D27D8DE709C32FE24980D11002F74786CCBCADE42B125F964DFC43E",
+  "USER_ACCEPTED": "NO",
+  "RELEASE_READY": "NO",
+  "Record": "PLAN/0.3.3.4/Dialogue_Button_Inset_2026-09-30.md",
+  "RemainingVersionCoverage": [
+    "C10 long text / voice / history combined native verification",
+    "C12 remaining candidate edge cases; basic item/group selection and submission covered this round"
+  ],
+  "RemainingMediaCoverage": [
+    "Normal demand decode and GPU upload latency remains; no zero-wait promise",
+    "WAN/multi-client 3/10-package native stress remains open; policy probes pass",
+    "Strict render-frame distribution and audible long-audio latency remain open"
+  ],
+  "RemainingCurrentScopeCoverage": [
+    "100% deliberately preserves the original small-GUI font and baseline capacity",
+    "Native default-font 12 scale combinations covered; theme/size exhaustive cross product and all resource packs not claimed",
+    "Prior portrait loading-placeholder forced-delay capture remains open"
+  ],
+  "PreviousVerifiedAt": "2026-09-30T15:18:07.358193+08:00",
+  "StudioChangedThisRound": false
+}

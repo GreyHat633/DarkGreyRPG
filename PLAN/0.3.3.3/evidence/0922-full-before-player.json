@@ -1,0 +1,307 @@
+{
+  "": {
+    "Spawns": [],
+    "ForgeData": {
+      "SkinOverlayData": [],
+      "PlayerPersisted": {
+        "DGRTaskReceipts": {
+          "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8": 1,
+          "e442775f1b14d8acc9d93140a9abfbc7340515d72df954cf8b5edfe17c6de26f": 1,
+          "7f1e1b1ea939384ca448eaa80c22882d0a44ed8330653737ff7013c55e18139d": 1
+        }
+      }
+    },
+    "SleepTimer": 0,
+    "Attributes": [
+      {
+        "Base": 20.0,
+        "Name": "generic.maxHealth"
+      },
+      {
+        "Base": 0.0,
+        "Name": "generic.knockbackResistance"
+      },
+      {
+        "Base": 0.10000000149011612,
+        "Name": "generic.movementSpeed"
+      },
+      {
+        "Base": 1.0,
+        "Name": "generic.attackDamage"
+      }
+    ],
+    "Invulnerable": 0,
+    "PortalCooldown": 0,
+    "AbsorptionAmount": 0.0,
+    "abilities": {
+      "invulnerable": 1,
+      "mayfly": 1,
+      "instabuild": 1,
+      "walkSpeed": 0.10000000149011612,
+      "mayBuild": 1,
+      "flying": 0,
+      "flySpeed": 0.05000000074505806
+    },
+    "FallDistance": 0.0,
+    "DeathTime": 0,
+    "HealF": 20.0,
+    "XpTotal": 0,
+    "playerGameType": 1,
+    "Motion": [
+      0.0,
+      -0.0784000015258789,
+      0.0
+    ],
+    "UUIDLeast": -5905154756776021197,
+    "Health": 20,
+    "foodSaturationLevel": 5.0,
+    "Air": 300,
+    "OnGround": 1,
+    "Dimension": 0,
+    "Rotation": [
+      0.0,
+      0.0
+    ],
+    "XpLevel": 0,
+    "Score": 0,
+    "UUIDMost": 4623605811679546520,
+    "Sleeping": 0,
+    "Pos": [
+      -113.5,
+      91.0,
+      207.5
+    ],
+    "Fire": -20,
+    "XpP": 0.0,
+    "EnderItems": [],
+    "foodLevel": 20,
+    "foodExhaustionLevel": 0.0,
+    "HurtTime": 0,
+    "SelectedItemSlot": 0,
+    "AttackTime": 0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "id": 264,
+        "Count": 64,
+        "tag": {
+          "display": {
+            "Name": "NativeNamedGem0333"
+          }
+        },
+        "Damage": 0
+      },
+      {
+        "Slot": 1,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 2,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 3,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 4,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 5,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 6,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 7,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 8,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 9,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 10,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 11,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 12,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 13,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 14,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 15,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 16,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 17,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 18,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 19,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 20,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 21,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 22,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 23,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 24,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 25,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 26,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 27,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 28,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 29,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 30,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 31,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 32,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 33,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 34,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      },
+      {
+        "Slot": 35,
+        "id": 1,
+        "Count": 64,
+        "Damage": 0
+      }
+    ],
+    "foodTickTimer": 0
+  }
+}

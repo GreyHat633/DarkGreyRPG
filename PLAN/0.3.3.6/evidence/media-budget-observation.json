@@ -1,0 +1,24 @@
+{
+  "max_admitted": 10,
+  "max_downloading": 3,
+  "all_running_fixture_stories": 12,
+  "other_protected_story": 1,
+  "final": [
+    10,
+    0,
+    3,
+    10,
+    10
+  ],
+  "observations": 18,
+  "all_bounds_obeyed": true,
+  "after_manual_completion": [
+    10,
+    0,
+    2,
+    10,
+    10
+  ],
+  "queue_decreased_without_evicting_running": true,
+  "network_bytes_scope": "Three 2048x2048 valid PNGs shared across 12 distinct Story bundles; max 3 downloads captured in opt-in trace"
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 3,
+  "story_id": "Native0332:acceptance",
+  "owned_resources": {
+    "actors": [],
+    "items": [],
+    "item_groups": [],
+    "sessions": [
+      "Native0332:conversation"
+    ],
+    "tasks": []
+  },
+  "referenced_resources": {
+    "actors": [],
+    "items": [],
+    "item_groups": [],
+    "sessions": [],
+    "tasks": []
+  },
+  "display_order": {
+    "actors": [],
+    "items": [],
+    "sessions": [],
+    "tasks": []
+  }
+}

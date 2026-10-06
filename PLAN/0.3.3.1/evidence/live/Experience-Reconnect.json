@@ -1,0 +1,600 @@
+{
+  "screen": "darkgrey.rpg.client.gui.GuiCanonicalSessionScreen",
+  "server_result": "/dgr reload => 1",
+  "fixture_entity_ids": [
+    136942,
+    136943
+  ],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    -805.5,
+    5.620000004768372,
+    -1609.5
+  ],
+  "inventory": [],
+  "width": 427,
+  "height": 267,
+  "buttons": [],
+  "task_client_frame": {
+    "presentation": {
+      "revision": 0,
+      "musicRevision": 0,
+      "loop": false,
+      "fadeIn": 0.0,
+      "fadeOut": 0.0,
+      "musicVolume": 1.0,
+      "layers": []
+    },
+    "lineEpoch": 1,
+    "playVoice": false,
+    "voiceVolume": 1.0,
+    "textSpeed": 30.0,
+    "portraitRef": "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png",
+    "transportId": 2,
+    "storyId": "GreyHat_:test_story",
+    "sessionResourceId": "GreyHat_:TaskFinish",
+    "currentNodeId": "node_713eb756c18a4bd59f731a39062fd14a",
+    "kind": "LINE",
+    "speaker": "酒馆老板",
+    "text": "感谢您完成了我的委托。",
+    "choices": []
+  },
+  "task_client_visible_text": "感谢您完成了我的委托。",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": 1,
+    "musicRevision": 0,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "sources": {
+      "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb": {
+        "sourcename": "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 859.1383
+      },
+      "1f786e6c-7bbc-4f20-b9c3-c6bab174bff7": {
+        "sourcename": "1f786e6c-7bbc-4f20-b9c3-c6bab174bff7",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 219.97733
+      },
+      "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d": {
+        "sourcename": "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "74393754-32c3-44aa-92f4-164dd828e3d3": {
+        "sourcename": "74393754-32c3-44aa-92f4-164dd828e3d3",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 79.977325
+      },
+      "6e75d8af-29bf-4140-b479-a6a192cfb398": {
+        "sourcename": "6e75d8af-29bf-4140-b479-a6a192cfb398",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "28706804-973d-4a08-8bb8-a68fced6edd8": {
+        "sourcename": "28706804-973d-4a08-8bb8-a68fced6edd8",
+        "toStream": false,
+        "sourceVolume": 0.4,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 219.97733
+      },
+      "1febfdb8-997d-4851-8a0e-295d0c2aef9d": {
+        "sourcename": "1febfdb8-997d-4851-8a0e-295d0c2aef9d",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 441.85944
+      },
+      "255da0d1-41a0-40ea-9e7a-249f39039baa": {
+        "sourcename": "255da0d1-41a0-40ea-9e7a-249f39039baa",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 351.08844
+      },
+      "2279589d-b41a-4bd1-b565-97a6332cc844": {
+        "sourcename": "2279589d-b41a-4bd1-b565-97a6332cc844",
+        "toStream": false,
+        "sourceVolume": 0.4,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "99b798dc-7817-4abb-b11e-a0c6ceee5033": {
+        "sourcename": "99b798dc-7817-4abb-b11e-a0c6ceee5033",
+        "toStream": false,
+        "sourceVolume": 0.4,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 181.56464
+      },
+      "6f96658a-b2e6-4d77-83bb-124d03b18575": {
+        "sourcename": "6f96658a-b2e6-4d77-83bb-124d03b18575",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 486.644
+      },
+      "91c9ce45-0d30-490c-a7e3-09115c922a5c": {
+        "sourcename": "91c9ce45-0d30-490c-a7e3-09115c922a5c",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "9557da9c-5989-4e6c-b7a9-c5ed5c3ffe4f": {
+        "sourcename": "9557da9c-5989-4e6c-b7a9-c5ed5c3ffe4f",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 351.08844
+      },
+      "adb08e8a-aaea-4adf-b7a4-5c563d0dfb3f": {
+        "sourcename": "adb08e8a-aaea-4adf-b7a4-5c563d0dfb3f",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 479.95465
+      },
+      "c8e0bc7d-7017-4cb9-af91-a459e3a4adc5": {
+        "sourcename": "c8e0bc7d-7017-4cb9-af91-a459e3a4adc5",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 181.56464
+      },
+      "d0673a5f-14db-433c-812e-8a78600996b7": {
+        "sourcename": "d0673a5f-14db-433c-812e-8a78600996b7",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 10479.433
+      },
+      "e819e0e2-5a8d-414e-8439-df2f61054727": {
+        "sourcename": "e819e0e2-5a8d-414e-8439-df2f61054727",
+        "toStream": false,
+        "sourceVolume": 0.8,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 208.86621
+      }
+    },
+    "textures_ready": [
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+    ],
+    "downloads": {
+      "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3bd754dd71da64a2d17ab14406276ed54283535fd23333c7431aa4380809e094.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/aaccb768908bceb78d2c239a1e0df424c6bd61afc9fe20509d7cc33ae26faaf1.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+        "ready": true,
+        "offset": 0
+      }
+    },
+    "master_level": 1.0,
+    "players_level": 1.0,
+    "music_level": 1.0,
+    "cached_packages": 2,
+    "preloading_packages": 0,
+    "queued_packages": 0,
+    "package_entries": [
+      {
+        "id": "local:ExperiencePlan0916|GreyHat_:test_story",
+        "ready": false,
+        "running": false,
+        "refs": 4
+      },
+      {
+        "id": "local:ExperiencePlan0916B|GreyHat_:test_story",
+        "ready": true,
+        "running": true,
+        "refs": 6
+      }
+    ],
+    "cache_hits": 4,
+    "local_hits": 2,
+    "network_requests": 0,
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      -805.5,
+      4.0,
+      -1609.5
+    ],
+    "tick": 3252,
+    "tick_p95_ms": 5.556,
+    "tick_max_ms": 7.2232,
+    "heap": {
+      "used": 834741608,
+      "free": 1964432024,
+      "total": 2799173632,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 2,
+      "task_presentation_generation": 1
+    },
+    "inventory": [],
+    "tasks": [
+      {
+        "story_id": "GreyHat_:test_story",
+        "placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "task_id": "GreyHat_:KillSlimes",
+        "status": "SETTLED",
+        "activation_time": 1789531850988,
+        "settlement_time": 1789531896449,
+        "runtime": {
+          "status": "SETTLED",
+          "progress": {
+            "node_4feb6ff8c4944e078f9914cd808c9f17": 1,
+            "node_cfc0a454a1ef4168890d4ce6fbb3e803": 3
+          },
+          "objective_statuses": {
+            "node_4feb6ff8c4944e078f9914cd808c9f17": "COMPLETED",
+            "node_cfc0a454a1ef4168890d4ce6fbb3e803": "COMPLETED"
+          },
+          "result_port_id": "dynamic_port_8a66683d24ed4c09b54b7eeb426000bb"
+        }
+      }
+    ],
+    "journal": [
+      {
+        "task_id": "GreyHat_:KillSlimes",
+        "story_id": "GreyHat_:test_story",
+        "placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "title": "击杀3只史莱姆",
+        "status": "SETTLED",
+        "objectives": [
+          {
+            "id": "node_cfc0a454a1ef4168890d4ce6fbb3e803",
+            "type": "kill_entity",
+            "description": "消灭史莱姆",
+            "status": "COMPLETED",
+            "current": 3,
+            "required": 3
+          },
+          {
+            "id": "node_4feb6ff8c4944e078f9914cd808c9f17",
+            "type": "interact_actor",
+            "description": "与酒馆老板对话",
+            "status": "COMPLETED",
+            "current": 1,
+            "required": 1
+          }
+        ]
+      }
+    ],
+    "entities": [
+      {
+        "entity_id": 926286,
+        "uuid": "722acb2a-8fa2-4339-b8fa-3ed3f9e99004",
+        "name": "Koshi Tatsu",
+        "dimension": 0,
+        "pos": [
+          -803.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      },
+      {
+        "entity_id": 926287,
+        "uuid": "081b1245-86e3-4b5e-9d87-7e766ad27c1b",
+        "name": "Barbara",
+        "dimension": 0,
+        "pos": [
+          -802.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      }
+    ],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": 1,
+      "musicRevision": 0,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 0.0,
+      "engine_ready": true,
+      "playing": {
+        "dgr_session_voice": false,
+        "dgr_session_music_a": false,
+        "dgr_session_music_b": false
+      },
+      "sources": {
+        "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb": {
+          "sourcename": "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 859.1383
+        },
+        "1f786e6c-7bbc-4f20-b9c3-c6bab174bff7": {
+          "sourcename": "1f786e6c-7bbc-4f20-b9c3-c6bab174bff7",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 219.97733
+        },
+        "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d": {
+          "sourcename": "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "74393754-32c3-44aa-92f4-164dd828e3d3": {
+          "sourcename": "74393754-32c3-44aa-92f4-164dd828e3d3",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 79.977325
+        },
+        "6e75d8af-29bf-4140-b479-a6a192cfb398": {
+          "sourcename": "6e75d8af-29bf-4140-b479-a6a192cfb398",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "28706804-973d-4a08-8bb8-a68fced6edd8": {
+          "sourcename": "28706804-973d-4a08-8bb8-a68fced6edd8",
+          "toStream": false,
+          "sourceVolume": 0.4,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 219.97733
+        },
+        "1febfdb8-997d-4851-8a0e-295d0c2aef9d": {
+          "sourcename": "1febfdb8-997d-4851-8a0e-295d0c2aef9d",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 441.85944
+        },
+        "255da0d1-41a0-40ea-9e7a-249f39039baa": {
+          "sourcename": "255da0d1-41a0-40ea-9e7a-249f39039baa",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 351.08844
+        },
+        "2279589d-b41a-4bd1-b565-97a6332cc844": {
+          "sourcename": "2279589d-b41a-4bd1-b565-97a6332cc844",
+          "toStream": false,
+          "sourceVolume": 0.4,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "99b798dc-7817-4abb-b11e-a0c6ceee5033": {
+          "sourcename": "99b798dc-7817-4abb-b11e-a0c6ceee5033",
+          "toStream": false,
+          "sourceVolume": 0.4,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 181.56464
+        },
+        "6f96658a-b2e6-4d77-83bb-124d03b18575": {
+          "sourcename": "6f96658a-b2e6-4d77-83bb-124d03b18575",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 486.644
+        },
+        "91c9ce45-0d30-490c-a7e3-09115c922a5c": {
+          "sourcename": "91c9ce45-0d30-490c-a7e3-09115c922a5c",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "9557da9c-5989-4e6c-b7a9-c5ed5c3ffe4f": {
+          "sourcename": "9557da9c-5989-4e6c-b7a9-c5ed5c3ffe4f",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 351.08844
+        },
+        "adb08e8a-aaea-4adf-b7a4-5c563d0dfb3f": {
+          "sourcename": "adb08e8a-aaea-4adf-b7a4-5c563d0dfb3f",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 479.95465
+        },
+        "c8e0bc7d-7017-4cb9-af91-a459e3a4adc5": {
+          "sourcename": "c8e0bc7d-7017-4cb9-af91-a459e3a4adc5",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 181.56464
+        },
+        "d0673a5f-14db-433c-812e-8a78600996b7": {
+          "sourcename": "d0673a5f-14db-433c-812e-8a78600996b7",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 10479.433
+        },
+        "e819e0e2-5a8d-414e-8439-df2f61054727": {
+          "sourcename": "e819e0e2-5a8d-414e-8439-df2f61054727",
+          "toStream": false,
+          "sourceVolume": 0.8,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 208.86621
+        }
+      },
+      "textures_ready": [
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+      ],
+      "downloads": {
+        "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/3bd754dd71da64a2d17ab14406276ed54283535fd23333c7431aa4380809e094.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/aaccb768908bceb78d2c239a1e0df424c6bd61afc9fe20509d7cc33ae26faaf1.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+          "ready": true,
+          "offset": 0
+        }
+      },
+      "master_level": 1.0,
+      "players_level": 1.0,
+      "music_level": 1.0,
+      "cached_packages": 2,
+      "preloading_packages": 0,
+      "queued_packages": 0,
+      "package_entries": [
+        {
+          "id": "local:ExperiencePlan0916|GreyHat_:test_story",
+          "ready": false,
+          "running": false,
+          "refs": 4
+        },
+        {
+          "id": "local:ExperiencePlan0916B|GreyHat_:test_story",
+          "ready": true,
+          "running": true,
+          "refs": 6
+        }
+      ],
+      "cache_hits": 4,
+      "local_hits": 2,
+      "network_requests": 0,
+      "worker_queue": 0,
+      "worker_active": 0,
+      "in_flight": 0
+    },
+    "server_result": "/dgr reload => 1"
+  }
+}

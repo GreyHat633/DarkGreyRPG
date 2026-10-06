@@ -1,0 +1,37 @@
+{
+  "removedIndexIdentity": "45ca59f8-73a4-374b-a419-a6bfea1a4897",
+  "preparedIndex": {
+    "": {
+      "data": {
+        "names": {
+          "witness0334": "a5006605-027a-3524-8a14-1273915286b7"
+        }
+      }
+    }
+  },
+  "existingUsercache": [
+    {
+      "name": "Witness0334",
+      "uuid": "a5006605-027a-3524-8a14-1273915286b7",
+      "expiresOn": "2026-10-24 12:21:00 +0800"
+    },
+    {
+      "name": "Native0334",
+      "uuid": "45ca59f8-73a4-374b-a419-a6bfea1a4897",
+      "expiresOn": "2026-10-24 12:16:06 +0800"
+    }
+  ],
+  "usercacheBeforeSha256": "e7e65fdc6c08b969bc52d4eb061b0cdf73d6297c23e522d658326679fb4c22e0",
+  "indexBeforeSha256": "81f852237ad482b484535a107aa7a1ab3942038c98ab1ad9fc255731f39ee123",
+  "indexAfterQuery": {
+    "": {
+      "data": {
+        "names": {
+          "witness0334": "a5006605-027a-3524-8a14-1273915286b7"
+        }
+      }
+    }
+  },
+  "nativeWasNotAddedToIndex": true,
+  "restoredSha256": "81f852237ad482b484535a107aa7a1ab3942038c98ab1ad9fc255731f39ee123"
+}

@@ -133,6 +133,8 @@ public sealed class CanonicalStoryActorLifecycleService
         {
             var (_, membership) = RequireCanonicalStory(storyId);
             EnsureActorId(actorId);
+            if (ResourceAddress.FromKey(actorId).StoryUid.Value != storyId)
+                throw Failure("actor.owner.mismatch", "New Actor address must belong to the target Story.");
             EnsureDisplayName(displayName);
             var membershipPath = _store.Memberships.GetPath(storyId);
             byte[] membershipBytes;
@@ -161,7 +163,7 @@ public sealed class CanonicalStoryActorLifecycleService
                 {
                     CanonicalStoryActorKind.Individual => _actors.CreateIndividual(actorId, displayName),
                     CanonicalStoryActorKind.Collective => _actors.CreateCollective(actorId, displayName),
-                    _ => _actors.CreateActor(actorId, displayName),
+                    _ => _actors.CreateIndividual(actorId, displayName),
                 };
                 if (tags is not null) document.SetTags(tags);
                 document.HomeStoryId = storyId;
@@ -501,11 +503,8 @@ public sealed class CanonicalStoryActorLifecycleService
 
     private static void EnsureActorId(string actorId)
     {
-        var validLegacy = !string.IsNullOrWhiteSpace(actorId)
-            && actorId[0] is >= 'a' and <= 'z' or >= '0' and <= '9'
-            && actorId.All(character => character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-');
-        if (!DgrResourceId.IsFullId(actorId) && !validLegacy)
-            throw Failure("story.actor.id.invalid", $"Actor ID '{actorId}' must be a valid full DGR ID or a compatible legacy ID.");
+        if (!ResourceAddress.IsKey(actorId) || !(ResourceAddress.FromKey(actorId).Kind == ResourceKind.Actor))
+            throw Failure("resource.address.invalid", "A current resource address of the matching kind is required.");
     }
 
     private static void EnsureDisplayName(string displayName)

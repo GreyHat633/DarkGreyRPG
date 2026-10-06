@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "samples": 4775,
+    "matrixModes": [
+      5888
+    ],
+    "distinctModelViews": 113,
+    "worldPerspectiveAll": true,
+    "bounds": [
+      "[-136.0, 75.0, 184.0, -103.0, 108.0, 217.0]",
+      "[-162.0, 88.0, 198.0, -157.0, 93.0, 203.0]"
+    ]
+  },
+  "fixed": {
+    "samples": 1168,
+    "matrixModes": [
+      5888
+    ],
+    "distinctModelViews": 119,
+    "worldPerspectiveAll": true,
+    "bounds": [
+      "[-16.0, -16.0, -16.0, 17.0, 17.0, 17.0]",
+      "[-2.0, -2.0, -2.0, 3.0, 3.0, 3.0]"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "ManifestFiles": 405,
+  "Missing": 0,
+  "RootFiles": [
+    "DarkGreyRPGStudio.exe"
+  ],
+  "RootDirectories": [
+    "Data",
+    "Docs",
+    "Program",
+    "Tools"
+  ]
+}

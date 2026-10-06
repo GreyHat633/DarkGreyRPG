@@ -54,6 +54,11 @@ public sealed class ProjectWorkspaceDialogs(Func<Window?> ownerProvider, StudioS
             $"resources/canonical/stories/{storyId}.json 与 resources/canonical/memberships/{storyId}.json",
             resourcesToDelete);
 
+    public bool ConfirmDeleteStoryGroups(string groupNames, string summary, IReadOnlyList<string> affectedPaths)
+        => MessageBox.Show(ownerProvider(),
+            $"确定删除故事组“{groupNames}”吗？\n\n{summary}\n\n受影响的项目文件：\n- {string.Join("\n- ", affectedPaths)}\n\n外部原包不会删除。完成后可以撤销恢复。",
+            "确认删除故事组", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+
     private bool ConfirmDeleteStoryCore(
         string storyId,
         string displayName,

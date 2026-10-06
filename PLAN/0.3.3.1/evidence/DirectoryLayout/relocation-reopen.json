@@ -1,0 +1,351 @@
+{
+  "screen": "world",
+  "server_result": "/dgr buff export => 1",
+  "fixture_entity_ids": [
+    72716,
+    72717
+  ],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    -805.5,
+    5.620000004768372,
+    -1609.5
+  ],
+  "inventory": [],
+  "task_client_visible_text": "",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": -1,
+    "musicRevision": -1,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "sources": {
+      "5c768367-4f54-468f-a5ae-18b60ae1a59f": {
+        "sourcename": "5c768367-4f54-468f-a5ae-18b60ae1a59f",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "7f4c167e-69db-4d9d-8058-66b96522f5e7": {
+        "sourcename": "7f4c167e-69db-4d9d-8058-66b96522f5e7",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 319.97733
+      },
+      "4ad7fea6-b9b0-4bfe-a19c-210a7684eece": {
+        "sourcename": "4ad7fea6-b9b0-4bfe-a19c-210a7684eece",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "f08ec79c-12dc-4625-9a8f-2f448bb49a81": {
+        "sourcename": "f08ec79c-12dc-4625-9a8f-2f448bb49a81",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 319.97733
+      },
+      "f85f49cd-a163-4f1d-b251-bda17b8ceadc": {
+        "sourcename": "f85f49cd-a163-4f1d-b251-bda17b8ceadc",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      }
+    },
+    "textures_ready": [],
+    "downloads": {
+      "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+        "ready": true,
+        "offset": 0
+      }
+    },
+    "master_level": 1.0,
+    "players_level": 1.0,
+    "music_level": 1.0,
+    "cached_packages": 4,
+    "preloading_packages": 0,
+    "queued_packages": 0,
+    "package_entries": [
+      {
+        "id": "local:DGR0331PackagePolicy0916|QA0330:presentation",
+        "ready": false,
+        "running": false,
+        "refs": 2
+      },
+      {
+        "id": "local:DGR0331PackagePolicy0916|LiveHarness:FlowTarget",
+        "ready": false,
+        "running": false,
+        "refs": 0
+      },
+      {
+        "id": "local:DGR0331PackagePolicy0916|GreyHat_:test_story",
+        "ready": false,
+        "running": false,
+        "refs": 4
+      },
+      {
+        "id": "local:DGRRelocation0916|GreyHat_:test_story",
+        "ready": true,
+        "running": true,
+        "refs": 4
+      }
+    ],
+    "cache_hits": 4,
+    "local_hits": 0,
+    "network_requests": 0,
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      -805.5,
+      4.0,
+      -1609.5
+    ],
+    "tick": 2899,
+    "tick_p95_ms": 5.5891,
+    "tick_max_ms": 8.5698,
+    "heap": {
+      "used": 1180092416,
+      "free": 1667315712,
+      "total": 2847408128,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 2,
+      "task_presentation_generation": 1
+    },
+    "inventory": [],
+    "tasks": [
+      {
+        "story_id": "GreyHat_:test_story",
+        "placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "task_id": "GreyHat_:KillSlimes",
+        "status": "ACTIVE",
+        "activation_time": 1789519975432,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "node_4feb6ff8c4944e078f9914cd808c9f17": 0,
+            "node_cfc0a454a1ef4168890d4ce6fbb3e803": 0
+          },
+          "objective_statuses": {
+            "node_4feb6ff8c4944e078f9914cd808c9f17": "INACTIVE",
+            "node_cfc0a454a1ef4168890d4ce6fbb3e803": "ACTIVE"
+          }
+        }
+      }
+    ],
+    "journal": [
+      {
+        "task_id": "GreyHat_:KillSlimes",
+        "story_id": "GreyHat_:test_story",
+        "placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "title": "击杀3只史莱姆",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "node_cfc0a454a1ef4168890d4ce6fbb3e803",
+            "type": "kill_entity",
+            "description": "消灭史莱姆",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 3
+          }
+        ]
+      }
+    ],
+    "entities": [
+      {
+        "entity_id": 815660,
+        "uuid": "d0d60709-44c9-4ea2-818a-ea54ad46a91c",
+        "name": "Gościbora",
+        "dimension": 0,
+        "pos": [
+          -803.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      },
+      {
+        "entity_id": 815661,
+        "uuid": "d798f7cb-3655-433a-babb-9f4fcb503460",
+        "name": "Suzuoki Mitsuko",
+        "dimension": 0,
+        "pos": [
+          -802.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      }
+    ],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": -1,
+      "musicRevision": -1,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 0.0,
+      "engine_ready": true,
+      "playing": {
+        "dgr_session_voice": false,
+        "dgr_session_music_a": false,
+        "dgr_session_music_b": false
+      },
+      "sources": {
+        "5c768367-4f54-468f-a5ae-18b60ae1a59f": {
+          "sourcename": "5c768367-4f54-468f-a5ae-18b60ae1a59f",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "7f4c167e-69db-4d9d-8058-66b96522f5e7": {
+          "sourcename": "7f4c167e-69db-4d9d-8058-66b96522f5e7",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 319.97733
+        },
+        "4ad7fea6-b9b0-4bfe-a19c-210a7684eece": {
+          "sourcename": "4ad7fea6-b9b0-4bfe-a19c-210a7684eece",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "f08ec79c-12dc-4625-9a8f-2f448bb49a81": {
+          "sourcename": "f08ec79c-12dc-4625-9a8f-2f448bb49a81",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 319.97733
+        },
+        "f85f49cd-a163-4f1d-b251-bda17b8ceadc": {
+          "sourcename": "f85f49cd-a163-4f1d-b251-bda17b8ceadc",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        }
+      },
+      "textures_ready": [],
+      "downloads": {
+        "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+          "ready": true,
+          "offset": 0
+        }
+      },
+      "master_level": 1.0,
+      "players_level": 1.0,
+      "music_level": 1.0,
+      "cached_packages": 4,
+      "preloading_packages": 0,
+      "queued_packages": 0,
+      "package_entries": [
+        {
+          "id": "local:DGR0331PackagePolicy0916|QA0330:presentation",
+          "ready": false,
+          "running": false,
+          "refs": 2
+        },
+        {
+          "id": "local:DGR0331PackagePolicy0916|LiveHarness:FlowTarget",
+          "ready": false,
+          "running": false,
+          "refs": 0
+        },
+        {
+          "id": "local:DGR0331PackagePolicy0916|GreyHat_:test_story",
+          "ready": false,
+          "running": false,
+          "refs": 4
+        },
+        {
+          "id": "local:DGRRelocation0916|GreyHat_:test_story",
+          "ready": true,
+          "running": true,
+          "refs": 4
+        }
+      ],
+      "cache_hits": 4,
+      "local_hits": 0,
+      "network_requests": 0,
+      "worker_queue": 0,
+      "worker_active": 0,
+      "in_flight": 0
+    },
+    "server_result": "/dgr buff export => 1"
+  }
+}

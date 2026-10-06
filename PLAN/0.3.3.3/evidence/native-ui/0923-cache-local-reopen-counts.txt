@@ -1,0 +1,7 @@
+operation=snapshot
+time=1790115065938
+darkgrey/rpg/client/TaskTrackerHud.draw=22835
+darkgrey/rpg/gramophone/GramophoneAudio.start=2
+darkgrey/rpg/gramophone/GramophoneAudio.stop=1
+darkgrey/rpg/gramophone/GramophoneLocalClient.download=1
+darkgrey/rpg/gramophone/GramophoneMediaInfo.inspect=2

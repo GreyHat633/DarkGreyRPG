@@ -18,23 +18,18 @@ public sealed class ExternalReferencePackageExportTests
         var providerArchive = Path.Combine(provider.Root, "build/provider.dgrs");
         var consumerArchive = Path.Combine(consumer.Root, "build/consumer.dgrs");
         var exporter = new DgrsStoryPackageExporter(consumer.Root);
-        new DgrsStoryPackageExporter(provider.Root).Build("Provider:story", providerArchive);
-        var result = exporter.Build("Consumer:story", consumerArchive);
-        Assert.AreEqual(1, result.Manifest.RequiredResources.Actors.Count);
+        new DgrsStoryPackageExporter(provider.Root).Build("ST-2345-6789-ABCD-EFGH", providerArchive);
+        new OfflineReferencePackageService().AddOrUpdateContainer(consumer.Root, providerArchive);
+        var result = exporter.Build("ST-JKLM-NPQR-STUV-WXYZ", consumerArchive);
+        Assert.HasCount(2, result.Manifest.RequiredResources.Actors);
         WriteActor(consumer.Root, "Provider", "Conflicting definition");
-        var conflictArchive = Path.Combine(consumer.Root, "build/conflict.dgrs");
-        var conflict = exporter.Build("Consumer:story", conflictArchive);
-        Assert.AreEqual(2, conflict.Manifest.RequiredResources.Actors.Count);
-        var destination = Environment.GetEnvironmentVariable("DGR_B4_EXTERNAL_EXPORTS");
-        if (string.IsNullOrEmpty(destination)) return;
-        var path = Path.GetFullPath(destination);
-        if (!path.StartsWith("E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("External fixture artifacts must stay in repository .tooling.");
-        Directory.CreateDirectory(path);
-        File.Copy(providerArchive, Path.Combine(path, "provider.dgrs"), true);
-        File.Copy(consumerArchive, Path.Combine(path, "consumer.dgrs"), true);
-        File.Copy(conflictArchive, Path.Combine(path, "conflict.dgrs"), true);
+        var before = File.ReadAllBytes(consumerArchive);
+        Assert.Throws<StoryPackageException>(() => exporter.Build("ST-JKLM-NPQR-STUV-WXYZ", consumerArchive));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(consumerArchive));
+
     }
+
+    private static string Story(string author) => author == "Provider" ? "ST-2345-6789-ABCD-EFGH" : "ST-JKLM-NPQR-STUV-WXYZ";
 
     private static void CreateAuthor(string root, string author, bool external)
     {
@@ -43,39 +38,40 @@ public sealed class ExternalReferencePackageExportTests
         if (external)
         {
             start.Ports.Clear();
-            StoryStartSchema.InitializeDefault(start, "actor", StoryStartSchema.ActorInteraction, "Provider:guard");
+            StoryStartSchema.InitializeDefault(start, "actor", StoryStartSchema.ActorInteraction, "ST-2345-6789-ABCD-EFGH~actor~guard");
         }
-        store.Stories.Create(new(GraphResourceKind.Story, author + ":story", author, new GraphDocument([start])));
-        store.Memberships.Create(new(author + ":story", new() { Actors = [author + ":guard"] },
-            external ? new() { Actors = ["Provider:guard"] } : new()));
+        store.Stories.Create(new(GraphResourceKind.Story, Story(author), author, new GraphDocument([start])));
+        store.Memberships.Create(new(Story(author), new() { Actors = [Story(author) + "~actor~guard"] },
+            external ? new() { Actors = ["ST-2345-6789-ABCD-EFGH~actor~guard"] } : new()));
         WriteActor(root, author, author);
     }
 
     private static void WriteActor(string root, string author, string displayName)
     {
-        var id = author + ":guard";
-        var path = Path.Combine(root, "actors", DarkGreyRPG.Studio.Core.Identity.DgrResourceId.RelativeJsonPath(id));
+        var id = Story(author) + "~actor~guard";
+        var path = Path.Combine(root, "actors", DarkGreyRPG.Studio.Core.Identity.ResourceAddress.FromKey(id).RelativeDefinitionPath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, DarkGreyRPG.Studio.Core.Actors.ActorSerializer.Serialize(
-            new DarkGreyRPG.Studio.Core.Actors.IndividualActorResource { NpcId = id, DisplayName = displayName, HomeStoryId = author + ":story" },
+            new DarkGreyRPG.Studio.Core.Actors.IndividualActorResource { NpcId = id, DisplayName = displayName, HomeStoryId = Story(author) },
             DarkGreyRPG.Studio.Core.Actors.ActorIdPolicy.ExistingResource));
     }
 
     [TestMethod]
-    public void ExplicitMissingFullIdReferencesExportWithoutInventedDefinitions()
+    public void ExplicitMissingReferencesRejectExportWithoutInventedDefinitions()
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new(GraphResourceKind.Story, "Consumer:story", "Consumer", new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
-        store.Memberships.Create(new("Consumer:story", referencedResources: new()
+        store.Stories.Create(new(GraphResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ", "Consumer", new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Memberships.Create(new("ST-JKLM-NPQR-STUV-WXYZ", referencedResources: new()
         {
-            Actors = ["Provider:actor"], Items = ["Provider:item"], ItemGroups = ["Provider:group"],
-            Sessions = ["Provider:session"], Tasks = ["Provider:task"],
+            Actors = ["ST-2345-6789-ABCD-EFGH~actor~actor"], Items = ["ST-2345-6789-ABCD-EFGH~item~item"], ItemGroups = ["ST-2345-6789-ABCD-EFGH~item_group~group"],
+            Sessions = ["ST-2345-6789-ABCD-EFGH~session~session"], Tasks = ["ST-2345-6789-ABCD-EFGH~task~task"],
         }));
-        var result = new DgrsStoryPackageExporter(project.Root).Build("Consumer:story", Path.Combine(project.Root, "build/external.dgrs"));
-        var resources = result.Manifest.RequiredResources;
-        Assert.AreEqual(0, resources.Actors.Count + resources.Items.Count + resources.ItemGroups.Count + resources.Sessions.Count + resources.Tasks.Count);
-        Assert.AreEqual("Provider:actor", store.Memberships.Load("Consumer:story").ReferencedResources.Actors.Single());
+        var output = Path.Combine(project.Root, "build", "external.dgrs");
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!); File.WriteAllText(output, "previous artifact");
+        Assert.Throws<StoryPackageException>(() => new DgrsStoryPackageExporter(project.Root).Build("ST-JKLM-NPQR-STUV-WXYZ", output));
+        Assert.AreEqual("previous artifact", File.ReadAllText(output));
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor", store.Memberships.Load("ST-JKLM-NPQR-STUV-WXYZ").ReferencedResources.Actors.Single());
     }
 
     [TestMethod]
@@ -83,45 +79,33 @@ public sealed class ExternalReferencePackageExportTests
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new(GraphResourceKind.Story, "Consumer:story", "Consumer", new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
-        store.Memberships.Create(new("Consumer:story", new() { Actors = ["Consumer:missing"] }));
+        store.Stories.Create(new(GraphResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ", "Consumer", new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Memberships.Create(new("ST-JKLM-NPQR-STUV-WXYZ", new() { Actors = ["ST-JKLM-NPQR-STUV-WXYZ~actor~missing"] }));
         Assert.ThrowsExactly<StoryPackageException>(() => new DgrsStoryPackageExporter(project.Root)
-            .Build("Consumer:story", Path.Combine(project.Root, "build/missing.dgrs")));
+            .Build("ST-JKLM-NPQR-STUV-WXYZ", Path.Combine(project.Root, "build/missing.dgrs")));
     }
     [TestMethod]
-    public void CaseSensitiveResourceSetExportsEveryDistinctIdentity()
+    public void CaseDistinctDisplayNamesExportEveryDistinctAllocatedIdentity()
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        var actors = new DarkGreyRPG.Studio.Core.Actors.ActorRepository(project.Root);
-        var items = new DarkGreyRPG.Studio.Core.Items.ItemRepository(project.Root);
-        foreach (var local in new[] { "Guard", "guard" })
+        var story = new CanonicalStoryLifecycleService(store).CreateNew("Display names");
+        var actors = new CanonicalStoryActorLifecycleService(store);
+        var items = new CanonicalStoryItemLifecycleService(store);
+        var owner = DarkGreyRPG.Studio.Core.Identity.StoryUid.Parse(story.Id);
+        for (var index = 0; index < 2; index++)
         {
-            actors.SaveActor(actors.CreateIndividual("Team:" + local, local));
-            actors.SaveActor(actors.CreateCollective("Team:" + local + "Group", local + "Group"));
+            var label = index == 0 ? "Guard" : "guard";
+            string Key(DarkGreyRPG.Studio.Core.Identity.ResourceKind kind, string local) => new DarkGreyRPG.Studio.Core.Identity.ResourceAddress(owner, kind, local + index).ToKey();
+            actors.CreateOwned(story.Id, CanonicalStoryActorKind.Individual, Key(DarkGreyRPG.Studio.Core.Identity.ResourceKind.Actor, "guard"), label);
+            actors.CreateOwned(story.Id, CanonicalStoryActorKind.Collective, Key(DarkGreyRPG.Studio.Core.Identity.ResourceKind.Actor, "group"), label);
+            items.CreateOwned(story.Id, CanonicalStoryItemKind.Individual, Key(DarkGreyRPG.Studio.Core.Identity.ResourceKind.Item, "token"), label);
+            items.CreateOwned(story.Id, CanonicalStoryItemKind.Collective, Key(DarkGreyRPG.Studio.Core.Identity.ResourceKind.ItemGroup, "tokens"), label);
         }
-        foreach (var local in new[] { "Token", "token" })
-        {
-            items.SaveItem(items.CreateItem("Team:" + local, local));
-            items.SaveGroup(items.CreateGroup("Team:" + local + "s", local + "s"));
-        }
-        store.Stories.Create(new(GraphResourceKind.Story, "Team:CaseStory", "Case-sensitive identities",
-            new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
-        store.Memberships.Create(new("Team:CaseStory", new()
-        {
-            Actors = ["Team:Guard", "Team:guard", "Team:GuardGroup", "Team:guardGroup"],
-            Items = ["Team:Token", "Team:token"], ItemGroups = ["Team:Tokens", "Team:tokens"],
-        }));
-        var archive = Path.Combine(project.Root, "build/case-sensitive.dgrs");
-        var result = new DgrsStoryPackageExporter(project.Root).Build("Team:CaseStory", archive);
-        Assert.AreEqual(4, result.Manifest.RequiredResources.Actors.Count);
-        Assert.AreEqual(2, result.Manifest.RequiredResources.Items.Count);
-        Assert.AreEqual(2, result.Manifest.RequiredResources.ItemGroups.Count);
-        var destination = Environment.GetEnvironmentVariable("DGR_B4_CASE_ARCHIVE");
-        if (string.IsNullOrWhiteSpace(destination)) return;
-        var path = Path.GetFullPath(destination);
-        Assert.IsTrue(path.StartsWith("E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\", StringComparison.OrdinalIgnoreCase));
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.Copy(archive, path, true);
+        var archive = Path.Combine(project.Root, "build", "distinct-names.dgrs");
+        var result = new DgrsStoryPackageExporter(project.Root).Build(story.Id, archive);
+        Assert.HasCount(4, result.Manifest.RequiredResources.Actors);
+        Assert.HasCount(2, result.Manifest.RequiredResources.Items);
+        Assert.HasCount(2, result.Manifest.RequiredResources.ItemGroups);
     }
 }

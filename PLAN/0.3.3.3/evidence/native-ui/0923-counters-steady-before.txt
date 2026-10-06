@@ -1,0 +1,3 @@
+operation=snapshot
+time=1790106695095
+darkgrey/rpg/client/gui/CanonicalDialogueRenderer.draw=1394

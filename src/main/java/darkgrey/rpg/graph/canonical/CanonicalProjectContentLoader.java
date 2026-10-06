@@ -12,7 +12,8 @@ import java.util.Set;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import darkgrey.rpg.identity.DgrResourceId;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.StoryUid;
 
 /** Strict, read-only loader for the complete canonical project-content tree. */
 public final class CanonicalProjectContentLoader {
@@ -216,7 +217,7 @@ public final class CanonicalProjectContentLoader {
         for (Map.Entry<String, CanonicalStoryMembership> entry : memberships.entrySet()) {
             CanonicalStoryMembership value = entry.getValue();
             if (value == null || !entry.getKey()
-                .equals(value.getStoryId()) || !DgrResourceId.isCompatibleId(entry.getKey()))
+                .equals(value.getStoryId()) || !StoryUid.isValid(entry.getKey()))
                 throw CanonicalProjectContentException.failure(
                     "project.content.membership.id.mismatch",
                     "Canonical membership map key does not match a valid Story ID: " + entry.getKey());
@@ -514,16 +515,16 @@ public final class CanonicalProjectContentLoader {
         }
         for (String id : membership.getReferencedResources()
             .getActors()) {
-            if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+            if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                 "project.content.actor.id.invalid",
                 "Canonical membership contains an invalid actor ID: " + id);
-            if (!actorIds.contains(id) && (!allowUnresolvedExternal || !DgrResourceId.isFullId(id)))
+            if (!actorIds.contains(id) && (!allowUnresolvedExternal || !ResourceAddress.isKey(id)))
                 requireActor(actorIds, id);
         }
     }
 
     private static void requireActor(Set<String> actorIds, String id) {
-        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException
+        if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException
             .failure("project.content.actor.id.invalid", "Canonical membership contains an invalid actor ID: " + id);
         if (!actorIds.contains(id)) throw CanonicalProjectContentException
             .failure("project.content.actor.missing", "Canonical membership references an unknown Actor: " + id);
@@ -532,10 +533,10 @@ public final class CanonicalProjectContentLoader {
     private static void checkIdentityResources(List<String> ids, Set<String> known, Set<String> owned, String kind,
         boolean allowUnresolvedExternal) {
         for (String id : ids) {
-            if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+            if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                 "project.content." + kind + ".id.invalid",
                 "Canonical membership contains an invalid " + kind + " ID: " + id);
-            if (!known.contains(id) && (owned != null || !allowUnresolvedExternal || !DgrResourceId.isFullId(id)))
+            if (!known.contains(id) && (owned != null || !allowUnresolvedExternal || !ResourceAddress.isKey(id)))
                 throw CanonicalProjectContentException.failure(
                     "project.content." + kind + ".missing",
                     "Canonical membership references an unknown " + kind + ": " + id);
@@ -548,11 +549,10 @@ public final class CanonicalProjectContentLoader {
     private static void checkResources(List<String> ids, Map<String, CanonicalGraphResource> resources,
         Set<String> owned, String kind, boolean allowUnresolvedExternal) {
         for (String id : ids) {
-            if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+            if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                 "project.content." + kind + ".id.invalid",
                 "Canonical membership contains an invalid " + kind + " ID: " + id);
-            if (!resources.containsKey(id)
-                && (owned != null || !allowUnresolvedExternal || !DgrResourceId.isFullId(id)))
+            if (!resources.containsKey(id) && (owned != null || !allowUnresolvedExternal || !ResourceAddress.isKey(id)))
                 throw CanonicalProjectContentException.failure(
                     "project.content." + kind + ".missing",
                     "Canonical membership references an unknown " + kind + ": " + id);
@@ -567,7 +567,9 @@ public final class CanonicalProjectContentLoader {
         for (Map.Entry<String, CanonicalGraphResource> entry : resources.entrySet()) {
             CanonicalGraphResource value = entry.getValue();
             if (value == null || !entry.getKey()
-                .equals(value.getId()) || !DgrResourceId.isCompatibleId(entry.getKey()))
+                .equals(value.getId())
+                || !(expected == CanonicalGraphResourceKind.STORY ? StoryUid.isValid(entry.getKey())
+                    : ResourceAddress.isKey(entry.getKey())))
                 throw CanonicalProjectContentException.failure(
                     "project.content." + kind + ".id.mismatch",
                     "Canonical " + kind + " map key does not match its resource ID: " + entry.getKey());
@@ -711,7 +713,7 @@ public final class CanonicalProjectContentLoader {
                 else if ("collect_item".equals(type) || "submit_item".equals(type)) {
                     String id = property(node, "item");
                     if (id != null && !nativeTarget(id)) {
-                        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+                        if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                             "project.content.graph.reference.invalid",
                             "Graph node '" + node.getId() + "' has an invalid item ID.");
                         if (!declared.items.contains(id) && !declared.itemGroups.contains(id))
@@ -728,7 +730,7 @@ public final class CanonicalProjectContentLoader {
                 } else if ("kill_entity".equals(type)) {
                     String id = property(node, "entity");
                     if (id != null && !nativeTarget(id)) {
-                        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+                        if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                             "project.content.graph.reference.invalid",
                             "Graph node '" + node.getId() + "' has an invalid actor ID.");
                         if (!declared.actors.contains(id)) throw undeclared("actor", id, node.getId());
@@ -740,7 +742,7 @@ public final class CanonicalProjectContentLoader {
     private static void requireProperty(CanonicalGraphNode node, String field, Set<String> declared, String kind) {
         String id = property(node, field);
         if (id != null) {
-            if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+            if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                 "project.content.graph.reference.invalid",
                 "Graph node '" + node.getId() + "' has an invalid " + kind + " ID.");
             if (!declared.contains(id)) throw undeclared(kind, id, node.getId());
@@ -756,7 +758,7 @@ public final class CanonicalProjectContentLoader {
         String id = value.getAsString();
         if (id.trim()
             .isEmpty()) return;
-        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalProjectContentException.failure(
+        if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
             "project.content.graph.reference.invalid",
             "Graph node '" + nodeId + "' has an invalid " + kind + " ID.");
         if (!declared.contains(id)) throw undeclared(kind, id, nodeId);
@@ -785,7 +787,7 @@ public final class CanonicalProjectContentLoader {
     }
 
     private static boolean nativeTarget(String id) {
-        return !id.contains(":") || id.startsWith("minecraft:");
+        return !ResourceAddress.isKey(id);
     }
 
     private static CanonicalProjectContentException undeclared(String kind, String id, String nodeId) {

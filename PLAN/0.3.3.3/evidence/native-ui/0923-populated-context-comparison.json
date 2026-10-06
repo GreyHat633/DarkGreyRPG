@@ -1,0 +1,20 @@
+{
+  "A": {
+    "darkgrey_rpg_canonical_sessions": true,
+    "darkgrey_rpg_canonical_tasks": true,
+    "a99b827f-b024-3719-b92d-611120c4cea4": true,
+    "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c": true
+  },
+  "B_unchanged": {
+    "darkgrey_rpg_canonical_tasks": true,
+    "player": true,
+    "transactions": true
+  },
+  "B_new_session": [
+    {
+      "transport_id": 2,
+      "line_page_index": 0,
+      "line_epoch": 1
+    }
+  ]
+}

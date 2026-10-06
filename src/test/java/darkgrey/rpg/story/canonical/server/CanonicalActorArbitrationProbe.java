@@ -36,7 +36,9 @@ public final class CanonicalActorArbitrationProbe {
 
     private static final UUID PLAYER = UUID.fromString("50000000-0000-0000-0000-000000000001");
     private static final UUID OTHER = UUID.fromString("50000000-0000-0000-0000-000000000002");
-    private static final List<String> ACTORS = Arrays.asList("actor", "group");
+    private static final String A = "ST-2345-6789-ABCD-EFGH", B = "ST-JKLM-NPQR-STUV-WXYZ";
+    private static final String ACTOR = A + "~actor~arbitration";
+    private static final List<String> ACTORS = Collections.singletonList(ACTOR);
 
     public static void main(String[] args) {
         ProjectSnapshot project = project();
@@ -67,7 +69,7 @@ public final class CanonicalActorArbitrationProbe {
         check(service.executeActorCandidate(PLAYER, ACTORS, a, 201L) == null, "old start stale after activation");
         List<CanonicalActorCandidate> remaining = service.actorCandidates(PLAYER, ACTORS);
         check(
-            remaining.size() == 1 && "b".equals(
+            remaining.size() == 1 && B.equals(
                 remaining.get(0)
                     .getStoryId()),
             "active Story is not restarted");
@@ -77,12 +79,12 @@ public final class CanonicalActorArbitrationProbe {
                 .isEmpty(),
             "active starts are excluded");
         NBTTagCompound beforeB = darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
-            .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")));
-        service.completeAction(PLAYER, "a", "wait", 203L);
+            .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, B)));
+        service.completeAction(PLAYER, A, "wait", 203L);
         check(
             beforeB.equals(
                 darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
-                    .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")))),
+                    .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, B)))),
             "other active Story unchanged");
         remaining = service.actorCandidates(PLAYER, ACTORS);
         check(
@@ -93,7 +95,7 @@ public final class CanonicalActorArbitrationProbe {
         CanonicalActorCandidate repeat = remaining.get(0);
         check(service.executeActorCandidate(PLAYER, ACTORS, repeat, 204L) != null, "repeat executes");
         check(service.executeActorCandidate(PLAYER, ACTORS, repeat, 205L) == null, "replayed repeat rejected");
-        service.completeAction(PLAYER, "a", "wait", 206L);
+        service.completeAction(PLAYER, A, "wait", 206L);
         CanonicalActorCandidate staleGeneration = service.actorCandidates(PLAYER, ACTORS)
             .get(0);
         check(
@@ -101,13 +103,13 @@ public final class CanonicalActorArbitrationProbe {
                 .executeActorCandidate(PLAYER, ACTORS, staleGeneration, 207L) == null,
             "different project generation rejected");
         NBTTagCompound retainedB = darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
-            .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")));
-        check(data.discardByPlayerStory(PLAYER, "a"), "canonical exact reset removed Story");
-        check(data.getStorySnapshot(PLAYER, "a") == null, "canonical reset left cursor");
+            .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, B)));
+        check(data.discardByPlayerStory(PLAYER, A), "canonical exact reset removed Story");
+        check(data.getStorySnapshot(PLAYER, A) == null, "canonical reset left cursor");
         check(
             retainedB.equals(
                 darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceNbtCodec
-                    .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, "b")))),
+                    .encode(Collections.singletonList(data.getStorySnapshot(PLAYER, B)))),
             "canonical reset altered other Story");
         System.out.println("DGR_STORY_RESET_CANONICAL_STORE=PASS");
         for (String gate : Arrays.asList(
@@ -127,22 +129,29 @@ public final class CanonicalActorArbitrationProbe {
     private static ProjectSnapshot project() {
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
         Map<String, CanonicalStoryMembership> memberships = new LinkedHashMap<String, CanonicalStoryMembership>();
-        for (String id : Arrays.asList("a", "b")) {
+        for (String id : Arrays.asList(A, B)) {
             stories.put(id, story(id));
             memberships.put(
                 id,
                 new CanonicalStoryMembership(
                     id,
                     new CanonicalStoryMembershipSet(
-                        Collections.singletonList("actor"),
+                        Collections.singletonList(ACTOR),
                         Collections.<String>emptyList(),
                         Collections.<String>emptyList())));
         }
         return new ProjectSnapshot(
             new ProjectDefinition(1, "arbitration", "Arbitration"),
             Collections.singletonMap(
-                "actor",
-                new ActorDefinition(1, "actor", "Actor", "", Collections.<String>emptyList(), "")),
+                ACTOR,
+                new ActorDefinition(
+                    1,
+                    ActorDefinition.TYPE_INDIVIDUAL,
+                    ACTOR,
+                    "Actor",
+                    "",
+                    Collections.<String>emptyList(),
+                    A)),
             Collections.<String, DialogueDefinition>emptyMap(),
             Collections.<String, QuestDefinition>emptyMap(),
             Collections.<String, StoryDefinition>emptyMap(),
@@ -155,16 +164,18 @@ public final class CanonicalActorArbitrationProbe {
 
     private static CanonicalGraphResource story(String id) {
         Map<String, JsonElement> start = new LinkedHashMap<String, JsonElement>();
-        start.put("repeat_policy", json("\"" + (id.equals("a") ? "repeatable" : "once") + "\""));
+        start.put("repeat_policy", json("\"" + (id.equals(A) ? "repeatable" : "once") + "\""));
         start.put(
             "triggers",
             json(
-                "[{\"port_id\":\"entry\",\"display_name\":\"entry\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"actor\"},\"order\":0}]"));
+                "[{\"port_id\":\"entry\",\"display_name\":\"entry\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\""
+                    + ACTOR
+                    + "\"},\"order\":0}]"));
         Map<String, JsonElement> region = new LinkedHashMap<String, JsonElement>();
         for (String key : Arrays.asList("dimension", "x", "y", "z")) region.put(key, json("0"));
         region.put("radius", json("2"));
         return new CanonicalGraphResource(
-            1,
+            CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
             CanonicalGraphResourceKind.STORY,
             id,
             "Story " + id,

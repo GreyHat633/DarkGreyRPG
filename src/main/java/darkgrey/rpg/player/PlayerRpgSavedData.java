@@ -26,7 +26,7 @@ import net.minecraft.world.storage.MapStorage;
 public final class PlayerRpgSavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_players";
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private final Map<UUID, Map<String, StoryFacts>> players = new LinkedHashMap<UUID, Map<String, StoryFacts>>();
 
     public PlayerRpgSavedData() {
@@ -104,7 +104,8 @@ public final class PlayerRpgSavedData extends WorldSavedData {
 
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
-        requireKeys(root, set("schema_version", "players"), "Player RPG root");
+        requireKeys(root, set("schema_version", "identity_format", "players"), "Player RPG root");
+        darkgrey.rpg.identity.ResourceAddressNbt.requireFormat(root);
         requireType(root, "schema_version", 3);
         if (root.getInteger("schema_version") != SCHEMA_VERSION)
             throw new IllegalArgumentException("Unsupported Player RPG schema_version.");
@@ -126,7 +127,8 @@ public final class PlayerRpgSavedData extends WorldSavedData {
             for (int storyIndex = 0; storyIndex < storyValues.tagCount(); storyIndex++) {
                 NBTTagCompound storyValue = storyValues.getCompoundTagAt(storyIndex);
                 requireKeys(storyValue, set("story_id", "facts", "choices", "rewards"), "Player RPG story");
-                String storyId = string(storyValue, "story_id");
+                String storyId = darkgrey.rpg.identity.StoryUid.parse(string(storyValue, "story_id"))
+                    .getValue();
                 StoryFacts story = new StoryFacts();
                 decodeMap(list(storyValue, "facts"), story.facts, "fact");
                 decodeMap(list(storyValue, "choices"), story.choices, "choice");
@@ -151,6 +153,7 @@ public final class PlayerRpgSavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         for (String key : new HashSet<String>(root.func_150296_c())) root.removeTag(key);
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", darkgrey.rpg.identity.ResourceAddressNbt.IDENTITY_FORMAT);
         NBTTagList playerValues = new NBTTagList();
         List<UUID> playerIds = new ArrayList<UUID>(players.keySet());
         Collections.sort(playerIds, new Comparator<UUID>() {
@@ -173,7 +176,10 @@ public final class PlayerRpgSavedData extends WorldSavedData {
                 StoryFacts story = players.get(playerId)
                     .get(storyId);
                 NBTTagCompound storyValue = new NBTTagCompound();
-                storyValue.setString("story_id", storyId);
+                storyValue.setString(
+                    "story_id",
+                    darkgrey.rpg.identity.StoryUid.parse(storyId)
+                        .getValue());
                 storyValue.setTag("facts", encodeMap(story.facts));
                 storyValue.setTag("choices", encodeMap(story.choices));
                 NBTTagList rewards = new NBTTagList();

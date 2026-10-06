@@ -1,0 +1,597 @@
+[
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "文件(F)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "文件(_F)"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "编辑(E)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "编辑(_E)"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "视图(V)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "视图(_V)"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "项目(P)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目(_P)"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "帮助(H)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "帮助(_H)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "已打开故事：ST-2345-6789-ABCD-EFGH"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "输出"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "问题"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "调试器"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Minecraft"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalStoryWorkspace",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "资源所有者"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "ST-2345-6789-ABCD-EFGH"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalCreateResource",
+    "Name": "新建资源"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalReferenceResource",
+    "Name": "引用已有资源"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalDeleteResource",
+    "Name": "删除资源或解除引用"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "搜索"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "搜索"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "AuthoringSearchBox",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "角色"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "角色"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "角色"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = ST-2345-6789-ABCD-EFGH~actor~shared, DisplayName = 测试角色, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\actor\\r-shared.json, Tags = System.String[], Type = individual, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, MembershipKind = Owned, PortraitSource = ActorResourceInfo { Id = ST-2345-6789-ABCD-EFGH~actor~shared, DisplayName = 测试角色, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\actor\\r-shared.json, Tags = System.String[], Type = individual, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-2345-6789-ABCD-EFGH~actor~shared, DisplayName = 测试角色, IdentityText = [NPC_ID] ST-2345-6789-ABCD-EFGH~actor~shared, IsOwned = True, IsReferenced = False }"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试角色  [NPC_ID] ST-2345-6789-ABCD-EFGH~actor~shared"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试角色  [NPC_ID] ST-2345-6789-ABCD-EFGH~actor~shared"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "物品"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "物品"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "物品"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.IndividualItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-2345-6789-ABCD-EFGH~item~shared, DisplayName = 测试物品, IdentityText = [Item_ID] ST-2345-6789-ABCD-EFGH~item~shared, Type = individual, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False }"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试物品  [Item_ID] ST-2345-6789-ABCD-EFGH~item~shared"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试物品  [Item_ID] ST-2345-6789-ABCD-EFGH~item~shared"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.CollectiveItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-2345-6789-ABCD-EFGH~item_group~shared, DisplayName = 测试物品组, IdentityText = [Group_ID] ST-2345-6789-ABCD-EFGH~item_group~shared, Type = collective, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False }"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试物品组  [Group_ID] ST-2345-6789-ABCD-EFGH~item_group~shared"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试物品组  [Group_ID] ST-2345-6789-ABCD-EFGH~item_group~shared"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "会话"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "会话"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "会话"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试会话  [Session_ID] ST-2345-6789-ABCD-EFGH~session~shared"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试会话  [Session_ID] ST-2345-6789-ABCD-EFGH~session~shared"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "任务"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "任务"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "任务"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试任务  [Task_ID] ST-2345-6789-ABCD-EFGH~task~shared"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试任务  [Task_ID] ST-2345-6789-ABCD-EFGH~task~shared"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryBreadcrumb { Id = identity_fixture, DisplayName = 当前身份实机验收, Kind = Project, ResourceKind = , IsFirst = True, IsCurrent = False }"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "当前身份实机验收"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "当前身份实机验收"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryBreadcrumb { Id = ST-2345-6789-ABCD-EFGH, DisplayName = 资源所有者, Kind = Story, ResourceKind = Story, IsFirst = False, IsCurrent = True }"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": ">"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "资源所有者"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "资源所有者"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalStoryWorkspaceGraph",
+    "Name": "节点图编辑器"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "图编辑器缩放到百分之百"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "100%"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "适应全部图节点"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "适应"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "重置图视图"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "重置"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "ScissorsButton",
+    "Name": "剪断连线"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "剪刀"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CombineSelection",
+    "Name": "组合"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "组合"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_start",
+    "Name": "图节点 开始 start"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "开始"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_start_story_trigger_7a73644849d0460a8f0c95a55afc47d4",
+    "Name": "start 输出端口 story_trigger_7a73644849d0460a8f0c95a55afc47d4 (Flow)"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "启动条件 1"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "CanonicalNodeParameterSummary",
+    "Name": "参数"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "参数"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "参数"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "重复设置"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "重复条件"
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "InlineStartRepeatMode",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "启动条件（共 1 条）"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "InlineStartAddTrigger",
+    "Name": "添加启动条件"
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "InlineStartTriggerList",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "启动条件 1"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "↑"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "↑"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "↓"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "↓"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "删除"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "删除"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "名称"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineStartTriggerName",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "类型"
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "InlineStartTriggerType",
+    "Name": "Story Start trigger type"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "维度"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineStartTriggerDimension",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "X"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineStartTriggerX",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Y"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineStartTriggerY",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Z"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineStartTriggerZ",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "半径"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineStartTriggerRadius",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": ""
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "资源所有者"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "已保存"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Id": "CanonicalInspectorScrollViewer",
+    "Name": ""
+  }
+]

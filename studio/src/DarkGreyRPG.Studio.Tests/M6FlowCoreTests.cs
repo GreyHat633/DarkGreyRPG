@@ -57,7 +57,7 @@ public sealed class M6FlowCoreTests
             C("start", "next", "quest"), C("quest", "next", "wait"), C("wait", "complete", "detective"), C("detective", "next", "dialogue"),
             C("dialogue", "next", "branch"), C("branch", "hand_over", "kingdom"), C("branch", "conceal", "empire"),
         };
-        var resource = new StoryResource { Id = "wangcheng_mystery", DisplayName = "王城迷案", Title = "王城迷案", Entry = "start", Nodes = [.. nodes], Connections = [.. connections], Tags = ["acceptance"], Metadata = new() { Notes = "keep me" } };
+        var resource = new StoryResource { Id = "ST-2345-6789-ABCD-EFGH", DisplayName = "王城迷案", Title = "王城迷案", Entry = "start", Nodes = [.. nodes], Connections = [.. connections], Tags = ["acceptance"], Metadata = new() { Notes = "keep me" } };
         var issues = StoryValidator.Validate(resource);
         Assert.IsFalse(issues.Any(i => i.Severity == DarkGreyRPG.Studio.Core.Validation.ValidationSeverity.Error), string.Join("; ", issues.Select(i => i.Message)));
     }
@@ -67,13 +67,13 @@ public sealed class M6FlowCoreTests
     {
         using var directory = new TestProjectDirectory();
         var repository = new StoryRepository(directory.Root);
-        var document = StoryDocument.CreateNew("atomic", "Atomic story");
+        var document = StoryDocument.CreateNew("ST-2345-6789-ABCD-EFGH", "Atomic story");
         document.Description = "preserve description";
         document.Tags.Add("tag");
         document.EntryPresentation = new StoryEntryPresentation { Mode = "hero", Eyebrow = "case", Title = "Atomic", DurationSeconds = 3.5 };
         repository.SaveStory(document);
         Assert.IsFalse(document.IsDirty);
-        var reloaded = repository.LoadStoryDocument("atomic");
+        var reloaded = repository.LoadStoryDocument("ST-2345-6789-ABCD-EFGH");
         Assert.AreEqual("preserve description", reloaded.Description);
         CollectionAssert.Contains(reloaded.Tags.ToList(), "tag");
         Assert.AreEqual(3.5, reloaded.EntryPresentation.DurationSeconds);

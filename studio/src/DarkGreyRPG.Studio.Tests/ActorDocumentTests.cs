@@ -8,7 +8,7 @@ public sealed class ActorDocumentTests
     [TestMethod]
     public void NewDocumentIsDirtyAndValidationTracksEdits()
     {
-        var document = ActorDocument.CreateNew("teacher");
+        var document = ActorDocument.CreateNew("ST-2345-6789-ABCD-EFGH~actor~teacher");
 
         Assert.IsTrue(document.IsNew);
         Assert.IsTrue(document.IsDirty);
@@ -23,15 +23,16 @@ public sealed class ActorDocumentTests
     public void SavedDocumentBecomesDirtyAndCanReturnToBaseline()
     {
         using var project = new TestProjectDirectory();
-        var resource = new ActorResource { Id = "teacher", DisplayName = "Teacher" };
-        var path = project.ActorPath("teacher");
+        var resource = new IndividualActorResource { HomeStoryId = "ST-2345-6789-ABCD-EFGH", NpcId = "ST-2345-6789-ABCD-EFGH~actor~teacher", DisplayName = "Teacher" };
+        var path = new ActorRepository(project.Root).GetActorPath(resource.Id);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, ActorSerializer.Serialize(resource, ActorIdPolicy.NewResource));
         var document = ActorDocument.FromResource(resource, path);
 
-        document.Notes = "Changed";
+        document.DisplayName = "Changed";
         Assert.IsTrue(document.IsDirty);
 
-        document.Notes = string.Empty;
+        document.DisplayName = "Teacher";
         Assert.IsFalse(document.IsDirty);
     }
 }

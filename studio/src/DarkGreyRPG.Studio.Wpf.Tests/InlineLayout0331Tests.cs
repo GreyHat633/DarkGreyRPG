@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -20,8 +20,10 @@ public sealed class InlineLayout0331Tests
         foreach (var definition in GraphNodeDefinitionRegistry.All.Where(d => !d.CompatibilityOnly && d.Scope != GraphScope.Project))
         {
             var kind = definition.Scope switch { GraphScope.Session => GraphResourceKind.Session, GraphScope.Task => GraphResourceKind.Task, _ => GraphResourceKind.Story };
-            var node = GraphNodeFactory.Create(definition.Scope, definition.Type, "node");
-            using var editor = new CanonicalGraphResourceEditorViewModel(new(kind, "resource", "Resource", new([node])));
+            var node = PublicOutputSchema.IsOutput(GraphNodeFactory.Create(definition.Scope, definition.Type, "node"))
+                ? new GraphNodeAuthoringService().Create(new GraphDocument(), definition.Scope, definition.Type, "node").Candidate!
+                : GraphNodeFactory.Create(definition.Scope, definition.Type, "node");
+            using var editor = new CanonicalGraphResourceEditorViewModel(new(kind, CurrentIdentityFixture.GraphId(kind), "Resource", new([node])));
             using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
             var view = new CanonicalInlineNodeEditorControl { Width = 210, Editor = inspector };
             Layout(view);
@@ -49,8 +51,10 @@ public sealed class InlineLayout0331Tests
         foreach (var definition in GraphNodeDefinitionRegistry.All.Where(d => !d.CompatibilityOnly && d.Scope != GraphScope.Project))
         {
             var kind = definition.Scope switch { GraphScope.Session => GraphResourceKind.Session, GraphScope.Task => GraphResourceKind.Task, _ => GraphResourceKind.Story };
-            var node = GraphNodeFactory.Create(definition.Scope, definition.Type, "node");
-            using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(kind, "resource", "Resource", new GraphDocument([node])));
+            var node = PublicOutputSchema.IsOutput(GraphNodeFactory.Create(definition.Scope, definition.Type, "node"))
+                ? new GraphNodeAuthoringService().Create(new GraphDocument(), definition.Scope, definition.Type, "node").Candidate!
+                : GraphNodeFactory.Create(definition.Scope, definition.Type, "node");
+            using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(kind, CurrentIdentityFixture.GraphId(kind), "Resource", new GraphDocument([node])));
             using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
             var view = new CanonicalInlineNodeEditorControl { Width = 210, Editor = inspector };
             Layout(view);
@@ -62,8 +66,8 @@ public sealed class InlineLayout0331Tests
     [STATestMethod]
     public void TerminateFieldsStartNearHeaderAndValidationRowsReturnOnlyWhenNeeded()
     {
-        var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "terminate", "node");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([node])));
+        var node = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.StoryFlow, "terminate", "node").Candidate!;
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         var view = new CanonicalInlineNodeEditorControl { Width = 210, Editor = inspector };
         Layout(view);

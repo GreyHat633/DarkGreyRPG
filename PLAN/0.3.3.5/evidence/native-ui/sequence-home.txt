@@ -1,0 +1,84 @@
+WINDOW:  1567,986,320,53
+WINDOW: 0335IntegratedAcceptance — DarkGrey RPG Studio 0.3.3.5 -9,-9,1938,1048
+ControlType.Menu id= name= enabled=True rect=0,28,1920,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=7,30,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=26,49,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=100,30,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=119,49,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=193,30,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=212,49,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=288,30,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=307,49,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=383,30,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=401,49,60,22
+ControlType.Text id= name=已恢复上次项目，共 2 个 Actor。 enabled=True rect=15,999,1890,22
+ControlType.List id= name= enabled=True rect=0,939,1920,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=2,944,62,42
+ControlType.Text id= name=输出 enabled=True rect=16,954,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=67,944,62,42
+ControlType.Text id= name=问题 enabled=True rect=81,954,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=131,944,80,42
+ControlType.Text id= name=调试器 enabled=True rect=145,954,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=213,944,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=227,954,85,22
+ControlType.Button id= name=新建故事 enabled=True rect=267,107,39,40
+ControlType.Text id= name=项目首页 enabled=True rect=17,114,250,26
+ControlType.Button id= name=引用故事包 enabled=True rect=15,873,291,49
+ControlType.Pane id= name= enabled=True rect=Empty
+ControlType.List id= name=引用故事包区域 enabled=True rect=Empty
+ControlType.Edit id=StorySearchBox name=搜索故事 enabled=True rect=15,159,291,40
+ControlType.List id=StoryList name=故事导航列表 enabled=True rect=15,209,291,649
+ControlType.ListItem id= name=DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel enabled=True rect=16,210,289,116
+ControlType.Text id= name=acceptance enabled=True rect=38,235,245,22
+ControlType.Text id= name=Native0332:acceptance enabled=True rect=38,259,245,22
+ControlType.Text id= name=新格式 enabled=True rect=38,284,245,17
+ControlType.Thumb id=ResourceBrowserSplitter name= enabled=True rect=322,92,10,845
+ControlType.Button id= name=进入选中故事 enabled=True rect=1738,144,144,42
+ControlType.Text id= name=进入故事 enabled=True rect=1775,153,69,22
+ControlType.Text id= name=项目故事图谱 enabled=True rect=367,131,1371,41
+ControlType.Text id= name=左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。 enabled=True rect=367,177,1371,22
+ControlType.Custom id= name=故事图谱自由布局画布 enabled=True rect=367,221,1133,678
+ControlType.Text id= name=1 个故事 · 0 条连接 enabled=True rect=367,221,1133,22
+ControlType.Custom id=Editor name=节点图编辑器 enabled=True rect=367,253,1133,584
+ControlType.Button id= name=图编辑器缩放到百分之百 enabled=True rect=367,253,68,34
+ControlType.Text id= name=100% enabled=True rect=378,259,46,22
+ControlType.Button id= name=适应全部图节点 enabled=True rect=440,253,57,34
+ControlType.Text id= name=适应 enabled=True rect=451,259,35,22
+ControlType.Button id= name=重置图视图 enabled=True rect=502,253,57,34
+ControlType.Text id= name=重置 enabled=True rect=513,259,35,22
+ControlType.Button id=ScissorsButton name=剪断连线 enabled=True rect=564,253,57,34
+ControlType.Text id= name=剪刀 enabled=True rect=575,259,35,22
+ControlType.Button id=CombineSelection name=组合 enabled=True rect=626,253,57,34
+ControlType.Text id= name=组合 enabled=True rect=637,259,35,22
+ControlType.Text id= name=拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放 enabled=True rect=698,260,802,27
+ControlType.Custom id=CanonicalGraphNode_Native0332:acceptance name=图节点 故事「acceptance」 Native0332:acceptance enabled=True rect=467,385,288,114
+ControlType.Text id=HeaderTitle name=故事「acceptance」 enabled=True rect=480,394,263,22
+ControlType.Button id=CanonicalGraphPort_Native0332:acceptance_completed name=Native0332:acceptance 输出端口 completed (Flow) enabled=True rect=611,431,134,25
+ControlType.Text id= name=集成完成 enabled=True rect=659,435,55,17
+ControlType.Button id=CanonicalGraphPort_Native0332:acceptance_ready name=Native0332:acceptance 输出端口 ready (Logic) enabled=True rect=611,456,134,24
+ControlType.Text id= name=任务提交结果 enabled=True rect=632,459,82,18
+ControlType.Group id=Help name=介绍说明 enabled=True rect=367,847,1133,52
+ControlType.Button id=HeaderSite name=介绍说明 enabled=True rect=368,848,1131,50
+ControlType.Text id= name=介绍说明 enabled=True rect=382,862,1088,22
+ControlType.Thumb id= name= enabled=True rect=1500,221,10,678
+ControlType.Pane id= name= enabled=True rect=1531,242,330,636
+ControlType.Text id= name=故事详情 enabled=True rect=1531,242,330,19
+ControlType.Text id= name=选中故事完整概览 enabled=True rect=1531,266,330,34
+ControlType.Text id= name=Native0332:acceptance enabled=True rect=1531,305,330,22
+ControlType.List id= name= enabled=True rect=1531,350,330,147
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 角色, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1531,350,330,37
+ControlType.Group id= name=角色 enabled=True rect=1531,352,330,32
+ControlType.Button id=HeaderToggle name=角色 enabled=True rect=1531,352,59,32
+ControlType.Text id= name=角色 enabled=True rect=1552,357,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 物品, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1531,387,330,37
+ControlType.Group id= name=物品 enabled=True rect=1531,389,330,32
+ControlType.Button id=HeaderToggle name=物品 enabled=True rect=1531,389,59,32
+ControlType.Text id= name=物品 enabled=True rect=1552,394,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 会话, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1531,424,330,36
+ControlType.Group id= name=会话 enabled=True rect=1531,426,330,32
+ControlType.Button id=HeaderToggle name=会话 enabled=True rect=1531,426,59,32
+ControlType.Text id= name=会话 enabled=True rect=1552,431,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 任务, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1531,460,330,37
+ControlType.Group id= name=任务 enabled=True rect=1531,463,330,32
+ControlType.Button id=HeaderToggle name=任务 enabled=True rect=1531,463,59,32
+ControlType.Text id= name=任务 enabled=True rect=1552,468,35,22

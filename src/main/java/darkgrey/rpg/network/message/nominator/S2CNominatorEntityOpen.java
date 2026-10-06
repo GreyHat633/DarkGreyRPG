@@ -9,6 +9,7 @@ import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import darkgrey.rpg.DarkGreyRpg;
+import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.nominator.NominatorCatalog;
 import darkgrey.rpg.nominator.NominatorEntityBinding;
@@ -138,22 +139,24 @@ public final class S2CNominatorEntityOpen implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buffer) {
+        if (buffer.readInt() != 0x44475236)
+            throw new IllegalArgumentException("Unsupported Nominator identity protocol");
         entityId = buffer.readInt();
         entityUuid = new UUID(buffer.readLong(), buffer.readLong());
         revision = buffer.readLong();
-        individual = readString(buffer);
-        story = readString(buffer);
+        individual = NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR);
+        story = NominatorIdentityCodec.story(buffer);
         int count = buffer.readUnsignedByte();
         if (count > 32) throw new IllegalArgumentException("Too many groups.");
         List<String> decoded = new ArrayList<String>();
-        for (int i = 0; i < count; i++) decoded.add(readString(buffer));
+        for (int i = 0; i < count; i++) decoded.add(NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR));
         groups = Collections.unmodifiableList(decoded);
         displayName = readString(buffer);
         entityType = readString(buffer);
         int typeCount = buffer.readUnsignedByte();
         if (typeCount > 32) throw new IllegalArgumentException("Too many type groups.");
         List<String> types = new ArrayList<String>();
-        for (int i = 0; i < typeCount; i++) types.add(readString(buffer));
+        for (int i = 0; i < typeCount; i++) types.add(NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR));
         typeGroups = Collections.unmodifiableList(types);
         catalogRevision = buffer.readLong();
         catalog = NominatorCatalogCodec.read(buffer);
@@ -162,20 +165,21 @@ public final class S2CNominatorEntityOpen implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buffer) {
+        buffer.writeInt(0x44475236);
         buffer.writeInt(entityId);
         buffer.writeLong(entityUuid.getMostSignificantBits());
         buffer.writeLong(entityUuid.getLeastSignificantBits());
         buffer.writeLong(revision);
-        writeString(buffer, individual);
-        writeString(buffer, story);
+        NominatorIdentityCodec.write(buffer, individual, ResourceAddress.Kind.ACTOR);
+        NominatorIdentityCodec.story(buffer, story);
         if (groups.size() > 32) throw new IllegalArgumentException("Too many groups.");
         buffer.writeByte(groups.size());
-        for (String group : groups) writeString(buffer, group);
+        for (String group : groups) NominatorIdentityCodec.write(buffer, group, ResourceAddress.Kind.ACTOR);
         writeString(buffer, displayName);
         writeString(buffer, entityType);
         if (typeGroups.size() > 32) throw new IllegalArgumentException("Too many type groups.");
         buffer.writeByte(typeGroups.size());
-        for (String group : typeGroups) writeString(buffer, group);
+        for (String group : typeGroups) NominatorIdentityCodec.write(buffer, group, ResourceAddress.Kind.ACTOR);
         buffer.writeLong(catalogRevision);
         NominatorCatalogCodec.write(
             buffer,

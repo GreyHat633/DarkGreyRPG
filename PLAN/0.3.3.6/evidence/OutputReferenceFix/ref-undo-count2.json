@@ -1,0 +1,559 @@
+{
+  "schema_version": 4,
+  "identity_format": "story-uid-v1",
+  "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+  "owned_resources": {
+    "actors": [
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "individual"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "collective"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra0"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra1"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra2"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra3"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra4"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra5"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra6"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra7"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra8"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra9"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra10"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra11"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra12"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra13"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra14"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra15"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra16"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra17"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra18"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra19"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra20"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra21"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra22"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra23"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra24"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra25"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra26"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra27"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra28"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra29"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra30"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra31"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra32"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra33"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra34"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra35"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra36"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra37"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra38"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra39"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra40"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra41"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra42"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra43"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra44"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra45"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra46"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra47"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra48"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra49"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra50"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra51"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra52"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra53"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra54"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra55"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra56"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra57"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra58"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra59"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra60"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra61"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra62"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra63"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra64"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra65"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra66"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra67"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra68"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra69"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra70"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra71"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra72"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra73"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra74"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra75"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra76"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra77"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra78"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra79"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra80"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra81"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra82"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra83"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra84"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra85"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra86"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra87"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra88"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra89"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra90"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra91"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra92"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra93"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra94"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra95"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra96"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra97"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra98"
+      },
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "actor",
+        "local_id": "extra99"
+      }
+    ],
+    "items": [
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "item",
+        "local_id": "coin"
+      }
+    ],
+    "item_groups": [
+      {
+        "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+        "kind": "item_group",
+        "local_id": "sword"
+      }
+    ],
+    "sessions": [],
+    "tasks": []
+  },
+  "referenced_resources": {
+    "actors": [
+      {
+        "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+        "kind": "actor",
+        "local_id": "individual"
+      },
+      {
+        "story_uid": "ST-5555-6666-7777-8888",
+        "kind": "actor",
+        "local_id": "npc"
+      }
+    ],
+    "items": [],
+    "item_groups": [],
+    "sessions": [],
+    "tasks": []
+  },
+  "display_order": {
+    "actors": [],
+    "items": [],
+    "sessions": [],
+    "tasks": []
+  }
+}

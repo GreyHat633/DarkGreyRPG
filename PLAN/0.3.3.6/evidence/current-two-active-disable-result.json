@@ -1,0 +1,18 @@
+{
+  "status": "PASS_TARGETED_NATIVE_THREE_CLIENTS",
+  "scope": "Two active members preserved by OP manual container disable; A reconnect resumes same instance and portrait; A and C finish normally; third player cannot start disabled region members; unrelated story continues",
+  "players": [
+    "Native0336",
+    "Operator0336",
+    "Manager0336"
+  ],
+  "evidence": [
+    "disable-manager-two-active.png",
+    "disable-two-active-after.json",
+    "disable-A-reconnected.png",
+    "disable-two-active-reconnect.json",
+    "disable-two-active-completed.json"
+  ],
+  "remaining": "Flow cross-story exit denial needs a Flow-connected fixture; this Group has Logic edges only",
+  "jar_sha256": "9b28a32256ff7c02805916efd79c5bb9ed100bf773adafde27ee7efc7561860b"
+}

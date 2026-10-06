@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.3.3.4.jar",
+    "Sha256": "5DCFF88E1506BD3723788757BB8176CD302AF1FE1A49AE1EA27872F8B9454428"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Server\\mods\\darkgrey_rpg-0.3.3.4.jar",
+    "Sha256": "5DCFF88E1506BD3723788757BB8176CD302AF1FE1A49AE1EA27872F8B9454428"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Client\\mods\\darkgrey_rpg-0.3.3.4.jar",
+    "Sha256": "5DCFF88E1506BD3723788757BB8176CD302AF1FE1A49AE1EA27872F8B9454428"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Witness\\mods\\darkgrey_rpg-0.3.3.4.jar",
+    "Sha256": "5DCFF88E1506BD3723788757BB8176CD302AF1FE1A49AE1EA27872F8B9454428"
+  }
+]

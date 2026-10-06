@@ -1,0 +1,125 @@
+{
+  "actions": [
+    {
+      "atMs": 62,
+      "state": "Off"
+    },
+    {
+      "atMs": 132,
+      "state": "On"
+    },
+    {
+      "atMs": 256,
+      "state": "Off"
+    },
+    {
+      "atMs": 581,
+      "state": "On"
+    }
+  ],
+  "frames": [
+    {
+      "file": "frame-00.png",
+      "atMs": 9
+    },
+    {
+      "file": "frame-01.png",
+      "atMs": 65
+    },
+    {
+      "file": "frame-02.png",
+      "atMs": 88
+    },
+    {
+      "file": "frame-03.png",
+      "atMs": 135
+    },
+    {
+      "file": "frame-04.png",
+      "atMs": 177
+    },
+    {
+      "file": "frame-05.png",
+      "atMs": 204
+    },
+    {
+      "file": "frame-06.png",
+      "atMs": 257
+    },
+    {
+      "file": "frame-07.png",
+      "atMs": 285
+    },
+    {
+      "file": "frame-08.png",
+      "atMs": 331
+    },
+    {
+      "file": "frame-09.png",
+      "atMs": 377
+    },
+    {
+      "file": "frame-10.png",
+      "atMs": 407
+    },
+    {
+      "file": "frame-11.png",
+      "atMs": 453
+    },
+    {
+      "file": "frame-12.png",
+      "atMs": 484
+    },
+    {
+      "file": "frame-13.png",
+      "atMs": 531
+    },
+    {
+      "file": "frame-14.png",
+      "atMs": 582
+    },
+    {
+      "file": "frame-15.png",
+      "atMs": 607
+    },
+    {
+      "file": "frame-16.png",
+      "atMs": 655
+    },
+    {
+      "file": "frame-17.png",
+      "atMs": 686
+    },
+    {
+      "file": "frame-18.png",
+      "atMs": 732
+    },
+    {
+      "file": "frame-19.png",
+      "atMs": 764
+    },
+    {
+      "file": "frame-20.png",
+      "atMs": 811
+    },
+    {
+      "file": "frame-21.png",
+      "atMs": 856
+    },
+    {
+      "file": "frame-22.png",
+      "atMs": 887
+    },
+    {
+      "file": "frame-23.png",
+      "atMs": 932
+    },
+    {
+      "file": "frame-24.png",
+      "atMs": 962
+    }
+  ],
+  "finalState": "On",
+  "input": "Windows UIAutomation TogglePattern",
+  "exeHash": "2A3F74860CE17CED2FB6FDB39CD6968B9D3CDE850C74B5F37534C6E02956C251"
+}

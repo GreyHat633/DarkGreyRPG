@@ -1,0 +1,38 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\organized-publish-0467e38a69cd4a96b9125a54dbd917d2",
+    "Files": 405,
+    "Bytes": 593599986.0,
+    "ExeSha256": "8E8BF253B16B1516616D890B8BD604A907CF9D607469E3785D4AB113A5B3B20C"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\organized-publish-0a9e4dc9e33f4159899d0887655b8cd0",
+    "Files": 405,
+    "Bytes": 593599474.0,
+    "ExeSha256": "8E8BF253B16B1516616D890B8BD604A907CF9D607469E3785D4AB113A5B3B20C"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\organized-publish-12ec1130ca1b4ed78f3ffee13f6284bb",
+    "Files": 405,
+    "Bytes": 593603058.0,
+    "ExeSha256": "8E8BF253B16B1516616D890B8BD604A907CF9D607469E3785D4AB113A5B3B20C"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\portable-publish-6d080f76311043c5adb111bf6a0b10ef",
+    "Files": 404,
+    "Bytes": 593596609.0,
+    "ExeSha256": "75D69241FE0BE26B0DC3AABA1E09277F3EC7C56D61C448102D9FD3456FDFCB98"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\portable-publish-76e3b72522e74fd4983389d9386632f2",
+    "Files": 404,
+    "Bytes": 593600193.0,
+    "ExeSha256": "75D69241FE0BE26B0DC3AABA1E09277F3EC7C56D61C448102D9FD3456FDFCB98"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\portable-publish-81d14ecd4a3f47d2acfb340566220783",
+    "Files": 404,
+    "Bytes": 593597121.0,
+    "ExeSha256": "75D69241FE0BE26B0DC3AABA1E09277F3EC7C56D61C448102D9FD3456FDFCB98"
+  }
+]

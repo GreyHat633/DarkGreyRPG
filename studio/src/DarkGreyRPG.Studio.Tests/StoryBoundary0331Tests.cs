@@ -15,7 +15,7 @@ public sealed class StoryBoundary0331Tests
     public void ProjectionRequiresExplicitFlowDrivenInputsAndPreservesStableTypedBoundaryMetadata()
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "local_entry");
-        var story = Story("story", start);
+        var story = Story("ST-2345-6789-ABCD-EFGH", start);
 
         Assert.IsEmpty(CanonicalStoryBoundaryProjection.Ports(story));
 
@@ -31,8 +31,8 @@ public sealed class StoryBoundary0331Tests
         Assert.IsTrue(ports[0].IsInput);
         Assert.AreEqual(GraphInterfaceKind.Flow, ports[0].InterfaceKind);
 
-        var source = Story("source", Terminate("stop", "隐藏结局"), LogicOutput("out", "完成"));
-        var target = Story("target", FlowInput("entry", "来自第一章"), LogicInput("in", "逻辑门"));
+        var source = Story("ST-2345-6789-ABCD-EFGH", Terminate("stop", "隐藏结局"), LogicOutput("out", "完成"));
+        var target = Story("ST-JKLM-NPQR-STUV-WXYZ", FlowInput("entry", "来自第一章"), LogicInput("in", "逻辑门"));
         var sourcePorts = CanonicalStoryBoundaryProjection.Ports(source);
         var targetPorts = CanonicalStoryBoundaryProjection.Ports(target);
         CollectionAssert.AreEquivalent(new[] { "stop", "out" }, sourcePorts.Select(port => port.Id).ToArray());
@@ -48,12 +48,12 @@ public sealed class StoryBoundary0331Tests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Story("source", FlowInput("source_entry", "本地入口"), Terminate("stop", "停止"), LogicOutput("out", "完成")));
-        store.Stories.Create(Story("target", FlowInput("entry", "入口"), LogicInput("in", "条件")));
-        store.Stories.Create(Story("target_two", FlowInput("entry_two", "第二入口"), LogicInput("in_two", "第二条件")));
+        store.Stories.Create(Story("ST-2345-6789-ABCD-EFGH", FlowInput("source_entry", "本地入口"), Terminate("stop", "停止"), LogicOutput("out", "完成")));
+        store.Stories.Create(Story("ST-JKLM-NPQR-STUV-WXYZ", FlowInput("entry", "入口"), LogicInput("in", "条件")));
+        store.Stories.Create(Story("ST-4567-89AB-CDEF-GHJK", FlowInput("entry_two", "第二入口"), LogicInput("in_two", "第二条件")));
         store.StoryLogicGraph.Save([
-            new("source", "stop", "target", "entry", "Flow"),
-            new("source", "out", "target", "in", "Logic"),
+            new("ST-2345-6789-ABCD-EFGH", "stop", "ST-JKLM-NPQR-STUV-WXYZ", "entry", "Flow"),
+            new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic"),
         ]);
 
         var saved = store.StoryLogicGraph.Load();
@@ -61,76 +61,68 @@ public sealed class StoryBoundary0331Tests
         Assert.AreEqual("Logic", saved.Connections.Single(connection => connection.SourcePortId == "out").InterfaceKind);
 
         var wrongSourceKind = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(() =>
-            store.StoryLogicGraph.Save([new("source", "stop", "target", "in", "Logic")]));
+            store.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "stop", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic")]));
         Assert.AreEqual("story.logic_graph.port.missing", wrongSourceKind.Code);
 
         var wrongTargetKind = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(() =>
-            store.StoryLogicGraph.Save([new("source", "out", "target", "entry", "Flow")]));
+            store.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "entry", "Flow")]));
         Assert.AreEqual("story.logic_graph.port.missing", wrongTargetKind.Code);
 
         var duplicateFlow = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(() =>
             store.StoryLogicGraph.Save([
-                new("source", "stop", "target", "entry", "Flow"),
-                new("source", "stop", "target_two", "entry_two", "Flow"),
+                new("ST-2345-6789-ABCD-EFGH", "stop", "ST-JKLM-NPQR-STUV-WXYZ", "entry", "Flow"),
+                new("ST-2345-6789-ABCD-EFGH", "stop", "ST-4567-89AB-CDEF-GHJK", "entry_two", "Flow"),
             ]));
         Assert.AreEqual("story.logic_graph.source.multiple_targets", duplicateFlow.Code);
 
         var duplicateLogic = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(() =>
             store.StoryLogicGraph.Save([
-                new("source", "out", "target", "in", "Logic"),
-                new("source", "out", "target", "in", "Logic"),
+                new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic"),
+                new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic"),
             ]));
         Assert.AreEqual("story.logic_graph.connection.duplicate", duplicateLogic.Code);
 
-        var secondSource = Story("source_two", LogicOutput("out_two", "另一个完成"));
+        var secondSource = Story("ST-3456-789A-BCDE-FGHJ", LogicOutput("out_two", "另一个完成"));
         store.Stories.Create(secondSource);
         var multipleSources = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(() =>
             store.StoryLogicGraph.Save([
-                new("source", "out", "target", "in", "Logic"),
-                new("source_two", "out_two", "target", "in", "Logic"),
+                new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic"),
+                new("ST-3456-789A-BCDE-FGHJ", "out_two", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic"),
             ]));
         Assert.AreEqual("story.logic_graph.target.multiple_sources", multipleSources.Code);
 
-        var targetWithAmbiguousPort = store.Stories.Load("target");
-        targetWithAmbiguousPort.Graph!.Nodes.Add(LogicInput("duplicate", "条件"));
-        targetWithAmbiguousPort.Graph.Nodes.Add(LogicInput("duplicate", "条件副本"));
+        var targetWithAmbiguousPort = store.Stories.Load("ST-JKLM-NPQR-STUV-WXYZ");
+        var ambiguousGraph = targetWithAmbiguousPort.Graph!;
+        ambiguousGraph.Nodes.Add(LogicInput("duplicate", "条件"));
+        ambiguousGraph.Nodes.Add(LogicInput("duplicate", "条件副本"));
+        targetWithAmbiguousPort.Graph = ambiguousGraph;
         store.Stories.Replace(targetWithAmbiguousPort);
         var ambiguous = Assert.ThrowsExactly<CanonicalStoryLogicGraphRepositoryException>(() =>
-            store.StoryLogicGraph.Save([new("source", "out", "target", "duplicate", "Logic")]));
+            store.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "duplicate", "Logic")]));
         Assert.AreEqual("story.logic_graph.port.missing", ambiguous.Code);
     }
 
     [TestMethod]
-    public void DgrsExporterWritesTypedSourceOutgoingEdgesWithoutRecursiveTargetStory()
+    public void LinkedStoriesRequireWholeGroupExportWithTypedEdges()
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Story("source", FlowInput("source_entry", "本地入口"), Terminate("stop", "停止"), LogicOutput("out", "完成")));
-        store.Stories.Create(Story("target", FlowInput("entry", "入口"), LogicInput("in", "条件")));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("source"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("target"));
+        store.Stories.Create(Story("ST-2345-6789-ABCD-EFGH", FlowInput("source_entry", "本地入口"), Terminate("stop", "停止"), LogicOutput("out", "完成")));
+        store.Stories.Create(Story("ST-JKLM-NPQR-STUV-WXYZ", FlowInput("entry", "入口"), LogicInput("in", "条件")));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-JKLM-NPQR-STUV-WXYZ"));
         store.StoryLogicGraph.Save([
-            new("source", "stop", "target", "entry", "Flow"),
-            new("source", "out", "target", "in", "Logic"),
+            new("ST-2345-6789-ABCD-EFGH", "stop", "ST-JKLM-NPQR-STUV-WXYZ", "entry", "Flow"),
+            new("ST-2345-6789-ABCD-EFGH", "out", "ST-JKLM-NPQR-STUV-WXYZ", "in", "Logic"),
         ]);
 
         var archive = Path.Combine(project.Root, "build", "source.dgrs");
-        var result = new DgrsStoryPackageExporter(project.Root).Build("source", archive, "0.3.3.1");
-
-        Assert.AreEqual("resources/story_logic_graph.json", result.Manifest.RequiredResources.StoryLogicGraph);
-        using var zip = ZipFile.OpenRead(archive);
-        Assert.IsFalse(zip.Entries.Any(entry => entry.FullName.Contains("target", StringComparison.OrdinalIgnoreCase)));
-        var graphEntry = zip.GetEntry("resources/story_logic_graph.json");
-        Assert.IsNotNull(graphEntry);
-        using var reader = new StreamReader(graphEntry!.Open());
-        using var json = JsonDocument.Parse(reader.ReadToEnd());
-        var connections = json.RootElement.GetProperty("connections").EnumerateArray().ToArray();
-        Assert.HasCount(2, connections);
-        CollectionAssert.AreEquivalent(new[] { "Flow", "Logic" },
-            connections.Select(connection => connection.GetProperty("interface_kind").GetString()).ToArray());
-        Assert.IsTrue(connections.All(connection => connection.GetProperty("source_story_id").GetString() == "source"));
-        CollectionAssert.AreEquivalent(new[] { "target" },
-            connections.Select(connection => connection.GetProperty("target_story_id").GetString()).Distinct().ToArray());
+        Assert.ThrowsExactly<StoryPackageException>(() => new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", archive));
+        var result = new DgrsGroupPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", archive + ".g", "0.3.3.6");
+        CollectionAssert.AreEquivalent(new[] { "ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ" }, result.Manifest.Members.Select(member => member.StoryId).ToArray());
+        Assert.HasCount(2, result.Connections.Connections);
+        CollectionAssert.AreEquivalent(new[] { "Flow", "Logic" }, result.Connections.Connections.Select(edge => edge.InterfaceKind).ToArray());
+        Assert.IsTrue(result.Connections.Connections.All(edge => edge.SourceStoryId == "ST-2345-6789-ABCD-EFGH" && edge.TargetStoryId == "ST-JKLM-NPQR-STUV-WXYZ"));
     }
 
     private static GraphResourceEnvelope Story(string id, params GraphNode[] nodes)

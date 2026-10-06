@@ -1,0 +1,25 @@
+{
+  "label": "0923-integrated-author880-output",
+  "time": "2026-09-23T03:15:49",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.048993897613597896,
+  "peak": 0.10247516632080078,
+  "tone440": 0.06106280152720431,
+  "tone880": 0.017254747208286157,
+  "dominantVoiceHz": 879.846256684492,
+  "dominantVoiceAmplitude": 0.017254747208286157
+}

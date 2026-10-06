@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "before_all_active": true,
+  "final_results": [
+    "perfect",
+    "ordinary"
+  ],
+  "zero_settlement": "ACTIVE",
+  "reward_receipts_once": true,
+  "xp": {
+    "before": 0,
+    "results": 14,
+    "repeat": 14,
+    "restored": 14
+  },
+  "story_completion_count": [
+    1,
+    1,
+    0
+  ],
+  "after_duplicate_events_and_server_restart_byte_equivalent": true,
+  "environment": "isolated Forge 1.7.10 ReformServer + Client2; RCON event injection and persisted NBT verification",
+  "user_accepted": false
+}

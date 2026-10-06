@@ -1,0 +1,7 @@
+{
+  "AuthoritativeArtifactsMatch": true,
+  "SourceHashesMatch": 89,
+  "UniqueRequirementRows": 37,
+  "NoTemporaryAgentClassesInJar": true,
+  "ThreeInstalledJarsMatch": true
+}

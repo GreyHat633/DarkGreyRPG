@@ -1,0 +1,2 @@
+command=stop
+result=1

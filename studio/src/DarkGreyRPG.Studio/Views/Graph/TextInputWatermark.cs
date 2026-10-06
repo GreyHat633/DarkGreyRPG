@@ -172,7 +172,15 @@ public static class TextInputWatermark
         {
             var size = AdornedElement.RenderSize;
             _label.Arrange(new Rect(new Point(0, 0), size));
-            Clip = new RectangleGeometry(new Rect(size));
+            // Replacing Clip on every arrange invalidates the adorner layer again.
+            // A clipped node can otherwise keep scheduling layout indefinitely.
+            var bounds = new Rect(size);
+            if (Clip is not RectangleGeometry geometry || geometry.Rect != bounds)
+            {
+                var next = new RectangleGeometry(bounds);
+                next.Freeze();
+                Clip = next;
+            }
             return size;
         }
 

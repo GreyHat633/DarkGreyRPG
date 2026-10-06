@@ -38,9 +38,9 @@
             </ListBox>
         </Grid>
         <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Width="88" Height="32" Margin="0,0,8,0" IsCancel="True" Content="取消" />
-            <Button Width="88" Height="32" IsDefault="True" IsEnabled="{Binding CanConfirm}"
+            <Button Margin="0,0,8,0" Width="88" Height="32" IsDefault="True" IsEnabled="{Binding CanConfirm}"
                     Style="{DynamicResource AccentButtonStyle}" Click="ConfirmButton_OnClick" Content="{Binding ActionText}" />
+            <Button Width="88" Height="32" IsCancel="True" Content="取消" />
         </StackPanel>
     </Grid>
 </Window>

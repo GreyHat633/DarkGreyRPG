@@ -126,7 +126,8 @@ public final class NpcIdentityRegistry {
     }
 
     public static String requireId(String npcId) {
-        if (!DgrResourceId.isCompatibleId(npcId))
+        if (!ResourceAddress.isKey(npcId) || ResourceAddress.fromKey(npcId)
+            .getKind() != ResourceAddress.Kind.ACTOR)
             throw new IllegalArgumentException("NPC ID must be a valid DGR resource ID.");
         return npcId;
     }

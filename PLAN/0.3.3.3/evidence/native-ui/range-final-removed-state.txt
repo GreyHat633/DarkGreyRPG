@@ -1,0 +1,5 @@
+action=snapshot
+world=true
+audioDevices=0
+tile=absent
+source=jar:file:/E:/Java/MinecraftMod/DarkGreyRPG/.tooling/0333/Client/mods/darkgrey_rpg-0.3.3.3.jar!/darkgrey/rpg/gramophone/GramophoneClient.class

@@ -39,7 +39,7 @@ public sealed class ScaleComparison0334Tests
                 return node;
             }).ToArray();
             store.Sessions.Create(new(GraphResourceKind.Session, "session_" + s, "Session " + s,
-                new GraphDocument(nodes.Concat([GraphNodeFactory.Create(GraphScope.Session, "start", "start"), GraphNodeFactory.Create(GraphScope.Session, "end", "end")]))));
+                new GraphDocument(nodes.Concat([GraphNodeFactory.Create(GraphScope.Session, "start", "start"), new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "end", "end").Candidate!]))));
         }
         store.Memberships.Create(new("story", new CanonicalStoryMembershipSet { Sessions = ["session_0", "session_1", "session_2"] }));
         var results = new Dictionary<string, object>();

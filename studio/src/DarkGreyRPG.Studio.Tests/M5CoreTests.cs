@@ -28,18 +28,22 @@ public sealed class M5CoreTests
     }
 
     [TestMethod]
-    public void ProjectServiceCreatesSavesAndRestoresDialogueAndQuest()
+    public void CurrentSessionAndTaskSaveAndRestoreInProject()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        var dialogue = service.CreateDialogueInStory("uncategorized", "intro", "Intro");
-        dialogue.Speakers.Add("hero"); dialogue.Nodes.Add(DialogueNodeResource.Line("line", "hero", "Hello", "end")); dialogue.Entry = "line"; service.SaveDialogue(dialogue);
-        var quest = service.CreateQuestInStory("uncategorized", "find", "Find"); quest.Description = "Find it"; service.SaveQuest(quest);
-        var restarted = new ProjectService(); restarted.OpenProject(directory.Root);
-        Assert.AreEqual("line", restarted.OpenDialogue("intro").Entry);
-        Assert.AreEqual("Find it", restarted.OpenQuest("find").Description);
-        Assert.IsTrue(restarted.CurrentProject!.Registry.Exists(ProjectResourceType.Dialogue, "intro"));
-        Assert.IsTrue(restarted.CurrentProject.Registry.Exists(ProjectResourceType.Quest, "find"));
+        const string uid = "ST-2345-6789-ABCD-EFGH";
+        var store = new Core.Graphs.Resources.CanonicalProjectGraphStore(directory.Root);
+        new Core.Graphs.Resources.CanonicalStoryLifecycleService(store).Create(uid, "Story");
+        var lifecycle = new Core.Graphs.Resources.CanonicalStoryResourceLifecycleService(store);
+        lifecycle.CreateOwnedSession(uid, uid + "~session~intro", "Intro");
+        lifecycle.CreateOwnedTask(uid, uid + "~task~find", "Find");
+        var session = store.Sessions.Load(uid + "~session~intro"); session.DisplayName = "Saved Session"; store.Sessions.Replace(session);
+        var task = store.Tasks.Load(uid + "~task~find"); task.DisplayName = "Saved Task"; store.Tasks.Replace(task);
+        new ProjectService().OpenProject(directory.Root);
+        var reopened = new Core.Graphs.Resources.CanonicalProjectGraphStore(directory.Root);
+        Assert.AreEqual("Saved Session", reopened.Sessions.Load(session.Id).DisplayName);
+        Assert.AreEqual("Saved Task", reopened.Tasks.Load(task.Id).DisplayName);
+        CollectionAssert.Contains(reopened.Memberships.Load(uid).OwnedResources.Sessions, session.Id);
+        CollectionAssert.Contains(reopened.Memberships.Load(uid).OwnedResources.Tasks, task.Id);
     }
 }

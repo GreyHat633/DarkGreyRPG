@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ba5b388b-bf55-488a-b5bd-538282627682" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-05 21:14:57" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-05T21:14:57.3366167+08:00" queuing="2026-10-05T21:14:57.3366170+08:00" start="2026-10-05T21:14:53.8341425+08:00" finish="2026-10-05T21:15:07.5658520+08:00" />
+  <TestSettings name="default" id="a46bca4d-98a3-4091-aee4-4f4457c50f1e">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-05_21_14_57" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="06ad9884-288e-4add-ace5-005e35b4574e" testId="13f9cc18-2e32-812b-a434-837dc0d2775e" testName="EmitLiveUpdatesWhenRequested" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0002613" startTime="2026-10-05T21:15:00.8096710+08:00" endTime="2026-10-05T21:15:00.8099794+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="06ad9884-288e-4add-ace5-005e35b4574e" />
+    <UnitTestResult executionId="128e6f3e-d3c3-44ef-9171-600594d8f551" testId="19f78fce-7341-8b79-99a2-97e35462fac9" testName="LocalReferenceDirectoryUsesOwnerFoldersAndTypedServicesWithUndoAndExport" computerName="LAPTOP-F7PUVUPO" duration="00:00:02.8808306" startTime="2026-10-05T21:15:00.8106548+08:00" endTime="2026-10-05T21:15:03.6921169+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="128e6f3e-d3c3-44ef-9171-600594d8f551" />
+    <UnitTestResult executionId="221e6508-16be-4845-a8ba-7fd612e8273f" testId="1d6212dc-c929-823a-92bf-992e1604723a" testName="ReferenceUndoRespectsNewerGraphEdits" computerName="LAPTOP-F7PUVUPO" duration="00:00:01.3456641" startTime="2026-10-05T21:14:54.4816251+08:00" endTime="2026-10-05T21:14:55.8664970+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="221e6508-16be-4845-a8ba-7fd612e8273f" />
+    <UnitTestResult executionId="9a7d0ff0-4897-4d89-9a50-b4ca1bed44da" testId="19b211cf-48bc-8d09-b3e4-7cd8ab44b42a" testName="ReferencePickerImportPreservesOriginalReferenceAndReexportsFreshOwnership" computerName="LAPTOP-F7PUVUPO" duration="00:00:01.4282522" startTime="2026-10-05T21:14:58.7138351+08:00" endTime="2026-10-05T21:15:00.1421806+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9a7d0ff0-4897-4d89-9a50-b4ca1bed44da" />
+    <UnitTestResult executionId="85bb16c5-afb8-4a05-80ea-9a948129650b" testId="1619e577-fc4f-891c-aca4-b28938122fa9" testName="PickerSearchKeepsFoldersSixLabelsAndRestoresExpansionWithoutDisplayingIds" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1439288" startTime="2026-10-05T21:15:07.2763570+08:00" endTime="2026-10-05T21:15:07.4244511+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="85bb16c5-afb8-4a05-80ea-9a948129650b" />
+    <UnitTestResult executionId="7653d5ac-5439-4300-90f8-61f81d392a87" testId="15f4869b-f37a-8fca-adff-97d6105cad17" testName="RemovalRequiresConsumerConfirmationAndKeepsMembership" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.6666670" startTime="2026-10-05T21:15:00.1422315+08:00" endTime="2026-10-05T21:15:00.8090307+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7653d5ac-5439-4300-90f8-61f81d392a87" />
+    <UnitTestResult executionId="4617aa05-1112-46b4-8a02-8f26be237dfa" testId="17cf6483-ddd2-80fc-aa50-dc4d0d06c259" testName="ChangingSectionContextSnapsWhileUserExpansionStillAnimates" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1399494" startTime="2026-10-05T21:15:07.1297839+08:00" endTime="2026-10-05T21:15:07.2762524+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4617aa05-1112-46b4-8a02-8f26be237dfa" />
+    <UnitTestResult executionId="2d739d20-8269-4275-90fd-c3e2c4b92747" testId="12a0eb87-4420-8e05-a262-515c383f2781" testName="ReferencedPackagePanelDoesNotRemeasureContentFromLayoutUpdated" computerName="LAPTOP-F7PUVUPO" duration="00:00:01.1152710" startTime="2026-10-05T21:15:03.6925464+08:00" endTime="2026-10-05T21:15:04.8156642+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2d739d20-8269-4275-90fd-c3e2c4b92747" />
+    <UnitTestResult executionId="46479102-9454-4b69-9d76-c8363cd37478" testId="1e5e0f8c-aabe-863e-b08c-442fd83cc079" testName="ClippedWatermarkSettlesLayoutAndStillResizes" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.4233376" startTime="2026-10-05T21:15:04.8157397+08:00" endTime="2026-10-05T21:15:05.2442617+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="46479102-9454-4b69-9d76-c8363cd37478" />
+    <UnitTestResult executionId="df99e44e-9b44-4654-a566-8ceac765669d" testId="138cef45-3745-8c7b-8435-74d671a12112" testName="ReferenceOperationsAreIndependentUndoableAndPreserveUnsavedStory" computerName="LAPTOP-F7PUVUPO" duration="00:00:02.3658990" startTime="2026-10-05T21:14:55.8712719+08:00" endTime="2026-10-05T21:14:58.2375452+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="df99e44e-9b44-4654-a566-8ceac765669d" />
+    <UnitTestResult executionId="22252f9a-5d44-4b85-8b4a-212d6b750467" testId="10bb9049-22f4-8188-ba9a-7182aa8c09bd" testName="CreatingTasksDoesNotRebuildUnrelatedOutputEditorsOrLoseDrafts" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.9250086" startTime="2026-10-05T21:15:06.0398965+08:00" endTime="2026-10-05T21:15:06.9693736+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="22252f9a-5d44-4b85-8b4a-212d6b750467" />
+    <UnitTestResult executionId="b35ab917-2c71-42f9-9561-a8d0f96f490b" testId="19c1cfb6-e92e-8233-9a0e-8a4463ca178a" testName="ReorderPreviewKeepsHeightAndOriginalHitGeometryWithoutChangingData" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.2690737" startTime="2026-10-05T21:15:05.7662406+08:00" endTime="2026-10-05T21:15:06.0398171+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b35ab917-2c71-42f9-9561-a8d0f96f490b" />
+    <UnitTestResult executionId="39b0ea8c-f1d8-41c5-9b39-247d03177391" testId="1c236e28-fa14-8290-9564-6bcee6f5cada" testName="EmitIsolatedLiveFixturesWhenRequested" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0004489" startTime="2026-10-05T21:15:00.8091135+08:00" endTime="2026-10-05T21:15:00.8096334+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="39b0ea8c-f1d8-41c5-9b39-247d03177391" />
+    <UnitTestResult executionId="451fdaae-be3b-4d13-898e-d620b9e490f7" testId="15aafbad-00ad-8708-9aa9-b1653bbdbbbe" testName="ResourceOptionRefreshPreservesFocusedTextAndUncommittedRename" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1560788" startTime="2026-10-05T21:15:06.9694445+08:00" endTime="2026-10-05T21:15:07.1297059+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="451fdaae-be3b-4d13-898e-d620b9e490f7" />
+    <UnitTestResult executionId="42d999f7-88f9-4807-9e69-b9615b7cbe28" testId="1ff7b910-4878-80a6-b674-70e4ded19d04" testName="PackageInspectorSeparatesMetadataFromNavigableReadOnlyFlow" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.4755815" startTime="2026-10-05T21:14:58.2380007+08:00" endTime="2026-10-05T21:14:58.7136852+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="42d999f7-88f9-4807-9e69-b9615b7cbe28" />
+    <UnitTestResult executionId="2e290712-b7c8-496f-ae72-fecaf676f68e" testId="10f09574-0d2b-8e57-bf3e-40cf44b1f264" testName="EmitReferenceFlowFixtureWhenRequested" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0005873" startTime="2026-10-05T21:15:00.8100033+08:00" endTime="2026-10-05T21:15:00.8106304+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e290712-b7c8-496f-ae72-fecaf676f68e" />
+    <UnitTestResult executionId="2aa87637-2e98-41a7-b505-a2feb7b3550a" testId="1ec74ac4-bb4e-8306-bf42-728ac31177a3" testName="ReorderLandingGapAcceptsTheNativeDropHit" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.5163762" startTime="2026-10-05T21:15:05.2443648+08:00" endTime="2026-10-05T21:15:05.7661367+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2aa87637-2e98-41a7-b505-a2feb7b3550a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="EmitReferenceFlowFixtureWhenRequested" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="10f09574-0d2b-8e57-bf3e-40cf44b1f264">
+      <Execution id="2e290712-b7c8-496f-ae72-fecaf676f68e" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="EmitReferenceFlowFixtureWhenRequested" />
+    </UnitTest>
+    <UnitTest name="PickerSearchKeepsFoldersSixLabelsAndRestoresExpansionWithoutDisplayingIds" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1619e577-fc4f-891c-aca4-b28938122fa9">
+      <Execution id="85bb16c5-afb8-4a05-80ea-9a948129650b" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="PickerSearchKeepsFoldersSixLabelsAndRestoresExpansionWithoutDisplayingIds" />
+    </UnitTest>
+    <UnitTest name="ReferencePickerImportPreservesOriginalReferenceAndReexportsFreshOwnership" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="19b211cf-48bc-8d09-b3e4-7cd8ab44b42a">
+      <Execution id="9a7d0ff0-4897-4d89-9a50-b4ca1bed44da" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="ReferencePickerImportPreservesOriginalReferenceAndReexportsFreshOwnership" />
+    </UnitTest>
+    <UnitTest name="PackageInspectorSeparatesMetadataFromNavigableReadOnlyFlow" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1ff7b910-4878-80a6-b674-70e4ded19d04">
+      <Execution id="42d999f7-88f9-4807-9e69-b9615b7cbe28" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="PackageInspectorSeparatesMetadataFromNavigableReadOnlyFlow" />
+    </UnitTest>
+    <UnitTest name="ReorderPreviewKeepsHeightAndOriginalHitGeometryWithoutChangingData" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="19c1cfb6-e92e-8233-9a0e-8a4463ca178a">
+      <Execution id="b35ab917-2c71-42f9-9561-a8d0f96f490b" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="ReorderPreviewKeepsHeightAndOriginalHitGeometryWithoutChangingData" />
+    </UnitTest>
+    <UnitTest name="ReferenceUndoRespectsNewerGraphEdits" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1d6212dc-c929-823a-92bf-992e1604723a">
+      <Execution id="221e6508-16be-4845-a8ba-7fd612e8273f" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="ReferenceUndoRespectsNewerGraphEdits" />
+    </UnitTest>
+    <UnitTest name="EmitIsolatedLiveFixturesWhenRequested" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1c236e28-fa14-8290-9564-6bcee6f5cada">
+      <Execution id="39b0ea8c-f1d8-41c5-9b39-247d03177391" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="EmitIsolatedLiveFixturesWhenRequested" />
+    </UnitTest>
+    <UnitTest name="ReferenceOperationsAreIndependentUndoableAndPreserveUnsavedStory" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="138cef45-3745-8c7b-8435-74d671a12112">
+      <Execution id="df99e44e-9b44-4654-a566-8ceac765669d" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="ReferenceOperationsAreIndependentUndoableAndPreserveUnsavedStory" />
+    </UnitTest>
+    <UnitTest name="ResourceOptionRefreshPreservesFocusedTextAndUncommittedRename" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="15aafbad-00ad-8708-9aa9-b1653bbdbbbe">
+      <Execution id="451fdaae-be3b-4d13-898e-d620b9e490f7" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="ResourceOptionRefreshPreservesFocusedTextAndUncommittedRename" />
+    </UnitTest>
+    <UnitTest name="ChangingSectionContextSnapsWhileUserExpansionStillAnimates" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="17cf6483-ddd2-80fc-aa50-dc4d0d06c259">
+      <Execution id="4617aa05-1112-46b4-8a02-8f26be237dfa" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="ChangingSectionContextSnapsWhileUserExpansionStillAnimates" />
+    </UnitTest>
+    <UnitTest name="CreatingTasksDoesNotRebuildUnrelatedOutputEditorsOrLoseDrafts" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="10bb9049-22f4-8188-ba9a-7182aa8c09bd">
+      <Execution id="22252f9a-5d44-4b85-8b4a-212d6b750467" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="CreatingTasksDoesNotRebuildUnrelatedOutputEditorsOrLoseDrafts" />
+    </UnitTest>
+    <UnitTest name="RemovalRequiresConsumerConfirmationAndKeepsMembership" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="15f4869b-f37a-8fca-adff-97d6105cad17">
+      <Execution id="7653d5ac-5439-4300-90f8-61f81d392a87" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="RemovalRequiresConsumerConfirmationAndKeepsMembership" />
+    </UnitTest>
+    <UnitTest name="ReorderLandingGapAcceptsTheNativeDropHit" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1ec74ac4-bb4e-8306-bf42-728ac31177a3">
+      <Execution id="2aa87637-2e98-41a7-b505-a2feb7b3550a" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="ReorderLandingGapAcceptsTheNativeDropHit" />
+    </UnitTest>
+    <UnitTest name="ClippedWatermarkSettlesLayoutAndStillResizes" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1e5e0f8c-aabe-863e-b08c-442fd83cc079">
+      <Execution id="46479102-9454-4b69-9d76-c8363cd37478" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="ClippedWatermarkSettlesLayoutAndStillResizes" />
+    </UnitTest>
+    <UnitTest name="LocalReferenceDirectoryUsesOwnerFoldersAndTypedServicesWithUndoAndExport" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="19f78fce-7341-8b79-99a2-97e35462fac9">
+      <Execution id="128e6f3e-d3c3-44ef-9171-600594d8f551" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="LocalReferenceDirectoryUsesOwnerFoldersAndTypedServicesWithUndoAndExport" />
+    </UnitTest>
+    <UnitTest name="EmitLiveUpdatesWhenRequested" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="13f9cc18-2e32-812b-a434-837dc0d2775e">
+      <Execution id="06ad9884-288e-4add-ace5-005e35b4574e" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OfflineShellWorkflowTests" name="EmitLiveUpdatesWhenRequested" />
+    </UnitTest>
+    <UnitTest name="ReferencedPackagePanelDoesNotRemeasureContentFromLayoutUpdated" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="12a0eb87-4420-8e05-a262-515c383f2781">
+      <Execution id="2d739d20-8269-4275-90fd-c3e2c4b92747" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.OutputReferenceFix0336Tests" name="ReferencedPackagePanelDoesNotRemeasureContentFromLayoutUpdated" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="13f9cc18-2e32-812b-a434-837dc0d2775e" executionId="06ad9884-288e-4add-ace5-005e35b4574e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19f78fce-7341-8b79-99a2-97e35462fac9" executionId="128e6f3e-d3c3-44ef-9171-600594d8f551" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d6212dc-c929-823a-92bf-992e1604723a" executionId="221e6508-16be-4845-a8ba-7fd612e8273f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19b211cf-48bc-8d09-b3e4-7cd8ab44b42a" executionId="9a7d0ff0-4897-4d89-9a50-b4ca1bed44da" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1619e577-fc4f-891c-aca4-b28938122fa9" executionId="85bb16c5-afb8-4a05-80ea-9a948129650b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15f4869b-f37a-8fca-adff-97d6105cad17" executionId="7653d5ac-5439-4300-90f8-61f81d392a87" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17cf6483-ddd2-80fc-aa50-dc4d0d06c259" executionId="4617aa05-1112-46b4-8a02-8f26be237dfa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="12a0eb87-4420-8e05-a262-515c383f2781" executionId="2d739d20-8269-4275-90fd-c3e2c4b92747" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e5e0f8c-aabe-863e-b08c-442fd83cc079" executionId="46479102-9454-4b69-9d76-c8363cd37478" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="138cef45-3745-8c7b-8435-74d671a12112" executionId="df99e44e-9b44-4654-a566-8ceac765669d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10bb9049-22f4-8188-ba9a-7182aa8c09bd" executionId="22252f9a-5d44-4b85-8b4a-212d6b750467" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19c1cfb6-e92e-8233-9a0e-8a4463ca178a" executionId="b35ab917-2c71-42f9-9561-a8d0f96f490b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1c236e28-fa14-8290-9564-6bcee6f5cada" executionId="39b0ea8c-f1d8-41c5-9b39-247d03177391" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15aafbad-00ad-8708-9aa9-b1653bbdbbbe" executionId="451fdaae-be3b-4d13-898e-d620b9e490f7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ff7b910-4878-80a6-b674-70e4ded19d04" executionId="42d999f7-88f9-4807-9e69-b9615b7cbe28" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10f09574-0d2b-8e57-bf3e-40cf44b1f264" executionId="2e290712-b7c8-496f-ae72-fecaf676f68e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ec74ac4-bb4e-8306-bf42-728ac31177a3" executionId="2aa87637-2e98-41a7-b505-a2feb7b3550a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="17" executed="17" passed="17" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

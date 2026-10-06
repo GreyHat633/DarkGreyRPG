@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="cc9383cf-0bc5-48b7-befc-584cee79d2b2" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-04 20:07:54" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-04T20:07:54.7403211+08:00" queuing="2026-10-04T20:07:54.7403217+08:00" start="2026-10-04T20:07:53.5648507+08:00" finish="2026-10-04T20:07:54.7463007+08:00" />
+  <TestSettings name="default" id="e17acf04-07f1-4897-ba4f-15851e51083a">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-04_20_07_54" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="50fd84ae-3051-4f8b-93a9-1c9080f2b850" testId="161db98b-d59c-817d-8e6d-1e91830e8246" testName="OptionalTagsSurviveSnapshotsCopyAndNewIdentityPackageImport (Task)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.4716349" startTime="2026-10-04T20:07:54.1376146+08:00" endTime="2026-10-04T20:07:54.6279142+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="50fd84ae-3051-4f8b-93a9-1c9080f2b850" />
+    <UnitTestResult executionId="62e676a1-b5c0-4d5f-8f0b-7a517b715216" testId="1d9b9145-5756-8a05-9d47-dd150bd1e4e7" testName="OptionalTagsSurviveSnapshotsCopyAndNewIdentityPackageImport (Session)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.4716336" startTime="2026-10-04T20:07:54.1375710+08:00" endTime="2026-10-04T20:07:54.6279156+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="62e676a1-b5c0-4d5f-8f0b-7a517b715216" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="OptionalTagsSurviveSnapshotsCopyAndNewIdentityPackageImport (Session)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1d9b9145-5756-8a05-9d47-dd150bd1e4e7">
+      <Execution id="62e676a1-b5c0-4d5f-8f0b-7a517b715216" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.GraphResourceMetadataTests" name="OptionalTagsSurviveSnapshotsCopyAndNewIdentityPackageImport" />
+    </UnitTest>
+    <UnitTest name="OptionalTagsSurviveSnapshotsCopyAndNewIdentityPackageImport (Task)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="161db98b-d59c-817d-8e6d-1e91830e8246">
+      <Execution id="50fd84ae-3051-4f8b-93a9-1c9080f2b850" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.GraphResourceMetadataTests" name="OptionalTagsSurviveSnapshotsCopyAndNewIdentityPackageImport" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="161db98b-d59c-817d-8e6d-1e91830e8246" executionId="50fd84ae-3051-4f8b-93a9-1c9080f2b850" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d9b9145-5756-8a05-9d47-dd150bd1e4e7" executionId="62e676a1-b5c0-4d5f-8f0b-7a517b715216" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

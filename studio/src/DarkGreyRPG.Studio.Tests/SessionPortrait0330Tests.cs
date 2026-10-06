@@ -30,16 +30,16 @@ public sealed class SessionPortrait0330Tests
     [TestMethod]
     public void PortraitsRoundTripRenameAndDocumentSaveWithoutIdentityChanges()
     {
-        var actor = new IndividualActorResource { NpcId = "hero", DisplayName = "Hero", HomeStoryId = "intro",
+        var actor = new IndividualActorResource { NpcId = "ST-2345-6789-ABCD-EFGH~actor~hero", DisplayName = "Hero", HomeStoryId = "ST-2345-6789-ABCD-EFGH",
             DefaultPortraitRef = Image, PortraitVariants = [new("开心 / happy", Image)] };
         var json = ActorSerializer.Serialize(actor, ActorIdPolicy.ExistingResource);
         var reopened = ActorSerializer.DeserializeIndividual(json);
-        Assert.AreEqual(4, reopened.SchemaVersion);
+        Assert.AreEqual(5, reopened.SchemaVersion);
         Assert.AreEqual(Image, ActorPortraitSchema.Resolve(reopened, null));
         Assert.AreEqual(Image, ActorPortraitSchema.Resolve(reopened, "开心 / happy"));
         Assert.ThrowsExactly<InvalidOperationException>(() => ActorPortraitSchema.Resolve(reopened, "missing"));
-        var renamed = reopened.WithId("other");
-        Assert.AreEqual("other", renamed.NpcId);
+        var renamed = reopened.WithId("ST-2345-6789-ABCD-EFGH~actor~other");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~other", renamed.NpcId);
         Assert.AreEqual(Image, renamed.DefaultPortraitRef);
         Assert.AreEqual("开心 / happy", renamed.PortraitVariants.Single().Name);
         var document = ActorDocument.FromResource(reopened, Path.Combine(Path.GetTempPath(), "hero.json"));
@@ -48,6 +48,6 @@ public sealed class SessionPortrait0330Tests
         Assert.AreEqual(1, document.ToResource().PortraitVariants.Count);
         document.SetPortraitVariants([new("duplicate", Image), new("duplicate", Image)]);
         Assert.IsTrue(document.ValidationErrors.Any(issue => issue.Code == "actor.portrait.name"));
-        Assert.ThrowsExactly<ActorValidationException>(() => ActorSerializer.Deserialize(json.Replace("\"schema_version\": 4", "\"schema_version\": 3")));
+        Assert.ThrowsExactly<ActorValidationException>(() => ActorSerializer.Deserialize(json.Replace("\"schema_version\": 5", "\"schema_version\": 3")));
     }
 }

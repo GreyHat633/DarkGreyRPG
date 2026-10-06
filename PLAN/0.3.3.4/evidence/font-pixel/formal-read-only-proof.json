@@ -1,0 +1,29 @@
+[
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\saves\\\u65b0\u7684\u4e16\u754c\\data\\darkgrey_rpg_task_completion_history.dat",
+    "prior_isolation_baseline": "ae5b63bca6ed63b161d337fd2958726c2e1100734dd9d5ce8e89ddebbfc2e5c8",
+    "current_sha256": "ae5b63bca6ed63b161d337fd2958726c2e1100734dd9d5ce8e89ddebbfc2e5c8",
+    "matches": true,
+    "file_last_write": "2026-09-30T11:37:56.004565+08:00",
+    "test_setup_time": "2026-09-30T14:28:02.163519+08:00",
+    "last_write_precedes_test_setup": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\saves\\\u65b0\u7684\u4e16\u754c\\data\\darkgrey_rpg_canonical_tasks.dat",
+    "prior_isolation_baseline": "2242ea552599badc5ce6b399ca1b24a037e952feb0497c8318ae4c231a7b30f2",
+    "current_sha256": "effa8675d8869940639f05cec6a11cdfefabe875b4ade43bab188cf2c6118ccc",
+    "matches": false,
+    "file_last_write": "2026-09-30T14:02:50.999841+08:00",
+    "test_setup_time": "2026-09-30T14:28:02.163519+08:00",
+    "last_write_precedes_test_setup": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\DarkGreyRPG\\StoryPackages\\GreyHat_.test_story.dgrs",
+    "prior_isolation_baseline": "fdc8e08029f3da527dfcb6a08d9495b186dba4c82a2a72abc306476a43b082ea",
+    "current_sha256": "fdc8e08029f3da527dfcb6a08d9495b186dba4c82a2a72abc306476a43b082ea",
+    "matches": true,
+    "file_last_write": "2026-09-17T04:31:21.206062+08:00",
+    "test_setup_time": "2026-09-30T14:28:02.163519+08:00",
+    "last_write_precedes_test_setup": true
+  }
+]

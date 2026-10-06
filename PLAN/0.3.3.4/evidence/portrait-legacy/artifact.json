@@ -1,0 +1,10 @@
+{
+  "Version": "0.3.3.4",
+  "Size": 1793662,
+  "Sha256": "BE5C57EA6BA82AF9BA7CC4EB34D156F3427EEDF607A5337E1210FD18A3461F48",
+  "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.4.jar",
+  "BuildAndDeliveryIdentical": true,
+  "NativeTestBuild": "build/libs/darkgrey_rpg-0.3.3.4.jar; jar/reobfJar remained UP-TO-DATE in final assemble",
+  "USER_ACCEPTED": "NO",
+  "RELEASE_READY": "NO"
+}

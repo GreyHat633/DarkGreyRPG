@@ -82,9 +82,8 @@ public sealed class ActorWorkspaceDialogs(Func<Window?> ownerProvider) : IActorW
     public string? RequestRename(ActorResourceInfo actor, string suggestedId)
     {
         ArgumentNullException.ThrowIfNull(actor);
-        var viewModel = ActorIdentityDialogViewModel.ForRename(actor.Id, suggestedId);
-        var dialog = new ActorIdentityDialog(viewModel) { Owner = ownerProvider() };
-        return dialog.ShowDialog() == true ? viewModel.Id : null;
+        // Persisted identities cannot be renamed. Metadata uses RequestResourceRename.
+        return null;
     }
 
     public bool ConfirmDelete(ActorResourceInfo actor)

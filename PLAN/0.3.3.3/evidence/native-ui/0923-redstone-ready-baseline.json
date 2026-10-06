@@ -1,0 +1,25 @@
+{
+  "label": "0923-redstone-ready-baseline",
+  "time": "2026-09-23T00:08:25",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.0004793063819745838,
+  "peak": 0.0008141994476318359,
+  "tone440": 0.0006329297297625317,
+  "tone880": 1.4366222344065803e-07,
+  "dominantVoiceHz": 1320.0200534759358,
+  "dominantVoiceAmplitude": 4.5588210899250905e-06
+}

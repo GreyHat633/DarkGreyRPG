@@ -27,7 +27,7 @@ public sealed class PortraitPreviewControl : Image
         try
         {
             byte[]? bytes = Actor?.Provider is { } provider
-                ? OfflineDgrsPackageReader.Read(provider.PackagePath).Entries.GetValueOrDefault("resources/" + reference)
+                ? OfflineDgrsPackageReader.ReadContainer(provider.PackagePath)[0].Entries.GetValueOrDefault("resources/" + reference)
                 : ProjectDirectory is { } root ? File.ReadAllBytes(Path.Combine(root, "resources", reference.Replace('/', Path.DirectorySeparatorChar))) : null;
             if (bytes is null) return;
             using var stream = new MemoryStream(bytes, writable: false);

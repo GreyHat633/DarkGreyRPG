@@ -1,0 +1,23 @@
+{
+  "label": "0922-range-confirmed-zplus-inside",
+  "time": "2026-09-22T22:11:07",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.00047583816420330007,
+  "peak": 0.0008130073547363281,
+  "tone440": 0.0006284294284679009,
+  "tone880": 9.976714463129898e-08
+}

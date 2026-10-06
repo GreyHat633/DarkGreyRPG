@@ -49,6 +49,10 @@ public static class ItemSerializer
                 throw new ItemValidationException([new("item.type.required", "Item type is required.", nameof(ItemResource.Type))]);
             }
 
+            if (root.RootElement.EnumerateObject().Select(property => property.Name).Distinct(StringComparer.Ordinal).Count() != root.RootElement.EnumerateObject().Count())
+                throw new JsonException("Duplicate Item field.");
+            if (!root.RootElement.TryGetProperty("identity_format", out var marker) || marker.ValueKind != JsonValueKind.String
+                || marker.GetString() != "story-uid-v1") throw new JsonException("Current Item identity format is required.");
             EnsureRequiredProperties(root.RootElement, type.GetString());
 
             ItemResource resource = type.GetString() switch
@@ -61,17 +65,6 @@ public static class ItemSerializer
             };
 
             var issues = ItemValidator.Validate(resource).ToList();
-            if (!string.IsNullOrWhiteSpace(sourcePath))
-            {
-                var id = resource is IndividualItemResource individual ? individual.ItemId : ((CollectiveItemResource)resource).GroupId;
-                var expected = id + ".json";
-                var actual = Path.GetFileName(sourcePath);
-                if (!string.Equals(expected, actual, StringComparison.Ordinal))
-                {
-                    issues.Add(new("item.filename.mismatch", $"Item file name must match its ID: expected '{expected}', got '{actual}'.", nameof(ItemResource.Type)));
-                }
-            }
-
             ThrowIfInvalid(issues);
             return resource;
         }

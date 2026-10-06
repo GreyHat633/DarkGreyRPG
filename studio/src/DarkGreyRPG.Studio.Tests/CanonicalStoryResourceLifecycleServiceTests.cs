@@ -15,23 +15,26 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "story");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryResourceLifecycleService(store);
 
-        var session = service.CreateOwned("story", GraphResourceKind.Session, "session", "Session");
-        var task = service.CreateOwned("story", GraphResourceKind.Task, "task", "Task");
+        var session = service.CreateOwned("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session");
+        var task = service.CreateOwned("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task");
 
         Assert.IsTrue(GraphScopePolicy.IsValid(session.Graph!, GraphScope.Session));
         Assert.IsTrue(GraphScopePolicy.IsValid(task.Graph!, GraphScope.Task));
         CollectionAssert.AreEqual(new[] { "start" }, session.Graph!.Nodes.Select(node => node.Id).ToArray());
-        CollectionAssert.AreEqual(new[] { "settle" }, task.Graph!.Nodes.Select(node => node.Id).ToArray());
-        var settle = task.Graph.Nodes.Single(node => node.Type == "settle");
-        Assert.HasCount(1, settle.Ports);
-        Assert.IsTrue(settle.Ports[0].IsInput);
-        Assert.AreEqual(GraphInterfaceKind.Logic, settle.Ports[0].InterfaceKind);
-        StringAssert.StartsWith(settle.Ports[0].Id, "dynamic_port_");
-        CollectionAssert.AreEqual(new[] { "session" }, store.Memberships.Load("story").OwnedResources.Sessions);
-        CollectionAssert.AreEqual(new[] { "task" }, store.Memberships.Load("story").OwnedResources.Tasks);
+        CollectionAssert.AreEqual(new[] { "objective" }, task.Graph!.Nodes.Select(node => node.Id).ToArray());
+        var objective = task.Graph.Nodes.Single();
+        Assert.AreEqual("objective", objective.Type);
+        Assert.HasCount(1, objective.Ports);
+        Assert.IsTrue(objective.Ports[0].IsOutput);
+        Assert.AreEqual(GraphInterfaceKind.Logic, objective.Ports[0].InterfaceKind);
+        Assert.AreEqual(CanonicalTaskObjectiveSchema.CompletionPortId, objective.Ports[0].Id);
+        Assert.AreEqual("", objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty].GetString());
+        Assert.IsEmpty(task.Graph.Connections);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~session~session" }, store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Sessions);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~task~task" }, store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Tasks);
     }
 
     [TestMethod]
@@ -39,27 +42,27 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "owner");
-        CreateStory(store, "other");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
+        CreateStory(store, "ST-JKLM-NPQR-STUV-WXYZ");
         var service = new CanonicalStoryResourceLifecycleService(store);
-        service.CreateOwnedSession("owner", "before", "Before");
-        service.CreateOwnedSession("owner", "shared", "Shared");
-        service.CreateOwnedSession("owner", "after", "After");
+        service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~before", "Before");
+        service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~shared", "Shared");
+        service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~after", "After");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "other",
-            referencedResources: new CanonicalStoryMembershipSet { Sessions = ["before", "shared", "after"] }));
+            "ST-JKLM-NPQR-STUV-WXYZ",
+            referencedResources: new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~before", "ST-2345-6789-ABCD-EFGH~session~shared", "ST-2345-6789-ABCD-EFGH~session~after"] }));
 
-        AssertCode(() => service.AddSessionReference("other", "shared"),
+        AssertCode(() => service.AddSessionReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~session~shared"),
             "story.resource.reference.duplicate");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "other",
-            referencedResources: new CanonicalStoryMembershipSet { Sessions = ["before", "after"] }));
-        service.AddSessionReference("other", "shared");
-        CollectionAssert.AreEqual(new[] { "before", "after", "shared" },
-            store.Memberships.Load("other").ReferencedResources.Sessions);
-        service.RemoveSessionReference("other", "shared");
-        CollectionAssert.AreEqual(new[] { "before", "after" },
-            store.Memberships.Load("other").ReferencedResources.Sessions);
+            "ST-JKLM-NPQR-STUV-WXYZ",
+            referencedResources: new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~before", "ST-2345-6789-ABCD-EFGH~session~after"] }));
+        service.AddSessionReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~session~shared");
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~session~before", "ST-2345-6789-ABCD-EFGH~session~after", "ST-2345-6789-ABCD-EFGH~session~shared" },
+            store.Memberships.Load("ST-JKLM-NPQR-STUV-WXYZ").ReferencedResources.Sessions);
+        service.RemoveSessionReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~session~shared");
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~session~before", "ST-2345-6789-ABCD-EFGH~session~after" },
+            store.Memberships.Load("ST-JKLM-NPQR-STUV-WXYZ").ReferencedResources.Sessions);
     }
 
     [TestMethod]
@@ -67,40 +70,39 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "owner");
-        CreateStory(store, "other");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
+        CreateStory(store, "ST-JKLM-NPQR-STUV-WXYZ");
         var service = new CanonicalStoryResourceLifecycleService(store);
-        service.CreateOwnedTask("owner", "task", "Task");
-        service.AddTaskReference("other", "task");
+        service.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task", "Task");
+        service.AddTaskReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~task~task");
 
-        var plan = service.GetDeletionPlan("owner", GraphResourceKind.Task, "task");
+        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task");
         Assert.IsFalse(plan.CanDelete);
-        CollectionAssert.AreEqual(new[] { "other" }, plan.ReferencingStoryIds.ToArray());
-        AssertCode(() => service.DeleteOwnedTask("owner", "task"), "story.resource.delete.blocked");
+        CollectionAssert.AreEqual(new[] { "ST-JKLM-NPQR-STUV-WXYZ" }, plan.ReferencingStoryIds.ToArray());
+        AssertCode(() => service.DeleteOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task"), "story.resource.delete.blocked");
 
-        service.RemoveTaskReference("other", "task");
-        service.DeleteOwnedTask("owner", "task");
-        Assert.IsFalse(File.Exists(store.Tasks.GetPath("task")));
-        Assert.IsEmpty(store.Memberships.Load("owner").OwnedResources.Tasks);
+        service.RemoveTaskReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~task~task");
+        service.DeleteOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task");
+        Assert.IsFalse(File.Exists(store.Tasks.GetPath("ST-2345-6789-ABCD-EFGH~task~task")));
+        Assert.IsEmpty(store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Tasks);
     }
 
     [TestMethod]
-    public void DeletionPlanBlocksCorruptDuplicateOwnershipInAnotherStory()
+    public void DuplicateOwnershipInAnotherStoryIsRejectedWithoutChangingEitherMembership()
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "owner");
-        CreateStory(store, "other");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
+        CreateStory(store, "ST-JKLM-NPQR-STUV-WXYZ");
         var service = new CanonicalStoryResourceLifecycleService(store);
-        service.CreateOwnedSession("owner", "shared", "Shared");
-        store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "other",
-            ownedResources: new CanonicalStoryMembershipSet { Sessions = ["shared"] }));
-
-        var plan = service.GetDeletionPlan("owner", GraphResourceKind.Session, "shared");
-
-        Assert.IsFalse(plan.CanDelete);
-        CollectionAssert.AreEqual(new[] { "other" }, plan.ReferencingStoryIds.ToArray());
+        service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~shared", "Shared");
+        var previous = File.ReadAllBytes(store.Memberships.GetPath("ST-JKLM-NPQR-STUV-WXYZ"));
+        Assert.Throws<CanonicalStoryMembershipRepositoryException>(() => store.Memberships.Replace(new CanonicalStoryMembershipManifest(
+            "ST-JKLM-NPQR-STUV-WXYZ",
+            ownedResources: new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~shared"] })));
+        CollectionAssert.AreEqual(previous, File.ReadAllBytes(store.Memberships.GetPath("ST-JKLM-NPQR-STUV-WXYZ")));
+        Assert.IsTrue(File.Exists(store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~shared")));
+        CollectionAssert.Contains(store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Sessions, "ST-2345-6789-ABCD-EFGH~session~shared");
     }
 
     [TestMethod]
@@ -108,15 +110,15 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "story");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "story",
-            referencedResources: new CanonicalStoryMembershipSet { Tasks = ["missing_task"] }));
+            "ST-2345-6789-ABCD-EFGH",
+            referencedResources: new CanonicalStoryMembershipSet { Tasks = ["ST-JKLM-NPQR-STUV-WXYZ~task~missing_task"] }));
 
-        new CanonicalStoryResourceLifecycleService(store).RemoveTaskReference("story", "missing_task");
+        new CanonicalStoryResourceLifecycleService(store).RemoveTaskReference("ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ~task~missing_task");
 
-        Assert.IsEmpty(store.Memberships.Load("story").ReferencedResources.Tasks);
-        Assert.IsFalse(File.Exists(store.Tasks.GetPath("missing_task")));
+        Assert.IsEmpty(store.Memberships.Load("ST-2345-6789-ABCD-EFGH").ReferencedResources.Tasks);
+        Assert.IsFalse(File.Exists(store.Tasks.GetPath("ST-JKLM-NPQR-STUV-WXYZ~task~missing_task")));
     }
 
     [TestMethod]
@@ -124,19 +126,19 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "owner");
-        CreateStory(store, "consumer");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
+        CreateStory(store, "ST-JKLM-NPQR-STUV-WXYZ");
         var service = new CanonicalStoryResourceLifecycleService(store);
-        service.CreateOwnedTask("owner", "task", "Task");
-        service.AddTaskReference("consumer", "task");
-        ReplaceStoryWithPlacements(store, "consumer", GraphResourceKind.Task, "task");
+        service.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task", "Task");
+        service.AddTaskReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~task~task");
+        ReplaceStoryWithPlacements(store, "ST-JKLM-NPQR-STUV-WXYZ", GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task");
 
-        service.RemoveTaskReference("consumer", "task");
+        service.RemoveTaskReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~task~task");
 
-        var graph = store.Stories.Load("consumer").Graph!;
+        var graph = store.Stories.Load("ST-JKLM-NPQR-STUV-WXYZ").Graph!;
         CollectionAssert.AreEqual(new[] { "keep" }, graph.Nodes.Select(node => node.Id).ToArray());
         Assert.IsEmpty(graph.Connections);
-        Assert.IsTrue(File.Exists(store.Tasks.GetPath("task")), "Removing a placement/reference must not delete the resource.");
+        Assert.IsTrue(File.Exists(store.Tasks.GetPath("ST-2345-6789-ABCD-EFGH~task~task")), "Removing a placement/reference must not delete the resource.");
     }
 
     [TestMethod]
@@ -144,20 +146,20 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "owner");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryResourceLifecycleService(store);
-        service.CreateOwnedSession("owner", "session", "Session");
-        ReplaceStoryWithPlacements(store, "owner", GraphResourceKind.Session, "session");
-        var story = store.Stories.Load("owner");
+        service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session", "Session");
+        ReplaceStoryWithPlacements(store, "ST-2345-6789-ABCD-EFGH", GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session");
+        var story = store.Stories.Load("ST-2345-6789-ABCD-EFGH");
         var session = new GraphEditSession(story.Graph!, GraphScope.StoryFlow);
 
         Assert.IsTrue(session.RemoveNode("placement-a", confirmReferencedRemoval: true));
         story.Graph = session.Document;
         store.Stories.Replace(story);
 
-        Assert.IsFalse(store.Stories.Load("owner").Graph!.Nodes.Any(node => node.Id == "placement-a"));
-        Assert.IsTrue(File.Exists(store.Sessions.GetPath("session")));
-        CollectionAssert.Contains(store.Memberships.Load("owner").OwnedResources.Sessions, "session");
+        Assert.IsFalse(store.Stories.Load("ST-2345-6789-ABCD-EFGH").Graph!.Nodes.Any(node => node.Id == "placement-a"));
+        Assert.IsTrue(File.Exists(store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~session")));
+        CollectionAssert.Contains(store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Sessions, "ST-2345-6789-ABCD-EFGH~session~session");
     }
 
     [TestMethod]
@@ -165,17 +167,17 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "owner");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryResourceLifecycleService(store);
-        service.CreateOwnedSession("owner", "session", "Session");
-        ReplaceStoryWithPlacements(store, "owner", GraphResourceKind.Session, "session");
+        service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session", "Session");
+        ReplaceStoryWithPlacements(store, "ST-2345-6789-ABCD-EFGH", GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session");
 
-        service.DeleteOwnedSession("owner", "session");
+        service.DeleteOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session");
 
-        var graph = store.Stories.Load("owner").Graph!;
+        var graph = store.Stories.Load("ST-2345-6789-ABCD-EFGH").Graph!;
         CollectionAssert.AreEqual(new[] { "keep" }, graph.Nodes.Select(node => node.Id).ToArray());
         Assert.IsEmpty(graph.Connections);
-        Assert.IsFalse(File.Exists(store.Sessions.GetPath("session")));
+        Assert.IsFalse(File.Exists(store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~session")));
     }
 
     [TestMethod]
@@ -183,20 +185,20 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var normal = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(normal, "owner");
-        CreateStory(normal, "consumer");
+        CreateStory(normal, "ST-2345-6789-ABCD-EFGH");
+        CreateStory(normal, "ST-JKLM-NPQR-STUV-WXYZ");
         var normalService = new CanonicalStoryResourceLifecycleService(normal);
-        normalService.CreateOwnedTask("owner", "task", "Task");
-        normalService.AddTaskReference("consumer", "task");
-        ReplaceStoryWithPlacements(normal, "consumer", GraphResourceKind.Task, "task");
-        var storyPath = normal.Stories.GetPath("consumer");
-        var membershipPath = normal.Memberships.GetPath("consumer");
+        normalService.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task", "Task");
+        normalService.AddTaskReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~task~task");
+        ReplaceStoryWithPlacements(normal, "ST-JKLM-NPQR-STUV-WXYZ", GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task");
+        var storyPath = normal.Stories.GetPath("ST-JKLM-NPQR-STUV-WXYZ");
+        var membershipPath = normal.Memberships.GetPath("ST-JKLM-NPQR-STUV-WXYZ");
         var storyBytes = File.ReadAllBytes(storyPath);
         var membershipBytes = File.ReadAllBytes(membershipPath);
 
         var failing = new CanonicalProjectGraphStore(project.Root, new FailOnWrite(2));
         AssertCode(() => new CanonicalStoryResourceLifecycleService(failing)
-            .RemoveTaskReference("consumer", "task"), "story.resource.lifecycle.membership_replace_failed");
+            .RemoveTaskReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~task~task"), "story.resource.lifecycle.membership_replace_failed");
 
         CollectionAssert.AreEqual(storyBytes, File.ReadAllBytes(storyPath));
         CollectionAssert.AreEqual(membershipBytes, File.ReadAllBytes(membershipPath));
@@ -207,14 +209,14 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var normal = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(normal, "story");
+        CreateStory(normal, "ST-2345-6789-ABCD-EFGH");
         var failing = new CanonicalProjectGraphStore(project.Root, new FailOnWrite(2));
         var service = new CanonicalStoryResourceLifecycleService(failing);
 
-        AssertCode(() => service.CreateOwnedSession("story", "orphan", "Orphan"),
+        AssertCode(() => service.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~orphan", "Orphan"),
             "story.resource.lifecycle.membership_replace_failed");
-        Assert.IsFalse(File.Exists(failing.Sessions.GetPath("orphan")));
-        Assert.IsEmpty(failing.Memberships.Load("story").OwnedResources.Sessions);
+        Assert.IsFalse(File.Exists(failing.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~orphan")));
+        Assert.IsEmpty(failing.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Sessions);
     }
 
     [TestMethod]
@@ -222,17 +224,17 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var normal = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(normal, "story");
+        CreateStory(normal, "ST-2345-6789-ABCD-EFGH");
         var normalService = new CanonicalStoryResourceLifecycleService(normal);
-        normalService.CreateOwnedSession("story", "session", "Session");
-        var resourcePath = normal.Sessions.GetPath("session");
-        var membershipPath = normal.Memberships.GetPath("story");
+        normalService.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session", "Session");
+        var resourcePath = normal.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~session");
+        var membershipPath = normal.Memberships.GetPath("ST-2345-6789-ABCD-EFGH");
         var resourceBytes = File.ReadAllBytes(resourcePath);
         var membershipBytes = File.ReadAllBytes(membershipPath);
 
         var failing = new CanonicalProjectGraphStore(project.Root, new FailOnWrite(1));
         var service = new CanonicalStoryResourceLifecycleService(failing);
-        AssertCode(() => service.DeleteOwnedSession("story", "session"),
+        AssertCode(() => service.DeleteOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session"),
             "story.resource.lifecycle.membership_replace_failed");
         CollectionAssert.AreEqual(resourceBytes, File.ReadAllBytes(resourcePath));
         CollectionAssert.AreEqual(membershipBytes, File.ReadAllBytes(membershipPath));
@@ -243,17 +245,17 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var normal = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(normal, "story");
+        CreateStory(normal, "ST-2345-6789-ABCD-EFGH");
         var normalService = new CanonicalStoryResourceLifecycleService(normal);
-        normalService.CreateOwnedTask("story", "task", "Task");
-        var resourcePath = normal.Tasks.GetPath("task");
-        var membershipPath = normal.Memberships.GetPath("story");
+        normalService.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task", "Task");
+        var resourcePath = normal.Tasks.GetPath("ST-2345-6789-ABCD-EFGH~task~task");
+        var membershipPath = normal.Memberships.GetPath("ST-2345-6789-ABCD-EFGH");
         var resourceBytes = File.ReadAllBytes(resourcePath);
         var membershipBytes = File.ReadAllBytes(membershipPath);
 
         var failing = new CanonicalProjectGraphStore(project.Root, new AlwaysFailingWriter());
         var exception = Assert.ThrowsExactly<CanonicalStoryResourceLifecycleException>(
-            () => new CanonicalStoryResourceLifecycleService(failing).DeleteOwnedTask("story", "task"));
+            () => new CanonicalStoryResourceLifecycleService(failing).DeleteOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task"));
 
         Assert.AreEqual("story.resource.lifecycle.membership_replace_failed", exception.Code);
         CollectionAssert.AreEqual(resourceBytes, File.ReadAllBytes(resourcePath));
@@ -266,14 +268,14 @@ public sealed class CanonicalStoryResourceLifecycleServiceTests
     {
         using var project = NewProject();
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "story");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryResourceLifecycleService(store);
 
-        AssertCode(() => service.CreateOwned("story", GraphResourceKind.Story, "bad", "Bad"),
+        AssertCode(() => service.CreateOwned("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Story, "bad", "Bad"),
             "story.resource.kind.unsupported");
-        AssertCode(() => service.AddReference("story", GraphResourceKind.Task, "missing"),
+        AssertCode(() => service.AddReference("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Task, "ST-JKLM-NPQR-STUV-WXYZ~task~missing"),
             "story.resource.resource.not_found");
-        AssertCode(() => service.RemoveReference("story", GraphResourceKind.Task, "missing"),
+        AssertCode(() => service.RemoveReference("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Task, "ST-JKLM-NPQR-STUV-WXYZ~task~missing"),
             "story.resource.reference.not_found");
     }
 

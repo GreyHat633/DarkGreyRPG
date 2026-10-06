@@ -48,6 +48,7 @@ public final class CanonicalTaskForgeManager {
     private final SavedDataProvider savedDataProvider;
     private final CanonicalTaskSubmitChoiceStore submitChoices = new CanonicalTaskSubmitChoiceStore();
     private StorySettlementListener storySettlementListener;
+    private final java.util.Map<UUID, ProjectSnapshot> submitProjects = new java.util.HashMap<UUID, ProjectSnapshot>();
 
     public CanonicalTaskForgeManager(ProjectRepository projectRepository) {
         this(projectRepository, new SavedDataProvider() {
@@ -118,10 +119,17 @@ public final class CanonicalTaskForgeManager {
 
     /** Dispatches only to the SavedData inverted index; it never invokes Story or legacy Quest code. */
     public CanonicalTaskDispatchResult dispatch(EntityPlayerMP player, CanonicalTaskEvent event) {
+        return dispatch(player, event, null, null);
+    }
+
+    private CanonicalTaskDispatchResult dispatch(EntityPlayerMP player, CanonicalTaskEvent event, String storyId,
+        String placementId) {
         UUID playerUuid = requirePlayerUuid(player);
         if (event == null) throw new IllegalArgumentException("Canonical Task event is required.");
         try {
-            CanonicalTaskDispatchResult result = context(player).data.dispatch(playerUuid, event);
+            CanonicalTaskSavedData data = context(player).data;
+            CanonicalTaskDispatchResult result = storyId == null ? data.dispatch(playerUuid, event)
+                : data.dispatchScoped(playerUuid, storyId, placementId, event, System.currentTimeMillis());
             LOG.debug(
                 "Canonical Task event {} for player {}: candidates={}, changed={}, settled={}, errors={}",
                 event.getType(),
@@ -153,6 +161,10 @@ public final class CanonicalTaskForgeManager {
      * trusted for the inventory transaction.
      */
     public boolean handleEntityInteraction(EntityPlayerMP player, Entity target) {
+        return handleEntityInteraction(player, target, null, null);
+    }
+
+    public boolean handleEntityInteraction(EntityPlayerMP player, Entity target, String storyId, String placementId) {
         if (player == null || target == null || player instanceof net.minecraftforge.common.util.FakePlayer)
             return false;
         if (target.isDead || player.worldObj != target.worldObj
@@ -165,6 +177,8 @@ public final class CanonicalTaskForgeManager {
         java.util.List<CanonicalTaskSubmitChoiceStore.Candidate> candidates = new ArrayList<CanonicalTaskSubmitChoiceStore.Candidate>();
         java.util.Map<String, net.minecraft.nbt.NBTTagCompound> previews = new java.util.HashMap<String, net.minecraft.nbt.NBTTagCompound>();
         for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+            if (storyId != null && (!storyId.equals(snapshot.getStoryInstanceId())
+                || !placementId.equals(snapshot.getTaskNodePlacementId()))) continue;
             if (!uuid.equals(snapshot.getPlayerUuid())
                 || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
             CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
@@ -183,9 +197,7 @@ public final class CanonicalTaskForgeManager {
                     .getAsString();
                 if (!actorIds.contains(requiredActor)) continue;
                 String title = resource.getDisplayName();
-                String description = node.getProperties()
-                    .get("description")
-                    .getAsString();
+                String description = darkgrey.rpg.task.runtime.CanonicalTaskRuntime.objectiveDescription(node);
                 net.minecraft.nbt.NBTTagCompound preview = darkgrey.rpg.creator.TaskItemPreview
                     .project(node, darkgrey.rpg.item.identity.ItemIdentitySavedData.get());
                 darkgrey.rpg.creator.TaskItemPreview.context(
@@ -231,6 +243,7 @@ public final class CanonicalTaskForgeManager {
                 target.worldObj.provider.dimensionId,
                 candidates,
                 System.currentTimeMillis());
+            submitProjects.put(uuid, context.project);
             List<CanonicalTaskSubmitChoiceFrame.Option> options = new ArrayList<CanonicalTaskSubmitChoiceFrame.Option>();
             for (CanonicalTaskSubmitChoiceStore.Candidate candidate : candidates) options.add(
                 new CanonicalTaskSubmitChoiceFrame.Option(
@@ -256,11 +269,22 @@ public final class CanonicalTaskForgeManager {
             candidate.getActivationTime());
     }
 
+    public boolean executeActorInteraction(EntityPlayerMP player, Entity actor, String storyId, String placementId) {
+        if (handleEntityInteraction(player, actor, storyId, placementId)) return true;
+        return dispatch(
+            player,
+            CanonicalTaskEvent.interactActors(EntityDgrIdentityResolver.resolveActorIds(actor)),
+            storyId,
+            placementId).getChangedInstanceCount() > 0;
+    }
+
     /** Revalidates a pending physical actor choice before committing inventory. */
     public boolean selectSubmitCandidate(EntityPlayerMP player, long token, int optionIndex) {
         if (player == null || optionIndex < 0) return false;
         UUID uuid = requirePlayerUuid(player);
         CanonicalTaskSubmitChoiceStore.Choice choice = submitChoices.consume(uuid, token, System.currentTimeMillis());
+        ProjectSnapshot offeredProject = submitProjects.remove(uuid);
+        if (offeredProject != projectRepository.getSnapshot()) return false;
         if (choice == null || choice.getDimension() != player.worldObj.provider.dimensionId) return false;
         Entity target = player.worldObj.getEntityByID(choice.getEntityId());
         if (target == null || !choice.getEntity()
@@ -283,6 +307,7 @@ public final class CanonicalTaskForgeManager {
 
     public void forgetSubmitChoices(UUID playerUuid) {
         submitChoices.forget(playerUuid);
+        submitProjects.remove(playerUuid);
     }
 
     /** Samples actual inventory and continuous position, without fabricating pickup history. */

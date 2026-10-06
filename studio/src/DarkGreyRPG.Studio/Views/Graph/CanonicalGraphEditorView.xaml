@@ -23,12 +23,12 @@
             <Button Grid.Column="1" Margin="0,0,4,0" Padding="8,4" Click="FitAll_OnClick" Content="适应" AutomationProperties.Name="适应全部图节点" />
             <Button Grid.Column="2" Margin="0,0,4,0" Padding="8,4" Click="ResetView_OnClick" Content="重置" AutomationProperties.Name="重置图视图" />
             <Button Grid.Column="3" x:Name="ScissorsButton" Margin="0,0,4,0" Padding="8,4" Click="Scissors_OnClick"
-                    Content="剪刀" ToolTip="剪断连线&#10;Alt 键" AutomationProperties.Name="剪断连线">
+                    Content="剪刀" ToolTip="点击切换持续剪刀；按住 Ctrl 临时剪线" AutomationProperties.Name="剪断连线">
                 <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsReadOnly, ElementName=GraphRoot}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Button.Style>
             </Button>
-            <Button Grid.Column="4" HorizontalAlignment="Left" Margin="0,0,4,0" Padding="8,4" Click="Group_OnClick" Content="组合" ToolTip="组合所选内容（G）&#10;按住 G 拖动节点，可加入、移出或转移分组。" AutomationProperties.AutomationId="CombineSelection"/>
+            <Button Grid.Column="4" HorizontalAlignment="Left" Margin="0,0,4,0" Padding="8,4" Click="Group_OnClick" Content="组合" ToolTip="组合所选内容（G）&#10;按住 G 拖动节点，可加入、移出或转移分组。" AutomationProperties.AutomationId="CombineSelection"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Host.Scope, ElementName=GraphRoot}" Value="Project"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
             <TextBlock Grid.Column="5" Margin="8,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap">
-                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放"/><Style.Triggers><DataTrigger Binding="{Binding IsReadOnly, ElementName=GraphRoot}" Value="True"><Setter Property="Text" Value="只读 · 中键平移 · 滚轮缩放 · 双击会话或任务进入子流程"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放"/><Style.Triggers><DataTrigger Binding="{Binding Host.Scope, ElementName=GraphRoot}" Value="Project"><Setter Property="Text" Value="拖动端口连线 · Ctrl 剪线 · 拖动整理布局 · 中键平移 · 滚轮缩放"/></DataTrigger><DataTrigger Binding="{Binding IsReadOnly, ElementName=GraphRoot}" Value="True"><Setter Property="Text" Value="只读 · 中键平移 · 滚轮缩放 · 双击会话或任务进入子流程"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
             </TextBlock>
         </Grid>
         <Border x:Name="CanvasViewport" Grid.Row="2" ClipToBounds="True" Background="{DynamicResource LayerFillColorAltBrush}"

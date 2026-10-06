@@ -201,7 +201,9 @@ public sealed class CanonicalProjectStoryGraphService
         var connected = edges.SelectMany(edge => new[] { edge.SourceStoryId, edge.TargetStoryId })
             .ToHashSet(StringComparer.Ordinal);
 
-        var adjacency = storyIds.ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
+        // Valid cross-source edges may point at a referenced Story, absent from local discovery.
+        var adjacency = storyIds.Union(connected, StringComparer.Ordinal)
+            .ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
         foreach (var edge in edges) adjacency[edge.SourceStoryId].Add(edge.TargetStoryId);
         foreach (var targets in adjacency.Values)
         {
@@ -209,7 +211,7 @@ public sealed class CanonicalProjectStoryGraphService
             for (var index = targets.Count - 1; index > 0; index--)
                 if (string.Equals(targets[index], targets[index - 1], StringComparison.Ordinal)) targets.RemoveAt(index);
         }
-        foreach (var component in FindStronglyConnectedComponents(storyIds, adjacency)
+        foreach (var component in FindStronglyConnectedComponents(adjacency.Keys, adjacency)
                      .Where(component => component.Count > 1 || adjacency[component[0]].Contains(component[0], StringComparer.Ordinal)))
         {
             var members = string.Join("、", component);

@@ -1,0 +1,46 @@
+﻿WINDOW:  1567,986,320,53
+WINDOW: DarkGrey RPG Studio 0.3.3.2 229,44,1463,942
+ControlType.Window id= name=NameSpace 设置 enabled=True rect=613,292,694,446
+ControlType.Text id= name=NameSpace 设置 enabled=True rect=649,356,622,32
+ControlType.Text id=FirstUseText name=为新项目设置 NameSpace。每个项目独立保存；此处可沿用上次创建项目时的值。 enabled=True rect=649,395,622,44
+ControlType.Text id= name=NameSpace enabled=True rect=649,463,137,22
+ControlType.Edit id=NamespaceTextBox name=NameSpace enabled=True rect=786,454,485,40
+ControlType.Button id=DeleteButton name= enabled=True rect=1229,459,37,30
+ControlType.Text id= name=建议使用自己的 Minecraft 游戏内 ID 作为 NameSpace，方便其他用户识别，并降低不同作者创建重复 ID 引发冲突的风险。 enabled=True rect=786,502,485,45
+ControlType.Text id= name=仅支持 ASCII 字母、数字、下划线和连字符；最长 32 个字符，且必须以字母或数字开头。 enabled=True rect=786,555,485,44
+ControlType.Text id=ValidationText name= enabled=True rect=786,612,485,50
+ControlType.Button id= name=取消 enabled=True rect=981,662,109,40
+ControlType.Text id= name=取消 enabled=True rect=1018,670,35,22
+ControlType.Button id=ConfirmButton name=下一步：创建项目 enabled=True rect=1100,662,171,40
+ControlType.Text id= name=下一步：创建项目 enabled=True rect=1116,671,139,22
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=就绪 enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,62,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=369,891,80,42
+ControlType.Text id= name=调试器 enabled=True rect=383,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=451,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=465,901,85,22
+ControlType.Button id= name=新建故事 enabled=False rect=505,160,39,40
+ControlType.Text id= name=项目首页 enabled=True rect=255,167,250,26
+ControlType.Button id= name=引用故事包 enabled=True rect=253,820,291,49
+ControlType.Pane id= name= enabled=True rect=Empty
+ControlType.List id= name=引用故事包区域 enabled=True rect=Empty
+ControlType.Edit id=StorySearchBox name=搜索故事 enabled=True rect=253,212,291,40
+ControlType.Text id= name=请先从“文件”菜单新建或打开项目。 enabled=True rect=253,522,273,22
+ControlType.Thumb id=ResourceBrowserSplitter name= enabled=True rect=560,145,10,739
+ControlType.Text id= name=DarkGrey RPG Studio enabled=True rect=952,477,346,41
+ControlType.Text id= name=从“文件”菜单新建或打开项目。 enabled=True rect=952,530,346,22

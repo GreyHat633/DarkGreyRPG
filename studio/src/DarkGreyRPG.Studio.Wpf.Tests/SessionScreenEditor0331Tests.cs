@@ -29,7 +29,7 @@ public sealed class SessionScreenEditor0331Tests
         using (var file = System.IO.File.Create(System.IO.Path.Combine(root, "resources", media))) encoder.Save(file);
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         node.Properties["layers"] = JsonSerializer.SerializeToElement(new[] { new { media_ref = media, x = 0.1, y = 0.1, width = 0.5, height = 0.5, anchor_x = 0, anchor_y = 0, z = 0 } });
-        using var resource = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([node])));
+        using var resource = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Single());
         var window = new Window { Width = 400, Height = 700 };
         try
@@ -54,7 +54,7 @@ public sealed class SessionScreenEditor0331Tests
     [STATestMethod]
     public void ImportCompletionCannotWriteIntoAnotherNodeOrProject()
     {
-        using var resource = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session",
+        using var resource = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
             new([GraphNodeFactory.Create(GraphScope.Session, "screen", "a"), GraphNodeFactory.Create(GraphScope.Session, "screen", "b")])));
         using var a = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes[0]);
         using var b = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes[1]);
@@ -103,7 +103,7 @@ public sealed class SessionScreenEditor0331Tests
         var root = Path.Combine(Path.GetFullPath("../../../../../../.tooling/0.3.3.1"), "screen-tests", Guid.NewGuid().ToString("N"));
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         using var resource = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Session, "selection-test", "Session", new GraphDocument([node])));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~selection_test", "Session", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Single());
         inspector.SetScreenLayers(JsonSerializer.SerializeToElement(new[]
         {
@@ -167,7 +167,7 @@ public sealed class SessionScreenEditor0331Tests
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         using var resource = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Session, "legacy", "Session", new GraphDocument([node])));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~legacy", "Session", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Single());
         inspector.SetScreenLayers(JsonSerializer.SerializeToElement(new[]
         {
@@ -289,7 +289,7 @@ public sealed class SessionScreenEditor0331Tests
         });
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         using var resource = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Session, "session", "Session", new GraphDocument([node])));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Single());
         Assert.IsTrue(inspector.SetScreenLayers(layers));
         var editor = new SessionScreenEditor { DataContext = inspector };
@@ -335,7 +335,7 @@ public sealed class SessionScreenEditor0331Tests
         var firstNode = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen-a");
         var secondNode = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen-b");
         using var resource = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Session, "card", "Session", new GraphDocument([firstNode, secondNode])));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~card", "Session", new GraphDocument([firstNode, secondNode])));
         using var first = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes[0]);
         using var second = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes[1]);
         var layers = JsonSerializer.SerializeToElement(new[]
@@ -382,7 +382,7 @@ public sealed class SessionScreenEditor0331Tests
         });
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         using var resource = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Session, "session", "Session", new GraphDocument([node])));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Single());
         Assert.IsTrue(inspector.SetScreenLayers(layers));
         var editor = new SessionScreenEditor { DataContext = inspector };

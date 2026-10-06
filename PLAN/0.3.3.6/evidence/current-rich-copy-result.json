@@ -1,0 +1,22 @@
+{
+  "status": "PASS_NATIVE_COPY_REPAIR_EXPORT_PLAY",
+  "source": "ST-8Q7T-6EWT-PEPM-WYKS",
+  "target": "ST-YGZK-MYX4-UKGL-68UW",
+  "target_nonempty": true,
+  "hidden_session_id_collision": "shared",
+  "node_id_collision": "story_start",
+  "source_and_target_existing_resource_files_preserved": true,
+  "undo_restored_original_target_files": true,
+  "redo_restored_copy": true,
+  "structure_repair": "Native graph editor deleted original duplicate Start; preserved original Session/resources; saved and reopened authoritative Studio",
+  "export": "StudioExportedRichCopy0336.dgrs.g",
+  "bytes": 26635,
+  "sha256": "51b0bf238fcb862000df316dad3380cddec18640788a68d9753c58bce61577f8",
+  "runtime": "Actual Operator0336 runs target-owned remapped Session; blue portrait and dynamic actor/player text visible",
+  "evidence": [
+    "rich-copy-files-before.json",
+    "rich-copy-applied.json",
+    "rich-copy-runtime-active.json",
+    "rich-copy-runtime.png"
+  ]
+}

@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.IO;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -14,7 +15,35 @@ namespace DarkGreyRPG.Studio.ViewModels.Graph;
 public sealed partial class CanonicalStoryWorkspaceViewModel
 {
     public Func<IEnumerable<CanonicalStoryWorkspaceViewModel>>? OpenProjectWorkspaces { get; set; }
-    private static void AddScreenMetadataChanges(List<NamespaceFileChange> changes, string root, string resource,
+    private static bool AddClipboardDependencies(CanonicalStoryMembershipManifest membership, IEnumerable<DgrResourceKey> dependencies)
+    {
+        var owned = membership.OwnedResources; var references = membership.ReferencedResources;
+        var changed = false;
+        foreach (var dependency in dependencies.Distinct())
+        {
+            var (ownedIds, referenceIds) = dependency.Kind switch
+            {
+                DgrResourceKind.Actor => (owned.Actors, references.Actors),
+                DgrResourceKind.Item => (owned.Items, references.Items),
+                DgrResourceKind.ItemGroup => (owned.ItemGroups, references.ItemGroups),
+                _ => throw new InvalidOperationException("复制的聚合资源包含不支持的依赖类型。"),
+            };
+            if (!ownedIds.Contains(dependency.Id) && !referenceIds.Contains(dependency.Id))
+            { referenceIds.Add(dependency.Id); changed = true; }
+        }
+        membership.ReferencedResources = references;
+        return changed;
+    }
+
+    private void RefreshClipboardDependencies(CanonicalProjectGraphStore store)
+    {
+        using var incoming = new CanonicalStoryWorkspaceViewModel(new CanonicalStoryWorkspaceLoader(store).Load(StoryEditor.Id));
+        ActorItems = incoming.ActorItems; ItemItems = incoming.ItemItems;
+        Folders.Single(folder => folder.Kind == CanonicalStoryFolderKind.Actors).SynchronizeItems(ActorItems);
+        Folders.Single(folder => folder.Kind == CanonicalStoryFolderKind.Items).SynchronizeItems(ItemItems);
+        OnPropertyChanged(nameof(ActorItems)); OnPropertyChanged(nameof(ItemItems));
+    }
+    private static void AddScreenMetadataChanges(List<ProjectFileChange> changes, string root, string resource,
         IReadOnlyDictionary<string, byte[]?>? metadata, IReadOnlyDictionary<string, string> ids)
     {
         foreach (var pair in metadata ?? new Dictionary<string, byte[]?>())
@@ -29,11 +58,11 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
         IReadOnlyDictionary<string, string> ids, bool parameters)
     {
         if (MediaProjectDirectory is not { } root) return (() => { }, () => { });
-        var changes = new List<NamespaceFileChange>();
+        var changes = new List<ProjectFileChange>();
         AddScreenMetadataChanges(changes, root, host.AuthoringResourceKey,
             parameters ? Clipboard.ParameterScreenMetadata : Clipboard.NodeScreenMetadata, ids);
-        var inverse = changes.Select(c => new NamespaceFileChange(c.RelativePath, c.DesiredBytes, c.ExpectedBytes)).ToArray();
-        void Apply(IEnumerable<NamespaceFileChange> edits) { new NamespaceFileTransaction().Apply(root, edits.ToArray(), () => { }); ScreenLayerEditorState.Reload(host); }
+        var inverse = changes.Select(c => new ProjectFileChange(c.RelativePath, c.DesiredBytes, c.ExpectedBytes)).ToArray();
+        void Apply(IEnumerable<ProjectFileChange> edits) { new ProjectFileTransaction().Apply(root, edits.ToArray(), () => { }); ScreenLayerEditorState.Reload(host); }
         return (() => Apply(inverse), () => Apply(changes));
     }
     public (Action Undo, Action Redo) PrepareCopiedResources(GraphDocument pasted, IReadOnlyDictionary<string, string> nodeIds)
@@ -42,7 +71,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
         if (aggregates.Length == 0) return (() => { }, () => { });
         var root = MediaProjectDirectory ?? throw new InvalidOperationException("项目未打开。");
         var store = new CanonicalProjectGraphStore(root);
-        var changes = new List<NamespaceFileChange>();
+        var changes = new List<ProjectFileChange>();
         var created = new List<CanonicalGraphClipboard.Resource>();
         var membership = store.Memberships.Load(StoryEditor.Id);
         var owned = membership.OwnedResources; var order = membership.DisplayOrder;
@@ -70,8 +99,10 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
                 var sourceGraph = envelope.Graph!;
                 var scope = GraphResourceScopeAdapter.GetScope(kind);
                 var graph = new GraphClipboardSnapshot(scope, sourceGraph, sourceGraph.Nodes.Select(n => n.Id)).CloneForPaste(scope, out var internalIds, true);
-                string id = oldId + "_copy"; int suffix = 0;
-                while (!reserved.Add(id)) id = oldId + "_copy" + ++suffix;
+                var address = ResourceAddress.Create(StoryUid.Parse(StoryEditor.Id),
+                    kind == GraphResourceKind.Session ? ResourceKind.Session : ResourceKind.Task,
+                    reserved.Select(ResourceAddress.FromKey).ToHashSet());
+                var id = address.ToKey(); reserved.Add(id);
                 envelope.Id = id; envelope.Graph = graph;
                 AddScreenMetadataChanges(changes, root, CanonicalGraphLayoutStore.BuildGraphKey(kind, id), source.ScreenMetadata, internalIds);
                 var ports = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -109,9 +140,11 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
             aggregate.Properties["resource_id"] = JsonSerializer.SerializeToElement(clone.Envelope.Id);
         }
         membership.OwnedResources = owned; membership.DisplayOrder = order;
+        AddClipboardDependencies(membership, created.SelectMany(resource => ResourceCopyRemapper.References(resource.Envelope)));
         var membershipPath = store.Memberships.GetPath(StoryEditor.Id);
         changes.Add(new(Path.GetRelativePath(root, membershipPath), File.ReadAllBytes(membershipPath), Encoding.UTF8.GetBytes(membership.ToJson())));
-        var inverse = changes.Select(c => new NamespaceFileChange(c.RelativePath, c.DesiredBytes, c.ExpectedBytes)).ToArray();
+        var inverse = changes.Select(c => new ProjectFileChange(c.RelativePath, c.DesiredBytes, c.ExpectedBytes)).ToArray();
+        void RefreshDependencies() => RefreshClipboardDependencies(store);
         void ApplyFiles(bool forward)
         {
             // Saving another graph may rewrite this shared sidecar between paste
@@ -126,19 +159,20 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
                 var value = forward ? layoutGraphs[key] : originalGraphs[key];
                 if (value is null) currentGraphs.Remove(key); else currentGraphs[key] = value.DeepClone();
             }
-            var layoutChange = new NamespaceFileChange(Path.GetRelativePath(root, layoutPath), currentBytes, Encoding.UTF8.GetBytes(current.ToJsonString()));
-            new NamespaceFileTransaction().Apply(root, (forward ? changes : inverse.AsEnumerable()).Append(layoutChange).ToArray(), () => { });
+            var layoutChange = new ProjectFileChange(Path.GetRelativePath(root, layoutPath), currentBytes, Encoding.UTF8.GetBytes(current.ToJsonString()));
+            new ProjectFileTransaction().Apply(root, (forward ? changes : inverse.AsEnumerable()).Append(layoutChange).ToArray(), () => { });
         }
         void Redo()
         {
             ApplyFiles(true);
-            try { foreach (var resource in created) AddClipboardResource(resource); }
+            try { foreach (var resource in created) AddClipboardResource(resource); RefreshDependencies(); }
             catch { foreach (var resource in created) RemoveClipboardResource(resource.Envelope.ResourceKind, resource.Envelope.Id); ApplyFiles(false); throw; }
         }
         void Undo()
         {
             ApplyFiles(false);
             foreach (var resource in created) RemoveClipboardResource(resource.Envelope.ResourceKind, resource.Envelope.Id);
+            RefreshDependencies();
         }
         return (Undo, Redo);
     }
@@ -163,11 +197,22 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
         var retainedChanges = new List<(GraphEditorHostViewModel Host, GraphDocument Before, GraphDocument After, IReadOnlyDictionary<string, GraphEditorNodePosition> Layout)>();
         var resourceHosts = open.SelectMany(w => w.Editors).Where(e => e.ResourceKind == kind && e.Id == targetId)
             .Distinct().Select(e => (Host: e.Host, Before: e.CreateSnapshot().Graph!, Layout: e.CreateLayoutSnapshot())).ToArray();
-        var changes = new List<NamespaceFileChange>(); var references = new List<string>(); var removed = new List<string>();
+        var changes = new List<ProjectFileChange>(); var references = new List<string>(); var removed = new List<string>();
+        var dependencies = ResourceCopyRemapper.References(after);
+        var dependencyConsumers = new HashSet<string>(StringComparer.Ordinal);
         AddScreenMetadataChanges(changes, root, target.Host.AuthoringResourceKey, source.ScreenMetadata, ids);
         GraphDocument? nextStory = null;
         foreach (var info in store.Stories.List())
         {
+            var membership = store.Memberships.Load(info.Id);
+            var ownedIds = kind == GraphResourceKind.Session ? membership.OwnedResources.Sessions : membership.OwnedResources.Tasks;
+            var referencedIds = kind == GraphResourceKind.Session ? membership.ReferencedResources.Sessions : membership.ReferencedResources.Tasks;
+            if ((ownedIds.Contains(targetId) || referencedIds.Contains(targetId)) && AddClipboardDependencies(membership, dependencies))
+            {
+                var membershipPath = store.Memberships.GetPath(info.Id);
+                changes.Add(new(Path.GetRelativePath(root, membershipPath), File.ReadAllBytes(membershipPath), Encoding.UTF8.GetBytes(membership.ToJson())));
+                dependencyConsumers.Add(info.Id);
+            }
             var retained = open.FirstOrDefault(w => w.StoryEditor.Id == info.Id)?.StoryEditor;
             var story = retained?.CreateSnapshot() ?? store.Stories.Load(info.Id);
             var previousGraph = GraphDocument.FromJson(story.Graph!.ToJson());
@@ -200,18 +245,20 @@ public sealed partial class CanonicalStoryWorkspaceViewModel
         }
         string resourcePath = (kind == GraphResourceKind.Session ? store.Sessions : store.Tasks).GetPath(targetId);
         changes.Add(new(Path.GetRelativePath(root, resourcePath), File.ReadAllBytes(resourcePath), Encoding.UTF8.GetBytes(after.ToJson())));
-        var inverse = changes.Select(c => new NamespaceFileChange(c.RelativePath, c.DesiredBytes, c.ExpectedBytes)).ToArray();
+        var inverse = changes.Select(c => new ProjectFileChange(c.RelativePath, c.DesiredBytes, c.ExpectedBytes)).ToArray();
         void Redo()
         {
-            new NamespaceFileTransaction().Apply(root, changes, () => { });
+            new ProjectFileTransaction().Apply(root, changes, () => { });
             foreach (var item in resourceHosts) item.Host.RestoreClipboardSnapshot(after.Graph!, afterLayout);
             foreach (var item in retainedChanges) item.Host.RestoreClipboardSnapshot(item.After, item.Layout);
+            foreach (var workspace in open.Where(workspace => dependencyConsumers.Contains(workspace.StoryEditor.Id))) workspace.RefreshClipboardDependencies(store);
         }
         void Undo()
         {
-            new NamespaceFileTransaction().Apply(root, inverse, () => { });
+            new ProjectFileTransaction().Apply(root, inverse, () => { });
             foreach (var item in resourceHosts) item.Host.RestoreClipboardSnapshot(item.Before, item.Layout);
             foreach (var item in retainedChanges) item.Host.RestoreClipboardSnapshot(item.Before, item.Layout);
+            foreach (var workspace in open.Where(workspace => dependencyConsumers.Contains(workspace.StoryEditor.Id))) workspace.RefreshClipboardDependencies(store);
         }
         StoryEditor.Host.CommitClipboardSnapshot(nextStory ?? StoryEditor.Host.Graph, StoryEditor.Host.Layout, Undo, Redo);
         return true;

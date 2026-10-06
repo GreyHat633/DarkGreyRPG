@@ -1,0 +1,31 @@
+{
+  "frames": {
+    "session:Native0332:conversation": [
+      {
+        "id": "649f1cc2328148faa31e82564ec075eb",
+        "title": "\u5206\u7EC4\u6CE8\u91CA",
+        "x": 114.45621409679666,
+        "y": 84.7649712774373,
+        "width": 280,
+        "height": 158,
+        "members": [
+          "start"
+        ],
+        "is_valid": true
+      }
+    ]
+  },
+  "schema_version": 1,
+  "graphs": {
+    "session:Native0332:conversation": {
+      "node_311203e4e0894920bc9b0c2c9189a743": {
+        "x": 337.31932773109247,
+        "y": 233.66151260504205
+      },
+      "start": {
+        "x": 138.45621409679666,
+        "y": 126.7649712774373
+      }
+    }
+  }
+}

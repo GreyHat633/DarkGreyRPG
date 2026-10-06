@@ -1,0 +1,11 @@
+warning: in the working copy of 'studio/src/DarkGreyRPG.Studio.Wpf.Tests/SettingsServiceTests.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'studio/src/DarkGreyRPG.Studio/MainWindow.xaml.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'studio/src/DarkGreyRPG.Studio/Services/DgrsExportPathPicker.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'studio/src/DarkGreyRPG.Studio/Services/OfflinePackageDialogs.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'studio/src/DarkGreyRPG.Studio/Settings/StudioSettings.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'studio/src/DarkGreyRPG.Studio/ViewModels/ShellViewModel.OfflinePackages.cs', LF will be replaced by CRLF the next time Git touches it
+FROZEN_CANONICAL_RUNTIME_DIFF=0
+FROZEN_DGRS_SCHEMA_DIFF=0
+FROZEN_IDENTITY_AND_NETWORK_DIFF=0
+STUDIO_DIFF_OUTSIDE_FILE_DIALOG_EXCEPTION=0 (path whitelist; semantic diff separately reviewed)
+FREEZE_GUARD=PASS

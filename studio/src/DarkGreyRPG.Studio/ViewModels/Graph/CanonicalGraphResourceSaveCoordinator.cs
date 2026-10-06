@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Identity;
@@ -88,12 +89,12 @@ public sealed class CanonicalGraphResourceSaveCoordinator
         var storyPath = _store.Stories.GetPath(snapshot.Id);
         var changes = new[]
         {
-            new NamespaceFileChange(Path.GetRelativePath(_store.ProjectDirectory, storyPath), File.ReadAllBytes(storyPath),
+            new ProjectFileChange(Path.GetRelativePath(_store.ProjectDirectory, storyPath), File.ReadAllBytes(storyPath),
                 Encoding.UTF8.GetBytes(GraphResourceEnvelopeSerializer.Serialize(snapshot))),
-            new NamespaceFileChange(Path.GetRelativePath(_store.ProjectDirectory, repository.Path), File.Exists(repository.Path) ? File.ReadAllBytes(repository.Path) : null,
+            new ProjectFileChange(Path.GetRelativePath(_store.ProjectDirectory, repository.Path), File.Exists(repository.Path) ? File.ReadAllBytes(repository.Path) : null,
                 JsonSerializer.SerializeToUtf8Bytes(next, new JsonSerializerOptions { WriteIndented = true }))
         };
-        new NamespaceFileTransaction().Apply(_store.ProjectDirectory, changes, () => repository.Validate(next, snapshot));
+        new ProjectFileTransaction().Apply(_store.ProjectDirectory, changes, () => repository.Validate(next, snapshot));
         foreach (var edge in dropped) if (!removed.Contains(edge)) removed.Add(edge);
         foreach (var edge in restored) removed.Remove(edge);
         return _store.Stories.Load(snapshot.Id);

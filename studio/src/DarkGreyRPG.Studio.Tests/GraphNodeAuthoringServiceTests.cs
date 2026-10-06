@@ -96,7 +96,7 @@ public sealed class GraphNodeAuthoringServiceTests
     }
 
     [TestMethod]
-    public void TaskSettleReceivesOneStableLogicResultSlot()
+    public void TaskSettleReceivesOneConditionAndStablePublicBoundary()
     {
         var result = new GraphNodeAuthoringService(() => "settle_result_1")
             .Create(new GraphDocument(), GraphScope.Task, "settle", "settle");
@@ -105,7 +105,8 @@ public sealed class GraphNodeAuthoringServiceTests
         var slot = result.Candidate!.Ports.Single();
         Assert.IsTrue(slot.IsInput);
         Assert.AreEqual(GraphInterfaceKind.Logic, slot.InterfaceKind);
-        Assert.AreEqual("settle_result_1", slot.Id);
+        Assert.AreEqual("logic_in", slot.Id);
+        Assert.AreEqual("settle_result_1", result.Candidate.Properties["port_id"].GetString());
         Assert.AreEqual(0, slot.Order);
         Assert.IsTrue(GraphNodeShapeValidator.IsValid(result.Candidate, GraphScope.Task));
     }
@@ -133,7 +134,8 @@ public sealed class GraphNodeAuthoringServiceTests
         Assert.AreEqual(reservedBefore, reservedGraph.ToJson());
 
         var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("settle_result", "Result", true, GraphInterfaceKind.Logic, 0));
+        settle.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("settle_result");
+        settle.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Result");
         var output = GraphNodeFactory.Create(GraphScope.Task, "logic_output", "output");
         output.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("public_id");
         output.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Public");

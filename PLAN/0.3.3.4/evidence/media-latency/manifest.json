@@ -1,0 +1,17 @@
+{
+  "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java": "f2412cb1eb56e911ed7fa1f7d4de69e93468df61cdcf3d31a63ba6732580a94c",
+  "src/main/java/darkgrey/rpg/media/CanonicalMediaServer.java": "01ab12f22cbe80e1e2c9716e4f3dd70db8b85e9fdef7d04bfd4d4ddadeff3e48",
+  "src/main/java/darkgrey/rpg/media/CanonicalMediaTextures.java": "7972f0d68bf4b860793de165a576fccfbde46e77d6e323d10a0ed619ab2d9d0b",
+  "src/main/java/darkgrey/rpg/media/CanonicalSessionAudio.java": "c4e64e5654ee0242ab923c3c97006e5c90b51256cf71b4ab5c3bb9243a186ef5",
+  "src/main/java/darkgrey/rpg/media/MediaLatencyTrace.java": "ddc01ffdde686b9d5ac6e9add8e85e62513873a28c19059edfe8f9e255e5db56",
+  "src/main/java/darkgrey/rpg/media/MediaTransferReaders.java": "b2c09ad69af4b876b2c8115d62784c9800ed110f5ce74c9ac35e7a62037bd15b",
+  "src/main/java/darkgrey/rpg/media/MediaDownloadSelection.java": "ca7a283e2d399f18557caff5197789632ffada587a72697347e38180ff0edfbd",
+  "src/main/java/darkgrey/rpg/media/MediaUploadBudget.java": "3f9d8df75216b552a9b9cb9bf7ec4fbe4ed75949d86a0feaa8ebb6f075f665ac",
+  "src/main/java/darkgrey/rpg/client/session/CanonicalPresentationBridge.java": "0ce3fcc309527ad7a98d3483ca783acde1e80bb5f96b456a71c1943b1a04e677",
+  "src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientController.java": "bd54c786ddf1b0fdb88402250c68cb3540ac346ee1e09c1846c539a40b193e45",
+  "src/main/java/darkgrey/rpg/client/gui/CanonicalDialogueRenderer.java": "cdaa91e851a52090d9ef66fa4ab90769d79543529960db838d91fab0ef8fa132",
+  "src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryEventAdapter.java": "09f367994f5fb65dd611f730ca3b4ee8994c38ea8f2579554674acf6493f5478",
+  "src/test/java/darkgrey/rpg/project/packages/MediaLatency0334Probe.java": "73121bdee0bbadba210306b0392744da81e66fd9c79d34fab93266bab78ef8aa",
+  "src/test/java/darkgrey/rpg/media/MediaQueue0334Probe.java": "f7b78460129b820670f3fec038a6d775fb298c0b17656eea6c2837abf1244e84",
+  "dist/darkgrey_rpg-0.3.3.4.jar": "c258400d3bf7cb1232bf687c81878f56efb4b3de4e4ac1bc6ef359dd1b49d7c7"
+}

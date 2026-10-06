@@ -38,10 +38,10 @@ public sealed class DynamicContent0334Tests
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
         using var workspace = new DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryWorkspaceViewModel(
-            new(DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Story, "story", "Story", new([])),
-            actors: [new("actor", "Merchant", "actor.json", [])],
-            sessions: [new(DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session, "session", "Session", new([line]))],
-            items: [new DarkGreyRPG.Studio.Core.Items.CollectiveItemResource { GroupId = "group", DisplayName = "Group" }]);
+            new(DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new([])),
+            actors: [new("ST-2345-6789-ABCD-EFGH~actor~actor", "Merchant", "actor.json", [])],
+            sessions: [new(DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line]))],
+            items: [new DarkGreyRPG.Studio.Core.Items.CollectiveItemResource { GroupId = "ST-2345-6789-ABCD-EFGH~item_group~group", DisplayName = "Group" }]);
         workspace.OpenGraphResource(workspace.SessionItems.Single());
         using var owner = new DarkGreyRPG.Studio.ViewModels.Graph.CanonicalNodeInspectorViewModel(workspace.ActiveGraphHost, workspace.ActiveGraphHost.Nodes.Single(), workspace.ActorItems, workspace.ItemItems);
         owner.AddLinePage(); owner.AddLinePage();
@@ -59,7 +59,7 @@ public sealed class DynamicContent0334Tests
             Assert.AreEqual(System.Windows.DragDropEffects.Link, args.Effects);
             Assert.AreEqual("untouched", owner.LinePages[0].Text);
             var part = DynamicContentText.Parse(owner.LinePages[1].Text).Single();
-            Assert.AreEqual("item_name", part.Type); Assert.AreEqual("group", part.ItemId);
+            Assert.AreEqual("item_name", part.Type); Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item_group~group", part.ItemId);
             var atom = ((Paragraph)editor.Body.Document.Blocks.FirstBlock!).Inlines.OfType<InlineUIContainer>().Single();
             Assert.AreEqual("{Group}", ((System.Windows.Controls.Button)atom.Child).Content);
         } finally { window.Close(); }
@@ -71,7 +71,7 @@ public sealed class DynamicContent0334Tests
         var a = DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphNodeFactory.Create(DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphScope.Session, "line", "a");
         var b = DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphNodeFactory.Create(DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphScope.Session, "line", "b");
         using var resource = new DarkGreyRPG.Studio.ViewModels.Graph.CanonicalGraphResourceEditorViewModel(new(
-            DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session, "session", "Session", new([a, b])));
+            DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([a, b])));
         using var first = new DarkGreyRPG.Studio.ViewModels.Graph.CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.First());
         using var other = new DarkGreyRPG.Studio.ViewModels.Graph.CanonicalNodeInspectorViewModel(resource.Host, resource.Host.Nodes.Last());
         first.AddLinePage(); first.AddLinePage(); other.AddLinePage();
@@ -107,7 +107,7 @@ public sealed class DynamicContent0334Tests
     [STATestMethod]
     public void SameNameItemChoicesShowDistinctStableIds()
     {
-        foreach (var id in new[] { "demo:stone_a", "demo:stone_b" })
+        foreach (var id in new[] { "ST-2345-6789-ABCD-EFGH~item~stone_a", "ST-2345-6789-ABCD-EFGH~item~stone_b" })
         {
             var template = DynamicContentEditor.ItemChoiceTemplate(); template.Seal();
             var row = (System.Windows.Controls.StackPanel)template.LoadContent();
@@ -227,11 +227,11 @@ public sealed class DynamicContent0334Tests
     {
         const string old = "欢迎 {{player_name}}，〔玩家名称〕 \\ n";
         Assert.AreEqual(old, DynamicContentText.Display(old));
-        var parts = new[] { new DynamicContentText.Part(Text: old), new DynamicContentText.Part(Type: "player_name"), new DynamicContentText.Part(Type: "item_count", ItemId: "demo:iron") };
+        var parts = new[] { new DynamicContentText.Part(Text: old), new DynamicContentText.Part(Type: "player_name"), new DynamicContentText.Part(Type: "item_count", ItemId: "ST-2345-6789-ABCD-EFGH~item~iron") };
         var encoded = DynamicContentText.Encode(parts);
         CollectionAssert.AreEqual(parts, DynamicContentText.Parse(encoded).ToArray());
         Assert.AreEqual(old + "Alice3", DynamicContentText.Resolve(encoded, p => p.Type == "player_name" ? "Alice" : "3"));
-        CollectionAssert.AreEqual(new[] { "demo:iron" }, DynamicContentText.ItemReferences(encoded).ToArray());
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item~iron" }, DynamicContentText.ItemReferences(encoded).ToArray());
     }
     [STATestMethod]
     public void LoadedEditorCanDeleteAndUndoAtomicContent()

@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Items;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -63,6 +64,9 @@ public sealed class CanonicalStoryItemLifecycleService
         {
             EnsureKind(kind);
             var membership = RequireStory(storyId);
+            if (!ResourceAddress.IsKey(itemId) || ResourceAddress.FromKey(itemId).StoryUid.Value != storyId
+                || ResourceAddress.FromKey(itemId).Kind != (kind == CanonicalStoryItemKind.Individual ? ResourceKind.Item : ResourceKind.ItemGroup))
+                throw Failure("item.address.invalid", "New Item address must have the target Story owner and matching kind.");
             EnsureAbsent(membership, storyId, kind, itemId);
             var resourcePath = kind == CanonicalStoryItemKind.Individual
                 ? _items.GetItemPath(itemId)

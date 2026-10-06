@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "session_inline_reorder": true,
+  "task_inline_zoom_reorder": true,
+  "single_undo_and_redo_exact": true,
+  "port_ids_and_names_unchanged": true,
+  "node_coordinates_unchanged": true,
+  "original_story_connection_target_preserved": true,
+  "default_task_only_objective": true,
+  "objective_delete_zero_undo_redo": [
+    0,
+    1,
+    0
+  ],
+  "settlement_menu_repeat_enabled": true,
+  "empty_task_saved_and_reopened": true,
+  "continuous_mouse_reorder": true,
+  "outside_then_reentry_cancelled": true,
+  "ordinary_node_move_and_undo": true,
+  "final_promoted_rid_rechecked": true,
+  "user_accepted": false,
+  "manual_native_cases": [
+    "whole group title and blank toggle",
+    "group header sort without toggle",
+    "context rename and undo",
+    "Session and Task node parameters and Inspector",
+    "Esc and outside-list cancellation",
+    "Flow-to-Logic rejection",
+    "dark and light preview",
+    "89 percent zoom",
+    "narrow window preview",
+    "outside caption and hidden empty section"
+  ]
+}

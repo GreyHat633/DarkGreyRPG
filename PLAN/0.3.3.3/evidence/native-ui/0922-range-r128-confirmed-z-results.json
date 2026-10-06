@@ -1,0 +1,174 @@
+[
+  {
+    "radius": 128,
+    "label": "0922-range-r128-confirmed-zminus-inside",
+    "axis": "z",
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      72.1
+    ],
+    "measurement": {
+      "label": "0922-range-r128-confirmed-zminus-inside",
+      "time": "2026-09-22T22:48:08",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004758572286405169,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.0006284297242756573,
+      "tone880": 9.98156260245327E-08,
+      "dominantVoiceHz": 1320.0200534759358,
+      "dominantVoiceAmplitude": 4.546489843149482E-06
+    },
+    "inside": true,
+    "clientPoint": [
+      -119.5,
+      91.5,
+      72.1
+    ],
+    "passed": true,
+    "side": "minus"
+  },
+  {
+    "radius": 128,
+    "label": "0922-range-r128-confirmed-zminus-outside",
+    "axis": "z",
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      71.9
+    ],
+    "measurement": {
+      "label": "0922-range-r128-confirmed-zminus-outside",
+      "time": "2026-09-22T22:48:17",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0,
+      "dominantVoiceHz": 650.2339572192514,
+      "dominantVoiceAmplitude": 0.0
+    },
+    "inside": false,
+    "clientPoint": [
+      -119.5,
+      91.5,
+      71.9
+    ],
+    "passed": true,
+    "side": "minus"
+  },
+  {
+    "radius": 128,
+    "label": "0922-range-r128-confirmed-zplus-inside",
+    "axis": "z",
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      328.9
+    ],
+    "measurement": {
+      "label": "0922-range-r128-confirmed-zplus-inside",
+      "time": "2026-09-22T22:48:26",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004758453643489259,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.000628429304414977,
+      "tone880": 9.999337893121437E-08,
+      "dominantVoiceHz": 1320.0200534759358,
+      "dominantVoiceAmplitude": 4.54612521980725E-06
+    },
+    "inside": true,
+    "clientPoint": [
+      -119.5,
+      91.5,
+      328.9
+    ],
+    "passed": true,
+    "side": "plus"
+  },
+  {
+    "radius": 128,
+    "label": "0922-range-r128-confirmed-zplus-outside",
+    "axis": "z",
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      329.1
+    ],
+    "measurement": {
+      "label": "0922-range-r128-confirmed-zplus-outside",
+      "time": "2026-09-22T22:48:34",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0,
+      "dominantVoiceHz": 650.2339572192514,
+      "dominantVoiceAmplitude": 0.0
+    },
+    "inside": false,
+    "clientPoint": [
+      -119.5,
+      91.5,
+      329.1
+    ],
+    "passed": true,
+    "side": "plus"
+  }
+]

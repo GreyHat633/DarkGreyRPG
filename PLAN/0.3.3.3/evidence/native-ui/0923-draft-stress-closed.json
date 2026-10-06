@@ -1,0 +1,29 @@
+{
+  "Phase": "closed",
+  "Time": "2026-09-23T00:27:53.4332459+08:00",
+  "UIImports": 100,
+  "DistinctInputHashes": 100,
+  "SourceBytes": 215692.0,
+  "Context": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0333\\Client\\DarkGreyRPG\\Cache\\Gramophone\\1439cbf4-f0da-4ca4-a8f6-e8b07a604a6f",
+  "CacheDraftCount": 0,
+  "CacheDraftBytes": null,
+  "PeakObservedDrafts": 100.0,
+  "ServerFilesUnchanged": true,
+  "ServerFiles": [
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0333\\Client\\DarkGreyRPG\\Media\\Gramophone\\a4a4de6f-6650-38cb-a86e-300b9abf5493\\5ed750249ec796e71944b80860a7f3054fbd3138b98ece939b17b3d1cbcfd361.dgrmp3",
+      "Bytes": 2881453,
+      "SHA256": "5ED750249EC796E71944B80860A7F3054FBD3138B98ECE939B17B3D1CBCFD361"
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0333\\Client\\DarkGreyRPG\\Media\\Gramophone\\a4a4de6f-6650-38cb-a86e-300b9abf5493\\a2dc58d03695d3156bfc0b25fcf1317d6cefa9296238419c760c65e1bf08a967.dgrmp3",
+      "Bytes": 239922,
+      "SHA256": "A2DC58D03695D3156BFC0B25FCF1317D6CEFA9296238419C760C65E1BF08A967"
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0333\\Client\\DarkGreyRPG\\Media\\Gramophone\\a4a4de6f-6650-38cb-a86e-300b9abf5493\\Devices.properties",
+      "Bytes": 845,
+      "SHA256": "D128F25FAE0E90B6B26F889CAFB49D69A53CBA35D83406260CF260FCAEBA3039"
+    }
+  ]
+}

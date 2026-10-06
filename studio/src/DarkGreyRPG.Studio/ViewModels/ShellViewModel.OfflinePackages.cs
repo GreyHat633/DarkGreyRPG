@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -12,7 +12,7 @@ namespace DarkGreyRPG.Studio.ViewModels;
 
 public sealed record ReferencedResourceRow(OfflineResourceChoice Resource, RelayCommand ViewCommand, RelayCommand? GraphCommand = null)
 {
-    public string Label => $"{Resource.DisplayName} · {Resource.Id}";
+    public string Label => $"{Resource.DisplayName} {Resource.TypeLabel}";
 }
 
 public sealed record ReferencedPackageRow(string Label, string Identity, string Details,
@@ -21,6 +21,7 @@ public sealed record ReferencedPackageRow(string Label, string Identity, string 
 {
     public IReadOnlyList<ReferencedResourceFolder> Folders { get; } =
     [
+        new("故事", Resources.Where(row => row.Resource.Kind == "Story").ToArray()),
         new("角色", Resources.Where(row => row.Resource.Kind == "Actor").ToArray()),
         new("物品", Resources.Where(row => row.Resource.Kind is "Item" or "ItemGroup").ToArray()),
         new("会话", Resources.Where(row => row.Resource.Kind == "Session").ToArray()),
@@ -105,8 +106,8 @@ public sealed partial class ShellViewModel
                 return;
             }
             service.Apply(plan);
-            RefreshOfflineWorkspace(plan.Package.Manifest.StoryId);
-            ReportSuccess($"已导入故事 {plan.Package.Manifest.StoryId}，现为当前项目的可编辑内容。", "故事包");
+            RefreshOfflineWorkspace(plan.ImportedStoryId);
+            ReportSuccess($"已导入 {plan.StoryUidMap.Count} 个可编辑故事，并分配新 UID。" + (plan.ReferencedPackagePath is null ? "" : "外部资源依赖保留在完整的只读来源包中。"), "故事包");
         }
         catch (Exception exception) { ReportFailure("导入故事包", exception); }
     }
@@ -117,22 +118,27 @@ public sealed partial class ShellViewModel
         SelectedReferencedPackage = null;
         if (!HasProject) return;
         var catalog = OfflineProviderCatalog.Load(_projectService.CurrentProject!.ProjectDirectory);
-        foreach (var package in catalog.Providers)
+        foreach (var container in catalog.Providers.GroupBy(package => package.PackagePath, StringComparer.OrdinalIgnoreCase))
         {
-            var choices = package.Resources.Select(ToOfflineChoice).ToArray();
+            var package = container.First();
+            var choices = container.SelectMany(member => member.Resources).DistinctBy(resource => (resource.Kind, resource.Id)).Select(ToOfflineChoice).ToArray();
             var graphs = choices.Where(choice => choice.HasGraph).ToArray();
             choices = choices.Select(choice => choice with { RelatedGraphs = graphs }).ToArray();
+            var containerChoice = package.GroupDisplayName is null ? choices.First(choice => choice.Kind == "Story")
+                : new OfflineResourceChoice("StoryGroup", string.Empty, package.GroupDisplayName,
+                    Path.GetFileName(package.PackagePath), string.Empty)
+                { RelatedGraphs = graphs, ContainerGraph = package.ContainerConnections };
             ReferencedPackageRow? row = null;
             row = new ReferencedPackageRow(
-                package.Resources.FirstOrDefault(resource => resource.Kind == DgrResourceKind.Story)?.DisplayName ?? package.Identity.PackageId,
+                package.GroupDisplayName ?? package.Resources.FirstOrDefault(resource => resource.Kind == DgrResourceKind.Story)?.DisplayName ?? package.Identity.PackageId,
                 package.Identity.ToString(),
-                $"故事包：{Path.GetFileName(package.PackagePath)}\nStory ID：{package.Manifest.StoryId}",
-                choices.Where(choice => choice.Kind != "Story").Select(choice => new ReferencedResourceRow(choice,
+                $"故事包：{Path.GetFileName(package.PackagePath)}\nStory UID：{string.Join("、", container.Select(member => member.Manifest.StoryId))}",
+                choices.Where(choice => package.GroupDisplayName is not null || choice.Kind != "Story").Select(choice => new ReferencedResourceRow(choice,
                     new RelayCommand(() => SelectedReferencedResource = choice),
                     new RelayCommand(() => _offlinePackageDialogs.ShowReadOnlyResource(choice)))).ToArray(),
                 new RelayCommand(() => RemoveReferencedPackage(package.Identity.PackageId)),
                 new RelayCommand(() => SelectedReferencedPackage = row),
-                new RelayCommand(() => _offlinePackageDialogs.ShowReadOnlyResource(choices.Single(choice => choice.Kind == "Story"))));
+                new RelayCommand(() => _offlinePackageDialogs.ShowReadOnlyResource(containerChoice)));
             ReferencedPackages.Add(row);
         }
     }
@@ -143,7 +149,8 @@ public sealed partial class ShellViewModel
         try
         {
             var package = OfflineProviderCatalog.Load(ProjectDirectory).Providers.Single(provider => provider.Identity.PackageId == packageId);
-            var keys = package.Resources.Select(resource => new DgrResourceKey(resource.Kind, resource.Id)).ToHashSet();
+            var keys = OfflineProviderCatalog.Load(ProjectDirectory).Providers.Where(member => member.PackagePath == package.PackagePath)
+                .SelectMany(member => member.Resources).Select(resource => new DgrResourceKey(resource.Kind, resource.Id)).ToHashSet();
             var consumers = _canonicalGraphStore!.Memberships.List().Select(info => _canonicalGraphStore.Memberships.Load(info.StoryId))
                 .Where(member => MembershipKeys(member.ReferencedResources).Any(keys.Contains))
                 .Select(member => member.StoryId).ToArray();
@@ -161,6 +168,7 @@ public sealed partial class ShellViewModel
     {
         // Refresh membership/provider projections without replacing native drafts or their history.
         LoadReferencedPackages();
+        ProjectHome.Graph.RefreshReferencedStories();
         if (CanonicalStoryWorkspace is { } workspace)
         {
             var snapshot = new CanonicalStoryWorkspaceLoader(_canonicalGraphStore!).Load(workspace.StoryEditor.Id);
@@ -192,6 +200,7 @@ public sealed partial class ShellViewModel
             SourcePackageName = Path.GetFileName(resource.PackagePath),
             SourceStoryId = resource.StoryId,
             ResourceIdLabel = ResourceIdLabel(resource),
+            IsExternal = true,
         };
 
     private static string ResourceIdLabel(OfflineProviderResource resource)
@@ -201,8 +210,8 @@ public sealed partial class ShellViewModel
         return resource.Kind.ToString() switch { "Actor" => "NPC ID", "Item" => "Item ID", "ItemGroup" => "Group ID", "Session" => "Session ID", "Task" => "Task ID", "Story" => "Story ID", _ => "资源 ID" };
     }
 
-    internal static string ProviderDescription(OfflineProviderResource resource)
-        => $"故事包：{Path.GetFileName(resource.PackagePath)}\nStory ID：{(string.IsNullOrEmpty(resource.StoryId) ? resource.PackageIdentity.PackageId : resource.StoryId)}";
+    internal static string ProviderDescription(OfflineProviderResource? resource)
+        => resource is null ? "当前项目的引用资源；请在所属故事中编辑，或导入为本地资源。" : $"来源故事包：{Path.GetFileName(resource.PackagePath)}";
 
     private IEnumerable<OfflineResourceChoice> NativeResourceChoices()
     {
@@ -222,29 +231,81 @@ public sealed partial class ShellViewModel
             }
     }
 
-    private void PickOfflineResourceReference(string? storyId, IReadOnlySet<DgrResourceKind>? kinds, bool externalOnly = false)
+    private IReadOnlyList<OfflineResourceChoice> ResourceReferenceChoices()
+    {
+        var store = _canonicalGraphStore!;
+        var native = NativeResourceChoices().ToDictionary(choice => new DgrResourceKey(Enum.Parse<DgrResourceKind>(choice.Kind), choice.Id));
+        var choices = new List<OfflineResourceChoice>();
+        var order = ProjectHome.Graph.Presentation.NavigationOrder;
+        int Rank(StoryListItemViewModel story) { var index = Array.IndexOf(order, story.NavigationKey); return index < 0 ? int.MaxValue : index; }
+        foreach (var story in ProjectHome.Stories.Where(story => story.HasCanonicalStory).OrderBy(Rank).ThenBy(story => story.NavigationKey, StringComparer.Ordinal).ThenBy(story => story.DisplayName, StringComparer.CurrentCulture))
+        {
+            var membership = store.Memberships.Load(story.Id);
+            foreach (var key in MembershipKeys(membership.OwnedResources))
+                if (native.TryGetValue(key, out var choice)) choices.Add(choice with { SourceStoryId = story.Id, SourceStoryName = story.DisplayName });
+        }
+        var providers = OfflineProviderCatalog.Load(ProjectDirectory);
+        foreach (var package in providers.Providers)
+        {
+            var story = package.Resources.Single(resource => resource.Kind == DgrResourceKind.Story && resource.Id == package.Manifest.StoryId);
+            var membership = package.Manifest.RequiredResources.CanonicalMemberships
+                .Select(path => CanonicalStoryMembershipSerializer.Deserialize(System.Text.Encoding.UTF8.GetString(package.GetEntry(path))))
+                .Single(member => member.StoryId == story.Id);
+            var owned = MembershipKeys(membership.OwnedResources).ToHashSet();
+            foreach (var resource in package.Resources.Where(resource => owned.Contains(new(resource.Kind, resource.Id))))
+                choices.Add(ToOfflineChoice(resource) with { SourceStoryId = story.Id, SourceStoryName = story.DisplayName });
+        }
+        return choices;
+    }
+
+    private void PickOfflineResourceReference(string? storyId)
     {
         if (storyId is null || _canonicalGraphStore is null || !HasProject) return;
+        OfflineResourceChoice? choice = null;
         try
         {
             var membership = _canonicalGraphStore.Memberships.Load(storyId);
             var present = MembershipKeys(membership.OwnedResources).Concat(MembershipKeys(membership.ReferencedResources)).ToHashSet();
-            bool Offered(OfflineResourceChoice choice) => Enum.TryParse<DgrResourceKind>(choice.Kind, out var kind)
-                && kind != DgrResourceKind.Story && (kinds is null || kinds.Contains(kind)) && !present.Contains(new(kind, choice.Id));
-            var native = externalOnly ? [] : NativeResourceChoices().Where(Offered).ToArray();
-            var external = OfflineProviderCatalog.Load(ProjectDirectory).Resources.Select(ToOfflineChoice).Where(Offered).ToArray();
-            var choice = _offlinePackageDialogs.PickResource(native, external, "引用资源");
+            bool Offered(OfflineResourceChoice candidate) => Enum.TryParse<DgrResourceKind>(candidate.Kind, out var kind)
+                && kind != DgrResourceKind.Story && !present.Contains(new(kind, candidate.Id));
+            choice = _offlinePackageDialogs.PickResource(ResourceReferenceChoices().Where(Offered).ToArray(), "引用资源");
             if (choice is null) return;
-            if (!native.Contains(choice) && !external.Contains(choice)) throw new InvalidOperationException("所选资源不在当前 Provider 目录中。");
-            var selectedKind = Enum.Parse<DgrResourceKind>(choice.Kind);
+            if (!ResourceReferenceChoices().Any(candidate => candidate.Kind == choice.Kind && candidate.Id == choice.Id
+                    && candidate.SourceStoryId == choice.SourceStoryId && candidate.IsExternal == choice.IsExternal))
+                throw new InvalidOperationException("所选资源的来源已变化，请重新选择。");
             var before = CaptureReferenceFiles(storyId);
-            new CanonicalExternalReferenceService(_canonicalGraphStore).AddReference(storyId, selectedKind, choice.Id);
+            try
+            {
+                new CanonicalProjectResourceReferenceService(_canonicalGraphStore).AddReference(storyId,
+                    Enum.Parse<DgrResourceKind>(choice.Kind), choice.Id, choice.SourceStoryId, choice.IsExternal);
+                // Validate and apply the new workspace before publishing its Undo entry.
+                RefreshOfflineWorkspace(storyId);
+            }
+            catch
+            {
+                var after = CaptureReferenceFiles(storyId);
+                new Core.IO.ProjectFileTransaction().Apply(ProjectDirectory,
+                    before.Select(file => new Core.IO.ProjectFileChange(file.Key, after[file.Key], file.Value)).ToArray(), () => { });
+                throw;
+            }
             RecordReferenceChange(before, storyId);
-            RefreshOfflineWorkspace(storyId);
-            ReportSuccess($"已引用 {choice.DisplayName} · {choice.Id}。", "故事包");
+            ReportSuccess($"已引用“{choice.SourceStoryName}”中的“{choice.DisplayName}”。", "故事包");
         }
-        catch (Exception exception) { ReportFailure("引用资源", exception); }
+        catch (Exception exception)
+        {
+            // Keep machine identities in diagnostic logs; author-facing messages use names.
+            var message = choice is null ? "无法读取引用目录，请检查故事或引用包是否有效。"
+                : $"无法引用“{choice.SourceStoryName}”中的“{choice.DisplayName}”：{ReferenceFailureReason(exception)}";
+            ReportFailure("引用资源", new InvalidOperationException(message, exception));
+        }
     }
+    private static string ReferenceFailureReason(Exception exception) => exception switch
+    {
+        CanonicalExternalReferenceException { Code: "story.external_reference.source.invalid" } => "来源故事包无效或存在冲突。",
+        CanonicalExternalReferenceException { Code: "story.external_reference.duplicate" or "story.external_reference.owned" } => "该故事已拥有或引用此资源。",
+        CanonicalStoryActorLifecycleException => "角色来源或成员关系已变化，请重新选择。",
+        _ => "来源已失效、存在冲突或资源已被引用；请重新选择并检查问题列表。",
+    };
 
     private static IEnumerable<DgrResourceKey> MembershipKeys(CanonicalStoryMembershipSet set)
         => set.Actors.Select(id => new DgrResourceKey(DgrResourceKind.Actor, id))

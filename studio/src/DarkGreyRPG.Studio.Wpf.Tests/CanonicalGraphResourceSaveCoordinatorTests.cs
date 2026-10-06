@@ -19,9 +19,9 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
 
         foreach (var (kind, id, name, addType) in new[]
         {
-            (GraphResourceKind.Story, "story", "Story", "start"),
-            (GraphResourceKind.Session, "session", "Session", "line"),
-            (GraphResourceKind.Task, "task", "Task", "objective"),
+            (GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", "start"),
+            (GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", "line"),
+            (GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", "objective"),
         })
         {
             var original = Envelope(kind, id, name);
@@ -45,7 +45,7 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
     {
         using var project = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Path);
-        var envelope = Envelope(GraphResourceKind.Session, "session", "Original");
+        var envelope = Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Original");
         store.Sessions.Create(envelope);
         using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
         var coordinator = new CanonicalGraphResourceSaveCoordinator(
@@ -53,11 +53,11 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
 
         var result = coordinator.Replace(editor);
 
-        Assert.AreEqual("session", result.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~session~session", result.Id);
         Assert.AreEqual("Original", result.DisplayName);
         Assert.IsFalse(editor.IsDirty);
         Assert.AreNotSame(editor.Document.Graph, result.Graph);
-        Assert.AreEqual("Original", store.Sessions.Load("session").DisplayName);
+        Assert.AreEqual("Original", store.Sessions.Load("ST-2345-6789-ABCD-EFGH~session~session").DisplayName);
     }
 
     [TestMethod]
@@ -65,9 +65,9 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
     {
         using var project = new TemporaryProjectDirectory();
         var initialStore = new CanonicalProjectGraphStore(project.Path);
-        var original = Envelope(GraphResourceKind.Session, "session", "Original");
+        var original = Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Original");
         initialStore.Sessions.Create(original);
-        var path = initialStore.Sessions.GetPath("session");
+        var path = initialStore.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~session");
         var before = File.ReadAllText(path);
 
         using var editor = new CanonicalGraphResourceEditorViewModel(original);
@@ -82,8 +82,8 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         Assert.AreEqual("graph.resource.repository.write.failed", exception.Code);
         Assert.AreEqual(before, File.ReadAllText(path));
         Assert.IsTrue(editor.IsDirty);
-        Assert.AreEqual("Original", initialStore.Sessions.Load("session").DisplayName);
-        Assert.IsEmpty(initialStore.Sessions.Load("session").Graph!.Nodes);
+        Assert.AreEqual("Original", initialStore.Sessions.Load("ST-2345-6789-ABCD-EFGH~session~session").DisplayName);
+        Assert.IsEmpty(initialStore.Sessions.Load("ST-2345-6789-ABCD-EFGH~session~session").Graph!.Nodes);
     }
 
     [TestMethod]
@@ -93,9 +93,9 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         var store = new CanonicalProjectGraphStore(project.Path);
         var node = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
         var envelope = new GraphResourceEnvelope(
-            GraphResourceKind.Session, "session", "Session", new GraphDocument([node]));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([node]));
         store.Sessions.Create(envelope);
-        var canonicalPath = store.Sessions.GetPath("session");
+        var canonicalPath = store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~session");
         var before = File.ReadAllBytes(canonicalPath);
         using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
 
@@ -105,10 +105,10 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         CollectionAssert.AreEqual(before, File.ReadAllBytes(canonicalPath));
         Assert.IsFalse(editor.IsDirty);
         var layoutStore = new CanonicalGraphLayoutStore(project.Path);
-        Assert.AreEqual(612.5, layoutStore.Load(GraphResourceKind.Session, "session")["line-1"].X);
+        Assert.AreEqual(612.5, layoutStore.Load(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session")["line-1"].X);
         using var reopened = new CanonicalGraphResourceEditorViewModel(
-            store.Sessions.Load("session"),
-            layoutStore.Load(GraphResourceKind.Session, "session").ToDictionary(
+            store.Sessions.Load("ST-2345-6789-ABCD-EFGH~session~session"),
+            layoutStore.Load(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session").ToDictionary(
                 pair => pair.Key,
                 pair => new GraphEditorNodePosition(pair.Value.X, pair.Value.Y),
                 StringComparer.Ordinal));
@@ -124,7 +124,7 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         var nodes = new[] { "a", "b", "c" }
             .Select(id => GraphNodeFactory.Create(GraphScope.Session, "line", id)).ToArray();
         var envelope = new GraphResourceEnvelope(
-            GraphResourceKind.Session, "session", "Session", new GraphDocument(nodes));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument(nodes));
         store.Sessions.Create(envelope);
         using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
         editor.Host.SetNodePosition("a", 10, 20);
@@ -139,9 +139,9 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
         new CanonicalGraphResourceSaveCoordinator(store).Replace(editor);
 
         var layoutStore = new CanonicalGraphLayoutStore(project.Path);
-        var saved = layoutStore.Load(GraphResourceKind.Session, "session");
+        var saved = layoutStore.Load(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session");
         using var reopened = new CanonicalGraphResourceEditorViewModel(
-            store.Sessions.Load("session"),
+            store.Sessions.Load("ST-2345-6789-ABCD-EFGH~session~session"),
             saved.ToDictionary(pair => pair.Key,
                 pair => new GraphEditorNodePosition(pair.Value.X, pair.Value.Y),
                 StringComparer.Ordinal));
@@ -155,24 +155,24 @@ public sealed class CanonicalGraphResourceSaveCoordinatorTests
     {
         using var project = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Path);
-        var source = StoryWithBoundary("source", "logic_output", "output", "rescued");
-        var target = StoryWithBoundary("target", "logic_input", "input", "kingdom_gate");
+        var source = StoryWithBoundary("ST-2345-6789-ABCD-EFGH", "logic_output", "output", "rescued");
+        var target = StoryWithBoundary("ST-JKLM-NPQR-STUV-WXYZ", "logic_input", "input", "kingdom_gate");
         store.Stories.Create(source);
         store.Stories.Create(target);
-        store.StoryLogicGraph.Save([new("source", "rescued", "target", "kingdom_gate")]);
-        var before = File.ReadAllText(store.Stories.GetPath("source"));
+        store.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "rescued", "ST-JKLM-NPQR-STUV-WXYZ", "kingdom_gate")]);
+        var before = File.ReadAllText(store.Stories.GetPath("ST-2345-6789-ABCD-EFGH"));
         using var editor = new CanonicalGraphResourceEditorViewModel(source);
         Assert.IsTrue(editor.Host.RemoveNode("output"));
 
         var coordinator = new CanonicalGraphResourceSaveCoordinator(store);
         coordinator.Replace(editor);
         Assert.IsEmpty(store.StoryLogicGraph.Load().Connections);
-        Assert.IsEmpty(store.Stories.Load("source").Graph!.Nodes);
+        Assert.IsEmpty(store.Stories.Load("ST-2345-6789-ABCD-EFGH").Graph!.Nodes);
         Assert.IsFalse(editor.IsDirty);
         Assert.IsTrue(editor.Host.Undo());
         coordinator.Replace(editor);
-        Assert.AreEqual("rescued", store.Stories.Load("source").Graph!.Nodes.Single().Properties["port_id"].GetString());
-        Assert.AreEqual(new CanonicalStoryLogicConnection("source", "rescued", "target", "kingdom_gate"), store.StoryLogicGraph.Load().Connections.Single());
+        Assert.AreEqual("rescued", store.Stories.Load("ST-2345-6789-ABCD-EFGH").Graph!.Nodes.Single().Properties["port_id"].GetString());
+        Assert.AreEqual(new CanonicalStoryLogicConnection("ST-2345-6789-ABCD-EFGH", "rescued", "ST-JKLM-NPQR-STUV-WXYZ", "kingdom_gate"), store.StoryLogicGraph.Load().Connections.Single());
         Assert.IsTrue(editor.Host.Redo());
         coordinator.Replace(editor);
         Assert.IsEmpty(store.StoryLogicGraph.Load().Connections);

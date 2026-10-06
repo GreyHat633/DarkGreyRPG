@@ -1,271 +1,206 @@
-using DarkGreyRPG.Studio.Core.Dialogues;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
-using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels;
+using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
 
+// Replaces flat Dialogue/Quest draft gates with current Session/Task lifecycle contracts.
 [TestClass]
 public sealed class GateEWpfTests
 {
     [TestMethod]
-    public void DirectDialogueCreateIsInMemoryTopSelectedDraft()
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void CreateAllocatesOwnedMinimalResourceWithoutFakeActor(GraphResourceKind kind)
     {
-        using var project = CreateProject();
-        var service = project.Service;
-        service.CreateDialogueInStory("intro", "existing", "Existing");
-        var dialogs = new GateEDialogs { CreateResult = new("draft", "Draft") };
-        var shell = OpenDialogues(project, dialogs);
-
-        shell.NewStoryResourceCommand.Execute(null);
-
-        var item = shell.StoryWorkspace.Dialogues!.Items[0];
-        Assert.AreEqual("draft", item.Id);
-        Assert.IsTrue(item.IsDraft);
-        Assert.AreEqual("未保存", item.DraftBadge);
-        Assert.AreSame(item, shell.SelectedStoryResource);
-        Assert.IsNotNull(shell.CurrentDialogue);
-        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "dialogues", "draft.json")));
-        Assert.DoesNotContain("draft", project.Session.Stories.LoadStory("intro").OwnedResources.Dialogues);
-        Assert.AreEqual(0, dialogs.CreationModeCalls);
+        using var f = new Fixture(kind);
+        var item = f.Create();
+        var saved = f.Repository.Load(item.Id);
+        Assert.AreEqual(kind, saved.ResourceKind);
+        Assert.AreEqual("Created", saved.DisplayName);
+        StringAssert.StartsWith(item.Id, Fixture.Owner + "~");
+        Assert.AreNotEqual("ignored_identity", item.Id);
+        Assert.HasCount(1, saved.Graph!.Nodes);
+        Assert.AreEqual(kind == GraphResourceKind.Session ? "start" : "objective", saved.Graph.Nodes.Single().Type);
+        Assert.AreEqual(item.Id, f.Workspace.SelectedTreeItem?.Id);
+        Assert.IsFalse(item.Editor.IsDirty);
+        Assert.IsEmpty(f.Shell.Actors);
+        Assert.AreEqual(1, f.Dialogs.CreateCalls);
     }
 
     [TestMethod]
-    public void DialogueIdentityCancelNeverOpensCreationMode()
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void CancelCreationPreservesMembershipAndFiles(GraphResourceKind kind)
     {
-        using var project = CreateProject();
-        var dialogs = new GateEDialogs { CreateResult = null, CreationMode = ResourceCreationMode.ImportAsNew };
-        var shell = OpenDialogues(project, dialogs);
-
-        shell.NewStoryResourceCommand.Execute(null);
-
-        Assert.IsNull(shell.CurrentDialogue);
-        Assert.AreEqual(0, dialogs.CreationModeCalls);
-        Assert.IsEmpty(shell.StoryWorkspace.Dialogues!.Items);
+        using var f = new Fixture(kind);
+        f.Dialogs.CreateResult = null;
+        var before = File.ReadAllBytes(f.Store.Memberships.GetPath(Fixture.Owner));
+        Assert.IsTrue(f.Workspace.RequestCreate(f.Folder));
+        Assert.IsEmpty(f.Items);
+        Assert.IsEmpty(f.Repository.List());
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(f.Store.Memberships.GetPath(Fixture.Owner)));
     }
 
     [TestMethod]
-    public void FirstLineAndChoiceCreationAreExplicitAndNamedEndRequiresAction()
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void EditUndoRedoSaveRetainsSelection(GraphResourceKind kind)
     {
-        using var project = CreateProject();
-        var shell = OpenDialogues(project, new GateEDialogs { CreateResult = new("draft", "Draft") });
-        shell.NewStoryResourceCommand.Execute(null);
-        var editor = shell.CurrentDialogue!;
-
-        Assert.IsTrue(editor.IsStarterEmptyState);
-        editor.AddFirstLineCommand.Execute(null);
-
-        var line = editor.Document.Nodes.Single(node => node.Type == "line");
-        Assert.AreEqual("line_1", line.Id);
-        Assert.AreEqual(string.Empty, line.Next);
-        Assert.HasCount(1, editor.Document.Nodes);
-        Assert.AreEqual("line_1", editor.Document.Entry);
-
-        using var namedEndProject = CreateProject();
-        var namedEndShell = OpenDialogues(namedEndProject, new GateEDialogs { CreateResult = new("draft", "Draft") });
-        namedEndShell.NewStoryResourceCommand.Execute(null);
-        var namedEndEditor = namedEndShell.CurrentDialogue!;
-        namedEndEditor.AddEndCommand.Execute(null);
-        Assert.IsFalse(namedEndEditor.IsStarterEmptyState);
-        Assert.IsTrue(namedEndEditor.SelectedNode!.IsEnd);
+        using var f = new Fixture(kind);
+        var item = f.Create();
+        f.Edit(item);
+        Assert.HasCount(1, f.Repository.Load(item.Id).Graph!.Nodes);
+        item.Editor.UndoCommand.Execute(null);
+        Assert.HasCount(1, item.Editor.Host.Graph.Nodes);
+        item.Editor.RedoCommand.Execute(null);
+        Assert.HasCount(2, item.Editor.Host.Graph.Nodes);
+        f.Shell.SaveCurrentResourceCommand.Execute(null);
+        Assert.IsFalse(item.Editor.IsDirty, f.Shell.StatusMessage);
+        Assert.AreSame(item.Editor, f.Workspace.ActiveEditor);
+        Assert.HasCount(2, f.Repository.Load(item.Id).Graph!.Nodes);
+        Assert.IsEmpty(f.Shell.Actors);
     }
 
     [TestMethod]
-    public void ChoiceCreationDoesNotCreateImplicitEndsAndLastNodeCanBeDeleted()
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void NavigationRetainsDetachedDraft(GraphResourceKind kind)
     {
-        using var project = CreateProject();
-        var shell = OpenDialogues(project, new GateEDialogs { CreateResult = new("draft", "Draft") });
-        shell.NewStoryResourceCommand.Execute(null);
-        var editor = shell.CurrentDialogue!;
-
-        editor.AddChoiceCommand.Execute(null);
-        Assert.HasCount(1, editor.Nodes);
-        Assert.IsTrue(editor.Nodes.Single().IsChoice);
-        Assert.IsTrue(editor.Nodes.Single().Choices.All(choice => string.IsNullOrEmpty(choice.Next)));
-        Assert.AreEqual(editor.Nodes.Single().Id, editor.Entry);
-
-        editor.DeleteNodeCommand.Execute(null);
-        Assert.IsEmpty(editor.Nodes);
-        Assert.AreEqual(string.Empty, editor.Entry);
-        Assert.IsNull(editor.SelectedNode);
-        Assert.IsFalse(editor.DeleteNodeCommand.CanExecute(null));
+        using var f = new Fixture(kind);
+        var first = f.Create();
+        var second = f.Create();
+        f.Edit(first);
+        Assert.IsTrue(f.Workspace.OpenGraphResource(second));
+        Assert.IsTrue(first.Editor.IsDirty);
+        f.Shell.ShowProjectHomeCommand.Execute(null);
+        f.Shell.OpenStory(f.Shell.ProjectHome.Stories.Single());
+        Assert.AreSame(f.Workspace, f.Shell.CanonicalStoryWorkspace);
+        Assert.IsTrue(f.Workspace.OpenGraphResource(first));
+        Assert.AreSame(first.Editor, f.Workspace.ActiveEditor);
+        Assert.HasCount(2, first.Editor.Host.Graph.Nodes);
+        Assert.HasCount(1, f.Repository.Load(first.Id).Graph!.Nodes);
     }
 
     [TestMethod]
-    public void ExplicitSavePromotesDraftAndKeepsSelection()
+    [DataRow(GraphResourceKind.Session, UnsavedChangesChoice.Save)]
+    [DataRow(GraphResourceKind.Session, UnsavedChangesChoice.Discard)]
+    [DataRow(GraphResourceKind.Session, UnsavedChangesChoice.Cancel)]
+    [DataRow(GraphResourceKind.Task, UnsavedChangesChoice.Save)]
+    [DataRow(GraphResourceKind.Task, UnsavedChangesChoice.Discard)]
+    [DataRow(GraphResourceKind.Task, UnsavedChangesChoice.Cancel)]
+    public void CloseChoicesRespectPersistedBaseline(GraphResourceKind kind, UnsavedChangesChoice choice)
     {
-        using var project = CreateProject(withActor: true);
-        var shell = OpenDialogues(project, new GateEDialogs { CreateResult = new("draft", "Draft") });
-        shell.NewStoryResourceCommand.Execute(null);
-        var editor = shell.CurrentDialogue!;
-        editor.AddFirstLineCommand.Execute(null);
-        editor.Nodes.Single(node => node.IsLine).Speaker = "hero";
-        shell.SaveCurrentResourceCommand.Execute(null);
-
-        var item = shell.SelectedStoryResource!;
-        Assert.IsFalse(item.IsDraft);
-        Assert.IsTrue(item.IsOwned);
-        Assert.IsNotNull(item.Descriptor);
-        Assert.AreEqual("draft", item.Id);
-        Assert.IsFalse(shell.CurrentDialogue!.Document.IsNewDraft);
-        Assert.IsTrue(File.Exists(Path.Combine(project.Root, "dialogues", "draft.json")));
-        Assert.Contains("draft", project.Session.Stories.LoadStory("intro").OwnedResources.Dialogues);
-    }
-
-    [TestMethod]
-    public void SwitchingWithSavePromotesWithoutStaleSelection()
-    {
-        using var project = CreateProject(withActor: true);
-        project.Service.CreateDialogueInStory("intro", "other", "Other");
-        var dialogs = new GateEDialogs { CreateResult = new("draft", "Draft"), CloseChoice = UnsavedChangesChoice.Save };
-        var shell = OpenDialogues(project, dialogs);
-        shell.NewStoryResourceCommand.Execute(null);
-        shell.CurrentDialogue!.AddFirstLineCommand.Execute(null);
-        shell.CurrentDialogue.Nodes.Single(node => node.IsLine).Speaker = "hero";
-        var target = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "other");
-
-        shell.SelectedStoryResource = target;
-
-        Assert.AreSame(target, shell.SelectedStoryResource);
-        Assert.AreSame(target, shell.StoryWorkspace.Dialogues.SelectedItem);
-        Assert.AreEqual("other", shell.CurrentDialogue?.Id);
-        Assert.IsFalse(shell.StoryWorkspace.Dialogues.Items.Any(item => item.IsDraft));
-    }
-
-    [TestMethod]
-    public void SwitchingWithDiscardRemovesDraftWithoutDiskState()
-    {
-        using var project = CreateProject();
-        project.Service.CreateDialogueInStory("intro", "other", "Other");
-        var dialogs = new GateEDialogs { CreateResult = new("draft", "Draft"), CloseChoice = UnsavedChangesChoice.Discard };
-        var shell = OpenDialogues(project, dialogs);
-        shell.NewStoryResourceCommand.Execute(null);
-        var target = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "other");
-        shell.SelectedStoryResource = target;
-
-        Assert.AreEqual("other", shell.SelectedStoryResource?.Id);
-        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "dialogues", "draft.json")));
-        Assert.DoesNotContain("draft", project.Session.Stories.LoadStory("intro").OwnedResources.Dialogues);
-        Assert.IsFalse(shell.StoryWorkspace.Dialogues.Items.Any(item => item.Id == "draft"));
-    }
-
-    [TestMethod]
-    public void SwitchingWithCancelBlocksNavigation()
-    {
-        using var project = CreateProject();
-        project.Service.CreateDialogueInStory("intro", "other", "Other");
-        var dialogs = new GateEDialogs { CreateResult = new("draft", "Draft"), CloseChoice = UnsavedChangesChoice.Cancel };
-        var shell = OpenDialogues(project, dialogs);
-        shell.NewStoryResourceCommand.Execute(null);
-        var draft = shell.SelectedStoryResource;
-        shell.SelectedStoryResource = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "other");
-
-        Assert.AreSame(draft, shell.SelectedStoryResource);
-        Assert.AreEqual("draft", shell.CurrentDialogue?.Id);
-    }
-
-    [TestMethod]
-    public void TryCloseSupportsSaveDiscardAndCancel()
-    {
-        using var saveProject = CreateProject();
-        var saveDialogs = new GateEDialogs { CreateResult = new("save", "Save"), CloseChoice = UnsavedChangesChoice.Save };
-        var saveShell = OpenDialogues(saveProject, saveDialogs);
-        saveShell.NewStoryResourceCommand.Execute(null);
-        saveShell.CurrentDialogue!.AddEndCommand.Execute(null);
-        Assert.IsTrue(saveShell.TryClose());
-        Assert.IsTrue(File.Exists(Path.Combine(saveProject.Root, "dialogues", "save.json")));
-
-        using var discardProject = CreateProject();
-        var discardDialogs = new GateEDialogs { CreateResult = new("discard", "Discard"), CloseChoice = UnsavedChangesChoice.Discard };
-        var discardShell = OpenDialogues(discardProject, discardDialogs);
-        discardShell.NewStoryResourceCommand.Execute(null);
-        Assert.IsTrue(discardShell.TryClose());
-        Assert.IsFalse(File.Exists(Path.Combine(discardProject.Root, "dialogues", "discard.json")));
-
-        using var cancelProject = CreateProject();
-        var cancelDialogs = new GateEDialogs { CreateResult = new("cancel", "Cancel"), CloseChoice = UnsavedChangesChoice.Cancel };
-        var cancelShell = OpenDialogues(cancelProject, cancelDialogs);
-        cancelShell.NewStoryResourceCommand.Execute(null);
-        Assert.IsFalse(cancelShell.TryClose());
-        Assert.AreEqual("cancel", cancelShell.CurrentDialogue?.Id);
-    }
-
-    [TestMethod]
-    public void SaveFailureRetainsSelectedEditableDraft()
-    {
-        using var project = CreateProject();
-        var dialogs = new GateEDialogs { CreateResult = new("draft", "Draft"), CloseChoice = UnsavedChangesChoice.Save };
-        var shell = OpenDialogues(project, dialogs);
-        shell.NewStoryResourceCommand.Execute(null);
-        var editor = shell.CurrentDialogue!;
-        editor.Entry = "missing";
-        var selected = shell.SelectedStoryResource;
-
-        Assert.IsFalse(shell.TryClose());
-        Assert.AreSame(selected, shell.SelectedStoryResource);
-        Assert.AreSame(editor, shell.CurrentDialogue);
-        Assert.IsTrue(shell.SelectedStoryResource!.IsDraft);
-        Assert.IsTrue(editor.IsDirty);
-        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "dialogues", "draft.json")));
-    }
-
-    private static TestProject CreateProject(bool withActor = false)
-    {
-        var root = Path.Combine(AppContext.BaseDirectory, ".gate-e-test-data", Guid.NewGuid().ToString("N"));
-        var service = new ProjectService();
-        var session = service.CreateProject(root, "gate_e", "Gate E");
-        session.Stories.CreateStory("intro", "Intro");
-        if (withActor) service.CreateActorInStory("intro", "hero", "Hero");
-        return new TestProject(root, service, session);
-    }
-
-    private static ShellViewModel OpenDialogues(TestProject project, GateEDialogs dialogs)
-    {
-        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root),
-            projectWorkspaceDialogs: dialogs, resourceWorkspaceDialogs: dialogs);
-        shell.OpenProjectCommand.Execute(null);
-        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single();
-        shell.OpenSelectedStoryCommand.Execute(null);
-        shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Dialogues);
-        return shell;
-    }
-
-    private sealed record TestProject(string Root, ProjectService Service, ProjectSession Session) : IDisposable
-    {
-        public void Dispose()
+        using var f = new Fixture(kind);
+        var item = f.Create();
+        f.Edit(item);
+        f.Dialogs.CloseChoice = choice;
+        Assert.AreEqual(choice != UnsavedChangesChoice.Cancel, f.Shell.TryClose());
+        Assert.AreEqual(1, f.Dialogs.CloseCalls);
+        Assert.HasCount(choice == UnsavedChangesChoice.Save ? 2 : 1, f.Repository.Load(item.Id).Graph!.Nodes);
+        if (choice == UnsavedChangesChoice.Cancel)
         {
-            if (Directory.Exists(Root)) Directory.Delete(Root, true);
+            Assert.AreSame(item.Editor, f.Workspace.ActiveEditor);
+            Assert.IsTrue(item.Editor.IsDirty);
         }
     }
 
-    private sealed class FixedFolderPicker(string root) : IProjectFolderPicker
+    [TestMethod]
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void FailedSaveRetainsExactEditableDraftAndRetrySucceeds(GraphResourceKind kind)
     {
-        public string? PickProjectFolder() => root;
+        using var f = new Fixture(kind);
+        var item = f.Create();
+        f.Edit(item);
+        f.Dialogs.CloseChoice = UnsavedChangesChoice.Save;
+        var path = f.Repository.GetPath(item.Id);
+        var before = File.ReadAllBytes(path);
+        using (var held = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+            Assert.IsFalse(f.Shell.TryClose());
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(path));
+        Assert.AreSame(item.Editor, f.Workspace.ActiveEditor);
+        Assert.IsTrue(item.Editor.IsDirty);
+        Assert.HasCount(2, item.Editor.Host.Graph.Nodes);
+        Assert.IsTrue(f.Shell.TryClose(), f.Shell.StatusMessage);
+        Assert.HasCount(2, f.Repository.Load(item.Id).Graph!.Nodes);
     }
 
-    private sealed class GateEDialogs : IResourceWorkspaceDialogs, IProjectWorkspaceDialogs
+    [TestMethod]
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void DeleteRemovesOwnedFileAndMembership(GraphResourceKind kind)
     {
-        public ResourceIdentityRequest? CreateResult { get; init; }
-        public ResourceCreationMode? CreationMode { get; init; }
-        public UnsavedChangesChoice CloseChoice { get; init; } = UnsavedChangesChoice.Cancel;
-        public int CreationModeCalls { get; private set; }
-        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName)
+        using var f = new Fixture(kind);
+        var item = f.Create();
+        Assert.IsTrue(f.Workspace.RequestDelete(item));
+        Assert.IsFalse(File.Exists(f.Repository.GetPath(item.Id)));
+        Assert.IsEmpty(f.Items);
+        var owned = f.Store.Memberships.Load(Fixture.Owner).OwnedResources;
+        Assert.IsEmpty(kind == GraphResourceKind.Session ? owned.Sessions : owned.Tasks);
+    }
+
+    private sealed class Fixture : IDisposable
+    {
+        public const string Owner = "ST-2345-6789-ABCD-EFGH";
+        public string Root { get; } = Path.Combine(AppContext.BaseDirectory, ".current-gate-ef", Guid.NewGuid().ToString("N"));
+        public CanonicalProjectGraphStore Store { get; }
+        public GraphResourceRepository Repository { get; }
+        public ShellViewModel Shell { get; }
+        public CanonicalStoryWorkspaceViewModel Workspace { get; }
+        public Dialogs Dialogs { get; } = new();
+        public CanonicalStoryFolderKind Folder { get; }
+        public GraphScope Scope { get; }
+        public IEnumerable<CanonicalStoryGraphItem> Items => Workspace.SessionItems.Concat(Workspace.TaskItems);
+        public Fixture(GraphResourceKind kind)
         {
-            CreationModeCalls++;
-            return CreationMode;
+            new ProjectService().CreateProject(Root, "current_gate", "Current Gate");
+            Store = new(Root);
+            new CanonicalStoryLifecycleService(Store).Create(Owner, "Owner");
+            Repository = kind == GraphResourceKind.Session ? Store.Sessions : Store.Tasks;
+            Folder = kind == GraphResourceKind.Session ? CanonicalStoryFolderKind.Sessions : CanonicalStoryFolderKind.Tasks;
+            Scope = kind == GraphResourceKind.Session ? GraphScope.Session : GraphScope.Task;
+            Shell = new(new ProjectService(), new Picker(Root), projectWorkspaceDialogs: Dialogs, canonicalStoryResourceDialogs: Dialogs);
+            Shell.OpenProjectCommand.Execute(null);
+            Shell.OpenStory(Shell.ProjectHome.Stories.Single());
+            Workspace = Shell.CanonicalStoryWorkspace!;
         }
-        public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) => CreateResult;
-        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
-        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
-        public bool ConfirmDelete(ResourceDescriptor resource) => false;
-        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
-        public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
-        public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
-        public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => CloseChoice;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() => CloseChoice;
+        public CanonicalStoryGraphItem Create()
+        {
+            var previous = Items.Select(item => item.Id).ToHashSet();
+            Assert.IsTrue(Workspace.RequestCreate(Folder));
+            return Items.Single(item => !previous.Contains(item.Id));
+        }
+        public void Edit(CanonicalStoryGraphItem item)
+        {
+            Assert.IsTrue(Workspace.OpenGraphResource(item));
+            var node = GraphNodeFactory.Create(Scope, "logic_output", "extra");
+            node.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("extra");
+            node.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Extra");
+            Assert.IsTrue(item.Editor.Host.AddNode(node));
+            Assert.IsTrue(item.Editor.IsDirty);
+        }
+        public void Dispose() { if (Directory.Exists(Root)) Directory.Delete(Root, true); }
+    }
+    private sealed class Picker(string root) : IProjectFolderPicker { public string? PickProjectFolder() => root; }
+    private sealed class Dialogs : ICanonicalStoryResourceDialogs, IProjectWorkspaceDialogs
+    {
+        public CanonicalGraphResourceIdentityRequest? CreateResult { get; set; } = new("ignored_identity", "Created");
+        public UnsavedChangesChoice CloseChoice { get; set; } = UnsavedChangesChoice.Cancel;
+        public int CreateCalls { get; private set; }
+        public int CloseCalls { get; private set; }
+        public CanonicalGraphResourceIdentityRequest? RequestCreate(GraphResourceKind kind, string suggestedId) { CreateCalls++; return CreateResult; }
+        public CanonicalGraphResourceChoice? PickReference(GraphResourceKind kind, IReadOnlyList<GraphResourceInfo> candidates, string storyDisplayName) => null;
+        public bool ConfirmRemoveReference(CanonicalGraphResourceChoice resource, string storyDisplayName) => true;
+        public bool ConfirmDeleteOwned(CanonicalGraphResourceChoice resource) => true;
+        public bool ConfirmAggregateInterfaceRemoval(CanonicalGraphResourceChoice resource, IReadOnlyList<GraphConnection> affectedConnections) => true;
+        public void ShowDeleteBlocked(CanonicalGraphResourceChoice resource, IReadOnlyList<string> storyIds) { }
         public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() { CloseCalls++; return CloseChoice; }
         public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 }

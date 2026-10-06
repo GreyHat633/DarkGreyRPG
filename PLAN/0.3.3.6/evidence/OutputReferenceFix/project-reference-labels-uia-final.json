@@ -1,0 +1,14 @@
+{
+  "ResourceNames": [
+    "外部群 [角色组]",
+    "外部老板 [角色]",
+    "外部铜币 [物品]",
+    "外部剑 [物品组]",
+    "外部会话 [会话]",
+    "外部任务 [任务]"
+  ],
+  "SixKindsVisible": true,
+  "NoResourceUid": true,
+  "TooltipScreenshot": "project-reference-tooltip-final.png",
+  "TooltipTextVerifiedByAgent": "外部群 [角色组]"
+}

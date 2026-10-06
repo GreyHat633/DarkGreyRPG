@@ -1,11 +1,36 @@
 ---
 name: studio-node-ui
-description: Design or change DarkGrey RPG Studio UI text hierarchy, node property editors, Inspector layouts and expand/collapse interactions, including helper text, input placeholders and repeated multi-field module cards.
+description: Design or change DarkGrey RPG Studio directory trees, UI text hierarchy, node property editors, Inspector layouts and expand/collapse interactions, including helper text, input placeholders and repeated multi-field module cards. Also apply the preferred animated reorder feedback when designing user-facing list drag sorting in DGR.
 ---
 
 # Studio 节点属性 UI
 
 修改 Studio 节点内编辑区或 Inspector 时，先判断内容结构，再选择分组方式。
+
+## 目录树标准（用户认可的项目故事树样式）
+
+用户于 2026-10-05 明确认可项目故事树，要求以后的所有目录结构优先沿用同一风格；Story 内部左侧资源库也使用该风格。修改或新增 Studio 目录、分类导航和资源库时，默认采用以下规范，不再用外框卡片包裹目录组。
+
+- 用三角展开标记、主题色线框文件夹图标区分分类；分类标题为 **16 DIP、SemiBold、次级文字色**。叶子使用线框文档图标、**14 DIP、正常字重**。用户本轮进一步要求放大侧栏文字，文件夹标题必须大于内部文件名称；不能沿用之前过小的 12／13 DIP 标题和名称。
+- 子项缩进 **20 DIP**，左侧保留细竖向层级导线；顶层独立项不显示成员导线。目录标题、成员与独立项要能一眼分辨，不使用每组一张边框卡片。辅助文字为 **12 DIP**，颜色弱于名称；资源只显示名称与六类中文标签，不显示内部 UID。
+- 同级文件夹与独立文件的图标和名称起点必须分别对齐；文件行预留文件夹展开箭头所占的空间。组内文件再向右缩进一级，不能把独立故事放得比故事组标题更靠左，也不能让组内故事与组标题看起来处于同一级。
+- 普通行透明、悬停使用主题浅底；选中行使用主题高亮与左侧 **3 DIP** 标记。文字及图标跟随选中前景色，在深浅主题都保持可读。长名称省略并用工具提示显示完整名称。
+- 整个目录标题行均可展开／收起，沿用 **220 ms** 高度折叠动画，初始状态直接同步。项目故事组折叠保留选中故事和 Inspector；资源分类标题沿用既有分类选择语义，继续指定新建／引用操作所属类别。右键菜单和拖动手柄独立处理，保持已有选中、双击打开、拖放、排序和只读规则。
+- 优先复用 `studio/src/DarkGreyRPG.Studio/Views/DirectoryTreeStyles.xaml` 的文件夹／文档几何、目录标题、折叠和行样式；资源叶子使用 `DirectoryTreeRowButton`。项目与 Story 资源库共享这些资源，避免新页面各自硬编码一套近似样式。
+- 验证深浅主题、窄栏、同名与长名称、六类资源标签、空分类、整行折叠、选中与双击，以及原有资源拖入参数框的行为。此规范只约束目录树，不替代下方节点多模块属性卡片规则。
+
+## 拖动换位标准：相邻项让位式拖动排序（Animated Reorder）
+
+用户于 2026-10-05 明确认可当前输出端口的换位效果。后续 DGR 用户／玩家可见列表涉及拖动换位时，**优先使用相邻项让位、等高空位和单个拖动预览**，包括 Studio 节点内、Inspector、项目列表及玩家界面的列表；用户另有指定或交互结构不适合时再调整。这是列表排序偏好，不套用于画布节点自由移动或资源拖入选择框。
+
+- 拖起条目后隐藏原行，仅显示一个跟随鼠标、带条目名称的行预览；相邻条目平滑让位，目标位置留出与拖起条目等高的空位。空位使用主题色浅底和清晰轮廓，列表总高度保持稳定。不要退回只有一根插入线、上下箭头或重叠的“移到某项之前／之后”提示框。
+- 让位动画参考当前 **120 ms、CubicEase / EaseInOut**；尊重系统动画设置。使用拖动前的行位置计算落点，不能让动画中的位置反过来改变命中结果；松开后的真实顺序必须与预览一致。只有顺序具有优先级语义时才在预览附加位置数字，例如 Task Flow 的“优先级 N”。
+- 在有拖动手柄的列表中，手柄及其子元素独占排序手势；嵌入节点的列表不得把该手势交给画布移动。拖动期间只改变临时显示，不提交数据；有效落下提交一次排序 Undo，原位落下不提交。Esc、离开列表、视图切换、窗口失活或意外失去捕获取消并还原预览。
+- 保留稳定条目／端口 ID、名称、已有连线与只读限制。排序只改变该列表允许的顺序；不同类别不能互拖，引用资源仍须先导入才能修改。新增交互不因采用此效果而改变原有运行语义。
+- 优先复用 `studio/src/DarkGreyRPG.Studio/Views/Graph/OutputReorderPreview.cs` 的预览和 `EntryReorder.cs` 的手势／提交规则。当前让位预览接在 `PublicOutputRow` 路径，扩展其他条目时需接入相同预览机制，不能仅绑定现有排序行为就假定有此效果；玩家界面使用自身 UI 技术实现相同反馈。
+- 验证实际拖起、首尾和相邻落点、取消、原位放下及 Undo/Redo；同时检查深浅主题、窄列表、缩放、列表高度和预览与最终顺序一致，节点内排序不得改变节点坐标。
+
+术语与参考：[Unity ListView 的 Animated reorder](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/UIElements.BaseListView-reorderMode.html)。用户认可的本地实现及验收见 `PLAN/0.3.3.6/OutputReferenceFixAcceptance.md`；本次认可仅指排序效果，不等于整个版本验收。
 
 ## Windows 实机操作工具（用户明确要求）
 

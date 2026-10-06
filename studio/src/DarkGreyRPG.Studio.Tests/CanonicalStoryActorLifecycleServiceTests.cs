@@ -14,13 +14,13 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "story");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
 
-        var actor = new CanonicalStoryActorLifecycleService(store).CreateOwned("story", "hero", "Hero");
+        var actor = new CanonicalStoryActorLifecycleService(store).CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
 
-        Assert.AreEqual("story", actor.HomeStoryId);
-        Assert.AreEqual("story", ActorSerializer.Deserialize(File.ReadAllText(project.ActorPath("hero"))).HomeStoryId);
-        CollectionAssert.AreEqual(new[] { "hero" }, store.Memberships.Load("story").OwnedResources.Actors);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", actor.HomeStoryId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", ActorSerializer.Deserialize(File.ReadAllText(new ActorRepository(project.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~hero"))).HomeStoryId);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~actor~hero" }, store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Actors);
     }
 
     [TestMethod]
@@ -28,21 +28,21 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "owner");
-        CreateCanonicalStory(store, "other");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
+        CreateCanonicalStory(store, "ST-JKLM-NPQR-STUV-WXYZ");
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("owner", "before", "Before");
-        service.CreateOwned("owner", "shared", "Shared");
-        service.CreateOwned("owner", "after", "After");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~before", "Before");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~shared", "Shared");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~after", "After");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "other", referencedResources: new CanonicalStoryMembershipSet { Actors = ["before", "after"] }));
+            "ST-JKLM-NPQR-STUV-WXYZ", referencedResources: new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~before", "ST-2345-6789-ABCD-EFGH~actor~after"] }));
 
-        service.AddReference("other", "shared");
-        CollectionAssert.AreEqual(new[] { "before", "after", "shared" },
-            store.Memberships.Load("other").ReferencedResources.Actors);
-        service.RemoveReference("other", "before");
-        CollectionAssert.AreEqual(new[] { "after", "shared" },
-            store.Memberships.Load("other").ReferencedResources.Actors);
+        service.AddReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~actor~shared");
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~actor~before", "ST-2345-6789-ABCD-EFGH~actor~after", "ST-2345-6789-ABCD-EFGH~actor~shared" },
+            store.Memberships.Load("ST-JKLM-NPQR-STUV-WXYZ").ReferencedResources.Actors);
+        service.RemoveReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~actor~before");
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~actor~after", "ST-2345-6789-ABCD-EFGH~actor~shared" },
+            store.Memberships.Load("ST-JKLM-NPQR-STUV-WXYZ").ReferencedResources.Actors);
     }
 
     [TestMethod]
@@ -50,14 +50,14 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "story");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "story", referencedResources: new CanonicalStoryMembershipSet { Actors = ["missing"] }));
+            "ST-2345-6789-ABCD-EFGH", referencedResources: new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~missing"] }));
 
-        new CanonicalStoryActorLifecycleService(store).RemoveReference("story", "missing");
+        new CanonicalStoryActorLifecycleService(store).RemoveReference("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~missing");
 
-        Assert.IsEmpty(store.Memberships.Load("story").ReferencedResources.Actors);
-        Assert.IsFalse(File.Exists(project.ActorPath("missing")));
+        Assert.IsEmpty(store.Memberships.Load("ST-2345-6789-ABCD-EFGH").ReferencedResources.Actors);
+        Assert.IsFalse(File.Exists(new ActorRepository(project.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~missing")));
     }
 
     [TestMethod]
@@ -65,21 +65,23 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "owner");
-        CreateCanonicalStory(store, "reference");
-        CreateCanonicalStory(store, "duplicate");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
+        CreateCanonicalStory(store, "ST-JKLM-NPQR-STUV-WXYZ");
+        CreateCanonicalStory(store, "ST-3456-789A-BCDE-FGHJ");
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("owner", "hero", "Hero");
-        service.AddReference("reference", "hero");
-        store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "duplicate", ownedResources: new CanonicalStoryMembershipSet { Actors = ["hero"] }));
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
+        service.AddReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~actor~hero");
+        Assert.ThrowsExactly<CanonicalStoryMembershipRepositoryException>(() =>
+            store.Memberships.Replace(new CanonicalStoryMembershipManifest(
+                "ST-3456-789A-BCDE-FGHJ", ownedResources: new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~hero"] })));
+        Assert.IsEmpty(store.Memberships.Load("ST-3456-789A-BCDE-FGHJ").OwnedResources.Actors);
 
-        var plan = service.GetDeletionPlan("owner", "hero");
+        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
 
         Assert.IsFalse(plan.CanDelete);
-        Assert.HasCount(2, plan.CanonicalBlockers);
-        Assert.IsTrue(plan.CanonicalBlockers.Any(item => item.IsReferenced && item.StoryId == "reference"));
-        Assert.IsTrue(plan.CanonicalBlockers.Any(item => item.IsOwned && item.StoryId == "duplicate"));
+        Assert.HasCount(1, plan.CanonicalBlockers);
+        Assert.IsTrue(plan.CanonicalBlockers.Any(item => item.IsReferenced && item.StoryId == "ST-JKLM-NPQR-STUV-WXYZ"));
+        Assert.IsFalse(plan.CanonicalBlockers.Any(item => item.IsOwned));
     }
 
     [TestMethod]
@@ -87,19 +89,19 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "owner");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("owner", "hero", "Hero");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
         var stories = new StoryRepository(project.Root);
-        stories.SaveStory(LegacyStory("legacy_reference", referenced: true));
-        stories.SaveStory(LegacyStory("legacy_owner", owned: true));
+        stories.SaveStory(LegacyStory("ST-4567-89AB-CDEF-GHJK", referenced: true));
+        stories.SaveStory(LegacyStory("ST-5678-9ABC-DEFG-HJKL", owned: true));
 
-        var plan = service.GetDeletionPlan("owner", "hero");
+        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
 
         Assert.IsFalse(plan.CanDelete);
         Assert.HasCount(2, plan.LegacyBlockers);
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsReferenced && item.StoryId == "legacy_reference"));
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsOwned && item.StoryId == "legacy_owner"));
+        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsReferenced && item.StoryId == "ST-4567-89AB-CDEF-GHJK"));
+        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsOwned && item.StoryId == "ST-5678-9ABC-DEFG-HJKL"));
     }
 
     [TestMethod]
@@ -107,12 +109,12 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "owner");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("owner", "hero", "Hero");
-        new StoryRepository(project.Root).SaveStory(LegacyStory("owner", owned: true));
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
+        new StoryRepository(project.Root).SaveStory(LegacyStory("ST-2345-6789-ABCD-EFGH", owned: true));
 
-        var plan = service.GetDeletionPlan("owner", "hero");
+        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
 
         Assert.IsTrue(plan.CanDelete);
         Assert.IsEmpty(plan.LegacyBlockers);
@@ -123,19 +125,19 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "owner");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("owner", "hero", "Hero");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
         var stories = new StoryRepository(project.Root);
-        stories.SaveStory(LegacyStory("owner", referenced: true));
-        stories.SaveStory(LegacyStory("legacy_owner", owned: true));
+        stories.SaveStory(LegacyStory("ST-2345-6789-ABCD-EFGH", referenced: true));
+        stories.SaveStory(LegacyStory("ST-5678-9ABC-DEFG-HJKL", owned: true));
 
-        var plan = service.GetDeletionPlan("owner", "hero");
+        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
 
         Assert.IsFalse(plan.CanDelete);
         Assert.HasCount(2, plan.LegacyBlockers);
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsReferenced && item.StoryId == "owner"));
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsOwned && item.StoryId == "legacy_owner"));
+        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsReferenced && item.StoryId == "ST-2345-6789-ABCD-EFGH"));
+        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsOwned && item.StoryId == "ST-5678-9ABC-DEFG-HJKL"));
     }
 
     [TestMethod]
@@ -143,14 +145,14 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "owner");
+        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("owner", "hero", "Hero");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
 
-        service.DeleteOwned("owner", "hero");
+        service.DeleteOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
 
-        Assert.IsFalse(File.Exists(project.ActorPath("hero")));
-        Assert.IsEmpty(store.Memberships.Load("owner").OwnedResources.Actors);
+        Assert.IsFalse(File.Exists(new ActorRepository(project.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~hero")));
+        Assert.IsEmpty(store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Actors);
     }
 
     [TestMethod]
@@ -158,15 +160,15 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var normal = NewStore(project.Root);
-        CreateCanonicalStory(normal, "story");
+        CreateCanonicalStory(normal, "ST-2345-6789-ABCD-EFGH");
         var failing = new CanonicalProjectGraphStore(project.Root, new FailOnWrite(1));
 
         var exception = Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(
-            () => new CanonicalStoryActorLifecycleService(failing).CreateOwned("story", "hero", "Hero"));
+            () => new CanonicalStoryActorLifecycleService(failing).CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero"));
 
         Assert.AreEqual("story.actor.lifecycle.membership_replace_failed", exception.Code);
-        Assert.IsFalse(File.Exists(project.ActorPath("hero")));
-        Assert.IsEmpty(failing.Memberships.Load("story").OwnedResources.Actors);
+        Assert.IsFalse(File.Exists(new ActorRepository(project.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~hero")));
+        Assert.IsEmpty(failing.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Actors);
     }
 
     [TestMethod]
@@ -174,19 +176,19 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     {
         using var project = NewProject();
         var normal = NewStore(project.Root);
-        CreateCanonicalStory(normal, "story");
+        CreateCanonicalStory(normal, "ST-2345-6789-ABCD-EFGH");
         var normalService = new CanonicalStoryActorLifecycleService(normal);
-        normalService.CreateOwned("story", "hero", "Hero");
-        var actorBytes = File.ReadAllBytes(project.ActorPath("hero"));
-        var membershipBytes = File.ReadAllBytes(normal.Memberships.GetPath("story"));
+        normalService.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
+        var actorBytes = File.ReadAllBytes(new ActorRepository(project.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~hero"));
+        var membershipBytes = File.ReadAllBytes(normal.Memberships.GetPath("ST-2345-6789-ABCD-EFGH"));
         var failing = new CanonicalProjectGraphStore(project.Root, new FailOnWrite(1));
 
         var exception = Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(
-            () => new CanonicalStoryActorLifecycleService(failing).DeleteOwned("story", "hero"));
+            () => new CanonicalStoryActorLifecycleService(failing).DeleteOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero"));
 
         Assert.AreEqual("story.actor.lifecycle.membership_replace_failed", exception.Code);
-        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(project.ActorPath("hero")));
-        CollectionAssert.AreEqual(membershipBytes, File.ReadAllBytes(failing.Memberships.GetPath("story")));
+        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(new ActorRepository(project.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~hero")));
+        CollectionAssert.AreEqual(membershipBytes, File.ReadAllBytes(failing.Memberships.GetPath("ST-2345-6789-ABCD-EFGH")));
     }
 
     private static TestProjectDirectory NewProject() => new(createProjectFile: false);
@@ -209,8 +211,8 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
             Title = id,
             Entry = "end",
             Nodes = [new StoryNodeResource { Id = "end", Type = "END" }],
-            OwnedResources = new StoryMembership { Actors = owned ? ["hero"] : [] },
-            ReferencedResources = new StoryMembership { Actors = referenced ? ["hero"] : [] },
+            OwnedResources = new StoryMembership { Actors = owned ? ["ST-2345-6789-ABCD-EFGH~actor~hero"] : [] },
+            ReferencedResources = new StoryMembership { Actors = referenced ? ["ST-2345-6789-ABCD-EFGH~actor~hero"] : [] },
         };
 
     private sealed class FailOnWrite(int failureNumber) : IAtomicFileWriter

@@ -1,0 +1,12 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-runtime\\ReformServer\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    "Sha256": "b41b414285f9e28d96ebddd64825ddc4690220b53648d69711ac4bb5ee1a5798",
+    "Size": 1953317
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-runtime\\Client2\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    "Sha256": "b41b414285f9e28d96ebddd64825ddc4690220b53648d69711ac4bb5ee1a5798",
+    "Size": 1953317
+  }
+]

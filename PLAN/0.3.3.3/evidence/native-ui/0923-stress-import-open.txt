@@ -1,0 +1,90 @@
+WINDOW: 导入留声机 MP3（不超过 32 MiB / 15 分钟） 0,0,758,543
+ControlType.Text id=1091 name=查找范围(I): enabled=True rect=17,50,114,17
+ControlType.ComboBox id=1137 name=查找范围(I): enabled=True rect=141,46,348,26
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=469,47,19,24
+ControlType.ToolBar id=1088 name= enabled=True rect=505,46,160,28
+ControlType.Button id=Item 40971 name=转到访问的上一个文件夹 enabled=False rect=505,46,23,22
+ControlType.Button id=Item 40961 name=向上一级 enabled=True rect=528,46,23,22
+ControlType.Button id=Item 40962 name=创建新文件夹 enabled=True rect=551,46,23,22
+ControlType.Button id=Item 40970 name=“查看”菜单 enabled=True rect=574,46,36,22
+ControlType.ToolBar id=1184 name= enabled=True rect=17,76,118,450
+ControlType.Button id=Item 41060 name=最近使用的项目 enabled=True rect=17,76,118,73
+ControlType.Button id=Item 41061 name=桌面 enabled=True rect=17,149,118,73
+ControlType.Button id=Item 41062 name=文档 enabled=True rect=17,222,118,73
+ControlType.Button id=Item 41063 name=此电脑 enabled=True rect=17,295,118,73
+ControlType.DataGrid id=1 name=文件夹视图 enabled=True rect=141,82,600,353
+ControlType.Header id=Header name=Header enabled=True rect=141,82,600,24
+ControlType.SplitButton id=HeaderItem 0 name=名称 enabled=True rect=141,82,371,24
+ControlType.SplitButton id=HeaderItem 1 name=修改日期 enabled=True rect=528,82,185,24
+ControlType.SplitButton id=HeaderItem 2 name=类型 enabled=True rect=729,82,151,24
+ControlType.ScrollBar id=Horizontal ScrollBar name=Horizontal Scroll Bar enabled=True rect=141,414,600,21
+ControlType.Button id=SmallDecrement name=Back by small amount enabled=True rect=141,414,17,21
+ControlType.Button id=LargeDecrement name=Back by large amount enabled=True rect=158,414,4,21
+ControlType.Thumb id=Thumb name=Thumb enabled=True rect=162,414,390,21
+ControlType.Button id=LargeIncrement name=Forward by large amount enabled=True rect=552,414,172,21
+ControlType.Button id=SmallIncrement name=Forward by small amount enabled=True rect=724,414,17,21
+ControlType.DataItem id= name=AudioProject enabled=True rect=145,106,855,24
+ControlType.Edit id= name=AudioProject enabled=True rect=145,106,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎21:06 enabled=True rect=520,106,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,106,167,24
+ControlType.DataItem id= name=bundle enabled=True rect=145,130,855,24
+ControlType.Edit id= name=bundle enabled=True rect=145,130,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎22:53 enabled=True rect=520,130,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,130,167,24
+ControlType.DataItem id= name=ChoicesProject enabled=True rect=145,154,855,24
+ControlType.Edit id= name=ChoicesProject enabled=True rect=145,154,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎19:15 enabled=True rect=520,154,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,154,167,24
+ControlType.DataItem id= name=DraftStress enabled=True rect=145,178,855,24
+ControlType.Edit id= name=DraftStress enabled=True rect=145,178,375,24
+ControlType.Edit id= name=‎2026/‎9/‎23 ‏‎0:13 enabled=True rect=520,178,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,178,167,24
+ControlType.DataItem id= name=logs enabled=True rect=145,202,855,24
+ControlType.Edit id= name=logs enabled=True rect=145,202,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎21:07 enabled=True rect=520,202,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,202,167,24
+ControlType.DataItem id= name=NpcProject enabled=True rect=145,226,855,24
+ControlType.Edit id= name=NpcProject enabled=True rect=145,226,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎21:06 enabled=True rect=520,226,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,226,167,24
+ControlType.DataItem id= name=ProfileProject enabled=True rect=145,250,855,24
+ControlType.Edit id= name=ProfileProject enabled=True rect=145,250,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎21:06 enabled=True rect=520,250,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,250,167,24
+ControlType.DataItem id= name=Project enabled=True rect=145,274,855,24
+ControlType.Edit id= name=Project enabled=True rect=145,274,375,24
+ControlType.Edit id= name=‎2026/‎9/‎20 ‏‎16:40 enabled=True rect=520,274,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,274,167,24
+ControlType.DataItem id= name=RewardProject enabled=True rect=145,298,855,24
+ControlType.Edit id= name=RewardProject enabled=True rect=145,298,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎20:01 enabled=True rect=520,298,201,24
+ControlType.Edit id= name=文件夹 enabled=True rect=721,298,167,24
+ControlType.DataItem id= name=audio-tone440.mp3 enabled=True rect=145,322,855,24
+ControlType.Edit id= name=audio-tone440.mp3 enabled=True rect=145,322,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎21:36 enabled=True rect=520,322,201,24
+ControlType.Edit id= name=MP3 文件 enabled=True rect=721,322,167,24
+ControlType.DataItem id= name=audio-tone440-quiet.mp3 enabled=True rect=145,346,855,24
+ControlType.Edit id= name=audio-tone440-quiet.mp3 enabled=True rect=145,346,375,24
+ControlType.Edit id= name=‎2026/‎9/‎22 ‏‎21:49 enabled=True rect=520,346,201,24
+ControlType.Edit id= name=MP3 文件 enabled=True rect=721,346,167,24
+ControlType.Text id=1090 name=文件名(N): enabled=True rect=143,454,116,17
+ControlType.ComboBox id=1148 name=文件名(N): enabled=True rect=269,446,328,24
+ControlType.Edit id=1148 name=文件名(N): enabled=True rect=273,451,300,15
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=577,447,19,22
+ControlType.Text id=1089 name=文件类型(T): enabled=True rect=143,486,116,17
+ControlType.ComboBox id=1136 name=文件类型(T): enabled=True rect=269,482,328,23
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=577,483,19,21
+ControlType.Button id=1 name=打开(O) enabled=True rect=621,446,120,28
+ControlType.Button id=2 name=取消 enabled=True rect=621,480,120,28
+ControlType.Pane id= name= enabled=True rect=728,513,21,21
+ControlType.TitleBar id=TitleBar name=导入留声机 MP3（不超过 32 MiB / 15 分钟） enabled=True rect=9,9,740,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=9,9,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=9,9,27,27
+ControlType.Button id=Close name=Close enabled=True rect=707,1,43,36
+WINDOW: Minecraft 1.7.10 40,40,658,526
+ControlType.TitleBar id=TitleBar name=Minecraft 1.7.10 enabled=True rect=49,49,640,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=49,49,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=49,49,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=517,41,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=575,41,57,36
+ControlType.Button id=Close name=Close enabled=True rect=632,41,58,36

@@ -1,0 +1,391 @@
+{
+  "darkgrey_rpg_canonical_sessions.dat": {
+    "data": {
+      "schema_version": 7,
+      "identity_format": "story-uid-v1",
+      "terminal_routes": [
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791262779133\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        }
+      ],
+      "sessions": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "next_transport_id": 3,
+        "instances": [
+          {
+            "activation_logic": 0,
+            "session_resource_id": {
+              "local_id": "rdd7c4868b53c088abc13805f1c836331",
+              "kind": "session",
+              "story_uid": "ST-S2H3-3QDN-35HH-MVTP"
+            },
+            "story_id": "ST-S2H3-3QDN-35HH-MVTP",
+            "transport_id": 2,
+            "public_logic_outputs": [],
+            "executed_flow_judgment_node_ids": [],
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "aggregate_placement_id": "aggregate_56137404139a4c04891d26f6ef654659",
+            "presentation": "{\"revision\":0,\"music_revision\":0,\"media_ref\":null,\"loop\":false,\"fade_in\":0.0,\"fade_out\":0.0,\"volume\":1.0,\"layers\":[],\"screen_revision\":0,\"transition\":{\"type\":\"none\",\"direction\":\"left\",\"duration\":0.0}}",
+            "line_page_index": 0,
+            "selected_option_ids": [],
+            "waiting_condition": 0,
+            "external_logic_inputs": [],
+            "internal_logic_values": [],
+            "selected_choice_node_ids": [],
+            "line_epoch": 1,
+            "current_node_id": "node_af4bbe56bd404d11a11682689a4b37bc",
+            "status": "ACTIVE",
+            "latest_choice_selections": []
+          }
+        ]
+      },
+      "stories": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "instances": [
+          {
+            "story_id": "ST-8SHM-YRLG-FF2K-UV3S",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "40b90658f0824b85568126734f8099049335cba06396901e965d3e7ab82c5e7d",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-8SHM-YRLG-FF2K-UV3S",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_acb3ffec96fa45dabeac6b8defa88291",
+              "current_node_id": "node_051713838e634a7fb34114e8be6b5b05",
+              "repeat_policy": "repeatable",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "terminal_time": 1791262792930,
+            "activation_time": 1791262779133
+          },
+          {
+            "story_id": "ST-S2H3-3QDN-35HH-MVTP",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "f31c7f9196fc9eb967270325c81199d842ee3a9866a73884746494aa1b9956ff",
+              "wait_resource_id": {
+                "local_id": "rdd7c4868b53c088abc13805f1c836331",
+                "kind": "session",
+                "story_uid": "ST-S2H3-3QDN-35HH-MVTP"
+              },
+              "wait_kind": "SESSION",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-S2H3-3QDN-35HH-MVTP",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_63949bba12de46b795e9dc5bbca914e1",
+              "current_node_id": "aggregate_56137404139a4c04891d26f6ef654659",
+              "repeat_policy": "repeatable",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "terminal_time": 0,
+            "activation_time": 1791262792931
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [
+        {
+          "target_key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-S2H3-3QDN-35HH-MVTP\u00001791262792931",
+          "source_key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791262779133\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        }
+      ],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  },
+  "darkgrey_rpg_canonical_tasks.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "instances": [
+        {
+          "result_port_id": "dynamic_port_f836736dcb374ff89e0bb7aebb9a0994",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "ST-S2H3-3QDN-35HH-MVTP",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "c5bc49939ba8d7ae1c88bde6a6937e616ae6dcb82c3e9a6287ecdcd04383d3af",
+          "runtime_status": "SETTLED",
+          "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+          "settlement_time": 1791263076470,
+          "activation_time": 1791262792932,
+          "task_resource_id": {
+            "local_id": "r64f81607fb0ce134e00dc76e5f923557",
+            "kind": "task",
+            "story_uid": "ST-S2H3-3QDN-35HH-MVTP"
+          },
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "objective"
+            }
+          ],
+          "task_node_placement_id": "aggregate_c49ec74e7f7a449a99f59f94ab63fd5f",
+          "status": "SETTLED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_creator_inspect.dat": {
+    "data": {
+      "players": [
+        {
+          "most": -5635303547346666088,
+          "least": -9097848922010358255
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_nominator.dat": {
+    "data": {
+      "schema_version": 3,
+      "identity_format": "story-uid-v1",
+      "entities": [
+        {
+          "entity_uuid": "eafbab1f-65d8-45b1-9f1d-e72f502e10a7",
+          "story_id": "ST-S2H3-3QDN-35HH-MVTP",
+          "groups": [],
+          "individual_id": {
+            "local_id": "r24103d28ca482e251e892ecf5dae9e86",
+            "kind": "actor",
+            "story_uid": "ST-8SHM-YRLG-FF2K-UV3S"
+          }
+        }
+      ],
+      "type_groups": [],
+      "revision": 1
+    }
+  },
+  "darkgrey_rpg_npc_identities.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "bindings": [
+        {
+          "entity_uuid": "eafbab1f-65d8-45b1-9f1d-e72f502e10a7",
+          "entity_type": "Villager",
+          "npc_id": {
+            "local_id": "r24103d28ca482e251e892ecf5dae9e86",
+            "kind": "actor",
+            "story_uid": "ST-8SHM-YRLG-FF2K-UV3S"
+          },
+          "last_dimension": 0
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_player_names.dat": {
+    "data": {
+      "names": {
+        "dgrruntimeui": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11"
+      }
+    }
+  },
+  "darkgrey_rpg_story_completion_history.dat": {
+    "data": {
+      "schema_version": 1,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "terminal": 1791262792930,
+          "activation": 1791262779133,
+          "completed_count": 1,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-8SHM-YRLG-FF2K-UV3S",
+          "player": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+          "status": "TERMINATED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_story_package_generations.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "generations": [
+        {
+          "story_id": "ST-8SHM-YRLG-FF2K-UV3S",
+          "package_id": "ST-8SHM-YRLG-FF2K-UV3S",
+          "content_fingerprint": "7090c4eaab1048be57eea75c75e791c39c4d23a10a3b39da7e3800a986de1867"
+        },
+        {
+          "story_id": "ST-KD3A-X344-8D79-L772",
+          "package_id": "ST-KD3A-X344-8D79-L772",
+          "content_fingerprint": "2533d2118a7fc69e98d8295b2aba5c3e5cb78d1319785860adb347e334215fca"
+        },
+        {
+          "story_id": "ST-S2H3-3QDN-35HH-MVTP",
+          "package_id": "ST-S2H3-3QDN-35HH-MVTP",
+          "content_fingerprint": "8c677adda1ad9247b14abc7fdf6a0ad0340d21eeb172e857e3395d6f0eb6cf37"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_task_completion_history.dat": {
+    "data": {
+      "schema": 2,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "description": "",
+          "completion_count": 1,
+          "title": "继续下一段对话",
+          "settlement": 1791263076470,
+          "task_resource_id": {
+            "local_id": "r64f81607fb0ce134e00dc76e5f923557",
+            "kind": "task",
+            "story_uid": "ST-S2H3-3QDN-35HH-MVTP"
+          },
+          "result": "dynamic_port_f836736dcb374ff89e0bb7aebb9a0994",
+          "story_title": "故事组B",
+          "story_package": "ST-S2H3-3QDN-35HH-MVTP",
+          "objectives": [
+            {
+              "current": 1,
+              "text": "与测试员对话",
+              "type": "interact_actor",
+              "required": 1
+            }
+          ],
+          "id": "history:36:b1cb6147-e2e7-3d98-81bd-f29b9f66ee1122:ST-S2H3-3QDN-35HH-MVTP42:aggregate_c49ec74e7f7a449a99f59f94ab63fd5f61:ST-S2H3-3QDN-35HH-MVTP~task~r64f81607fb0ce134e00dc76e5f923557",
+          "player": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+          "story": "ST-S2H3-3QDN-35HH-MVTP",
+          "status": "SETTLED",
+          "group": "36:b1cb6147-e2e7-3d98-81bd-f29b9f66ee1122:ST-S2H3-3QDN-35HH-MVTP42:aggregate_c49ec74e7f7a449a99f59f94ab63fd5f61:ST-S2H3-3QDN-35HH-MVTP~task~r64f81607fb0ce134e00dc76e5f923557"
+        }
+      ],
+      "observed": [
+        {
+          "identity": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-S2H3-3QDN-35HH-MVTP\u0000aggregate_c49ec74e7f7a449a99f59f94ab63fd5f",
+          "activation": 1791262792932
+        }
+      ]
+    }
+  },
+  "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11.dat": {
+    "Spawns": [],
+    "ForgeData": {
+      "SkinOverlayData": []
+    },
+    "SleepTimer": 0,
+    "Attributes": [
+      {
+        "Base": 20.0,
+        "Name": "generic.maxHealth"
+      },
+      {
+        "Base": 0.0,
+        "Name": "generic.knockbackResistance"
+      },
+      {
+        "Base": 0.10000000149011612,
+        "Name": "generic.movementSpeed"
+      },
+      {
+        "Base": 1.0,
+        "Name": "generic.attackDamage"
+      }
+    ],
+    "Invulnerable": 0,
+    "PortalCooldown": 0,
+    "AbsorptionAmount": 0.0,
+    "abilities": {
+      "invulnerable": 1,
+      "mayfly": 1,
+      "instabuild": 1,
+      "walkSpeed": 0.10000000149011612,
+      "mayBuild": 1,
+      "flying": 0,
+      "flySpeed": 0.05000000074505806
+    },
+    "FallDistance": 0.0,
+    "DeathTime": 0,
+    "HealF": 20.0,
+    "XpTotal": 0,
+    "playerGameType": 1,
+    "Motion": [
+      0.0,
+      -0.0784000015258789,
+      0.0
+    ],
+    "UUIDLeast": -9097848922010358255,
+    "Health": 20,
+    "foodSaturationLevel": 5.0,
+    "Air": 300,
+    "OnGround": 1,
+    "Dimension": 0,
+    "Rotation": [
+      18.900001525878906,
+      7.9499969482421875
+    ],
+    "XpLevel": 0,
+    "Score": 0,
+    "UUIDMost": -5635303547346666088,
+    "Sleeping": 0,
+    "Pos": [
+      -1.5,
+      4.0,
+      -4.5
+    ],
+    "Fire": -20,
+    "XpP": 0.0,
+    "EnderItems": [],
+    "foodLevel": 20,
+    "foodExhaustionLevel": 0.0,
+    "HurtTime": 0,
+    "SelectedItemSlot": 3,
+    "AttackTime": 0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "id": 4453,
+        "Count": 1,
+        "Damage": 0
+      },
+      {
+        "Slot": 1,
+        "id": 4457,
+        "Count": 1,
+        "Damage": 0
+      },
+      {
+        "Slot": 2,
+        "id": 4096,
+        "Count": 1,
+        "Damage": 0
+      }
+    ],
+    "foodTickTimer": 0
+  }
+}

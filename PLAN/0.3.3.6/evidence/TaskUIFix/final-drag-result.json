@@ -1,0 +1,10 @@
+{
+  "FinalInlineOrder": [
+    "离开",
+    "接受",
+    "拒绝"
+  ],
+  "SingleUndoExact": true,
+  "OrdinaryNodeMoved": true,
+  "OrdinaryNodeUndoCoordinatesExact": true
+}

@@ -1,0 +1,166 @@
+[
+  {
+    "axis": "z",
+    "inside": true,
+    "measurement": {
+      "label": "0922-range-r16-zminus-inside",
+      "time": "2026-09-22T22:21:51",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004758677515952194,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.0006284296703089629,
+      "tone880": 9.98270997421498E-08
+    },
+    "clientPoint": [
+      -119.5,
+      91.5,
+      184.1
+    ],
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      184.1
+    ],
+    "radius": 16,
+    "side": "minus",
+    "label": "0922-range-r16-zminus-inside",
+    "passed": true
+  },
+  {
+    "axis": "z",
+    "inside": false,
+    "measurement": {
+      "label": "0922-range-r16-zminus-outside",
+      "time": "2026-09-22T22:22:00",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "clientPoint": [
+      -119.5,
+      91.5,
+      183.9
+    ],
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      183.9
+    ],
+    "radius": 16,
+    "side": "minus",
+    "label": "0922-range-r16-zminus-outside",
+    "passed": true
+  },
+  {
+    "axis": "z",
+    "inside": true,
+    "measurement": {
+      "label": "0922-range-r16-zplus-inside",
+      "time": "2026-09-22T22:22:09",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.05036440494911112,
+      "peak": 0.31304454803466797,
+      "tone440": 0.002480802604591468,
+      "tone880": 0.00120113505014629
+    },
+    "clientPoint": [
+      -119.5,
+      91.5,
+      216.9
+    ],
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      216.9
+    ],
+    "radius": 16,
+    "side": "plus",
+    "label": "0922-range-r16-zplus-inside",
+    "passed": true
+  },
+  {
+    "axis": "z",
+    "inside": false,
+    "measurement": {
+      "label": "0922-range-r16-zplus-outside",
+      "time": "2026-09-22T22:22:18",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.04347185852585315,
+      "peak": 0.36797475814819336,
+      "tone440": 0.0021691920817152105,
+      "tone880": 0.0006374298451585074
+    },
+    "clientPoint": [
+      -119.5,
+      91.5,
+      217.1
+    ],
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      217.1
+    ],
+    "radius": 16,
+    "side": "plus",
+    "label": "0922-range-r16-zplus-outside",
+    "passed": false
+  }
+]

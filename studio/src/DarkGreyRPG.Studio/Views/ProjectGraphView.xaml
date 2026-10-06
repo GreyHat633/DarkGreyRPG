@@ -4,7 +4,7 @@
  <UserControl.Resources><BooleanToVisibilityConverter x:Key="VisibleWhen"/></UserControl.Resources>
  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <TextBlock Text="{Binding ConnectionSummary}" Margin="0,0,0,8" VerticalAlignment="Center"/>
-  <graph:CanonicalGraphEditorView x:Name="Editor" Grid.Row="1" Host="{Binding CanonicalHost}"/>
+  <graph:CanonicalGraphEditorView x:Name="Editor" Grid.Row="1" Host="{Binding CanonicalHost}" StoryGroups="{Binding StoryGroups}"/>
   <StackPanel Grid.Row="2" Margin="0,8,0,0">
    <Expander Header="介绍说明" Foreground="{DynamicResource TextFillColorPrimaryBrush}" x:Name="Help"><TextBlock graph:AuthoringText.IsHelp="True" x:Name="HelpText" TextWrapping="Wrap"/></Expander>
    <TextBlock x:Name="LogicError" Text="{Binding LogicEditorError}" Visibility="{Binding HasLogicEditorError, Converter={StaticResource VisibleWhen}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>

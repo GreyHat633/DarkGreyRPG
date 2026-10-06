@@ -1,0 +1,54 @@
+{
+  "task": {
+    "result_port_id": "goal_0",
+    "objective_statuses": [
+      {
+        "value": "COMPLETED",
+        "key": "objective_0"
+      }
+    ],
+    "activation_logic": 0,
+    "story_instance_id": "Native0332:acceptance",
+    "public_logic_outputs": [],
+    "resource_fingerprint": "bf091f5bf29b7d1b2b96a3014dfec2f269bf147af6b00e75fb40b193665c2a5d",
+    "runtime_status": "SETTLED",
+    "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+    "reward_states": [
+      {
+        "value": 1,
+        "key": "reward_0"
+      }
+    ],
+    "settlement_time": 1790092256365,
+    "activation_time": 1790092107099,
+    "task_resource_id": "Native0332:npc_task",
+    "internal_logic_values": [
+      {
+        "value": 1,
+        "key": "objective_0:logic_status"
+      }
+    ],
+    "progress": [
+      {
+        "value": 1,
+        "key": "objective_0"
+      }
+    ],
+    "task_node_placement_id": "native_profile_task",
+    "status": "SETTLED"
+  },
+  "receipt": "f5ad8fa7c77440da490c423d72f60478009e71b585d8bfe222569734b6683196",
+  "receipts": {
+    "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8": 1,
+    "e442775f1b14d8acc9d93140a9abfbc7340515d72df954cf8b5edfe17c6de26f": 1,
+    "7f1e1b1ea939384ca448eaa80c22882d0a44ed8330653737ff7013c55e18139d": 1,
+    "08c0b0783faf14bef86355b3b929edde4672c2da15d39662200b917667eea71a": 1,
+    "f1825d7790dd529faedf3da24c5dcf8f58e3cfc380b730c1f89e2d3494c40abe": 1,
+    "f5ad8fa7c77440da490c423d72f60478009e71b585d8bfe222569734b6683196": 1
+  },
+  "xp": {
+    "XpTotal": 13,
+    "XpLevel": 0,
+    "XpP": 0.7647058963775635
+  }
+}

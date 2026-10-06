@@ -75,6 +75,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
     private final CanonicalStoryForgeManager canonicalStoryManager;
     private final CanonicalJournalService canonicalJournalService;
     private final StoryPackageLoader storyPackageLoader;
+    private List<String> lastPackageReloadErrors;
 
     /** Original constructor retained for legacy registrations and probes. */
     public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
@@ -242,6 +243,12 @@ public final class CommandDarkGreyRpg extends CommandBase {
             return;
         }
         if ("reload".equalsIgnoreCase(arguments[0])) {
+            if (arguments.length >= 2 && "errors".equalsIgnoreCase(arguments[1])) {
+                if (arguments.length > 3) throw new WrongUsageException("/dgr reload errors [页码]");
+                showPackageReloadErrors(sender, arguments.length == 3 ? parseInt(sender, arguments[2]) : 1);
+                return;
+            }
+            requireLength(arguments, 1, "/dgr reload 或 /dgr reload errors [页码]");
             reload(sender);
             return;
         }
@@ -919,6 +926,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
         if (storyPackageLoader != null) {
             StoryPackageRuntimeReloader.Result reload = StoryPackageRuntimeReloader
                 .reload(repository, storyPackageLoader);
+            lastPackageReloadErrors = reload.getErrors();
             StoryPackageGenerationLifecycle.Result generations = null;
             if (reload.isPackageSetCommitted()) generations = StoryPackageGenerationLifecycle.reconcile(
                 MinecraftServer.getServer()
@@ -934,10 +942,9 @@ public final class CommandDarkGreyRpg extends CommandBase {
                         + reload.getProjectReload()
                             .getSummary());
             } else {
-                ChatMessages.error(sender, "重新加载未完全成功；无效候选未生效，请查看服务器日志。");
+                ChatMessages.error(sender, "重新加载未完全成功；无效候选未生效。原因如下：");
                 for (String error : reload.getErrors()) LOG.warn("Story Package reload rejected: {}", error);
-                if (!reload.getErrors()
-                    .isEmpty()) ChatMessages.error(sender, "故事包校验失败；详细原因已写入服务器日志。");
+                showPackageReloadErrors(sender, 1);
             }
             return;
         }
@@ -947,6 +954,55 @@ public final class CommandDarkGreyRpg extends CommandBase {
         } else {
             ChatMessages.error(sender, "重新加载失败：" + result.getSummary());
         }
+    }
+
+    private void showPackageReloadErrors(ICommandSender sender, int number) {
+        if (storyPackageLoader == null) {
+            ChatMessages.info(sender, "当前未启用故事包加载器。");
+            return;
+        }
+        List<String> errors = lastPackageReloadErrors == null ? storyPackageLoader.getLastReload()
+            .getErrors() : lastPackageReloadErrors;
+        if (errors.isEmpty()) {
+            if (!storyPackageLoader.getLastReload()
+                .isSuccessful())
+                errors = Collections.singletonList(
+                    storyPackageLoader.getLastReload()
+                        .getSummary());
+            else {
+                ChatMessages.info(sender, "最近一次故事包加载没有错误。");
+                return;
+            }
+        }
+        darkgrey.rpg.project.packages.StoryPackageErrorPage page;
+        try {
+            page = new darkgrey.rpg.project.packages.StoryPackageErrorPage(errors, number);
+        } catch (IllegalArgumentException invalidPage) {
+            ChatMessages.error(sender, invalidPage.getMessage());
+            return;
+        }
+        ChatMessages.info(sender, "故事包错误详情 " + page.getPage() + "/" + page.getPageCount());
+        for (String line : page.getLines()) ChatMessages.error(sender, line);
+        if (page.getPageCount() > 1) {
+            net.minecraft.util.ChatComponentText navigation = new net.minecraft.util.ChatComponentText(
+                "[DarkGrey RPG] ");
+            if (number > 1) navigation.appendSibling(errorPageLink("[上一页] ", number - 1));
+            if (number < page.getPageCount()) navigation.appendSibling(errorPageLink("[下一页] ", number + 1));
+            navigation.appendText("/dgr reload errors <页码>；完整报告已写入服务器日志。");
+            sender.addChatMessage(navigation);
+        }
+    }
+
+    private static net.minecraft.util.ChatComponentText errorPageLink(String label, int page) {
+        net.minecraft.util.ChatComponentText link = new net.minecraft.util.ChatComponentText(label);
+        link.getChatStyle()
+            .setColor(net.minecraft.util.EnumChatFormatting.AQUA)
+            .setUnderlined(true)
+            .setChatClickEvent(
+                new net.minecraft.event.ClickEvent(
+                    net.minecraft.event.ClickEvent.Action.RUN_COMMAND,
+                    "/dgr reload errors " + page));
+        return link;
     }
 
     private static void showGenerationDelta(ICommandSender sender, StoryPackageGenerationLifecycle.Result result) {
@@ -1186,6 +1242,8 @@ public final class CommandDarkGreyRpg extends CommandBase {
         }
         if (arguments.length == 2 && "buff".equalsIgnoreCase(arguments[0]))
             return getListOfStringsMatchingLastWord(arguments, "list", "export");
+        if (arguments.length == 2 && "reload".equalsIgnoreCase(arguments[0]))
+            return getListOfStringsMatchingLastWord(arguments, "errors");
         if (arguments.length == 2 && "dimension".equalsIgnoreCase(arguments[0]))
             return getListOfStringsMatchingLastWord(arguments, "id");
         if (arguments.length == 2 && "actor".equalsIgnoreCase(arguments[0])) {

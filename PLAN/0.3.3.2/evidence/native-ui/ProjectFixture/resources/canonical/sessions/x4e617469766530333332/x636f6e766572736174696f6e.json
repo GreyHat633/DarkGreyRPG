@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "resource_kind": "session",
+  "id": "Native0332:conversation",
+  "display_name": "NativeConversation",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "起始",
+        "ports": [
+          {
+            "port_id": "flow_out",
+            "display_name": "流程输出",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": "node_311203e4e0894920bc9b0c2c9189a743",
+        "type": "line",
+        "display_name": "台词",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "flow_out",
+            "display_name": "流程输出",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "pages": [
+            {
+              "page_id": "page_cb44660e2c2c49c6841e1ad55f3ad896",
+              "text": "第一句：原生UI实机验收 Alpha。",
+              "voice_volume": 1,
+              "text_speed": 30,
+              "custom_text_speed": false
+            },
+            {
+              "page_id": "46a2dadc2c9a4aca81ccbfdc5cee19af",
+              "text": "第二句：搜索定位 BetaUnique0332；折叠不会丢失正文。",
+              "voice_volume": 1,
+              "text_speed": 30,
+              "custom_text_speed": false
+            }
+          ],
+          "speaker_actor_id": null
+        }
+      }
+    ],
+    "connections": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "PASS_NATIVE_FLOW_CONTROL_AND_DISABLE",
+  "package": "StudioExportedFlowBoundary0336.dgrs.g",
+  "package_bytes": 22303,
+  "package_sha256": "e435f4ec9cbda0a594d593e2a6198db1804671813607f4a47a3446e0e33aa527",
+  "jar_sha256": "edccc103fef4fdc1af56dc261440ec98988f46c8f50411a0f1b1f6c0b79d0f39",
+  "enabled_control": "A completed_count 1 -> 2; B absent -> TERMINATED count 1 through A.finished -> B.from_a Flow edge",
+  "disabled_case": "After explicit reset of both stories, A ACTIVE then OP disables Group. A completes count 2 -> 3; B reset_pending remains 1, count remains 1, no new B instance.",
+  "evidence": [
+    "flow-enabled-control.json",
+    "flow-disabled-active.json",
+    "flow-disabled-completed.json",
+    "flow-disabled-A-active.png"
+  ]
+}

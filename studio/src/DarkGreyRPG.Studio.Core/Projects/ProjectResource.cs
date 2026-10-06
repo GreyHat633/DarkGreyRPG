@@ -5,7 +5,11 @@ namespace DarkGreyRPG.Studio.Core.Projects;
 public sealed class ProjectResource
 {
     public const int LegacySchemaVersion = 1;
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
+    public const string CurrentIdentityFormat = "story-uid-v1";
+
+    [JsonPropertyName("identity_format")]
+    public string IdentityFormat { get; init; } = CurrentIdentityFormat;
 
     [JsonPropertyName("schema_version")]
     [JsonPropertyOrder(0)]

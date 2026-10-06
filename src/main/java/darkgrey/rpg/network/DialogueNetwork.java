@@ -37,6 +37,16 @@ public final class DialogueNetwork {
     public static synchronized void registerCommon() {
         if (registered) return;
         CHANNEL.registerMessage(
+            darkgrey.rpg.project.packages.StoryPackageManagerPacket.Server.class,
+            darkgrey.rpg.project.packages.StoryPackageManagerPacket.class,
+            33,
+            Side.SERVER);
+        CHANNEL.registerMessage(
+            darkgrey.rpg.project.packages.StoryPackageManagerPacket.Client.class,
+            darkgrey.rpg.project.packages.StoryPackageManagerPacket.class,
+            33,
+            Side.CLIENT);
+        CHANNEL.registerMessage(
             darkgrey.rpg.network.message.canonical.TaskPresentationPage.Server.class,
             darkgrey.rpg.network.message.canonical.TaskPresentationPage.class,
             32,

@@ -23,16 +23,16 @@ public sealed class SessionPagesTests
         page["text"] = JsonSerializer.SerializeToElement(text);
         var edits = new GraphEditSession(graph, GraphScope.Session);
         Assert.IsTrue(edits.SetNodeProperty("line", "pages", JsonSerializer.SerializeToElement(new[] { page })));
-        Assert.IsTrue(edits.ChangeSessionSpeaker("line", "npc"));
+        Assert.IsTrue(edits.ChangeSessionSpeaker("line", "ST-2345-6789-ABCD-EFGH~actor~npc"));
         Assert.IsTrue(edits.ChangeSessionSpeaker("line", null));
         var pasted = new GraphClipboardSnapshot(GraphScope.Session, graph, ["line"]).CloneForPaste(GraphScope.Session, out _).Nodes.Single();
         Assert.AreEqual(text, CanonicalSessionLineSchema.ReadPages(pasted).Single()["text"].GetString());
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new(GraphResourceKind.Story, "story", "Story", new([GraphNodeFactory.CreateStoryStart("start")])));
-        store.Sessions.Create(new(GraphResourceKind.Session, "session", "Session", graph));
-        store.Memberships.Create(new("story") { OwnedResources = new() { Sessions = ["session"] } });
+        store.Stories.Create(new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Sessions.Create(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", graph));
+        store.Memberships.Create(new("ST-2345-6789-ABCD-EFGH") { OwnedResources = new() { Sessions = ["ST-2345-6789-ABCD-EFGH~session~session"] } });
         var package = Path.Combine(project.Root, "over-capacity.dgrs");
-        new DgrsStoryPackageExporter(project.Root).Build("story", package);
+        new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", package);
         Assert.IsTrue(File.Exists(package));
         using var archive = System.IO.Compression.ZipFile.OpenRead(package);
         Assert.IsTrue(archive.Entries.Where(e => e.FullName.EndsWith(".json")).Any(e => {
@@ -47,7 +47,7 @@ public sealed class SessionPagesTests
         var graph = new GraphDocument([line]);
         var edits = new GraphEditSession(graph, GraphScope.Session);
         Assert.IsTrue(edits.SetNodeProperty("line", "pages", JsonSerializer.SerializeToElement(Array.Empty<object>())));
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", graph);
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", graph);
         var restored = GraphResourceEnvelopeSerializer.Deserialize(GraphResourceEnvelopeSerializer.Serialize(envelope));
         Assert.IsEmpty(CanonicalSessionLineSchema.ReadPages(restored.Graph!.Nodes.Single()));
         var clipboard = new GraphClipboardSnapshot(GraphScope.Session, graph, ["line"]);
@@ -61,14 +61,14 @@ public sealed class SessionPagesTests
         var line = new GraphNode("line", "line", "台词", [], new Dictionary<string, JsonElement>
         {
             ["text"] = JsonSerializer.SerializeToElement("第一句😀\n第二行"),
-            ["speaker_actor_id"] = JsonSerializer.SerializeToElement("npc"),
+            ["speaker_actor_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~npc"),
             ["portrait_variant"] = JsonSerializer.SerializeToElement("happy"),
             ["voice_ref"] = JsonSerializer.SerializeToElement("media/" + new string('a', 64) + ".ogg"),
             ["voice_volume"] = JsonSerializer.SerializeToElement(.4),
             ["text_speed"] = JsonSerializer.SerializeToElement(87),
             ["custom_text_speed"] = JsonSerializer.SerializeToElement(true),
         });
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line]));
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line]));
         var restored = GraphResourceEnvelopeSerializer.Deserialize(GraphResourceEnvelopeSerializer.Serialize(envelope));
         var saved = restored.Graph!.Nodes.Single();
         Assert.IsFalse(saved.Properties.ContainsKey("text"));
@@ -140,7 +140,7 @@ public sealed class SessionPagesTests
         var graph = new GraphDocument([line]);
         var edits = new GraphEditSession(graph, GraphScope.Session);
         var before = graph.ToJson();
-        Assert.IsFalse(edits.ChangeSessionSpeaker("line", "new_actor"));
+        Assert.IsFalse(edits.ChangeSessionSpeaker("line", "ST-2345-6789-ABCD-EFGH~actor~new_actor"));
         Assert.AreEqual(before, graph.ToJson());
         Assert.AreEqual(0, edits.UndoCount);
         Assert.IsNotEmpty(edits.LastValidationIssues);
@@ -167,7 +167,7 @@ public sealed class SessionPagesTests
         var pasted = GraphClipboardSnapshot.PasteParameters(GraphScope.Session, graph, source, "target", out var removed);
         Assert.IsEmpty(removed);
         Assert.AreEqual("target", pasted.Connections.Single().ToNodeId);
-        var roundTrip = GraphResourceEnvelopeSerializer.Deserialize(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", pasted).ToJson()).Graph!;
+        var roundTrip = GraphResourceEnvelopeSerializer.Deserialize(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", pasted).ToJson()).Graph!;
         var targetPages = CanonicalSessionLineSchema.ReadPages(roundTrip.Nodes.Single(n => n.Id == "target"));
         Assert.HasCount(3, targetPages);
         for (var i = 0; i < pages.Length; i++)
@@ -192,7 +192,7 @@ public sealed class SessionPagesTests
         line.Properties["pages"] = JsonSerializer.SerializeToElement(pages);
         var graph = new GraphDocument([line]);
         var edits = new GraphEditSession(graph, GraphScope.Session);
-        Assert.IsTrue(edits.ChangeSessionSpeaker("line", "new_actor"));
+        Assert.IsTrue(edits.ChangeSessionSpeaker("line", "ST-2345-6789-ABCD-EFGH~actor~new_actor"));
         Assert.IsTrue(CanonicalSessionLineSchema.ReadPages(graph.Nodes.Single()).All(p => !p.ContainsKey("portrait_variant")));
         Assert.AreEqual(.25, CanonicalSessionLineSchema.ReadPages(graph.Nodes.Single())[1]["voice_volume"].GetDouble());
         Assert.AreEqual(1, edits.UndoCount);
@@ -208,12 +208,12 @@ public sealed class SessionPagesTests
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story",
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story",
             new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
         var actors = new ActorRepository(project.Root);
-        var actor = actors.CreateIndividual("npc", "NPC"); actor.HomeStoryId = "story"; actors.SaveActor(actor);
+        var actor = actors.CreateIndividual("ST-2345-6789-ABCD-EFGH~actor~npc", "NPC"); actor.HomeStoryId = "ST-2345-6789-ABCD-EFGH"; actors.SaveActor(actor);
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("npc");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~npc");
         var pages = new[] { CanonicalSessionLineSchema.CreatePage(), CanonicalSessionLineSchema.CreatePage() };
         pages[1]["portrait_variant"] = JsonSerializer.SerializeToElement("missing_later_variant");
         foreach (var page in pages) page["text"] = JsonSerializer.SerializeToElement("Portrait validation sample.");
@@ -223,11 +223,11 @@ public sealed class SessionPagesTests
         end.Properties["display_name"] = JsonSerializer.SerializeToElement("Done");
         var nodes = new[] { GraphNodeFactory.Create(GraphScope.Session, "start", "start"), line, end };
         var edges = nodes.Zip(nodes.Skip(1), (a, b) => new GraphConnection(a.Id, "flow_out", b.Id, "flow_in", GraphInterfaceKind.Flow));
-        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument(nodes, edges)));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("story")
-        { OwnedResources = new CanonicalStoryMembershipSet { Actors = ["npc"], Sessions = ["session"] } });
+        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument(nodes, edges)));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH")
+        { OwnedResources = new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~npc"], Sessions = ["ST-2345-6789-ABCD-EFGH~session~session"] } });
         var exception = Assert.ThrowsExactly<StoryPackageException>(() =>
-            new DgrsStoryPackageExporter(project.Root).Build("story", Path.Combine(project.Root, "story.dgrs")));
+            new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", Path.Combine(project.Root, "story.dgrs")));
         StringAssert.Contains(exception.Message, "头像变体");
     }
 
@@ -242,7 +242,7 @@ public sealed class SessionPagesTests
         line.Properties["pages"] = JsonSerializer.SerializeToElement(pages);
         var sessionPath = Path.Combine(project.Root, "resources/canonical/sessions/session.json");
         Directory.CreateDirectory(Path.GetDirectoryName(sessionPath)!);
-        File.WriteAllText(sessionPath, new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])).ToJson());
+        File.WriteAllText(sessionPath, new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])).ToJson());
         var media = Path.Combine(project.Root, "resources", reference);
         Directory.CreateDirectory(Path.GetDirectoryName(media)!);
         File.WriteAllBytes(media, [1]);

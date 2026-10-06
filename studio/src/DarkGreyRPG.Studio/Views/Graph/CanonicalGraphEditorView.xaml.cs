@@ -108,8 +108,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private FlowPortControl? _pendingWirePort;
     private bool _pendingWireBundle;
     private bool _scissorsMode;
-    private bool _altScissorsMode;
-    private bool _scissorsModeBeforeAlt;
+    private bool _ctrlScissorsMode;
     private GraphEditorConnectionViewModel? _selectedConnection;
     private GraphEditorNodeViewModel? _selectedNode;
     private readonly Func<string?> _nodeIdSource;
@@ -213,7 +212,7 @@ public partial class CanonicalGraphEditorView : UserControl
     public bool IsWirePressPending => _pointerState.Is(GraphPointerMode.PortPressed);
     public bool IsIncidentWireReconnect => _incidentWireReconnect;
     public bool IsScissorsMode => _scissorsMode;
-    public bool IsTemporaryScissorsMode => _altScissorsMode;
+    public bool IsTemporaryScissorsMode => _ctrlScissorsMode;
     public bool IsBoxSelecting => _pointerState.Is(GraphPointerMode.BoxSelect);
     public Rect SelectionBoxBounds => _selectionBoxBounds;
     public GraphEditorConnectionViewModel? ActiveSpliceCandidate => _spliceCandidate;
@@ -298,8 +297,7 @@ public partial class CanonicalGraphEditorView : UserControl
             (GraphScope.StoryFlow, "start") and not
             (GraphScope.StoryFlow, "session") and not
             (GraphScope.StoryFlow, "task") and not
-            (GraphScope.Session, "start") and not
-            (GraphScope.Task, "settle");
+            (GraphScope.Session, "start");
     }
 
     /// <summary>
@@ -395,6 +393,8 @@ public partial class CanonicalGraphEditorView : UserControl
     private static void OnHostChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var view = (CanonicalGraphEditorView)sender;
+        view._ctrlScissorsMode = false;
+        view.SetScissorsMode(false);
         view._lastAuthoringIssues = [];
         if (!view._settingHostFromDataContext) view._hostFromDataContext = false;
         view.DetachHost(args.OldValue as GraphEditorHostViewModel);
@@ -410,7 +410,7 @@ public partial class CanonicalGraphEditorView : UserControl
     }
 
     private Window? _gestureWindow;
-    private void GestureWindow_Deactivated(object? sender, EventArgs args) => CancelPointerGesture();
+    private void GestureWindow_Deactivated(object? sender, EventArgs args) { _ctrlScissorsMode = false; SetScissorsMode(false); CancelPointerGesture(); }
 
     private void View_OnLoaded(object sender, RoutedEventArgs args)
     {
@@ -425,6 +425,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void View_OnUnloaded(object sender, RoutedEventArgs args)
     {
+        _ctrlScissorsMode = false; SetScissorsMode(false);
         _viewportResizeTrackingEnabled = false;
         if (_gestureWindow is not null) _gestureWindow.Deactivated -= GestureWindow_Deactivated;
         _gestureWindow = null;
@@ -1003,7 +1004,7 @@ public partial class CanonicalGraphEditorView : UserControl
         var canOpen = node is not null && node.Type is "session" or "task" or "story" && _selectedNodes.Count == 1 && _selectedGroups.Count == 0;
         menu.Items.Add(FluentContextMenuFactory.CreateItem("流程图", () => { if (node is not null) RequestNodeEdit(node); }, canOpen));
         AddClipboardMenuItems(menu, node, _contextGraphPoint);
-        AddGroupMenuItems(menu);
+        if (Host?.Scope != GraphScope.Project) AddGroupMenuItems(menu);
         menu.Items.Add(FluentContextMenuFactory.CreateItem("删除", () => DeleteCurrentSelection(confirmReferencedRemoval: true), !IsReadOnly, critical: true));
         return menu;
     }
@@ -1023,8 +1024,8 @@ public partial class CanonicalGraphEditorView : UserControl
         e.Handled = true;
     }
 
-    private static bool IsLeftAlt(KeyEventArgs e)
-        => e.Key == Key.LeftAlt || e.Key == Key.System && e.SystemKey == Key.LeftAlt;
+    private static bool IsControlKey(KeyEventArgs e)
+        => e.Key is Key.LeftCtrl or Key.RightCtrl;
 
     private static bool IsSpliceModifierActive()
         => (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control | ModifierKeys.Alt))
@@ -1038,7 +1039,7 @@ public partial class CanonicalGraphEditorView : UserControl
             ResetGroupGesture();
             DrawCommentFrames();
         }
-        if (e.Key == Key.G && !IsReadOnly && !IsEditableKeyboardSource(e.OriginalSource as DependencyObject)
+        if (e.Key == Key.G && Host?.Scope != GraphScope.Project && !IsReadOnly && !IsEditableKeyboardSource(e.OriginalSource as DependencyObject)
             && Keyboard.Modifiers == ModifierKeys.None && !_scissorsMode && _activeGroupThumb is null
             && (_pointerState.Is(GraphPointerMode.Idle) || _pointerState.Is(GraphPointerMode.NodeDrag))) {
             if (!e.IsRepeat) { _gPressed = true; _gUsedForDrag = false; UpdateGroupDrop(_lastGraphPointer); }
@@ -1050,12 +1051,10 @@ public partial class CanonicalGraphEditorView : UserControl
             UpdateSplicePreview(_lastGraphPointer, IsSpliceModifierActive());
             return;
         }
-        if (!IsLeftAlt(e) || _altScissorsMode) return;
-        _scissorsModeBeforeAlt = _scissorsMode;
-        _altScissorsMode = true;
-        _scissorsMode = true;
-        CanvasViewport.Cursor = ScissorsCursorFactory.Cursor;
-        e.Handled = true;
+        if (!IsControlKey(e) || _ctrlScissorsMode || e.IsRepeat
+            || IsEditableKeyboardSource(e.OriginalSource as DependencyObject)) return;
+        _ctrlScissorsMode = true;
+        SetScissorsMode(!_scissorsMode);
     }
 
     private void Root_OnPreviewKeyUp(object sender, KeyEventArgs e)
@@ -1073,11 +1072,10 @@ public partial class CanonicalGraphEditorView : UserControl
             ClearSplicePreview();
             return;
         }
-        if (!IsLeftAlt(e) || !_altScissorsMode) return;
-        _altScissorsMode = false;
-        _scissorsMode = _scissorsModeBeforeAlt;
-        CanvasViewport.Cursor = _scissorsMode ? ScissorsCursorFactory.Cursor : Cursors.Arrow;
-        e.Handled = true;
+        if (!IsControlKey(e) || !_ctrlScissorsMode) return;
+        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) return;
+        _ctrlScissorsMode = false;
+        SetScissorsMode(false);
     }
 
     private void OpenContextMenu(ContextMenu menu)
@@ -1124,7 +1122,7 @@ public partial class CanonicalGraphEditorView : UserControl
     private bool BeginWire(FlowPortControl port, Point point, GraphConnection? original = null,
         bool reconnectIncidentBundle = false)
     {
-        if (_host is null || !TryEndpoint(port, out var endpoint) || !_pointerState.Begin(GraphPointerMode.WireDrag))
+        if (_host is null || IsReadOnly || !TryEndpoint(port, out var endpoint) || !_pointerState.Begin(GraphPointerMode.WireDrag))
             return false;
         var oldNode = _selectedNode;
         var oldConnection = _selectedConnection;
@@ -1325,7 +1323,7 @@ public partial class CanonicalGraphEditorView : UserControl
         }
         else if (e.ChangedButton == MouseButton.Left && _pointerState.Is(GraphPointerMode.BoxSelect))
         {
-            if (!_marqueeThresholdPassed) ClearSelection();
+            if (!_marqueeThresholdPassed) ClearSelection(notifyEvenIfEmpty: true);
             EndPointerGesture();
             e.Handled = true;
         }
@@ -1562,16 +1560,9 @@ public partial class CanonicalGraphEditorView : UserControl
         if (_host is null || _selectedNodes.Count == 0) return false;
         var selectedIds = _selectedNodes.Select(node => node.NodeId)
             .Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToArray();
-        var deletableIds = selectedIds.Where(id =>
-        {
-            var matches = _host.Nodes.Where(candidate =>
-                string.Equals(candidate.NodeId, id, StringComparison.Ordinal)).ToArray();
-            return matches.Length == 1 && (!GraphNodeDefinitionRegistry.TryGet(_host.Scope, matches[0].Type, out var definition)
-                || !definition.NonDeletable && !definition.Required);
-        }).ToArray();
-        var protectedIds = selectedIds.Except(deletableIds, StringComparer.Ordinal).ToArray();
         _host.SetAuthoringIssue("graph.selection.delete", null);
         var removedAny = _host.RemoveNodes(selectedIds, confirmReferencedRemoval);
+        var protectedIds = selectedIds.Where(id => _host.Nodes.Any(node => node.NodeId == id)).ToArray();
         if (removedAny && protectedIds.Length != 0)
         {
             _host.SetAuthoringIssue("graph.selection.delete", new ValidationIssue(
@@ -1663,7 +1654,7 @@ public partial class CanonicalGraphEditorView : UserControl
     public bool CompleteMarqueeSelection()
     {
         if (!_pointerState.Is(GraphPointerMode.BoxSelect)) return false;
-        if (!_marqueeThresholdPassed) ClearSelection();
+        if (!_marqueeThresholdPassed) ClearSelection(notifyEvenIfEmpty: true);
         EndPointerGesture();
         return true;
     }
@@ -1708,7 +1699,7 @@ public partial class CanonicalGraphEditorView : UserControl
         return SelectNode(matches[0]);
     }
 
-    public void ClearSelection()
+    public void ClearSelection(bool notifyEvenIfEmpty = false)
     {
         _selectedGroups.Clear();
         DrawCommentFrames();
@@ -1716,7 +1707,7 @@ public partial class CanonicalGraphEditorView : UserControl
         var oldConnection = _selectedConnection;
         ClearNodeSelection();
         ClearConnectionSelection();
-        NotifySelectionChanged(oldNode, oldConnection);
+        NotifySelectionChanged(oldNode, oldConnection, force: notifyEvenIfEmpty);
     }
 
     private void SetSelectedConnection(GraphEditorConnectionViewModel connection)
@@ -1974,7 +1965,7 @@ public partial class CanonicalGraphEditorView : UserControl
 
     private void UpdateSplicePreview(Point graphPoint, bool shiftPressed)
     {
-        if (!shiftPressed || !_nodeDragThresholdPassed || _host is null || _dragNode is null
+        if (!shiftPressed || !_nodeDragThresholdPassed || _host is null || _host.Scope == GraphScope.Project || _dragNode is null
             || _selectedNodes.Count != 1 || !_selectedNodes.Contains(_dragNode))
         {
             ClearSplicePreview();
@@ -2313,12 +2304,12 @@ public partial class CanonicalGraphEditorView : UserControl
     private readonly HashSet<string> _lastNotifiedSelection = new(StringComparer.Ordinal);
     private GraphEditorConnectionViewModel? _lastNotifiedConnection;
     private void NotifySelectionChanged(GraphEditorNodeViewModel? oldNode,
-        GraphEditorConnectionViewModel? oldConnection, bool isMarquee = false)
+        GraphEditorConnectionViewModel? oldConnection, bool isMarquee = false, bool force = false)
     {
         isMarquee |= _pointerState.Is(GraphPointerMode.BoxSelect) && _marqueeThresholdPassed;
-        if (ReferenceEquals(oldNode, _selectedNode) && ReferenceEquals(oldConnection, _selectedConnection)
+        if (!force && ReferenceEquals(oldNode, _selectedNode) && ReferenceEquals(oldConnection, _selectedConnection)
             && _selectedNodes.Count <= 1 && !_inspectorSelectionDeferred) return;
-        if (_lastNotifiedSelection.SetEquals(_selectedNodes.Select(n => n.NodeId)) && ReferenceEquals(_lastNotifiedConnection, _selectedConnection)) return;
+        if (!force && _lastNotifiedSelection.SetEquals(_selectedNodes.Select(n => n.NodeId)) && ReferenceEquals(_lastNotifiedConnection, _selectedConnection)) return;
         _lastNotifiedSelection.Clear();
         foreach (var n in _selectedNodes) _lastNotifiedSelection.Add(n.NodeId);
         _lastNotifiedConnection = _selectedConnection;

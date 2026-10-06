@@ -1,0 +1,13 @@
+{
+  "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+  "package_path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.6\\evidence\\StudioExportedTask0336.dgrs",
+  "size": 2843,
+  "sha256": "b7970d7cbe5dd6ada9d9f266b6a210b077e5094eff548b594a482bb357b6c522",
+  "export_method": "Authoritative Studio 0.3.3.6 native Project > Export Story Package dialog",
+  "before_xp": 0,
+  "after_xp": 7,
+  "task_status": "SETTLED",
+  "reward_state": true,
+  "story_status": "TERMINATED",
+  "restart_replay": "PASS: server restart and client reconnect, total XP remains 7, settled task and granted reward preserved"
+}

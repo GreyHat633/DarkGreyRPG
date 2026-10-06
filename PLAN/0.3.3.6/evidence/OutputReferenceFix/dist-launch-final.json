@@ -1,0 +1,11 @@
+{
+  "Id": 19256,
+  "Exe": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "Title": "测试项目 — DarkGrey RPG Studio 0.3.3.6",
+  "EntryAssembly": [
+    "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll"
+  ],
+  "Responding": true,
+  "UserDataAction": "Read-only launch and normal close; no editor commands",
+  "AssemblySHA256": "C157B49BE505FF57DE231A563C88B1EEFAC99D74EB146F4759EA9D556EC168B5"
+}

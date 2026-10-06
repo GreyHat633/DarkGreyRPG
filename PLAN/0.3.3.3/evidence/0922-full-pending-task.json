@@ -1,0 +1,205 @@
+{
+  "": {
+    "data": {
+      "schema_version": 1,
+      "instances": [
+        {
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "full0333",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "d1b8c87d3a683ba18d9ca24daaf7572ce4b908685c425bf1d7d5f093dd61cbce",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+          "reward_states": [
+            {
+              "value": 0,
+              "key": "reward_0"
+            }
+          ],
+          "activation_time": 1790078924865,
+          "task_resource_id": "Native0332:full_inventory_task",
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "reward",
+          "status": "ACTIVE"
+        },
+        {
+          "result_port_id": "goal_0",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "live0333",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "adbc28127721ba68c4b410ed605d79c9f5d366779791b3a73b63978a6f532274",
+          "runtime_status": "SETTLED",
+          "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward_0"
+            },
+            {
+              "value": 1,
+              "key": "reward_1"
+            },
+            {
+              "value": 1,
+              "key": "reward_2"
+            }
+          ],
+          "settlement_time": 1790072259655,
+          "activation_time": 1790071831584,
+          "task_resource_id": "Native0332:live_kill_task",
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 3,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "kills",
+          "status": "SETTLED"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "native0333",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "ea061ce4f0517c5142c42e1759e5957be1b5e7aa9620b96d06fd7a73b4a74b13",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+          "activation_time": 1790069140759,
+          "task_resource_id": "Native0332:long_task",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 0,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "long",
+          "status": "ACTIVE"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            },
+            {
+              "value": "ACTIVE",
+              "key": "objective_1"
+            },
+            {
+              "value": "ACTIVE",
+              "key": "objective_2"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "native0333",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "cf88b8cf69ce96d41048fea6e71ae3f2bbb8d45eb729eced5503245beed771e7",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+          "activation_time": 1790069174301,
+          "task_resource_id": "Native0332:multi_task",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            },
+            {
+              "value": 0,
+              "key": "objective_1:logic_status"
+            },
+            {
+              "value": 0,
+              "key": "objective_2:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 0,
+              "key": "objective_0"
+            },
+            {
+              "value": 0,
+              "key": "objective_1"
+            },
+            {
+              "value": 0,
+              "key": "objective_2"
+            }
+          ],
+          "task_node_placement_id": "multi",
+          "status": "ACTIVE"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "native0333",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "6edaf0245329b3ab2d2d151e1e2940807338b02cb276be0de12893b92fbb420f",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+          "activation_time": 1790067049838,
+          "task_resource_id": "Native0332:short_task",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 0,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "short",
+          "status": "ACTIVE"
+        }
+      ]
+    }
+  }
+}

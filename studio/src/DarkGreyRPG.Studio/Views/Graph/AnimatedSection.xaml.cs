@@ -13,5 +13,10 @@ public partial class AnimatedSection : UserControl
     public string Header { get => (string)GetValue(HeaderProperty); set => SetValue(HeaderProperty, value); }
     public object? Body { get => GetValue(BodyProperty); set => SetValue(BodyProperty, value); }
     public bool IsExpanded { get => (bool)GetValue(IsExpandedProperty); set => SetValue(IsExpandedProperty, value); }
-    public AnimatedSection() => InitializeComponent();
+    public AnimatedSection()
+    {
+        InitializeComponent();
+        DataContextChanged += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
+            new Action(() => ExpansionBody.SynchronizeExpansion()));
+    }
 }

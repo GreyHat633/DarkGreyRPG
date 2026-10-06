@@ -69,7 +69,8 @@ public sealed class CanonicalStoryLogicGraphRepository
         }
     }
 
-    public CanonicalStoryLogicGraph Save(IEnumerable<CanonicalStoryLogicConnection> connections)
+    public CanonicalStoryLogicGraph Save(IEnumerable<CanonicalStoryLogicConnection> connections,
+        IReadOnlyList<ProjectFileChange>? editorChanges = null)
     {
         ArgumentNullException.ThrowIfNull(connections);
         var graph = new CanonicalStoryLogicGraph(2, connections
@@ -84,11 +85,20 @@ public sealed class CanonicalStoryLogicGraphRepository
             try
             {
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path)!);
-                _writer.Write(Path, JsonSerializer.Serialize(graph, JsonOptions), temporaryPath =>
+                if (editorChanges is not null)
                 {
-                    using var staged = JsonDocument.Parse(File.ReadAllText(temporaryPath));
-                    Validate(Parse(staged.RootElement));
-                });
+                    var project = System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(Path)))!;
+                    var changes = editorChanges.Append(new ProjectFileChange(System.IO.Path.GetRelativePath(project, Path),
+                        File.Exists(Path) ? File.ReadAllBytes(Path) : null,
+                        System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(graph, JsonOptions)))).ToArray();
+                    new ProjectFileTransaction().Apply(project, changes, () => Validate(graph));
+                }
+                else
+                    _writer.Write(Path, JsonSerializer.Serialize(graph, JsonOptions), temporaryPath =>
+                    {
+                        using var staged = JsonDocument.Parse(File.ReadAllText(temporaryPath));
+                        Validate(Parse(staged.RootElement));
+                    });
             }
             catch (CanonicalStoryLogicGraphRepositoryException) { throw; }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
@@ -107,20 +117,33 @@ public sealed class CanonicalStoryLogicGraphRepository
         var stories = _stories.List().Select(info => _stories.Load(info.Id))
             .ToDictionary(story => story.Id, StringComparer.Ordinal);
         var projectDirectory = System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(Path)))!;
-        foreach (var group in OfflineProviderCatalog.Load(projectDirectory).Find(DgrResourceKind.Story).GroupBy(resource => resource.Id))
+        var providers = OfflineProviderCatalog.Load(projectDirectory);
+        if (providers.Diagnostics.Count != 0) throw Failure("story.graph.provider.invalid", string.Join("; ", providers.Diagnostics.Select(issue => issue.Message)));
+        foreach (var group in providers.Find(DgrResourceKind.Story).GroupBy(resource => resource.Id))
         {
             if (group.Count() != 1 || stories.ContainsKey(group.Key))
                 throw Failure("story.graph.story.ambiguous", $"故事身份 '{group.Key}' 在本地或引用包中重复。");
             stories[group.Key] = group.Single().ReadGraphDefinition()!;
         }
         if (replacement is not null) stories[replacement.Id] = replacement;
+        // Validate native records before deduplicating provider projections.
+        ValidateDetached(graph, stories);
+        ValidateDetached(new CanonicalStoryLogicGraph(2, graph.Connections
+            .Concat(providers.Providers.SelectMany(provider => provider.ContainerConnections.Connections)).Distinct().ToArray()), stories);
+    }
+
+    public static void ValidateDetached(CanonicalStoryLogicGraph graph, IReadOnlyDictionary<string, GraphResourceEnvelope> stories)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        if (graph.SchemaVersion != 2)
+            throw Failure("story.logic_graph.schema_version", "Story connection schema_version must be 2.");
         var targets = new HashSet<(string StoryId, string PortId)>();
         var flowSources = new HashSet<(string StoryId, string PortId)>();
         var exact = new HashSet<CanonicalStoryLogicConnection>();
         foreach (var connection in graph.Connections)
         {
-            if (connection is null || Blank(connection.SourceStoryId) || Blank(connection.SourcePortId)
-                || Blank(connection.TargetStoryId) || Blank(connection.TargetPortId))
+            if (connection is null || !StoryUid.IsValid(connection.SourceStoryId) || Blank(connection.SourcePortId)
+                || !StoryUid.IsValid(connection.TargetStoryId) || Blank(connection.TargetPortId))
                 throw Failure("story.logic_graph.connection.invalid", "Story Logic connection fields must be nonblank.");
             if (!exact.Add(connection))
                 throw Failure("story.logic_graph.connection.duplicate", "Story Logic connection is duplicated.");
@@ -161,20 +184,20 @@ public sealed class CanonicalStoryLogicGraphRepository
         if (root.ValueKind != JsonValueKind.Object || !ExactKeys(root, "schema_version", "connections"))
             throw Failure("story.logic_graph.schema", "Story Logic graph requires exactly schema_version and connections.");
         if (!root.GetProperty("schema_version").TryGetInt32(out var version)
+            || version != 2
             || root.GetProperty("connections").ValueKind != JsonValueKind.Array)
             throw Failure("story.logic_graph.schema", "Story Logic graph root fields have invalid types.");
         var connections = new List<CanonicalStoryLogicConnection>();
         foreach (var item in root.GetProperty("connections").EnumerateArray())
         {
             if (item.ValueKind != JsonValueKind.Object
-                || !(version == 1 ? ExactKeys(item, "source_story_id", "source_port_id", "target_story_id", "target_port_id")
-                    : ExactKeys(item, "source_story_id", "source_port_id", "target_story_id", "target_port_id", "interface_kind")))
+                || !ExactKeys(item, "source_story_id", "source_port_id", "target_story_id", "target_port_id", "interface_kind"))
                 throw Failure("story.logic_graph.connection.schema", "Story Logic connection fields are invalid.");
             connections.Add(new(
                 ReadString(item, "source_story_id"), ReadString(item, "source_port_id"),
-                ReadString(item, "target_story_id"), ReadString(item, "target_port_id"), version == 1 ? "Logic" : ReadString(item, "interface_kind")));
+                ReadString(item, "target_story_id"), ReadString(item, "target_port_id"), ReadString(item, "interface_kind")));
         }
-        return new(version == 1 ? 2 : version, connections);
+        return new(version, connections);
     }
 
     private static void RequireBoundary(IReadOnlyDictionary<string, GraphResourceEnvelope> stories,
@@ -195,7 +218,7 @@ public sealed class CanonicalStoryLogicGraphRepository
     private static bool ExactKeys(JsonElement element, params string[] keys)
     {
         var actual = element.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
-        return actual.SetEquals(keys);
+        return element.EnumerateObject().Count() == keys.Length && actual.SetEquals(keys);
     }
 
     private static string ReadString(JsonElement element, string name)

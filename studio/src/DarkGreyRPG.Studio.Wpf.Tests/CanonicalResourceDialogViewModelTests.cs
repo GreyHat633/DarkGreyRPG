@@ -9,12 +9,15 @@ public sealed class CanonicalResourceDialogViewModelTests
     [TestMethod]
     public void IdentityAcceptsSessionAndTaskWithChineseLabels()
     {
-        var session = CanonicalResourceIdentityDialogViewModel.ForCreate(GraphResourceKind.Session, "session_id");
-        var task = CanonicalResourceIdentityDialogViewModel.ForCreate(GraphResourceKind.Task, "task_id");
+        var session = CanonicalResourceIdentityDialogViewModel.ForCreate(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session_id");
+        var task = CanonicalResourceIdentityDialogViewModel.ForCreate(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task_id");
 
         Assert.AreEqual("会话", session.ChineseTypeLabel);
         Assert.AreEqual("任务", task.ChineseTypeLabel);
         Assert.AreNotEqual("对话", session.ChineseTypeLabel);
+        Assert.IsFalse(session.CanConfirm);
+        session.DisplayName = "初见";
+        task.DisplayName = "委托";
         Assert.IsTrue(session.CanConfirm);
         Assert.IsTrue(task.CanConfirm);
     }
@@ -32,17 +35,17 @@ public sealed class CanonicalResourceDialogViewModelTests
     }
 
     [TestMethod]
-    public void IdentityUsesNewResourceActorIdPolicy()
+    public void LegacyIdentityCannotBeRepairedIntoCurrentAddress()
     {
         var viewModel = new CanonicalResourceIdentityDialogViewModel(GraphResourceKind.Task, "legacy.id");
 
         Assert.IsFalse(viewModel.CanConfirm);
-        StringAssert.Contains(viewModel.ValidationText, "legacy.id");
+        StringAssert.Contains(viewModel.ValidationText, "资源内部地址无效");
         viewModel.Id = "Good Id";
-        Assert.AreEqual("good_id", viewModel.NormalizedSuggestion);
         viewModel.ApplySuggestionCommand.Execute(null);
-        Assert.AreEqual("good_id", viewModel.Id);
-        Assert.IsTrue(viewModel.CanConfirm);
+        Assert.AreEqual("legacy.id", viewModel.Id);
+        Assert.IsFalse(viewModel.HasSuggestion);
+        Assert.IsFalse(viewModel.CanConfirm);
     }
 
     [TestMethod]

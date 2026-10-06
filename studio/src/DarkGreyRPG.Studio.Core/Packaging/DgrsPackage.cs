@@ -1,5 +1,8 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -9,7 +12,7 @@ using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Packaging;
 
-/// <summary>Writes one validated DGRS v1 archive and commits it only after reopen validation.</summary>
+/// <summary>Writes one validated current DGRS archive and commits it only after reopen validation.</summary>
 public sealed class DgrsStoryPackageExporter
 {
     private static readonly DateTimeOffset StableEntryTimestamp =
@@ -34,6 +37,9 @@ public sealed class DgrsStoryPackageExporter
         ArgumentException.ThrowIfNullOrWhiteSpace(storyId);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputFile);
         ArgumentException.ThrowIfNullOrWhiteSpace(producerVersion);
+
+        if (new DgrsGroupPackageExporter(_projectDirectory).Groups().ByStory.ContainsKey(storyId))
+            throw new StoryPackageException("联动故事必须以完整 .dgrs.g 故事组导出。");
 
         var target = Path.GetFullPath(outputFile);
         if (!string.Equals(Path.GetExtension(target), ".dgrs", StringComparison.OrdinalIgnoreCase))
@@ -74,7 +80,7 @@ public sealed class DgrsStoryPackageExporter
         string producerVersion = "1.0.0")
         => Build(storyId, outputFile, producerVersion);
 
-    private static void WriteArchive(string sourceDirectory, string archivePath)
+    internal static void WriteArchive(string sourceDirectory, string archivePath)
     {
         using var stream = new FileStream(archivePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
         using var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: false, Encoding.UTF8);
@@ -129,23 +135,16 @@ public static class DgrsPackageValidator
             var manifest = StoryPackageManifest.Parse(ReadText(manifestEntry), $"{path}!/manifest.json");
             RequireEntry(entries, "project.json");
             foreach (var required in RequiredPaths(manifest.RequiredResources)) RequireEntry(entries, required);
-            ValidateCanonicalPayload(entries, manifest);
-            var reachable = StoryPackageMedia.Collect(manifest.RequiredResources, name => ReadText(entries[name]));
-            if (!reachable.SetEquals(manifest.RequiredResources.Media)) throw new StoryPackageException("媒体清单必须与资源实际引用一致。");
-            if (entries.Keys.Any(name => name.StartsWith("media/", StringComparison.Ordinal) && !reachable.Contains(name))) throw new StoryPackageException("包中包含未声明或不可达的媒体。");
-            foreach (var mediaRef in manifest.RequiredResources.Media)
+            var declared = RequiredPaths(manifest.RequiredResources).Append("project.json").Append("manifest.json").ToHashSet(StringComparer.Ordinal);
+            if (!declared.SetEquals(entries.Keys)) throw new StoryPackageException("DGRS contains undeclared entries.");
+            using (var project = JsonDocument.Parse(ReadText(entries["project.json"])))
             {
-                using var input = entries[mediaRef].Open();
-                using var bytes = new MemoryStream();
-                if (entries[mediaRef].Length > 64L * 1024 * 1024) throw new StoryPackageException("运行时媒体过大。");
-                byte[] buffer = new byte[81920]; int count;
-                while ((count = input.Read(buffer, 0, buffer.Length)) != 0) {
-                    if (bytes.Length + count > 64L * 1024 * 1024) throw new StoryPackageException("运行时媒体解压后过大。");
-                    bytes.Write(buffer, 0, count);
-                }
-                bytes.Position = 0;
-                StoryPackageMedia.Validate(mediaRef, bytes);
+                var root = project.RootElement;
+                if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("schema_version", out var schema) || schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var version) || version != 3
+                    || !root.TryGetProperty("identity_format", out var identity) || identity.ValueKind != JsonValueKind.String || identity.GetString() != "story-uid-v1")
+                    throw new StoryPackageException("DGRS project requires the current identity format.");
             }
+            ValidateMember(entries, manifest);
             return new DgrsValidationResult(
                 path,
                 manifest,
@@ -153,18 +152,44 @@ public static class DgrsPackageValidator
         }
         catch (StoryPackageException) { throw; }
         catch (Exception exception) when (exception is IOException or InvalidDataException
-            or UnauthorizedAccessException or NotSupportedException)
+            or UnauthorizedAccessException or NotSupportedException or JsonException or ArgumentException
+            or InvalidOperationException or ActorRepositoryException)
         {
             throw new StoryPackageException($"Could not open DGRS package '{path}'.", exception);
         }
     }
 
-    private static Dictionary<string, ZipArchiveEntry> IndexEntries(ZipArchive archive)
+    internal static void ValidateMember(IReadOnlyDictionary<string, ZipArchiveEntry> entries, StoryPackageManifest manifest)
+    {
+        ValidateCanonicalPayload(entries, manifest);
+        var reachable = StoryPackageMedia.Collect(manifest.RequiredResources, name => ReadText(entries[name]));
+        if (!reachable.SetEquals(manifest.RequiredResources.Media)) throw new StoryPackageException("媒体清单必须与资源实际引用一致。");
+        if (entries.Keys.Any(name => name.StartsWith("media/", StringComparison.Ordinal) && !reachable.Contains(name))) throw new StoryPackageException("包中包含未声明或不可达的媒体。");
+        foreach (var mediaRef in manifest.RequiredResources.Media)
+        {
+            using var input = entries[mediaRef].Open();
+            using var bytes = new MemoryStream();
+            if (entries[mediaRef].Length > 64L * 1024 * 1024) throw new StoryPackageException("运行时媒体过大。");
+            byte[] buffer = new byte[81920]; int count;
+            while ((count = input.Read(buffer, 0, buffer.Length)) != 0) {
+                if (bytes.Length + count > 64L * 1024 * 1024) throw new StoryPackageException("运行时媒体解压后过大。");
+                bytes.Write(buffer, 0, count);
+            }
+            bytes.Position = 0;
+            StoryPackageMedia.Validate(mediaRef, bytes);
+        }
+    }
+
+    internal static Dictionary<string, ZipArchiveEntry> IndexEntries(ZipArchive archive)
     {
         var entries = new Dictionary<string, ZipArchiveEntry>(StringComparer.Ordinal);
+        if (archive.Entries.Count > 4096) throw new StoryPackageException("DGRS entry count exceeds 4096.");
+        long total = 0;
         var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in archive.Entries)
         {
+            if (entry.Length > 64L * 1024 * 1024 || (total += entry.Length) > 256L * 1024 * 1024)
+                throw new StoryPackageException("DGRS uncompressed size exceeds its limit.");
             var path = NormalizeEntryPath(entry.FullName);
             if (!normalized.Add(path))
                 throw new StoryPackageException($"DGRS contains duplicate normalized entry path '{path}'.");
@@ -194,7 +219,7 @@ public static class DgrsPackageValidator
             throw new StoryPackageException($"Required DGRS entry is missing: {path}");
     }
 
-    private static IEnumerable<string> RequiredPaths(StoryPackageRequiredResources required)
+    internal static IEnumerable<string> RequiredPaths(StoryPackageRequiredResources required)
     {
         yield return required.Story;
         foreach (var path in required.Actors) yield return path;
@@ -219,13 +244,26 @@ public static class DgrsPackageValidator
         {
             var membership = CanonicalStoryMembershipSerializer.Deserialize(ReadText(entries[path]));
             if (!membershipIds.Add(membership.StoryId)) throw new StoryPackageException($"Duplicate Story membership ID '{membership.StoryId}'.");
-            if (!DgrResourceId.IsFullId(membership.StoryId) && !string.Equals(Path.GetFileNameWithoutExtension(path), membership.StoryId, StringComparison.Ordinal))
+            if (!string.Equals(Path.GetFileNameWithoutExtension(path), membership.StoryId, StringComparison.Ordinal))
                 throw new StoryPackageException($"Canonical membership identity does not match DGRS path '{path}'.");
         }
 
-        ValidateGraphs(entries, manifest.RequiredResources.CanonicalStories, GraphResourceKind.Story);
-        ValidateGraphs(entries, manifest.RequiredResources.Sessions, GraphResourceKind.Session);
-        ValidateGraphs(entries, manifest.RequiredResources.Tasks, GraphResourceKind.Task);
+        var graphIssues = new List<StoryPackageGraphIssue>();
+        ValidateGraphs(entries, manifest.RequiredResources.CanonicalStories, GraphResourceKind.Story, manifest, graphIssues);
+        ValidateGraphs(entries, manifest.RequiredResources.Sessions, GraphResourceKind.Session, manifest, graphIssues);
+        ValidateGraphs(entries, manifest.RequiredResources.Tasks, GraphResourceKind.Task, manifest, graphIssues);
+        if (graphIssues.Count != 0) throw new StoryPackageException(graphIssues);
+
+        var graphs = manifest.RequiredResources.CanonicalStories.Concat(manifest.RequiredResources.Sessions).Concat(manifest.RequiredResources.Tasks)
+            .Select(path => GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[path]))).ToArray();
+        var memberships = manifest.RequiredResources.CanonicalMemberships.Select(path => CanonicalStoryMembershipSerializer.Deserialize(ReadText(entries[path]))).ToArray();
+        var actors = manifest.RequiredResources.Actors.Select(path => ActorSerializer.Deserialize(ReadText(entries[path]))).ToArray();
+        var items = manifest.RequiredResources.Items.Concat(manifest.RequiredResources.ItemGroups).Select(path => ItemSerializer.Deserialize(ReadText(entries[path]))).ToArray();
+        CurrentProjectValidator.Validate(new(graphs, memberships, actors, items, CanonicalStoryLogicGraph.Empty));
+        var inventory = CurrentProjectInventory.Resources(new(graphs, memberships, actors, items, CanonicalStoryLogicGraph.Empty)).ToHashSet();
+        var declaredResources = CurrentProjectInventory.Members(memberships.Single().OwnedResources)
+            .Concat(CurrentProjectInventory.Members(memberships.Single().ReferencedResources)).Append(new(DgrResourceKind.Story, manifest.StoryId)).ToHashSet();
+        if (!inventory.SetEquals(declaredResources)) throw new StoryPackageException("DGRS must contain exactly its owned and referenced resource closure.");
 
         var selectedCanonical = manifest.RequiredResources.CanonicalStories
             .Any(path => string.Equals(GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[path])).Id, manifest.StoryId, StringComparison.Ordinal));
@@ -236,23 +274,14 @@ public static class DgrsPackageValidator
                 || GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[manifest.RequiredResources.Story])).Id != manifest.StoryId))
             throw new StoryPackageException("Primary canonical Story and membership must match manifest story_id.");
 
-        if (manifest.RequiredResources.Story.StartsWith("stories/", StringComparison.Ordinal))
-        {
-            var story = StorySerializer.Deserialize(ReadText(entries[manifest.RequiredResources.Story]));
-            if (!string.Equals(story.Id, manifest.StoryId, StringComparison.Ordinal))
-                throw new StoryPackageException("Legacy Story identity does not match manifest story_id.");
-            var errors = StoryValidator.Validate(story)
-                .Where(issue => issue.Severity == ValidationSeverity.Error)
-                .ToArray();
-            if (errors.Length != 0)
-                throw new StoryPackageException($"Legacy Story payload failed validation: {errors[0].Message}");
-        }
     }
 
     private static void ValidateGraphs(
         IReadOnlyDictionary<string, ZipArchiveEntry> entries,
         IEnumerable<string> paths,
-        GraphResourceKind expectedKind)
+        GraphResourceKind expectedKind,
+        StoryPackageManifest manifest,
+        ICollection<StoryPackageGraphIssue> graphIssues)
     {
         var scope = GraphResourceScopeAdapter.GetScope(expectedKind);
         var identities = new HashSet<string>(StringComparer.Ordinal);
@@ -260,7 +289,7 @@ public static class DgrsPackageValidator
         {
             var envelope = GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[path]));
             if (envelope.ResourceKind != expectedKind
-                || !DgrResourceId.IsFullId(envelope.Id) && !string.Equals(Path.GetFileNameWithoutExtension(path), envelope.Id, StringComparison.Ordinal))
+                || !path.EndsWith("/" + (expectedKind == GraphResourceKind.Story ? envelope.Id + ".json" : ResourceAddress.FromKey(envelope.Id).RelativeDefinitionPath), StringComparison.Ordinal))
                 throw new StoryPackageException($"Canonical resource identity does not match DGRS path '{path}'.");
             if (!identities.Add(envelope.Id)) throw new StoryPackageException($"Duplicate canonical resource ID '{envelope.Id}'.");
             var graph = GraphResourceScopeAdapter.Open(envelope, scope);
@@ -268,8 +297,14 @@ public static class DgrsPackageValidator
                 .Concat(ValidatePackageNodeShapes(graph, scope))
                 .Where(issue => issue.Severity == ValidationSeverity.Error)
                 .ToArray();
-            if (issues.Length != 0)
-                throw new StoryPackageException($"Canonical resource '{path}' failed validation: {issues[0].Code}: {issues[0].Message}");
+            if (issues.Length == 0) continue;
+            var storyName = GraphResourceEnvelopeSerializer.Deserialize(ReadText(entries[manifest.RequiredResources.Story])).DisplayName;
+            foreach (var issue in issues)
+            {
+                var node = graph.Nodes.FirstOrDefault(candidate => candidate.Id == issue.NodeId);
+                graphIssues.Add(new(manifest.StoryId, storyName, path, expectedKind, envelope.Id,
+                    envelope.DisplayName, node?.DisplayName, issue));
+            }
         }
     }
 
@@ -293,11 +328,18 @@ public static class DgrsPackageValidator
             || !dormant.Contains(issue.NodeId));
     }
 
-    private static string ReadText(ZipArchiveEntry entry)
+    internal static string ReadText(ZipArchiveEntry entry)
     {
         using var stream = entry.Open();
-        using var reader = new StreamReader(stream, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd();
+        using var bytes = new MemoryStream();
+        var buffer = new byte[81920];
+        int count;
+        while ((count = stream.Read(buffer)) != 0)
+        {
+            if (bytes.Length + count > 64L * 1024 * 1024) throw new StoryPackageException("DGRS entry exceeds its decoded size limit.");
+            bytes.Write(buffer, 0, count);
+        }
+        return new UTF8Encoding(false, true).GetString(bytes.ToArray()).TrimStart('\uFEFF');
     }
 }
 

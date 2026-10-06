@@ -4,7 +4,6 @@ import java.util.List;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.player.EntityInteractEvent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,25 +37,7 @@ public final class CanonicalTaskEventAdapter {
         }
     }
 
-    @SubscribeEvent(receiveCanceled = true)
-    public void onEntityInteract(EntityInteractEvent event) {
-        try {
-            if (event == null || event.isCanceled() || !(event.entityPlayer instanceof EntityPlayerMP)) return;
-            EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
-            // A successful submit consumes this physical interaction. Do not
-            // dispatch the same click as a second actor event, which could
-            // activate a newly unlocked objective in the same tick.
-            if (manager.handleEntityInteraction(player, event.target)) {
-                event.setCanceled(true);
-                return;
-            }
-            List<CanonicalTaskEvent> taskEvents = CanonicalTaskForgeEventNormalizer.interactEvents(event.target);
-            for (CanonicalTaskEvent taskEvent : taskEvents) dispatch((EntityPlayerMP) event.entityPlayer, taskEvent);
-        } catch (RuntimeException failure) {
-            // Forge listeners must not let one malformed CustomNPC+ wrapper abort the event bus.
-            LOG.warn("Canonical Task interaction event was ignored: {}", failure.getMessage());
-        }
-    }
+    // Physical actor clicks are arbitrated exclusively by CanonicalStoryEventAdapter.
 
     @SubscribeEvent
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {

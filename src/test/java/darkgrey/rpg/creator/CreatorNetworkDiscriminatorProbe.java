@@ -32,19 +32,26 @@ public final class CreatorNetworkDiscriminatorProbe {
             while (m.find()) constants.put(m.group(1), Integer.valueOf(m.group(2)));
         }
         Map<Integer, String> ids = new HashMap<Integer, String>();
+        Map<Integer, String> packetTypes = new HashMap<Integer, String>();
+        java.util.Set<String> handlers = new java.util.HashSet<String>();
         Pattern registration = Pattern.compile(
-            "registerMessage\\s*\\([^;]*?,\\s*(\\w+)\\s*,\\s*(?:cpw\\.mods\\.fml\\.relauncher\\.)?Side\\.(CLIENT|SERVER)\\s*\\)");
+            "registerMessage\\s*\\([^;]*?,\\s*([\\w.]+)\\.class\\s*,\\s*(\\w+)\\s*,\\s*(?:cpw\\.mods\\.fml\\.relauncher\\.)?Side\\.(CLIENT|SERVER)\\s*\\)");
         for (String source : sources) {
+            // Gramophone has its own channel and discriminator namespace.
+            if (source.contains("class GramophoneNetwork")) continue;
             Matcher m = registration.matcher(source);
             while (m.find()) {
-                Integer id = m.group(1)
-                    .matches("\\d+") ? Integer.valueOf(m.group(1)) : constants.get(m.group(1));
-                if (id == null || ids.put(id, m.group(2)) != null)
+                Integer id = m.group(2)
+                    .matches("\\d+") ? Integer.valueOf(m.group(2)) : constants.get(m.group(2));
+                String oldType = packetTypes.put(id, m.group(1));
+                if (id == null || !handlers.add(id + ":" + m.group(3))
+                    || (oldType != null && !oldType.equals(m.group(1))))
                     throw new AssertionError("Unknown or duplicate discriminator: " + m.group());
+                ids.put(id, ids.containsKey(id) ? ids.get(id) + "," + m.group(3) : m.group(3));
             }
         }
-        if (ids.size() != 23) throw new AssertionError("Expected 23 registrations, found " + ids);
-        for (int i = 3; i <= 25; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
+        if (ids.size() != 31) throw new AssertionError("Expected 31 packet identities, found " + ids);
+        for (int i = 3; i <= 33; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
         if (!"CLIENT".equals(ids.get(17)) || !"SERVER".equals(ids.get(18)))
             throw new AssertionError("Creator packet side mismatch");
         if (!"CLIENT".equals(ids.get(24)) || !"SERVER".equals(ids.get(25)))
@@ -52,6 +59,9 @@ public final class CreatorNetworkDiscriminatorProbe {
         if (!"SERVER".equals(ids.get(21))) throw new AssertionError("Task submit packet side mismatch");
         if (!"SERVER".equals(ids.get(22)) || !"CLIENT".equals(ids.get(23)))
             throw new AssertionError("Media packet side mismatch");
+        for (int id : new int[] { 30, 32, 33 })
+            if (!handlers.contains(id + ":CLIENT") || !handlers.contains(id + ":SERVER"))
+                throw new AssertionError("Bidirectional packet is missing a handler: " + id);
         System.out.println("CREATOR_NETWORK_DISCRIMINATOR_PROBE=PASS");
     }
 }

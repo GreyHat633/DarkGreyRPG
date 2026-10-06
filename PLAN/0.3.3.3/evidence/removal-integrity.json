@@ -1,0 +1,22 @@
+{
+  "Artifacts": [
+    {
+      "Path": "dist/darkgrey_rpg-0.3.3.3.jar",
+      "SHA256": "B5E90B0AE26EA360919E22EBA160E61119C7274E6958FF565337601C320849D2",
+      "Bytes": 1701765
+    },
+    {
+      "Path": ".tooling/0333/Client/mods/darkgrey_rpg-0.3.3.3.jar",
+      "SHA256": "B5E90B0AE26EA360919E22EBA160E61119C7274E6958FF565337601C320849D2",
+      "Bytes": 1701765
+    },
+    {
+      "Path": ".tooling/0333/ServerRelease/mods/darkgrey_rpg-0.3.3.3.jar",
+      "SHA256": "B5E90B0AE26EA360919E22EBA160E61119C7274E6958FF565337601C320849D2",
+      "Bytes": 1701765
+    }
+  ],
+  "MatchingHashes": true,
+  "DiagnosticClasses": [],
+  "UserAccepted": false
+}

@@ -5,7 +5,9 @@ namespace DarkGreyRPG.Studio.Core.Items;
 /// <summary>The two resource shapes supported by the Studio item registry.</summary>
 public abstract class ItemResource
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
+    [JsonPropertyName("identity_format")]
+    public string IdentityFormat { get; init; } = "story-uid-v1";
 
     [JsonPropertyName("schema_version")]
     [JsonPropertyOrder(0)]
@@ -38,6 +40,7 @@ public sealed class IndividualItemResource : ItemResource
     }
 
     [JsonPropertyName("item_id")]
+    [JsonConverter(typeof(Identity.ItemAddressKeyJsonConverter))]
     [JsonPropertyOrder(4)]
     public string ItemId { get; init; } = string.Empty;
 
@@ -55,6 +58,7 @@ public sealed class CollectiveItemResource : ItemResource
     }
 
     [JsonPropertyName("group_id")]
+    [JsonConverter(typeof(Identity.ItemGroupAddressKeyJsonConverter))]
     [JsonPropertyOrder(4)]
     public string GroupId { get; init; } = string.Empty;
 

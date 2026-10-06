@@ -1,4 +1,5 @@
 using DarkGreyRPG.Studio.Core.Identity;
+using DarkGreyRPG.Studio.Core.Packaging;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -15,8 +16,8 @@ public sealed class CanonicalExternalReferenceException : Exception
 }
 
 /// <summary>
-/// Adds an explicitly namespaced external resource to one Story membership.
-/// The referenced definition may be unavailable in this project and is never
+/// Adds a typed external resource from a fully validated provider to one Story membership.
+/// The referenced definition is never
 /// created, renamed, or otherwise changed by this service.
 /// </summary>
 public sealed class CanonicalExternalReferenceService
@@ -34,9 +35,9 @@ public sealed class CanonicalExternalReferenceService
     public void AddReference(string storyId, DgrResourceKind kind, string fullId)
     {
         EnsureSupportedKind(kind);
-        if (!DgrResourceId.IsFullId(fullId))
+        if (!CurrentProjectInventory.IsValid(new(kind, fullId)))
             throw Failure("story.external_reference.id.invalid",
-                $"External {KindText(kind)} ID '{fullId}' must be a valid full DGR ID.");
+                $"External {KindText(kind)} ID '{fullId}' must be a current typed resource address.");
 
         lock (_writeGate)
         {
@@ -64,6 +65,9 @@ public sealed class CanonicalExternalReferenceService
                 throw Failure("story.external_reference.duplicate",
                     $"Resource '{fullId}' is already referenced by Story '{storyId}'.");
 
+            var providers = OfflineProviderCatalog.Load(_store.ProjectDirectory);
+            if (providers.Diagnostics.Count != 0 || providers.Resolve(kind, fullId) is null)
+                throw Failure("story.external_reference.source.invalid", "External reference requires one complete, valid provider definition.");
             referencedIds.Add(fullId);
             var updated = new CanonicalStoryMembershipManifest(membership.StoryId, owned, referenced)
             {

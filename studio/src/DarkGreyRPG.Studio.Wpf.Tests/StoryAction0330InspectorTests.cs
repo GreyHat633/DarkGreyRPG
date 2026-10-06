@@ -12,7 +12,7 @@ public sealed class StoryAction0330InspectorTests
     public void AdvancedCommandsAndBuffModesUseTypedAtomicEditing()
     {
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([action])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([action])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.IsFalse(inspector.AdvancedActions);
         Assert.IsFalse(inspector.StoryActionTypeOptions.Any(type => type.Value == "execute_command"));

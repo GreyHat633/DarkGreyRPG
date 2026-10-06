@@ -1,0 +1,1130 @@
+[
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Menu",
+    "Rect": "0,28,1920,64"
+  },
+  {
+    "Name": "文件(F)",
+    "Id": "",
+    "Type": "ControlType.MenuItem",
+    "Rect": "7,30,93,60"
+  },
+  {
+    "Name": "文件(_F)",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "26,49,56,22"
+  },
+  {
+    "Name": "编辑(E)",
+    "Id": "",
+    "Type": "ControlType.MenuItem",
+    "Rect": "100,30,93,60"
+  },
+  {
+    "Name": "编辑(_E)",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "119,49,56,22"
+  },
+  {
+    "Name": "视图(V)",
+    "Id": "",
+    "Type": "ControlType.MenuItem",
+    "Rect": "193,30,95,60"
+  },
+  {
+    "Name": "视图(_V)",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "212,49,58,22"
+  },
+  {
+    "Name": "项目(P)",
+    "Id": "",
+    "Type": "ControlType.MenuItem",
+    "Rect": "288,30,95,60"
+  },
+  {
+    "Name": "项目(_P)",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "307,49,57,22"
+  },
+  {
+    "Name": "帮助(H)",
+    "Id": "",
+    "Type": "ControlType.MenuItem",
+    "Rect": "383,30,96,60"
+  },
+  {
+    "Name": "帮助(_H)",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "401,49,60,22"
+  },
+  {
+    "Name": "已将“资源所有者”的内容追加到“引用者”，可一次撤销。",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "15,999,1890,22"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "0,939,1920,52"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem",
+    "Rect": "2,944,62,42"
+  },
+  {
+    "Name": "输出",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "16,954,35,22"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem",
+    "Rect": "67,944,62,42"
+  },
+  {
+    "Name": "问题",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "81,954,34,22"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem",
+    "Rect": "131,944,80,42"
+  },
+  {
+    "Name": "调试器",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "145,954,52,22"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem",
+    "Rect": "213,944,112,42"
+  },
+  {
+    "Name": "Minecraft",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "227,954,85,22"
+  },
+  {
+    "Name": "",
+    "Id": "CanonicalStoryWorkspace",
+    "Type": "ControlType.Custom",
+    "Rect": "45,131,1837,768"
+  },
+  {
+    "Name": "引用者",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "62,145,207,26"
+  },
+  {
+    "Name": "ST-JKLM-NPQR-STUV-WXYZ",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "62,174,207,22"
+  },
+  {
+    "Name": "新建资源",
+    "Id": "CanonicalCreateResource",
+    "Type": "ControlType.Button",
+    "Rect": "271,155,33,32"
+  },
+  {
+    "Name": "引用已有资源",
+    "Id": "CanonicalReferenceResource",
+    "Type": "ControlType.Button",
+    "Rect": "306,155,32,32"
+  },
+  {
+    "Name": "删除资源或解除引用",
+    "Id": "CanonicalDeleteResource",
+    "Type": "ControlType.Button",
+    "Rect": "341,155,32,32"
+  },
+  {
+    "Name": "搜索",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "324,215,52,32"
+  },
+  {
+    "Name": "搜索",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "332,220,35,22"
+  },
+  {
+    "Name": "",
+    "Id": "AuthoringSearchBox",
+    "Type": "ControlType.Edit",
+    "Rect": "60,211,264,40"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Pane",
+    "Rect": "60,261,316,623"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "60,261,316,623"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "60,261,316,123"
+  },
+  {
+    "Name": "角色",
+    "Id": "",
+    "Type": "ControlType.Group",
+    "Rect": "60,263,316,119"
+  },
+  {
+    "Name": "角色",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button",
+    "Rect": "60,263,64,35"
+  },
+  {
+    "Name": "角色",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "81,268,39,25"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "72,300,304,74"
+  },
+  {
+    "Name": "CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = ST-JKLM-NPQR-STUV-WXYZ~actor~shared, DisplayName = 测试角色, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-JKLM-NPQR-STUV-WXYZ\\resources\\actor\\r-shared.json, Tags = System.String[], Type = individual, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, MembershipKind = Owned, PortraitSource = ActorResourceInfo { Id = ST-JKLM-NPQR-STUV-WXYZ~actor~shared, DisplayName = 测试角色, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-JKLM-NPQR-STUV-WXYZ\\resources\\actor\\r-shared.json, Tags = System.String[], Type = individual, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-JKLM-NPQR-STUV-WXYZ~actor~shared, DisplayName = 测试角色, IdentityText = 个体角色, IsOwned = True, IsReferenced = False }",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,300,304,37"
+  },
+  {
+    "Name": "测试角色  个体角色",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,302,156,34"
+  },
+  {
+    "Name": "测试角色  个体角色",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,308,134,22"
+  },
+  {
+    "Name": "CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = ST-2345-6789-ABCD-EFGH~actor~shared, DisplayName = 测试角色, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\actor\\r-shared.json, Tags = System.String[], Type = individual, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, MembershipKind = Referenced, PortraitSource = ActorResourceInfo { Id = ST-2345-6789-ABCD-EFGH~actor~shared, DisplayName = 测试角色, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\actor\\r-shared.json, Tags = System.String[], Type = individual, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = [引用] , Id = ST-2345-6789-ABCD-EFGH~actor~shared, DisplayName = 测试角色, IdentityText = 个体角色, IsOwned = False, IsReferenced = True }",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,337,304,37"
+  },
+  {
+    "Name": "[引用] 测试角色  个体角色",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,338,210,35"
+  },
+  {
+    "Name": "[引用] 测试角色  个体角色",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,345,188,22"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "60,384,316,123"
+  },
+  {
+    "Name": "物品",
+    "Id": "",
+    "Type": "ControlType.Group",
+    "Rect": "60,387,316,118"
+  },
+  {
+    "Name": "物品",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button",
+    "Rect": "60,387,64,34"
+  },
+  {
+    "Name": "物品",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "81,391,39,25"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "72,423,304,74"
+  },
+  {
+    "Name": "CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.IndividualItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-JKLM-NPQR-STUV-WXYZ~item~shared, DisplayName = 测试物品, IdentityText = 物品, Type = individual, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False }",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,423,304,37"
+  },
+  {
+    "Name": "测试物品  物品",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,425,129,34"
+  },
+  {
+    "Name": "测试物品  物品",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,431,107,22"
+  },
+  {
+    "Name": "CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.CollectiveItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-JKLM-NPQR-STUV-WXYZ~item_group~shared, DisplayName = 测试物品组, IdentityText = 资源组, Type = collective, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False }",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,460,304,37"
+  },
+  {
+    "Name": "测试物品组  资源组",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,462,160,34"
+  },
+  {
+    "Name": "测试物品组  资源组",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,468,138,22"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "60,507,316,123"
+  },
+  {
+    "Name": "会话",
+    "Id": "",
+    "Type": "ControlType.Group",
+    "Rect": "60,510,316,118"
+  },
+  {
+    "Name": "会话",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button",
+    "Rect": "60,510,64,34"
+  },
+  {
+    "Name": "会话",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "81,515,39,24"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "72,547,304,73"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,547,304,36"
+  },
+  {
+    "Name": "测试会话  会话",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,548,129,34"
+  },
+  {
+    "Name": "测试会话  会话",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,554,107,22"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,583,304,37"
+  },
+  {
+    "Name": "实机新身份会话  会话",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,585,181,34"
+  },
+  {
+    "Name": "实机新身份会话  会话",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,591,159,22"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "60,630,316,87"
+  },
+  {
+    "Name": "任务",
+    "Id": "",
+    "Type": "ControlType.Group",
+    "Rect": "60,633,316,81"
+  },
+  {
+    "Name": "任务",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button",
+    "Rect": "60,633,64,34"
+  },
+  {
+    "Name": "任务",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "81,638,39,24"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "72,670,304,37"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "72,670,304,37"
+  },
+  {
+    "Name": "测试任务  任务",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "72,671,129,34"
+  },
+  {
+    "Name": "测试任务  任务",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "83,677,107,22"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Thumb",
+    "Rect": "392,131,10,768"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "414,139,1098,30"
+  },
+  {
+    "Name": "CanonicalStoryBreadcrumb { Id = identity_fixture, DisplayName = 当前身份实机验收, Kind = Project, ResourceKind = , IsFirst = True, IsCurrent = False }",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "414,139,154,30"
+  },
+  {
+    "Name": "当前身份实机验收",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "414,139,154,30"
+  },
+  {
+    "Name": "当前身份实机验收",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "421,143,139,22"
+  },
+  {
+    "Name": "CanonicalStoryBreadcrumb { Id = ST-JKLM-NPQR-STUV-WXYZ, DisplayName = 引用者, Kind = Story, ResourceKind = Story, IsFirst = False, IsCurrent = True }",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "568,139,87,30"
+  },
+  {
+    "Name": ">",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "571,143,13,22"
+  },
+  {
+    "Name": "引用者",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "588,139,67,30"
+  },
+  {
+    "Name": "引用者",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "595,143,53,22"
+  },
+  {
+    "Name": "节点图编辑器",
+    "Id": "CanonicalStoryWorkspaceGraph",
+    "Type": "ControlType.Custom",
+    "Rect": "402,179,1123,720"
+  },
+  {
+    "Name": "图编辑器缩放到百分之百",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "402,179,68,34"
+  },
+  {
+    "Name": "100%",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "413,185,46,22"
+  },
+  {
+    "Name": "适应全部图节点",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "475,179,57,34"
+  },
+  {
+    "Name": "适应",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "486,185,35,22"
+  },
+  {
+    "Name": "重置图视图",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "537,179,57,34"
+  },
+  {
+    "Name": "重置",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "548,185,35,22"
+  },
+  {
+    "Name": "剪断连线",
+    "Id": "ScissorsButton",
+    "Type": "ControlType.Button",
+    "Rect": "599,179,57,34"
+  },
+  {
+    "Name": "剪刀",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "610,185,35,22"
+  },
+  {
+    "Name": "组合",
+    "Id": "CombineSelection",
+    "Type": "ControlType.Button",
+    "Rect": "661,179,57,34"
+  },
+  {
+    "Name": "组合",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "672,185,35,22"
+  },
+  {
+    "Name": "拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "733,186,792,27"
+  },
+  {
+    "Name": "图节点 开始 start",
+    "Id": "CanonicalGraphNode_start",
+    "Type": "ControlType.Custom",
+    "Rect": "824,323,288,731"
+  },
+  {
+    "Name": "开始",
+    "Id": "HeaderTitle",
+    "Type": "ControlType.Text",
+    "Rect": "837,332,263,22"
+  },
+  {
+    "Name": "start 输出端口 story_trigger_db88a60e2ff3405a813ef03c7c5ce405 (Flow)",
+    "Id": "CanonicalGraphPort_start_story_trigger_db88a60e2ff3405a813ef03c7c5ce405",
+    "Type": "ControlType.Button",
+    "Rect": "968,369,134,25"
+  },
+  {
+    "Name": "启动条件 1",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1004,373,67,17"
+  },
+  {
+    "Name": "参数",
+    "Id": "CanonicalNodeParameterSummary",
+    "Type": "ControlType.Group",
+    "Rect": "834,403,268,641"
+  },
+  {
+    "Name": "参数",
+    "Id": "HeaderSite",
+    "Type": "ControlType.Button",
+    "Rect": "837,405,263,24"
+  },
+  {
+    "Name": "参数",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "865,406,35,22"
+  },
+  {
+    "Name": "",
+    "Id": "Root",
+    "Type": "ControlType.Custom",
+    "Rect": "839,435,258,606"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Custom",
+    "Rect": "839,447,258,131"
+  },
+  {
+    "Name": "重复设置",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "839,447,258,22"
+  },
+  {
+    "Name": "重复条件",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,488,236,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartRepeatMode",
+    "Type": "ControlType.ComboBox",
+    "Rect": "850,515,236,39"
+  },
+  {
+    "Name": "启动条件（共 1 条）",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "839,593,226,30"
+  },
+  {
+    "Name": "添加启动条件",
+    "Id": "InlineStartAddTrigger",
+    "Type": "ControlType.Button",
+    "Rect": "1065,593,32,30"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerList",
+    "Type": "ControlType.List",
+    "Rect": "839,626,258,415"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "839,626,258,415"
+  },
+  {
+    "Name": "启动条件 1",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,641,133,22"
+  },
+  {
+    "Name": "↑",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "987,639,21,27"
+  },
+  {
+    "Name": "↑",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "993,641,9,22"
+  },
+  {
+    "Name": "↓",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "1010,639,21,27"
+  },
+  {
+    "Name": "↓",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1016,641,9,22"
+  },
+  {
+    "Name": "删除",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "1034,637,52,30"
+  },
+  {
+    "Name": "删除",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1042,641,35,22"
+  },
+  {
+    "Name": "名称",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,677,236,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerName",
+    "Type": "ControlType.Edit",
+    "Rect": "850,703,236,39"
+  },
+  {
+    "Name": "类型",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,752,236,22"
+  },
+  {
+    "Name": "Story Start trigger type",
+    "Id": "InlineStartTriggerType",
+    "Type": "ControlType.ComboBox",
+    "Rect": "850,778,236,40"
+  },
+  {
+    "Name": "维度",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,823,236,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerDimension",
+    "Type": "ControlType.Edit",
+    "Rect": "850,845,236,39"
+  },
+  {
+    "Name": "X",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,889,76,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerX",
+    "Type": "ControlType.Edit",
+    "Rect": "850,911,76,40"
+  },
+  {
+    "Name": "Y",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "931,889,74,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerY",
+    "Type": "ControlType.Edit",
+    "Rect": "931,911,74,40"
+  },
+  {
+    "Name": "Z",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1010,889,76,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerZ",
+    "Type": "ControlType.Edit",
+    "Rect": "1010,911,76,40"
+  },
+  {
+    "Name": "半径",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "850,956,236,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerRadius",
+    "Type": "ControlType.Edit",
+    "Rect": "850,978,236,40"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "Root",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "Root",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "图节点 开始 node_f511a2cc454549e28721f24dc78c45c2",
+    "Id": "CanonicalGraphNode_node_f511a2cc454549e28721f24dc78c45c2",
+    "Type": "ControlType.Custom",
+    "Rect": "923,224,288,730"
+  },
+  {
+    "Name": "开始",
+    "Id": "HeaderTitle",
+    "Type": "ControlType.Text",
+    "Rect": "936,233,263,22"
+  },
+  {
+    "Name": "node_f511a2cc454549e28721f24dc78c45c2 输出端口 port_265d402c806f4d419a5e1b23c66371c5 (Flow)",
+    "Id": "CanonicalGraphPort_node_f511a2cc454549e28721f24dc78c45c2_port_265d402c806f4d419a5e1b23c66371c5",
+    "Type": "ControlType.Button",
+    "Rect": "1067,270,134,25"
+  },
+  {
+    "Name": "启动条件 1",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1104,274,66,17"
+  },
+  {
+    "Name": "参数",
+    "Id": "CanonicalNodeParameterSummary",
+    "Type": "ControlType.Group",
+    "Rect": "933,303,268,641"
+  },
+  {
+    "Name": "参数",
+    "Id": "HeaderSite",
+    "Type": "ControlType.Button",
+    "Rect": "936,306,263,23"
+  },
+  {
+    "Name": "参数",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "964,307,35,22"
+  },
+  {
+    "Name": "",
+    "Id": "Root",
+    "Type": "ControlType.Custom",
+    "Rect": "938,336,258,606"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Custom",
+    "Rect": "938,348,258,131"
+  },
+  {
+    "Name": "重复设置",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "938,348,258,22"
+  },
+  {
+    "Name": "重复条件",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,389,235,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartRepeatMode",
+    "Type": "ControlType.ComboBox",
+    "Rect": "950,416,235,39"
+  },
+  {
+    "Name": "启动条件（共 1 条）",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "938,494,226,29"
+  },
+  {
+    "Name": "添加启动条件",
+    "Id": "InlineStartAddTrigger",
+    "Type": "ControlType.Button",
+    "Rect": "1164,494,32,29"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerList",
+    "Type": "ControlType.List",
+    "Rect": "938,527,258,415"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel",
+    "Id": "",
+    "Type": "ControlType.DataItem",
+    "Rect": "938,527,258,415"
+  },
+  {
+    "Name": "启动条件 1",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,542,132,22"
+  },
+  {
+    "Name": "↑",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "1086,540,21,27"
+  },
+  {
+    "Name": "↑",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1092,542,9,22"
+  },
+  {
+    "Name": "↓",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "1109,540,22,27"
+  },
+  {
+    "Name": "↓",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1116,542,8,22"
+  },
+  {
+    "Name": "删除",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "1133,538,52,30"
+  },
+  {
+    "Name": "删除",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1142,542,34,22"
+  },
+  {
+    "Name": "名称",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,578,235,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerName",
+    "Type": "ControlType.Edit",
+    "Rect": "950,603,235,40"
+  },
+  {
+    "Name": "类型",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,653,235,22"
+  },
+  {
+    "Name": "Story Start trigger type",
+    "Id": "InlineStartTriggerType",
+    "Type": "ControlType.ComboBox",
+    "Rect": "950,679,235,39"
+  },
+  {
+    "Name": "维度",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,723,235,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerDimension",
+    "Type": "ControlType.Edit",
+    "Rect": "950,745,235,40"
+  },
+  {
+    "Name": "X",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,790,76,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerX",
+    "Type": "ControlType.Edit",
+    "Rect": "950,812,76,40"
+  },
+  {
+    "Name": "Y",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1031,790,73,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerY",
+    "Type": "ControlType.Edit",
+    "Rect": "1031,812,73,40"
+  },
+  {
+    "Name": "Z",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1109,790,76,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerZ",
+    "Type": "ControlType.Edit",
+    "Rect": "1109,812,76,40"
+  },
+  {
+    "Name": "半径",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "950,857,235,22"
+  },
+  {
+    "Name": "",
+    "Id": "InlineStartTriggerRadius",
+    "Type": "ControlType.Edit",
+    "Rect": "950,879,235,39"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "Root",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "Root",
+    "Type": "ControlType.Custom",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List",
+    "Rect": "Empty"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.Thumb",
+    "Rect": "1525,131,9,768"
+  },
+  {
+    "Name": "引用者",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1556,155,306,30"
+  },
+  {
+    "Name": "已保存",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1556,185,306,22"
+  },
+  {
+    "Name": "",
+    "Id": "CanonicalInspectorScrollViewer",
+    "Type": "ControlType.Pane",
+    "Rect": "1556,225,306,654"
+  },
+  {
+    "Name": "×",
+    "Id": "",
+    "Type": "ControlType.Button",
+    "Rect": "1837,71,35,35"
+  },
+  {
+    "Name": "×",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1852,79,13,22"
+  },
+  {
+    "Name": "已将“资源所有者”的内容追加到“引用者”，可一次撤销。",
+    "Id": "",
+    "Type": "ControlType.Text",
+    "Rect": "1397,78,425,22"
+  }
+]

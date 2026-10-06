@@ -127,10 +127,6 @@ public sealed class CanonicalStoryMembershipRepository
         try
         {
             var manifest = CanonicalStoryMembershipSerializer.Deserialize(File.ReadAllText(path));
-            if (!DgrResourceId.IsFullId(manifest.StoryId)
-                && !string.Equals(Path.GetFileName(path), manifest.StoryId + ".json", StringComparison.Ordinal))
-                throw Failure("story.membership.repository.filename.mismatch",
-                    $"Membership file name '{Path.GetFileNameWithoutExtension(path)}' does not match story_id '{manifest.StoryId}'.");
             return manifest;
         }
         catch (CanonicalStoryMembershipRepositoryException) { throw; }
@@ -191,28 +187,33 @@ public sealed class CanonicalStoryMembershipRepository
 
     private string? FindExistingPath(string storyId)
     {
-        if (!DgrResourceId.IsFullId(storyId))
-        {
-            var legacyPath = Path.Combine(MembershipDirectory, storyId + ".json");
-            return File.Exists(legacyPath) ? legacyPath : null;
-        }
-        return CanonicalResourceFileSystem.FindUniquePath(
+        var found = CanonicalResourceFileSystem.FindUniquePath(
             MembershipDirectory,
             storyId,
             path => Read(path).StoryId,
             (logicalId, paths) => Failure("story.membership.repository.duplicate_id",
                 $"Story membership ID '{logicalId}' is present in multiple files: {string.Join(", ", paths)}."),
             exception => exception is CanonicalStoryMembershipRepositoryException);
+        if (found is null && File.Exists(CanonicalPath(storyId)))
+        {
+            var path = CanonicalPath(storyId);
+            var occupant = Read(path);
+            if (!string.Equals(occupant.StoryId, storyId, StringComparison.Ordinal))
+                throw Failure("story.membership.repository.path.occupied",
+                    $"Membership path '{path}' belongs to '{occupant.StoryId}', not requested Story '{storyId}'.");
+            return path;
+        }
+        return found;
     }
 
     private string CanonicalPath(string storyId)
-        => Path.Combine(MembershipDirectory, DgrResourceId.RelativeJsonPath(storyId));
+        => Path.Combine(MembershipDirectory, StoryUid.Parse(storyId).Value + ".json");
 
     private static void ValidateId(string? storyId)
     {
-        if (!DgrResourceId.IsFullId(storyId) && !LegacyIdPattern.IsMatch(storyId ?? string.Empty))
+        if (!StoryUid.IsValid(storyId))
             throw Failure("story.membership.repository.story_id.invalid",
-                $"Story ID '{storyId}' must be a valid full DGR ID or a compatible legacy ID.");
+                $"Story identity '{storyId}' must be a current Story UID.");
     }
 
     private void EnsureDirectory()

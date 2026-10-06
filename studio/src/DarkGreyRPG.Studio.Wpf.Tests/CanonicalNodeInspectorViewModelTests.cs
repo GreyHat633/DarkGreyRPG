@@ -51,10 +51,10 @@ public sealed class CanonicalNodeInspectorViewModelTests
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Story,
-                "story", "Story", new GraphDocument()),
+                "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
             sessions: [new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
-                "session", "Session", new GraphDocument([line]))]);
+                "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line]))]);
         var session = workspace.SessionItems.Single();
         Assert.IsTrue(workspace.OpenGraphResource(session));
         Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
@@ -72,7 +72,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         using var host = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
-                "session", "Session", new GraphDocument([line])));
+                "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         var node = host.Host.Nodes.Single();
         var inspector = new CanonicalNodeInspectorViewModel(host.Host, node);
         using (inspector)
@@ -90,7 +90,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, CanonicalStoryActionSchema.NodeType, "action-1");
         Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(action, CanonicalStoryActionSchema.SendMessage, out _));
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([action])));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([action])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
 
         Assert.IsTrue(inspector.IsStoryAction);
@@ -145,32 +145,32 @@ public sealed class CanonicalNodeInspectorViewModelTests
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         var actors = new[]
         {
-            new CanonicalStoryActorItem(new ActorResourceInfo("z-id", "同名", "z.json", []),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~z_id", "同名", "z.json", []),
                 CanonicalStoryWorkspaceMembershipKind.Referenced),
-            new CanonicalStoryActorItem(new ActorResourceInfo("a-id", "同名", "a.json", [])),
-            new CanonicalStoryActorItem(new ActorResourceInfo("hero", "英雄", "hero.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~a_id", "同名", "a.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~hero", "英雄", "hero.json", [])),
         };
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), actors);
 
-        CollectionAssert.AreEqual(new[] { "a-id", "z-id", "hero" },
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~actor~a_id", "ST-2345-6789-ABCD-EFGH~actor~z_id", "ST-2345-6789-ABCD-EFGH~actor~hero" },
             inspector.SpeakerOptions.Select(option => option.Id).ToArray());
-        Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "z-id").IsReferenced);
-        Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "a-id").IsOwned);
+        Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~actor~z_id").IsReferenced);
+        Assert.IsTrue(inspector.SpeakerOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~actor~a_id").IsOwned);
         Assert.IsNull(inspector.SelectedSpeaker);
         Assert.IsFalse(inspector.IsSpeakerResolved);
         Assert.AreEqual(string.Empty, inspector.SpeakerStatusText);
         Assert.IsFalse(inspector.HasSpeakerStatus);
         var stableOptions = inspector.SpeakerOptions;
 
-        inspector.SelectedSpeaker = inspector.SpeakerOptions.Single(option => option.Id == "z-id");
+        inspector.SelectedSpeaker = inspector.SpeakerOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~actor~z_id");
 
         Assert.AreSame(stableOptions, inspector.SpeakerOptions);
-        Assert.AreEqual("z-id", inspector.SpeakerActorId);
-        Assert.AreEqual("z-id", editor.Host.Graph.Nodes.Single().Properties["speaker_actor_id"].GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~z_id", inspector.SpeakerActorId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~z_id", editor.Host.Graph.Nodes.Single().Properties["speaker_actor_id"].GetString());
         Assert.IsTrue(editor.IsDirty);
         Assert.IsTrue(inspector.IsSpeakerResolved);
     }
@@ -179,19 +179,19 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void ExistingUnknownSpeakerRemainsVisibleAsUnresolvedOption()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
-        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("deleted-actor");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~deleted_actor");
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
-        var actor = new CanonicalStoryActorItem(new ActorResourceInfo("known", "已知角色", "known.json", []));
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
+        var actor = new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~known", "已知角色", "known.json", []));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), [actor]);
 
-        var unresolved = inspector.SpeakerOptions.Single(option => option.Id == "deleted-actor");
+        var unresolved = inspector.SpeakerOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~actor~deleted_actor");
         Assert.IsTrue(unresolved.IsUnresolved);
-        Assert.IsTrue(unresolved.DisplayName.Contains("deleted-actor", StringComparison.Ordinal));
+        Assert.IsTrue(unresolved.DisplayName.Contains("ST-2345-6789-ABCD-EFGH~actor~deleted_actor", StringComparison.Ordinal));
         Assert.AreSame(unresolved, inspector.SelectedSpeaker);
         Assert.IsTrue(inspector.IsSpeakerUnresolved);
-        Assert.AreEqual("deleted-actor",
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~deleted_actor",
             editor.Host.Graph.Nodes.Single().Properties["speaker_actor_id"].GetString());
     }
 
@@ -203,7 +203,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
-                "session", "Session", new GraphDocument([choice])));
+                "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([choice])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
 
         CollectionAssert.AreEqual(
@@ -252,15 +252,15 @@ public sealed class CanonicalNodeInspectorViewModelTests
         choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
         choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
-        var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
-        target.Properties["port_id"] = JsonSerializer.SerializeToElement("known");
+        var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
+        target.Properties["port_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~known");
         target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
         var graph = new GraphDocument([choice, target], [
             new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic)]);
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
-                "session", "Session", graph));
+                "ST-2345-6789-ABCD-EFGH~session~session", "Session", graph));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "choice"));
 
@@ -357,14 +357,14 @@ public sealed class CanonicalNodeInspectorViewModelTests
     [TestMethod]
     public void EndAndLogicOutputDisplayNamesUseHostTransactions()
     {
-        var end = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
+        var end = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "end", "end").Candidate!;
         end.Properties["display_name"] = JsonSerializer.SerializeToElement("Done");
-        var logic = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
+        var logic = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
         logic.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
-                "session", "Session", new GraphDocument([end, logic])));
+                "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([end, logic])));
         var endInspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(node => node.NodeId == "end"));
         using (endInspector)
         {
@@ -387,85 +387,53 @@ public sealed class CanonicalNodeInspectorViewModelTests
     }
 
     [TestMethod]
-    public void TaskSettleInspectorEditsVisiblePriorityWithoutChangingStableIds()
+    public void PublicTaskOutputsRenameAndReorderWithoutChangingIdsOrConditions()
     {
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("result_a", "A", true, GraphInterfaceKind.Logic, 0));
-        settle.Ports.Add(new GraphPort("result_b", "B", true, GraphInterfaceKind.Logic, 1));
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([
-                GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"), settle])));
-        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
-            editor.Host.Nodes.Single(node => node.NodeId == "settle"));
-
-        Assert.HasCount(2, inspector.TaskResultSlots);
-        var second = inspector.TaskResultSlots[1];
-        var changedNodes = new List<string>();
-        editor.Host.PortsChanged += (_, args) => changedNodes.AddRange(args.NodeIds);
-        Assert.IsTrue(inspector.AddTaskResultSlot("C"));
-        Assert.AreEqual("settle", changedNodes.Single());
-        Assert.IsTrue(inspector.RenameTaskResultSlot(second.PortId, "Renamed"));
-        Assert.IsTrue(inspector.ReorderTaskResultSlot(second.PortId, 0));
-        Assert.AreSame(second, inspector.TaskResultSlots[0], "Settlement rows must retain focus and identity through edits and reorder.");
-
-        var slots = editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
-            .OrderBy(port => port.Order).ToArray();
-        CollectionAssert.AreEqual(new[] { "result_b", "result_a", slots[2].Id }, slots.Select(port => port.Id).ToArray());
-        Assert.AreEqual("Renamed", slots[0].DisplayName);
-        Assert.AreEqual(1, editor.Host.Session.UndoCount - 2); // add and rename plus one move
-        Assert.IsTrue(inspector.RemoveTaskResultSlot(slots[2].Id));
+        var graph = new GraphDocument();
+        var author = new GraphNodeAuthoringService();
+        graph.Nodes.Add(author.Create(graph, GraphScope.Task, "settle", "a").Candidate!);
+        graph.Nodes.Add(author.Create(graph, GraphScope.Task, "settle", "b").Candidate!);
+        graph.Nodes.Add(author.Create(graph, GraphScope.Task, "logic_output", "logic").Candidate!);
+        var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
+        using var outputs = new PublicOutputsViewModel(host, true);
+        Assert.HasCount(2, outputs.Flow);
+        Assert.HasCount(1, outputs.Logic);
+        var first = outputs.Flow[0].PortId;
+        var second = outputs.Flow[1].PortId;
+        outputs.Flow[1].DisplayName = "Perfect";
+        Assert.IsTrue(outputs.Flow[1].MoveTo(0));
+        CollectionAssert.AreEqual(new[] { second, first }, outputs.Flow.Select(row => row.PortId).ToArray());
+        Assert.AreEqual("Perfect", outputs.Flow[0].DisplayName);
+        Assert.IsTrue(host.Graph.Nodes.Where(node => node.Type == "settle").All(node =>
+            node.Ports.Count == 1 && node.Ports[0].Id == "logic_in"));
+        Assert.IsTrue(host.Undo());
+        Assert.AreEqual(second, outputs.Flow[1].PortId);
+        Assert.IsTrue(host.Redo());
+        Assert.AreEqual(second, outputs.Flow[0].PortId);
     }
 
     [TestMethod]
-    public void TaskSettleDefaultResultNameFillsFirstStandardGap()
+    public void TaskAllowsDeletingLastSettlementAndRestoresDeletedConditionEdge()
     {
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("one", "结果 1", true, GraphInterfaceKind.Logic, 0));
-        settle.Ports.Add(new GraphPort("custom", "完美完成", true, GraphInterfaceKind.Logic, 1));
-        settle.Ports.Add(new GraphPort("three", "结果 3", true, GraphInterfaceKind.Logic, 2));
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([
-                GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"), settle])));
-        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
-            editor.Host.Nodes.Single(node => node.NodeId == "settle"));
-
-        Assert.IsTrue(inspector.AddTaskResultSlot());
-
-        Assert.IsTrue(editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
-            .Any(port => port.DisplayName == "结果 2"));
-    }
-
-    [TestMethod]
-    public void TaskSettleReferencedRemoveConfirmsAndCleansEdgeAsOneUndoUnit()
-    {
+        var graph = new GraphDocument();
+        var author = new GraphNodeAuthoringService();
+        graph.Nodes.Add(author.Create(graph, GraphScope.Task, "settle", "a").Candidate!);
+        graph.Nodes.Add(author.Create(graph, GraphScope.Task, "settle", "b").Candidate!);
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
-        settle.Ports.Add(new GraphPort("other", "Other", true, GraphInterfaceKind.Logic, 1));
-        settle.Ports.Add(new GraphPort("third", "Third", true, GraphInterfaceKind.Logic, 2));
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective, settle], [
-                new GraphConnection("objective", "logic_status", "settle", "result", GraphInterfaceKind.Logic)])));
-        using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
-            editor.Host.Nodes.Single(node => node.NodeId == "settle"));
-        var confirmationCount = 0;
-        inspector.TaskResultSlotRemovalConfirmationRequested = confirmation =>
-        {
-            confirmationCount++;
-            return confirmationCount > 1 && confirmation.DisplayName == "Result";
-        };
-
-        Assert.IsFalse(inspector.RemoveTaskResultSlot("result"));
-        Assert.AreEqual(1, confirmationCount);
-        Assert.IsTrue(inspector.RemoveTaskResultSlot("result"));
-        Assert.IsEmpty(editor.Host.Graph.Connections);
-        Assert.HasCount(2, editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports);
-        CollectionAssert.AreEqual(new[] { 0, 1 }, editor.Host.Graph.Nodes.Single(node => node.Id == "settle").Ports
-            .OrderBy(port => port.Order).Select(port => port.Order).ToArray());
-        Assert.IsTrue(inspector.ReorderTaskResultSlot("third", 0));
-        Assert.IsTrue(editor.Host.Undo());
-        Assert.IsTrue(editor.Host.Undo());
-        Assert.HasCount(1, editor.Host.Graph.Connections);
+        graph.Nodes.Add(objective);
+        graph.Connections.Add(new GraphConnection("objective", "logic_status", "a", "logic_in", GraphInterfaceKind.Logic));
+        var host = new GraphEditorHostViewModel(graph, GraphScope.Task);
+        Assert.IsTrue(host.RemoveNode("a", true));
+        Assert.IsEmpty(host.Graph.Connections);
+        Assert.IsTrue(host.RemoveNode("b", true));
+        Assert.IsTrue(host.Undo());
+        Assert.IsTrue(host.Undo());
+        Assert.HasCount(1, host.Graph.Connections);
+        Assert.AreEqual("logic_in", host.Graph.Connections[0].ToPortId);
+        Assert.IsTrue(host.RemoveNodes(["a", "b"], true));
+        Assert.AreEqual(0, host.Graph.Nodes.Count(node => node.Type == "settle"));
+        Assert.IsTrue(host.Undo());
+        Assert.AreEqual(2, host.Graph.Nodes.Count(node => node.Type == "settle"));
     }
 
     [TestMethod]
@@ -474,9 +442,9 @@ public sealed class CanonicalNodeInspectorViewModelTests
         var output = new GraphNodeAuthoringService(() => "public_task").Create(
             new GraphDocument(), GraphScope.Task, "logic_output", "logic").Candidate!;
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([
                 GraphNodeFactory.Create(GraphScope.Task, "objective", "objective"),
-                GraphNodeFactory.Create(GraphScope.Task, "settle", "settle"), output])));
+                new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Task, "settle", "settle").Candidate!, output])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "logic"));
 
@@ -491,9 +459,9 @@ public sealed class CanonicalNodeInspectorViewModelTests
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+            GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(),
-            [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "actor.json", []))]);
+            [new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", []))]);
 
         var initialTrigger = inspector.StoryStartTriggers.Single();
         var changedNodes = new List<string>();
@@ -508,7 +476,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
         Assert.IsTrue(inspector.AddStoryStartTrigger(
             displayName: "角色触发", triggerType: StoryStartSchema.ActorInteraction,
             triggerProperties: StoryStartSchema.DefaultTriggerProperties(
-                StoryStartSchema.ActorInteraction, "actor")));
+                StoryStartSchema.ActorInteraction, "ST-2345-6789-ABCD-EFGH~actor~actor")));
         Assert.AreEqual("start", changedNodes.Single());
         var trigger = inspector.StoryStartTriggers.Single(item => item.StablePortId != "opaque-start");
         Assert.IsTrue(initialTrigger.RemoveCommand.CanExecute(null));
@@ -548,7 +516,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+            GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
 
         Assert.IsFalse(inspector.IsRepeatable);
@@ -590,7 +558,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
             },
         });
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+            GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
 
         var trigger = inspector.StoryStartTriggers.Single();
@@ -606,35 +574,35 @@ public sealed class CanonicalNodeInspectorViewModelTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var task = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([
-                objective, GraphNodeFactory.Create(GraphScope.Task, "settle", "settle")])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([
+                objective, new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Task, "settle", "settle").Candidate!])));
         var actor = new CanonicalStoryActorItem(new ActorResourceInfo(
-            "slimes", "史莱姆", "slimes.json", [], CollectiveActorResource.ResourceType));
+            "ST-2345-6789-ABCD-EFGH~actor~slimes", "史莱姆", "slimes.json", [], CollectiveActorResource.ResourceType));
         var individual = new CanonicalStoryItemItem(new IndividualItemResource
-            { ItemId = "coin", DisplayName = "铜币" });
+            { ItemId = "ST-2345-6789-ABCD-EFGH~item~coin", DisplayName = "铜币" });
         var collective = new CanonicalStoryItemItem(new CollectiveItemResource
-            { GroupId = "ore", DisplayName = "矿石" });
+            { GroupId = "ST-2345-6789-ABCD-EFGH~item_group~ore", DisplayName = "矿石" });
         using var objectiveInspector = new CanonicalNodeInspectorViewModel(
             task.Host, task.Host.Nodes.Single(node => node.NodeId == "objective"), [actor], [individual, collective]);
 
-        objectiveInspector.SelectedObjectiveActor = objectiveInspector.ObjectiveActorOptions.Single(option => option.Id == "slimes");
-        Assert.AreEqual("slimes", task.Host.Graph.Nodes.Single(node => node.Id == "objective")
+        objectiveInspector.SelectedObjectiveActor = objectiveInspector.ObjectiveActorOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~actor~slimes");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~slimes", task.Host.Graph.Nodes.Single(node => node.Id == "objective")
             .Properties[CanonicalTaskObjectiveSchema.EntityProperty].GetString());
         objectiveInspector.SelectedObjectiveType = objectiveInspector.ObjectiveTypeOptions.Single(option => option.Value == CanonicalTaskObjectiveSchema.CollectItem);
-        objectiveInspector.SelectedObjectiveItem = objectiveInspector.ObjectiveItemOptions.Single(option => option.Id == "ore");
-        Assert.AreEqual("ore", task.Host.Graph.Nodes.Single(node => node.Id == "objective")
+        objectiveInspector.SelectedObjectiveItem = objectiveInspector.ObjectiveItemOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~item_group~ore");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item_group~ore", task.Host.Graph.Nodes.Single(node => node.Id == "objective")
             .Properties[CanonicalTaskObjectiveSchema.ItemProperty].GetString());
 
         var action = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action");
         using var story = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Story, "story", "Story", new GraphDocument([action])));
+            GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([action])));
         using var actionInspector = new CanonicalNodeInspectorViewModel(
             story.Host, story.Host.Nodes.Single(), [actor], [individual, collective]);
         actionInspector.SelectedStoryActionType = actionInspector.StoryActionTypeOptions.Single(option => option.Value == CanonicalStoryActionSchema.GiveItem);
 
-        CollectionAssert.AreEqual(new[] { "coin" }, actionInspector.StoryActionItemOptions.Select(option => option.Id).ToArray());
-        actionInspector.SelectedStoryActionItem = actionInspector.StoryActionItemOptions.Single(option => option.Id == "coin");
-        Assert.AreEqual("coin", story.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item~coin" }, actionInspector.StoryActionItemOptions.Select(option => option.Id).ToArray());
+        actionInspector.SelectedStoryActionItem = actionInspector.StoryActionItemOptions.Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~item~coin");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item~coin", story.Host.Graph.Nodes.Single().Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
     }
 
     private static CanonicalGraphResourceEditorViewModel ChoiceEditor(GraphNode choice, bool includeReference = false)
@@ -643,8 +611,8 @@ public sealed class CanonicalNodeInspectorViewModelTests
         var connections = new List<GraphConnection>();
         if (includeReference)
         {
-            var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
-            target.Properties["port_id"] = JsonSerializer.SerializeToElement("known");
+            var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
+            target.Properties["port_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~known");
             target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
             nodes.Add(target);
             connections.Add(new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic));
@@ -652,7 +620,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
 
         return new(new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
             DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
-            "session", "Session", new GraphDocument(nodes, connections)));
+            "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument(nodes, connections)));
     }
 
     private static GraphNode ReferencedChoice(string nodeId, bool includeReference)

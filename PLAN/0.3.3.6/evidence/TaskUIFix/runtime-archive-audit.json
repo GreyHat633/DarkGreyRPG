@@ -1,0 +1,5 @@
+{
+  "archive_integrity": true,
+  "entries": 939,
+  "mcmod_info": "[\n  {\n    \"modid\": \"darkgrey_rpg\",\n    \"name\": \"DarkGrey RPG\",\n    \"description\": \"Story-first RPG authoring framework with canonical Story Flow, Session, and Task runtime support.\",\n    \"version\": \"0.3.3.6\",\n    \"mcversion\": \"1.7.10\",\n    \"url\": \"\",\n    \"updateUrl\": \"\",\n    \"authorList\": [\"GreyHat\"],\n    \"credits\": \"\",\n    \"logoFile\": \"\",\n    \"screenshots\": [],\n    \"dependencies\": [\"after:customnpcs\"]\n  }\n]\n"
+}

@@ -16,12 +16,12 @@ public sealed class DgrsPackageTests
     public void BuildWritesOneValidatedDgrsWithVersionedManifestAndEquivalentCanonicalPayload()
     {
         using var project = new TestProjectDirectory();
-        CreateCanonicalStory(project.Root, "canonical_only", "中文故事");
+        CreateCanonicalStory(project.Root, "ST-2345-6789-ABCD-EFGH", "中文故事");
         var outputDirectory = Path.Combine(project.Root, "exports");
         var output = Path.Combine(outputDirectory, "canonical_only.dgrs");
 
         var result = new DgrsStoryPackageExporter(project.Root)
-            .Build("canonical_only", output, "0.3.2.0");
+            .Build("ST-2345-6789-ABCD-EFGH", output, "0.3.2.0");
 
         Assert.AreEqual(output, result.PackagePath);
         Assert.AreEqual(StoryPackageManifest.CurrentFormat, result.Manifest.Format);
@@ -32,12 +32,12 @@ public sealed class DgrsPackageTests
         Assert.IsFalse(Directory.EnumerateDirectories(outputDirectory).Any());
         CollectionAssert.Contains(result.Validation.Entries.ToArray(), "manifest.json");
         CollectionAssert.Contains(result.Validation.Entries.ToArray(),
-            "resources/canonical/stories/canonical_only.json");
+            "resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json");
 
         using var archive = ZipFile.OpenRead(output);
-        var packaged = Read(archive.GetEntry("resources/canonical/stories/canonical_only.json")!);
+        var packaged = Read(archive.GetEntry("resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json")!);
         var source = File.ReadAllText(Path.Combine(
-            project.Root, "resources", "canonical", "stories", "canonical_only.json"));
+            project.Root, "resources", "canonical", "stories", "ST-2345-6789-ABCD-EFGH.json"));
         Assert.AreEqual(source, packaged);
         _ = DgrsPackageValidator.Validate(output);
     }
@@ -83,7 +83,7 @@ public sealed class DgrsPackageTests
     public void FailedArchiveWritePreservesPreviousPackageAndCleansTransactionArtifacts()
     {
         using var project = new TestProjectDirectory();
-        CreateCanonicalStory(project.Root, "safe", "Safe");
+        CreateCanonicalStory(project.Root, "ST-2345-6789-ABCD-EFGH", "Safe");
         var outputDirectory = Path.Combine(project.Root, "exports");
         Directory.CreateDirectory(outputDirectory);
         var output = Path.Combine(outputDirectory, "safe.dgrs");
@@ -97,7 +97,7 @@ public sealed class DgrsPackageTests
                 throw new IOException("injected writer failure");
             });
 
-        Assert.ThrowsExactly<StoryPackageException>(() => exporter.Build("safe", output, "0.3.2.0"));
+        Assert.ThrowsExactly<StoryPackageException>(() => exporter.Build("ST-2345-6789-ABCD-EFGH", output, "0.3.2.0"));
 
         CollectionAssert.AreEqual(previous, File.ReadAllBytes(output));
         CollectionAssert.AreEqual(
@@ -116,7 +116,7 @@ public sealed class DgrsPackageTests
         var storyStart = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry");
         var storyJudgment = GraphNodeFactory.Create(GraphScope.StoryFlow,
             FlowJudgmentSchema.NodeType, "story_judgment");
-        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "complete_story", "完整故事",
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "完整故事",
             new GraphDocument([storyStart, storyJudgment],
             [new GraphConnection("start", "entry", "story_judgment", FlowJudgmentSchema.FlowInputPortId,
                 GraphInterfaceKind.Flow)])));
@@ -125,7 +125,9 @@ public sealed class DgrsPackageTests
         var sessionJudgment = GraphNodeFactory.Create(GraphScope.Session,
             FlowJudgmentSchema.NodeType, "session_judgment");
         var sessionEnd = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
-        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "dialogue", "会话",
+        sessionEnd.Properties["port_id"] = JsonSerializer.SerializeToElement("end_port");
+        sessionEnd.Properties["display_name"] = JsonSerializer.SerializeToElement("End");
+        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~dialogue", "会话",
             new GraphDocument([sessionStart, sessionJudgment, sessionEnd],
             [
                 new GraphConnection("start", "flow_out", "session_judgment",
@@ -134,29 +136,31 @@ public sealed class DgrsPackageTests
                     "end", "flow_in", GraphInterfaceKind.Flow),
             ])));
 
-        store.Tasks.Create(Task("task_off", prerequisite: false));
-        store.Tasks.Create(Task("task_on", prerequisite: true));
+        store.Tasks.Create(Task("ST-2345-6789-ABCD-EFGH~task~task_off", prerequisite: false));
+        store.Tasks.Create(Task("ST-2345-6789-ABCD-EFGH~task~task_on", prerequisite: true));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "complete_story",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembershipSet
             {
-                Sessions = ["dialogue"],
-                Tasks = ["task_off", "task_on"],
+                Sessions = ["ST-2345-6789-ABCD-EFGH~session~dialogue"],
+                Tasks = ["ST-2345-6789-ABCD-EFGH~task~task_off", "ST-2345-6789-ABCD-EFGH~task~task_on"],
             }));
 
+        new CanonicalStoryActorLifecycleService(store).CreateOwned("ST-2345-6789-ABCD-EFGH",
+            CanonicalStoryActorKind.Collective, "ST-2345-6789-ABCD-EFGH~actor~boss", "Boss");
         var output = Path.Combine(project.Root, "exports", "complete_story.dgrs");
-        var result = new DgrsStoryPackageExporter(project.Root).Build("complete_story", output, "0.3.2.0");
+        var result = new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output, "0.3.2.0");
 
         CollectionAssert.Contains(result.Validation.Entries.ToArray(),
-            "resources/canonical/sessions/dialogue.json");
+            "resources/canonical/sessions/stories/ST-2345-6789-ABCD-EFGH/resources/session/r-dialogue.json");
         CollectionAssert.Contains(result.Validation.Entries.ToArray(),
-            "resources/canonical/tasks/task_off.json");
+            "resources/canonical/tasks/stories/ST-2345-6789-ABCD-EFGH/resources/task/r-task_off.json");
         CollectionAssert.Contains(result.Validation.Entries.ToArray(),
-            "resources/canonical/tasks/task_on.json");
+            "resources/canonical/tasks/stories/ST-2345-6789-ABCD-EFGH/resources/task/r-task_on.json");
         using var archive = ZipFile.OpenRead(output);
-        StringAssert.Contains(Read(archive.GetEntry("resources/canonical/stories/complete_story.json")!),
+        StringAssert.Contains(Read(archive.GetEntry("resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json")!),
             FlowJudgmentSchema.NodeType);
-        StringAssert.Contains(Read(archive.GetEntry("resources/canonical/tasks/task_on.json")!),
+        StringAssert.Contains(Read(archive.GetEntry("resources/canonical/tasks/stories/ST-2345-6789-ABCD-EFGH/resources/task/r-task_on.json")!),
             CanonicalTaskObjectiveSchema.PrerequisitePortId);
         _ = DgrsPackageValidator.Validate(output);
     }
@@ -165,64 +169,65 @@ public sealed class DgrsPackageTests
     public void ExactAuditShapePreservesDetachedUnselectedObjectiveAsDormantPayload()
     {
         using var project = new TestProjectDirectory();
-        CreateCanonicalStory(project.Root, "kill_slimes", "消灭史莱姆");
+        CreateCanonicalStory(project.Root, "ST-2345-6789-ABCD-EFGH", "消灭史莱姆");
         var store = new CanonicalProjectGraphStore(project.Root);
         var configured = GraphNodeFactory.Create(GraphScope.Task, "objective", "configured");
-        configured.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
+        configured.Properties["description"] = JsonSerializer.SerializeToElement("");
         configured.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
-            System.Text.Json.JsonSerializer.SerializeToElement("slimes");
+            System.Text.Json.JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~slimes");
         configured.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
             System.Text.Json.JsonSerializer.SerializeToElement(3);
         var dormant = GraphNodeFactory.Create(GraphScope.Task, "objective", "dormant");
-        dormant.Properties["description"] = JsonSerializer.SerializeToElement("Dormant objective");
         dormant.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
             System.Text.Json.JsonSerializer.SerializeToElement(10);
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("complete", "任务完成", true, GraphInterfaceKind.Logic));
-        store.Tasks.Create(new GraphResourceEnvelope(GraphResourceKind.Task, "kill_slimes", "消灭史莱姆",
+        var settle = new GraphNodeAuthoringService(() => "complete").Create(new GraphDocument(), GraphScope.Task, "settle", "settle").Candidate!;
+        store.Tasks.Create(new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~kill_slimes", "消灭史莱姆",
             new GraphDocument([settle, configured, dormant],
             [
                 new GraphConnection("configured", CanonicalTaskObjectiveSchema.CompletionPortId,
-                    "settle", "complete", GraphInterfaceKind.Logic),
+                    "settle", "logic_in", GraphInterfaceKind.Logic),
             ])));
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "kill_slimes",
-            new CanonicalStoryMembershipSet { Tasks = ["kill_slimes"] }));
+            "ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Tasks = ["ST-2345-6789-ABCD-EFGH~task~kill_slimes"] }));
 
+        new CanonicalStoryActorLifecycleService(store).CreateOwned("ST-2345-6789-ABCD-EFGH",
+            CanonicalStoryActorKind.Collective, "ST-2345-6789-ABCD-EFGH~actor~slimes", "Slimes");
         var output = Path.Combine(project.Root, "exports", "kill_slimes.dgrs");
-        var result = new DgrsStoryPackageExporter(project.Root).Build("kill_slimes", output, "0.3.2.0");
+        var result = new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output, "0.3.2.0");
 
         Assert.IsTrue(File.Exists(result.PackagePath));
         _ = DgrsPackageValidator.Validate(output);
         using var archive = ZipFile.OpenRead(output);
-        var payload = Read(archive.GetEntry("resources/canonical/tasks/kill_slimes.json")!);
+        var payload = Read(archive.GetEntry("resources/canonical/tasks/stories/ST-2345-6789-ABCD-EFGH/resources/task/r-kill_slimes.json")!);
         StringAssert.Contains(payload, "\"id\": \"dormant\"");
         StringAssert.Contains(payload, "\"entity\": \"\"");
+        Assert.AreEqual(2, GraphResourceEnvelopeSerializer.Deserialize(payload).Graph!.Nodes.Count(node =>
+            node.Type == "objective" && node.Properties["description"].GetString() == ""));
     }
 
     [TestMethod]
     public void ConnectedUnselectedObjectiveStillFailsClosed()
     {
         using var project = new TestProjectDirectory();
-        CreateCanonicalStory(project.Root, "invalid", "Invalid");
+        CreateCanonicalStory(project.Root, "ST-2345-6789-ABCD-EFGH", "Invalid");
         var store = new CanonicalProjectGraphStore(project.Root);
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("complete", "完成", true, GraphInterfaceKind.Logic));
-        store.Tasks.Create(new GraphResourceEnvelope(GraphResourceKind.Task, "invalid", "Invalid",
+        var settle = new GraphNodeAuthoringService(() => "complete").Create(new GraphDocument(), GraphScope.Task, "settle", "settle").Candidate!;
+        store.Tasks.Create(new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~invalid", "Invalid",
             new GraphDocument([objective, settle],
             [
                 new GraphConnection("objective", CanonicalTaskObjectiveSchema.CompletionPortId,
-                    "settle", "complete", GraphInterfaceKind.Logic),
+                    "settle", "logic_in", GraphInterfaceKind.Logic),
             ])));
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "invalid",
-            new CanonicalStoryMembershipSet { Tasks = ["invalid"] }));
+            "ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Tasks = ["ST-2345-6789-ABCD-EFGH~task~invalid"] }));
 
         var output = Path.Combine(project.Root, "exports", "invalid.dgrs");
         var exception = Assert.ThrowsExactly<StoryPackageException>(() =>
-            new DgrsStoryPackageExporter(project.Root).Build("invalid", output, "0.3.2.0"));
+            new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output, "0.3.2.0"));
 
         StringAssert.Contains(exception.Message, "graph.objective.target.invalid");
         Assert.IsFalse(File.Exists(output));
@@ -244,14 +249,13 @@ public sealed class DgrsPackageTests
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
-            System.Text.Json.JsonSerializer.SerializeToElement("boss");
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("complete", "完成", true, GraphInterfaceKind.Logic));
+            System.Text.Json.JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~boss");
+        var settle = new GraphNodeAuthoringService(() => "complete").Create(new GraphDocument(), GraphScope.Task, "settle", "settle").Candidate!;
         var nodes = new List<GraphNode> { objective, settle };
         var graph = new GraphDocument(nodes,
         [
             new GraphConnection("objective", CanonicalTaskObjectiveSchema.CompletionPortId,
-                "settle", "complete", GraphInterfaceKind.Logic),
+                "settle", "logic_in", GraphInterfaceKind.Logic),
         ]);
         if (prerequisite)
         {
@@ -290,11 +294,12 @@ public sealed class DgrsPackageTests
           "format_version": {{formatVersion}},
           "producer": "DarkGreyRPGStudio",
           "producer_version": "0.3.2.0",
-          "schema_version": 1,
-          "package_id": "test",
+          "schema_version": 2,
+          "identity_format": "story-uid-v1",
+          "package_id": "ST-2345-6789-ABCD-EFGH",
           "package_version": "0.3.2.0",
-          "story_id": "story",
-          "story_schema_version": 1,
+          "story_id": "ST-2345-6789-ABCD-EFGH",
+          "story_schema_version": 2,
           "required_resources": {
             "story": "stories/story.json",
             "actors": [],

@@ -1,0 +1,75 @@
+{
+  "frames": {
+    "session:Native0332:conversation": [
+      {
+        "id": "649f1cc2328148faa31e82564ec075eb",
+        "title": "\u5206\u7EC4\u6CE8\u91CA",
+        "x": 56,
+        "y": 38,
+        "width": 280,
+        "height": 158,
+        "members": [
+          "start"
+        ],
+        "groups": [],
+        "is_valid": true
+      },
+      {
+        "id": "bac7323564c94460b6ec710973a2f884",
+        "title": "\u7EC4\u5408",
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 50,
+        "members": [
+          "node_b56adbff2ddf4c9aa469eaa493ba4df8",
+          "node_311203e4e0894920bc9b0c2c9189a743"
+        ],
+        "groups": [],
+        "is_valid": true
+      },
+      {
+        "id": "918971f771bb4b84a2446459872b65d2",
+        "title": "\u7EC4\u5408",
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 50,
+        "members": [],
+        "groups": [
+          "649f1cc2328148faa31e82564ec075eb",
+          "bac7323564c94460b6ec710973a2f884"
+        ],
+        "is_valid": true
+      }
+    ],
+    "story:Native0332:acceptance": []
+  },
+  "schema_version": 1,
+  "graphs": {
+    "session:Native0332:conversation": {
+      "node_311203e4e0894920bc9b0c2c9189a743": {
+        "x": 337.31932773109247,
+        "y": 233.66151260504205
+      },
+      "node_b56adbff2ddf4c9aa469eaa493ba4df8": {
+        "x": 135.6386554621849,
+        "y": 306.26655462184874
+      },
+      "start": {
+        "x": 31.596638655462243,
+        "y": 55.79831932773112
+      }
+    },
+    "story:Native0332:acceptance": {
+      "aggregate_5c6dba9d366e498b836f86b681901f85": {
+        "x": 304.6827423452418,
+        "y": 334.22187998623093
+      },
+      "start": {
+        "x": 80,
+        "y": 80
+      }
+    }
+  }
+}

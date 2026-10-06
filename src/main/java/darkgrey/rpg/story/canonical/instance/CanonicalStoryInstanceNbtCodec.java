@@ -13,6 +13,9 @@ import java.util.UUID;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
+import darkgrey.rpg.identity.StoryUid;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
@@ -21,7 +24,7 @@ import darkgrey.rpg.story.canonical.runtime.CanonicalStoryWaitKind;
 /** Strict versioned NBT codec for canonical Story instances. */
 public final class CanonicalStoryInstanceNbtCodec {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     private static final int BYTE = 1;
     private static final int LONG = 4;
     private static final int INT = 3;
@@ -35,6 +38,7 @@ public final class CanonicalStoryInstanceNbtCodec {
         if (snapshots == null) throw malformed("instances");
         NBTTagCompound root = new NBTTagCompound();
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         NBTTagList instances = new NBTTagList();
         Set<String> identities = new HashSet<String>();
         for (CanonicalStoryInstanceSnapshot snapshot : snapshots) {
@@ -47,7 +51,8 @@ public final class CanonicalStoryInstanceNbtCodec {
     }
 
     public static List<CanonicalStoryInstanceSnapshot> decode(NBTTagCompound root) {
-        requireKeys(root, set("schema_version", "instances"), "root");
+        requireKeys(root, set("identity_format", "schema_version", "instances"), "root");
+        ResourceAddressNbt.requireFormat(root);
         requireType(root, "schema_version", INT);
         if (root.getInteger("schema_version") != SCHEMA_VERSION) throw malformed("unsupported schema_version");
         requireType(root, "instances", LIST);
@@ -71,7 +76,10 @@ public final class CanonicalStoryInstanceNbtCodec {
             "player_uuid",
             value.getPlayerUuid()
                 .toString());
-        tag.setString("story_id", value.getStoryId());
+        tag.setString(
+            "story_id",
+            StoryUid.parse(value.getStoryId())
+                .getValue());
         tag.setLong("activation_time", value.getActivationTime());
         tag.setLong(
             "terminal_time",
@@ -85,7 +93,8 @@ public final class CanonicalStoryInstanceNbtCodec {
     private static CanonicalStoryInstanceSnapshot decodeInstance(NBTTagCompound tag) {
         requireKeys(tag, set("player_uuid", "story_id", "activation_time", "terminal_time", "runtime"), "instance");
         UUID player = uuid(tag, "player_uuid");
-        String story = string(tag, "story_id");
+        String story = StoryUid.parse(string(tag, "story_id"))
+            .getValue();
         requireType(tag, "activation_time", LONG);
         requireType(tag, "terminal_time", LONG);
         requireType(tag, "runtime", COMPOUND);
@@ -102,7 +111,10 @@ public final class CanonicalStoryInstanceNbtCodec {
 
     private static NBTTagCompound encodeRuntime(CanonicalStorySnapshot value) {
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setString("resource_id", value.getResourceId());
+        tag.setString(
+            "resource_id",
+            StoryUid.parse(value.getResourceId())
+                .getValue());
         tag.setString("resource_fingerprint", value.getResourceFingerprint());
         tag.setString(
             "status",
@@ -119,7 +131,13 @@ public final class CanonicalStoryInstanceNbtCodec {
             "wait_kind",
             value.getWaitKind()
                 .name());
-        tag.setString("wait_resource_id", nullable(value.getWaitResourceId()));
+        if (value.getWaitResourceId() == null) tag.setString("wait_resource_id", "");
+        else tag.setTag(
+            "wait_resource_id",
+            ResourceAddressNbt.write(
+                value.getWaitResourceId(),
+                value.getWaitKind() == CanonicalStoryWaitKind.SESSION ? ResourceAddress.Kind.SESSION
+                    : ResourceAddress.Kind.TASK));
         tag.setString(
             "wait_dimension",
             value.getWaitDimension() == null ? ""
@@ -145,7 +163,11 @@ public final class CanonicalStoryInstanceNbtCodec {
             value.getWaitRadius() == null ? ""
                 : value.getWaitRadius()
                     .toString());
-        tag.setString("target_story_id", nullable(value.getTargetStoryId()));
+        tag.setString(
+            "target_story_id",
+            value.getTargetStoryId() == null ? ""
+                : StoryUid.parse(value.getTargetStoryId())
+                    .getValue());
         NBTTagList logic = new NBTTagList();
         for (Map.Entry<String, Boolean> entry : value.getLogicValues()
             .entrySet()) {
@@ -263,7 +285,8 @@ public final class CanonicalStoryInstanceNbtCodec {
         if (wait != CanonicalStoryWaitKind.CONDITION && waitingValue != null)
             throw malformed("waiting_condition_value requires Condition wait");
         return new CanonicalStorySnapshot(
-            string(tag, "resource_id"),
+            StoryUid.parse(string(tag, "resource_id"))
+                .getValue(),
             string(tag, "resource_fingerprint"),
             status,
             repeat,
@@ -271,17 +294,36 @@ public final class CanonicalStoryInstanceNbtCodec {
             optionalString(tag, "current_node_id"),
             optionalString(tag, "current_input_port_id"),
             wait,
-            optionalString(tag, "wait_resource_id"),
+            wait == CanonicalStoryWaitKind.SESSION || wait == CanonicalStoryWaitKind.TASK
+                ? ResourceAddressNbt.read(
+                    tag,
+                    "wait_resource_id",
+                    wait == CanonicalStoryWaitKind.SESSION ? ResourceAddress.Kind.SESSION : ResourceAddress.Kind.TASK)
+                : emptyWaitResource(tag),
             optionalInteger(tag, "wait_dimension"),
             optionalDouble(tag, "wait_x"),
             optionalDouble(tag, "wait_y"),
             optionalDouble(tag, "wait_z"),
             optionalDouble(tag, "wait_radius"),
             logic,
-            optionalString(tag, "target_story_id"),
+            optionalStory(tag, "target_story_id"),
             external,
             waitingValue,
             executed);
+    }
+
+    private static String emptyWaitResource(NBTTagCompound tag) {
+        requireType(tag, "wait_resource_id", STRING);
+        if (!tag.getString("wait_resource_id")
+            .isEmpty()) throw malformed("unexpected wait resource");
+        return null;
+    }
+
+    private static String optionalStory(NBTTagCompound tag, String key) {
+        String value = optionalString(tag, key);
+        return value == null ? null
+            : StoryUid.parse(value)
+                .getValue();
     }
 
     private static NBTTagList strings(List<String> values) {

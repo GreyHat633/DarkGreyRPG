@@ -1,0 +1,17 @@
+{
+  "nodeCopyCount": 1,
+  "copiedPagesPreserved": true,
+  "reorderedOriginalPages": true,
+  "explicitMultiDeletePages": 0,
+  "explicitMultiDeleteNote": "Plan section 3.4 preserves existing explicit minus/multi-delete semantics; the one-page guard belongs only to new Backspace shortcut.",
+  "nativeScreens": [
+    "oldops-node-paste.png",
+    "oldops-page-reorder.png",
+    "oldops-multiselect-header.png",
+    "oldops-multi-remove.png",
+    "oldops-explicit-add.png",
+    "oldops-restored.png"
+  ],
+  "restoredByteIdentical": true,
+  "restoredSha256": "a05745055ecdbb977817a7b7b77014c272894ec363f516a5972427940cb173cf"
+}

@@ -19,7 +19,7 @@ public sealed class GraphResourceEnvelopeTests
         })
         {
             var graph = SampleGraph();
-            var envelope = new GraphResourceEnvelope(kind, $"{kind.ToString().ToLowerInvariant()}-id", "显示名", graph);
+            var envelope = new GraphResourceEnvelope(kind, kind == GraphResourceKind.Story ? "ST-2345-6789-ABCD-EFGH" : "ST-2345-6789-ABCD-EFGH~" + kind.ToString().ToLowerInvariant() + "~resource", "显示名", graph);
             var json = GraphResourceEnvelopeSerializer.Serialize(envelope);
             var restored = GraphResourceEnvelopeSerializer.Deserialize(json);
             var opened = GraphResourceScopeAdapter.Open(restored, scope);
@@ -38,26 +38,26 @@ public sealed class GraphResourceEnvelopeTests
     [TestMethod]
     public void SerializationHasOnlyFrozenRootMembersInOrderAndOneLf()
     {
-        var json = new GraphResourceEnvelope(GraphResourceKind.Story, "story-id", "Story", new GraphDocument()).ToJson();
-        StringAssert.StartsWith(json, "{\n  \"schema_version\": 1,\n  \"resource_kind\": \"story\",\n  \"id\": \"story-id\",\n  \"display_name\": \"Story\",\n  \"graph\":");
+        var json = new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()).ToJson();
+        StringAssert.StartsWith(json, "{\n  \"schema_version\": 2,");
         Assert.IsTrue(json.EndsWith("}\n", StringComparison.Ordinal));
         Assert.AreNotEqual('\n', json[^2]);
         using var root = JsonDocument.Parse(json);
-        CollectionAssert.AreEqual(new[] { "schema_version", "resource_kind", "id", "display_name", "graph" }, root.RootElement.EnumerateObject().Select(x => x.Name).ToArray());
+        CollectionAssert.AreEqual(new[] { "schema_version", "identity_format", "resource_kind", "id", "display_name", "graph" }, root.RootElement.EnumerateObject().Select(x => x.Name).ToArray());
     }
 
     [TestMethod]
     public void StrictDeserializerRejectsMalformedAndLegacyRoots()
     {
-        var valid = "{\"schema_version\":1,\"resource_kind\":\"story\",\"id\":\"id\",\"display_name\":\"Name\",\"graph\":{\"nodes\":[],\"connections\":[]}}";
+        var valid = "{\"schema_version\":2,\"identity_format\":\"story-uid-v1\",\"resource_kind\":\"story\",\"id\":\"ST-2345-6789-ABCD-EFGH\",\"display_name\":\"Name\",\"graph\":{\"nodes\":[],\"connections\":[]}}";
         foreach (var (json, code) in new[]
         {
             (valid.Replace("\"graph\":{", "\"extra\":true,\"graph\":{", StringComparison.Ordinal), "graph.resource.root.member.unsupported"),
-            (valid.Replace("\"schema_version\":1", "\"schema_version\":2", StringComparison.Ordinal), "graph.resource.schema_version.unsupported"),
+            (valid.Replace("\"schema_version\":2", "\"schema_version\":1", StringComparison.Ordinal), "graph.resource.schema_version.unsupported"),
             (valid.Replace(",\"graph\":{\"nodes\":[],\"connections\":[]}", string.Empty, StringComparison.Ordinal), "graph.resource.root.member.required"),
             (valid.Replace("\"graph\":{\"nodes\":[],\"connections\":[]}", "\"graph\":null", StringComparison.Ordinal), "graph.resource.graph.required"),
             (valid.Replace("\"resource_kind\":\"story\"", "\"resource_kind\":\"dialogue\"", StringComparison.Ordinal), "graph.resource.kind.unsupported"),
-            (valid.Replace("\"id\":\"id\"", "\"id\":\" \"", StringComparison.Ordinal), "graph.resource.id.required"),
+            (valid.Replace("\"id\":\"ST-2345-6789-ABCD-EFGH\"", "\"id\":\" \"", StringComparison.Ordinal), "graph.resource.invalid"),
             (valid.Replace("\"display_name\":\"Name\"", "\"display_name\":null", StringComparison.Ordinal), "graph.resource.root.member.null"),
             ("{\"schema_version\":2,\"id\":\"legacy\",\"title\":\"Old\",\"nodes\":[]}", "graph.resource.root.member.unsupported"),
         })
@@ -76,7 +76,7 @@ public sealed class GraphResourceEnvelopeTests
         Assert.AreEqual(GraphScope.StoryFlow, GraphResourceScopeAdapter.GetScope(GraphResourceKind.Story));
         Assert.AreEqual(GraphScope.Session, GraphResourceScopeAdapter.GetScope("session"));
         Assert.AreEqual(GraphScope.Task, GraphResourceScopeAdapter.GetScope(GraphResourceKind.Task));
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument());
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument());
         var exception = Assert.ThrowsExactly<GraphResourceEnvelopeException>(() => GraphResourceScopeAdapter.Open(envelope, GraphScope.Session));
         Assert.AreEqual("graph.resource.scope.mismatch", exception.Code);
     }
@@ -85,7 +85,7 @@ public sealed class GraphResourceEnvelopeTests
     public void OpenedSnapshotsDoNotAliasCallerGraphOrProperties()
     {
         var source = SampleGraph();
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Story, "id", "Name", source);
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Name", source);
         source.Nodes.Clear();
         source.Nodes.Add(new GraphNode("caller-only", "action", "Caller"));
         var opened = GraphResourceScopeAdapter.Open(envelope, GraphScope.StoryFlow);
@@ -100,7 +100,7 @@ public sealed class GraphResourceEnvelopeTests
     public void OpenDocumentOwnsEditableGraphAndProducesDetachedPersistenceSnapshot()
     {
         var source = SampleGraph();
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", source);
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", source);
         var document = GraphResourceScopeAdapter.OpenDocument(envelope, GraphScope.Session);
 
         source.Nodes.Clear();

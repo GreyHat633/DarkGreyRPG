@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="2ef45198-1de0-4e11-8ba8-110be257fa7d" name="GreyHat@LAPTOP-F7PUVUPO 2026-09-24 14:17:15" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-24T14:17:15.4226006+08:00" queuing="2026-09-24T14:17:15.4226009+08:00" start="2026-09-24T14:15:59.2474561+08:00" finish="2026-09-24T14:17:15.4290109+08:00" />
+  <TestSettings name="default" id="50a649d6-9719-4e57-8afb-9ed4702c188e">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-09-24_14_17_15" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="93e51926-6826-4564-a3e6-9bb1706fc241" testId="10429c01-408a-8419-ae9d-e666b887fdd8" testName="VisibleRenderingDuringMoveAndPageCollapsePreservesGroups" computerName="LAPTOP-F7PUVUPO" duration="00:01:15.4047936" startTime="2026-09-24T14:15:59.7940507+08:00" endTime="2026-09-24T14:17:15.2441806+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="93e51926-6826-4564-a3e6-9bb1706fc241">
+      <Output>
+        <StdOut>TestContext 消息:&#xD;
+WPF_RENDER groups=0 phase=move n=79 median_ms=13.965 p95_ms=44.483 max_ms=696.207; UI Rendering callback intervals, excludes GPU present&#xD;
+WPF_RENDER groups=0 phase=collapse n=99 median_ms=16.568 p95_ms=34.258 max_ms=61.721; UI Rendering callback intervals, excludes GPU present&#xD;
+WPF_RENDER groups=300 phase=move n=79 median_ms=16.662 p95_ms=40.975 max_ms=1138.663; UI Rendering callback intervals, excludes GPU present&#xD;
+WPF_RENDER groups=300 phase=collapse n=99 median_ms=16.378 p95_ms=36.817 max_ms=46.804; UI Rendering callback intervals, excludes GPU present</StdOut>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="VisibleRenderingDuringMoveAndPageCollapsePreservesGroups" storage="e:\java\minecraftmod\darkgreyrpg\.tooling\0334\perfbinarycandidate\bin\release\net10.0-windows\perfbinarycandidate.dll" id="10429c01-408a-8419-ae9d-e666b887fdd8">
+      <Execution id="93e51926-6826-4564-a3e6-9bb1706fc241" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0334\PerfBinaryCandidate\bin\Release\net10.0-windows\PerfBinaryCandidate.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.GroupFrame0333Tests" name="VisibleRenderingDuringMoveAndPageCollapsePreservesGroups" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="10429c01-408a-8419-ae9d-e666b887fdd8" executionId="93e51926-6826-4564-a3e6-9bb1706fc241" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="1" executed="1" passed="1" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

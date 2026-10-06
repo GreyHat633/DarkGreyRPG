@@ -110,7 +110,7 @@ public static class CanonicalAggregateNodeFactory
                 $"Graph node ID '{nodeId}' is already used.", "id", NodeId: nodeId));
         }
 
-        var boundaryIssues = new List<ValidationIssue>();
+        var boundaryIssues = new List<ValidationIssue>(PublicOutputSchema.Validate(graph.Nodes));
         var nodes = (graph.Nodes ?? []).Where(node => node is not null).ToArray();
         var flowBoundaries = new List<GraphBoundary>();
         var logicBoundaries = new List<GraphBoundary>();
@@ -122,33 +122,17 @@ public static class CanonicalAggregateNodeFactory
             {
                 ValidateBoundaryNode(node, GraphScope.Session, boundaryIssues);
                 if (TryReadPublicBoundary(node, GraphInterfaceKind.Flow, boundaryIssues, out var boundary))
-                    flowBoundaries.Add(boundary with { Order = flowBoundaries.Count });
+                    flowBoundaries.Add(boundary);
             }
         }
         else
         {
             var settles = nodes.Where(node => node.Type == "settle").ToArray();
-            if (settles.Length == 0)
+            foreach (var settle in settles)
             {
-                boundaryIssues.Add(new("graph.aggregate.task.settle.required",
-                    "Task resource must contain exactly one settle boundary.", "graph.nodes"));
-            }
-            else if (settles.Length > 1)
-            {
-                boundaryIssues.Add(new("graph.aggregate.task.settle.duplicate",
-                    "Task resource must contain exactly one settle boundary.", "graph.nodes"));
-            }
-            else
-            {
-                var settle = settles[0];
-                boundaryIssues.AddRange(GraphNodeShapeValidator.Validate(settle, GraphScope.Task));
-                var settlePorts = (settle.Ports ?? []).Where(port => port is not null).ToArray();
-                foreach (var port in settlePorts)
-                {
-                    if (port.IsInput && port.InterfaceKind == GraphInterfaceKind.Logic)
-                        flowBoundaries.Add(new GraphBoundary(port.Id, port.DisplayName, port.Order,
-                            GraphInterfaceKind.Flow, NodeId: settle.Id));
-                }
+                ValidateBoundaryNode(settle, GraphScope.Task, boundaryIssues);
+                if (TryReadPublicBoundary(settle, GraphInterfaceKind.Flow, boundaryIssues, out var boundary))
+                    flowBoundaries.Add(boundary);
             }
         }
 
@@ -158,7 +142,7 @@ public static class CanonicalAggregateNodeFactory
                 ? GraphScope.Session : GraphScope.Task;
             ValidateBoundaryNode(node, scope, boundaryIssues);
             if (TryReadPublicBoundary(node, GraphInterfaceKind.Logic, boundaryIssues, out var boundary))
-                logicBoundaries.Add(boundary with { Order = logicBoundaries.Count });
+                logicBoundaries.Add(boundary);
         }
 
         foreach (var node in nodes.Where(node => node.Type == "logic_input"))
@@ -217,7 +201,9 @@ public static class CanonicalAggregateNodeFactory
         if (!hasId || !hasName)
             return false;
 
-        boundary = new GraphBoundary(portId!, displayName!, 0, kind, NodeId: node.Id);
+        if (node.Type != "logic_input" && (!node.Properties.TryGetValue("display_order", out var orderValue)
+            || orderValue.ValueKind != JsonValueKind.Number || !orderValue.TryGetInt32(out var _) )) return false;
+        boundary = new GraphBoundary(portId!, displayName!, node.Type == "logic_input" ? 0 : PublicOutputSchema.Order(node), kind, NodeId: node.Id);
         return true;
     }
 

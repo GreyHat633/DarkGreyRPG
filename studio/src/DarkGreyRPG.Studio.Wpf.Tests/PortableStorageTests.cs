@@ -49,7 +49,7 @@ public sealed class PortableStorageTests
         new SettingsService(storagePaths: paths).Save(new StudioSettings
         {
             LastProject = project, RecentProjects = [project], LastExportDirectory = paths.Exports,
-            LastImportDirectory = fixture.External, GlobalNamespace = "GreyHat_", Theme = ThemePreference.Dark,
+            LastImportDirectory = fixture.External, Theme = ThemePreference.Dark,
         });
         using (var raw = JsonDocument.Parse(File.ReadAllText(paths.Settings)))
         {
@@ -63,7 +63,6 @@ public sealed class PortableStorageTests
         Assert.AreEqual(loaded.LastProject, loaded.RecentProjects.Single());
         Assert.AreEqual(Path.Combine(moved, "Data", "Exports"), loaded.LastExportDirectory);
         Assert.AreEqual(fixture.External, loaded.LastImportDirectory);
-        Assert.AreEqual("GreyHat_", loaded.GlobalNamespace);
     }
 
     [TestMethod]
@@ -280,7 +279,7 @@ public sealed class PortableStorageTests
         public string Root { get; } = Path.Combine(AppContext.BaseDirectory, ".portable-tests", Guid.NewGuid().ToString("N"));
         public StudioStoragePaths Paths => new(Path.Combine(Root, "Studio"));
         public string External => Path.Combine(Root, "External");
-        public void CreateProject() { Directory.CreateDirectory(Path.Combine(External, "actors")); File.WriteAllText(Path.Combine(External, "project.json"), "{\"schema_version\":2,\"id\":\"external\",\"display_name\":\"External\"}"); }
+        public void CreateProject() { Directory.CreateDirectory(Path.Combine(External, "actors")); File.WriteAllText(Path.Combine(External, "project.json"), "{\"schema_version\":3,\"identity_format\":\"story-uid-v1\",\"id\":\"external\",\"display_name\":\"External\"}"); }
         public void Dispose() { if (Directory.Exists(Root)) Directory.Delete(Root, true); }
     }
 }

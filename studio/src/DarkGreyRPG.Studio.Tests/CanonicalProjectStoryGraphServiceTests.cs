@@ -12,18 +12,18 @@ public sealed class CanonicalProjectStoryGraphServiceTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "a", "A");
-        CreateStory(store, "b", "B");
-        store.Memberships.Create(new("a"));
-        store.Memberships.Create(new("b"));
-        store.Memberships.Create(new("membership_only"));
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH", "A");
+        CreateStory(store, "ST-3456-789A-BCDE-FGHJ", "B");
+        store.Memberships.Create(new("ST-2345-6789-ABCD-EFGH"));
+        store.Memberships.Create(new("ST-3456-789A-BCDE-FGHJ"));
+        store.Memberships.Create(new("ST-JKLM-NPQR-STUV-WXYZ"));
 
         var snapshot = new CanonicalProjectStoryGraphService(store).Derive();
 
-        CollectionAssert.AreEqual(new[] { "a", "b", "membership_only" }, snapshot.Nodes.Select(node => node.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH", "ST-3456-789A-BCDE-FGHJ", "ST-JKLM-NPQR-STUV-WXYZ" }, snapshot.Nodes.Select(node => node.Id).ToArray());
         Assert.IsEmpty(snapshot.Edges);
         Assert.IsFalse(snapshot.Diagnostics.Any(issue => issue.Code == "project_graph.story.cycle"));
-        Assert.IsTrue(snapshot.Diagnostics.Any(issue => issue.Code == "story.discovery.root.missing" && issue.StoryId == "membership_only"));
+        Assert.IsTrue(snapshot.Diagnostics.Any(issue => issue.Code == "story.discovery.root.missing" && issue.StoryId == "ST-JKLM-NPQR-STUV-WXYZ"));
         Assert.IsFalse(snapshot.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated"));
     }
 
@@ -32,12 +32,12 @@ public sealed class CanonicalProjectStoryGraphServiceTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "source", "Source");
-        CreateStory(store, "target", "Target");
-        store.Memberships.Create(new("source"));
-        store.Memberships.Create(new("target"));
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH", "Source");
+        CreateStory(store, "ST-JKLM-NPQR-STUV-WXYZ", "Target");
+        store.Memberships.Create(new("ST-2345-6789-ABCD-EFGH"));
+        store.Memberships.Create(new("ST-JKLM-NPQR-STUV-WXYZ"));
         var service = new CanonicalProjectStoryGraphService(store);
-        var source = store.Stories.Load("source");
+        var source = store.Stories.Load("ST-2345-6789-ABCD-EFGH");
 
         var first = service.Derive();
         var second = service.Derive();
@@ -45,8 +45,8 @@ public sealed class CanonicalProjectStoryGraphServiceTests
             second.Edges.Select(edge => string.Join("/", edge.EnterStoryNodeIds)).ToArray());
         source.DisplayName = "Mutated source envelope";
         source.Graph!.Nodes.Clear();
-        Assert.AreEqual("Source", first.Nodes.Single(node => node.Id == "source").DisplayName);
-        Assert.AreEqual("Source", service.Derive().Nodes.Single(node => node.Id == "source").DisplayName);
+        Assert.AreEqual("Source", first.Nodes.Single(node => node.Id == "ST-2345-6789-ABCD-EFGH").DisplayName);
+        Assert.AreEqual("Source", service.Derive().Nodes.Single(node => node.Id == "ST-2345-6789-ABCD-EFGH").DisplayName);
         Assert.ThrowsExactly<NotSupportedException>(() => ((IList<CanonicalProjectStoryGraphNode>)first.Nodes)
             .Add(first.Nodes[0]));
     }

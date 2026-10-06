@@ -1,0 +1,173 @@
+{
+  "screen": "darkgrey.rpg.client.gui.GuiCanonicalSessionScreen",
+  "server_result": "",
+  "fixture_entity_ids": [],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    0.5,
+    5.620000004768372,
+    0.5
+  ],
+  "inventory": [],
+  "width": 427,
+  "height": 267,
+  "buttons": [],
+  "task_client_frame": {
+    "presentation": {
+      "revision": 0,
+      "musicRevision": 0,
+      "loop": false,
+      "fadeIn": 0.0,
+      "fadeOut": 0.0,
+      "musicVolume": 1.0,
+      "layers": []
+    },
+    "lineEpoch": 1,
+    "playVoice": false,
+    "voiceVolume": 1.0,
+    "portraitRef": "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png",
+    "voiceRef": "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg",
+    "transportId": 2,
+    "storyId": "GreyHat_:test_story",
+    "sessionResourceId": "GreyHat_:Firest",
+    "currentNodeId": "node_dc9924050ade449d8f1c65d2ea30d994",
+    "kind": "LINE",
+    "speaker": "酒馆老板",
+    "text": "哎，这位客官请留步，可有时间否？",
+    "choices": []
+  },
+  "task_client_visible_text": "哎，这位客官请留步，可有时间否？",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": 1,
+    "musicRevision": 0,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "sources": {
+      "701a6325-4cb6-4d92-bb1d-81fccad3f543": {
+        "sourcename": "701a6325-4cb6-4d92-bb1d-81fccad3f543",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 299.97733
+      },
+      "2a22144c-dd6b-4f31-babd-a80472cfcfe9": {
+        "sourcename": "2a22144c-dd6b-4f31-babd-a80472cfcfe9",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 139.97733
+      },
+      "d9d76636-3b83-49b7-a70d-510bd1f8554d": {
+        "sourcename": "d9d76636-3b83-49b7-a70d-510bd1f8554d",
+        "toStream": false,
+        "sourceVolume": 0.4,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "0959b5de-ab4f-472b-8cad-539f268d44e4": {
+        "sourcename": "0959b5de-ab4f-472b-8cad-539f268d44e4",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "f2a250c1-4bbf-4cf6-bacc-afa7e7a3142e": {
+        "sourcename": "f2a250c1-4bbf-4cf6-bacc-afa7e7a3142e",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 26098.594
+      },
+      "399b6ad3-fd8f-4798-b45c-ff66b788935d": {
+        "sourcename": "399b6ad3-fd8f-4798-b45c-ff66b788935d",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 539.95465
+      }
+    },
+    "textures_ready": [
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+    ],
+    "downloads": {
+      "media/7d7f03cbf38c3c362d3a8adb08b7e24b4a6052be76db64053af3bb6dbdd54b9c.ogg": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/6eaa5b2c058cb427279d2ba234f661fb53342090b795df103c0ce155baed4e4a.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+        "ready": true,
+        "offset": 0
+      }
+    },
+    "master_level": 1.0,
+    "players_level": 1.0,
+    "music_level": 1.0,
+    "cached_packages": 3,
+    "preloading_packages": 0,
+    "queued_packages": 0,
+    "package_entries": [
+      {
+        "id": "local:DGR0331PackagePolicy0916|GreyHat_:test_story",
+        "ready": true,
+        "running": true,
+        "refs": 4
+      },
+      {
+        "id": "local:DGR0331PackagePolicy0916|QA0330:presentation",
+        "ready": true,
+        "running": true,
+        "refs": 2
+      },
+      {
+        "id": "local:DGR0331PackagePolicy0916|LiveHarness:FlowTarget",
+        "ready": true,
+        "running": false,
+        "refs": 0
+      }
+    ],
+    "cache_hits": 6,
+    "local_hits": 0,
+    "network_requests": 0,
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  }
+}

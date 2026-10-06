@@ -1,0 +1,8 @@
+{
+  "Responding": true,
+  "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "CoreClr": [
+    "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\coreclr.dll"
+  ],
+  "StudioDll": "F9A083A192D2200F11289C184C684ADF28B914471A056884993C231362DA60CE"
+}

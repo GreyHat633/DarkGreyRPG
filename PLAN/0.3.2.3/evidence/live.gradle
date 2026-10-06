@@ -1,0 +1,22 @@
+gradle.projectsEvaluated {
+    def p = rootProject
+    def live = p.sourceSets.create('acceptance0323') {
+        java.srcDir(p.file('.tooling/0.3.2.3/live-src'))
+        compileClasspath = p.sourceSets.main.compileClasspath + p.sourceSets.main.output + p.sourceSets.test.output
+        runtimeClasspath = output + compileClasspath
+    }
+    def jar = p.tasks.register('acceptance0323Jar', Jar) {
+        dependsOn(p.tasks.named('acceptance0323Classes'), p.tasks.testClasses)
+        from(live.output)
+        from(p.sourceSets.test.output) { include 'darkgrey/rpg/creator/CreatorUxProbe.class' }
+        archiveFileName = 'dgr-acceptance-harness.jar'
+        destinationDirectory = p.layout.projectDirectory.dir('.tooling/0.3.2.3/live-client/mods')
+    }
+    p.tasks.named('runClient') {
+        dependsOn(jar)
+        workingDir = p.file('.tooling/0.3.2.3/live-client')
+        args('--width','1100','--height','740')
+        jvmArgs('-Djava.io.tmpdir=' + p.file('.tooling/0.3.2.3/live-client'), '-Duser.home=E:/AI/CODEX')
+    }
+}
+

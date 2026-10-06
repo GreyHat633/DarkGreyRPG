@@ -1,0 +1,9 @@
+{
+  "AfterEachDelete": [
+    2,
+    1,
+    1
+  ],
+  "Restored": 3,
+  "Passed": true
+}

@@ -12,7 +12,7 @@ public sealed class CommentFrame0332Tests
     public void ClipboardFramesUseNewNodeIdsAndUndoWithThePaste()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([node])));
         var host = editor.Host;
         host.AddFrame([node.Id], 10, 20, 300, 200);
         var clipboard = new CanonicalGraphClipboard();
@@ -36,7 +36,7 @@ public sealed class CommentFrame0332Tests
     public void FrameMovesMembersInOneUndoAndDeleteNeverDeletesGraph()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([node])));
         var host = editor.Host;
         host.SetNodePosition(node.Id, 100, 100);
         editor.MarkSaved();

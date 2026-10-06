@@ -1,0 +1,10 @@
+action=open
+time=1790124392449
+dimension=0
+context=server:127.0.0.1:25594|player:402a58fd-2297-4c98-ae0c-ad091aa83333
+device=0:-118:93:203:a22809f7-dd8f-47c7-8fd5-a73efd02487d;range=false
+device=0:-120:91:200:e3291d2b-c634-4a22-b9ba-77d2c324da0d;range=false
+device=0:-116:93:203:391f6f0b-75bd-4666-bc37-0181a7c5345b;range=false
+device=0:-114:91:208:ac763732-349a-47fe-b318-b4e45c1c553e;range=false
+device=0:-105:69:208:e3431236-34d0-45e7-87b1-4b019beeb6b0;range=false
+device=0:-104:70:208:e6bf1f66-4fb3-483e-87ed-bd659c345f77;range=false

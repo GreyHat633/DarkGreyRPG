@@ -1,7 +1,14 @@
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Views.Graph;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Validation;
+using DarkGreyRPG.Studio.ViewModels.Graph;
 using DarkGreyRPG.Studio.Core.Actors;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Packaging;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels;
 
@@ -10,6 +17,141 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class StoryNavigationViewModelTests
 {
+    [TestMethod]
+    public void MixedStoryGroupDeletionUnlinksWholeReferenceAndPreservesOriginalPackage()
+    {
+        using var f = new CurrentNavigationFixture();
+        const string external = "ST-JKLM-NPQR-STUV-WXYZ";
+        var source = Path.Combine(f.Root, "source-fixture");
+        new ProjectService().CreateProject(source, "source", "Source");
+        var sourceStore = new CanonicalProjectGraphStore(source);
+        new CanonicalStoryLifecycleService(sourceStore).Create(external, "External");
+        AddBoundary(sourceStore, external, "logic_input");
+        AddBoundary(f.Store, CurrentNavigationFixture.Owner, "logic_output");
+        var original = Path.Combine(source, "original.dgrs");
+        new DgrsStoryPackageExporter(source).Build(external, original, "0.3.3.6");
+        var originalBytes = File.ReadAllBytes(original);
+        var installed = Path.Combine(f.Root, "references", "external.dgrs");
+        Directory.CreateDirectory(Path.GetDirectoryName(installed)!); File.Copy(original, installed);
+        f.Store.StoryLogicGraph.Save([new(CurrentNavigationFixture.Owner, "boundary", external, "boundary")]);
+        f.Shell.OpenProjectCommand.Execute(null); f.Dialogs.AllowGroupDeletion = true;
+        Assert.IsTrue(f.Shell.ProjectHome.Graph.DeleteStoryGroupsRequested!([f.Shell.ProjectHome.Graph.StoryGroups.Groups.Single().Key]));
+        Assert.IsFalse(File.Exists(installed)); Assert.IsEmpty(f.Store.Stories.List());
+        CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(original));
+        f.Shell.UndoCurrentCommand.Execute(null);
+        CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(installed));
+        Assert.HasCount(1, f.Store.Stories.List()); Assert.HasCount(1, f.Store.StoryLogicGraph.Load().Connections);
+    }
+
+    [TestMethod]
+    public void OutsideResourceDependencyBlocksGroupDeletionWithoutWritingAnyMember()
+    {
+        using var f = new CurrentNavigationFixture();
+        const string other = "ST-JKLM-NPQR-STUV-WXYZ", outsider = "ST-AAAA-BBBB-CCCC-DDDD";
+        var lifecycle = new CanonicalStoryLifecycleService(f.Store);
+        lifecycle.Create(other, "Member"); lifecycle.Create(outsider, "Outside");
+        AddBoundary(f.Store, CurrentNavigationFixture.Owner, "logic_output"); AddBoundary(f.Store, other, "logic_input");
+        f.Store.StoryLogicGraph.Save([new(CurrentNavigationFixture.Owner, "boundary", other, "boundary")]);
+        new CanonicalStoryActorLifecycleService(f.Store).AddReference(outsider, CurrentNavigationFixture.Owner + "~actor~hero");
+        f.Shell.OpenProjectCommand.Execute(null); f.Dialogs.AllowGroupDeletion = true;
+        var paths = new[] { f.Store.Stories.GetPath(CurrentNavigationFixture.Owner), f.Store.Stories.GetPath(other), f.Store.StoryLogicGraph.Path };
+        var before = paths.Select(File.ReadAllBytes).ToArray();
+        Assert.IsFalse(f.Shell.ProjectHome.Graph.DeleteStoryGroupsRequested!([f.Shell.ProjectHome.Graph.StoryGroups.Groups.Single().Key]));
+        for (var i = 0; i < paths.Length; i++) CollectionAssert.AreEqual(before[i], File.ReadAllBytes(paths[i]));
+    }
+
+    private static void AddBoundary(CanonicalProjectGraphStore store, string id, string type)
+    {
+        var resource = store.Stories.Load(id); var graph = resource.Graph!;
+        var node = new GraphNodeAuthoringService().Create(graph, GraphScope.StoryFlow, type, "boundary").Candidate!;
+        node.Properties["port_id"] = JsonSerializer.SerializeToElement("boundary");
+        graph.Nodes.Add(node); resource.Graph = graph; store.Stories.Replace(resource);
+    }
+
+    [TestMethod]
+    public void StoryGroupDeletionRestoresAllOwnedFilesAndConnectionsWithUndoRedo()
+    {
+        using var f = new CurrentNavigationFixture();
+        const string other = "ST-JKLM-NPQR-STUV-WXYZ";
+        new CanonicalStoryLifecycleService(f.Store).Create(other, "Other");
+        foreach (var (id, type) in new[] { (CurrentNavigationFixture.Owner, "logic_output"), (other, "logic_input") })
+        {
+            var resource = f.Store.Stories.Load(id); var graph = resource.Graph!;
+            var node = new GraphNodeAuthoringService().Create(graph, GraphScope.StoryFlow, type, "boundary").Candidate!;
+            node.Properties["port_id"] = JsonSerializer.SerializeToElement("boundary");
+            graph.Nodes.Add(node); resource.Graph = graph; f.Store.Stories.Replace(resource);
+        }
+        f.Store.StoryLogicGraph.Save([new(CurrentNavigationFixture.Owner, "boundary", other, "boundary")]);
+        f.Shell.OpenProjectCommand.Execute(null);
+        var files = Directory.GetFiles(f.Root, "*.json", SearchOption.AllDirectories)
+            .Where(path => path.Contains("resources")) .ToDictionary(path => path, File.ReadAllBytes);
+        f.Dialogs.AllowGroupDeletion = true;
+        var key = f.Shell.ProjectHome.Graph.StoryGroups.Groups.Single().Key;
+        Assert.IsTrue(f.Shell.ProjectHome.Graph.DeleteStoryGroupsRequested!([key]));
+        Assert.IsEmpty(f.Store.Stories.List());
+        f.Shell.UndoCurrentCommand.Execute(null);
+        foreach (var pair in files) CollectionAssert.AreEqual(pair.Value, File.ReadAllBytes(pair.Key));
+        f.Shell.RedoCurrentCommand.Execute(null);
+        Assert.IsEmpty(f.Store.Stories.List());
+        f.Shell.UndoCurrentCommand.Execute(null);
+        Assert.HasCount(2, f.Store.Stories.List());
+    }
+
+    [TestMethod]
+    public void AggregateOutputsUseGlobalUndoRedoAcrossResourceAndStoryViews()
+    {
+        using var f = new CurrentNavigationFixture();
+        var id = CurrentNavigationFixture.Owner + "~session~history";
+        var resource = new CanonicalStoryResourceLifecycleService(f.Store).CreateOwned(CurrentNavigationFixture.Owner,
+            GraphResourceKind.Session, id, "Session");
+        var author = new GraphNodeAuthoringService();
+        var sessionGraph = resource.Graph!;
+        for (var i = 0; i < 2; i++) sessionGraph.Nodes.Add(author.Create(sessionGraph, GraphScope.Session, "end", "end" + i).Candidate!);
+        resource.Graph = sessionGraph;
+        f.Store.Sessions.Replace(resource);
+        f.Shell.OpenProjectCommand.Execute(null); f.Open();
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        var session = workspace.SessionItems.Single();
+        var aggregate = CanonicalAggregateNodeFactory.Create(workspace.StoryEditor.Document.Graph,
+            session.Editor.CreatePersistenceSnapshot(), "aggregate").Candidate!;
+        Assert.IsTrue(workspace.StoryEditor.Host.AddNode(aggregate));
+        var terminal = author.Create(workspace.StoryEditor.Document.Graph, GraphScope.StoryFlow, "terminate", "terminal").Candidate!;
+        Assert.IsTrue(workspace.StoryEditor.Host.AddNode(terminal));
+        var connectedPort = aggregate.Ports.First(port => !port.IsInput && port.Kind == GraphInterfaceKind.Flow).Id;
+        var connection = new GraphConnection("aggregate", connectedPort, "terminal", "flow_in", GraphInterfaceKind.Flow);
+        Assert.IsTrue(workspace.StoryEditor.Host.Connect(
+            GraphEditorEndpoint.Output("aggregate", connectedPort, GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("terminal", "flow_in", GraphInterfaceKind.Flow)));
+        using var inspector = new CanonicalNodeInspectorViewModel(workspace.StoryEditor.Host,
+            workspace.StoryEditor.Host.Nodes.Single(node => node.NodeId == "aggregate"));
+        workspace.ConfigurePublicOutputs(inspector);
+        var rows = inspector.PublicOutputs!;
+        var first = rows.Flow[0].PortId;
+        var second = rows.Flow[1].PortId;
+        Assert.IsTrue(rows.Flow[1].MoveTo(0));
+        Assert.AreEqual(second, rows.Flow[0].PortId);
+        f.Shell.SaveAllCommand.Execute(null);
+        Assert.IsFalse(session.Editor.IsDirty);
+        Assert.AreEqual(connection, workspace.StoryEditor.Document.Graph.Connections.Single());
+        Assert.IsTrue(f.Shell.UndoCurrentCommand.CanExecute(null));
+        f.Shell.UndoCurrentCommand.Execute(null);
+        Assert.AreEqual(first, rows.Flow[0].PortId);
+        f.Shell.RedoCurrentCommand.Execute(null);
+        Assert.AreEqual(second, rows.Flow[0].PortId);
+        rows.Flow[0].DisplayName = "Accepted";
+        workspace.OpenGraphResource(session);
+        f.Shell.UndoCurrentCommand.Execute(null);
+        Assert.AreNotEqual("Accepted", rows.Flow[0].DisplayName);
+        workspace.ReturnToStory();
+        f.Shell.UndoCurrentCommand.Execute(null);
+        Assert.AreEqual(first, rows.Flow[0].PortId);
+        f.Shell.RedoCurrentCommand.Execute(null);
+        Assert.AreEqual(second, rows.Flow[0].PortId);
+        f.Shell.RedoCurrentCommand.Execute(null);
+        Assert.AreEqual("Accepted", rows.Flow[0].DisplayName);
+        Assert.AreEqual(connection, workspace.StoryEditor.Document.Graph.Connections.Single());
+    }
+
     [TestMethod]
     public void ProjectHomeSelectsFirstStoryAndClassifiesEmptyAndSearchStates()
     {
@@ -119,7 +261,7 @@ public sealed class StoryNavigationViewModelTests
             canonicalOnly.MembershipSummary);
         Assert.AreEqual(5, canonicalOnly.FlowNodeCount);
         var broken = home.Stories.Single(item => item.Id == "broken");
-        Assert.AreEqual("新格式 · 数据不完整", broken.TagsText);
+        Assert.AreEqual("数据不完整", broken.TagsText);
         StringAssert.Contains(broken.Description, "缺少 membership");
         Assert.HasCount(2, home.Graph.Nodes);
     }
@@ -327,315 +469,181 @@ public sealed class StoryNavigationViewModelTests
     [TestMethod]
     public void ShellOpensProjectHomeThenStoryWithoutSelectingGlobalActor()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var service = new ProjectService();
-            service.CreateProject(directory, "demo", "Demo");
-            var actor = service.CurrentProject!.Actors.CreateActor("hero", "Hero");
-            actor.HomeStoryId = "castle_mystery";
-            service.CurrentProject.Actors.SaveActor(actor);
-            service.CurrentProject.Stories.SaveStory(new StoryResource
-            {
-                Id = "castle_mystery",
-                DisplayName = "Castle Mystery",
-                Tags = ["main"],
-                OwnedResources = new StoryMembership { Actors = ["hero"] },
-                Nodes = [new StoryNodeResource { Id = "end", Type = "END" }],
-            });
-            service.CloseProject(discardUnsavedChanges: true);
-
-            var shell = new ShellViewModel(service, new FixedProjectFolderPicker(directory));
-            shell.OpenProjectCommand.Execute(null);
-
-            Assert.HasCount(1, shell.ProjectHome.Stories);
-            Assert.IsNull(shell.SelectedActor);
-            Assert.IsNull(shell.CurrentActor);
-            Assert.IsTrue(shell.ProjectHome.IsHomeVisible);
-
-            shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(item => item.Id == "castle_mystery");
-            shell.OpenSelectedStoryCommand.Execute(null);
-
-            Assert.AreEqual("castle_mystery", shell.StoryWorkspace.StoryId);
-            Assert.AreEqual(StoryWorkspaceRoutes.Actors, shell.StoryWorkspace.CurrentRoute);
-            Assert.IsNull(shell.SelectedActor);
-
-            shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-            var draft = shell.CurrentFlow!;
-            draft.AddNodeAt("PlayDialogue", 240, 160);
-            Assert.IsNotEmpty(draft.ValidationErrors);
-            shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Actors);
-            Assert.AreEqual(StoryWorkspaceRoutes.Actors, shell.StoryWorkspace.CurrentRoute);
-            Assert.AreSame(draft, shell.CurrentFlow);
-            Assert.IsTrue(draft.IsDirty);
-
-            shell.StoryWorkspace.Actors!.SelectedMembership = shell.StoryWorkspace.Actors.Memberships.Single();
-            Assert.AreEqual("hero", shell.SelectedActor!.Id);
-            Assert.AreEqual("hero", shell.CurrentActor!.Id);
-        }
-        finally
-        {
-            TryDelete(directory);
-        }
+        using var f = new CurrentNavigationFixture();
+        Assert.IsNull(f.Shell.SelectedActor);
+        Assert.IsTrue(f.Shell.ProjectHome.IsHomeVisible);
+        f.Open();
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        Assert.AreEqual(CurrentNavigationFixture.Owner, workspace.StoryEditor.Id);
+        Assert.IsNull(f.Shell.SelectedActor);
+        workspace.StoryEditor.Host.AddNode(new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.StoryFlow, "terminate", "draft").Candidate!);
+        Assert.IsTrue(workspace.SelectFolder(CanonicalStoryFolderKind.Actors));
+        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        Assert.IsTrue(workspace.SelectTreeItem(workspace.ActorItems.Single()));
+        Assert.AreEqual(CurrentNavigationFixture.Owner + "~actor~hero", workspace.SelectedActor?.Id);
+        Assert.IsNull(f.Shell.CurrentActor); // Canonical selection uses its own Inspector, not the retired global editor.
     }
 
     [TestMethod]
-    public void LeavingStoryPromptsForInvalidFlowAndSupportsCancelSaveFailureAndDiscard()
+    public void RetainedGraphSurvivesNavigationAndCloseChoicesRespectBaseline()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var service = new ProjectService();
-            service.CreateProject(directory, "flow_leave", "Flow Leave");
-            service.CurrentProject!.Stories.SaveStory(new StoryResource
-            {
-                Id = "draft_story",
-                DisplayName = "Draft Story",
-                Nodes = [new StoryNodeResource { Id = "end", Type = "END" }],
-            });
-            service.CloseProject(discardUnsavedChanges: true);
-            var dialogs = new FakeFlowWorkspaceDialogs { Choice = UnsavedChangesChoice.Cancel };
-            var shell = new ShellViewModel(service, new FixedProjectFolderPicker(directory), flowWorkspaceDialogs: dialogs);
-            shell.OpenProjectCommand.Execute(null);
-            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "draft_story"));
-            shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-            shell.CurrentFlow!.AddNodeAt("PlayDialogue", 200, 120);
-
-            shell.ShowProjectHomeCommand.Execute(null);
-            Assert.IsTrue(shell.StoryWorkspace.HasStory);
-
-            dialogs.Choice = UnsavedChangesChoice.Save;
-            shell.ShowProjectHomeCommand.Execute(null);
-            Assert.IsTrue(shell.StoryWorkspace.HasStory);
-            Assert.IsTrue(shell.BottomPanel.IsExpanded);
-            Assert.AreEqual("Problems", shell.BottomPanel.SelectedTab.Page);
-
-            dialogs.Choice = UnsavedChangesChoice.Discard;
-            shell.ShowProjectHomeCommand.Execute(null);
-            Assert.IsFalse(shell.StoryWorkspace.HasStory);
-            Assert.IsTrue(shell.ProjectHome.IsHomeVisible);
-            Assert.IsFalse(service.CurrentProject!.Stories.LoadStory("draft_story").Nodes.Any(node => node.Type.Equals("play_dialogue", StringComparison.OrdinalIgnoreCase)));
-        }
-        finally
-        {
-            TryDelete(directory);
-        }
+        using var f = new CurrentNavigationFixture();
+        f.Open();
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        workspace.StoryEditor.Host.AddNode(new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.StoryFlow, "logic_output", "invalid").Candidate!);
+        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        f.Shell.ShowProjectHomeCommand.Execute(null);
+        Assert.IsTrue(f.Shell.ProjectHome.IsHomeVisible);
+        f.Open();
+        Assert.AreSame(workspace, f.Shell.CanonicalStoryWorkspace);
+        Assert.IsTrue(workspace.StoryEditor.Host.Graph.Nodes.Any(node => node.Id == "invalid"));
+        f.Dialogs.Choice = UnsavedChangesChoice.Cancel;
+        Assert.IsFalse(f.Shell.TryClose());
+        f.Dialogs.Choice = UnsavedChangesChoice.Save;
+        using (var held = new FileStream(f.Store.Stories.GetPath(CurrentNavigationFixture.Owner), FileMode.Open, FileAccess.Read, FileShare.None))
+            Assert.IsFalse(f.Shell.TryClose());
+        f.Dialogs.Choice = UnsavedChangesChoice.Discard;
+        Assert.IsTrue(f.Shell.TryClose());
+        Assert.IsFalse(f.Store.Stories.Load(CurrentNavigationFixture.Owner).Graph!.Nodes.Any(node => node.Id == "invalid"));
     }
 
     [TestMethod]
     public void ShellUndoCommandTracksFlowHistoryAvailability()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var service = new ProjectService();
-            service.CreateProject(directory, "flow_history", "Flow History");
-            service.CurrentProject!.Stories.SaveStory(new StoryResource
-            {
-                Id = "history_story",
-                DisplayName = "History Story",
-                Nodes = [new StoryNodeResource { Id = "end", Type = "END" }],
-            });
-            service.CloseProject(discardUnsavedChanges: true);
-            var shell = new ShellViewModel(service, new FixedProjectFolderPicker(directory));
-            shell.OpenProjectCommand.Execute(null);
-            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "history_story"));
-            shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-            var before = shell.CurrentFlow!.Nodes.Count;
-
-            Assert.IsFalse(shell.UndoCurrentCommand.CanExecute(null));
-            shell.CurrentFlow.AddNodeAt("End", 300, 120);
-            Assert.IsTrue(shell.UndoCurrentCommand.CanExecute(null));
-            shell.UndoCurrentCommand.Execute(null);
-            Assert.HasCount(before, shell.CurrentFlow.Nodes);
-        }
-        finally
-        {
-            TryDelete(directory);
-        }
+        using var f = new CurrentNavigationFixture(); f.Open();
+        var host = f.Shell.CanonicalStoryWorkspace!.StoryEditor.Host;
+        var before = host.Nodes.Count;
+        Assert.IsFalse(f.Shell.UndoCurrentCommand.CanExecute(null));
+        Assert.IsTrue(host.AddNode(new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.StoryFlow, "terminate", "added").Candidate!));
+        Assert.IsTrue(f.Shell.UndoCurrentCommand.CanExecute(null));
+        f.Shell.UndoCurrentCommand.Execute(null);
+        Assert.HasCount(before, host.Nodes);
+        f.Shell.RedoCurrentCommand.Execute(null);
+        Assert.HasCount(before + 1, host.Nodes);
     }
 
     [TestMethod]
     public void OpeningFlowProblemNavigatesSelectsNodeAndCarriesField()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var service = new ProjectService();
-            service.CreateProject(directory, "flow_problem", "Flow Problem");
-            service.CurrentProject!.Stories.SaveStory(new StoryResource
-            {
-                Id = "problem_story", DisplayName = "Problem Story", Entry = "dialogue",
-                Nodes = [new StoryNodeResource
-                {
-                    Id = "dialogue", Type = "play_dialogue",
-                    Properties = new Dictionary<string, JsonElement>
-                    {
-                        ["dialogue_id"] = JsonSerializer.SerializeToElement("missing_dialogue"),
-                    },
-                }],
-            });
-            service.CloseProject(discardUnsavedChanges: true);
-            var dialogs = new FakeFlowWorkspaceDialogs { Choice = UnsavedChangesChoice.Cancel };
-            var shell = new ShellViewModel(service, new FixedProjectFolderPicker(directory), flowWorkspaceDialogs: dialogs);
-            shell.OpenProjectCommand.Execute(null);
-            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "problem_story"));
-            shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-            shell.CurrentFlow!.Nodes.Single(node => node.Id == "dialogue").ResourceValue = "still_missing";
-            shell.FocusCurrentFlowProblems();
-            var problem = shell.Problems.Problems.Single(item => item.Code == "story.flow.dialogue.missing");
-
-            Assert.AreEqual("story/problem_story/flow/dialogue", problem.Source);
-            Assert.AreEqual("dialogue_id", problem.Field);
-            shell.OpenProblem(problem);
-
-            Assert.AreEqual(StoryWorkspaceRoutes.Flow, shell.StoryWorkspace.CurrentRoute);
-            Assert.AreEqual("dialogue", shell.CurrentFlow!.SelectedNode?.Id);
-            Assert.AreEqual("dialogue_id", shell.CurrentFlow.ProblemFocusRequest?.Field);
-            Assert.AreEqual(0, dialogs.UnsavedPromptCount);
-        }
-        finally
-        {
-            TryDelete(directory);
-        }
+        using var f = new CurrentNavigationFixture(); f.Open();
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        var start = workspace.StoryEditor.Host.Nodes.Single();
+        Assert.IsTrue(workspace.SelectGraphNode(start));
+        workspace.NodeInspector!.StoryStartTriggers.Single().RadiusText = "invalid";
+        var problem = f.Shell.Problems.Problems.Single(item => item.Code == "graph.story.start.trigger.authoring_invalid");
+        Assert.AreEqual(start.NodeId, problem.NodeId);
+        Assert.AreEqual(CurrentNavigationFixture.Owner, problem.GraphResourceId);
+        f.Shell.ShowProjectHomeCommand.Execute(null);
+        f.Shell.OpenProblem(problem);
+        Assert.AreSame(workspace, f.Shell.CanonicalStoryWorkspace);
+        Assert.AreEqual(start.NodeId, workspace.StoryNodeFocusRequest?.NodeId);
+        Assert.AreEqual(StoryStartSchema.RadiusProperty, workspace.StoryNodeFocusRequest?.Field);
+        Assert.AreEqual(0, f.Dialogs.Prompts);
     }
 
     [TestMethod]
-    public void InvalidFlowDraftIsRecoveredWithoutChangingOfficialJsonAndValidSaveClearsRecovery()
+    public void LegacyRecoveryIsNotAppliedToCurrentStoryOrRewritten()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var setup = new ProjectService();
-            setup.CreateProject(directory, "flow_recovery", "Flow Recovery");
-            setup.CurrentProject!.Stories.SaveStory(new StoryResource
-            {
-                Id = "recovery_story", DisplayName = "Recovery Story", Entry = "end",
-                Nodes = [new StoryNodeResource { Id = "end", Type = "end" }],
-            });
-            setup.CloseProject(discardUnsavedChanges: true);
-
-            var firstShell = new ShellViewModel(new ProjectService(), new FixedProjectFolderPicker(directory));
-            firstShell.OpenProjectCommand.Execute(null);
-            firstShell.OpenStory(firstShell.ProjectHome.Stories.Single(story => story.Id == "recovery_story"));
-            firstShell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-            firstShell.CurrentFlow!.AddNodeAt("PlayDialogue", 260, 180);
-            var recoveryPath = Path.Combine(directory, "resources", "editor", "recovery", "recovery_story.json");
-            Assert.IsTrue(File.Exists(recoveryPath));
-            Assert.IsFalse(new StoryRepository(directory).LoadStory("recovery_story").Nodes.Any(node => StoryValidator.CanonicalizeType(node.Type) == "PlayDialogue"));
-
-            var dialogs = new FakeFlowWorkspaceDialogs { RecoveryChoice = StoryFlowRecoveryChoice.Recover };
-            var restarted = new ShellViewModel(new ProjectService(), new FixedProjectFolderPicker(directory), flowWorkspaceDialogs: dialogs);
-            restarted.OpenProjectCommand.Execute(null);
-            restarted.OpenStory(restarted.ProjectHome.Stories.Single(story => story.Id == "recovery_story"));
-            restarted.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-            var recoveredNode = restarted.CurrentFlow!.Nodes.Single(node => node.CanonicalType == "PlayDialogue");
-
-            Assert.IsTrue(restarted.CurrentFlow.IsDirty);
-            Assert.AreEqual(StoryFlowRecoveryChoice.Recover, dialogs.LastRecoveryChoice);
-            Assert.IsFalse(new StoryRepository(directory).LoadStory("recovery_story").Nodes.Any(node => StoryValidator.CanonicalizeType(node.Type) == "PlayDialogue"));
-
-            restarted.CurrentFlow.SelectOnly(recoveredNode);
-            restarted.CurrentFlow.DeleteSelectionCommand.Execute(null);
-            restarted.SaveCurrentResourceCommand.Execute(null);
-
-            Assert.IsFalse(File.Exists(recoveryPath));
-            Assert.IsFalse(restarted.CurrentFlow.IsDirty);
-        }
-        finally
-        {
-            TryDelete(directory);
-        }
+        using var f = new CurrentNavigationFixture();
+        var currentPath = f.Store.Stories.GetPath(CurrentNavigationFixture.Owner);
+        var before = File.ReadAllBytes(currentPath);
+        var recovery = new StoryFlowRecoveryStore(f.Root);
+        recovery.Save(new StoryResource { Id = "legacy_story", DisplayName = "Legacy draft", Nodes = [new() { Id = "draft", Type = "play_dialogue" }] });
+        var legacyPath = Path.Combine(recovery.RecoveryDirectory, "legacy_story.json");
+        var recoveryBefore = File.ReadAllBytes(legacyPath);
+        f.Shell.OpenProjectCommand.Execute(null); f.Open();
+        Assert.IsFalse(f.Shell.CanonicalStoryWorkspace!.StoryEditor.Host.Nodes.Any(node => node.NodeId == "draft"));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(currentPath));
+        CollectionAssert.AreEqual(recoveryBefore, File.ReadAllBytes(legacyPath));
     }
 
     [TestMethod]
-    public void RecoveryCanBeIgnoredForSessionOrDeletedWhenStoryOpens()
+    public void SavingCurrentGraphPreservesUnrelatedLegacyRecovery()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var setup = new ProjectService();
-            setup.CreateProject(directory, "recovery_choices", "Recovery Choices");
-            foreach (var id in new[] { "ignore_story", "delete_story" })
-                setup.CurrentProject!.Stories.SaveStory(new StoryResource
-                {
-                    Id = id, DisplayName = id, Entry = "end",
-                    Nodes = [new StoryNodeResource { Id = "end", Type = "end" }],
-                });
-            setup.CloseProject(discardUnsavedChanges: true);
-            var store = new StoryFlowRecoveryStore(directory);
-            foreach (var id in new[] { "ignore_story", "delete_story" })
-                store.Save(new StoryResource
-                {
-                    Id = id, DisplayName = id, Entry = "end",
-                    Nodes =
-                    [
-                        new StoryNodeResource { Id = "end", Type = "end" },
-                        new StoryNodeResource { Id = "draft", Type = "play_dialogue" },
-                    ],
-                });
-
-            var dialogs = new FakeFlowWorkspaceDialogs { RecoveryChoice = StoryFlowRecoveryChoice.Ignore };
-            var shell = new ShellViewModel(new ProjectService(), new FixedProjectFolderPicker(directory), flowWorkspaceDialogs: dialogs);
-            shell.OpenProjectCommand.Execute(null);
-            Assert.IsTrue(shell.Output.Entries.Any(entry => entry.Message.Contains("2 个 Story Flow 恢复草稿", StringComparison.Ordinal)));
-            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ignore_story"));
-            Assert.IsFalse(shell.CurrentFlow!.Nodes.Any(node => node.Id == "draft"));
-            Assert.IsNotNull(store.Load("ignore_story"));
-
-            dialogs.RecoveryChoice = StoryFlowRecoveryChoice.Delete;
-            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "delete_story"));
-            Assert.IsFalse(shell.CurrentFlow!.Nodes.Any(node => node.Id == "draft"));
-            Assert.IsNull(store.Load("delete_story"));
-        }
-        finally
-        {
-            TryDelete(directory);
-        }
+        using var f = new CurrentNavigationFixture();
+        var recovery = new StoryFlowRecoveryStore(f.Root);
+        recovery.Save(new StoryResource { Id = "legacy_story", Nodes = [new() { Id = "draft", Type = "play_dialogue" }] });
+        var path = Path.Combine(recovery.RecoveryDirectory, "legacy_story.json");
+        var before = File.ReadAllBytes(path);
+        f.Open();
+        f.Shell.CanonicalStoryWorkspace!.StoryEditor.Host.SetNodePosition("start", 765, 432);
+        f.Shell.SaveCurrentResourceCommand.Execute(null);
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(path));
+        Assert.IsNotNull(recovery.Load("legacy_story"));
     }
 
     [TestMethod]
-    public void ProjectGraphProblemsFocusOrOpenMissingTargetEnterStory()
+    public void ProjectGraphProblemRouteOpensCurrentStoryAndCarriesField()
     {
-        var directory = CreateProjectDirectory();
-        try
-        {
-            var setup = new ProjectService();
-            setup.CreateProject(directory, "graph_problems", "Graph Problems");
-            setup.CurrentProject!.Stories.SaveStory(new StoryResource
-            {
-                Id = "source", DisplayName = "Source", Entry = "enter_missing",
-                Nodes = [new StoryNodeResource
-                {
-                    Id = "enter_missing", Type = "enter_story",
-                    Properties = new Dictionary<string, JsonElement>
-                    {
-                        ["target_story_id"] = JsonSerializer.SerializeToElement("missing"),
-                    },
-                }],
-            });
-            setup.CurrentProject.Stories.SaveStory(new StoryResource { Id = "isolated", DisplayName = "Isolated", Entry = "end", Nodes = [new StoryNodeResource { Id = "end", Type = "end" }] });
-            setup.CloseProject(discardUnsavedChanges: true);
-            var shell = new ShellViewModel(new ProjectService(), new FixedProjectFolderPicker(directory));
-            shell.OpenProjectCommand.Execute(null);
-            shell.FocusProjectGraphProblems();
+        using var f = new CurrentNavigationFixture();
+        var problem = new ProblemItem(ValidationSeverity.Error, "project_graph.target.missing", "Missing target", "target_story_id",
+            "project-graph/" + CurrentNavigationFixture.Owner + "/start");
+        f.Shell.OpenProblem(problem);
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        Assert.AreEqual(CurrentNavigationFixture.Owner, workspace.StoryEditor.Id);
+        Assert.AreEqual("start", workspace.StoryNodeFocusRequest?.NodeId);
+        Assert.AreEqual("target_story_id", workspace.StoryNodeFocusRequest?.Field);
+        f.Shell.ShowProjectHomeCommand.Execute(null);
+        f.Shell.ShowProjectGraphCommand.Execute(null);
+        f.Shell.FocusProjectGraphProblems();
+        Assert.IsFalse(f.Shell.Problems.Problems.Any(problem => problem.Code == "project_graph.story.isolated"));
+    }
 
-            var missing = shell.Problems.Problems.Single(problem => problem.Code == "project_graph.target.missing");
-            Assert.AreEqual("project-graph/source/enter_missing", missing.Source);
-            shell.OpenProblem(missing);
-            Assert.AreEqual("source", shell.CurrentFlow?.Id);
-            Assert.AreEqual("enter_missing", shell.CurrentFlow?.SelectedNode?.Id);
-            Assert.AreEqual("target_story_id", shell.CurrentFlow?.ProblemFocusRequest?.Field);
+    [TestMethod]
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void ResourceProblemFocusDoesNotSelectSameNamedStoryNode(GraphResourceKind kind)
+    {
+        using var f = new CurrentNavigationFixture();
+        var resourceId = CurrentNavigationFixture.Owner + (kind == GraphResourceKind.Session ? "~session~resource" : "~task~resource");
+        new CanonicalStoryResourceLifecycleService(f.Store).CreateOwned(CurrentNavigationFixture.Owner, kind, resourceId, "Resource");
+        f.Shell.OpenProjectCommand.Execute(null); f.Open();
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        workspace.StoryEditor.Host.AddNode(new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.StoryFlow, "logic_output", "same_node").Candidate!);
+        var resource = workspace.SessionItems.Concat(workspace.TaskItems).Single();
+        workspace.OpenGraphResource(resource);
+        resource.Editor.Host.AddNode(GraphNodeFactory.Create(resource.Editor.Scope, "logic_output", "same_node"));
+        resource.Editor.Host.SetAuthoringIssue("test-input", new("test.authoring_invalid", "Invalid input", "value", NodeId: "same_node"));
+        var problem = f.Shell.Problems.Problems.First(item => item.NodeId == "same_node" && item.GraphResourceId == resourceId);
+        f.Shell.ShowProjectHomeCommand.Execute(null);
+        f.Shell.OpenProblem(problem);
+        Assert.AreSame(resource.Editor, workspace.ActiveEditor);
+        Assert.AreEqual(resourceId, workspace.StoryNodeFocusRequest?.ResourceId);
+        Assert.AreEqual("same_node", workspace.StoryNodeFocusRequest?.NodeId);
+        Assert.IsTrue(workspace.StoryEditor.IsDirty);
+        Assert.IsTrue(resource.Editor.IsDirty);
+    }
 
-            shell.ShowProjectHomeCommand.Execute(null);
-            shell.ShowProjectGraphCommand.Execute(null);
-            shell.FocusProjectGraphProblems();
-            Assert.IsFalse(shell.Problems.Problems.Any(problem => problem.Code == "project_graph.story.isolated"));
-        }
-        finally
+    private sealed class CurrentNavigationFixture : IDisposable
+    {
+        public const string Owner = "ST-2345-6789-ABCD-EFGH";
+        public string Root { get; } = CreateProjectDirectory();
+        public CanonicalProjectGraphStore Store { get; }
+        public ShellViewModel Shell { get; }
+        public CurrentProjectDialogs Dialogs { get; } = new();
+        public CurrentNavigationFixture()
         {
-            TryDelete(directory);
+            var service = new ProjectService(); service.CreateProject(Root, "navigation", "Navigation");
+            Store = new(Root);
+            Store.Stories.Create(new(GraphResourceKind.Story, Owner, "Owner",
+                new([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "region")])));
+            Store.Memberships.Create(new(Owner));
+            service.CreateActorInStory(Owner, Owner + "~actor~hero", "Hero");
+            Shell = new(new ProjectService(), new FixedProjectFolderPicker(Root), projectWorkspaceDialogs: Dialogs);
+            Shell.OpenProjectCommand.Execute(null);
         }
+        public void Open() => Shell.OpenStory(Shell.ProjectHome.Stories.Single());
+        public void Dispose() => TryDelete(Root);
+    }
+    private sealed class CurrentProjectDialogs : IProjectWorkspaceDialogs
+    {
+        public bool AllowGroupDeletion { get; set; }
+        public bool ConfirmDeleteStoryGroups(string groupNames, string summary, IReadOnlyList<string> affectedPaths) => AllowGroupDeletion;
+        public UnsavedChangesChoice Choice { get; set; } = UnsavedChangesChoice.Cancel;
+        public int Prompts { get; private set; }
+        public ProjectCreationRequest? RequestCreate(string? initialParentDirectory = null) => null;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges() { Prompts++; return Choice; }
+        public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 
     private static string CreateProjectDirectory() =>

@@ -1,3 +1,4 @@
+﻿using DarkGreyRPG.Studio.Core.Identity;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -8,7 +9,6 @@ using DarkGreyRPG.Studio.Core.Dialogues;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
-using DarkGreyRPG.Studio.Core.Graphs.Migration;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Core.Stories;
@@ -74,8 +74,6 @@ public sealed partial class ShellViewModel : ObservableObject
         Func<string, CanonicalProjectGraphStore>? canonicalGraphStoreFactory = null,
         IItemWorkspaceDialogs? itemWorkspaceDialogs = null,
         IDgrsExportPathPicker? dgrsExportPathPicker = null,
-        DarkGreyRPG.Studio.Settings.ISettingsService? namespaceSettings = null,
-        INamespaceDialogs? namespaceDialogs = null,
         IOfflinePackageDialogs? offlinePackageDialogs = null,
         PortableProjectStore? portableProjects = null)
     {
@@ -93,12 +91,6 @@ public sealed partial class ShellViewModel : ObservableObject
         _offlinePackageDialogs = offlinePackageDialogs ?? NullOfflinePackageDialogs.Instance;
         ReferencePackageCommand = new RelayCommand(ReferencePackage, () => HasProject);
         ImportPackageCommand = new RelayCommand(ImportPackage, () => HasProject);
-        _namespaceSettings = namespaceSettings;
-        _namespaceDialogs = namespaceDialogs ?? new NullNamespaceDialogs();
-        ChangeGlobalNamespaceCommand = new RelayCommand(ChangeGlobalNamespace);
-        ChangeStoryNamespaceCommand = new RelayCommand(() => ChangeStoryNamespace(ProjectHome.SelectedStory?.Id, false));
-        ReturnStoryToGlobalNamespaceCommand = new RelayCommand(() => ChangeStoryNamespace(ProjectHome.SelectedStory?.Id, true));
-        UndoNamespaceMigrationCommand = new RelayCommand(UndoNamespaceMigration);
         AddExternalReferenceCommand = new RelayCommand(() => AddExternalReference(CanonicalStoryWorkspace?.StoryEditor.Id ?? ProjectHome.SelectedStory?.Id));
         _canonicalGraphStoreFactory = canonicalGraphStoreFactory
             ?? (projectDirectory => new CanonicalProjectGraphStore(projectDirectory));
@@ -106,8 +98,8 @@ public sealed partial class ShellViewModel : ObservableObject
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
         SaveCurrentResourceCommand = new RelayCommand(SaveAll, CanSaveAll);
-        UndoCurrentCommand = new RelayCommand(UndoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanUndo == true || ActiveProjectGraphHost?.CanUndo == true || ActiveEditor?.UndoCommand.CanExecute(null) == true || CanUndoProjectNamespace() || CanUndoReference());
-        RedoCurrentCommand = new RelayCommand(RedoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanRedo == true || ActiveProjectGraphHost?.CanRedo == true || ActiveEditor?.RedoCommand.CanExecute(null) == true || CanRedoReference());
+        UndoCurrentCommand = new RelayCommand(UndoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanUndo == true || LatestCanonicalUndoHost is not null || ActiveEditor?.UndoCommand.CanExecute(null) == true || CanUndoReference());
+        RedoCurrentCommand = new RelayCommand(RedoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanRedo == true || NextCanonicalRedoHost is not null || (ActiveEditor is not CanonicalGraphResourceEditorViewModel && ActiveEditor?.RedoCommand.CanExecute(null) == true) || CanRedoReference());
         NewActorCommand = new RelayCommand(NewActor, CanCreateOrReferenceActor);
         ReferenceActorCommand = new RelayCommand(ReferenceActor, CanCreateOrReferenceActor);
         RemoveActorReferenceCommand = new RelayCommand(RemoveActorReference, CanRemoveActorReference);
@@ -135,6 +127,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 && (story.HasCanonicalStory || story.CanDeleteLegacyStory));
         ShowProjectHomeCommand = new RelayCommand(ShowProjectHome, () => HasProject);
         ShowProjectGraphCommand = new RelayCommand(ShowProjectGraph, () => HasProject);
+        CopyStoryContentCommand = new RelayCommand(CopyStoryContent,
+            () => HasProject && ProjectHome.SelectedStory is { HasCanonicalStory: true });
         ExportSelectedStoryPackageCommand = new RelayCommand(
             ExportSelectedStoryPackage,
             () => HasProject && ProjectHome.SelectedStory is not null);
@@ -453,6 +447,18 @@ public sealed partial class ShellViewModel : ObservableObject
     public void OpenProblem(ProblemItem problem)
     {
         ArgumentNullException.ThrowIfNull(problem);
+        var canonicalPrefix = problem.Source?.StartsWith("export/story/", StringComparison.Ordinal) == true
+            ? "export/story/" : "canonical/story/";
+        if (problem.Source?.StartsWith(canonicalPrefix, StringComparison.Ordinal) == true
+            && problem.NodeId is { } canonicalNode && problem.GraphResourceId is { } resourceId)
+        {
+            var storyId = problem.Source[canonicalPrefix.Length..];
+            var story = ProjectHome.Stories.FirstOrDefault(candidate => candidate.Id == storyId);
+            if (story is not null) OpenStory(story);
+            if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
+                CanonicalStoryWorkspace.RequestResourceNodeFocus(resourceId, canonicalNode, problem.Field);
+            return;
+        }
         if (TryOpenProjectGraphProblem(problem)) return;
         if (TryOpenFlowProblem(problem)) return;
 
@@ -635,8 +641,13 @@ public sealed partial class ShellViewModel : ObservableObject
             {
                 projectDirectory = _portableProjects.PrepareOpen(projectDirectory, isRestore);
             }
-            if (!PrepareLegacyProjectCompatibility(projectDirectory)) return false;
-            if (!PrepareProjectNamespace(projectDirectory)) return false;
+            // Reject unsupported graph contracts before changing the active
+            // workspace or running startup media cleanup. Never repair user files.
+            var candidateStore = _canonicalGraphStoreFactory(projectDirectory);
+            _ = candidateStore.Stories.List();
+            _ = candidateStore.Sessions.List();
+            _ = candidateStore.Tasks.List();
+            _ = candidateStore.StoryLogicGraph.Load();
             var firstProject = _projectService.CurrentProject is null;
             var project = _projectService.OpenProject(projectDirectory);
             if (firstProject)
@@ -657,7 +668,7 @@ public sealed partial class ShellViewModel : ObservableObject
             _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
             SetCanonicalStoryWorkspace(null);
-            _canonicalGraphStore = _canonicalGraphStoreFactory(project.ProjectDirectory);
+            _canonicalGraphStore = candidateStore;
             _canonicalSaveCoordinator = new CanonicalGraphResourceSaveCoordinator(_canonicalGraphStore);
             _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
@@ -689,15 +700,19 @@ public sealed partial class ShellViewModel : ObservableObject
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or JsonException
                 or ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
-                or StoryRepositoryException or StoryNotFoundException or StoryDataException)
+                or StoryRepositoryException or StoryNotFoundException or StoryDataException
+                or GraphResourceRepositoryException or GraphResourceEnvelopeException
+                or CanonicalStoryLogicGraphRepositoryException)
         {
+            var detail = exception.Message == exception.GetBaseException().Message
+                ? exception.Message : exception.Message + "\n" + exception.GetBaseException().Message;
             if (isRestore)
             {
-                ReportWarning($"无法恢复上次项目：{exception.Message}", "Project");
+                ReportWarning($"无法恢复上次项目，文件保持原样：{detail}", "Project");
             }
             else
             {
-                ReportFailure("打开项目", exception);
+                ReportFailure("打开项目", new ProjectException(detail + "\n项目文件保持原样。", exception));
             }
 
             return false;
@@ -712,8 +727,6 @@ public sealed partial class ShellViewModel : ObservableObject
             return;
         }
 
-        var initialNamespace = RequestInitialNamespace();
-        if (_namespaceSettings is not null && initialNamespace is null) return;
         var initialParent = _portableProjects?.Paths.Projects ?? (_projectService.CurrentProject is null
             ? null
             : Directory.GetParent(_projectService.CurrentProject.ProjectDirectory)?.FullName);
@@ -730,7 +743,6 @@ public sealed partial class ShellViewModel : ObservableObject
                 request.ProjectDirectory,
                 request.Id,
                 request.DisplayName);
-            InitializeNewProjectNamespace(project.ProjectDirectory, initialNamespace);
             _dialogueDrafts.Clear();
             _questDrafts.Clear();
             _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
@@ -809,6 +821,7 @@ public sealed partial class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(ProjectHome));
         OpenSelectedStoryCommand.RaiseCanExecuteChanged();
         DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
+        CopyStoryContentCommand.RaiseCanExecuteChanged();
         ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
     }
 
@@ -907,14 +920,15 @@ public sealed partial class ShellViewModel : ObservableObject
             var workspace = _retainedStoryWorkspaces.Remove(storyId, out var retained) ? retained
                 : new CanonicalStoryWorkspaceViewModel(new CanonicalStoryWorkspaceLoader(store).Load(storyId),
                     new CanonicalGraphLayoutStore(store.ProjectDirectory));
+            if (retained is not null && !retained.HasDirtyEditors)
+                workspace.ApplyResourceSnapshot(new CanonicalStoryWorkspaceLoader(store).Load(storyId),
+                    workspace.SelectedFolderKind ?? CanonicalStoryFolderKind.Sessions);
             ConfigureCanonicalResourceActions(workspace);
             ClearAllEditorSelections();
             StoryWorkspace.CloseStory();
             SetCanonicalStoryWorkspace(workspace);
             Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-            ReplaceValidationSource(
-                $"canonical/story/{storyId}",
-                workspace.ValidationIssues.Concat(workspace.ActiveEditor.ValidationIssues));
+            ReplaceCanonicalValidation(workspace);
             StatusMessage = $"已打开故事：{storyId}";
             Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
             return CanonicalOpenResult.Opened;
@@ -1025,7 +1039,7 @@ public sealed partial class ShellViewModel : ObservableObject
                 : _projectService.OpenActor(actor.Id);
             var editor = new ActorEditorViewModel(document) { IsReadOnly = actor.IsReadOnly };
             if (actor.Provider is { } mediaProvider)
-                editor.PortraitPreviewData = mediaRef => OfflineDgrsPackageReader.Read(mediaProvider.PackagePath)
+                editor.PortraitPreviewData = mediaRef => OfflineDgrsPackageReader.ReadContainer(mediaProvider.PackagePath)[0]
                     .Entries.TryGetValue("resources/" + mediaRef, out var data) ? data : null;
             editor.IsPortraitVariantReferenced = variant =>
             {
@@ -1049,6 +1063,10 @@ public sealed partial class ShellViewModel : ObservableObject
                         .Where(resource => resource.PackageIdentity == provider.PackageIdentity)
                         .Select(ToOfflineChoice).Where(choice => choice.HasGraph).ToArray(),
                 });
+            else
+                _offlinePackageDialogs.ShowReadOnlyResource(new OfflineResourceChoice(
+                    item.ResourceKind.ToString(), item.Id, item.DisplayName,
+                    "当前项目引用（只读）", item.Editor.CreatePersistenceSnapshot().ToJson()));
         };
         workspace.CreateResourceRequested = CreateCanonicalStoryResource;
         workspace.ReferenceResourceRequested = ReferenceCanonicalStoryResource;
@@ -1288,42 +1306,24 @@ public sealed partial class ShellViewModel : ObservableObject
         if (workspace is null || store is null || project is null) return;
         try
         {
-            if (!_actorWorkspaceDialogs.SupportsCanonicalActorKinds)
-            {
-                var suggestedLegacyId = project.Actors.GetAvailableId("new_actor");
-                var legacyRequest = _actorWorkspaceDialogs.RequestCreate(suggestedLegacyId);
-                if (legacyRequest is null) return;
-                var legacyCreated = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
-                    .CreateOwned(workspace.StoryEditor.Id, legacyRequest.Id, legacyRequest.DisplayName);
-                LoadActorList();
-                ReloadCanonicalStoryWorkspace(
-                    workspace.StoryEditor.Id,
-                    CanonicalStoryFolderKind.Actors,
-                    legacyCreated.Id);
-                ReportSuccess(
-                    $"角色 '{legacyCreated.Id}' 已创建。",
-                    $"canonical/actor/{legacyCreated.Id}");
-                return;
-            }
-
             var kind = _actorWorkspaceDialogs.RequestCanonicalCreationKind(workspace.StoryEditor.DisplayName);
             if (kind is null) return;
             var suggestedId = project.Actors.GetAvailableId(
-                NamespaceCreationId(kind == CanonicalStoryActorKind.Individual ? "new_npc" : "new_group", workspace.StoryEditor.Id));
+                AllocateResourceAddress(workspace.StoryEditor.Id, ResourceKind.Actor));
             var request = _actorWorkspaceDialogs.RequestCreateCanonical(kind.Value, suggestedId);
             if (request is null) return;
             if (request.Kind != kind.Value)
                 throw new InvalidOperationException("Actor creation dialog returned a different identity kind.");
 
             var created = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
-                .CreateOwned(workspace.StoryEditor.Id, request.Kind, NamespaceCreationId(request.Id, workspace.StoryEditor.Id), request.DisplayName, request.Tags);
+                .CreateOwned(workspace.StoryEditor.Id, request.Kind, suggestedId, request.DisplayName, request.Tags);
             LoadActorList();
             ReloadCanonicalStoryWorkspace(
                 workspace.StoryEditor.Id,
                 CanonicalStoryFolderKind.Actors,
                 created.Id);
             ReportSuccess(
-                $"角色 '{created.Id}' 已创建。",
+                $"角色“{created.DisplayName}”已创建。",
                 $"canonical/actor/{created.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
@@ -1339,7 +1339,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (_offlinePackageDialogs is not NullOfflinePackageDialogs)
         {
-            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id, new HashSet<Core.Identity.DgrResourceKind>([Core.Identity.DgrResourceKind.Actor]));
+            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id);
             return;
         }
         var workspace = CanonicalStoryWorkspace;
@@ -1382,6 +1382,9 @@ public sealed partial class ShellViewModel : ObservableObject
         }
     }
 
+    private static string AllocateResourceAddress(string owner, ResourceKind kind)
+        => ResourceAddress.Create(StoryUid.Parse(owner), kind, new HashSet<ResourceAddress>()).ToKey();
+
     private void CreateCanonicalStoryResource(GraphResourceKind resourceKind)
     {
         var workspace = CanonicalStoryWorkspace;
@@ -1391,18 +1394,18 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             var repository = CanonicalRepository(store, resourceKind);
             var suggestedId = repository.GetAvailableId(
-                NamespaceCreationId(resourceKind == GraphResourceKind.Session ? "new_session" : "new_task", workspace.StoryEditor.Id));
+                AllocateResourceAddress(workspace.StoryEditor.Id, resourceKind == GraphResourceKind.Session ? ResourceKind.Session : ResourceKind.Task));
             var request = _canonicalStoryResourceDialogs.RequestCreate(resourceKind, suggestedId);
             if (request is null) return;
 
             var created = new CanonicalStoryResourceLifecycleService(store).CreateOwned(
                 workspace.StoryEditor.Id,
                 resourceKind,
-                NamespaceCreationId(request.Id, workspace.StoryEditor.Id),
+                suggestedId,
                 request.DisplayName, request.Tags);
             ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, resourceKind, created.Id);
             ReportSuccess(
-                $"{CanonicalKindLabel(resourceKind)} '{created.Id}' 已创建。",
+                $"{CanonicalKindLabel(resourceKind)}“{created.DisplayName}”已创建。",
                 $"canonical/{resourceKind}/{created.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
@@ -1418,7 +1421,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (_offlinePackageDialogs is not NullOfflinePackageDialogs)
         {
-            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id, new HashSet<Core.Identity.DgrResourceKind>([resourceKind == GraphResourceKind.Session ? Core.Identity.DgrResourceKind.Session : Core.Identity.DgrResourceKind.Task]));
+            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id);
             return;
         }
         var workspace = CanonicalStoryWorkspace;
@@ -1479,8 +1482,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 ? CanonicalStoryItemKind.Individual
                 : CanonicalStoryItemKind.Collective;
             var suggestedId = kind == CanonicalStoryItemKind.Individual
-                ? repository.GetAvailableItemId(NamespaceCreationId("new_item", workspace.StoryEditor.Id))
-                : repository.GetAvailableGroupId(NamespaceCreationId("new_group", workspace.StoryEditor.Id));
+                ? repository.GetAvailableItemId(AllocateResourceAddress(workspace.StoryEditor.Id, ResourceKind.Item))
+                : repository.GetAvailableGroupId(AllocateResourceAddress(workspace.StoryEditor.Id, ResourceKind.ItemGroup));
             var request = _itemWorkspaceDialogs.RequestCreate(kind, suggestedId);
             if (request is null) return;
             if (request.Kind != kind)
@@ -1489,12 +1492,12 @@ public sealed partial class ShellViewModel : ObservableObject
             var created = new CanonicalStoryItemLifecycleService(store, repository).CreateOwned(
                 workspace.StoryEditor.Id,
                 kind,
-                NamespaceCreationId(request.Id, workspace.StoryEditor.Id),
+                suggestedId,
                 request.DisplayName,
                 request.Tags);
             ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Items, created.Id);
             ReportSuccess(
-                $"{(kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")} '{created.Id}' 已创建。",
+                $"{(kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组")}“{created.DisplayName}”已创建。",
                 $"canonical/{(kind == CanonicalStoryItemKind.Individual ? "item" : "item_group")}/{created.Id}");
         }
         catch (Exception exception) when (IsCanonicalResourceLifecycleException(exception))
@@ -1507,7 +1510,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (_offlinePackageDialogs is not NullOfflinePackageDialogs)
         {
-            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id, new HashSet<Core.Identity.DgrResourceKind>([Core.Identity.DgrResourceKind.Item, Core.Identity.DgrResourceKind.ItemGroup]));
+            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id);
             return;
         }
         var workspace = CanonicalStoryWorkspace;
@@ -1752,9 +1755,7 @@ public sealed partial class ShellViewModel : ObservableObject
             ?? throw new InvalidOperationException("Canonical Story workspace is unavailable.");
         workspace.ApplyResourceSnapshot(snapshot, selectedFolderKind, selectedResourceId);
         RefreshHomeResourceFolders();
-        ReplaceValidationSource(
-            $"canonical/story/{storyId}",
-            workspace.ValidationIssues.Concat(workspace.ActiveEditor.ValidationIssues));
+        ReplaceCanonicalValidation(workspace);
     }
 
     private static bool TryDescribeCanonicalResource(
@@ -1974,7 +1975,10 @@ public sealed partial class ShellViewModel : ObservableObject
         }
         _canonicalStoryWorkspace = workspace;
         if (_canonicalStoryWorkspace is not null)
+        {
+            _canonicalStoryWorkspace.PropertyChanged -= OnCanonicalStoryWorkspacePropertyChanged;
             _canonicalStoryWorkspace.PropertyChanged += OnCanonicalStoryWorkspacePropertyChanged;
+        }
         SetCanonicalStoryWorkspaceVisible(workspace is not null);
         OnPropertyChanged(nameof(CanonicalStoryWorkspace));
         OnPropertyChanged(nameof(HasCanonicalStoryWorkspace));
@@ -2021,16 +2025,12 @@ public sealed partial class ShellViewModel : ObservableObject
 
         try
         {
-            var request = _resourceWorkspaceDialogs.RequestCreate(
-                ProjectResourceType.Story,
-                GetAvailableStoryId(NamespaceCreationId("new_story")));
+            var lifecycle = new CanonicalStoryLifecycleService(_canonicalGraphStore, project.Actors, project.Stories);
+            var allocatedUid = lifecycle.AllocateStoryUid();
+            var request = _resourceWorkspaceDialogs.RequestCreate(ProjectResourceType.Story, allocatedUid.Value);
             if (request is null) return;
 
-            var story = new CanonicalStoryLifecycleService(
-                    _canonicalGraphStore,
-                    project.Actors,
-                    project.Stories)
-                .Create(NamespaceCreationId(request.Id), request.DisplayName);
+            var story = lifecycle.Create(allocatedUid.Value, request.DisplayName);
             LoadStoryList();
             if (graphPosition is { } position)
                 ProjectHome.Graph.CanonicalHost?.SetNodePosition(story.Id, position.X, position.Y);
@@ -2601,17 +2601,6 @@ public sealed partial class ShellViewModel : ObservableObject
         }
     }
 
-    private string GetAvailableStoryId(string baseId)
-    {
-        var usedIds = ProjectHome.Stories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal);
-        if (!usedIds.Contains(baseId)) return baseId;
-        for (var suffix = 2; ; suffix++)
-        {
-            var candidate = $"{baseId}_{suffix}";
-            if (!usedIds.Contains(candidate)) return candidate;
-        }
-    }
-
     private void DeleteSelectedCanonicalStory(StoryListItemViewModel selected)
     {
         var project = _projectService.CurrentProject;
@@ -2965,27 +2954,70 @@ public sealed partial class ShellViewModel : ObservableObject
 
         var suggestedDirectory = _portableProjects?.Paths.Exports
             ?? Path.Combine(project.ProjectDirectory, "build", "story_packages");
-        var output = _dgrsExportPathPicker.PickExportPath(story.Id, suggestedDirectory);
-        if (string.IsNullOrWhiteSpace(output)) return;
-
-        if (HasUnsavedDocuments() && !TrySaveAll())
-        {
-            ReportWarning("导出已取消：存在无法保存的故事或资源，请根据“输出/问题”面板修正后重试。", $"story/{story.Id}");
-            return;
-        }
-
         try
         {
-            var result = new DgrsStoryPackageExporter(project.ProjectDirectory)
-                .Build(story.Id, output, "0.3.2.0");
+            Problems.RemoveSourceTree("export/story");
+            var groups = new DgrsGroupPackageExporter(project.ProjectDirectory).Groups();
+            groups.ByStory.TryGetValue(story.Id, out var group);
+            var output = group is null ? _dgrsExportPathPicker.PickExportPath(story.DisplayName, suggestedDirectory)
+                : _dgrsExportPathPicker.PickGroupExportPath(group.DisplayName, suggestedDirectory);
+            if (string.IsNullOrWhiteSpace(output)) return;
+            if (HasUnsavedDocuments() && !TrySaveAll())
+            {
+                ReportWarning("导出已取消：存在无法保存的故事或资源，请根据“输出/问题”面板修正后重试。", $"story/{story.Id}");
+                return;
+            }
+            var resultPath = group is null
+                ? new DgrsStoryPackageExporter(project.ProjectDirectory).Build(story.Id, output, "0.3.3.6").PackagePath
+                : new DgrsGroupPackageExporter(project.ProjectDirectory).Build(story.Id, output, "0.3.3.6").PackagePath;
             _lastUiCommand = nameof(ExportSelectedStoryPackage);
             OnPropertyChanged(nameof(LastUiCommand));
-            ReportSuccess($"故事包已导出并验证：{result.PackagePath}", $"story/{story.Id}");
+            ReportSuccess($"{(group is null ? "故事包" : "完整故事组")}已导出并验证：{resultPath}", $"story/{story.Id}");
+        }
+        catch (StoryPackageException exception) when (exception.GraphIssues.Count != 0)
+        {
+            ReportExportGraphIssues(exception.GraphIssues);
         }
         catch (Exception exception) when (IsWorkspaceException(exception) || exception is StoryPackageException)
         {
             ReportFailure("导出故事包", exception, story.Id);
         }
+    }
+
+    private void ReportExportGraphIssues(IReadOnlyList<StoryPackageGraphIssue> issues)
+    {
+        static string Describe(StoryPackageGraphIssue item)
+        {
+            var detail = item.Issue.Code switch
+            {
+                "graph.objective.description.invalid" => "目标说明必须是文字，可以留空。",
+                "graph.objective.target.invalid" => item.Issue.Field switch
+                {
+                    "properties.entity" => "请选择有效的击杀目标；未配置的目标不能接入任务逻辑。",
+                    "properties.actor_id" => "请选择有效的交互或提交角色；未配置的目标不能接入任务逻辑。",
+                    "properties.item" => "请选择有效的目标物品；未配置的目标不能接入任务逻辑。",
+                    _ => "请选择有效的目标对象。",
+                },
+                "graph.objective.required.invalid" => "目标数量必须为正整数。",
+                _ => ValidationIssuePresentation.FormatCompact(item.Issue),
+            };
+            var kind = item.ResourceKind switch
+            {
+                GraphResourceKind.Task => "任务", GraphResourceKind.Session => "会话", _ => "故事",
+            };
+            var node = string.IsNullOrWhiteSpace(item.NodeDisplayName) ? string.Empty : $" → 节点“{item.NodeDisplayName}”";
+            return $"故事“{item.StoryDisplayName}” → {kind}“{item.ResourceDisplayName}”{node}：{detail}";
+        }
+
+        foreach (var group in issues.GroupBy(issue => issue.StoryId))
+            Problems.ReplaceForSource($"export/story/{group.Key}", group.Select(item => new ProblemItem(
+                item.Issue.Severity, item.Issue.Code, Describe(item), item.Issue.Field,
+                NodeId: item.Issue.NodeId, GraphResourceId: item.ResourceId)));
+        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
+        var message = $"导出未完成，共 {issues.Count} 项内容需要修正。双击“问题”中的条目可定位。";
+        StatusMessage = message;
+        Output.Append(message + Environment.NewLine + string.Join(Environment.NewLine, issues.Select(Describe)), OutputKind.Error, "export/story");
+        Toast.Show(message, ToastKind.Error);
     }
 
     private void RememberProject(string projectDirectory)
@@ -3509,7 +3541,13 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             var document = operation();
             var selectedId = document.Id;
-            RefreshCurrentStory(selectedId);
+            if (CanonicalStoryWorkspace is { } workspace)
+            {
+                LoadActorList();
+                ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, selectedId);
+                SelectedActor = Actors.FirstOrDefault(actor => actor.Id == selectedId);
+            }
+            else RefreshCurrentStory(selectedId);
             ReportSuccess(successMessage(document), $"actor/{document.Id}");
         }
         catch (Exception exception) when (IsWorkspaceException(exception))
@@ -3623,7 +3661,23 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (args.PropertyName == nameof(ProjectHomeViewModel.Graph))
         {
-            ProjectHome.Graph.CreateStoryRequested = (x, y) => CreateStory(new System.Windows.Point(x, y));
+            ProjectHome.Graph.CreateStoryRequested = null;
+            ProjectHome.Graph.DeleteStoryGroupsRequested = DeleteStoryGroups;
+            ProjectHome.Graph.OutputEditorProvider = storyId =>
+            {
+                if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId) return CanonicalStoryWorkspace.StoryEditor;
+                if (!_retainedStoryWorkspaces.TryGetValue(storyId, out var workspace))
+                {
+                    if (_canonicalGraphStore is null) return null;
+                    workspace = new CanonicalStoryWorkspaceViewModel(new CanonicalStoryWorkspaceLoader(_canonicalGraphStore).Load(storyId),
+                        new CanonicalGraphLayoutStore(_canonicalGraphStore.ProjectDirectory));
+                    ConfigureCanonicalResourceActions(workspace);
+                    workspace.PropertyChanged += OnCanonicalStoryWorkspacePropertyChanged;
+                    _retainedStoryWorkspaces.Add(storyId, workspace);
+                }
+                return workspace.StoryEditor;
+            };
+            ProjectHome.Graph.SelectOutputs(ProjectHome.SelectedStory?.Id);
             if (_observedProjectGraphHost is not null) _observedProjectGraphHost.PropertyChanged -= OnProjectGraphHostPropertyChanged;
             _observedProjectGraphHost = ProjectHome.Graph.CanonicalHost;
             if (_observedProjectGraphHost is not null) _observedProjectGraphHost.PropertyChanged += OnProjectGraphHostPropertyChanged;
@@ -3631,11 +3685,13 @@ public sealed partial class ShellViewModel : ObservableObject
         }
         if (args.PropertyName == nameof(ProjectHomeViewModel.SelectedStory))
         {
+            ProjectHome.Graph.SelectOutputs(ProjectHome.SelectedStory?.Id);
             SelectedReferencedPackage = null;
             RefreshHomeResourceFolders();
             OpenSelectedStoryCommand.RaiseCanExecuteChanged();
             DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
-            ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
+            CopyStoryContentCommand.RaiseCanExecuteChanged();
+        ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -3771,6 +3827,7 @@ public sealed partial class ShellViewModel : ObservableObject
         DeleteSelectedStoryCommand.RaiseCanExecuteChanged();
         ShowProjectHomeCommand.RaiseCanExecuteChanged();
         ShowProjectGraphCommand.RaiseCanExecuteChanged();
+        CopyStoryContentCommand.RaiseCanExecuteChanged();
         ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
     }
 
@@ -3778,9 +3835,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (CanonicalStoryWorkspace is { } canonical)
         {
-            ReplaceValidationSource(
-                $"canonical/story/{canonical.StoryEditor.Id}",
-                canonical.ValidationIssues.Concat(canonical.ActiveEditor.ValidationIssues));
+            ReplaceCanonicalValidation(canonical);
             return;
         }
         if (CurrentFlow is not null)
@@ -3813,6 +3868,16 @@ public sealed partial class ShellViewModel : ObservableObject
         }
 
         Problems.ClearAll();
+    }
+
+    private void ReplaceCanonicalValidation(CanonicalStoryWorkspaceViewModel workspace)
+    {
+        var source = $"canonical/story/{workspace.StoryEditor.Id}";
+        var structural = workspace.ValidationIssues.Select(issue => new ProblemItem(
+            issue.Severity, issue.Code, issue.Message, issue.Field, source, issue.NodeId, workspace.StoryEditor.Id));
+        var active = workspace.ActiveEditor.ValidationIssues.Select(issue => new ProblemItem(
+            issue.Severity, issue.Code, issue.Message, issue.Field, source, issue.NodeId, workspace.ActiveEditor.Id));
+        Problems.ReplaceForSource(source, structural.Concat(active));
     }
 
     private void ReplaceValidationSource(string source, IEnumerable<ValidationIssue> issues) =>

@@ -1,0 +1,11 @@
+{
+  "story_uid": "ST-YQGT-ZYHR-DRNN-9HF3",
+  "size": 2855,
+  "sha256": "3700a49dff3ec36814e50e15551fcfd233fe417f013e88bf39f05c675f00d6ed",
+  "baseline_xp": 7,
+  "completed_xp": 14,
+  "reopened_xp": 14,
+  "status": "PASS_TARGETED",
+  "scope": "Actual singleplayer integrated server loaded native Studio import/export package, regional objective settled, XP once, save and reopen retained XP. No full matrix claim.",
+  "environment_note": "Old test clients that ignored WM_CLOSE were terminated before final movement and all reopen checks; no unrelated process touched."
+}

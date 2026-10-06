@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="9b492340-e9eb-40e1-9aba-495fd2c37ff3" name="GreyHat@LAPTOP-F7PUVUPO 2026-09-24 11:16:12" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-24T11:16:12.4366390+08:00" queuing="2026-09-24T11:16:12.4366396+08:00" start="2026-09-24T11:16:11.0915315+08:00" finish="2026-09-24T11:16:12.4454168+08:00" />
+  <TestSettings name="default" id="48915a6a-6645-408b-bd6b-28a447c9f8da">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-09-24_11_16_12" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="2004fdbd-60d0-485e-bd05-4244556c7895" testId="1553051b-591e-89de-975d-bf4f41a84943" testName="RenameUpdatesOnlyMarkedReferencesInTaskMetadataAndNodeProse" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0725191" startTime="2026-09-24T11:16:11.9089416+08:00" endTime="2026-09-24T11:16:12.0044467+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2004fdbd-60d0-485e-bd05-4244556c7895" />
+    <UnitTestResult executionId="612b6515-07e6-4d5a-b011-6d516b3d358c" testId="13310ac3-844f-8be2-b41f-12707c742723" testName="DynamicOnlyExternalItemIsDeclaredAndMissingDeclarationCannotOverwriteExport" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.3587080" startTime="2026-09-24T11:16:11.9089453+08:00" endTime="2026-09-24T11:16:12.2884716+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="612b6515-07e6-4d5a-b011-6d516b3d358c">
+      <Output>
+        <ErrorInfo>
+          <Message>CollectionAssert.Contains 失败。</Message>
+          <StackTrace>   at Microsoft.VisualStudio.TestTools.UnitTesting.CollectionAssert.Contains(ICollection collection, Object element, String message) in /_/src/TestFramework/TestFramework/Assertions/CollectionAssert.cs:line 82&#xD;
+   at Microsoft.VisualStudio.TestTools.UnitTesting.CollectionAssert.Contains(ICollection collection, Object element) in /_/src/TestFramework/TestFramework/Assertions/CollectionAssert.cs:line 49&#xD;
+   at DarkGreyRPG.Studio.Tests.DynamicReferences0334Tests.DynamicOnlyExternalItemIsDeclaredAndMissingDeclarationCannotOverwriteExport() in E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\DynamicReferences0334Tests.cs:line 40&#xD;
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="DynamicOnlyExternalItemIsDeclaredAndMissingDeclarationCannotOverwriteExport" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="13310ac3-844f-8be2-b41f-12707c742723">
+      <Execution id="612b6515-07e6-4d5a-b011-6d516b3d358c" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.DynamicReferences0334Tests" name="DynamicOnlyExternalItemIsDeclaredAndMissingDeclarationCannotOverwriteExport" />
+    </UnitTest>
+    <UnitTest name="RenameUpdatesOnlyMarkedReferencesInTaskMetadataAndNodeProse" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1553051b-591e-89de-975d-bf4f41a84943">
+      <Execution id="2004fdbd-60d0-485e-bd05-4244556c7895" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.DynamicReferences0334Tests" name="RenameUpdatesOnlyMarkedReferencesInTaskMetadataAndNodeProse" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1553051b-591e-89de-975d-bf4f41a84943" executionId="2004fdbd-60d0-485e-bd05-4244556c7895" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13310ac3-844f-8be2-b41f-12707c742723" executionId="612b6515-07e6-4d5a-b011-6d516b3d358c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="2" executed="2" passed="1" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

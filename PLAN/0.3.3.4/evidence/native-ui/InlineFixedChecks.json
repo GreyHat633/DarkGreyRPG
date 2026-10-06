@@ -1,0 +1,22 @@
+{
+  "exeSha256": "2a3f74860ce17ced2fb6fdb39cd6968b9d3cde850c74b5f37534c6e02956c251",
+  "nativeInlineClickSelection": "inline-fixed-select.png",
+  "nativeCut": "inline-fixed-cut.png",
+  "nativeUndoRedo": [
+    "inline-fixed-undo.png",
+    "inline-fixed-redo.png",
+    "inline-fixed-restored.png"
+  ],
+  "nativeEnterBackspace": [
+    "inline-shortcut-enter.png",
+    "inline-shortcut-backspace.png"
+  ],
+  "nativeReverseInspector": [
+    "reverse-inspector-select.png",
+    "reverse-inspector-cut.png",
+    "reverse-inspector-paste.png"
+  ],
+  "sessionRestoredByteIdentical": true,
+  "sessionSha256": "a05745055ecdbb977817a7b7b77014c272894ec363f516a5972427940cb173cf",
+  "lastCrashBeforeNewExe": "crash-20260924-151416186.log"
+}

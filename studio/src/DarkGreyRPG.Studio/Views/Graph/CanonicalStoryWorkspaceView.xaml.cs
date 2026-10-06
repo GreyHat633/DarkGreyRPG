@@ -77,7 +77,6 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     private long _appliedStoryNodeFocusSequence;
     private bool _storyNodeFocusQueued;
     private Func<CanonicalChoiceOptionRemovalConfirmation, bool>? _choiceOptionRemovalConfirmation;
-    private Func<CanonicalTaskResultSlotRemovalConfirmation, bool>? _taskResultSlotRemovalConfirmation;
     private Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? _storyStartTriggerRemovalConfirmation;
 
     public static readonly DependencyProperty WorkspaceProperty = DependencyProperty.Register(
@@ -136,15 +135,6 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         }
     }
 
-    public Func<CanonicalTaskResultSlotRemovalConfirmation, bool>? TaskResultSlotRemovalConfirmation
-    {
-        get => _taskResultSlotRemovalConfirmation;
-        set
-        {
-            _taskResultSlotRemovalConfirmation = value;
-            ApplyRemovalConfirmations();
-        }
-    }
 
     public Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? StoryStartTriggerRemovalConfirmation
     {
@@ -186,7 +176,8 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var request = workspace?.StoryNodeFocusRequest;
         if (workspace is null || request is null) return false;
         if (_appliedStoryNodeFocusSequence == request.Sequence) return true;
-        if (!workspace.IsStoryFlowActive || !ReferenceEquals(WorkspaceGraph.Host, workspace.StoryEditor.Host))
+        if (workspace.ActiveEditor.Id != (request.ResourceId ?? workspace.StoryEditor.Id)
+            || !ReferenceEquals(WorkspaceGraph.Host, workspace.ActiveGraphHost))
             return false;
         if (!WorkspaceGraph.SelectNode(request.NodeId)) return false;
         _appliedStoryNodeFocusSequence = request.Sequence;
@@ -267,6 +258,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var inspector = new CanonicalNodeInspectorViewModel(
             workspace.ActiveGraphHost, node, workspace.ActorItems, workspace.ItemItems,
             subscribeToHostChanges: false);
+        workspace.ConfigurePublicOutputs(inspector);
         ConfigureRemovalConfirmations(inspector);
         return inspector;
     }
@@ -281,6 +273,18 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         if (sender is Button { Tag: ICanonicalStoryTreeItem item } && ActivateResourceItem(item))
             args.Handled = true;
+    }
+
+    private void ResourceSidebar_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs args)
+    {
+        var source = args.OriginalSource as DependencyObject;
+        while (source is not null && !ReferenceEquals(source, sender))
+        {
+            if (source is System.Windows.Controls.Primitives.ButtonBase or TextBox
+                or System.Windows.Controls.Primitives.ScrollBar) return;
+            source = LinePagesEditor.InputParent(source);
+        }
+        Workspace?.ClearGraphSelection();
     }
 
     private void ResourceItem_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs args)
@@ -559,8 +563,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.ActorItems)
             or nameof(CanonicalStoryWorkspaceViewModel.ItemItems))
         {
-            WorkspaceGraph.ClearSelection();
-            WorkspaceGraph.RefreshInlineEditors();
+            if (Workspace is not { } workspace) return;
+            foreach (var visual in WorkspaceGraph.NodeVisuals)
+                visual.InlineEditor?.UpdateResourceOptions(workspace.ActorItems, workspace.ItemItems);
+            workspace.NodeInspector?.UpdateResourceOptions(workspace.ActorItems, workspace.ItemItems);
         }
         if (args.PropertyName is nameof(CanonicalStoryWorkspaceViewModel.StoryNodeFocusRequest)
             or nameof(CanonicalStoryWorkspaceViewModel.ActiveGraphHost))
@@ -581,8 +587,6 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         inspector.ChoiceOptionRemovalConfirmationRequested =
             _choiceOptionRemovalConfirmation ?? ShowChoiceOptionRemovalConfirmation;
-        inspector.TaskResultSlotRemovalConfirmationRequested =
-            _taskResultSlotRemovalConfirmation ?? ShowTaskResultSlotRemovalConfirmation;
         inspector.StoryStartTriggerRemovalConfirmationRequested =
             _storyStartTriggerRemovalConfirmation ?? ShowStoryStartTriggerRemovalConfirmation;
     }
@@ -596,14 +600,6 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;
 
-    private bool ShowTaskResultSlotRemovalConfirmation(CanonicalTaskResultSlotRemovalConfirmation confirmation)
-        => MessageBox.Show(
-            Window.GetWindow(this),
-            $"删除结果“{confirmation.DisplayName}”将同时移除它的 Flow 和 Logic 引用/连接。\n确定继续吗？",
-            "确认删除任务结果",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning,
-            MessageBoxResult.No) == MessageBoxResult.Yes;
 
     private bool ShowStoryStartTriggerRemovalConfirmation(CanonicalStoryStartTriggerRemovalConfirmation confirmation)
         => MessageBox.Show(

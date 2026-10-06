@@ -37,43 +37,32 @@ public sealed class CanonicalActorIdentityDialogViewModel : ObservableObject
     {
         if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
         Kind = kind;
-        NamespacePrefix = DgrResourceId.IsFullId(suggestedId) ? DgrResourceId.Namespace(suggestedId) + ":" : string.Empty;
         _id = suggestedId ?? string.Empty;
-        _displayName = kind == CanonicalStoryActorKind.Individual ? "新角色" : "新角色组";
+        _displayName = string.Empty;
         ApplySuggestionCommand = new RelayCommand(() => Id = NormalizedSuggestion, () => HasSuggestion);
     }
 
     public CanonicalStoryActorKind Kind { get; }
-    public string Title => Kind == CanonicalStoryActorKind.Individual ? "新建个体角色" : "新建集体角色";
-    public string NamespacePrefix { get; }
-    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
-    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
-    public string EditableId
-    {
-        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
-            ? Id[NamespacePrefix.Length..] : Id;
-        set => Id = NamespacePrefix + (value ?? string.Empty);
-    }
+    public string Title => Kind == CanonicalStoryActorKind.Individual ? "新建角色" : "新建角色组";
+    public string EditableId { get => Id; set { } }
 
-    public string IdentityLabel => Kind == CanonicalStoryActorKind.Individual ? "NPC ID" : "Group ID";
-    public string Description => Kind == CanonicalStoryActorKind.Individual
-        ? "创建一个以 NPC ID 标识的个体角色。"
-        : "创建一个以 Group ID 标识的集体角色。";
+    public string IdentityLabel => "角色";
+    public string Description => Kind == CanonicalStoryActorKind.Individual ? "创建角色，并归入当前故事。" : "创建角色组，并归入当前故事。";
     public RelayCommand ApplySuggestionCommand { get; }
-    public string Id { get => _id; set { if (SetProperty(ref _id, value ?? string.Empty)) RaiseValidation(); } }
+    public string Id { get => _id; set { } }
     public string DisplayName { get => _displayName; set { if (SetProperty(ref _displayName, value ?? string.Empty)) RaiseValidation(); } }
     public string TagsText { get => _tagsText; set { if (SetProperty(ref _tagsText, value ?? string.Empty)) RaiseValidation(); } }
     public IReadOnlyList<string> Tags => TagsText.Split([',', '，', ';', '；', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries).Select(tag => tag.Trim()).ToArray();
-    public string NormalizedSuggestion => NormalizeSuggestion(Id);
-    public bool HasSuggestion => NormalizedSuggestion.Length > 0 && !string.Equals(Id, NormalizedSuggestion, StringComparison.Ordinal);
+    public string NormalizedSuggestion => Id;
+    public bool HasSuggestion => false;
+
     public string ValidationText
     {
         get
         {
-            var errors = ActorValidator.ValidateId(Id, ActorIdPolicy.NewResource)
-                .Where(issue => issue.Severity == ValidationSeverity.Error).Select(issue => issue.Message).ToList();
-            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
-                errors.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
+            var errors = new List<string>();
+            if (!ResourceAddress.IsKey(Id) || ResourceAddress.FromKey(Id).Kind != (Core.Identity.ResourceKind.Actor))
+                errors.Add("资源内部地址无效。");
             if (string.IsNullOrWhiteSpace(DisplayName)) errors.Add("资源名称不能为空。");
             if (Tags.Count != Tags.Distinct(StringComparer.Ordinal).Count()) errors.Add("标签不能重复。");
             return string.Join(Environment.NewLine, errors);
@@ -81,10 +70,6 @@ public sealed class CanonicalActorIdentityDialogViewModel : ObservableObject
     }
     public bool CanConfirm => ValidationText.Length == 0;
 
-    private static string NormalizeSuggestion(string id)
-        => DgrResourceId.IsFullId(id) || id.Contains(':')
-            ? id
-            : ActorValidator.NormalizeId(id);
 
     private void RaiseValidation()
     {

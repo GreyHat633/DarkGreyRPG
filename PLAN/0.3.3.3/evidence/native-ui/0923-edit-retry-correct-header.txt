@@ -1,0 +1,366 @@
+WINDOW: Native0333Integrated — DarkGrey RPG Studio 0.3.3.3 229,44,1463,942
+ControlType.TitleBar id=TitleBar name=Native0333Integrated — DarkGrey RPG Studio 0.3.3.3 enabled=True rect=238,53,1445,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=238,53,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=238,53,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1511,45,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=1569,45,57,36
+ControlType.Button id=Close name=Close enabled=True rect=1626,45,58,36
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=已打开故事：Native0332:integrated enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,62,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=369,891,80,42
+ControlType.Text id= name=调试器 enabled=True rect=383,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=451,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=465,901,85,22
+ControlType.Custom id=CanonicalStoryWorkspace name= enabled=True rect=283,184,1362,662
+ControlType.Text id= name=NativeAcceptance enabled=True rect=300,198,207,26
+ControlType.Text id= name=Native0332:integrated enabled=True rect=300,227,207,22
+ControlType.Button id=CanonicalCreateResource name=新建资源 enabled=True rect=509,208,33,32
+ControlType.Button id=CanonicalReferenceResource name=引用已有资源 enabled=True rect=544,208,32,32
+ControlType.Button id=CanonicalDeleteResource name=删除资源或解除引用 enabled=True rect=579,208,32,32
+ControlType.Button id= name=搜索 enabled=True rect=562,268,52,32
+ControlType.Text id= name=搜索 enabled=True rect=570,273,35,22
+ControlType.Edit id=AuthoringSearchBox name= enabled=True rect=298,264,264,40
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Pane id= name= enabled=True rect=298,314,316,517
+ControlType.List id= name= enabled=True rect=298,314,316,566
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,314,316,86
+ControlType.Group id= name=角色 enabled=True rect=298,316,316,82
+ControlType.Button id=HeaderToggle name=角色 enabled=True rect=298,316,64,35
+ControlType.Text id= name=角色 enabled=True rect=319,321,39,25
+ControlType.List id= name= enabled=True rect=310,353,304,37
+ControlType.DataItem id= name=CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = Native0332:profile_actor, DisplayName = 容量头像验证, SourcePath = E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Native\IntegratedProject\actors\x4e617469766530333332\x70726f66696c655f6163746f72.json, Tags = System.String[], Type = individual, DefaultPortraitRef = media/8a0661aa86c3a5494ed2bf091634fad0b04837a2a366a53d25bb9a020ca35867.png, PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, MembershipKind = Owned, PortraitSource = ActorResourceInfo { Id = Native0332:profile_actor, DisplayName = 容量头像验证, SourcePath = E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Native\IntegratedProject\actors\x4e617469766530333332\x70726f66696c655f6163746f72.json, Tags = System.String[], Type = individual, DefaultPortraitRef = media/8a0661aa86c3a5494ed2bf091634fad0b04837a2a366a53d25bb9a020ca35867.png, PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = Native0332:profile_actor, DisplayName = 容量头像验证, IdentityText = [NPC_ID] Native0332 : profile_actor, IsOwned = True, IsReferenced = False } enabled=True rect=310,353,304,37
+ControlType.Button id= name=容量头像验证  [NPC_ID] Native0332 : profile_actor enabled=True rect=310,355,294,34
+ControlType.Text id= name=容量头像验证  [NPC_ID] Native0332 : profile_actor enabled=True rect=321,361,272,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,400,316,86
+ControlType.Group id= name=物品 enabled=True rect=298,403,316,81
+ControlType.Button id=HeaderToggle name=物品 enabled=True rect=298,403,64,34
+ControlType.Text id= name=物品 enabled=True rect=319,408,39,24
+ControlType.List id= name= enabled=True rect=310,440,304,36
+ControlType.DataItem id= name=CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.IndividualItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = Native0332:named_gem, DisplayName = 作者资源名（非实际名称）, IdentityText = [Item_ID] Native0332 : named_gem, Type = individual, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False } enabled=True rect=310,440,304,36
+ControlType.Button id= name=作者资源名（非实际名称）  [Item_ID] Native0332 : named_gem enabled=True rect=310,441,299,34
+ControlType.Text id= name=作者资源名（非实际名称）  [Item_ID] Native0332 : named_gem enabled=True rect=321,447,277,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,486,316,87
+ControlType.Group id= name=会话 enabled=True rect=298,489,316,81
+ControlType.Button id=HeaderToggle name=会话 enabled=True rect=298,489,64,34
+ControlType.Text id= name=会话 enabled=True rect=319,494,39,24
+ControlType.List id= name= enabled=True rect=310,526,304,37
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,526,304,37
+ControlType.Button id= name=同包容量语音选择验收  [Session_ID] Native0332 : integrated_session enabled=True rect=310,527,299,34
+ControlType.Text id= name=同包容量语音选择验收  [Session_ID] Native0332 : integrated_session enabled=True rect=321,533,277,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,573,316,307
+ControlType.Group id= name=任务 enabled=True rect=298,575,316,303
+ControlType.Button id=HeaderToggle name=任务 enabled=True rect=298,575,64,34
+ControlType.Text id= name=任务 enabled=True rect=319,580,39,25
+ControlType.List id= name= enabled=True rect=310,612,304,258
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,612,304,37
+ControlType.Button id= name=短目标  [Task_ID] Native0332 : short_task enabled=True rect=310,613,299,35
+ControlType.Text id= name=短目标  [Task_ID] Native0332 : short_task enabled=True rect=321,619,277,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,649,304,37
+ControlType.Button id= name=长目标排版  [Task_ID] Native0332 : long_task enabled=True rect=310,650,302,35
+ControlType.Text id= name=长目标排版  [Task_ID] Native0332 : long_task enabled=True rect=321,656,280,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,686,304,37
+ControlType.Button id= name=并行目标  [Task_ID] Native0332 : multi_task enabled=True rect=310,687,298,34
+ControlType.Text id= name=并行目标  [Task_ID] Native0332 : multi_task enabled=True rect=321,693,276,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,723,304,37
+ControlType.Button id= name=实机击杀验证  [Task_ID] Native0332 : live_kill_task enabled=True rect=310,724,303,34
+ControlType.Text id= name=实机击杀验证  [Task_ID] Native0332 : live_kill_task enabled=True rect=321,730,280,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,760,304,37
+ControlType.Button id= name=满背包与指名奖励验证  [Task_ID] Native0332 : full_inventory_task enabled=True rect=310,761,302,34
+ControlType.Text id= name=满背包与指名奖励验证  [Task_ID] Native0332 : full_inventory_task enabled=True rect=321,767,279,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,797,304,36
+ControlType.Button id= name=正常Story链：击败一头牛  [Task_ID] Native0332 : profile_task enabled=True rect=310,798,303,34
+ControlType.Text id= name=正常Story链：击败一头牛  [Task_ID] Native0332 : profile_task enabled=True rect=321,804,281,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,833,304,37
+ControlType.Button id= name=同包任务：牛与猪  [Task_ID] Native0332 : integrated_task enabled=True rect=310,835,298,34
+ControlType.Text id= name=同包任务：牛与猪  [Task_ID] Native0332 : integrated_task enabled=True rect=321,841,276,22
+ControlType.ScrollBar id=PART_VerticalScrollBar name= enabled=True rect=599,314,15,517
+ControlType.Button id=PART_ButtonScrollUp name=Scroll Up enabled=True rect=599,315,15,15
+ControlType.Button id=PageUp name= enabled=True rect=Empty
+ControlType.Thumb id= name= enabled=True rect=604,331,5,441
+ControlType.Button id=PageDown name= enabled=True rect=604,772,5,42
+ControlType.Button id=PART_ButtonScrollDown name=Scroll Down enabled=True rect=599,815,15,15
+ControlType.Thumb id= name= enabled=True rect=630,184,10,662
+ControlType.List id= name= enabled=True rect=652,192,623,30
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = native0332, DisplayName = Native0333Integrated, Kind = Project, ResourceKind = , IsFirst = True, IsCurrent = False } enabled=True rect=652,192,196,30
+ControlType.Button id= name=Native0333Integrated enabled=True rect=652,192,196,30
+ControlType.Text id= name=Native0333Integrated enabled=True rect=659,196,182,22
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = Native0332:integrated, DisplayName = NativeAcceptance, Kind = Story, ResourceKind = Story, IsFirst = False, IsCurrent = False } enabled=True rect=848,192,185,30
+ControlType.Text id= name=> enabled=True rect=852,196,13,22
+ControlType.Button id= name=NativeAcceptance enabled=True rect=869,192,164,30
+ControlType.Text id= name=NativeAcceptance enabled=True rect=876,196,150,22
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = Native0332:integrated_session, DisplayName = 同包容量语音选择验收, Kind = Session, ResourceKind = Session, IsFirst = False, IsCurrent = True } enabled=True rect=1033,192,209,30
+ControlType.Text id= name=> enabled=True rect=1037,196,13,22
+ControlType.Button id= name=同包容量语音选择验收 enabled=True rect=1053,192,189,30
+ControlType.Text id= name=同包容量语音选择验收 enabled=True rect=1061,196,173,22
+ControlType.Custom id=CanonicalStoryWorkspaceGraph name=节点图编辑器 enabled=True rect=640,232,648,614
+ControlType.Button id= name=图编辑器缩放到百分之百 enabled=True rect=640,240,68,35
+ControlType.Text id= name=100% enabled=True rect=651,246,46,22
+ControlType.Button id= name=适应全部图节点 enabled=True rect=713,240,57,35
+ControlType.Text id= name=适应 enabled=True rect=724,246,35,22
+ControlType.Button id= name=重置图视图 enabled=True rect=775,240,57,35
+ControlType.Text id= name=重置 enabled=True rect=786,246,35,22
+ControlType.Button id=ScissorsButton name=剪断连线 enabled=True rect=837,240,57,35
+ControlType.Text id= name=剪刀 enabled=True rect=848,246,35,22
+ControlType.Button id=CombineSelection name=组合 enabled=True rect=899,240,57,35
+ControlType.Text id= name=组合 enabled=True rect=910,246,35,22
+ControlType.Text id= name=拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放 enabled=True rect=971,239,317,44
+ControlType.Thumb id= name= enabled=True rect=671,465,588,211
+ControlType.Text id= name=组合 enabled=True rect=674,467,582,6
+ControlType.Thumb id= name= enabled=True rect=799,476,331,195
+ControlType.Text id= name=组合 enabled=True rect=802,478,326,6
+ControlType.Thumb id= name= enabled=True rect=676,476,578,69
+ControlType.Text id= name=组合 enabled=True rect=679,478,572,6
+ControlType.Custom id=CanonicalGraphNode_start name=图节点 起始 start enabled=True rect=681,487,75,30
+ControlType.Text id=HeaderTitle name=起始 enabled=True rect=684,489,69,6
+ControlType.Button id=CanonicalGraphPort_start_flow_out name=start 输出端口 flow_out (Flow) enabled=True rect=719,499,35,7
+ControlType.Text id= name=流程输出 enabled=True rect=731,500,14,5
+ControlType.Custom id=CanonicalGraphNode_native_audio_music name=图节点 音乐「440Hz背景音」 native_audio_music enabled=True rect=804,487,75,144
+ControlType.Text id=HeaderTitle name=音乐「440Hz背景音」 enabled=True rect=807,489,69,6
+ControlType.Button id=CanonicalGraphPort_native_audio_music_flow_in name=native_audio_music 输入端口 flow_in (Flow) enabled=True rect=807,499,35,7
+ControlType.Text id= name=流程输入 enabled=True rect=815,500,14,5
+ControlType.Button id=CanonicalGraphPort_native_audio_music_flow_out name=native_audio_music 输出端口 flow_out (Flow) enabled=True rect=842,499,35,7
+ControlType.Text id= name=流程输出 enabled=True rect=854,500,15,5
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=807,508,70,120
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=807,508,69,7
+ControlType.Text id= name=参数 enabled=True rect=815,509,9,5
+ControlType.Custom id=Root name= enabled=True rect=808,516,67,112
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=音乐 enabled=True rect=811,524,61,6
+ControlType.Button id=ImportMusic name=导入 enabled=True rect=811,531,30,10
+ControlType.Text id= name=导入 enabled=True rect=821,533,9,6
+ControlType.Button id=StopMusic name=停止 enabled=True rect=843,531,29,10
+ControlType.Text id= name=停止 enabled=True rect=853,533,9,6
+ControlType.Custom id= name= enabled=True rect=811,543,61,20
+ControlType.Button id= name=-5s enabled=False rect=811,543,15,10
+ControlType.Text id= name=-5s enabled=False rect=815,545,7,6
+ControlType.Button id= name=▶ enabled=True rect=835,543,14,10
+ControlType.Text id= name=▶ enabled=True rect=840,545,4,6
+ControlType.Button id= name=+5s enabled=False rect=857,543,15,10
+ControlType.Text id= name=+5s enabled=False rect=860,545,9,6
+ControlType.Slider id= name= enabled=False rect=811,553,61,10
+ControlType.Button id=DecreaseLarge name= enabled=False rect=Empty
+ControlType.Thumb id=Thumb name= enabled=False rect=811,555,6,6
+ControlType.Button id=IncreaseLarge name= enabled=False rect=817,553,55,10
+ControlType.Text id= name=音量 enabled=True rect=811,566,49,6
+ControlType.Text id= name=100% enabled=True rect=860,566,12,6
+ControlType.Slider id=MusicVolume name= enabled=True rect=811,572,61,10
+ControlType.Button id=DecreaseLarge name= enabled=True rect=811,572,55,10
+ControlType.Thumb id=Thumb name= enabled=True rect=866,574,6,6
+ControlType.Button id=IncreaseLarge name= enabled=True rect=Empty
+ControlType.CheckBox id= name=循环 enabled=True rect=811,582,39,10
+ControlType.Text id= name=循环 enabled=True rect=820,584,9,6
+ControlType.Text id= name=淡入（秒） enabled=True rect=811,592,61,6
+ControlType.Edit id= name= enabled=True rect=811,598,61,11
+ControlType.Text id= name=淡出（秒） enabled=True rect=811,609,61,5
+ControlType.Edit id= name= enabled=True rect=811,614,61,11
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_node_311203e4e0894920bc9b0c2c9189a743 name=图节点 台词 node_311203e4e0894920bc9b0c2c9189a743 enabled=True rect=927,487,75,179
+ControlType.Text id=HeaderTitle name=台词 enabled=True rect=930,489,69,6
+ControlType.Button id=CanonicalGraphPort_node_311203e4e0894920bc9b0c2c9189a743_flow_in name=node_311203e4e0894920bc9b0c2c9189a743 输入端口 flow_in (Flow) enabled=True rect=930,499,35,7
+ControlType.Text id= name=流程输入 enabled=True rect=938,500,14,5
+ControlType.Button id=CanonicalGraphPort_node_311203e4e0894920bc9b0c2c9189a743_flow_out name=node_311203e4e0894920bc9b0c2c9189a743 输出端口 flow_out (Flow) enabled=True rect=965,499,35,7
+ControlType.Text id= name=流程输出 enabled=True rect=977,500,15,5
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=930,508,70,155
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=930,508,69,7
+ControlType.Text id= name=参数 enabled=True rect=938,509,9,5
+ControlType.Custom id=Root name= enabled=True rect=931,516,68,147
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=说话角色 enabled=True rect=931,519,68,6
+ControlType.ComboBox id=InlineLineActorSelector name=Session Line Actor selector enabled=True rect=931,526,68,11
+ControlType.Custom id= name= enabled=True rect=931,537,68,126
+ControlType.Text id= name=台词文本 enabled=True rect=931,540,18,6
+ControlType.Button id=AddLinePage name=+ enabled=True rect=952,540,8,7
+ControlType.Text id= name=+ enabled=True rect=954,540,4,6
+ControlType.Button id=RemoveSelectedLinePages name=删除选中台词 enabled=False rect=961,540,8,7
+ControlType.Text id= name=− enabled=False rect=963,540,4,6
+ControlType.List id=Pages name= enabled=True rect=931,548,68,115
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=931,548,68,20
+ControlType.Button id=integrated_short name=拖动第 1 句 enabled=True rect=934,552,7,7
+ControlType.Text id= name=⠿ enabled=True rect=936,553,3,5
+ControlType.Button id=ToggleLinePage name=展开第 1 句 enabled=True rect=941,551,55,9
+ControlType.Text id= name=第 1 句 enabled=True rect=943,553,42,5
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=931,568,68,19
+ControlType.Button id=profile_page_0 name=拖动第 2 句 enabled=True rect=934,571,7,7
+ControlType.Text id= name=⠿ enabled=True rect=936,572,3,6
+ControlType.Button id=ToggleLinePage name=展开第 2 句 enabled=True rect=941,570,55,9
+ControlType.Text id= name=第 2 句 enabled=True rect=943,572,42,6
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=931,587,68,19
+ControlType.Button id=profile_page_1 name=拖动第 3 句 enabled=True rect=934,590,7,7
+ControlType.Text id= name=⠿ enabled=True rect=936,591,3,6
+ControlType.Button id=ToggleLinePage name=展开第 3 句 enabled=True rect=941,589,55,9
+ControlType.Text id= name=第 3 句 enabled=True rect=943,591,42,6
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=931,606,68,19
+ControlType.Button id=profile_page_2 name=拖动第 4 句 enabled=True rect=934,609,7,7
+ControlType.Text id= name=⠿ enabled=True rect=936,610,3,6
+ControlType.Button id=ToggleLinePage name=展开第 4 句 enabled=True rect=941,609,55,8
+ControlType.Text id= name=第 4 句 enabled=True rect=943,610,42,6
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=931,625,68,19
+ControlType.Button id=audio_chirp_page name=拖动第 5 句 enabled=True rect=934,628,7,7
+ControlType.Text id= name=⠿ enabled=True rect=936,629,3,6
+ControlType.Button id=ToggleLinePage name=展开第 5 句 enabled=True rect=941,628,55,8
+ControlType.Text id= name=第 5 句 enabled=True rect=943,629,42,6
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=931,644,68,19
+ControlType.Button id=audio_next_page name=拖动第 6 句 enabled=True rect=934,647,7,7
+ControlType.Text id= name=⠿ enabled=True rect=936,648,3,6
+ControlType.Button id=ToggleLinePage name=展开第 6 句 enabled=True rect=941,647,55,8
+ControlType.Text id= name=第 6 句 enabled=True rect=943,648,42,6
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_choice_5 name=图节点 选择 choice_5 enabled=True rect=1050,487,76,167
+ControlType.Text id=HeaderTitle name=选择 enabled=True rect=1054,489,68,6
+ControlType.Button id=CanonicalGraphPort_choice_5_flow_in name=choice_5 输入端口 flow_in (Flow) enabled=True rect=1053,499,35,7
+ControlType.Text id= name=流程输入 enabled=True rect=1061,500,14,5
+ControlType.Button id=CanonicalGraphPort_choice_5_flow_0 name=choice_5 输出端口 flow_0 (Flow) enabled=True rect=1116,499,7,7
+ControlType.Text id= name=选项1：继续验证 enabled=True rect=1116,500,28,5
+ControlType.Text id= name=选项1：继续验证 enabled=True rect=1089,500,27,5
+ControlType.Button id=CanonicalGraphPort_choice_5_flow_1 name=choice_5 输出端口 flow_1 (Flow) enabled=True rect=1116,509,7,7
+ControlType.Text id= name=选项2：继续验证 enabled=True rect=1116,510,28,5
+ControlType.Text id= name=选项2：继续验证 enabled=True rect=1089,510,27,5
+ControlType.Button id=CanonicalGraphPort_choice_5_flow_2 name=choice_5 输出端口 flow_2 (Flow) enabled=True rect=1116,520,7,6
+ControlType.Text id= name=选项3：继续验证 enabled=True rect=1116,521,28,4
+ControlType.Text id= name=选项3：继续验证 enabled=True rect=1089,521,27,4
+ControlType.Button id=CanonicalGraphPort_choice_5_flow_3 name=choice_5 输出端口 flow_3 (Flow) enabled=True rect=1116,530,7,7
+ControlType.Text id= name=选项4：继续验证 enabled=True rect=1116,531,28,5
+ControlType.Text id= name=选项4：继续验证 enabled=True rect=1089,531,27,5
+ControlType.Button id=CanonicalGraphPort_choice_5_flow_4 name=choice_5 输出端口 flow_4 (Flow) enabled=True rect=1116,541,7,6
+ControlType.Text id= name=LONG_BEGIN 这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容， LONG_END enabled=True rect=1116,542,2005,4
+ControlType.Text id= name=LONG_BEGIN 这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容，这是一条用于验证完整访问和键盘滚动的超长选择内容， LONG_END enabled=True rect=1090,542,26,4
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=1053,553,70,99
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=1054,554,68,6
+ControlType.Text id= name=参数 enabled=True rect=1061,554,9,6
+ControlType.Custom id=Root name= enabled=True rect=1054,562,68,89
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=选择提示 enabled=True rect=1054,565,68,6
+ControlType.Edit id= name= enabled=True rect=1054,572,68,10
+ControlType.Text id= name=选项 enabled=True rect=1054,585,9,7
+ControlType.Button id= name=+ enabled=True rect=1066,585,8,7
+ControlType.Text id= name=+ enabled=True rect=1068,585,4,6
+ControlType.Custom id=Root name= enabled=True rect=1054,593,68,58
+ControlType.List id= name= enabled=True rect=1054,593,68,58
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalChoiceOptionViewModel enabled=True rect=1054,593,68,11
+ControlType.Button id= name=⠿ enabled=True rect=1054,595,7,7
+ControlType.Text id= name=⠿ enabled=True rect=1056,596,3,5
+ControlType.Edit id= name= enabled=True rect=1062,593,52,11
+ControlType.Button id= name=− enabled=True rect=1115,595,7,7
+ControlType.Text id= name=− enabled=True rect=1117,596,3,5
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalChoiceOptionViewModel enabled=True rect=1054,604,68,12
+ControlType.Button id= name=⠿ enabled=True rect=1054,607,7,7
+ControlType.Text id= name=⠿ enabled=True rect=1056,607,3,6
+ControlType.Edit id= name= enabled=True rect=1062,605,52,10
+ControlType.Button id= name=− enabled=True rect=1115,607,7,7
+ControlType.Text id= name=− enabled=True rect=1117,607,3,6
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalChoiceOptionViewModel enabled=True rect=1054,616,68,12
+ControlType.Button id= name=⠿ enabled=True rect=1054,618,7,7
+ControlType.Text id= name=⠿ enabled=True rect=1056,619,3,6
+ControlType.Edit id= name= enabled=True rect=1062,617,52,10
+ControlType.Button id= name=− enabled=True rect=1115,618,7,7
+ControlType.Text id= name=− enabled=True rect=1117,619,3,6
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalChoiceOptionViewModel enabled=True rect=1054,628,68,11
+ControlType.Button id= name=⠿ enabled=True rect=1054,630,7,7
+ControlType.Text id= name=⠿ enabled=True rect=1056,631,3,5
+ControlType.Edit id= name= enabled=True rect=1062,628,52,11
+ControlType.Button id= name=− enabled=True rect=1115,630,7,7
+ControlType.Text id= name=− enabled=True rect=1117,631,3,5
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalChoiceOptionViewModel enabled=True rect=1054,639,68,12
+ControlType.Button id= name=⠿ enabled=True rect=1054,642,7,7
+ControlType.Text id= name=⠿ enabled=True rect=1056,642,3,6
+ControlType.Edit id= name= enabled=True rect=1062,640,52,10
+ControlType.Button id= name=− enabled=True rect=1115,642,7,7
+ControlType.Text id= name=− enabled=True rect=1117,642,3,6
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_native_end name=图节点 结束「验收完成」 native_end enabled=True rect=1174,487,75,53
+ControlType.Text id=HeaderTitle name=结束「验收完成」 enabled=True rect=1177,489,68,6
+ControlType.Button id=CanonicalGraphPort_native_end_flow_in name=native_end 输入端口 flow_in (Flow) enabled=True rect=1176,499,35,7
+ControlType.Text id= name=流程输入 enabled=True rect=1184,500,14,5
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=1176,508,70,29
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=1177,508,68,7
+ControlType.Text id= name=参数 enabled=True rect=1184,509,9,5
+ControlType.Custom id=Root name= enabled=True rect=1177,516,68,21
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Text id= name=名称 enabled=True rect=1177,519,68,6
+ControlType.Edit id= name= enabled=True rect=1177,526,68,11
+ControlType.Thumb id= name= enabled=True rect=1288,184,9,662
+ControlType.Text id= name=台词 enabled=True rect=1319,208,306,30
+ControlType.Pane id=CanonicalInspectorScrollViewer name= enabled=True rect=1319,256,306,570
+ControlType.Group id=CanonicalNodeHelp name=介绍说明 enabled=True rect=1319,256,306,28
+ControlType.Button id=HeaderSite name=介绍说明 enabled=True rect=1321,258,301,24
+ControlType.Text id= name=介绍说明 enabled=True rect=1350,259,69,22
+ControlType.Text id= name=节点属性 enabled=True rect=1319,297,306,22
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=说话角色 enabled=True rect=1319,331,306,22
+ControlType.ComboBox id=SessionLineActorSelector name=Session Line Actor selector enabled=True rect=1319,357,306,39
+ControlType.Custom id= name= enabled=True rect=1319,396,306,483
+ControlType.Text id= name=台词文本 enabled=True rect=1319,411,69,22
+ControlType.Button id=AddLinePage name=+ enabled=True rect=1398,409,30,27
+ControlType.Text id= name=+ enabled=True rect=1407,411,12,22
+ControlType.Button id=RemoveSelectedLinePages name=删除选中台词 enabled=False rect=1433,409,30,27
+ControlType.Text id= name=− enabled=False rect=1442,411,13,22
+ControlType.List id=Pages name= enabled=True rect=1319,442,306,437
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1319,442,306,73
+ControlType.Button id=integrated_short name=拖动第 1 句 enabled=True rect=1330,456,25,27
+ControlType.Text id= name=⠿ enabled=True rect=1336,458,13,22
+ControlType.Button id=ToggleLinePage name=展开第 1 句 enabled=True rect=1358,453,256,32
+ControlType.Text id= name=第 1 句 enabled=True rect=1365,458,206,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1319,515,306,73
+ControlType.Button id=profile_page_0 name=拖动第 2 句 enabled=True rect=1330,529,25,27
+ControlType.Text id= name=⠿ enabled=True rect=1336,531,13,22
+ControlType.Button id=ToggleLinePage name=展开第 2 句 enabled=True rect=1358,526,256,32
+ControlType.Text id= name=第 2 句 enabled=True rect=1365,531,206,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1319,588,306,73
+ControlType.Button id=profile_page_1 name=拖动第 3 句 enabled=True rect=1330,601,25,27
+ControlType.Text id= name=⠿ enabled=True rect=1336,604,13,22
+ControlType.Button id=ToggleLinePage name=展开第 3 句 enabled=True rect=1358,599,256,32
+ControlType.Text id= name=第 3 句 enabled=True rect=1365,604,206,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1319,661,306,72
+ControlType.Button id=profile_page_2 name=拖动第 4 句 enabled=True rect=1330,674,25,27
+ControlType.Text id= name=⠿ enabled=True rect=1336,677,13,22
+ControlType.Button id=ToggleLinePage name=展开第 4 句 enabled=True rect=1358,672,256,32
+ControlType.Text id= name=第 4 句 enabled=True rect=1365,677,206,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1319,733,306,73
+ControlType.Button id=audio_chirp_page name=拖动第 5 句 enabled=True rect=1330,747,25,27
+ControlType.Text id= name=⠿ enabled=True rect=1336,750,13,22
+ControlType.Button id=ToggleLinePage name=展开第 5 句 enabled=True rect=1358,745,256,32
+ControlType.Text id= name=第 5 句 enabled=True rect=1365,750,206,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1319,806,306,73
+ControlType.Button id=audio_next_page name=拖动第 6 句 enabled=True rect=1330,820,25,27
+ControlType.Text id= name=⠿ enabled=True rect=1336,822,13,22
+ControlType.Button id=ToggleLinePage name=展开第 6 句 enabled=True rect=1358,817,256,32
+ControlType.Text id= name=第 6 句 enabled=True rect=1365,822,206,22
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.ScrollBar id=PART_VerticalScrollBar name= enabled=True rect=1610,256,15,570
+ControlType.Button id=PART_ButtonScrollUp name=Scroll Up enabled=True rect=1610,257,15,15
+ControlType.Button id=PageUp name= enabled=True rect=Empty
+ControlType.Thumb id= name= enabled=True rect=1615,273,5,490
+ControlType.Button id=PageDown name= enabled=True rect=1615,763,5,46
+ControlType.Button id=PART_ButtonScrollDown name=Scroll Down enabled=True rect=1610,810,15,15

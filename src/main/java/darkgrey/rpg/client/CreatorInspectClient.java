@@ -28,8 +28,10 @@ public final class CreatorInspectClient {
     private static boolean enabled;
     private static int dimension;
     private static long revision = -1;
+    private static long projectRevision = -1;
     private static final Map<Integer, NBTTagCompound> entities = new LinkedHashMap<Integer, NBTTagCompound>();
     private static ItemIdentitySavedData catalog;
+    private static final Map<String, String> labels = new LinkedHashMap<String, String>();
     private static final Map<ItemStackDefinition, List<String>> cache = new LinkedHashMap<ItemStackDefinition, List<String>>();
 
     public static void accept(NBTTagCompound data) {
@@ -37,6 +39,7 @@ public final class CreatorInspectClient {
         if (mc.theWorld == null || mc.thePlayer == null || mc.thePlayer.dimension != data.getInteger("dimension"))
             return;
         if (world != mc.theWorld) clear();
+        if (data.getLong("projectRevision") < projectRevision) return;
         world = mc.theWorld;
         dimension = data.getInteger("dimension");
         enabled = data.getBoolean("enabled");
@@ -45,17 +48,27 @@ public final class CreatorInspectClient {
             catalog = null;
             cache.clear();
             revision = -1;
+            projectRevision = -1;
+            labels.clear();
             return;
         }
         if (data.hasKey("catalog", 10)) {
             ItemIdentitySavedData incoming = new ItemIdentitySavedData();
             incoming.readFromNBT(data.getCompoundTag("catalog"));
             catalog = incoming;
+            labels.clear();
+            NBTTagList nameRows = data.getTagList("labels", 10);
+            for (int i = 0; i < Math.min(1024, nameRows.tagCount()); i++) {
+                NBTTagCompound row = nameRows.getCompoundTagAt(i);
+                labels.put(row.getString("id"), row.getString("name"));
+            }
             cache.clear();
             revision = data.getLong("revision");
-        } else if (revision != data.getLong("revision")) {
+            projectRevision = data.getLong("projectRevision");
+        } else if (revision != data.getLong("revision") || projectRevision != data.getLong("projectRevision")) {
             catalog = null;
             cache.clear();
+            labels.clear();
         }
         NBTTagList list = data.getTagList("entities", 10);
         for (int i = 0; i < list.tagCount(); i++) {
@@ -70,7 +83,9 @@ public final class CreatorInspectClient {
         entities.clear();
         cache.clear();
         catalog = null;
+        labels.clear();
         revision = -1;
+        projectRevision = -1;
     }
 
     @SubscribeEvent
@@ -89,8 +104,8 @@ public final class CreatorInspectClient {
             lines = new ArrayList<String>();
             List<String> items = catalog.matchingItemIds(event.itemStack),
                 groups = catalog.matchingGroupIds(event.itemStack);
-            for (String id : items) lines.add("\u00a7e[ItemID] " + id);
-            for (String id : groups) lines.add("\u00a7b[GroupID] " + id);
+            for (String id : items) lines.add("\u00a7e" + labels.getOrDefault(id, "物品资源不可用"));
+            for (String id : groups) lines.add("\u00a7b" + labels.getOrDefault(id, "物品组资源不可用"));
             if (cache.size() >= 256) cache.clear();
             cache.put(key, lines);
         }

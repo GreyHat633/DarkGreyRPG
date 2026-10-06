@@ -26,25 +26,25 @@ public sealed class CanonicalTaskRewardTests
             Assert.IsTrue(CanonicalTaskRewardSchema.Validate(node).Count > 0, invalid);
         }
         node.Properties["entries"] = JsonSerializer.SerializeToElement(new object[] {
-            new { type = "item", item = "Author:apple", amount = int.MinValue }, new { type = "xp", amount = 0 }, new { type = "xp", amount = int.MaxValue } });
+            new { type = "item", item = "ST-2345-6789-ABCD-EFGH~item~apple", amount = int.MinValue }, new { type = "xp", amount = 0 }, new { type = "xp", amount = int.MaxValue } });
         Assert.AreEqual(0, CanonicalTaskRewardSchema.Validate(node).Count);
         var restored = GraphSerializer.Deserialize(GraphSerializer.Serialize(new GraphDocument([node])));
         Assert.AreEqual(3, restored.Nodes.Single().Properties["entries"].GetArrayLength());
     }
 
     [TestMethod]
-    public void NamespaceRewritePreservesTaskDescriptionAndChangesOnlyRewardItemReferences()
+    public void CopyPreservesTaskDescriptionAndChangesOnlyRewardItemReferences()
     {
         var reward = GraphNodeFactory.Create(GraphScope.Task, "reward", "reward");
-        reward.Properties["entries"] = JsonSerializer.SerializeToElement(new object[] { new { type = "item", item = "Author:apple", amount = -2 }, new { type = "xp", amount = 250 } });
-        var original = new GraphResourceEnvelope(GraphResourceKind.Task, "Author:task", "Task", new GraphDocument([reward]))
-        { TaskMetadata = new CanonicalTaskMetadata("Author:apple 是背景文字") };
-        var map = new ResourceRenameMap(); map.Add(DgrResourceKind.Item, "Author:apple", "Other:apple");
+        reward.Properties["entries"] = JsonSerializer.SerializeToElement(new object[] { new { type = "item", item = "ST-2345-6789-ABCD-EFGH~item~apple", amount = -2 }, new { type = "xp", amount = 250 } });
+        var original = new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([reward]))
+        { TaskMetadata = new CanonicalTaskMetadata("ST-2345-6789-ABCD-EFGH~item~apple 是背景文字") };
+        var map = new ResourceCopyRemapper(); map.Add(DgrResourceKind.Item, "ST-2345-6789-ABCD-EFGH~item~apple", "ST-JKLM-NPQR-STUV-WXYZ~item~apple");
         var changed = map.Rewrite(original);
         Assert.AreEqual(original.TaskMetadata, changed.TaskMetadata);
-        Assert.AreEqual("Other:apple", changed.Graph!.Nodes.Single().Properties["entries"][0].GetProperty("item").GetString());
-        Assert.AreEqual("Author:apple", original.Graph!.Nodes.Single().Properties["entries"][0].GetProperty("item").GetString());
+        Assert.AreEqual("ST-JKLM-NPQR-STUV-WXYZ~item~apple", changed.Graph!.Nodes.Single().Properties["entries"][0].GetProperty("item").GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item~apple", original.Graph!.Nodes.Single().Properties["entries"][0].GetProperty("item").GetString());
         Assert.ThrowsExactly<InvalidDataException>(() => CanonicalTaskRewardReferences.Validate(reward, GraphResourceKind.Task, new HashSet<DgrResourceKey>()));
-        CanonicalTaskRewardReferences.Validate(reward, GraphResourceKind.Task, new HashSet<DgrResourceKey> { new(DgrResourceKind.Item, "Author:apple") });
+        CanonicalTaskRewardReferences.Validate(reward, GraphResourceKind.Task, new HashSet<DgrResourceKey> { new(DgrResourceKind.Item, "ST-2345-6789-ABCD-EFGH~item~apple") });
     }
 }

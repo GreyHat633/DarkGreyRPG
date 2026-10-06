@@ -1,0 +1,738 @@
+{
+  "version": "0.3.3.6",
+  "plan_revision": "final-discussion-2026-10-04",
+  "baseline_commit": "99a3253d7186127bdbe37898824ecbd32219f136",
+  "branch": "codex/0.3.3.6",
+  "implementation_commit": null,
+  "status": "DEVELOPMENT_COMPLETE_AGENT_VERIFIED",
+  "namespace_removal_complete": true,
+  "identity_production_integration": "CURRENT_FORMAT_MAIN_CHAIN",
+  "tests": {
+    "identity_vectors": {
+      "count": 56,
+      "csharp": "PASS",
+      "java8_gson224": "PASS"
+    },
+    "studio_core": {
+      "passed": 491,
+      "failed": 0,
+      "skipped": 0,
+      "total": 491,
+      "scope": "Current full suite with bundled FFmpeg; retired flat resource draft/deletion contracts ported to canonical current contracts",
+      "evidence": "full-core-current-final-identity.trx"
+    },
+    "studio_wpf": {
+      "full_suite": "PASS",
+      "passed": 652,
+      "failed": 0,
+      "skipped": 1,
+      "total": 653,
+      "evidence": "full-wpf-current-contracts.trx",
+      "render_environment": "DGR_STUDIO_SOFTWARE_RENDERING=1; bundled FFmpeg",
+      "skipped_test": "FixedThreeHundredNodeWorkload"
+    },
+    "java": "GRADLE_BUILD_PASS_SCOPED_SPOTLESS_CHECKSTYLE_AND_TEST",
+    "windows_gui": "PASS_AGENT_NATIVE_UI: rich copy, Undo/Redo, repair, export/reopen/play, whole Reference/Import and cross-project closure",
+    "minecraft_e2e": "PASS_AGENT_NATIVE: dedicated and integrated server, E2E A-E evidence mapped in Acceptance.md",
+    "multiplayer_permissions": "PASS targeted actual dedicated server: OP open, deop closes panel, non-OP O denied",
+    "current_identity_core": {
+      "passed": 9,
+      "failed": 0,
+      "evidence": "current-resource-identity.trx"
+    },
+    "current_story_dialog": {
+      "passed": 2,
+      "failed": 0,
+      "evidence": "current-story-dialog.trx"
+    },
+    "current_java_interop": "PASS: Studio current project and real single Story ZIP loaded by Java formal scanner/merger; NPC/Item/Nominator binding roundtrips and rejection protection",
+    "current_authoring_settings": {
+      "passed": 30,
+      "failed": 0,
+      "evidence": "current-authoring-settings.trx"
+    },
+    "current_content_copy": {
+      "core_passed": 3,
+      "wpf_history_passed": 1,
+      "evidence": [
+        "story-content-copy.trx",
+        "story-copy-history.trx"
+      ],
+      "native": "PASS: current-rich-copy-result.json"
+    },
+    "copy_draft_wpf": {
+      "passed": 7,
+      "failed": 0,
+      "scope": "draft repair, save/undo, independent layout preservation, UID export path"
+    },
+    "group_container_core": {
+      "passed": 15,
+      "failed": 0,
+      "scope": "group roundtrip/rejection/reference plus current identity, copy and draft boundary"
+    },
+    "group_java_reader": {
+      "status": "PASS",
+      "valid_members": 2,
+      "edges": 1,
+      "rejected_containers": 6,
+      "scope": "C# / Java semantic fingerprints, full installed inventory, disabled admission, both-side UID conflict, payload CRC claims, no old snapshot fallback, durable retired Story completion; targeted probe only; current loaded Story and Task runtime construction now covered",
+      "evidence": "current-runtime-execution.log"
+    },
+    "group_import_current": {
+      "passed": 10,
+      "failed": 0,
+      "evidence": "group-import-current.trx"
+    },
+    "clipboard_dependencies": {
+      "passed": 10,
+      "failed": 0,
+      "evidence": "clipboard-parameter-dependencies.trx",
+      "scope": "Aggregate copy and shared parameter dependencies, unplaced consumers, cancellation and Undo/Redo"
+    },
+    "manager_live": {
+      "status": "TARGETED_PASS_INITIAL_CANDIDATE",
+      "evidence": [
+        "mc-manager-open.png",
+        "mc-manager-disabled.png",
+        "mc-manager-graph2.png",
+        "mc-manager-op-revoked.png",
+        "mc-manager-nonop-denied.png",
+        "mc-manager-conflict.png",
+        "mc-manager-delete-confirm2.png",
+        "mc-manager-deleted.png"
+      ],
+      "limitations": "Historical initial-candidate evidence; current two-OP and in-flight conflict checks supplement it."
+    },
+    "reference_projection": {
+      "passed": 3,
+      "failed": 0,
+      "evidence": "reference-refresh.trx",
+      "scope": "Whole container navigation, derived frames, retained host/history/layout across provider refresh"
+    },
+    "current_world_identity": {
+      "status": "TARGETED_PROBE_PASS",
+      "evidence": "current-world-identity.log",
+      "scope": "Current structured world identity, schema rejection and rejected-candidate state preservation"
+    },
+    "active_story_runtime": {
+      "status": "TARGETED_NATIVE_PASS",
+      "scope": "Real dedicated-server Story A session; B-only update preserves A generation/active session; config disable plus formal reload blocks B new admission and allows A to complete via actual click; manager UI enable permits B; world restart preserves A completion count 1 and prevents replay",
+      "evidence": [
+        "runtime-active-generation-server.log",
+        "runtime-active-before-update.txt",
+        "runtime-active-after-b-update.txt",
+        "runtime-disabled-b-admission.txt",
+        "runtime-disabled-a-completed.txt",
+        "runtime-current-manager-enabled.png",
+        "runtime-a-after-restart.txt",
+        "runtime-current-world-saved.json"
+      ],
+      "limitations": "Historical initial fixture; current three-member media, Task and multi-client tests supplement it."
+    },
+    "current_resource_lifecycle_boundaries": {
+      "passed": 21,
+      "failed": 0,
+      "evidence": "current-resource-lifecycle-boundaries.trx"
+    },
+    "current_actor_repository": {
+      "passed": 9,
+      "failed": 0,
+      "evidence": "current-actor-repository.trx"
+    },
+    "current_items_pages": {
+      "passed": 29,
+      "failed": 0,
+      "evidence": "current-items-pages.trx"
+    },
+    "current_envelope_task_metadata": {
+      "passed": 10,
+      "failed": 0,
+      "evidence": "current-envelope-task-metadata.trx"
+    },
+    "current_membership_repositories": {
+      "passed": 23,
+      "failed": 0,
+      "evidence": "current-membership-repositories.trx"
+    },
+    "current_path_occupation": {
+      "passed": 18,
+      "failed": 0,
+      "evidence": "current-path-occupation.trx"
+    },
+    "namespace_java_removal": {
+      "status": "PASS",
+      "evidence": "namespace-removal-build.log",
+      "scope": "Java production/test compilation and current project-origin validation; retired namespace helper, warning API and feature-only probes removed"
+    },
+    "current_session_wire": {
+      "status": "PASS",
+      "evidence": "current-session-wire.log",
+      "scope": "Session and Story chooser codecs; old Story IDs, old resource IDs and wrong resource kind rejected"
+    },
+    "current_dormant_package": {
+      "passed": 6,
+      "failed": 0,
+      "total": 6,
+      "evidence": "current-dormant-package.trx"
+    },
+    "current_actor_lifecycle": {
+      "passed": 10,
+      "failed": 0,
+      "total": 10,
+      "evidence": "current-actor-lifecycle.trx"
+    },
+    "current_story_discovery": {
+      "passed": 4,
+      "failed": 0,
+      "total": 4,
+      "evidence": "current-story-discovery.trx"
+    },
+    "current_project_references": {
+      "passed": 19,
+      "failed": 0,
+      "total": 19,
+      "evidence": "current-project-references.trx"
+    },
+    "current_offline_collaboration": {
+      "passed": 9,
+      "failed": 0,
+      "total": 9,
+      "evidence": "current-offline-collaboration.trx"
+    },
+    "current_directory_package": {
+      "passed": 9,
+      "failed": 0,
+      "total": 9,
+      "evidence": "current-directory-package.trx"
+    },
+    "current_media_presentation": {
+      "passed": 14,
+      "failed": 0,
+      "total": 14,
+      "evidence": "current-media-presentation.trx"
+    },
+    "current_project_actor_operations": {
+      "passed": 15,
+      "failed": 0,
+      "total": 15,
+      "evidence": "current-project-actor-operations.trx"
+    },
+    "current_project_actor_transaction": {
+      "passed": 10,
+      "failed": 0,
+      "total": 10,
+      "evidence": "current-project-actor-transaction.trx"
+    },
+    "current_workspace_inspector_wpf": {
+      "passed": 73,
+      "failed": 0,
+      "total": 73,
+      "evidence": "current-workspace-inspector-wpf.trx"
+    },
+    "current_editor_wpf": {
+      "passed": 96,
+      "failed": 0,
+      "total": 96,
+      "evidence": "current-editor-wpf.trx"
+    },
+    "current-controls-wpf": {
+      "passed": 123,
+      "failed": 0,
+      "evidence": "current-controls-wpf.trx"
+    },
+    "current-resource-shell-wpf": {
+      "passed": 19,
+      "failed": 0,
+      "evidence": "current-resource-shell-wpf.trx"
+    },
+    "current-actor-shell-wpf": {
+      "passed": 2,
+      "failed": 0,
+      "evidence": "current-actor-shell-wpf.trx"
+    },
+    "current-lifecycle-shell-wpf": {
+      "passed": 7,
+      "failed": 0,
+      "evidence": "current-lifecycle-shell-wpf.trx"
+    },
+    "current-project-discovery-wpf": {
+      "passed": 6,
+      "failed": 0,
+      "evidence": "current-project-discovery-wpf.trx"
+    },
+    "current-boundary-resolution": {
+      "passed": 10,
+      "failed": 0,
+      "evidence": "current-boundary-resolution.trx"
+    },
+    "current-offline-shell-wpf": {
+      "passed": 8,
+      "failed": 0,
+      "evidence": "current-offline-shell-wpf.trx"
+    },
+    "current_nominator_wire": "PASS: structured typed owner addresses; round trip and malformed/legacy rejection",
+    "current_task_runtime": {
+      "dedicated": "PASS: native Studio export, ACTIVE -> SETTLED, XP 0 -> 7, server restart/reconnect retains XP 7",
+      "integrated": "PASS targeted: native Studio import allocates ST-YQGT-ZYHR-DRNN-9HF3, native re-export, singleplayer task settled with XP 7 -> 14",
+      "evidence": [
+        "current-task-runtime-result.json",
+        "task-after-restart-nbt.json",
+        "integrated-task-after-region-nbt.json",
+        "current-integrated-runtime-result.json"
+      ],
+      "remaining": "None for specified dedicated/integrated settlement and restart gates"
+    },
+    "current_media_runtime": {
+      "status": "PASS_TARGETED",
+      "evidence": "current-media-runtime-result.json",
+      "remaining": "Specified media matrix completed by three-member update, real 3/10, failure/retry, disconnect/conflict and policy probes"
+    },
+    "media_policy": "PASS StoryMediaCacheIndexProbe / MediaQueue0334Probe / MediaTransferWindowProbe",
+    "current_media_import": {
+      "passed": 2,
+      "failed": 0,
+      "evidence": "current-media-import-final.trx"
+    },
+    "current_two_op": {
+      "status": "PASS_TARGETED_NATIVE_TWO_OP",
+      "players": [
+        "Native0336",
+        "Operator0336"
+      ],
+      "steps": [
+        "Operator0336 selected Media0336.dgrs.g and obtained delete confirmation",
+        "Native0336 disabled the same container",
+        "Operator0336 submitted old confirmation",
+        "server retained file; client cleared confirmation, refreshed counts and showed persistent inventory-changed message"
+      ],
+      "remaining_file_sha256": "6ce9982264b57b1546ebfb52c437a7c5d395092aedffca000e2cd848ea01b66a",
+      "evidence": "op2-stale-confirm-fixed.png",
+      "runtime_jar": {
+        "path": "build\\libs\\darkgrey_rpg-0.3.3.6.jar",
+        "bytes": 1948418,
+        "sha256": "55f18cbec66dc2d7e8dfd53673edd3014bb8cfbaadc12ea51a1c1e375d5fd919"
+      }
+    },
+    "current_m2_recovery": {
+      "passed": 13,
+      "failed": 0,
+      "evidence": "current-m2-recovery.trx"
+    },
+    "current_deletion_edges": {
+      "passed": 15,
+      "failed": 0,
+      "evidence": "current-deletion-edges.trx"
+    },
+    "current_three_media_runtime": {
+      "status": "PASS_TARGETED_REAL_TWO_CLIENTS",
+      "evidence": "current-three-media-runtime-result.json"
+    },
+    "current_shell_contracts": {
+      "passed": 27,
+      "failed": 0,
+      "evidence": "current-shell-contracts.trx"
+    },
+    "current_resource_ui_lifecycle": {
+      "passed": 18,
+      "failed": 0,
+      "evidence": "current-gate-ef.trx"
+    },
+    "current_copy_reference_shell": {
+      "passed": 32,
+      "failed": 0,
+      "evidence": "current-copy-reference-shell.trx"
+    },
+    "current_navigation_editors": {
+      "passed": 22,
+      "failed": 0,
+      "evidence": "current-navigation-editors.trx"
+    },
+    "current_cnpc_external_identity": {
+      "status": "PASS",
+      "evidence": "current-cnpc-identity-probe.log",
+      "scope": "External registry resolves; legacy CNPC stored data ignored; unbind cannot resurrect legacy identity"
+    },
+    "two_active_disable": "PASS_TARGETED_NATIVE_THREE_CLIENTS: current-two-active-disable-result.json",
+    "flow_exit_disable": "PASS_NATIVE_POSITIVE_CONTROL_AND_DISABLED: current-flow-disable-result.json",
+    "rich_copy": {
+      "evidence": "current-rich-copy-result.json",
+      "result": {
+        "status": "PASS_NATIVE_COPY_REPAIR_EXPORT_PLAY",
+        "source": "ST-8Q7T-6EWT-PEPM-WYKS",
+        "target": "ST-YGZK-MYX4-UKGL-68UW",
+        "target_nonempty": true,
+        "hidden_session_id_collision": "shared",
+        "node_id_collision": "story_start",
+        "source_and_target_existing_resource_files_preserved": true,
+        "undo_restored_original_target_files": true,
+        "redo_restored_copy": true,
+        "structure_repair": "Native graph editor deleted original duplicate Start; preserved original Session/resources; saved and reopened authoritative Studio",
+        "export": "StudioExportedRichCopy0336.dgrs.g",
+        "bytes": 26635,
+        "sha256": "51b0bf238fcb862000df316dad3380cddec18640788a68d9753c58bce61577f8",
+        "runtime": "Actual Operator0336 runs target-owned remapped Session; blue portrait and dynamic actor/player text visible",
+        "evidence": [
+          "rich-copy-files-before.json",
+          "rich-copy-applied.json",
+          "rich-copy-runtime-active.json",
+          "rich-copy-runtime.png"
+        ]
+      }
+    },
+    "reference_closure": {
+      "evidence": "current-reference-closure-result.json",
+      "result": {
+        "status": "PASS_NATIVE_REFERENCE_AND_BOUNDARY_EXPORT",
+        "reference_source": "StudioExportedFlowBoundary0336.dgrs.g",
+        "reference_members": 3,
+        "npc_only_export": {
+          "file": "StudioExportedNpcOnly0336.dgrs",
+          "bytes": 3864,
+          "sha256": "5f3370d6126a44476ed1891db5a6946465b7a5a91311923ea3de27d51ad6d67e",
+          "story_count": 1
+        },
+        "native_boundary": "Mouse drag X.finished -> referenced B.from_a Flow",
+        "closure_export": {
+          "file": "StudioExportedReferenceClosure0336.dgrs.g",
+          "bytes": 24558,
+          "sha256": "7c2a03785957bf061abb37b918db9a33ce8b0747a18482bca12192e846b6a7e1",
+          "members": [
+            "ST-8Q7T-6EWT-PEPM-WYKS",
+            "ST-AAAA-BBBB-CCCC-DDDD",
+            "ST-YGZK-MYX4-UKGL-68UW",
+            "ST-YPL7-HP2E-E9PA-PZG6"
+          ],
+          "edges": [
+            {
+              "source_story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+              "source_port_id": "finished",
+              "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+              "target_port_id": "from_a",
+              "interface_kind": "Flow"
+            },
+            {
+              "source_story_id": "ST-8Q7T-6EWT-PEPM-WYKS",
+              "source_port_id": "group_output",
+              "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+              "target_port_id": "group_input",
+              "interface_kind": "Logic"
+            },
+            {
+              "source_story_id": "ST-YGZK-MYX4-UKGL-68UW",
+              "source_port_id": "group_output",
+              "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+              "target_port_id": "group_input_c",
+              "interface_kind": "Logic"
+            },
+            {
+              "source_story_id": "ST-8Q7T-6EWT-PEPM-WYKS",
+              "source_port_id": "finished",
+              "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+              "target_port_id": "from_a",
+              "interface_kind": "Flow"
+            }
+          ]
+        }
+      }
+    },
+    "media_budget": {
+      "evidence": "media-budget-observation.json",
+      "result": {
+        "max_admitted": 10,
+        "max_downloading": 3,
+        "all_running_fixture_stories": 12,
+        "other_protected_story": 1,
+        "final": [
+          10,
+          0,
+          3,
+          10,
+          10
+        ],
+        "observations": 18,
+        "all_bounds_obeyed": true,
+        "after_manual_completion": [
+          10,
+          0,
+          2,
+          10,
+          10
+        ],
+        "queue_decreased_without_evicting_running": true,
+        "network_bytes_scope": "Three 2048x2048 valid PNGs shared across 12 distinct Story bundles; max 3 downloads captured in opt-in trace"
+      }
+    },
+    "media_failure_retry": {
+      "evidence": "media-budget-retry-result.json",
+      "result": {
+        "status": "PASS_REAL_CLIENT_SERVER_IO_FAILURE_RETRY",
+        "fault": "Temporary exclusive read lock on one isolated server cache PNG; no bytes changed",
+        "retry_count": 4,
+        "partial_readiness_observed": true,
+        "recovered": [
+          10,
+          0,
+          3,
+          10,
+          10
+        ],
+        "verified_cache_hashes": {
+          "media/441ecb12c0a0fbca39728f08c60830156226af6a5662bd668279a4c5f92e3131.png": true,
+          "media/f4f5adb538345c04bc82a21db523978e40f456818ea2730599556884f2477a07.png": true,
+          "media/5e8c1ec3c3eb933361cb87a9a49633f6aace6350e18d0f97fdebf801a42c34b4.png": true
+        }
+      }
+    },
+    "media_disconnect": {
+      "evidence": "media-disconnect-inflight-result.json",
+      "result": {
+        "status": "PASS_REAL_INFLIGHT_DISCONNECT",
+        "request_observed_before_kick": true,
+        "after_disconnect": {
+          "downloading": 0,
+          "queued": 0,
+          "protected": 0,
+          "ready": 0
+        },
+        "unfinished_media_not_published": true,
+        "late_ready_events": false
+      }
+    },
+    "media_conflict": {
+      "evidence": "media-conflict-inflight-result.json",
+      "result": {
+        "status": "PASS_REAL_INFLIGHT_CONFLICT_AND_RECOVERY",
+        "retired_story_records": 12,
+        "retired_sessions": 11,
+        "error_histories": 11,
+        "unrelated_task_active": true,
+        "no_budget_instances_after_restore": true,
+        "late_results_no_bundle_revival": true,
+        "manager_screenshot": "media-conflict-manager.png",
+        "duplicate_recycled": true,
+        "evidence": [
+          "media-conflict-client.log",
+          "media-conflict-retired.json",
+          "media-conflict-restored.json",
+          "media-conflict-inflight-reload.log"
+        ]
+      }
+    }
+  },
+  "studio": {
+    "path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
+    "bytes": 204288,
+    "sha256": "8e8bf253b16b1516616d890b8bd604a907cf9d607469e3785d4ab113a5b3b20c",
+    "updated_for_0336": true,
+    "product_version": "0.3.3.6",
+    "studio_dll_sha256": "8169be9193c428d1073b2ed6f631b7dc190b0323b72a59fe2955dc8a708f4ba9",
+    "core_dll_sha256": "77e3673a48dde35b5c3b7eb80d278ac8746d0a238690e5b8907e3f4846449acd"
+  },
+  "runtime_jar": {
+    "path": "build/libs/darkgrey_rpg-0.3.3.6.jar",
+    "bytes": 1949038,
+    "sha256": "be3c49d863ed381784bebcd6ba9e1aa09b7bce1c9edc6b8a44b1d751b4801cd9"
+  },
+  "test_packages": [
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedFlowBoundary0336.dgrs.g",
+      "bytes": 22303,
+      "sha256": "e435f4ec9cbda0a594d593e2a6198db1804671813607f4a47a3446e0e33aa527",
+      "member_uids": [
+        "ST-8Q7T-6EWT-PEPM-WYKS",
+        "ST-YGZK-MYX4-UKGL-68UW",
+        "ST-YPL7-HP2E-E9PA-PZG6"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedIntegratedTask0336.dgrs",
+      "bytes": 2855,
+      "sha256": "3700a49dff3ec36814e50e15551fcfd233fe417f013e88bf39f05c675f00d6ed",
+      "member_uids": [
+        "ST-YQGT-ZYHR-DRNN-9HF3"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedMediaBudget0336.dgrs.g",
+      "bytes": 37805451,
+      "sha256": "58de4e735e872e3c9200d23642a04dea34d8721ceea37bb0192ff41f9a4be495",
+      "member_uids": [
+        "ST-3336-2222-2222-2222",
+        "ST-3336-2222-2222-2223",
+        "ST-3336-2222-2222-2224",
+        "ST-3336-2222-2222-2225",
+        "ST-3336-2222-2222-2226",
+        "ST-3336-2222-2222-2227",
+        "ST-3336-2222-2222-2228",
+        "ST-3336-2222-2222-2229",
+        "ST-3336-2222-2222-222A",
+        "ST-3336-2222-2222-222B",
+        "ST-3336-2222-2222-222C",
+        "ST-3336-2222-2222-222D"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedMediaGroup0336.dgrs.g",
+      "bytes": 19866,
+      "sha256": "6f19e7b4ff4f0512d9ce5b4a033145d13fd653694b5af58d3ee197a38900aa11",
+      "member_uids": [
+        "ST-9427-YJUA-UKY9-34P6",
+        "ST-HGM8-UFVY-MHA7-S3Y5"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedMediaGroup0336.dgrs.g.dgrs.g",
+      "bytes": 19866,
+      "sha256": "6f19e7b4ff4f0512d9ce5b4a033145d13fd653694b5af58d3ee197a38900aa11",
+      "member_uids": [
+        "ST-9427-YJUA-UKY9-34P6",
+        "ST-HGM8-UFVY-MHA7-S3Y5"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedMediaGroup0336Updated.dgrs.g",
+      "bytes": 19893,
+      "sha256": "6ce9982264b57b1546ebfb52c437a7c5d395092aedffca000e2cd848ea01b66a",
+      "member_uids": [
+        "ST-9427-YJUA-UKY9-34P6",
+        "ST-HGM8-UFVY-MHA7-S3Y5"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedNpcOnly0336.dgrs",
+      "bytes": 3864,
+      "sha256": "5f3370d6126a44476ed1891db5a6946465b7a5a91311923ea3de27d51ad6d67e",
+      "member_uids": [
+        "ST-AAAA-BBBB-CCCC-DDDD"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedReferenceClosure0336.dgrs.g",
+      "bytes": 24558,
+      "sha256": "7c2a03785957bf061abb37b918db9a33ce8b0747a18482bca12192e846b6a7e1",
+      "member_uids": [
+        "ST-8Q7T-6EWT-PEPM-WYKS",
+        "ST-AAAA-BBBB-CCCC-DDDD",
+        "ST-YGZK-MYX4-UKGL-68UW",
+        "ST-YPL7-HP2E-E9PA-PZG6"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedRichCopy0336.dgrs.g",
+      "bytes": 26635,
+      "sha256": "51b0bf238fcb862000df316dad3380cddec18640788a68d9753c58bce61577f8",
+      "member_uids": [
+        "ST-8Q7T-6EWT-PEPM-WYKS",
+        "ST-YGZK-MYX4-UKGL-68UW",
+        "ST-YPL7-HP2E-E9PA-PZG6"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedTask0336.dgrs",
+      "bytes": 2843,
+      "sha256": "b7970d7cbe5dd6ada9d9f266b6a210b077e5094eff548b594a482bb357b6c522",
+      "member_uids": [
+        "ST-AAAA-BBBB-CCCC-DDDD"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedThreeMedia0336.dgrs.g",
+      "bytes": 22211,
+      "sha256": "f4629ca7ac61a058ade3168462fee7a60cd6d5ebd29fb4c44369a09a68b38975",
+      "member_uids": [
+        "ST-8Q7T-6EWT-PEPM-WYKS",
+        "ST-YGZK-MYX4-UKGL-68UW",
+        "ST-YPL7-HP2E-E9PA-PZG6"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedThreeMedia0336BUpdated.dgrs.g",
+      "bytes": 22227,
+      "sha256": "328658a453149961523d8566ee5438a3e7b983d53b3447d7456efeb376935317",
+      "member_uids": [
+        "ST-8Q7T-6EWT-PEPM-WYKS",
+        "ST-YGZK-MYX4-UKGL-68UW",
+        "ST-YPL7-HP2E-E9PA-PZG6"
+      ]
+    },
+    {
+      "path": "PLAN\\0.3.3.6\\evidence\\StudioExportedThreeMedia0336Updated.dgrs.g",
+      "bytes": 19893,
+      "sha256": "6ce9982264b57b1546ebfb52c437a7c5d395092aedffca000e2cd848ea01b66a",
+      "member_uids": [
+        "ST-9427-YJUA-UKY9-34P6",
+        "ST-HGM8-UFVY-MHA7-S3Y5"
+      ]
+    }
+  ],
+  "known_gaps": [
+    "Existing WPF FixedThreeHundredNodeWorkload is skipped; no human USER_ACCEPTED or human auditory acceptance is claimed."
+  ],
+  "user_accepted": false,
+  "delivered": true,
+  "release_ready": false,
+  "cleanup": {
+    "method": "SendToRecycleBin",
+    "files": 6,
+    "bytes": 1439666112,
+    "verified": true,
+    "evidence": [
+      "recycled-history-zips.json",
+      "recycle-history-verification.json",
+      "recycled-publish-staging.json",
+      "recycle-publish-staging-verification.json",
+      "recycled-staging-compression.json"
+    ],
+    "temporary_publish_folders": 12,
+    "temporary_publish_bytes": 7122596914,
+    "ntfs_compressed_in_recycle_bin": true,
+    "observed_free_gb": 0.249,
+    "round2_evidence": [
+      "recycled-publish-staging-round2.json",
+      "recycle-publish-staging-round2-verification.json",
+      "recycled-staging-round2-compression.json"
+    ],
+    "final_evidence": [
+      "recycled-final-staging.json",
+      "recycled-old-candidate-program.json",
+      "recycled-media-test-cache.json",
+      "recycled-inflight-test-image.json",
+      "recycled-conflict-test-duplicate.json"
+    ]
+  },
+  "group_container_integration": "SCANNER_REFERENCE_CLOSED_EXPORT_NEW_UID_IMPORT_AND_MANAGER_IMPLEMENTED_TARGETED_TESTS",
+  "authoritative_studio_promotion": {
+    "data_files_before": 2454,
+    "data_files_after": 2454,
+    "data_difference_count": 0,
+    "program_mismatches": 0,
+    "exe": {
+      "Length": 204288,
+      "version": "0.3.3.6"
+    },
+    "hashes": [
+      {
+        "Algorithm": "SHA256",
+        "Hash": "8E8BF253B16B1516616D890B8BD604A907CF9D607469E3785D4AB113A5B3B20C",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe"
+      },
+      {
+        "Algorithm": "SHA256",
+        "Hash": "8169BE9193C428D1073B2ED6F631B7DC190B0323B72A59FE2955DC8A708F4BA9",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll"
+      },
+      {
+        "Algorithm": "SHA256",
+        "Hash": "77E3673A48DDE35B5C3B7EB80D278AC8746D0A238690E5B8907E3F4846449ACD",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll"
+      }
+    ]
+  },
+  "namespace_compatibility": false,
+  "uid_regeneration": false,
+  "story_transfer_mode": "append_to_existing_writable_story",
+  "formats": [
+    ".dgrs",
+    ".dgrs.g"
+  ]
+}

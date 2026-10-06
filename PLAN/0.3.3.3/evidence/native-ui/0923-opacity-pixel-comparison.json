@@ -1,0 +1,12 @@
+{
+  "text_rgb": [
+    32,
+    42,
+    48
+  ],
+  "text_pixels": 1218,
+  "text_unchanged": 1218,
+  "portrait_gold_pixels": 873,
+  "portrait_max_channel_difference": 3,
+  "note": "Portrait RGB is not exactly equal; do not claim pixel identity. Text RGB is identical at both opacity endpoints."
+}

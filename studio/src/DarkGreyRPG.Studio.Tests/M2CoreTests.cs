@@ -3,6 +3,7 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -10,133 +11,79 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class M2CoreTests
 {
     [TestMethod]
-    public void OpeningLegacyProjectMigratesOnceAndIsByteStable()
+    public void OpeningLegacyProjectRejectsWithoutMigratingOrChangingBytes()
     {
         using var directory = new TestProjectDirectory();
-        File.WriteAllText(Path.Combine(directory.Root, "project.json"), """
-            { "schema_version": 1, "id": "test_project", "display_name": "Test Project" }
-            """);
-        File.WriteAllText(directory.ActorPath("old_actor"), """
-            { "schema_version": 1, "id": "old_actor", "display_name": "旧角色", "notes": "", "tags": [] }
-            """);
-
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        var projectBytes = File.ReadAllBytes(Path.Combine(directory.Root, "project.json"));
-        var actorBytes = File.ReadAllBytes(directory.ActorPath("old_actor"));
-        var story = StorySerializer.Read(Path.Combine(directory.Root, "stories", "uncategorized.json"));
-
-        Assert.AreEqual(2, service.CurrentProject!.Project.SchemaVersion);
-        Assert.AreEqual("uncategorized", service.OpenActor("old_actor").HomeStoryId);
-        CollectionAssert.AreEqual(new[] { "old_actor" }, story.OwnedResources.Actors);
-        Assert.AreEqual(1, Directory.GetDirectories(Path.Combine(directory.Root, ".migration-backups")).Length);
-
-        new ProjectService().OpenProject(directory.Root);
-        CollectionAssert.AreEqual(projectBytes, File.ReadAllBytes(Path.Combine(directory.Root, "project.json")));
-        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(directory.ActorPath("old_actor")));
-        Assert.AreEqual(1, Directory.GetDirectories(Path.Combine(directory.Root, ".migration-backups")).Length);
+        var projectPath = Path.Combine(directory.Root, "project.json");
+        var actorPath = directory.ActorPath("old_actor");
+        File.WriteAllText(projectPath, """{"schema_version":1,"id":"test_project","display_name":"Legacy"}""");
+        File.WriteAllText(actorPath, """{"schema_version":1,"id":"old_actor","display_name":"旧角色","tags":[]}""");
+        var projectBytes = File.ReadAllBytes(projectPath);
+        var actorBytes = File.ReadAllBytes(actorPath);
+        for (var attempt = 0; attempt < 2; attempt++)
+            Assert.ThrowsExactly<ProjectException>(() => new ProjectService().OpenProject(directory.Root));
+        CollectionAssert.AreEqual(projectBytes, File.ReadAllBytes(projectPath));
+        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(actorPath));
+        Assert.IsFalse(Directory.Exists(Path.Combine(directory.Root, ".migration-backups")));
+        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "uncategorized.json")));
     }
 
     [TestMethod]
-    public void RegistryImportCreatesIndependentActorAndMembership()
+    public void CurrentImportCreatesIndependentActorAndMembership()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        var original = service.CreateActor("original", "Original");
-        service.SaveActor(original);
-        var registry = new ProjectResourceRegistry(directory.Root);
-
-        var imported = registry.ImportAsNew("original", "copy");
-
-        Assert.AreEqual("copy", imported.Id);
-        Assert.AreNotEqual(imported.Id, registry.Actors.LoadActor("original").Id);
-        Assert.IsTrue(registry.CanDelete(ProjectResourceType.Actor, "copy"));
-        Assert.IsNotNull(registry.GetHomeStory(ProjectResourceType.Actor, "copy"));
-
-        registry.Stories.CreateStory("other_story", "Other Story");
-        registry.AddReference("other_story", ProjectResourceType.Actor, "copy");
-        Assert.IsFalse(registry.CanDelete(ProjectResourceType.Actor, "copy"));
-        CollectionAssert.AreEqual(
-            new[] { "other_story" },
-            registry.GetReferences(ProjectResourceType.Actor, "copy").Select(reference => reference.Id).ToArray());
-
-        registry.RemoveReference("other_story", ProjectResourceType.Actor, "copy");
-        Assert.IsTrue(registry.CanDelete(ProjectResourceType.Actor, "copy"));
+        const string owner = "ST-2345-6789-ABCD-EFGH", other = "ST-JKLM-NPQR-STUV-WXYZ";
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        var stories = new CanonicalStoryLifecycleService(store);
+        stories.Create(owner, "Owner"); stories.Create(other, "Other");
+        var service = new ProjectService(); service.OpenProject(directory.Root);
+        var source = service.CreateActorInStory(owner, owner + "~actor~original", "Original");
+        var imported = service.ImportActorAsNew(source.Id, other + "~actor~copy", other);
+        var actors = new CanonicalStoryActorLifecycleService(store);
+        Assert.AreNotEqual(source.Id, imported.Id);
+        Assert.AreEqual(other, imported.HomeStoryId);
+        CollectionAssert.Contains(store.Memberships.Load(other).OwnedResources.Actors, imported.Id);
+        actors.AddReference(owner, imported.Id);
+        Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(() => service.DeleteActor(imported.Id));
+        actors.RemoveReference(owner, imported.Id);
+        service.DeleteActor(imported.Id);
+        Assert.IsTrue(File.Exists(actors.Actors.GetActorPath(source.Id)));
+        Assert.IsFalse(File.Exists(actors.Actors.GetActorPath(imported.Id)));
     }
 
     [TestMethod]
-    public void MigrationMergesExistingMembershipWithoutLosingResources()
+    public void RejectedLegacyProjectLeavesExistingMembershipUntouched()
     {
         using var directory = new TestProjectDirectory();
-        File.WriteAllText(Path.Combine(directory.Root, "project.json"),
-            "{\"schema_version\":1,\"id\":\"test_project\",\"display_name\":\"Test Project\"}");
-        File.WriteAllText(directory.ActorPath("legacy_actor"),
-            "{\"schema_version\":1,\"id\":\"legacy_actor\",\"display_name\":\"Legacy\",\"notes\":\"\",\"tags\":[]}");
-        File.WriteAllText(directory.ActorPath("current_actor"),
-            "{\"schema_version\":2,\"id\":\"current_actor\",\"display_name\":\"Current\",\"notes\":\"\",\"tags\":[],\"home_story_id\":\"uncategorized\"}");
-        var stories = new StoryRepository(directory.Root);
-        var existing = StoryResource.CreateUncategorized();
-        stories.SaveStory(new StoryResource
-        {
-            Id = existing.Id,
-            DisplayName = existing.DisplayName,
-            Description = "preserved",
-            Tags = ["existing"],
-            EntryPresentation = new StoryEntryPresentation
-            {
-                Mode = "chapter_title",
-                Eyebrow = "Above",
-                Title = "Title",
-                DurationSeconds = 3.5,
-            },
-            OwnedResources = new StoryMembership
-            {
-                Actors = ["already_owned"],
-                Dialogues = ["dialogue_one"],
-                Quests = ["quest_one"],
-            },
-            ReferencedResources = new StoryMembership { Actors = ["external_actor"] },
-            FlowRef = existing.FlowRef,
-            Title = existing.Title,
-            Entry = existing.Entry,
-            Nodes = existing.Nodes,
-            Connections = existing.Connections,
-        });
-
-        new ProjectService().OpenProject(directory.Root);
-
-        var migrated = stories.LoadStory("uncategorized");
-        CollectionAssert.AreEqual(
-            new[] { "already_owned", "current_actor", "legacy_actor" },
-            migrated.OwnedResources.Actors.ToArray());
-        CollectionAssert.AreEqual(new[] { "dialogue_one" }, migrated.OwnedResources.Dialogues.ToArray());
-        CollectionAssert.AreEqual(new[] { "quest_one" }, migrated.OwnedResources.Quests.ToArray());
-        CollectionAssert.AreEqual(new[] { "external_actor" }, migrated.ReferencedResources.Actors.ToArray());
-        Assert.AreEqual("chapter_title", migrated.EntryPresentation.Mode);
-        Assert.AreEqual(3.5, migrated.EntryPresentation.DurationSeconds);
+        File.WriteAllText(Path.Combine(directory.Root, "project.json"), """{"schema_version":1,"id":"test_project","display_name":"Legacy"}""");
+        var path = Path.Combine(directory.Root, "stories", "uncategorized.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, """{"schema_version":2,"id":"uncategorized","owned_resources":{"actors":["already_owned"],"dialogues":["dialogue_one"],"quests":["quest_one"]},"referenced_resources":{"actors":["external_actor"]}}""");
+        var bytes = File.ReadAllBytes(path);
+        Assert.ThrowsExactly<ProjectException>(() => new ProjectService().OpenProject(directory.Root));
+        CollectionAssert.AreEqual(bytes, File.ReadAllBytes(path));
+        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "migration.log")));
     }
 
     [TestMethod]
-    public void ProjectServiceKeepsActorOwnershipAndDeleteGuardConsistent()
+    public void ProjectServiceKeepsCurrentActorOwnershipAndDeleteGuardConsistent()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        var session = service.OpenProject(directory.Root);
-        session.Stories.CreateStory("second_story", "Second Story");
-
-        var actor = service.CreateActor("owned_actor", "Owned Actor");
-        service.SaveActor(actor);
-        CollectionAssert.Contains(session.Stories.LoadStory("uncategorized").OwnedResources.Actors, "owned_actor");
-
-        session.Registry.AddReference("second_story", ProjectResourceType.Actor, "owned_actor");
-        Assert.ThrowsExactly<ProjectException>(() => service.DeleteActor("owned_actor"));
-        Assert.IsTrue(File.Exists(directory.ActorPath("owned_actor")));
-
-        session.Registry.RemoveReference("second_story", ProjectResourceType.Actor, "owned_actor");
-        service.DeleteActor("owned_actor");
-        Assert.IsFalse(File.Exists(directory.ActorPath("owned_actor")));
-        CollectionAssert.DoesNotContain(session.Stories.LoadStory("uncategorized").OwnedResources.Actors, "owned_actor");
+        const string owner = "ST-2345-6789-ABCD-EFGH", other = "ST-JKLM-NPQR-STUV-WXYZ";
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        var stories = new CanonicalStoryLifecycleService(store);
+        stories.Create(owner, "Owner"); stories.Create(other, "Other");
+        var service = new ProjectService(); service.OpenProject(directory.Root);
+        var actor = service.CreateActorInStory(owner, owner + "~actor~owned", "Owned");
+        CollectionAssert.Contains(store.Memberships.Load(owner).OwnedResources.Actors, actor.Id);
+        var actors = new CanonicalStoryActorLifecycleService(store);
+        actors.AddReference(other, actor.Id);
+        Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(() => service.DeleteActor(actor.Id));
+        Assert.IsTrue(File.Exists(actors.Actors.GetActorPath(actor.Id)));
+        actors.RemoveReference(other, actor.Id);
+        service.DeleteActor(actor.Id);
+        Assert.IsFalse(File.Exists(actors.Actors.GetActorPath(actor.Id)));
+        CollectionAssert.DoesNotContain(store.Memberships.Load(owner).OwnedResources.Actors, actor.Id);
     }
 
     [TestMethod]
@@ -200,7 +147,7 @@ public sealed class M2CoreTests
     }
 
     [TestMethod]
-    public void MigrationFailureRestoresOriginalFiles()
+    public void RejectedLegacyOpenDoesNotStartMigrationWrites()
     {
         using var directory = new TestProjectDirectory();
         var projectPath = Path.Combine(directory.Root, "project.json");
@@ -214,7 +161,7 @@ public sealed class M2CoreTests
 
         CollectionAssert.AreEqual(originalProject, File.ReadAllBytes(projectPath));
         CollectionAssert.AreEqual(originalActor, File.ReadAllBytes(actorPath));
-        Assert.IsTrue(File.Exists(Path.Combine(directory.Root, "migration.log")));
+        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "migration.log")));
     }
 
     private sealed class ThrowingWriter : IAtomicFileWriter

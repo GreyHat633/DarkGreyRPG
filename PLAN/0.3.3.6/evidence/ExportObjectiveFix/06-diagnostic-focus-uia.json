@@ -1,0 +1,1717 @@
+[
+  {
+    "Type": "ControlType.Menu",
+    "Id": "",
+    "Name": "",
+    "Bounds": "0,28,1920,64",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "文件(F)",
+    "Bounds": "7,30,93,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "文件(_F)",
+    "Bounds": "26,49,56,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "编辑(E)",
+    "Bounds": "100,30,93,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "编辑(_E)",
+    "Bounds": "119,49,56,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "视图(V)",
+    "Bounds": "193,30,95,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "视图(_V)",
+    "Bounds": "212,49,58,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "项目(P)",
+    "Bounds": "288,30,95,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目(_P)",
+    "Bounds": "307,49,57,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "帮助(H)",
+    "Bounds": "383,30,96,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "帮助(_H)",
+    "Bounds": "401,49,60,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "已打开故事：ST-KD3A-X344-8D79-L772",
+    "Bounds": "15,999,1890,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "BottomPanelSplitter",
+    "Name": "",
+    "Bounds": "0,710,1920,7",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "0,718,1920,52",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }",
+    "Bounds": "2,723,62,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "输出",
+    "Bounds": "16,733,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }",
+    "Bounds": "67,723,90,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "问题",
+    "Bounds": "81,733,34,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "1",
+    "Bounds": "130,734,7,20",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }",
+    "Bounds": "160,723,79,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "调试器",
+    "Bounds": "173,733,52,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }",
+    "Bounds": "242,723,112,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Minecraft",
+    "Bounds": "255,733,85,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataGrid",
+    "Id": "ProblemList",
+    "Name": "",
+    "Bounds": "24,781,1872,185",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Header",
+    "Id": "",
+    "Name": "",
+    "Bounds": "24,781,1872,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.HeaderItem",
+    "Id": "",
+    "Name": "严重性",
+    "Bounds": "24,781,111,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "严重性",
+    "Bounds": "38,790,82,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "PART_HeaderGripper",
+    "Name": "",
+    "Bounds": "130,781,10,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.HeaderItem",
+    "Id": "",
+    "Name": "资源",
+    "Bounds": "135,781,223,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "资源",
+    "Bounds": "150,790,193,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "PART_HeaderGripper",
+    "Name": "",
+    "Bounds": "353,781,10,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.HeaderItem",
+    "Id": "",
+    "Name": "问题",
+    "Bounds": "358,781,645,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "问题",
+    "Bounds": "373,790,615,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "PART_HeaderGripper",
+    "Name": "",
+    "Bounds": "998,781,10,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.HeaderItem",
+    "Id": "",
+    "Name": "字段",
+    "Bounds": "1003,781,161,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "字段",
+    "Bounds": "1018,790,131,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "PART_HeaderGripper",
+    "Name": "",
+    "Bounds": "1159,781,10,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "ProblemItem { Severity = Error, Code = graph.objective.target.invalid, Message = 故事“测试故事” → 任务“讨伐3只史莱姆” → 节点“目标”：请选择有效的击杀目标；未配置的目标不能接入任务逻辑。, Field = properties.entity, Source = export/story/ST-KD3A-X344-8D79-L772, NodeId = node_7d7f86eff3b94d06ae8c1b0f94b564ba, GraphResourceId = ST-KD3A-X344-8D79-L772~task~r46878b26cdc88af1ca4449e31f39bf3e, DisplayMessage = 故事“测试故事” → 任务“讨伐3只史莱姆” → 节点“目标”：请选择有效的击杀目标；未配置的目标不能接入任务逻辑。, IsError = True, IsWarning = False }",
+    "Bounds": "24,821,1872,49",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Error",
+    "Bounds": "40,835,96,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "export/story/ST-KD3A-X344-8D79-L772",
+    "Bounds": "151,835,332,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "故事“测试故事” → 任务“讨伐3只史莱姆” → 节点“目标”：请选择有效的击杀目标；未配置的目标不能接入任务逻辑。",
+    "Bounds": "374,835,886,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "properties.entity",
+    "Bounds": "1019,835,146,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalStoryWorkspace",
+    "Name": "",
+    "Bounds": "45,131,1837,541",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试故事",
+    "Bounds": "62,145,207,26",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalCreateResource",
+    "Name": "新建资源",
+    "Bounds": "271,145,33,33",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalReferenceResource",
+    "Name": "引用已有资源",
+    "Bounds": "306,145,32,33",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalDeleteResource",
+    "Name": "删除资源或解除引用",
+    "Bounds": "341,145,32,33",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "搜索",
+    "Bounds": "324,196,52,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "搜索",
+    "Bounds": "332,201,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "AuthoringSearchBox",
+    "Name": "",
+    "Bounds": "60,193,264,39",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Id": "",
+    "Name": "",
+    "Bounds": "60,242,316,415",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "60,242,316,655",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Bounds": "60,242,316,153",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "角色",
+    "Bounds": "60,251,316,137",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "",
+    "Bounds": "63,251,309,44",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "角色",
+    "Bounds": "114,261,252,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "86,298,290,89",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = ST-KD3A-X344-8D79-L772~actor~r6d90be0e3d9ae26ce40bccdfb9535fbc, DisplayName = 酒馆老板, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-ui-followup\\Studio\\Data\\Projects\\ExportRegression0336\\actors\\stories\\ST-KD3A-X344-8D79-L772\\resources\\actor\\r-r6d90be0e3d9ae26ce40bccdfb9535fbc.json, Tags = System.String[], Type = individual, DefaultPortraitRef = media/c2de1b71330078f135e38ad90458824c411e20fa92f638cecb76fed99696f3c3.png, PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, MembershipKind = Owned, PortraitSource = ActorResourceInfo { Id = ST-KD3A-X344-8D79-L772~actor~r6d90be0e3d9ae26ce40bccdfb9535fbc, DisplayName = 酒馆老板, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-ui-followup\\Studio\\Data\\Projects\\ExportRegression0336\\actors\\stories\\ST-KD3A-X344-8D79-L772\\resources\\actor\\r-r6d90be0e3d9ae26ce40bccdfb9535fbc.json, Tags = System.String[], Type = individual, DefaultPortraitRef = media/c2de1b71330078f135e38ad90458824c411e20fa92f638cecb76fed99696f3c3.png, PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-KD3A-X344-8D79-L772~actor~r6d90be0e3d9ae26ce40bccdfb9535fbc, DisplayName = 酒馆老板, IdentityText = [角色], IsOwned = True, IsReferenced = False }",
+    "Bounds": "86,298,290,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "酒馆老板",
+    "Bounds": "89,299,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "酒馆老板  [角色]",
+    "Bounds": "126,309,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryActorItem { Actor = ActorResourceInfo { Id = ST-KD3A-X344-8D79-L772~actor~r6a7b460863e06b9464ef831eee05dccf, DisplayName = 史莱姆群, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-ui-followup\\Studio\\Data\\Projects\\ExportRegression0336\\actors\\stories\\ST-KD3A-X344-8D79-L772\\resources\\actor\\r-r6a7b460863e06b9464ef831eee05dccf.json, Tags = System.String[], Type = collective, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, MembershipKind = Owned, PortraitSource = ActorResourceInfo { Id = ST-KD3A-X344-8D79-L772~actor~r6a7b460863e06b9464ef831eee05dccf, DisplayName = 史莱姆群, SourcePath = E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-ui-followup\\Studio\\Data\\Projects\\ExportRegression0336\\actors\\stories\\ST-KD3A-X344-8D79-L772\\resources\\actor\\r-r6a7b460863e06b9464ef831eee05dccf.json, Tags = System.String[], Type = collective, DefaultPortraitRef = , PortraitVariants = DarkGreyRPG.Studio.Core.Actors.ActorPortraitVariant[] }, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-KD3A-X344-8D79-L772~actor~r6a7b460863e06b9464ef831eee05dccf, DisplayName = 史莱姆群, IdentityText = [角色组], IsOwned = True, IsReferenced = False }",
+    "Bounds": "86,343,290,44",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "史莱姆群",
+    "Bounds": "89,344,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "史莱姆群  [角色组]",
+    "Bounds": "126,354,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Bounds": "60,395,316,152",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "物品",
+    "Bounds": "60,403,316,138",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "",
+    "Bounds": "63,403,309,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "物品",
+    "Bounds": "114,413,252,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "86,450,290,90",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.IndividualItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-KD3A-X344-8D79-L772~item~radea5b22c3a5aa4b56e15bc7f985f7bd, DisplayName = 铜币, IdentityText = [物品], Type = individual, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False }",
+    "Bounds": "86,450,290,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "铜币",
+    "Bounds": "89,452,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "铜币  [物品]",
+    "Bounds": "126,462,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.CollectiveItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = ST-KD3A-X344-8D79-L772~item_group~r37d3e90054f21832e1c97b722e17c094, DisplayName = 剑, IdentityText = [物品组], Type = collective, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False }",
+    "Bounds": "86,495,290,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "剑",
+    "Bounds": "89,496,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "剑  [物品组]",
+    "Bounds": "126,506,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Bounds": "60,547,316,153",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "会话",
+    "Bounds": "60,556,316,137",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "",
+    "Bounds": "63,556,309,44",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "会话",
+    "Bounds": "114,566,252,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "86,603,290,89",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Bounds": "86,603,290,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "初次见面",
+    "Bounds": "89,604,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "初次见面  [会话]",
+    "Bounds": "126,614,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Bounds": "86,648,290,44",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "完成委托",
+    "Bounds": "89,649,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "完成委托  [会话]",
+    "Bounds": "126,659,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel",
+    "Bounds": "60,700,316,197",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "任务",
+    "Bounds": "60,708,316,182",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "",
+    "Bounds": "63,708,309,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "任务",
+    "Bounds": "114,718,252,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "86,755,290,134",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Bounds": "86,755,290,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "讨伐3只史莱姆",
+    "Bounds": "89,757,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "讨伐3只史莱姆  [任务]",
+    "Bounds": "126,767,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Bounds": "86,800,290,45",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "啊",
+    "Bounds": "89,801,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "啊  [任务]",
+    "Bounds": "126,811,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem",
+    "Bounds": "86,845,290,44",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "啊",
+    "Bounds": "89,846,283,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "啊  [任务]",
+    "Bounds": "126,856,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ScrollBar",
+    "Id": "PART_VerticalScrollBar",
+    "Name": "",
+    "Bounds": "361,242,15,415",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "PART_ButtonScrollUp",
+    "Name": "Scroll Up",
+    "Bounds": "361,243,15,15",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "PageUp",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "",
+    "Name": "",
+    "Bounds": "366,260,5,241",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "PageDown",
+    "Name": "",
+    "Bounds": "366,501,5,139",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "PART_ButtonScrollDown",
+    "Name": "Scroll Down",
+    "Bounds": "361,641,15,15",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "",
+    "Name": "",
+    "Bounds": "392,131,10,541",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "414,139,1098,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryBreadcrumb { Id = TestProject4, DisplayName = 测试项目, Kind = Project, ResourceKind = , IsFirst = True, IsCurrent = False }",
+    "Bounds": "414,139,84,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试项目",
+    "Bounds": "414,139,84,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试项目",
+    "Bounds": "421,143,70,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryBreadcrumb { Id = ST-KD3A-X344-8D79-L772, DisplayName = 测试故事, Kind = Story, ResourceKind = Story, IsFirst = False, IsCurrent = False }",
+    "Bounds": "498,139,105,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": ">",
+    "Bounds": "502,143,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "测试故事",
+    "Bounds": "519,139,84,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试故事",
+    "Bounds": "526,143,69,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "CanonicalStoryBreadcrumb { Id = ST-KD3A-X344-8D79-L772~task~r46878b26cdc88af1ca4449e31f39bf3e, DisplayName = 讨伐3只史莱姆, Kind = Task, ResourceKind = Task, IsFirst = False, IsCurrent = True }",
+    "Bounds": "603,139,149,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": ">",
+    "Bounds": "607,143,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "讨伐3只史莱姆",
+    "Bounds": "623,139,129,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "讨伐3只史莱姆",
+    "Bounds": "631,143,114,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalStoryWorkspaceGraph",
+    "Name": "节点图编辑器",
+    "Bounds": "402,179,1123,493",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "图编辑器缩放到百分之百",
+    "Bounds": "402,179,68,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "100%",
+    "Bounds": "413,185,46,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "适应全部图节点",
+    "Bounds": "475,179,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "适应",
+    "Bounds": "486,185,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "重置图视图",
+    "Bounds": "537,179,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "重置",
+    "Bounds": "548,185,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "ScissorsButton",
+    "Name": "剪断连线",
+    "Bounds": "599,179,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "剪刀",
+    "Bounds": "610,185,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CombineSelection",
+    "Name": "组合",
+    "Bounds": "661,179,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "组合",
+    "Bounds": "672,185,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放",
+    "Bounds": "733,186,792,27",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_settle",
+    "Name": "图节点 结算 settle",
+    "Bounds": "502,323,288,202",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "结算",
+    "Bounds": "514,332,263,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_settle_logic_in",
+    "Name": "settle 输入端口 logic_in (Logic)",
+    "Bounds": "512,369,134,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "结算条件",
+    "Bounds": "543,373,54,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "CanonicalNodeParameterSummary",
+    "Name": "参数",
+    "Bounds": "512,403,268,112",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "参数",
+    "Bounds": "514,405,263,24",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "参数",
+    "Bounds": "543,406,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "517,435,258,78",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "名称",
+    "Bounds": "517,447,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "",
+    "Name": "",
+    "Bounds": "517,473,258,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_node_7d7f86eff3b94d06ae8c1b0f94b564ba",
+    "Name": "图节点 目标 node_7d7f86eff3b94d06ae8c1b0f94b564ba",
+    "Bounds": "-245,316,288,460",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "目标",
+    "Bounds": "-233,325,263,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_node_7d7f86eff3b94d06ae8c1b0f94b564ba_logic_status",
+    "Name": "node_7d7f86eff3b94d06ae8c1b0f94b564ba 输出端口 logic_status (Logic)",
+    "Bounds": "-101,362,134,24",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "完成",
+    "Bounds": "-26,365,28,18",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "CanonicalNodeParameterSummary",
+    "Name": "参数",
+    "Bounds": "-235,395,268,371",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "参数",
+    "Bounds": "-233,398,263,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "参数",
+    "Bounds": "-204,398,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "-230,427,258,336",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "-230,427,258,336",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标描述",
+    "Bounds": "-230,427,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "InlineObjectiveDescription",
+    "Name": "",
+    "Bounds": "-230,449,258,35",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "讨伐三只史莱姆",
+    "Bounds": "-230,449,258,35",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "玩家将在游戏中看到的目标文字。",
+    "Bounds": "-230,484,258,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标类型",
+    "Bounds": "-230,509,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "InlineObjectiveType",
+    "Name": "",
+    "Bounds": "-230,533,258,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "需求数量",
+    "Bounds": "-230,580,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "InlineObjectiveRequired",
+    "Name": "",
+    "Bounds": "-230,605,258,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标角色",
+    "Bounds": "-230,652,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "InlineObjectiveActorSelector",
+    "Name": "",
+    "Bounds": "-230,677,258,39",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.CheckBox",
+    "Id": "InlineObjectivePrerequisiteToggle",
+    "Name": "前置条件",
+    "Bounds": "-230,724,149,39",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "前置条件",
+    "Bounds": "-194,731,69,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_node_6ef93846b36e4ffb86391269e97ebc00",
+    "Name": "图节点 目标 node_6ef93846b36e4ffb86391269e97ebc00",
+    "Bounds": "124,339,288,405",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "目标",
+    "Bounds": "136,348,263,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_node_6ef93846b36e4ffb86391269e97ebc00_prerequisite",
+    "Name": "node_6ef93846b36e4ffb86391269e97ebc00 输入端口 prerequisite (Logic)",
+    "Bounds": "134,385,134,24",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "前置条件",
+    "Bounds": "165,388,54,18",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_node_6ef93846b36e4ffb86391269e97ebc00_logic_status",
+    "Name": "node_6ef93846b36e4ffb86391269e97ebc00 输出端口 logic_status (Logic)",
+    "Bounds": "268,385,134,24",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "完成",
+    "Bounds": "343,388,28,18",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "CanonicalNodeParameterSummary",
+    "Name": "参数",
+    "Bounds": "134,418,268,317",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "参数",
+    "Bounds": "136,421,263,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "参数",
+    "Bounds": "165,421,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "139,450,258,282",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "139,450,258,282",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标描述",
+    "Bounds": "139,450,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "InlineObjectiveDescription",
+    "Name": "",
+    "Bounds": "139,472,258,35",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "找酒馆老板交任务",
+    "Bounds": "139,472,258,35",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "玩家将在游戏中看到的目标文字。",
+    "Bounds": "139,507,258,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标类型",
+    "Bounds": "139,532,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "InlineObjectiveType",
+    "Name": "",
+    "Bounds": "139,556,258,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标角色",
+    "Bounds": "139,603,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "InlineObjectiveActorSelector",
+    "Name": "",
+    "Bounds": "139,628,258,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.CheckBox",
+    "Id": "InlineObjectivePrerequisiteToggle",
+    "Name": "前置条件",
+    "Bounds": "139,675,149,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "前置条件",
+    "Bounds": "175,682,69,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "InlineObjectivePrerequisiteHelp",
+    "Name": "前置条件为 True 时激活",
+    "Bounds": "139,715,258,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_node_bc72f28a024a4c489c287ce83aa512a5",
+    "Name": "图节点 奖励 node_bc72f28a024a4c489c287ce83aa512a5",
+    "Bounds": "507,587,288,534",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "奖励",
+    "Bounds": "519,596,263,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_node_bc72f28a024a4c489c287ce83aa512a5_logic_in",
+    "Name": "node_bc72f28a024a4c489c287ce83aa512a5 输入端口 logic_in (Logic)",
+    "Bounds": "517,633,134,24",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "逻辑输入",
+    "Bounds": "548,636,54,18",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "CanonicalNodeParameterSummary",
+    "Name": "参数",
+    "Bounds": "517,666,268,445",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "参数",
+    "Bounds": "519,669,263,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "参数",
+    "Bounds": "548,669,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "522,698,258,410",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "522,708,258,393",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "奖励内容（共 1 条）",
+    "Bounds": "522,708,258,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "正数给予，负数扣除，零不操作。每个任务实例只发放一次。",
+    "Bounds": "522,734,258,35",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "TaskRewardEntries",
+    "Name": "",
+    "Bounds": "522,779,258,284",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.CanonicalTaskRewardEntryViewModel",
+    "Bounds": "522,779,258,284",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "删除奖励 1",
+    "Bounds": "716,790,53,29",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "删除",
+    "Bounds": "725,793,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "奖励 1",
+    "Bounds": "533,793,176,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "类型",
+    "Bounds": "533,829,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "",
+    "Name": "",
+    "Bounds": "533,854,236,39",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "数量（增减）",
+    "Bounds": "533,902,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "",
+    "Name": "",
+    "Bounds": "533,926,236,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "物品",
+    "Bounds": "533,975,236,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "",
+    "Name": "",
+    "Bounds": "533,999,236,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "+ 添加奖励",
+    "Bounds": "522,1063,117,38",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "+ 添加奖励",
+    "Bounds": "537,1070,87,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1525,131,9,541",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标",
+    "Bounds": "1556,155,306,30",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Id": "CanonicalInspectorScrollViewer",
+    "Name": "",
+    "Bounds": "1556,203,306,449",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "CanonicalNodeHelp",
+    "Name": "介绍说明",
+    "Bounds": "1556,203,306,28",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "介绍说明",
+    "Bounds": "1558,205,301,24",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "介绍说明",
+    "Bounds": "1587,206,69,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "节点属性",
+    "Bounds": "1556,244,306,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1556,266,306,336",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标描述",
+    "Bounds": "1556,266,306,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "TaskObjectiveDescription",
+    "Name": "",
+    "Bounds": "1556,288,306,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Document",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1556,288,306,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "玩家将在游戏中看到的目标文字。",
+    "Bounds": "1556,322,306,18",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标类型",
+    "Bounds": "1556,347,306,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "TaskObjectiveTypeSelector",
+    "Name": "",
+    "Bounds": "1556,372,306,39",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "需求数量",
+    "Bounds": "1556,419,306,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "TaskObjectiveRequired",
+    "Name": "",
+    "Bounds": "1556,443,306,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "目标角色",
+    "Bounds": "1556,490,306,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ComboBox",
+    "Id": "TaskObjectiveActorSelector",
+    "Name": "",
+    "Bounds": "1556,515,306,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.CheckBox",
+    "Id": "TaskObjectivePrerequisiteToggle",
+    "Name": "前置条件",
+    "Bounds": "1556,562,148,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "前置条件",
+    "Bounds": "1592,569,69,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "Empty",
+    "Offscreen": false
+  }
+]

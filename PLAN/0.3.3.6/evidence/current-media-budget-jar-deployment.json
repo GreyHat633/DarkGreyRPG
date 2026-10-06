@@ -1,0 +1,10 @@
+{
+  "bytes": 1949038,
+  "sha256": "be3c49d863ed381784bebcd6ba9e1aa09b7bce1c9edc6b8a44b1d751b4801cd9",
+  "deployed": [
+    ".tooling\\0336-runtime\\Server\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    ".tooling\\0336-runtime\\Client\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    ".tooling\\0336-runtime\\Client2\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    ".tooling\\0336-runtime\\Client3\\mods\\darkgrey_rpg-0.3.3.6.jar"
+  ]
+}

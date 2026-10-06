@@ -9,7 +9,7 @@ public sealed class ActorValidatorTests
     [TestMethod]
     public void ValidNewActorIdHasNoErrors()
     {
-        var issues = ActorValidator.ValidateId("teacher_npc-2", ActorIdPolicy.NewResource);
+        var issues = ActorValidator.ValidateId("ST-2345-6789-ABCD-EFGH~actor~teacher_npc", ActorIdPolicy.NewResource);
 
         Assert.IsFalse(issues.Any(issue => issue.Severity == ValidationSeverity.Error));
     }
@@ -30,12 +30,12 @@ public sealed class ActorValidatorTests
     }
 
     [TestMethod]
-    public void LegacyDotIdRemainsReadableWithWarning()
+    public void LegacyDotIdIsRejectedWithoutCompatibilityFallback()
     {
         var issues = ActorValidator.ValidateId("legacy.actor", ActorIdPolicy.ExistingResource);
 
-        Assert.IsFalse(issues.Any(issue => issue.Severity == ValidationSeverity.Error));
-        Assert.IsTrue(issues.Any(issue => issue.Code == "actor.id.legacy_compatible"));
+        Assert.IsTrue(issues.Any(issue => issue.Severity == ValidationSeverity.Error));
+        Assert.IsFalse(issues.Any(issue => issue.Code == "actor.id.legacy_compatible"));
     }
 
     [TestMethod]

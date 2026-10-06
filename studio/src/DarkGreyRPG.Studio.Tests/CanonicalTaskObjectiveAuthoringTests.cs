@@ -8,6 +8,35 @@ namespace DarkGreyRPG.Studio.Tests;
 [TestClass]
 public sealed class CanonicalTaskObjectiveAuthoringTests
 {
+    [DataTestMethod]
+    [DataRow("")]
+    [DataRow(" \r\n ")]
+    public void ObjectiveDescriptionMayBeEmptyWithoutRelaxingTargetValidation(string description)
+    {
+        var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        node.Properties["description"] = JsonSerializer.SerializeToElement(description);
+        Assert.IsFalse(CanonicalTaskObjectiveSchema.Validate(node).Any(issue => issue.Code == "graph.objective.description.invalid"));
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.Validate(node).Any(issue => issue.Code == "graph.objective.target.invalid"));
+        node.Properties["entity"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~slimes");
+        Assert.IsEmpty(CanonicalTaskObjectiveSchema.Validate(node));
+        Assert.AreEqual(description, node.Properties["description"].GetString());
+    }
+
+    [DataTestMethod]
+    [DataRow("null")]
+    [DataRow("false")]
+    [DataRow("1")]
+    [DataRow("[]")]
+    [DataRow("{}")]
+    public void NonTextObjectiveDescriptionRemainsInvalid(string json)
+    {
+        var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
+        node.Properties["description"] = JsonSerializer.Deserialize<JsonElement>(json);
+        var issue = CanonicalTaskObjectiveSchema.Validate(node).Single(issue => issue.Code == "graph.objective.description.invalid");
+        Assert.AreEqual("objective", issue.NodeId);
+        Assert.AreEqual("properties.description", issue.Field);
+    }
+
     [TestMethod]
     public void EmptyActorInteractionIsAnEditableDraftButNotAnExecutableObjective()
     {
@@ -99,7 +128,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         var session = new GraphEditSession(graph, GraphScope.Task);
         foreach (var (property, value) in new[]
         {
-            ("description", JsonSerializer.SerializeToElement(" ")),
+            ("description", JsonSerializer.SerializeToElement(false)),
             ("required", JsonSerializer.SerializeToElement(0)),
             ("required", JsonSerializer.SerializeToElement(-1)),
             ("required", JsonSerializer.SerializeToElement(1.5)),

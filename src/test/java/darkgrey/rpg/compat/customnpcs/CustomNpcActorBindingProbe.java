@@ -22,30 +22,38 @@ public final class CustomNpcActorBindingProbe {
         EntityCustomNpc firstEntity = allocateNpc(wrapper);
 
         require(CustomNpcActorBinding.isCustomNpc(firstEntity), "CustomNPC+ entity was not recognized");
-        require(CustomNpcActorBinding.getActorId(firstEntity) == null, "New NPC unexpectedly had an Actor binding");
-        CustomNpcActorBinding.bind(firstEntity, "detective");
+        persistedData.put("darkgrey_rpg.actor_id", "legacy:detective");
+        Field id = net.minecraft.entity.Entity.class.getDeclaredField("entityUniqueID");
+        id.setAccessible(true);
+        id.set(firstEntity, java.util.UUID.randomUUID());
+        darkgrey.rpg.identity.NpcIdentitySavedData identities = new darkgrey.rpg.identity.NpcIdentitySavedData();
         require(
-            "detective".equals(persistedData.get(CustomNpcActorBinding.ACTOR_ID_KEY)),
-            "Actor ID was not written through CustomNPC+ stored data");
-        require("detective".equals(CustomNpcActorBinding.getActorId(firstEntity)), "Stored Actor ID was not readable");
+            !darkgrey.rpg.identity.EntityDgrIdentityResolver
+                .resolve(firstEntity, "customnpcs:customnpc", identities, null)
+                .isResolved(),
+            "Legacy CNPC stored identity leaked into current resolution");
+        String actor = "ST-2345-6789-ABCD-EFGH~actor~detective";
+        identities.bind(
+            actor,
+            new darkgrey.rpg.identity.NpcHostIdentity(firstEntity.getUniqueID(), "customnpcs:customnpc", 0));
         require(
-            "Acceptance Detective".equals(CustomNpcActorBinding.getNpcName(firstEntity)),
-            "NPC name was not readable");
-
-        EntityCustomNpc reloadedEntity = allocateNpc(
-            createWrapper(persistedData, clientUpdates, "Acceptance Detective"));
+            actor.equals(
+                darkgrey.rpg.identity.EntityDgrIdentityResolver
+                    .resolve(firstEntity, "customnpcs:customnpc", identities, null)
+                    .getActorId()),
+            "Current external identity did not resolve");
+        identities.unbindHost(firstEntity.getUniqueID());
         require(
-            "detective".equals(CustomNpcActorBinding.getActorId(reloadedEntity)),
-            "Actor binding did not survive CustomNPC+ wrapper recreation");
-        CustomNpcActorBinding.unbind(reloadedEntity);
-        require(
-            !persistedData.containsKey(CustomNpcActorBinding.ACTOR_ID_KEY),
-            "Actor binding was not removed from CustomNPC+ stored data");
-        require(clientUpdates[0] == 2, "Bind and unbind did not request exactly two client updates");
-
-        System.out.println("CUSTOMNPC_ACTOR_BINDING_STORED_DATA=PASS");
-        System.out.println("CUSTOMNPC_ACTOR_BINDING_WRAPPER_RELOAD=PASS");
-        System.out.println("CUSTOMNPC_ACTOR_BINDING_UNBIND=PASS");
+            !darkgrey.rpg.identity.EntityDgrIdentityResolver
+                .resolve(firstEntity, "customnpcs:customnpc", identities, null)
+                .isResolved(),
+            "Unbind resurrected legacy stored identity");
+        require("Acceptance Detective".equals(CustomNpcActorBinding.getNpcName(firstEntity)), "NPC name unavailable");
+        require("legacy:detective".equals(persistedData.get("darkgrey_rpg.actor_id")), "Probe modified legacy data");
+        require(clientUpdates[0] == 0, "Identity operations mutated CNPC client data");
+        System.out.println("CUSTOMNPC_CURRENT_EXTERNAL_IDENTITY=PASS");
+        System.out.println("CUSTOMNPC_LEGACY_IDENTITY_IGNORED=PASS");
+        System.out.println("CUSTOMNPC_UNBIND_NO_LEGACY_RESURRECTION=PASS");
     }
 
     private static EntityCustomNpc allocateNpc(ICustomNpc<?> wrapper) throws Exception {

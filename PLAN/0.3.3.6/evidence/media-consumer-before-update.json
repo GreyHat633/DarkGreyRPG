@@ -1,0 +1,88 @@
+{
+  "schema_version": 2,
+  "identity_format": "story-uid-v1",
+  "resource_kind": "story",
+  "id": "ST-HGM8-UFVY-MHA7-S3Y5",
+  "display_name": "引用者",
+  "graph": {
+    "nodes": [
+      {
+        "id": "story_start",
+        "type": "start",
+        "display_name": "开始",
+        "ports": [
+          {
+            "port_id": "entry",
+            "display_name": "启动条件 1",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "repeat_policy": "once",
+          "triggers": [
+            {
+              "port_id": "entry",
+              "display_name": "启动条件 1",
+              "trigger_type": "enter_region",
+              "trigger_properties": {
+                "dimension": 0,
+                "x": 1000,
+                "y": 4,
+                "z": 0,
+                "radius": 8
+              },
+              "order": 0
+            }
+          ]
+        }
+      },
+      {
+        "id": "story_done",
+        "type": "terminate",
+        "display_name": "终止",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "Completed",
+          "port_id": "finished"
+        }
+      },
+      {
+        "id": "input",
+        "type": "logic_input",
+        "display_name": "逻辑输入",
+        "ports": [
+          {
+            "port_id": "logic_out",
+            "display_name": "逻辑输出",
+            "order": 0,
+            "kind": "logic",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "display_name": "Group input",
+          "port_id": "group_input"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "from_node_id": "story_start",
+        "from_port_id": "entry",
+        "to_node_id": "story_done",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      }
+    ]
+  }
+}

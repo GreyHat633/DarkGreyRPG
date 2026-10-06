@@ -15,7 +15,7 @@ public sealed class GraphResourceRepositoryTests
         {
             var directory = Path.Combine(project.Root, kind.ToString().ToLowerInvariant());
             var repository = new GraphResourceRepository(directory, kind);
-            var id = kind.ToString().ToLowerInvariant() + "_one";
+            var id = kind == GraphResourceKind.Story ? "ST-2345-6789-ABCD-EFGH" : "ST-2345-6789-ABCD-EFGH~" + kind.ToString().ToLowerInvariant() + "~one";
             var source = new GraphDocument([new GraphNode("node", "unknown", "Node")]);
 
             var created = repository.Create(new GraphResourceEnvelope(kind, id, "显示名", source));
@@ -35,26 +35,26 @@ public sealed class GraphResourceRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project, GraphResourceKind.Session);
-        var first = Envelope(GraphResourceKind.Session, "session", "First");
+        var first = Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "First");
         repository.Create(first);
 
         Assert.AreEqual("graph.resource.repository.collision",
             Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Create(first)).Code);
         Assert.AreEqual("graph.resource.repository.not_found",
             Assert.ThrowsExactly<GraphResourceRepositoryException>(
-                () => repository.Replace(Envelope(GraphResourceKind.Session, "missing", "Missing"))).Code);
+                () => repository.Replace(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~missing", "Missing"))).Code);
         Assert.AreEqual("graph.resource.repository.kind.mismatch",
             Assert.ThrowsExactly<GraphResourceRepositoryException>(
-                () => repository.Create(Envelope(GraphResourceKind.Task, "task", "Task"))).Code);
+                () => repository.Create(Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task"))).Code);
         Assert.AreEqual("graph.resource.repository.data.invalid",
             Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Create(
-                new GraphResourceEnvelope(GraphResourceKind.Session, "bad", "Bad", new GraphDocument())
+                new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~bad", "Bad", new GraphDocument())
                 {
-                    SchemaVersion = 2,
+                    SchemaVersion = 1,
                 })).Code);
 
-        repository.Replace(Envelope(GraphResourceKind.Session, "session", "Replaced"));
-        Assert.AreEqual("Replaced", repository.Load("session").DisplayName);
+        repository.Replace(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Replaced"));
+        Assert.AreEqual("Replaced", repository.Load("ST-2345-6789-ABCD-EFGH~session~session").DisplayName);
     }
 
     [TestMethod]
@@ -68,15 +68,20 @@ public sealed class GraphResourceRepositoryTests
                 Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Load(id)).Code);
 
         Directory.CreateDirectory(repository.ResourceDirectory);
-        File.WriteAllText(repository.GetPath("legacy"),
+        File.WriteAllText(repository.GetPath("ST-2345-6789-ABCD-EFG2"),
             "{\"schema_version\":2,\"id\":\"legacy\",\"title\":\"Old\",\"nodes\":[]}");
         Assert.AreEqual("graph.resource.repository.data.invalid",
-            Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Load("legacy")).Code);
+            Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Load("ST-2345-6789-ABCD-EFG2")).Code);
 
-        File.WriteAllText(repository.GetPath("file_id"),
-            GraphResourceEnvelopeSerializer.Serialize(Envelope(GraphResourceKind.Story, "other_id", "Other")));
-        Assert.AreEqual("graph.resource.repository.filename.mismatch",
-            Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Load("file_id")).Code);
+        File.Delete(Path.Combine(repository.ResourceDirectory, "ST-2345-6789-ABCD-EFG2.json"));
+        File.WriteAllText(repository.GetPath("ST-2345-6789-ABCD-EFG3"),
+            GraphResourceEnvelopeSerializer.Serialize(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFG4", "Other")));
+        Assert.AreEqual("graph.resource.repository.path.occupied",
+            Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Load("ST-2345-6789-ABCD-EFG3")).Code);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFG4", repository.Load("ST-2345-6789-ABCD-EFG4").Id);
+        Assert.AreEqual("graph.resource.repository.path.occupied", Assert.ThrowsExactly<GraphResourceRepositoryException>(
+            () => repository.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFG3", "Cannot overwrite"))).Code);
+        Assert.AreEqual("Other", repository.Load("ST-2345-6789-ABCD-EFG4").DisplayName);
     }
 
     [TestMethod]
@@ -84,15 +89,17 @@ public sealed class GraphResourceRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project, GraphResourceKind.Task);
-        Assert.AreEqual("task", repository.GetAvailableId("task"));
-        repository.Create(Envelope(GraphResourceKind.Task, "task", "Task"));
-        Assert.AreEqual("task_2", repository.GetAvailableId("task"));
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~task~task", repository.GetAvailableId("ST-2345-6789-ABCD-EFGH~task~task"));
+        repository.Create(Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task"));
+        var allocated = repository.GetAvailableId("ST-2345-6789-ABCD-EFGH~task~task");
+        Assert.AreNotEqual("ST-2345-6789-ABCD-EFGH~task~task", allocated);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", DarkGreyRPG.Studio.Core.Identity.ResourceAddress.FromKey(allocated).StoryUid.Value);
 
-        repository.Delete("task");
+        repository.Delete("ST-2345-6789-ABCD-EFGH~task~task");
 
-        Assert.IsFalse(File.Exists(repository.GetPath("task")));
+        Assert.IsFalse(File.Exists(repository.GetPath("ST-2345-6789-ABCD-EFGH~task~task")));
         Assert.AreEqual("graph.resource.repository.not_found",
-            Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Delete("task")).Code);
+            Assert.ThrowsExactly<GraphResourceRepositoryException>(() => repository.Delete("ST-2345-6789-ABCD-EFGH~task~task")).Code);
     }
 
     [TestMethod]
@@ -100,8 +107,8 @@ public sealed class GraphResourceRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project, GraphResourceKind.Session);
-        repository.Create(Envelope(GraphResourceKind.Session, "session", "Original"));
-        var path = repository.GetPath("session");
+        repository.Create(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Original"));
+        var path = repository.GetPath("ST-2345-6789-ABCD-EFGH~session~session");
         var before = File.ReadAllText(path);
         var failing = new GraphResourceRepository(
             repository.ResourceDirectory,
@@ -109,7 +116,7 @@ public sealed class GraphResourceRepositoryTests
             new ThrowingWriter());
 
         var exception = Assert.ThrowsExactly<GraphResourceRepositoryException>(
-            () => failing.Replace(Envelope(GraphResourceKind.Session, "session", "Changed")));
+            () => failing.Replace(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Changed")));
 
         Assert.AreEqual("graph.resource.repository.write.failed", exception.Code);
         Assert.AreEqual(before, File.ReadAllText(path));

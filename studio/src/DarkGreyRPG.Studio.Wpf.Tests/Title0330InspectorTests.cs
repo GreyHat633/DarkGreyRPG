@@ -14,7 +14,7 @@ public sealed class Title0330InspectorTests
         var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "title", "title");
         Assert.IsTrue(node.Properties["wait_for_completion"].GetBoolean());
         node.Properties.Remove("wait_for_completion");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.IsTrue(inspector.TitleWaitForCompletion);
         inspector.TitleWaitForCompletion = false;
@@ -28,7 +28,7 @@ public sealed class Title0330InspectorTests
     {
         Assert.IsNull(GraphNodeDefinitionRegistry.Get(GraphScope.Session, "title"));
         var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "title", "title");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.IsTrue(inspector.IsTitle);
         inspector.TitleMain = "第一章";

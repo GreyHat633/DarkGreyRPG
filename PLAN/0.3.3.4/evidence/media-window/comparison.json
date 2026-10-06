@@ -1,0 +1,27 @@
+{
+  "baseline": {
+    "files_ms": {
+      "media/5e55cb812a8abec3595ac8e7082ca93d3a40589dd5b4be34d240ed9501c16a2b.png:1": 24354.292,
+      "media/9db6c720f8b9d0bd353621779b043568506dfb61c1a418b445474a82fca86869.ogg:2": 1549.0,
+      "media/a7299e7c1afc991636b79d99e1a76cda0bfc22afb524152675d6fc0c81aa9fbb.png:3": 24347.75,
+      "media/aed9039ca4f60a06bed0306d95edc95256fddc82c73d1d42c41e5e499980377e.png:4": 24349.662,
+      "media/e54c45fe79cf829b97026cb64be1654f521e71af61c705057cfd71d6282803e6.png:5": 24513.263
+    },
+    "package_ms": 99121.3858,
+    "requests": 394,
+    "retries": 0
+  },
+  "window": {
+    "files_ms": {
+      "media/5e55cb812a8abec3595ac8e7082ca93d3a40589dd5b4be34d240ed9501c16a2b.png:1": 3537.887,
+      "media/9db6c720f8b9d0bd353621779b043568506dfb61c1a418b445474a82fca86869.ogg:2": 499.109,
+      "media/a7299e7c1afc991636b79d99e1a76cda0bfc22afb524152675d6fc0c81aa9fbb.png:3": 3648.383,
+      "media/aed9039ca4f60a06bed0306d95edc95256fddc82c73d1d42c41e5e499980377e.png:4": 3532.566,
+      "media/e54c45fe79cf829b97026cb64be1654f521e71af61c705057cfd71d6282803e6.png:5": 3465.025
+    },
+    "package_ms": 14692.5373,
+    "requests": 394,
+    "retries": 0
+  },
+  "reduction_percent": 85.17722771789576
+}

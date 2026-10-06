@@ -17,7 +17,7 @@ import net.minecraft.world.storage.MapStorage;
 public final class NpcIdentitySavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_npc_identities";
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private long revision;
 
     public synchronized long getRevision() {
@@ -111,11 +111,12 @@ public final class NpcIdentitySavedData extends WorldSavedData {
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
         if (root == null) throw new IllegalArgumentException("NPC identity NBT is required.");
-        requireKeys(root, set("schema_version", "bindings"), "NPC identity root");
+        ResourceAddressNbt.requireFormat(root);
+        requireKeys(root, set("schema_version", "identity_format", "bindings"), "NPC identity root");
         if (!root.hasKey("schema_version", 3) || root.getInteger("schema_version") != SCHEMA_VERSION)
             throw new IllegalArgumentException("Unsupported NPC identity schema_version.");
         if (!root.hasKey("bindings", 9)) throw new IllegalArgumentException("NPC identity bindings must be a list.");
-        NBTTagList values = root.getTagList("bindings", 10);
+        NBTTagList values = ResourceAddressNbt.compounds(root, "bindings");
         List<NpcIdentityRegistry.Binding> decoded = new ArrayList<NpcIdentityRegistry.Binding>();
         for (int index = 0; index < values.tagCount(); index++) {
             NBTTagCompound value = values.getCompoundTagAt(index);
@@ -123,7 +124,7 @@ public final class NpcIdentitySavedData extends WorldSavedData {
                 value,
                 set("npc_id", "entity_uuid", "entity_type", "last_dimension", "compatibility_key"),
                 "NPC identity binding");
-            requireType(value, "npc_id", 8);
+            requireType(value, "npc_id", 10);
             requireType(value, "entity_uuid", 8);
             requireType(value, "entity_type", 8);
             requireType(value, "last_dimension", 3);
@@ -138,7 +139,7 @@ public final class NpcIdentitySavedData extends WorldSavedData {
             String compatibility = value.hasKey("compatibility_key") ? value.getString("compatibility_key") : null;
             decoded.add(
                 new NpcIdentityRegistry.Binding(
-                    value.getString("npc_id"),
+                    ResourceAddressNbt.read(value, "npc_id", ResourceAddress.Kind.ACTOR),
                     new NpcHostIdentity(
                         uuid,
                         value.getString("entity_type"),
@@ -155,11 +156,12 @@ public final class NpcIdentitySavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         for (String key : new HashSet<String>(root.func_150296_c())) root.removeTag(key);
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         NBTTagList values = new NBTTagList();
         for (NpcIdentityRegistry.Binding binding : registry.bindings()) {
             NpcHostIdentity host = binding.getHost();
             NBTTagCompound value = new NBTTagCompound();
-            value.setString("npc_id", binding.getNpcId());
+            value.setTag("npc_id", ResourceAddressNbt.write(binding.getNpcId(), ResourceAddress.Kind.ACTOR));
             value.setString(
                 "entity_uuid",
                 host.getEntityUuid()

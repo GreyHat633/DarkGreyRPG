@@ -1,0 +1,56 @@
+{"type":"uid","input":"ST-2345-6789-ABCD-EFGH","valid":true}
+{"type":"uid","input":"ST-JKLM-NPQR-STUV-WXYZ","valid":true}
+{"type":"uid","input":"ST-2222-2222-2222-2222","valid":true}
+{"type":"uid","input":"ST-ZZZZ-ZZZZ-ZZZZ-ZZZZ","valid":true}
+{"type":"uid","input":"ST-0000-2345-6789-ABCD","valid":false}
+{"type":"uid","input":"ST-1111-2345-6789-ABCD","valid":false}
+{"type":"uid","input":"ST-IIII-2345-6789-ABCD","valid":false}
+{"type":"uid","input":"ST-OOOO-2345-6789-ABCD","valid":false}
+{"type":"uid","input":"st-2345-6789-ABCD-EFGH","valid":false}
+{"type":"uid","input":"ST-2345-6789-ABCD-EFGH ","valid":false}
+{"type":"uid","input":" ST-2345-6789-ABCD-EFGH","valid":false}
+{"type":"uid","input":"st-2345-6789-abcd-efgh","valid":false}
+{"type":"uid","input":"ST-2345-6789-ABCD-EFG","valid":false}
+{"type":"uid","input":"ST-2345-6789-ABCD-EFGH-X","valid":false}
+{"type":"uid","input":"ST-23456789-ABCD-EFGH","valid":false}
+{"type":"uid","input":"Author:story","valid":false}
+{"type":"uid","input":"","valid":false}
+{"type":"uid","input":"ＳＴ-2345-6789-ABCD-EFGH","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/actor/r-r17.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"item\",\"local_id\":\"r17\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"item\",\"local_id\":\"r17\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/item/r-r17.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"item_group\",\"local_id\":\"r17\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"item_group\",\"local_id\":\"r17\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/item_group/r-r17.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"session\",\"local_id\":\"r17\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"session\",\"local_id\":\"r17\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/session/r-r17.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"task\",\"local_id\":\"r17\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"task\",\"local_id\":\"r17\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/task/r-r17.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"con\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"con\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/actor/r-con.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"a\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"a\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/actor/r-a.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/actor/r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r_2\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r_2\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/actor/r-r_2.json"}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"A\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r.a\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r-a\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"1a\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"../x\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"a/b\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"a\\\\b\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"a:b\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"角色\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17 \"}","valid":false}
+{"type":"address","input":"\"Author:actor\"","valid":false}
+{"type":"address","input":"null","valid":false}
+{"type":"address","input":"{}","valid":false}
+{"type":"address","input":"[]","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":17}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":null}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"Actor\",\"local_id\":\"r17\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"story\",\"local_id\":\"r17\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\",\"namespace\":\"a\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\",\"local_id\":\"r18\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"Author\",\"kind\":\"actor\",\"local_id\":\"r17\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"local_id\":\"r17\"}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\"} {}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\",}","valid":false}
+{"type":"address","input":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\"","valid":false}
+{"type":"address","input":"{'story_uid':'ST-2345-6789-ABCD-EFGH','kind':'actor','local_id':'r17'}","valid":false}
+{"type":"address","input":"{\"local_id\":\"r17\",\"kind\":\"actor\",\"story_uid\":\"ST-2345-6789-ABCD-EFGH\"}","valid":true,"canonical":"{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"actor\",\"local_id\":\"r17\"}","path":"stories/ST-2345-6789-ABCD-EFGH/resources/actor/r-r17.json"}

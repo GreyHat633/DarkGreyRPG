@@ -31,13 +31,16 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-import darkgrey.rpg.identity.DgrResourceId;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressJson;
+import darkgrey.rpg.identity.StoryUid;
 
 /** Strict, read-only loader for the schema-version-1 canonical graph roots. */
 public final class CanonicalGraphResourceLoader {
 
     private static final Set<String> ROOT = set(
         "schema_version",
+        "identity_format",
         "resource_kind",
         "id",
         "display_name",
@@ -204,29 +207,46 @@ public final class CanonicalGraphResourceLoader {
         }
         exact(root, ROOT, "graph.resource.root");
         int version = integer(root, "schema_version", "graph.resource.root");
-        if (version != 1) throw CanonicalGraphResourceException.failure(
+        if (version != CanonicalGraphResource.CURRENT_SCHEMA_VERSION) throw CanonicalGraphResourceException.failure(
             "graph.resource.schema_version.unsupported",
-            "Unsupported canonical graph resource schema_version " + version + "; expected 1.");
+            "Unsupported canonical graph resource schema_version " + version + "; expected 2.");
+        if (!"story-uid-v1".equals(string(root, "identity_format", "graph.resource.root")))
+            throw CanonicalGraphResourceException.failure(
+                "graph.resource.identity_format.unsupported",
+                "Only current Story UID identity format is supported.");
         CanonicalGraphResourceKind kind = CanonicalGraphResourceKind
             .parse(string(root, "resource_kind", "graph.resource.root"));
         if (expectedKind != null && kind != expectedKind) requireKind(kind, expectedKind);
-        String id = string(root, "id", "graph.resource.root");
+        String id;
+        try {
+            if (kind == CanonicalGraphResourceKind.STORY) id = StoryUid.parse(string(root, "id", "graph.resource.root"))
+                .getValue();
+            else {
+                ResourceAddress address = ResourceAddressJson.parse(
+                    root.get("id")
+                        .toString());
+                ResourceAddress.Kind expected = kind == CanonicalGraphResourceKind.SESSION
+                    ? ResourceAddress.Kind.SESSION
+                    : ResourceAddress.Kind.TASK;
+                if (address.getKind() != expected) throw new IllegalArgumentException("Graph address kind mismatch.");
+                id = address.toKey();
+            }
+        } catch (IOException | IllegalArgumentException exception) {
+            throw new CanonicalGraphResourceException(
+                "graph.resource.identity.invalid",
+                "Graph requires a current Story UID or matching resource address.",
+                exception);
+        }
         String displayName = string(root, "display_name", "graph.resource.root");
         if (id.trim()
             .isEmpty())
             throw CanonicalGraphResourceException
                 .failure("graph.resource.id.required", "Canonical graph resource id cannot be blank.");
-        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalGraphResourceException
-            .failure("graph.resource.id.invalid", "Canonical graph resource id is invalid: " + id);
         if (displayName.trim()
             .isEmpty())
             throw CanonicalGraphResourceException.failure(
                 "graph.resource.display_name.required",
                 "Canonical graph resource display_name cannot be blank.");
-        if (!DgrResourceId.isFullId(id) && !fileName.equals(id + ".json"))
-            throw CanonicalGraphResourceException.failure(
-                "graph.resource.filename.mismatch",
-                "Canonical graph resource filename must equal id + '.json': " + fileName);
         if (root.has("tags")) {
             for (JsonElement tag : array(root, "tags", "graph.resource")) {
                 if (!tag.isJsonPrimitive() || !tag.getAsJsonPrimitive()
@@ -368,6 +388,7 @@ public final class CanonicalGraphResourceLoader {
             ports.add(port);
         }
         JsonObject propertyObject = object(object, "properties", "graph.node");
+        GraphResourceAddressCodec.decode(propertyObject, type, scope);
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
         for (Map.Entry<String, JsonElement> entry : propertyObject.entrySet())
             properties.put(entry.getKey(), copy(entry.getValue()));
@@ -406,15 +427,52 @@ public final class CanonicalGraphResourceLoader {
         throws CanonicalGraphResourceException {
         String required = kind == CanonicalGraphResourceKind.TASK ? null : "start";
         int count = 0;
-        int settle = 0;
+        Set<String> outputOrders = new HashSet<String>();
+        Set<String> outputIds = new HashSet<String>();
+        for (CanonicalGraphNode node : nodes) {
+            String type = node.getType();
+            if (!Arrays.asList("terminate", "end", "settle", "logic_output")
+                .contains(type)) continue;
+            JsonElement identity = node.getProperties()
+                .get("port_id");
+            if (identity == null || !identity.isJsonPrimitive()
+                || !identity.getAsJsonPrimitive()
+                    .isString()
+                || identity.getAsString()
+                    .trim()
+                    .isEmpty())
+                throw CanonicalGraphResourceException
+                    .failure("graph.output.port_id.required", "Stable public output identity required.");
+            if (!outputIds.add(identity.getAsString())) throw CanonicalGraphResourceException
+                .failure("graph.output.port_id.duplicate", "Duplicate public output identity.");
+            JsonElement name = node.getProperties()
+                .get("display_name");
+            if (name == null || !name.isJsonPrimitive()
+                || !name.getAsJsonPrimitive()
+                    .isString()
+                || name.getAsString()
+                    .trim()
+                    .isEmpty())
+                throw CanonicalGraphResourceException
+                    .failure("graph.output.name.required", "Public output display name required.");
+            JsonElement order = node.getProperties()
+                .get("display_order");
+            if (order == null || !order.isJsonPrimitive()
+                || !order.getAsJsonPrimitive()
+                    .isNumber()
+                || order.getAsDouble() != order.getAsInt()
+                || order.getAsInt() < 0)
+                throw CanonicalGraphResourceException
+                    .failure("graph.output.order.required", "Explicit public output order required.");
+            if (!outputOrders.add(("logic_output".equals(type) ? "logic:" : "flow:") + order.getAsInt()))
+                throw CanonicalGraphResourceException
+                    .failure("graph.output.order.duplicate", "Public output order must be unique within its kind.");
+        }
         for (CanonicalGraphNode node : nodes) {
             if (required != null && required.equals(node.getType())) count++;
-            if ("settle".equals(node.getType())) settle++;
         }
         if (required != null && count != 1) throw CanonicalGraphResourceException
             .failure("graph.node.required.unique", "Scope requires exactly one '" + required + "' node.");
-        if (kind == CanonicalGraphResourceKind.TASK && settle != 1) throw CanonicalGraphResourceException
-            .failure("graph.node.required.unique", "Task scope requires exactly one 'settle' node.");
     }
 
     private static void requireNoLogicCycles(Map<String, List<String>> adjacency)

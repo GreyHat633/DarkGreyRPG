@@ -1,0 +1,392 @@
+[
+  {
+    "Name": "文件(_F)",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "编辑(_E)",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "视图(_V)",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "项目(_P)",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "帮助(_H)",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "已恢复上次项目，共 0 个 Actor。",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "输出",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "问题",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "调试器",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "Minecraft",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "新建故事",
+    "Id": "",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "项目首页",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "引用故事包",
+    "Id": "",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "引用故事包区域",
+    "Id": "",
+    "Type": "ControlType.List"
+  },
+  {
+    "Name": "搜索故事",
+    "Id": "StorySearchBox",
+    "Type": "ControlType.Edit"
+  },
+  {
+    "Name": "故事导航列表",
+    "Id": "StoryList",
+    "Type": "ControlType.List"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "第二章",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:beta",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "新格式",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "第一章",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:alpha",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "新格式",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Id": "",
+    "Type": "ControlType.ListItem"
+  },
+  {
+    "Name": "独立故事",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:single",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "新格式",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "进入选中故事",
+    "Id": "",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "进入故事",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "项目故事图谱",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "3 个故事 · 1 条连接",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "图编辑器缩放到百分之百",
+    "Id": "",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "100%",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "适应全部图节点",
+    "Id": "",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "适应",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "重置图视图",
+    "Id": "",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "重置",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "剪断连线",
+    "Id": "ScissorsButton",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "剪刀",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "组合",
+    "Id": "CombineSelection",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "组合",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "故事「第一章」",
+    "Id": "HeaderTitle",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:alpha 输入端口 entry (Logic)",
+    "Id": "CanonicalGraphPort_Live:alpha_entry",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "entry",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:alpha 输出端口 exit (Logic)",
+    "Id": "CanonicalGraphPort_Live:alpha_exit",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "exit",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "故事「第二章」",
+    "Id": "HeaderTitle",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:beta 输入端口 entry (Logic)",
+    "Id": "CanonicalGraphPort_Live:beta_entry",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "entry",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:beta 输出端口 exit (Logic)",
+    "Id": "CanonicalGraphPort_Live:beta_exit",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "exit",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "故事「独立故事」",
+    "Id": "HeaderTitle",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:single 输入端口 entry (Logic)",
+    "Id": "CanonicalGraphPort_Live:single_entry",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "entry",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:single 输出端口 exit (Logic)",
+    "Id": "CanonicalGraphPort_Live:single_exit",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "exit",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "介绍说明",
+    "Id": "HeaderSite",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "介绍说明",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "故事详情",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "选中故事完整概览",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "Live:beta",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "",
+    "Id": "",
+    "Type": "ControlType.List"
+  },
+  {
+    "Name": "角色",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "角色",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "物品",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "物品",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "会话",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "会话",
+    "Id": "",
+    "Type": "ControlType.Text"
+  },
+  {
+    "Name": "任务",
+    "Id": "HeaderToggle",
+    "Type": "ControlType.Button"
+  },
+  {
+    "Name": "任务",
+    "Id": "",
+    "Type": "ControlType.Text"
+  }
+]

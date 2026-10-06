@@ -13,11 +13,14 @@ import net.minecraft.world.WorldSavedData;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.storage.MapStorage;
 
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
+
 /** Overworld-owned persistence for server-established Item ID and Group bindings. */
 public final class ItemIdentitySavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_item_identities";
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private ItemIdentityRegistry registry = new ItemIdentityRegistry();
     private long revision;
 
@@ -142,8 +145,8 @@ public final class ItemIdentitySavedData extends WorldSavedData {
     public synchronized void readFromNBT(NBTTagCompound root) {
         if (root == null) throw new IllegalArgumentException("Item identity root is required.");
         Set<String> rootKeys = new HashSet<String>(root.func_150296_c());
-        if (!rootKeys.equals(set("schema_version", "items", "groups"))
-            && !rootKeys.equals(set("schema_version", "revision", "items", "groups")))
+        ResourceAddressNbt.requireFormat(root);
+        if (!rootKeys.equals(set("schema_version", "identity_format", "revision", "items", "groups")))
             throw new IllegalArgumentException("Item identity root has unknown or missing keys.");
         requireType(root, "schema_version", 3);
         if (root.getInteger("schema_version") != SCHEMA_VERSION)
@@ -154,31 +157,33 @@ public final class ItemIdentitySavedData extends WorldSavedData {
         for (int index = 0; index < items.tagCount(); index++) {
             NBTTagCompound value = items.getCompoundTagAt(index);
             requireKeys(value, set("item_id", "definition"), "Item identity binding");
-            requireType(value, "item_id", 8);
+            requireType(value, "item_id", 10);
             requireType(value, "definition", 10);
             itemValues.add(
                 new ItemIdentityRegistry.ItemBinding(
-                    value.getString("item_id"),
+                    ResourceAddressNbt.read(value, "item_id", ResourceAddress.Kind.ITEM),
                     decodeDefinition(value.getCompoundTag("definition"))));
         }
         List<ItemIdentityRegistry.GroupBinding> groupValues = new ArrayList<ItemIdentityRegistry.GroupBinding>();
         for (int index = 0; index < groups.tagCount(); index++) {
             NBTTagCompound value = groups.getCompoundTagAt(index);
             requireKeys(value, set("group_id", "match_mode", "definition"), "Item Group binding");
-            requireType(value, "group_id", 8);
+            requireType(value, "group_id", 10);
             requireType(value, "match_mode", 8);
             requireType(value, "definition", 10);
             groupValues.add(
                 new ItemIdentityRegistry.GroupBinding(
-                    value.getString("group_id"),
+                    ResourceAddressNbt.read(value, "group_id", ResourceAddress.Kind.ITEM_GROUP),
                     new ItemGroupMember(
                         ItemMatchMode.fromName(value.getString("match_mode")),
                         decodeDefinition(value.getCompoundTag("definition")))));
         }
         ItemIdentityRegistry candidate = new ItemIdentityRegistry();
         candidate.replaceAll(itemValues, groupValues);
+        requireType(root, "revision", 4);
+        if (root.getLong("revision") < 0) throw new IllegalArgumentException("Invalid identity revision");
         registry = candidate;
-        revision = root.hasKey("revision", 4) ? root.getLong("revision") : 0L;
+        revision = root.getLong("revision");
     }
 
     @Override
@@ -186,11 +191,12 @@ public final class ItemIdentitySavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         for (String key : new HashSet<String>(root.func_150296_c())) root.removeTag(key);
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         root.setLong("revision", revision);
         NBTTagList items = new NBTTagList();
         for (ItemIdentityRegistry.ItemBinding binding : registry.itemBindings()) {
             NBTTagCompound value = new NBTTagCompound();
-            value.setString("item_id", binding.getItemId());
+            value.setTag("item_id", ResourceAddressNbt.write(binding.getItemId(), ResourceAddress.Kind.ITEM));
             value.setTag("definition", encodeDefinition(binding.getDefinition()));
             items.appendTag(value);
         }
@@ -198,7 +204,7 @@ public final class ItemIdentitySavedData extends WorldSavedData {
         NBTTagList groups = new NBTTagList();
         for (ItemIdentityRegistry.GroupBinding binding : registry.groupBindings()) {
             NBTTagCompound value = new NBTTagCompound();
-            value.setString("group_id", binding.getGroupId());
+            value.setTag("group_id", ResourceAddressNbt.write(binding.getGroupId(), ResourceAddress.Kind.ITEM_GROUP));
             value.setString(
                 "match_mode",
                 binding.getMember()

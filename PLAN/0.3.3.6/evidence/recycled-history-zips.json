@@ -1,0 +1,44 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\release-replacements\\1790873459531\\DarkGreyRPGStudio-0.3.3.5-win-x64.zip",
+    "Bytes": 242344888,
+    "SHA256": "C3D65E8661D4FB7A62E76223C8532970F10B8043D82E24E029C395B14487979C",
+    "Reason": "Historical Studio ZIP in replaced build backup",
+    "Recycled": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\release-replacements\\1790873459531\\PreviousRelease\\DarkGreyRPGStudio-0.3.3.5-win-x64.zip",
+    "Bytes": 233202030,
+    "SHA256": "878B456F2DE93BE65B8FB51A13CCCA4B9B883DA1D1A79C3C346BAFF740499216",
+    "Reason": "Historical Studio ZIP in replaced build backup",
+    "Recycled": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\release-replacements\\latest-1790880701085\\PreviousRelease\\Studio\\DarkGreyRPGStudio-0.3.3.5-win-x64.zip",
+    "Bytes": 242352971,
+    "SHA256": "4CCFFBE10E7E7695DFEAEF90AD32C695059ACD75FB63E14EE5523732ED5978A8",
+    "Reason": "Historical Studio ZIP in replaced build backup",
+    "Recycled": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\release-replacements\\organized-1790876295325\\DarkGreyRPGStudio-0.3.3.5-win-x64.zip",
+    "Bytes": 242352971,
+    "SHA256": "4CCFFBE10E7E7695DFEAEF90AD32C695059ACD75FB63E14EE5523732ED5978A8",
+    "Reason": "Historical Studio ZIP in replaced build backup",
+    "Recycled": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\release-replacements\\organized-1790876295325\\PreviousRelease\\DarkGreyRPGStudio-0.3.3.5-win-x64.zip",
+    "Bytes": 242344888,
+    "SHA256": "C3D65E8661D4FB7A62E76223C8532970F10B8043D82E24E029C395B14487979C",
+    "Reason": "Historical Studio ZIP in replaced build backup",
+    "Recycled": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\empty-resource-fix-20261002\\PreviousRelease\\Studio\\DarkGreyRPGStudio-0.3.3.5-win-x64.zip",
+    "Bytes": 237068364,
+    "SHA256": "0F979623F33CF1430DAC9B975735C235CFEAAC5672BD7690C6089949D538A62E",
+    "Reason": "Historical Studio ZIP in replaced build backup",
+    "Recycled": true
+  }
+]

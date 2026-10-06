@@ -14,12 +14,12 @@ public static class DialogueCapacityProfile
     public static int Safe => Profile.RootElement.GetProperty("safe").GetInt32();
     public sealed record Result(int Used, int Maximum, int Lines, bool Unsupported, bool ManualNewline, bool Dynamic = false)
     {
-        public bool Over => Used > Maximum || Unsupported || ManualNewline;
-        public string Caption => $"容量 {Used} / {Maximum}" + (Dynamic ? " · 含动态估算" : "");
+        public bool Over => Unsupported || ManualNewline;
+        public int Pages => Math.Max(1, (int)Math.Ceiling((double)Lines / Profile.RootElement.GetProperty("rows").GetInt32()));
+        public string Caption => $"预计 {Lines} 行 · {Pages} 页" + (Dynamic ? " · 动态估算" : "");
         public string Warning => ManualNewline ? "单句不支持手动换行，请拆分为多句"
             : Unsupported ? "含标准字体无法测量的字符；请检查游戏显示。"
-            : Used > Maximum ? "超过推荐显示容量；游戏可能分屏显示。建议拆成多句。"
-            : Used >= Maximum * .9 ? "接近推荐显示容量。" : Dynamic ? "动态内容为估算；游戏按实际文本测量并分屏。" : "";
+            : Dynamic ? "按 1280×720、GUI 缩放 2 估算；游戏按实际文本和窗口分页。" : "按 1280×720、GUI 缩放 2 估算；长台词自动分页。";
     }
     public static Result Measure(string text)
     {

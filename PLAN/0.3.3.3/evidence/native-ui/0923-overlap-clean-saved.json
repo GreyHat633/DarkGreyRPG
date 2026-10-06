@@ -1,0 +1,65 @@
+{
+  "nodes": 301,
+  "groups": 299,
+  "lastNode": {
+    "id": "node_8af0253f1e924e009bbd89f9df12c9b2",
+    "type": "line",
+    "display_name": "Perf 299",
+    "ports": [
+      {
+        "port_id": "flow_in",
+        "display_name": "流程输入",
+        "order": 0,
+        "kind": "flow",
+        "direction": "input"
+      },
+      {
+        "port_id": "flow_out",
+        "display_name": "流程输出",
+        "order": 1,
+        "kind": "flow",
+        "direction": "output"
+      }
+    ],
+    "properties": {
+      "pages": [
+        {
+          "page_id": "page_a34a17bacfc741089825fa0e8224395b",
+          "text": "性能导航 299",
+          "voice_volume": 1,
+          "text_speed": 30,
+          "custom_text_speed": false
+        }
+      ],
+      "speaker_actor_id": "Native0332:profile_actor"
+    }
+  },
+  "frames": [
+    {
+      "id": "group_299",
+      "title": "Group 299",
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 50,
+      "members": [
+        "perf_299"
+      ],
+      "groups": [],
+      "is_valid": true
+    },
+    {
+      "id": "026fe004019a42be81eeb17f20fbf3ab",
+      "title": "Group 299",
+      "x": 116,
+      "y": 50,
+      "width": 80,
+      "height": 50,
+      "members": [
+        "node_8af0253f1e924e009bbd89f9df12c9b2"
+      ],
+      "groups": [],
+      "is_valid": true
+    }
+  ]
+}

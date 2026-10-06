@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="6e23c879-b713-4440-ba76-1024dc75a013" name="GreyHat@LAPTOP-F7PUVUPO 2026-09-24 15:32:09" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-24T15:32:09.2530610+08:00" queuing="2026-09-24T15:32:09.2530613+08:00" start="2026-09-24T15:32:07.7693946+08:00" finish="2026-09-24T15:32:09.2593400+08:00" />
+  <TestSettings name="default" id="8461fd33-8c8b-4540-b3ff-a7ea44acd433">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-09-24_15_32_09" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="2fdd7ece-f2b9-46cb-bbb7-0049c7075488" testId="1ad8e697-3825-876d-89f0-e01c15f1e643" testName="M4BlankAndImportCreationPersistSelectedStoryAndIndependentData" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.6910975" startTime="2026-09-24T15:32:08.4182143+08:00" endTime="2026-09-24T15:32:09.1316582+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2fdd7ece-f2b9-46cb-bbb7-0049c7075488" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="M4BlankAndImportCreationPersistSelectedStoryAndIndependentData" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1ad8e697-3825-876d-89f0-e01c15f1e643">
+      <Execution id="2fdd7ece-f2b9-46cb-bbb7-0049c7075488" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ShellViewModelTests" name="M4BlankAndImportCreationPersistSelectedStoryAndIndependentData" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1ad8e697-3825-876d-89f0-e01c15f1e643" executionId="2fdd7ece-f2b9-46cb-bbb7-0049c7075488" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="1" executed="1" passed="1" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

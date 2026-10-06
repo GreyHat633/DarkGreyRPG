@@ -131,6 +131,7 @@ public sealed class GraphClipboardSnapshot
                 replacement.Properties[key] = JsonSerializer.SerializeToElement(value);
             }
             if (target.Properties.TryGetValue("port_id", out var boundary)) replacement.Properties["port_id"] = boundary.Clone();
+            if (target.Properties.TryGetValue("display_order", out var order)) replacement.Properties["display_order"] = order.Clone();
         }
         var lost = graph.Connections.Where(c => c.FromNodeId == targetId && !mapping.ContainsKey(c.FromPortId)
             || c.ToNodeId == targetId && !mapping.ContainsKey(c.ToPortId)).ToArray();

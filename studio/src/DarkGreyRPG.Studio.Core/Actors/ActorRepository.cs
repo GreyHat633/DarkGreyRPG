@@ -49,7 +49,7 @@ public sealed class ActorRepository
         return ActorDocument.FromResource(ReadResource(path), path);
     }
 
-    public ActorDocument CreateActor() => CreateActor(GetAvailableId("new_actor"), "新角色");
+    public ActorDocument CreateActor() => throw new ActorRepositoryException("A Story-owned resource address is required to create an Actor.");
 
     public ActorDocument CreateActor(string id, string displayName)
     {
@@ -96,7 +96,7 @@ public sealed class ActorRepository
             if (!string.Equals(sourcePath, targetPath, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ActorRepositoryException(
-                    "Changing a saved Actor ID requires the explicit RenameActor operation.");
+                    "Persisted Actor identity is immutable; edit its display name instead.");
             }
         }
 
@@ -130,7 +130,9 @@ public sealed class ActorRepository
     public ActorDocument DuplicateActor(string sourceId)
     {
         var source = LoadActor(sourceId);
-        var duplicateId = GetAvailableId(source.Id + "_copy");
+        var original = ResourceAddress.FromKey(source.Id);
+        var duplicateId = ResourceAddress.Create(original.StoryUid, ResourceKind.Actor,
+            ListActors().Select(actor => ResourceAddress.FromKey(actor.Id)).ToHashSet()).ToKey();
         var sourceResource = source.ToResource();
         var duplicate = sourceResource.Type switch
         {
@@ -148,81 +150,9 @@ public sealed class ActorRepository
 
     public ActorDocument RenameActor(string sourceId, string targetId)
     {
-        ValidateExistingId(sourceId);
-        ThrowIfInvalidNewId(targetId);
-
-        if (string.Equals(sourceId, targetId, StringComparison.Ordinal))
-        {
-            return LoadActor(sourceId);
-        }
-
-        var sourcePath = FindActorPath(sourceId);
-        if (sourcePath is null)
-        {
-            throw new ActorNotFoundException(sourceId);
-        }
-
-        if (ActorExists(targetId))
-        {
-            throw new ActorCollisionException(targetId);
-        }
-
-        var sourceResource = ReadResource(sourcePath);
-        var renamedResource = sourceResource.WithId(targetId);
-        var serialized = ActorSerializer.Serialize(renamedResource, ActorIdPolicy.NewResource);
-        var targetPath = GetActorPath(targetId);
-        var stagingPath = Path.Combine(ActorsDirectory, $".{targetId}.{Guid.NewGuid():N}.rename.tmp");
-        var backupPath = Path.Combine(ActorsDirectory, $".{sourceId}.{Guid.NewGuid():N}.rename.bak");
-        var sourceMoved = false;
-        var targetCreated = false;
-
-        try
-        {
-            _atomicFileWriter.Write(
-                stagingPath,
-                serialized,
-                temporaryPath => ActorSerializer.Deserialize(File.ReadAllText(temporaryPath)));
-
-            File.Move(sourcePath, backupPath);
-            sourceMoved = true;
-            File.Move(stagingPath, targetPath);
-            targetCreated = true;
-            File.Delete(backupPath);
-            sourceMoved = false;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            Exception? rollbackException = null;
-            try
-            {
-                if (targetCreated && File.Exists(targetPath))
-                {
-                    File.Delete(targetPath);
-                }
-
-                if (sourceMoved && File.Exists(backupPath) && !File.Exists(sourcePath))
-                {
-                    File.Move(backupPath, sourcePath);
-                }
-            }
-            catch (Exception rollbackFailure) when (rollbackFailure is IOException or UnauthorizedAccessException)
-            {
-                rollbackException = rollbackFailure;
-            }
-
-            var cause = rollbackException is null
-                ? exception
-                : new AggregateException("Actor rename and rollback both failed.", exception, rollbackException);
-            throw new ActorRepositoryException(
-                $"Could not rename Actor '{sourceId}' to '{targetId}'. The original was retained when rollback succeeded.",
-                cause);
-        }
-        finally
-        {
-            TryDelete(stagingPath);
-        }
-
-        return ActorDocument.FromResource(renamedResource, targetPath);
+        if (!string.Equals(sourceId, targetId, StringComparison.Ordinal))
+            throw new ActorRepositoryException("Persisted Actor identity is immutable; edit its display name instead.");
+        return LoadActor(sourceId);
     }
 
     public void DeleteActor(string id)
@@ -252,16 +182,9 @@ public sealed class ActorRepository
             return baseId;
         }
 
-        for (var suffix = 2; suffix < int.MaxValue; suffix++)
-        {
-            var candidate = $"{baseId}_{suffix}";
-            if (!ActorExists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new ActorRepositoryException($"Could not allocate an available Actor ID based on '{baseId}'.");
+        var original = ResourceAddress.FromKey(baseId);
+        return ResourceAddress.Create(original.StoryUid, ResourceKind.Actor,
+            ListActors().Select(actor => ResourceAddress.FromKey(actor.Id)).ToHashSet()).ToKey();
     }
 
     private bool ActorExists(string id) => FindActorPath(id) is not null;
@@ -292,34 +215,32 @@ public sealed class ActorRepository
 
     private string? FindActorPath(string id)
     {
-        if (!DgrResourceId.IsFullId(id))
-        {
-            var legacyPath = Path.Combine(ActorsDirectory, id + ".json");
-            return File.Exists(legacyPath) ? legacyPath : null;
-        }
-        return CanonicalResourceFileSystem.FindUniquePath(
+        var found = CanonicalResourceFileSystem.FindUniquePath(
             ActorsDirectory,
             id,
             path => ReadResource(path).Id,
             (logicalId, paths) => new ActorRepositoryException(
                 $"Actor ID '{logicalId}' is present in multiple files: {string.Join(", ", paths)}."),
             exception => exception is ActorValidationException or ActorDataException);
+        var canonical = CanonicalActorPath(id);
+        if (found is null && File.Exists(canonical))
+        {
+            var occupant = ReadResource(canonical);
+            if (!string.Equals(occupant.Id, id, StringComparison.Ordinal))
+                throw new ActorRepositoryException($"Actor path '{canonical}' belongs to '{occupant.Id}', not requested resource '{id}'.");
+            return canonical;
+        }
+        return found;
     }
 
     private string CanonicalActorPath(string id)
-        => Path.Combine(ActorsDirectory, DarkGreyRPG.Studio.Core.Identity.DgrResourceId.RelativeJsonPath(id));
+        => Path.Combine(ActorsDirectory, ResourceAddress.FromKey(id).RelativeDefinitionPath);
 
     private static ActorResource ReadResource(string path)
     {
         try
         {
             var resource = ActorSerializer.Deserialize(File.ReadAllText(path));
-            if (!DgrResourceId.IsFullId(resource.Id)
-                && !string.Equals(Path.GetFileName(path), resource.Id + ".json", StringComparison.Ordinal))
-                throw new ActorValidationException([new(
-                    "actor.filename.mismatch",
-                    $"Actor file name must match its ID: expected '{resource.Id}.json', got '{Path.GetFileName(path)}'.",
-                    nameof(ActorResource.Id))]);
             return resource;
         }
         catch (ActorValidationException) { throw; }
@@ -346,20 +267,14 @@ public sealed class ActorRepository
 
     private static void ValidateExistingId(string id)
     {
-        var issues = ActorValidator.ValidateId(id, ActorIdPolicy.ExistingResource);
-        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
-        {
-            throw new ActorValidationException(issues);
-        }
+        if (!ResourceAddress.IsKey(id) || ResourceAddress.FromKey(id).Kind != ResourceKind.Actor)
+            throw new ActorValidationException([new("actor.address.invalid", "A current Actor address is required.")]);
     }
 
     private static void ThrowIfInvalidNewId(string id)
     {
-        var issues = ActorValidator.ValidateId(id, ActorIdPolicy.NewResource);
-        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error))
-        {
-            throw new ActorValidationException(issues);
-        }
+        if (!ResourceAddress.IsKey(id) || ResourceAddress.FromKey(id).Kind != ResourceKind.Actor)
+            throw new ActorValidationException([new("actor.address.invalid", "A current Actor address is required.")]);
     }
 
     private static void TryDelete(string path)

@@ -14,6 +14,7 @@ import net.minecraft.item.ItemStack;
 import com.google.gson.JsonObject;
 
 import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
+import darkgrey.rpg.identity.EntityDgrIdentityResolver;
 import darkgrey.rpg.runtime.ChatMessages;
 
 public final class LivePickService {
@@ -36,7 +37,7 @@ public final class LivePickService {
                 ChatMessages.error(player, "Pick Actor requires a CustomNPC+ NPC.");
                 return true;
             }
-            String actorId = CustomNpcActorBinding.getActorId(target);
+            String actorId = EntityDgrIdentityResolver.resolveActorId(target);
             if (actorId == null) {
                 ChatMessages.error(player, "The selected NPC has no Actor binding.");
                 return true;

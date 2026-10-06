@@ -1,0 +1,14 @@
+{
+  "version": "0.3.2.3",
+  "branch": "codex/0.3.2.3",
+  "baseline": "c5ee16069ee938fd684af621de56597993c48c4e",
+  "artifact": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\dist\\darkgrey_rpg-0.3.2.3.jar",
+  "size": 958840,
+  "sha256": "B6A129AB9B272B2CC8BBD076EA4C9C4F14EF120400397EF8BD8023F76A7981DB",
+  "sourceSha256": "B6A129AB9B272B2CC8BBD076EA4C9C4F14EF120400397EF8BD8023F76A7981DB",
+  "studioUpdated": false,
+  "agentRealMachineVerified": true,
+  "userAccepted": false,
+  "gitCommittedOrPushed": false,
+  "realMachineRuntime": "Minecraft 1.7.10 / Forge 10.13.4.1614 / Java 8 development runtime with same-source dev JAR; final change after last live run only Story chooser gray text literal, covered by final build/source and codec probes."
+}

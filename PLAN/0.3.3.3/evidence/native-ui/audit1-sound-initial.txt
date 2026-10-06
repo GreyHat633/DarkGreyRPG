@@ -1,0 +1,4 @@
+action=snapshot
+vanillaMusic=0.0
+dgrMusic=1.0
+screen=darkgrey.rpg.client.gui.GuiCanonicalSessionScreen

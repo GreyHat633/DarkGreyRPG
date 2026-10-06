@@ -1,0 +1,157 @@
+[
+  {
+    "Path": "actors\\stories\\ST-8SHM-YRLG-FF2K-UV3S\\resources\\actor\\r-r24103d28ca482e251e892ecf5dae9e86.json",
+    "Bytes": 444,
+    "Sha256": "EA6B2C3270C4458C27551B966C809B44F7684118C1A100FB50FEABEE7FE391AC"
+  },
+  {
+    "Path": "actors\\stories\\ST-KD3A-X344-8D79-L772\\resources\\actor\\r-r6a7b460863e06b9464ef831eee05dccf.json",
+    "Bytes": 376,
+    "Sha256": "C3FD4D502DC940323AD1DA10BB2ED4C2BFBB1133A4E79F55BB489862F9D34D39"
+  },
+  {
+    "Path": "actors\\stories\\ST-KD3A-X344-8D79-L772\\resources\\actor\\r-r6d90be0e3d9ae26ce40bccdfb9535fbc.json",
+    "Bytes": 580,
+    "Sha256": "D37B58FBD0E7B2ABD1A2643918F6FCD3E29FCB5C03821BC9D9C1DA6DDB2EC9C5"
+  },
+  {
+    "Path": "item_groups\\stories\\ST-KD3A-X344-8D79-L772\\resources\\item_group\\r-r37d3e90054f21832e1c97b722e17c094.json",
+    "Bytes": 268,
+    "Sha256": "8ED71BF0924D72EA14B596A4CA7BA04BDB23E3999D930470E81E2A62204A5709"
+  },
+  {
+    "Path": "items\\stories\\ST-KD3A-X344-8D79-L772\\resources\\item\\r-radea5b22c3a5aa4b56e15bc7f985f7bd.json",
+    "Bytes": 264,
+    "Sha256": "4112599AED1FBC5A24DD8569166E5FCF739363A8873D7102F651BC55460D08C7"
+  },
+  {
+    "Path": "project.json",
+    "Bytes": 182,
+    "Sha256": "018E5C665D3279CDD99848F8DD8E0EFDBD89AEB1F5DAE19D7EEE89ADB6B3F269"
+  },
+  {
+    "Path": "resources\\canonical\\memberships\\ST-8SHM-YRLG-FF2K-UV3S.json",
+    "Bytes": 749,
+    "Sha256": "45AB3D19DD9F95A838A2EB33F49432F8EB5625D453017155EB7E8A29884FD3C8"
+  },
+  {
+    "Path": "resources\\canonical\\memberships\\ST-KD3A-X344-8D79-L772.json",
+    "Bytes": 1779,
+    "Sha256": "B2E13559E9A138A7123555FFDC1A07713E5824A18E8ACCFFA7DF102A8270BCA1"
+  },
+  {
+    "Path": "resources\\canonical\\memberships\\ST-S2H3-3QDN-35HH-MVTP.json",
+    "Bytes": 897,
+    "Sha256": "27FF7E489E988092AE56EFC0B9484036A5DD492A88F63B6A6EB44F084D9B090A"
+  },
+  {
+    "Path": "resources\\canonical\\sessions\\stories\\ST-8SHM-YRLG-FF2K-UV3S\\resources\\session\\r-r4925ef2b82a301f5589bd508229fcbf2.json",
+    "Bytes": 3005,
+    "Sha256": "CC11FE94B6AC874E4DBA0A9D2E3D85B33202A64AD95BF1DF3F9267129FF4697E"
+  },
+  {
+    "Path": "resources\\canonical\\sessions\\stories\\ST-KD3A-X344-8D79-L772\\resources\\session\\r-r2241f47919468125fa2ee06c1c3f7f9d.json",
+    "Bytes": 9621,
+    "Sha256": "E915B6E6794E319868A9F24811ECB22696245ECB3D1C3902613784F444A48FCE"
+  },
+  {
+    "Path": "resources\\canonical\\sessions\\stories\\ST-KD3A-X344-8D79-L772\\resources\\session\\r-ree96066f33b86d92b7a7cb4a818ab7e7.json",
+    "Bytes": 2734,
+    "Sha256": "7FCFC148344532D5FB509C8FAB006C3E18DF7AF49BDA9667C039B0915A0E4F77"
+  },
+  {
+    "Path": "resources\\canonical\\sessions\\stories\\ST-S2H3-3QDN-35HH-MVTP\\resources\\session\\r-rdd7c4868b53c088abc13805f1c836331.json",
+    "Bytes": 2961,
+    "Sha256": "0F79E9DD52C230E3CE1F5DFED9AD24E548FF6C3D13C1C6B35BE865C5ED3F4CA2"
+  },
+  {
+    "Path": "resources\\canonical\\stories\\ST-8SHM-YRLG-FF2K-UV3S.json",
+    "Bytes": 3113,
+    "Sha256": "BBE8811393D47456079847641BF9F7BDFCF2ADC68D4C1BDB0DEED663B7541743"
+  },
+  {
+    "Path": "resources\\canonical\\stories\\ST-KD3A-X344-8D79-L772.json",
+    "Bytes": 6269,
+    "Sha256": "69773A3E971337059BBC7833F57BEF75EA4436BE08014AB74520C9E703765B3B"
+  },
+  {
+    "Path": "resources\\canonical\\stories\\ST-S2H3-3QDN-35HH-MVTP.json",
+    "Bytes": 3986,
+    "Sha256": "B87A6B33E5F2CBA74B4084F0E5956618EC5837A57240B5E9AA5F02432F99EA90"
+  },
+  {
+    "Path": "resources\\canonical\\story_logic_graph.json",
+    "Bytes": 352,
+    "Sha256": "63350224A5844FB07EF20236EB1C5D3BABBB8712F1507A7E5B7552437A755486"
+  },
+  {
+    "Path": "resources\\canonical\\tasks\\stories\\ST-KD3A-X344-8D79-L772\\resources\\task\\r-r416138775e7566e6073c377dd5d64f01.json",
+    "Bytes": 827,
+    "Sha256": "FFE34769965DA678E8DE6EFCADF04212A820B275413FAD00974859F320823968"
+  },
+  {
+    "Path": "resources\\canonical\\tasks\\stories\\ST-KD3A-X344-8D79-L772\\resources\\task\\r-r46878b26cdc88af1ca4449e31f39bf3e.json",
+    "Bytes": 3866,
+    "Sha256": "D0133D6A09C1EC77694238932918F45B1FDCFCD95ABDBA532198B4C797B3B76E"
+  },
+  {
+    "Path": "resources\\canonical\\tasks\\stories\\ST-KD3A-X344-8D79-L772\\resources\\task\\r-rd0d07038f81ecf7dcd1637729d5d0766.json",
+    "Bytes": 302,
+    "Sha256": "80282F6FD8CF5BCC2B4A2C0B841EAD58AAAAC2455E5D515FC49B519504D4ACC7"
+  },
+  {
+    "Path": "resources\\canonical\\tasks\\stories\\ST-S2H3-3QDN-35HH-MVTP\\resources\\task\\r-r64f81607fb0ce134e00dc76e5f923557.json",
+    "Bytes": 1724,
+    "Sha256": "AD5E156EB2C5396CEAEA8F90AF72CEA59F8CF2EB0EA4738D384EF6E0AAF5999F"
+  },
+  {
+    "Path": "resources\\editor\\story-graph-layout.json",
+    "Bytes": 356,
+    "Sha256": "CF3D260739BEDCF62E1C0576AA962C8B5B7C2A5CB11E66CC8A9F6D7A76241C9C"
+  },
+  {
+    "Path": "resources\\editor\\story-graph-presentation.json",
+    "Bytes": 354,
+    "Sha256": "23699221B20D6BF633EBE1C4D64E025B37330EC2D04BDCCD78149852A800EAD4"
+  },
+  {
+    "Path": "resources\\editor\\story-group-names.json",
+    "Bytes": 248,
+    "Sha256": "EC98E24E4A4E7DE0963A910A71C08A9CFC859B443C27A82B1A54619EAFE35375"
+  },
+  {
+    "Path": "resources\\editor\\studio_layout.json",
+    "Bytes": 5252,
+    "Sha256": "0FE7B003BBA95B2D299FC338B573876A47545C0B7161316CE65306C1039C6E6D"
+  },
+  {
+    "Path": "resources\\media_metadata\\4ade7ad9a10bc81b6f2bd70e1748c23d5d89c16a7274b739aa8f29c401f26ddb.json",
+    "Bytes": 303,
+    "Sha256": "2588335F321407C2A2D60BEB272CB06CB5374DF87FA0154F285C78086EEF63FA"
+  },
+  {
+    "Path": "resources\\media_metadata\\c2de1b71330078f135e38ad90458824c411e20fa92f638cecb76fed99696f3c3.json",
+    "Bytes": 303,
+    "Sha256": "AB565409448B927782BD352009483EDD6FF8637FA35BC7834E08642A1C715F41"
+  },
+  {
+    "Path": "resources\\media_metadata\\cda6ab9ff62246125e9f84c4087f7653180c0d39891d369fc798a9082d37146a.json",
+    "Bytes": 405,
+    "Sha256": "9A694BEFDF480D65F63C32A2BC87170C205B8514D3F1F44C62AAA7CB73BC3388"
+  },
+  {
+    "Path": "resources\\media\\4ade7ad9a10bc81b6f2bd70e1748c23d5d89c16a7274b739aa8f29c401f26ddb.png",
+    "Bytes": 1413735,
+    "Sha256": "4ADE7AD9A10BC81B6F2BD70E1748C23D5D89C16A7274B739AA8F29C401F26DDB"
+  },
+  {
+    "Path": "resources\\media\\c2de1b71330078f135e38ad90458824c411e20fa92f638cecb76fed99696f3c3.png",
+    "Bytes": 2519817,
+    "Sha256": "C2DE1B71330078F135E38AD90458824C411E20FA92F638CECB76FED99696F3C3"
+  },
+  {
+    "Path": "resources\\media\\cda6ab9ff62246125e9f84c4087f7653180c0d39891d369fc798a9082d37146a.png",
+    "Bytes": 378043,
+    "Sha256": "CDA6AB9FF62246125E9F84C4087F7653180C0D39891D369FC798A9082D37146A"
+  }
+]

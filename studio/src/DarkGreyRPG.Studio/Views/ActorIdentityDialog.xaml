@@ -18,7 +18,7 @@
         </Grid.RowDefinitions>
         <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" />
         <TextBlock Grid.Row="1" Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Description}" />
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="3" Visibility="Collapsed">
             <Grid.ColumnDefinitions><ColumnDefinition Width="90" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
             <TextBlock VerticalAlignment="Center" Text="角色 ID" />
             <views:ResourceIdInput Grid.Column="1" />
@@ -40,9 +40,9 @@
         </Grid>
         <TextBlock Grid.Row="8" Margin="90,10,0,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Text="{Binding ValidationText}" />
         <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Width="88" Height="32" Margin="0,0,8,0" IsCancel="True" Content="取消" />
-            <Button Width="88" Height="32" IsDefault="True" IsEnabled="{Binding CanConfirm}"
+            <Button Margin="0,0,8,0" Width="88" Height="32" IsDefault="True" IsEnabled="{Binding CanConfirm}"
                     Style="{DynamicResource AccentButtonStyle}" Click="ConfirmButton_OnClick" Content="{Binding ActionText}" />
+            <Button Width="88" Height="32" IsCancel="True" Content="取消" />
         </StackPanel>
     </Grid>
 </Window>

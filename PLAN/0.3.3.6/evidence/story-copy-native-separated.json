@@ -1,0 +1,27 @@
+[
+  {
+    "Name": "已将“资源所有者”的内容追加到“引用者”，可一次撤销。",
+    "Type": "ControlType.Text",
+    "Rect": "15,999,1890,22"
+  },
+  {
+    "Name": "适应全部图节点",
+    "Type": "ControlType.Button",
+    "Rect": "475,179,57,34"
+  },
+  {
+    "Name": "适应",
+    "Type": "ControlType.Text",
+    "Rect": "486,185,35,22"
+  },
+  {
+    "Name": "图节点 开始 start",
+    "Type": "ControlType.Custom",
+    "Rect": "502,323,288,731"
+  },
+  {
+    "Name": "图节点 开始 node_a55eef35542445a686668f9a129a1fae",
+    "Type": "ControlType.Custom",
+    "Rect": "1023,224,287,730"
+  }
+]

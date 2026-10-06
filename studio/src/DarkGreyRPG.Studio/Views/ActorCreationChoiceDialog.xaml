@@ -38,9 +38,9 @@
             </Border>
         </StackPanel>
         <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Width="88" Height="32" Margin="0,0,8,0" IsCancel="True" Content="取消" />
-            <Button Width="88" Height="32" IsDefault="True" Style="{DynamicResource AccentButtonStyle}"
+            <Button Margin="0,0,8,0" Width="88" Height="32" IsDefault="True" Style="{DynamicResource AccentButtonStyle}"
                     Click="ContinueButton_OnClick" Content="继续" />
+            <Button Width="88" Height="32" IsCancel="True" Content="取消" />
         </StackPanel>
     </Grid>
 </Window>

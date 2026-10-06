@@ -29,6 +29,10 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Opt-in recovery for hosts whose graphics driver cannot present WPF.
+        // Keep this process-local; do not change machine or Windows-user settings.
+        if (Environment.GetEnvironmentVariable("DGR_STUDIO_SOFTWARE_RENDERING") == "1")
+            System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         base.OnStartup(e);
 
         var paths = StudioStoragePaths.Default;

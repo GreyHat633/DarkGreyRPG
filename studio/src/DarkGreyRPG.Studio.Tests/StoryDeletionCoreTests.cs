@@ -1,227 +1,148 @@
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Projects;
-using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
 namespace DarkGreyRPG.Studio.Tests;
 
+// Current equivalents of the retired flat Story deletion/migration contracts.
 [TestClass]
 public sealed class StoryDeletionCoreTests
 {
-    [TestMethod]
-    public void DeleteEmptyStoryRemovesOnlyItsJsonFile()
-    {
-        using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        service.CurrentProject!.Stories.CreateStory("empty", "Empty");
-        service.CurrentProject.Stories.CreateStory("keep", "Keep");
-
-        service.DeleteStory("empty");
-
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "empty.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(directory.Root, "stories", "keep.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(directory.Root, "stories", "uncategorized.json")));
-    }
+    private const string A = "ST-2345-6789-ABCD-EFGH", B = "ST-JKLM-NPQR-STUV-WXYZ", C = "ST-AAAA-BBBB-CCCC-DDDD";
 
     [TestMethod]
-    public void EmptyUncategorizedStoryCanBeDeleted()
+    public void DeleteEmptyStoryPreservesOtherStoryAndDoesNotRecreateDefault()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-
-        Assert.IsTrue(service.CanDeleteStory("uncategorized"));
-
-        service.DeleteStory("uncategorized");
-
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        var service = new CanonicalStoryLifecycleService(store);
+        service.Create(A, "Delete"); service.Create(B, "Keep");
+        var before = File.ReadAllBytes(store.Stories.GetPath(B));
+        service.Delete(A);
+        Assert.IsFalse(File.Exists(store.Stories.GetPath(A)));
+        Assert.IsFalse(File.Exists(store.Memberships.GetPath(A)));
+        new ProjectService().OpenProject(directory.Root);
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(store.Stories.GetPath(B)));
+        Assert.AreEqual(1, store.Stories.List().Count);
         Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "uncategorized.json")));
-
-        service.CloseProject(discardUnsavedChanges: true);
-        service.OpenProject(directory.Root);
-
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "uncategorized.json")));
-        Assert.IsFalse(service.CurrentProject!.Stories.ListStories().Any(story => story.Id == "uncategorized"));
     }
 
     [TestMethod]
-    public void StoryWithOwnedResourcesIsDeletedWithItsHomeResources()
+    public void DeleteLastStoryLeavesEmptyCurrentProjectAfterReopen()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        service.CurrentProject!.Stories.CreateStory("owned", "Owned");
-        var actor = service.CreateActorInStory("owned", "guard", "Guard");
-
-        var blockers = service.GetStoryDeletionBlockers("owned");
-
-        var plan = service.GetStoryDeletionPlan("owned");
-
-        CollectionAssert.AreEqual(new[] { actor.Id }, plan.ActorIds.ToArray());
-        Assert.IsEmpty(plan.Blockers);
-        service.DeleteStory("owned");
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "actors", actor.Id + ".json")));
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "owned.json")));
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        var service = new CanonicalStoryLifecycleService(store);
+        service.Create(A, "Only"); service.Delete(A);
+        new ProjectService().OpenProject(directory.Root);
+        Assert.IsEmpty(store.Stories.List());
     }
 
     [TestMethod]
-    public void StoryTargetedByEnterStoryCannotBeDeleted()
+    public void StoryDeletionIncludesAllOwnedResourceKinds()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        service.CurrentProject!.Stories.CreateStory("target", "Target");
-        service.CurrentProject.Stories.SaveStory(new StoryResource
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        var service = new CanonicalStoryLifecycleService(store); service.Create(A, "Owner");
+        var actors = new CanonicalStoryActorLifecycleService(store);
+        actors.CreateOwned(A, A + "~actor~guard", "Guard");
+        var resources = new CanonicalStoryResourceLifecycleService(store);
+        resources.CreateOwnedSession(A, A + "~session~talk", "Talk");
+        resources.CreateOwnedTask(A, A + "~task~job", "Job");
+        var plan = service.GetDeletionPlan(A);
+        CollectionAssert.AreEqual(new[] { A + "~actor~guard" }, plan.ActorIds.ToArray());
+        CollectionAssert.AreEqual(new[] { A + "~session~talk" }, plan.SessionIds.ToArray());
+        CollectionAssert.AreEqual(new[] { A + "~task~job" }, plan.TaskIds.ToArray());
+        service.Delete(A);
+        foreach (var path in new[] { actors.Actors.GetActorPath(A + "~actor~guard"), store.Sessions.GetPath(A + "~session~talk"), store.Tasks.GetPath(A + "~task~job") })
+            Assert.IsFalse(File.Exists(path));
+    }
+
+    [TestMethod]
+    public void DeletingGroupMemberRemovesOnlyItsEdgesAndLeavesValidGraph()
+    {
+        using var directory = new TestProjectDirectory();
+        var store = Connected(directory.Root);
+        var keep = File.ReadAllBytes(store.Stories.GetPath(C));
+        new CanonicalStoryLifecycleService(store).Delete(B);
+        var edge = store.StoryLogicGraph.Load().Connections.Single();
+        Assert.AreEqual(A, edge.SourceStoryId); Assert.AreEqual(C, edge.TargetStoryId);
+        CollectionAssert.AreEqual(keep, File.ReadAllBytes(store.Stories.GetPath(C)));
+        new ProjectService().OpenProject(directory.Root);
+    }
+
+    [TestMethod]
+    public void FailedGroupMemberDeletionRestoresRootsAndEdges()
+    {
+        using var directory = new TestProjectDirectory();
+        var store = Connected(directory.Root);
+        var paths = new[] { store.Stories.GetPath(B), store.Memberships.GetPath(B), store.StoryLogicGraph.Path };
+        var bytes = paths.Select(File.ReadAllBytes).ToArray();
+        var calls = 0;
+        var service = new CanonicalStoryLifecycleService(store, deleteFile: path =>
         {
-            Id = "source",
-            DisplayName = "Source",
-            Title = "Source",
-            FlowRef = "source",
-            Entry = "start",
-            Nodes =
-            [
-                new() { Id = "start", Type = "StoryStart" },
-                new()
-                {
-                    Id = "enter",
-                    Type = "EnterStory",
-                    Properties = new(StringComparer.Ordinal)
-                    {
-                        ["target_story_id"] = JsonSerializer.SerializeToElement("target"),
-                    },
-                },
-            ],
-            Connections = [new() { From = "start", Output = "next", To = "enter" }],
+            if (++calls == 2) throw new IOException("injected delete failure");
+            File.Delete(path);
         });
-
-        var blockers = service.GetStoryDeletionBlockers("target");
-
-        Assert.IsTrue(blockers.Any(blocker => blocker.Contains("source/enter", StringComparison.Ordinal)));
-        Assert.ThrowsExactly<ProjectException>(() => service.DeleteStory("target"));
-        Assert.IsTrue(File.Exists(Path.Combine(directory.Root, "stories", "target.json")));
+        Assert.ThrowsExactly<CanonicalStoryLifecycleException>(() => service.Delete(B));
+        for (var i = 0; i < paths.Length; i++) CollectionAssert.AreEqual(bytes[i], File.ReadAllBytes(paths[i]));
+        Assert.AreEqual(2, store.StoryLogicGraph.Load().Connections.Count);
     }
 
     [TestMethod]
-    public void RepositoryDeleteValidatesIdBeforeResolvingPath()
+    public void RepositoryDeleteRejectsTraversalBeforeResolvingPath()
     {
         using var directory = new TestProjectDirectory();
-        var outside = Path.Combine(directory.Root, "outside.json");
-        File.WriteAllText(outside, "not a story");
-
-        var repository = new StoryRepository(directory.Root);
-
-        Assert.ThrowsExactly<StoryRepositoryException>(() => repository.DeleteStory("../outside"));
-        Assert.IsTrue(File.Exists(outside));
+        var outside = Path.Combine(directory.Root, "outside.json"); File.WriteAllText(outside, "preserve");
+        var service = new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root));
+        Assert.ThrowsExactly<CanonicalStoryLifecycleException>(() => service.Delete("../outside"));
+        Assert.AreEqual("preserve", File.ReadAllText(outside));
     }
 
     [TestMethod]
-    public void OpenRepairsCurrentResourceMembershipToHomeStory()
+    public void LegacyMembershipIsNotAutomaticallyRepairedOrMigrated()
     {
         using var directory = new TestProjectDirectory();
-        File.WriteAllText(Path.Combine(directory.Root, "project.json"),
-            "{\"schema_version\":2,\"id\":\"test_project\",\"display_name\":\"Test Project\"}");
-        var stories = new StoryRepository(directory.Root);
-        stories.SaveStory(StoryResource.CreateUncategorized());
-        stories.CreateStory("chapter", "Chapter");
-        File.WriteAllText(directory.ActorPath("guard"), ActorSerializer.Serialize(new ActorResource
-        {
-            SchemaVersion = ActorResource.CurrentSchemaVersion,
-            Id = "guard",
-            DisplayName = "Guard",
-            HomeStoryId = "chapter",
-        }, ActorIdPolicy.ExistingResource));
-        stories.SaveStory(new StoryResource
-        {
-            Id = "uncategorized", DisplayName = "未分类", Title = "未分类", FlowRef = "uncategorized", Entry = "end",
-            Nodes = [new() { Id = "end", Type = "END" }],
-            OwnedResources = new StoryMembership { Actors = ["guard"] },
-        });
-
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-
-        CollectionAssert.DoesNotContain(service.CurrentProject!.Stories.LoadStory("uncategorized").OwnedResources.Actors, "guard");
-        CollectionAssert.Contains(service.CurrentProject.Stories.LoadStory("chapter").OwnedResources.Actors, "guard");
-        service.CloseProject(discardUnsavedChanges: true);
-        service.OpenProject(directory.Root);
-        CollectionAssert.Contains(service.CurrentProject!.Stories.LoadStory("chapter").OwnedResources.Actors, "guard");
-    }
-
-    [TestMethod]
-    public void LegacyDialogueAndQuestMigrationRecordsUncategorizedOwnership()
-    {
-        using var directory = new TestProjectDirectory();
-        File.WriteAllText(Path.Combine(directory.Root, "project.json"),
-            "{\"schema_version\":2,\"id\":\"test_project\",\"display_name\":\"Test Project\"}");
-        Directory.CreateDirectory(Path.Combine(directory.Root, "dialogues"));
-        Directory.CreateDirectory(Path.Combine(directory.Root, "quests"));
-        File.WriteAllText(Path.Combine(directory.Root, "dialogues", "legacy.json"), """
-            {"schema_version":1,"id":"legacy","title":"Legacy","speakers":[],"entry":"end","nodes":[{"id":"end","type":"end","result":"done"}],"metadata":{"notes":"","tags":[]}}
-            """);
-        File.WriteAllText(Path.Combine(directory.Root, "quests", "legacy.json"), """
-            {"schema_version":1,"id":"legacy","title":"Legacy","description":"Legacy","objectives":[{"id":"kill","type":"kill_entity","description":"Kill","entity":"slime","required":1}],"objective_groups":[{"id":"all","mode":"ALL","objectives":["kill"]}],"metadata":{"notes":"","tags":[]}}
-            """);
-
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-
-        var story = service.CurrentProject!.Stories.LoadStory("uncategorized");
-        CollectionAssert.Contains(story.OwnedResources.Dialogues, "legacy");
-        CollectionAssert.Contains(story.OwnedResources.Quests, "legacy");
-        StringAssert.Contains(File.ReadAllText(Path.Combine(directory.Root, "dialogues", "legacy.json")), "\"home_story_id\"");
-        StringAssert.Contains(File.ReadAllText(Path.Combine(directory.Root, "quests", "legacy.json")), "\"home_story_id\"");
-
-        var plan = service.GetStoryDeletionPlan("uncategorized");
-        CollectionAssert.Contains(plan.DialogueIds.ToArray(), "legacy");
-        CollectionAssert.Contains(plan.QuestIds.ToArray(), "legacy");
-        Assert.IsEmpty(plan.Blockers);
-
-        service.DeleteStory("uncategorized");
-
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "uncategorized.json")));
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "dialogues", "legacy.json")));
-        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "quests", "legacy.json")));
+        var path = Path.Combine(directory.Root, "stories", "uncategorized.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        const string legacy = "{\"schema_version\":2,\"id\":\"uncategorized\",\"owned_resources\":{\"actors\":[\"guard\"]}}";
+        File.WriteAllText(path, legacy);
+        Assert.ThrowsExactly<ProjectException>(() => new ProjectService().OpenProject(directory.Root));
+        Assert.AreEqual(legacy, File.ReadAllText(path));
+        Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "migration.log")));
     }
 
     [TestMethod]
     public void ExternalResourceReferenceBlocksCascadeWithoutChangingFiles()
     {
         using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        service.CurrentProject!.Stories.CreateStory("owned", "Owned");
-        service.CurrentProject.Stories.CreateStory("other", "Other");
-        var actor = service.CreateActorInStory("owned", "guard", "Guard");
-        service.AddActorReference("other", actor.Id);
-        var storyBytes = File.ReadAllBytes(Path.Combine(directory.Root, "stories", "owned.json"));
-        var actorBytes = File.ReadAllBytes(directory.ActorPath(actor.Id));
-
-        var plan = service.GetStoryDeletionPlan("owned");
-
-        Assert.IsFalse(plan.Blockers.Count == 0);
-        Assert.ThrowsExactly<ProjectException>(() => service.DeleteStory("owned"));
-        CollectionAssert.AreEqual(storyBytes, File.ReadAllBytes(Path.Combine(directory.Root, "stories", "owned.json")));
-        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(directory.ActorPath(actor.Id)));
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        var stories = new CanonicalStoryLifecycleService(store); stories.Create(A, "Owner"); stories.Create(B, "Consumer");
+        var actors = new CanonicalStoryActorLifecycleService(store);
+        actors.CreateOwned(A, A + "~actor~guard", "Guard"); actors.AddReference(B, A + "~actor~guard");
+        var path = actors.Actors.GetActorPath(A + "~actor~guard"); var before = File.ReadAllBytes(path);
+        Assert.IsFalse(stories.GetDeletionPlan(A).CanDelete);
+        Assert.ThrowsExactly<CanonicalStoryLifecycleException>(() => stories.Delete(A));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(path));
+        Assert.IsTrue(File.Exists(store.Stories.GetPath(A)));
     }
 
-    [TestMethod]
-    public void UnsavedOwnedResourceBlocksCascadeWithoutChangingFiles()
+    private static CanonicalProjectGraphStore Connected(string root)
     {
-        using var directory = new TestProjectDirectory();
-        var service = new ProjectService();
-        service.OpenProject(directory.Root);
-        service.CurrentProject!.Stories.CreateStory("owned", "Owned");
-        var actor = service.CreateActorInStory("owned", "guard", "Guard");
-        actor.Notes = "unsaved";
-        var storyPath = Path.Combine(directory.Root, "stories", "owned.json");
-        var storyBytes = File.ReadAllBytes(storyPath);
-        var actorBytes = File.ReadAllBytes(directory.ActorPath(actor.Id));
-
-        var plan = service.GetStoryDeletionPlan("owned");
-
-        Assert.IsTrue(plan.Blockers.Any(blocker => blocker.Contains("未保存", StringComparison.Ordinal)));
-        Assert.ThrowsExactly<ProjectException>(() => service.DeleteStory("owned"));
-        CollectionAssert.AreEqual(storyBytes, File.ReadAllBytes(storyPath));
-        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(directory.ActorPath(actor.Id)));
+        var store = new CanonicalProjectGraphStore(root); var stories = new CanonicalStoryLifecycleService(store);
+        foreach (var uid in new[] { A, B, C })
+        {
+            stories.Create(uid, uid);
+            var story = store.Stories.Load(uid);
+            var node = GraphNodeFactory.Create(GraphScope.StoryFlow, uid == A ? "logic_output" : "logic_input", "boundary");
+            node.Properties["port_id"] = JsonSerializer.SerializeToElement("edge");
+            node.Properties["display_name"] = JsonSerializer.SerializeToElement("Edge");
+            var graph = story.Graph!; graph.Nodes.Add(node); story.Graph = graph; store.Stories.Replace(story);
+        }
+        store.StoryLogicGraph.Save([new(A, "edge", B, "edge"), new(A, "edge", C, "edge")]);
+        return store;
     }
 }

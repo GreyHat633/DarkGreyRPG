@@ -1,0 +1,147 @@
+[
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/2/direction",
+    "before": "output",
+    "after": "input"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/2/display_name",
+    "before": "已提交后可选",
+    "after": "条件 · 已提交后显示"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/2/kind",
+    "before": "flow",
+    "after": "logic"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/2/order",
+    "before": 1,
+    "after": 0
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/2/port_id",
+    "before": "option_1",
+    "after": "condition_0"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/3/display_name",
+    "before": "继续第二会话",
+    "after": "已提交后可选"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/3/order",
+    "before": 2,
+    "after": 1
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/3/port_id",
+    "before": "option_2",
+    "after": "option_1"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/4/display_name",
+    "before": "条件 · 已提交后显示",
+    "after": "条件 · 已提交后可选"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/4/order",
+    "before": 0,
+    "after": 1
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/4/port_id",
+    "before": "condition_0",
+    "after": "condition_1"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/5/direction",
+    "before": "input",
+    "after": "output"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/5/display_name",
+    "before": "条件 · 已提交后可选",
+    "after": "继续第二会话"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/5/kind",
+    "before": "logic",
+    "after": "flow"
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/5/order",
+    "before": 1,
+    "after": 2
+  },
+  {
+    "path": "resources/canonical/sessions/x4e617469766530333332/x636f6e766572736174696f6e.json/graph/nodes/4/ports/5/port_id",
+    "before": "condition_1",
+    "after": "option_2"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/display_name",
+    "before": "session_one",
+    "after": "conversation"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/0/display_name",
+    "before": "flow_in",
+    "after": "流程输入"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/1/direction",
+    "before": "output",
+    "after": "input"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/1/display_name",
+    "before": "left",
+    "after": "任务提交结果"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/1/kind",
+    "before": "flow",
+    "after": "logic"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/1/port_id",
+    "before": "left",
+    "after": "gate"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/2/display_name",
+    "before": "right",
+    "after": "left"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/2/order",
+    "before": 1,
+    "after": 0
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/2/port_id",
+    "before": "right",
+    "after": "left"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/3/direction",
+    "before": "input",
+    "after": "output"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/3/display_name",
+    "before": "gate",
+    "after": "right"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/3/kind",
+    "before": "logic",
+    "after": "flow"
+  },
+  {
+    "path": "resources/canonical/stories/x4e617469766530333332/x616363657074616e6365.json/graph/nodes/2/ports/3/port_id",
+    "before": "gate",
+    "after": "right"
+  }
+]

@@ -1,0 +1,8 @@
+action=snapshot
+vanillaMusic=0.5
+dgrMusic=1.0
+vanillaSource=4623ee03-d831-47b5-9edb-46f564821f16;resource=minecraft:music.game;playing=true;gain=0.5
+screen=darkgrey.rpg.client.gui.GuiDialogueSettings
+previewCharacters=20.0
+previewHold=0.5319402
+adjusting=false

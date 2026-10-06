@@ -1,0 +1,111 @@
+{
+  "schema_version": 2,
+  "identity_format": "story-uid-v1",
+  "resource_kind": "task",
+  "id": {
+    "story_uid": "ST-2345-6789-ABCD-EFGH",
+    "kind": "task",
+    "local_id": "drag"
+  },
+  "display_name": "任务排序",
+  "graph": {
+    "nodes": [
+      {
+        "id": "boundary0",
+        "type": "settle",
+        "display_name": "结算",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "结算条件",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "接受",
+          "display_order": 2,
+          "port_id": "dynamic_port_936d594d61e84a4ba865d6b3ddd346aa"
+        }
+      },
+      {
+        "id": "boundary1",
+        "type": "settle",
+        "display_name": "结算",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "结算条件",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "拒绝",
+          "display_order": 0,
+          "port_id": "dynamic_port_df6e578380b34e06babd6d7abea78045"
+        }
+      },
+      {
+        "id": "boundary2",
+        "type": "settle",
+        "display_name": "结算",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "结算条件",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "离开",
+          "display_order": 1,
+          "port_id": "dynamic_port_6f168add263740eca7edb0af61883ccb"
+        }
+      },
+      {
+        "id": "boundary3",
+        "type": "logic_output",
+        "display_name": "逻辑输出",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "逻辑输入",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "可交互",
+          "display_order": 0,
+          "port_id": "dynamic_port_0e969b2a5c854ab0a5bc9d28f51af605"
+        }
+      },
+      {
+        "id": "boundary4",
+        "type": "logic_output",
+        "display_name": "逻辑输出",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "逻辑输入",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "已完成",
+          "display_order": 1,
+          "port_id": "dynamic_port_d40de3781e4545f6a14a78fc9cb1f2df"
+        }
+      }
+    ],
+    "connections": []
+  }
+}

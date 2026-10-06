@@ -1,0 +1,11 @@
+{
+  "source": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\run\\client\\darkgrey_rpg_story_packages\\kill_slimes.dgrs",
+  "source_sha256": "9B0F08C48BD702FE1F6060C52A455790DD7B0151E677EE72101C87852669EABD",
+  "corrected": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\kill_slimes-description-corrected.dgrs",
+  "corrected_sha256": "2D18468E5ED257E0C711741BD1A7B6449AE7071FB4AC8A4F7DDB322DE6AC0D4F",
+  "only_changed_entry": "resources/canonical/tasks/x477265794861745f/x4b696c6c536c696d6573.json",
+  "only_changed_field": "graph.nodes[node_4feb6ff8c4944e078f9914cd808c9f17].properties.description",
+  "AUTHOR_DESCRIPTION_FIXED": "PASS_ISOLATED_PACKAGE",
+  "RUNTIME_TRANSITION": "PENDING",
+  "SOURCE_AUTHORING": "UNAVAILABLE_REQUIRES_SAME_CORRECTION_WHEN_RECOVERED"
+}

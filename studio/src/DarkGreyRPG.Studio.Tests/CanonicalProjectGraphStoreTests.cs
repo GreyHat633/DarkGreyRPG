@@ -57,16 +57,16 @@ public sealed class CanonicalProjectGraphStoreTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story"));
-        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session"));
-        store.Tasks.Create(Envelope(GraphResourceKind.Task, "task"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("story"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH"));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session"));
+        store.Tasks.Create(Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
 
         Assert.IsTrue(store.HasCanonicalData);
-        Assert.AreEqual("story", store.Stories.List().Single().Id);
-        Assert.AreEqual("session", store.Sessions.List().Single().Id);
-        Assert.AreEqual("task", store.Tasks.List().Single().Id);
-        Assert.AreEqual("story", store.Memberships.List().Single().StoryId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", store.Stories.List().Single().Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~session~session", store.Sessions.List().Single().Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~task~task", store.Tasks.List().Single().Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", store.Memberships.List().Single().StoryId);
         Assert.HasCount(1, Directory.EnumerateFiles(store.StoriesDirectory).ToArray());
         Assert.HasCount(1, Directory.EnumerateFiles(store.MembershipsDirectory).ToArray());
     }

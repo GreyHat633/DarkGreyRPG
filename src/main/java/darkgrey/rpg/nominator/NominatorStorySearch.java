@@ -63,7 +63,7 @@ public final class NominatorStorySearch {
             .values()) {
             if (storyId != null && !storyId.trim()
                 .isEmpty() && !storyId.equals(actor.getHomeStoryId())) continue;
-            if (needle.isEmpty() || contains(actor.getId(), needle)
+            if (needle.isEmpty() || contains("collective".equals(actor.getType()) ? "角色组" : "角色", needle)
                 || contains(actor.getDisplayName(), needle)
                 || tagsContain(actor.getTags(), needle)) {
                 result.add(
@@ -87,7 +87,7 @@ public final class NominatorStorySearch {
         for (NominatorCatalog.Actor actor : catalog.getActors()) {
             if (storyId != null && !storyId.trim()
                 .isEmpty() && !storyId.equals(actor.getStoryId())) continue;
-            if (needle.isEmpty() || contains(actor.getId(), needle)
+            if (needle.isEmpty() || contains("collective".equals(actor.getType()) ? "角色组" : "角色", needle)
                 || contains(actor.getDisplayName(), needle)
                 || tagsContain(actor.getTags(), needle))
                 result.add(
@@ -113,7 +113,7 @@ public final class NominatorStorySearch {
         List<ActorChoice> result = new ArrayList<ActorChoice>();
         for (NominatorCatalog.Actor actor : catalog.getActors()) {
             if (!allowed.contains(actor.getId())) continue;
-            if (needle.isEmpty() || contains(actor.getId(), needle)
+            if (needle.isEmpty() || contains("collective".equals(actor.getType()) ? "角色组" : "角色", needle)
                 || contains(actor.getDisplayName(), needle)
                 || tagsContain(actor.getTags(), needle))
                 result.add(
@@ -161,7 +161,7 @@ public final class NominatorStorySearch {
             .values()
             : snapshot.getItems()
                 .values())) {
-            if (needle.isEmpty() || contains(item.getId(), needle)
+            if (needle.isEmpty() || contains(groups ? "物品组" : "物品", needle)
                 || contains(item.getDisplayName(), needle)
                 || tagsContain(item.getTags(), needle))
                 result.add(new ItemChoice(item.getId(), item.getDisplayName(), item.getTags(), groups));
@@ -175,7 +175,7 @@ public final class NominatorStorySearch {
         String needle = normalize(query);
         List<ItemChoice> result = new ArrayList<ItemChoice>();
         for (NominatorCatalog.Item item : groups ? catalog.getItemGroups() : catalog.getItems())
-            if (needle.isEmpty() || contains(item.getId(), needle)
+            if (needle.isEmpty() || contains(groups ? "物品组" : "物品", needle)
                 || contains(item.getDisplayName(), needle)
                 || tagsContain(item.getTags(), needle))
                 result.add(new ItemChoice(item.getId(), item.getDisplayName(), item.getTags(), groups));
@@ -194,7 +194,7 @@ public final class NominatorStorySearch {
         List<ItemChoice> result = new ArrayList<ItemChoice>();
         for (NominatorCatalog.Item item : groups ? catalog.getItemGroups() : catalog.getItems()) {
             if (!allowed.contains(item.getId())) continue;
-            if (needle.isEmpty() || contains(item.getId(), needle)
+            if (needle.isEmpty() || contains(groups ? "物品组" : "物品", needle)
                 || contains(item.getDisplayName(), needle)
                 || tagsContain(item.getTags(), needle))
                 result.add(new ItemChoice(item.getId(), item.getDisplayName(), item.getTags(), groups));

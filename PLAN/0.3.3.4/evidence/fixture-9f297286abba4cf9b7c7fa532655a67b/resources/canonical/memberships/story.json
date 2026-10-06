@@ -1,0 +1,28 @@
+{
+  "schema_version": 3,
+  "story_id": "story",
+  "owned_resources": {
+    "actors": [],
+    "items": [],
+    "item_groups": [],
+    "sessions": [
+      "session_0",
+      "session_1",
+      "session_2"
+    ],
+    "tasks": []
+  },
+  "referenced_resources": {
+    "actors": [],
+    "items": [],
+    "item_groups": [],
+    "sessions": [],
+    "tasks": []
+  },
+  "display_order": {
+    "actors": [],
+    "items": [],
+    "sessions": [],
+    "tasks": []
+  }
+}

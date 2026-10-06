@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -14,23 +14,23 @@ public sealed class M7ProjectGraphViewModelTests
     [TestMethod]
     public void DerivesOnlyValidEnterStoryEdgesAndFiltersIsolatedStoriesWithoutDiagnostics()
     {
-        var main = Story("mystery", "王城迷案",
+        var main = Story("ST-AAAA-BBBB-CCCC-DDDD", "王城迷案",
             Enter("kingdom_exit", "kingdom"), Enter("missing_exit", "missing_story"));
         var kingdom = Story("kingdom", "王国线");
         var isolated = Story("isolated", "孤立支线");
 
-        var graph = new ProjectGraphViewModel([main, kingdom, isolated], "mystery");
+        var graph = new ProjectGraphViewModel([main, kingdom, isolated], "ST-AAAA-BBBB-CCCC-DDDD");
 
         Assert.HasCount(1, graph.Edges);
-        Assert.AreEqual("mystery", graph.Edges[0].SourceStoryId);
+        Assert.AreEqual("ST-AAAA-BBBB-CCCC-DDDD", graph.Edges[0].SourceStoryId);
         Assert.AreEqual("kingdom", graph.Edges[0].TargetStoryId);
-        Assert.IsTrue(graph.Diagnostics.Any(issue => issue.Code == "project_graph.target.missing" && issue.StoryId == "mystery"));
+        Assert.IsTrue(graph.Diagnostics.Any(issue => issue.Code == "project_graph.target.missing" && issue.StoryId == "ST-AAAA-BBBB-CCCC-DDDD"));
         Assert.IsFalse(graph.Diagnostics.Any(issue => issue.Code == "project_graph.story.isolated"));
         Assert.IsTrue(graph.Nodes.Single(node => node.Id == "isolated").IsIsolated);
 
         graph.SearchText = "王国";
         Assert.IsTrue(graph.Nodes.Single(node => node.Id == "kingdom").IsVisible);
-        Assert.IsFalse(graph.Nodes.Single(node => node.Id == "mystery").IsVisible);
+        Assert.IsFalse(graph.Nodes.Single(node => node.Id == "ST-AAAA-BBBB-CCCC-DDDD").IsVisible);
         graph.SearchText = string.Empty;
         graph.SelectedFilter = "孤立";
         Assert.IsTrue(graph.Nodes.Single(node => node.Id == "isolated").IsVisible);
@@ -41,8 +41,8 @@ public sealed class M7ProjectGraphViewModelTests
     public void LayoutPersistsSeparatelyAndOpenRequestTargetsStoryFlow()
     {
         using var directory = new GraphDirectory();
-        var stories = new[] { Story("mystery", "王城迷案", Enter("to_kingdom", "kingdom")), Story("kingdom", "王国线") };
-        var graph = new ProjectGraphViewModel(stories, "mystery", directory.Root);
+        var stories = new[] { Story("ST-AAAA-BBBB-CCCC-DDDD", "王城迷案", Enter("to_kingdom", "kingdom")), Story("kingdom", "王国线") };
+        var graph = new ProjectGraphViewModel(stories, "ST-AAAA-BBBB-CCCC-DDDD", directory.Root);
         string? opened = null;
         graph.OpenStoryRequested += (_, storyId) => opened = storyId;
 
@@ -53,7 +53,7 @@ public sealed class M7ProjectGraphViewModelTests
         var layoutPath = Path.Combine(directory.Root, "resources", "editor", "story-graph-layout.json");
         Assert.IsTrue(File.Exists(layoutPath));
         Assert.IsFalse(File.Exists(Path.Combine(directory.Root, "stories", "kingdom.json")));
-        var restored = new ProjectGraphViewModel(stories, "mystery", directory.Root);
+        var restored = new ProjectGraphViewModel(stories, "ST-AAAA-BBBB-CCCC-DDDD", directory.Root);
         Assert.AreEqual(777, restored.Nodes.Single(node => node.Id == "kingdom").X);
         Assert.AreEqual(333, restored.Nodes.Single(node => node.Id == "kingdom").Y);
     }
@@ -61,8 +61,8 @@ public sealed class M7ProjectGraphViewModelTests
     [TestMethod]
     public void DeletingEnterStoryRemovesDerivedEdgeOnRefresh()
     {
-        var main = Story("mystery", "王城迷案", Enter("to_empire", "empire"));
-        var empire = Story("empire", "帝国线");
+        var main = Story("ST-AAAA-BBBB-CCCC-DDDD", "王城迷案", Enter("to_empire", "ST-2222-3333-4444-5555"));
+        var empire = Story("ST-2222-3333-4444-5555", "帝国线");
         var before = new ProjectGraphViewModel([main, empire]);
         Assert.HasCount(1, before.Edges);
 
@@ -79,10 +79,10 @@ public sealed class M7ProjectGraphViewModelTests
     {
         using var directory = new GraphDirectory();
         var project = new ProjectService().CreateProject(directory.Root, "m7_gate", "M7 Gate");
-        project.Stories.CreateStory("mystery", "王城迷案");
-        project.Stories.CreateStory("empire", "帝国线");
-        var document = project.Stories.LoadStoryDocument("mystery");
-        document.AddNode(Enter("to_empire", "empire"));
+        project.Stories.CreateStory("ST-AAAA-BBBB-CCCC-DDDD", "王城迷案");
+        project.Stories.CreateStory("ST-2222-3333-4444-5555", "帝国线");
+        var document = project.Stories.LoadStoryDocument("ST-AAAA-BBBB-CCCC-DDDD");
+        document.AddNode(Enter("to_empire", "ST-2222-3333-4444-5555"));
         project.Stories.SaveStory(document);
         Assert.HasCount(1, new ProjectGraphViewModel(project.Stories.ListStories()).Edges);
 
@@ -128,13 +128,13 @@ public sealed class M7ProjectGraphViewModelTests
     [TestMethod]
     public void ParallelEnterStoryNodesAggregateWithStableBranchDetailsAndSelfLoopFlag()
     {
-        var source = Story("source", "Source",
-            Enter("z_enter", "target"), Enter("a_enter", "target"), Enter("m_enter", "target"));
+        var source = Story("ST-2345-6789-ABCD-EFGH", "Source",
+            Enter("z_enter", "ST-JKLM-NPQR-STUV-WXYZ"), Enter("a_enter", "ST-JKLM-NPQR-STUV-WXYZ"), Enter("m_enter", "ST-JKLM-NPQR-STUV-WXYZ"));
         source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "conceal", To = "z_enter" });
         source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "accept", To = "z_enter" });
         source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "accept", To = "z_enter" });
         source.Connections.Add(new StoryConnectionResource { From = "branch", Output = "fallback", To = "a_enter" });
-        var target = Story("target", "Target");
+        var target = Story("ST-JKLM-NPQR-STUV-WXYZ", "Target");
 
         var graph = new ProjectGraphViewModel([source, target]);
 
@@ -155,42 +155,42 @@ public sealed class M7ProjectGraphViewModelTests
     [TestMethod]
     public void MissingTargetDiagnosticCarriesPreciseStoryAndEnterStoryNodeIds()
     {
-        var graph = new ProjectGraphViewModel([Story("source", "Source", Enter("enter_missing", "missing"))]);
+        var graph = new ProjectGraphViewModel([Story("ST-2345-6789-ABCD-EFGH", "Source", Enter("enter_missing", "missing"))]);
 
         var issue = graph.Diagnostics.Single(item => item.Code == "project_graph.target.missing");
-        Assert.AreEqual("source", issue.StoryId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", issue.StoryId);
         Assert.AreEqual("enter_missing", issue.NodeId);
-        StringAssert.Contains(issue.Message, "source.enter_missing");
+        StringAssert.Contains(issue.Message, "ST-2345-6789-ABCD-EFGH.enter_missing");
     }
 
     [TestMethod]
     public void ProblemFocusRequestMakesStoryVisibleAndCarriesStableSequence()
     {
-        var graph = new ProjectGraphViewModel([Story("source", "Source"), Story("other", "Other")]);
+        var graph = new ProjectGraphViewModel([Story("ST-2345-6789-ABCD-EFGH", "Source"), Story("other", "Other")]);
         graph.SearchText = "other";
-        Assert.IsFalse(graph.Nodes.Single(node => node.Id == "source").IsVisible);
+        Assert.IsFalse(graph.Nodes.Single(node => node.Id == "ST-2345-6789-ABCD-EFGH").IsVisible);
 
-        Assert.IsTrue(graph.RequestProblemFocus("source"));
+        Assert.IsTrue(graph.RequestProblemFocus("ST-2345-6789-ABCD-EFGH"));
 
-        Assert.AreEqual("source", graph.ProblemFocusRequest?.StoryId);
-        Assert.IsTrue(graph.Nodes.Single(node => node.Id == "source").IsVisible);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", graph.ProblemFocusRequest?.StoryId);
+        Assert.IsTrue(graph.Nodes.Single(node => node.Id == "ST-2345-6789-ABCD-EFGH").IsVisible);
         Assert.IsFalse(graph.RequestProblemFocus("missing"));
     }
 
     [TestMethod]
     public void CanonicalSnapshotWinsSameIdAndAddsCanonicalOnlyDerivedEdges()
     {
-        var legacySource = Story("source", "Legacy Source", Enter("legacy_exit", "legacy_target"));
+        var legacySource = Story("ST-2345-6789-ABCD-EFGH", "Legacy Source", Enter("legacy_exit", "legacy_target"));
         var legacyTarget = Story("legacy_target", "Legacy Target");
         var canonical = new CanonicalProjectStoryGraphSnapshot(
         [
-            new("source", "Canonical Source", true, true, true, true, false, []),
+            new("ST-2345-6789-ABCD-EFGH", "Canonical Source", true, true, true, true, false, []),
             new("canonical_target", "Canonical Target", true, true, true, true, false, []),
         ],
         [
-            new("source", "canonical_target",
+            new("ST-2345-6789-ABCD-EFGH", "canonical_target",
             [
-                new("source", "canonical_target", "canonical_exit",
+                new("ST-2345-6789-ABCD-EFGH", "canonical_target", "canonical_exit",
                     incomingBranchOutputs: ["accepted"]),
             ]),
         ],
@@ -199,11 +199,11 @@ public sealed class M7ProjectGraphViewModelTests
         var graph = new ProjectGraphViewModel([legacySource, legacyTarget], canonical);
 
         CollectionAssert.AreEquivalent(
-            new[] { "source", "canonical_target", "legacy_target" },
+            new[] { "ST-2345-6789-ABCD-EFGH", "canonical_target", "legacy_target" },
             graph.Nodes.Select(node => node.Id).ToArray());
-        Assert.AreEqual("Canonical Source", graph.Nodes.Single(node => node.Id == "source").DisplayName);
+        Assert.AreEqual("Canonical Source", graph.Nodes.Single(node => node.Id == "ST-2345-6789-ABCD-EFGH").DisplayName);
         var edge = graph.Edges.Single();
-        Assert.AreEqual("source", edge.SourceStoryId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", edge.SourceStoryId);
         Assert.AreEqual("canonical_target", edge.TargetStoryId);
         Assert.AreEqual("canonical_exit", edge.Transitions.Single().NodeId);
         CollectionAssert.AreEqual(new[] { "accepted" }, edge.Transitions.Single().IncomingBranchOutputs.ToArray());
@@ -215,10 +215,10 @@ public sealed class M7ProjectGraphViewModelTests
         var issue = new CanonicalProjectStoryGraphDiagnostic(
             "project_graph.enter_story.ambiguous",
             "ambiguous enter_story node",
-            "source",
+            "ST-2345-6789-ABCD-EFGH",
             "shared");
         var canonical = new CanonicalProjectStoryGraphSnapshot(
-            [new("source", "Source", true, true, true, false, true, [issue])],
+            [new("ST-2345-6789-ABCD-EFGH", "Source", true, true, true, false, true, [issue])],
             [],
             [issue]);
 
@@ -234,8 +234,8 @@ public sealed class M7ProjectGraphViewModelTests
     {
         using var directory = new GraphDirectory();
         var store = new CanonicalProjectGraphStore(directory.Root);
-        store.Stories.Create(CanonicalStory("source", "logic_output", "out", "rescued"));
-        store.Stories.Create(CanonicalStory("target", "logic_input", "in", "kingdom_gate"));
+        store.Stories.Create(CanonicalStory("ST-2345-6789-ABCD-EFGH", "logic_output", "out", "rescued"));
+        store.Stories.Create(CanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "logic_input", "in", "kingdom_gate"));
         var graph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
 
         graph.SelectedLogicSource = graph.LogicSources.Single();
@@ -250,6 +250,37 @@ public sealed class M7ProjectGraphViewModelTests
         restored.LogicConnections.Single().RemoveCommand.Execute(null);
         Assert.IsEmpty(restored.LogicConnections);
         Assert.IsEmpty(store.StoryLogicGraph.Load().Connections);
+    }
+
+    [TestMethod]
+    public void DerivedGroupNamesSurviveGraphUndoRedoAndProjectReopen()
+    {
+        using var directory = new GraphDirectory();
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        store.Stories.Create(CanonicalStory("ST-2345-6789-ABCD-EFGH", "logic_output", "out", "rescued"));
+        store.Stories.Create(CanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "logic_input", "in", "gate"));
+        store.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "rescued", "ST-JKLM-NPQR-STUV-WXYZ", "gate", "Logic")]);
+        var graph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var host = graph.CanonicalHost!;
+        Assert.HasCount(1, graph.StoryGroups.Groups);
+        var key = graph.StoryGroups.Groups.Single().Key;
+        var defaultName = graph.StoryGroups.Groups.Single().DisplayName;
+        graph.RenameStoryGroup(key, "王城主线");
+        Assert.AreEqual("王城主线", host.Frames.Single().Title);
+        var edge = host.Graph.Connections.Single();
+        Assert.IsTrue(host.Disconnect(edge));
+        Assert.IsEmpty(graph.StoryGroups.Groups);
+        Assert.IsTrue(host.Undo());
+        Assert.AreEqual("王城主线", graph.StoryGroups.Groups.Single().DisplayName);
+        Assert.IsFalse(host.Connect(new(edge.FromNodeId, edge.FromPortId, false, GraphInterfaceKind.Logic),
+            new(edge.ToNodeId, edge.ToPortId, true, GraphInterfaceKind.Logic)));
+        Assert.AreEqual("王城主线", new ProjectGraphViewModel([], projectDirectory: directory.Root).StoryGroups.Groups.Single().DisplayName);
+        Assert.IsTrue(host.Undo());
+        Assert.AreEqual(defaultName, graph.StoryGroups.Groups.Single().DisplayName);
+        Assert.IsTrue(host.Redo());
+        Assert.AreEqual("王城主线", graph.StoryGroups.Groups.Single().DisplayName);
+        Assert.AreEqual(edge, host.Graph.Connections.Single());
+
     }
 
     private static StoryResource Story(string id, string displayName, params StoryNodeResource[] nodes) => new()

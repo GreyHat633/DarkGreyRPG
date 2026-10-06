@@ -1,0 +1,117 @@
+{
+  "performance": [
+    {
+      "version": "0.3.3.4",
+      "start_ms": 1790787742077,
+      "end_ms": 1790787757094,
+      "frames": 901,
+      "duration_ms": 15017,
+      "gui_cpu_median_ms": 0.7275,
+      "gui_cpu_p95_ms": 1.2144,
+      "draw_interval_median_ms": 16.641,
+      "draw_interval_p95_ms": 18.0844
+    },
+    {
+      "version": "0.3.3.5",
+      "start_ms": 1790788624055,
+      "end_ms": 1790788639076,
+      "frames": 901,
+      "duration_ms": 15021,
+      "gui_cpu_median_ms": 0.7104,
+      "gui_cpu_p95_ms": 1.21,
+      "draw_interval_median_ms": 16.646,
+      "draw_interval_p95_ms": 18.3086
+    }
+  ],
+  "measurement": "CPU time inside the real Session GUI draw method and consecutive draw-start intervals; not GPU FPS; same host, 1280x800 viewport, 11 layers and the same 1026-character dialogue; 15s warm samples",
+  "excluded": "Initial baseline candidate and Merchant-overlay window are excluded; published dist 0.3.3.4 JAR used.",
+  "candidate_repeat": {
+    "action": {
+      "start_ms": 1790789321017,
+      "end_ms": 1790789330548,
+      "rounds": 10,
+      "page_clicks": 20,
+      "target_pid": 37104
+    },
+    "maxima": {
+      "page_cache": 6,
+      "page_bytes": 27660,
+      "page_requests": 1,
+      "carousels": 1,
+      "textures": 0,
+      "decode_pending": 0,
+      "decode_queue": 0,
+      "uploads": 0,
+      "sprites": 0,
+      "scene_pins": 0,
+      "audio_pins": 0
+    },
+    "last": {
+      "time_ms": 1790789330502,
+      "page_cache": 6,
+      "page_bytes": 27660,
+      "page_requests": 0,
+      "carousels": 1,
+      "textures": 0,
+      "decode_pending": 0,
+      "decode_queue": 0,
+      "uploads": 0,
+      "sprites": 0,
+      "scene_pins": 0,
+      "audio_pins": 0,
+      "voice_plays": 1,
+      "music_plays": 0,
+      "scene_frames": 0,
+      "scene_cpu_ns": 0,
+      "dialogue_frames": 0,
+      "dialogue_cpu_ns": 0
+    }
+  },
+  "final_run_maxima": {
+    "page_cache": 6,
+    "page_bytes": 27660,
+    "page_requests": 1,
+    "carousels": 1,
+    "textures": 3,
+    "decode_pending": 2,
+    "decode_queue": 1,
+    "uploads": 1,
+    "sprites": 352,
+    "scene_pins": 2,
+    "audio_pins": 1
+  },
+  "last_sample": {
+    "time_ms": 1790793191885,
+    "page_cache": 0,
+    "page_bytes": 0,
+    "page_requests": 0,
+    "carousels": 0,
+    "textures": 0,
+    "decode_pending": 0,
+    "decode_queue": 0,
+    "uploads": 0,
+    "sprites": 0,
+    "scene_pins": 0,
+    "audio_pins": 0,
+    "voice_plays": 2,
+    "music_plays": 0,
+    "scene_frames": 0,
+    "scene_cpu_ns": 0,
+    "dialogue_frames": 0,
+    "dialogue_cpu_ns": 0
+  },
+  "integrated_transition_run_maxima": {
+    "page_cache": 6,
+    "page_bytes": 32126,
+    "page_requests": 1,
+    "carousels": 2,
+    "textures": 3,
+    "decode_pending": 2,
+    "decode_queue": 1,
+    "uploads": 1,
+    "sprites": 352,
+    "scene_pins": 2,
+    "audio_pins": 1
+  },
+  "long_run_note": "Earlier integrated full transition metrics are retained separately; random_lines output can be 32 strips per input layer; this does not change the source sprite capture budget."
+}

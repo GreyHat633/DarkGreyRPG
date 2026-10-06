@@ -1,0 +1,108 @@
+{
+  "project": "dist\\DarkGreyRPGStudio\\Data\\Projects\\MediaBudget0336",
+  "uids": [
+    "ST-3336-2222-2222-2222",
+    "ST-3336-2222-2222-2223",
+    "ST-3336-2222-2222-2224",
+    "ST-3336-2222-2222-2225",
+    "ST-3336-2222-2222-2226",
+    "ST-3336-2222-2222-2227",
+    "ST-3336-2222-2222-2228",
+    "ST-3336-2222-2222-2229",
+    "ST-3336-2222-2222-222A",
+    "ST-3336-2222-2222-222B",
+    "ST-3336-2222-2222-222C",
+    "ST-3336-2222-2222-222D"
+  ],
+  "media": [
+    "media/441ecb12c0a0fbca39728f08c60830156226af6a5662bd668279a4c5f92e3131.png",
+    "media/f4f5adb538345c04bc82a21db523978e40f456818ea2730599556884f2477a07.png",
+    "media/5e8c1ec3c3eb933361cb87a9a49633f6aace6350e18d0f97fdebf801a42c34b4.png"
+  ],
+  "edges": [
+    {
+      "source_story_id": "ST-3336-2222-2222-2222",
+      "source_port_id": "finished",
+      "target_story_id": "ST-3336-2222-2222-2223",
+      "target_port_id": "from_previous",
+      "interface_kind": "Flow"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2223",
+      "source_port_id": "group_output",
+      "target_story_id": "ST-3336-2222-2222-2224",
+      "target_port_id": "from_previous_logic",
+      "interface_kind": "Logic"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2224",
+      "source_port_id": "finished",
+      "target_story_id": "ST-3336-2222-2222-2225",
+      "target_port_id": "from_previous",
+      "interface_kind": "Flow"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2225",
+      "source_port_id": "group_output",
+      "target_story_id": "ST-3336-2222-2222-2226",
+      "target_port_id": "from_previous_logic",
+      "interface_kind": "Logic"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2226",
+      "source_port_id": "finished",
+      "target_story_id": "ST-3336-2222-2222-2227",
+      "target_port_id": "from_previous",
+      "interface_kind": "Flow"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2227",
+      "source_port_id": "group_output",
+      "target_story_id": "ST-3336-2222-2222-2228",
+      "target_port_id": "from_previous_logic",
+      "interface_kind": "Logic"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2228",
+      "source_port_id": "finished",
+      "target_story_id": "ST-3336-2222-2222-2229",
+      "target_port_id": "from_previous",
+      "interface_kind": "Flow"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-2229",
+      "source_port_id": "group_output",
+      "target_story_id": "ST-3336-2222-2222-222A",
+      "target_port_id": "from_previous_logic",
+      "interface_kind": "Logic"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-222A",
+      "source_port_id": "finished",
+      "target_story_id": "ST-3336-2222-2222-222B",
+      "target_port_id": "from_previous",
+      "interface_kind": "Flow"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-222B",
+      "source_port_id": "group_output",
+      "target_story_id": "ST-3336-2222-2222-222C",
+      "target_port_id": "from_previous_logic",
+      "interface_kind": "Logic"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-222C",
+      "source_port_id": "finished",
+      "target_story_id": "ST-3336-2222-2222-222D",
+      "target_port_id": "from_previous",
+      "interface_kind": "Flow"
+    },
+    {
+      "source_story_id": "ST-3336-2222-2222-222D",
+      "source_port_id": "group_output",
+      "target_story_id": "ST-3336-2222-2222-2222",
+      "target_port_id": "from_previous_logic",
+      "interface_kind": "Logic"
+    }
+  ]
+}

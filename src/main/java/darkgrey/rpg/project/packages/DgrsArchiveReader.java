@@ -83,6 +83,44 @@ public final class DgrsArchiveReader {
         return new DgrsArchiveReader(archive);
     }
 
+    /** Reads trustworthy identity claims even when an unrelated payload entry is broken. */
+    static byte[] readManifestClaims(File archive) throws ProjectLoadException {
+        if (archive == null || !archive.isFile()) throw new ProjectLoadException("Missing container");
+        try (ZipFile zip = new ZipFile(archive)) {
+            ZipEntry manifest = null;
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            int count = 0;
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (++count > MAX_ENTRY_COUNT) throw failure("Too many container entries", null);
+                if (MANIFEST_ENTRY.equalsIgnoreCase(entry.getName())) {
+                    if (manifest != null || !MANIFEST_ENTRY.equals(entry.getName()) || entry.isDirectory())
+                        throw failure("Ambiguous container manifest", null);
+                    manifest = entry;
+                }
+            }
+            if (manifest == null || manifest.getSize() > MAX_ENTRY_BYTES)
+                throw failure("Missing or oversized container manifest", null);
+            java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+            java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+            try (InputStream input = zip.getInputStream(manifest)) {
+                byte[] buffer = new byte[READ_BUFFER_BYTES];
+                int countRead;
+                while ((countRead = input.read(buffer)) != -1) {
+                    if ((long) output.size() + countRead > MAX_ENTRY_BYTES)
+                        throw failure("Oversized container manifest", null);
+                    output.write(buffer, 0, countRead);
+                    crc.update(buffer, 0, countRead);
+                }
+            }
+            if (manifest.getSize() != output.size() || manifest.getCrc() != crc.getValue())
+                throw failure("Corrupt container manifest", null);
+            return output.toByteArray();
+        } catch (IOException | RuntimeException exception) {
+            throw failure("Cannot read container identity claims", exception);
+        }
+    }
+
     public File getSourceArchive() {
         return sourceArchive;
     }
@@ -173,17 +211,20 @@ public final class DgrsArchiveReader {
         long declared = entry.getSize();
         long remaining = MAX_TOTAL_UNCOMPRESSED_BYTES - prior;
         long total = 0L;
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
         try (InputStream input = zip.getInputStream(entry)) {
             byte[] buffer = new byte[READ_BUFFER_BYTES];
             int count;
             while ((count = input.read(buffer)) != -1) {
                 total += count;
+                crc.update(buffer, 0, count);
                 if (total > MAX_ENTRY_BYTES || total > remaining) throw failure(
                     "DGRS archive exceeds its uncompressed size limit at '" + entry.getName() + "'",
                     null);
             }
         }
         if (declared >= 0L && total != declared) throw failure("DGRS entry size mismatch: " + entry.getName(), null);
+        if (entry.getCrc() != crc.getValue()) throw failure("DGRS entry CRC mismatch: " + entry.getName(), null);
         return total;
     }
 

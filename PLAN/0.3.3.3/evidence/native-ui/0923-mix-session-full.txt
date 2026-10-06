@@ -1,0 +1,16 @@
+time=1790120985438
+nano=844608571507800
+theme=CHARCOAL
+textScale=1.5
+voiceVolume=1.0
+musicVolume=1.0
+autoWaitSeconds=3.0
+notifications.cards=0
+notifications.pending=0
+notifications.seen=3
+audio.active=2
+source=channel:dgr_gramophone_bfc13f13-a058-44f1-9fa3-d2fb77199317;gain:1.0;playing:true;paused:false;position:193.3560000227008;file:E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Client\DarkGreyRPG\Cache\Gramophone\8630f00f-2de3-4d08-a0d0-1209a0e2ac04\track-8605218870827458526.dgrmp3;
+source=channel:dgr_gramophone_4079ccb3-b61a-407e-a366-b406eec1606e;gain:1.0;playing:true;paused:false;position:193.3560000227008;file:E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Client\DarkGreyRPG\Cache\Gramophone\8630f00f-2de3-4d08-a0d0-1209a0e2ac04\track-8605218870827458526.dgrmp3;
+session.pins=1
+master=1.0
+ERROR=java.lang.IllegalAccessException: Class native0333.ReadStateAgent2 can not access a member of class net.minecraft.client.audio.SoundManager$SoundSystemStarterThread with modifiers "public"

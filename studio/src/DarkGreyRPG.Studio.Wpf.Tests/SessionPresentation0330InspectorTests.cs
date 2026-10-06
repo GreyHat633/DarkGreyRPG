@@ -13,7 +13,7 @@ public sealed class SessionPresentation0330InspectorTests
     public void MusicImportStopAndUndoAreAtomicAndLoopSupportsBothValues()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "music", "music");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         string audio = "media/" + new string('a', 64) + ".ogg";
         int before = editor.Host.Session.UndoCount;
@@ -36,7 +36,7 @@ public sealed class SessionPresentation0330InspectorTests
     {
         var music = GraphNodeFactory.Create(GraphScope.Session, "music", "music");
         music.Properties.Remove("volume"); // legacy music fixture
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([music])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([music])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.AreEqual(1d, inspector.MusicVolumeValue, 0.0001);
         var before = editor.Host.Session.UndoCount;
@@ -56,7 +56,7 @@ public sealed class SessionPresentation0330InspectorTests
     public void FullScreenReplacementUndoAndInvalidTransformsPreservePreviousSnapshot()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         string image = "media/" + new string('b', 64) + ".png";
         var layers = JsonSerializer.SerializeToElement(new[] { new { media_ref = image, x = 0.5, y = 0.5, width = 0.5, height = 1, anchor_x = 0.5, anchor_y = 0.5, z = 0 } });

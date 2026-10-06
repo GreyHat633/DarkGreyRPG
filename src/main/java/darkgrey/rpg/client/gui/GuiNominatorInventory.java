@@ -98,7 +98,7 @@ public final class GuiNominatorInventory extends GuiContainer {
         buttonList.clear();
         layoutControls();
         rebuildBrowser();
-        buttonList.add(new GuiRpgButton(7, guiLeft + xSize - 98, guiTop + 3, 82, 20, "ID释放"));
+        buttonList.add(new GuiRpgButton(7, guiLeft + xSize - 98, guiTop + 3, 82, 20, "释放绑定"));
         bindButton = new GuiRpgButton(6, guiLeft + operationLeft, guiTop + ySize - 94, 82, 18, "物品指名");
         buttonList.add(bindButton);
         buttonList.add(new GuiRpgButton(8, guiLeft + operationLeft, guiTop + ySize - 34, 82, 18, "物品解绑"));
@@ -160,6 +160,7 @@ public final class GuiNominatorInventory extends GuiContainer {
         darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
         if (row != null) {
             q.setString("resource", row.id);
+            q.setString("label", NominatorBrowser.resourceLabel(row, false));
             q.setString("type", row.type);
             q.setString("package", row.source.getPackageId());
         }
@@ -200,6 +201,8 @@ public final class GuiNominatorInventory extends GuiContainer {
         org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
         UtilityWindowChrome.drawGrip(windowGeometry);
         controls.draw(width, height, mx, my);
+        if (!controls.modal() && browser.tooltip() != null)
+            RuntimeDirectoryVisuals.tooltip(fontRendererObj, browser.tooltip(), mx, my, width, height);
         org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
     }
 

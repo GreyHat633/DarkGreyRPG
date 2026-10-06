@@ -1,0 +1,402 @@
+[
+  {
+    "File": "01-entity-layout.png",
+    "Bytes": 30556,
+    "SHA256": "DDA35C7C8F09FCCA71D7CBAC7DAC968570159B7DE83E294E0D9C1B3144FF3318"
+  },
+  {
+    "File": "02-entity-bound.png",
+    "Bytes": 24045,
+    "SHA256": "3F5BF73D3BD5EF7C877DC5AAEA67BAD69051989E4CDBFE0CA1F3DF0B09A2535E"
+  },
+  {
+    "File": "03-entity-drag-resize.png",
+    "Bytes": 40454,
+    "SHA256": "D90B21FD770D2A5BA6D9010A648F55F234FCA4A55B43DB90494A5B75FC98DA84"
+  },
+  {
+    "File": "04-item-layout.png",
+    "Bytes": 37107,
+    "SHA256": "72C563000355BFFF93652F9406C7B38E56879BCC6CC1AEBCCCF4F0F5217DC7C7"
+  },
+  {
+    "File": "05-real-armor-equipped.png",
+    "Bytes": 37251,
+    "SHA256": "E0E83EF0BEAA3AF0CFB0E13C829CF7CE23751D47FB8BD3CAB5501B556659519E"
+  },
+  {
+    "File": "06-dialogue-choice.png",
+    "Bytes": 70322,
+    "SHA256": "5E490C785BD6B15D279608CEAB8C2D7C473C084B6376B03FC403CBB5CA7F52C3"
+  },
+  {
+    "File": "07-dialogue-pause.png",
+    "Bytes": 63632,
+    "SHA256": "FB37A67F460042AE4002C19FB6D2D7D16F044A587C50461BE0FE61F6EE6C8E46"
+  },
+  {
+    "File": "08-dialogue-underlay.png",
+    "Bytes": 117198,
+    "SHA256": "9BCB2EED4F09D71E3729C810B5AC1D85BEEF551947944ABB21F7DA8EEDCEC3E5"
+  },
+  {
+    "File": "09-dialogue-reconnect.png",
+    "Bytes": 69432,
+    "SHA256": "4BE96F27B7AEC7DC9643D7AFEAFBCD995253CBC77166EC31A15773D8305BEF41"
+  },
+  {
+    "File": "10-task-kill-active.png",
+    "Bytes": 18107,
+    "SHA256": "46CF095472487B8E2E78D11F925ADD6792CF01D8389E3171D6C2158DC18BE1E4"
+  },
+  {
+    "File": "11-task-interact-active.png",
+    "Bytes": 24485,
+    "SHA256": "956B6FC2FF1988759348A410EEBD736D15FCA3C317A1350FD6FD920188B906B1"
+  },
+  {
+    "File": "12-copier-custom-layout.png",
+    "Bytes": 48728,
+    "SHA256": "DAF9593934717E9E25A459281D34CFDF17BAF5AAE005A599EF5811E2ADDE0600"
+  },
+  {
+    "File": "12-entity-custom-layout.png",
+    "Bytes": 46037,
+    "SHA256": "097ADEE4724A9E2DC864D441BD5101A29B5959BFD3B9BB74D7664969AAB88B84"
+  },
+  {
+    "File": "12-item-custom-layout.png",
+    "Bytes": 52235,
+    "SHA256": "3A9366CCBC248F95B60CCEB398E9CC4071831B9301C6077D623CC2C5491F4FA7"
+  },
+  {
+    "File": "12-task-custom-layout.png",
+    "Bytes": 46345,
+    "SHA256": "FD409BE1F510B9A7DAB77FE80F8112BA95F6BD726EC85486A5B0367883B935D5"
+  },
+  {
+    "File": "13-copier-after-process-restart.png",
+    "Bytes": 52222,
+    "SHA256": "FBD1EA295D60F74BF703B216F036C2271D7A3B1D48327E1E248224C3B59242EB"
+  },
+  {
+    "File": "13-entity-after-process-restart.png",
+    "Bytes": 45633,
+    "SHA256": "40F5C226B480B4A954AB7E297D88B8D938FCC1874865B4656F05270753274828"
+  },
+  {
+    "File": "13-item-after-process-restart.png",
+    "Bytes": 54279,
+    "SHA256": "FE96A21BDEC7BA79005E375E964B2166DD067D49E26E99DA18AAA75558CC95A6"
+  },
+  {
+    "File": "13-task-after-process-restart.png",
+    "Bytes": 46139,
+    "SHA256": "6AEA559083A5484C49DD6D5292E032AE2CD71D795EC0A4CD825C9255CB384195"
+  },
+  {
+    "File": "14-copier-640x480.png",
+    "Bytes": 21238,
+    "SHA256": "BFDF220E2B08CBC38780657CC7F75B6F4C783F0A8C1A2F6E85F9B4F59A80FFAE"
+  },
+  {
+    "File": "14-entity-640x480.png",
+    "Bytes": 12314,
+    "SHA256": "15CD8FBEF5466B2D7C4ADAE776814458FC26E1A3F205EA96A5F9F7B0F7E4DAAE"
+  },
+  {
+    "File": "14-item-640x480.png",
+    "Bytes": 16650,
+    "SHA256": "C4C211237E2B43F1F1BEE948BA663B1A257974E35D74615D01B79C5CA42C94B7"
+  },
+  {
+    "File": "14-task-640x480.png",
+    "Bytes": 10490,
+    "SHA256": "558D306734CA5E4F9E5A8916CE7D86DA4CCE6D4BC53C83CA671DC2F12D808D42"
+  },
+  {
+    "File": "15-item-smooth-refresh.png",
+    "Bytes": 51351,
+    "SHA256": "A50A74F39895EC4023D34583BD84CC6F5061DBF6B1CC5C2315737150C14A8195"
+  },
+  {
+    "File": "16-entity-package-scroll.png",
+    "Bytes": 47216,
+    "SHA256": "5F22B78BC91816A19F4194BA6C1B6F4550E411DEA8E415396F33DA4864D12214"
+  },
+  {
+    "File": "17-orphan-release.png",
+    "Bytes": 47385,
+    "SHA256": "E6478F81E2196BCAE4DF15C9B931F5E71A0F5C32BB52F7DCF33F44CADC4279BA"
+  },
+  {
+    "File": "18-transfer-confirmed.png",
+    "Bytes": 48318,
+    "SHA256": "0B568BE92A5A1C0B0795B8F617BFFF27D476EDB09708608E67561FBCFB9736D3"
+  },
+  {
+    "File": "19-group-release.png",
+    "Bytes": 48203,
+    "SHA256": "218387E26CDEBD4056AC3C8DA487E55C053F4496723A4C1CBB8FEB631D603464"
+  },
+  {
+    "File": "20-item-transfer.png",
+    "Bytes": 50911,
+    "SHA256": "D2428E9725F1A5752567E3A9337CA662DF7B0931B2E4EA4E7894EC2DA30B486A"
+  },
+  {
+    "File": "21-item-exact-fuzzy.png",
+    "Bytes": 51559,
+    "SHA256": "162885E35F8376A6D6F26E0761E616A4675EEC8712007DE7DFA9197E7F2C49A7"
+  },
+  {
+    "File": "22-item-unbind.png",
+    "Bytes": 51391,
+    "SHA256": "EB413CF99646DD08AC4E0632A8D8AE7A000279D108606216CB73484FD3F8A687"
+  },
+  {
+    "File": "baseline-retry.log",
+    "Bytes": 20836,
+    "SHA256": "DF1CF0A83610A7AAB4251D8A42092EF6C85A7C3DBEFD2D8B43E3324846CAECBC"
+  },
+  {
+    "File": "baseline-standard.log",
+    "Bytes": 21541,
+    "SHA256": "9A8CE94DD086EF2DCBC5DE4F0B1DA775E2FA46C1BBA5FB7CC188AE6F1421A023"
+  },
+  {
+    "File": "baseline.log",
+    "Bytes": 20254,
+    "SHA256": "68BF3D2E6F0F7AD25DB01A712B7AE607485CA05A6DD466488A274464062A2A04"
+  },
+  {
+    "File": "fixed-layout-build.log",
+    "Bytes": 4659,
+    "SHA256": "E3351B8C8A9C3F649443D0A5B837D1A912AAD21BA1D7AA1363B4D2E03E96D4DF"
+  },
+  {
+    "File": "freeze-final.txt",
+    "Bytes": 1142,
+    "SHA256": "3E95E32F59208B87446D47C3F879FAAE2339D4D6E768092E42027F093169210B"
+  },
+  {
+    "File": "freeze.txt",
+    "Bytes": 212,
+    "SHA256": "8A6DF4E85D1AA33FAC0EB4B795AA12BC0AE8ED6BC0400D6A91272673FFD77E92"
+  },
+  {
+    "File": "full-regression.log",
+    "Bytes": 24884,
+    "SHA256": "EA0F4F348324CCA8B714B94FD552065DB3E7B81A4FCF09D02AEFA8200C6AC2BB"
+  },
+  {
+    "File": "integration-build.log",
+    "Bytes": 3781,
+    "SHA256": "4AF392E707F2B258B1D0B832D03DD4A25A4CE129001FA4A2CCA00B12DE556548"
+  },
+  {
+    "File": "java-artifact.json",
+    "Bytes": 275,
+    "SHA256": "3AE9181A428BA3F3CF41355B39E206D3D1099B6A9B680F8FB4BBAFB387976D22"
+  },
+  {
+    "File": "kill_slimes-description-corrected.dgrs",
+    "Bytes": 6909,
+    "SHA256": "2D18468E5ED257E0C711741BD1A7B6449AE7071FB4AC8A4F7DDB322DE6AC0D4F"
+  },
+  {
+    "File": "layout-expected.json",
+    "Bytes": 766,
+    "SHA256": "7FB71480D4D03AA7A947DECAF8773BEB315F69D3BAEC6A5D293C92C9C6E878DA"
+  },
+  {
+    "File": "live-client-2.log",
+    "Bytes": 64401,
+    "SHA256": "81203552180EB07C3D7C080E2474D142C29E0BEC0AC7353FDD15D1507309EDB6"
+  },
+  {
+    "File": "live-client.log",
+    "Bytes": 2655,
+    "SHA256": "DB2918B6515FB189338FEFE11C1D633ED85B75D3490644C8B4D1D11F070CDE73"
+  },
+  {
+    "File": "live-restart.log",
+    "Bytes": 44479,
+    "SHA256": "95D438F1081D594FC72D10D4348E1019B288F5103BB97F8ECD8227A96886C0D6"
+  },
+  {
+    "File": "live-verification.jsonl",
+    "Bytes": 5240974,
+    "SHA256": "39F68F529420D8604382225F8FD4995276090996602C474B16DA060F0E221EC5"
+  },
+  {
+    "File": "objective-correction.json",
+    "Bytes": 787,
+    "SHA256": "3B381D63CE55C72EB9DF56CEB9DBC6B40EFB22E9F618F63A9818DFF406486CB3"
+  },
+  {
+    "File": "resize-performance.json",
+    "Bytes": 383,
+    "SHA256": "0799C14B80B26ADB60F2FEF53AE0824C6E9B573AFF501A2AC898CD35BAEF2591"
+  },
+  {
+    "File": "restart-results.json",
+    "Bytes": 185,
+    "SHA256": "141B3BBE2D5AA7255089F24839DBE0592E767601597D8FFD846F71F4055EFD81"
+  },
+  {
+    "File": "studio-artifact.json",
+    "Bytes": 330,
+    "SHA256": "C1AAFA2A5EAABA32A8A1021CA61E3BD4C6C759BED5063EC43FCE6D8333E20608"
+  },
+  {
+    "File": "studio-dialogs-fixed.log",
+    "Bytes": 6345,
+    "SHA256": "888FF1C4472485DF951E1A1A90E1F084D2B2BC1D9EFB835CB589B80F1C4101E9"
+  },
+  {
+    "File": "studio-dialogs-fixed.trx",
+    "Bytes": 68034,
+    "SHA256": "4292D3404EF1FDEB01E70D56563B40001DC499F5F8BE1380F190B627A9DF4FC6"
+  },
+  {
+    "File": "studio-dialogs.log",
+    "Bytes": 1023,
+    "SHA256": "9C1032EF8B65F321087D30618E63BC865FFEF13528106597C7EF1E5994CF8F27"
+  },
+  {
+    "File": "studio-publish.log",
+    "Bytes": 681,
+    "SHA256": "CCBF3C6AD1B1B0BA1FE9B435A064BB532EE83398F652332637C7B78DFD05B6DF"
+  },
+  {
+    "File": "studio-ui-limit.md",
+    "Bytes": 1044,
+    "SHA256": "72AD67160C961ABD973A67BA5AC8C71173C47A0A11CCD469564B6ABE1C5871D7"
+  },
+  {
+    "File": "user-review-fixes/backup/darkgrey_rpg_canonical_tasks.dat",
+    "Bytes": 509,
+    "SHA256": "50D3E6720570957BE5CBB5A31E5067FE91DF2C9D07CBE4973E6D9D532DD51EB8"
+  },
+  {
+    "File": "user-review-fixes/backup/darkgrey_rpg_story_package_generations.dat",
+    "Bytes": 171,
+    "SHA256": "9CCEA49C6A6BA79649F3FE17F92AFED54CFC9A7653DEE6ED8E245F7309982AD3"
+  },
+  {
+    "File": "user-review-fixes/backup/kill_slimes.dgrs",
+    "Bytes": 6929,
+    "SHA256": "9B0F08C48BD702FE1F6060C52A455790DD7B0151E677EE72101C87852669EABD"
+  },
+  {
+    "File": "user-review-fixes/backup/KillSlimes-source.json",
+    "Bytes": 2415,
+    "SHA256": "11943975EC29F67F73F9BC3CE9EAD364E0493A6DDA75D3B942C0CE7F60D945F0"
+  },
+  {
+    "File": "user-review-fixes/darkgrey_rpg_canonical_tasks.json",
+    "Bytes": 1461,
+    "SHA256": "B4D93DDFBF3663E356F8E7015E7E3E223CE62D2CDC56740F1DE224AD8B81140F"
+  },
+  {
+    "File": "user-review-fixes/darkgrey_rpg_story_package_generations.json",
+    "Bytes": 284,
+    "SHA256": "359EE5A9C571CF89D7355370AC7CAA7322E136A89910B4FFCBDF6D279F36766D"
+  },
+  {
+    "File": "user-review-fixes/fingerprints.json",
+    "Bytes": 331,
+    "SHA256": "7B0A8FF12FC73A5D2100F0E264822AB55045DD60F38153DF330DF1AF3034F9B6"
+  },
+  {
+    "File": "user-review-fixes/migration-applied.json",
+    "Bytes": 2643,
+    "SHA256": "C116EA313730629DE0DFA17D5E186DDF342191AC7987E4CD17738E698594C67A"
+  },
+  {
+    "File": "user-review-fixes/migration-candidate/darkgrey_rpg_canonical_tasks.dat",
+    "Bytes": 508,
+    "SHA256": "E3DD4447C889C5FF7AA221AD3455451A6E90E473DB1001926E43A6CABDB4AD56"
+  },
+  {
+    "File": "user-review-fixes/migration-candidate/darkgrey_rpg_story_package_generations.dat",
+    "Bytes": 173,
+    "SHA256": "EDA5602E2CE1AAC6440018C34883E264A2091A5A18BFD37566720257072C03B3"
+  },
+  {
+    "File": "user-review-fixes/migration-candidate/kill_slimes.dgrs",
+    "Bytes": 6909,
+    "SHA256": "2D18468E5ED257E0C711741BD1A7B6449AE7071FB4AC8A4F7DDB322DE6AC0D4F"
+  },
+  {
+    "File": "user-review-fixes/migration-candidate/KillSlimes-source.json",
+    "Bytes": 2420,
+    "SHA256": "CA7EB692633A0BCB28D77BE375890FCA579BF83CAF21FC3BBF0F9A704C2AA518"
+  },
+  {
+    "File": "user-review-fixes/migration-manifest.json",
+    "Bytes": 2436,
+    "SHA256": "A9DDD2C6C696A45F122DC108D21F7295ACB4045FDDFA2027EE7B615AA060E119"
+  },
+  {
+    "File": "user-review-fixes/review-actual.log",
+    "Bytes": 1795,
+    "SHA256": "753FDEE46EEABB45F48F73E8C0324D28BC6DFB45CDB0829D279C189437EB9691"
+  },
+  {
+    "File": "user-review-fixes/review-clean-entity.png",
+    "Bytes": 38621,
+    "SHA256": "915A69FE8B73EF80DDC13051E7332248A8FD6FB7368C30BBC6E1934248DB4D60"
+  },
+  {
+    "File": "user-review-fixes/review-clean-item.png",
+    "Bytes": 60638,
+    "SHA256": "19AB9D4876F79E9E650E18A70BB6A67C0F3AB70DF688941E03E35EAAA38C987F"
+  },
+  {
+    "File": "user-review-fixes/review-clean-screens.log",
+    "Bytes": 44521,
+    "SHA256": "F98CE3E73047B607D42EFADE9C4B4E8F8E7D52223E6377649A5ACB661CEF72B7"
+  },
+  {
+    "File": "user-review-fixes/review-delivery-live.log",
+    "Bytes": 44485,
+    "SHA256": "F241E51F23BB1EB853D0B2C0FDD45981F2729076BDDE07379CAA977EA64FD2F8"
+  },
+  {
+    "File": "user-review-fixes/review-input-results.json",
+    "Bytes": 251,
+    "SHA256": "38C003B7ABAF6D422E01FC6EDBE7BC98A2E9EC410F6A58C3A133058182024DA3"
+  },
+  {
+    "File": "user-review-fixes/review-live-final.log",
+    "Bytes": 46845,
+    "SHA256": "6A96DC408E06F47A1CBF224E5EC093B59D9F5F8E287EB8294DC3720EFD054153"
+  },
+  {
+    "File": "user-review-fixes/review-regression.log",
+    "Bytes": 24902,
+    "SHA256": "2C0E2C88553B780E4B979F550E07DCE3198D42DD071ED1339509BFFD90DD56A0"
+  },
+  {
+    "File": "user-review-fixes/review-user-world-after-interact.png",
+    "Bytes": 39231,
+    "SHA256": "D45A3B2D4A7989EA8ECB1C1E4E5DBC3DB7DE9B5B5BFD036A92430CCB01A2043E"
+  },
+  {
+    "File": "user-review-fixes/review-user-world-next-objective.png",
+    "Bytes": 38950,
+    "SHA256": "0BCA692AC9A553EDE458483FC7A142ABA68FB56F39E63FE9A81E56F6F1B3B8D1"
+  },
+  {
+    "File": "user-review-fixes/review-user-world-state.json",
+    "Bytes": 1615,
+    "SHA256": "C9721E286B0347B25BBDAC5DF0383B3C3E8CD16278A69EA71E21815340F0981A"
+  },
+  {
+    "File": "window-settings.properties",
+    "Bytes": 633,
+    "SHA256": "7EECE09DB237542675E28DC5B4D18AFFB89F00747EF6093E8BBF02C2B3B1D7F3"
+  }
+]

@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-10-01T02:41:38.203669+08:00",
+  "evidence_kind": "Agent observations plus recorded native UI actions, screenshots, server logs and instrumented counters; not human acceptance",
+  "package": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\IntegratedStudio0335-Acceptance.dgrs",
+  "sha256": "321803082FFFEB60D18A57799B3DA24D51216993C8B8D11AA634E7C104838CB3",
+  "generation": "7056fa944dea",
+  "native_export_success": "aggregate-fixed-export-verified",
+  "story_port_checks": [
+    {
+      "node": "start",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "task_placement",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "session_one",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "session_two",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "terminate",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "public_ready",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "session_one_left_bridge",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "session_one_right_bridge",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "session_two_left_bridge",
+      "unique_direction_orders": true
+    },
+    {
+      "node": "session_two_right_bridge",
+      "unique_direction_orders": true
+    }
+  ],
+  "final_flow": [
+    "actual region trigger",
+    "Task placement",
+    "actual NPC submit consumes item",
+    "SETTLED objective progress=1",
+    "Session one long line local pages",
+    "True choice: three options; independent False player: hidden and disabled options",
+    "unconditional choice to Session two",
+    "12 ordinary transition variants",
+    "final choice",
+    "TERMINATED / wait NONE / terminate node",
+    "actual submit history completion count=3"
+  ],
+  "final_history_screenshot": "acceptance-final-history-detail",
+  "witness_reset_screenshot": "acceptance-witness-reset-english",
+  "final_main_sample": {
+    "time_ms": 1790793191885,
+    "page_cache": 0,
+    "page_bytes": 0,
+    "page_requests": 0,
+    "carousels": 0,
+    "textures": 0,
+    "decode_pending": 0,
+    "decode_queue": 0,
+    "uploads": 0,
+    "sprites": 0,
+    "scene_pins": 0,
+    "audio_pins": 0,
+    "voice_plays": 2,
+    "music_plays": 0,
+    "scene_frames": 0,
+    "scene_cpu_ns": 0,
+    "dialogue_frames": 0,
+    "dialogue_cpu_ns": 0
+  },
+  "final_witness_sample": {
+    "time_ms": 1790793190612,
+    "page_cache": 0,
+    "page_bytes": 0,
+    "page_requests": 0,
+    "carousels": 0,
+    "textures": 0,
+    "decode_pending": 0,
+    "decode_queue": 0,
+    "uploads": 0,
+    "sprites": 0,
+    "scene_pins": 0,
+    "audio_pins": 0,
+    "voice_plays": 2,
+    "music_plays": 0,
+    "scene_frames": 0,
+    "scene_cpu_ns": 0,
+    "dialogue_frames": 0,
+    "dialogue_cpu_ns": 0
+  },
+  "retired_instrumentation_args": {
+    "client": [
+      "-javaagent:E:\\Java\\MinecraftMod\\DarkGreyRPG/.tooling/0335/MetricsAgent/frame-agent-v4.jar=E:\\Java\\MinecraftMod\\DarkGreyRPG/.tooling/0335/Native/frame-v4-final-client"
+    ],
+    "witness": [
+      "-javaagent:E:\\Java\\MinecraftMod\\DarkGreyRPG/.tooling/0335/MetricsAgent/metrics-agent.jar=E:\\Java\\MinecraftMod\\DarkGreyRPG/.tooling/0335/Native/metrics-witness"
+    ],
+    "baselineclient": [
+      "-Ddgr0335.baseline=true",
+      "-javaagent:E:\\Java\\MinecraftMod\\DarkGreyRPG/.tooling/0335/MetricsAgent/frame-agent-v4.jar=E:\\Java\\MinecraftMod\\DarkGreyRPG/.tooling/0335/Native/frame-v4-published-baseline"
+    ],
+    "baselineserver": []
+  },
+  "fault_injection": "task-send-fault-final.log: encoding and send failures leave committed state unchanged, subsequent retries commit",
+  "limitations": [
+    "Local two-client environment; not public-network latency or long-term soak",
+    "One host DPI; themes and Chinese IME tested, other displays unverified",
+    "Villager actor actually bound in Studio; third-party CustomNPC+ spawn failed in the supplied mod",
+    "45 item bindings prepared programmatically, not 45 manual Nominator bindings",
+    "Voice backend start observed; sample is villager sound, not human-listened Chinese narration"
+  ],
+  "USER_ACCEPTED": false,
+  "RELEASE_READY": false,
+  "earlier_subcase_scope": "Themes, repeated candidate paging and fault injection used the same final Java build before the final Studio aggregate-order fix; candidate items/groups and media are byte-identical to the final package."
+}

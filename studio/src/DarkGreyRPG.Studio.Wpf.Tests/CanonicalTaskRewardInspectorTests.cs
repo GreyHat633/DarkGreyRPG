@@ -13,7 +13,7 @@ public sealed class CanonicalTaskRewardInspectorTests
     public void PackageEditsAreAtomicUndoableAndInvalidAmountsRemainDrafts()
     {
         var reward = GraphNodeFactory.Create(GraphScope.Task, "reward", "reward");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([reward])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([reward])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(), itemItems:
             [new CanonicalStoryItemItem(new IndividualItemResource { ItemId = "Author:apple", DisplayName = "苹果" }),
              new CanonicalStoryItemItem(new CollectiveItemResource { GroupId = "Author:food", DisplayName = "食物组" })]);

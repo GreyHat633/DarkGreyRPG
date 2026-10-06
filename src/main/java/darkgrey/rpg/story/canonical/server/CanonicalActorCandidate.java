@@ -20,6 +20,32 @@ public final class CanonicalActorCandidate {
     private final String portId;
     private final String status;
     private final NBTTagCompound previousState;
+    private String taskPlacementId = "";
+
+    public static CanonicalActorCandidate forTask(UUID player, ProjectSnapshot project, String actorId,
+        CanonicalStoryInstanceSnapshot story, darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot task) {
+        CanonicalActorCandidate candidate = new CanonicalActorCandidate(
+            player,
+            project,
+            story.getStoryId(),
+            actorId,
+            "",
+            "continue",
+            story);
+        candidate.taskPlacementId = task.getTaskNodePlacementId();
+        candidate.previousState.setTag(
+            "task",
+            darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec.encode(Collections.singletonList(task)));
+        return candidate;
+    }
+
+    public String getTaskPlacementId() {
+        return taskPlacementId;
+    }
+
+    public boolean isTask() {
+        return !taskPlacementId.isEmpty();
+    }
 
     CanonicalActorCandidate(UUID player, ProjectSnapshot project, String storyId, String actorId, String portId,
         String status, CanonicalStoryInstanceSnapshot previous) {
@@ -54,13 +80,14 @@ public final class CanonicalActorCandidate {
         return status;
     }
 
-    boolean matches(UUID currentPlayer, ProjectSnapshot currentProject, CanonicalActorCandidate current) {
+    public boolean matches(UUID currentPlayer, ProjectSnapshot currentProject, CanonicalActorCandidate current) {
         return player.equals(currentPlayer) && project == currentProject
             && current != null
             && storyId.equals(current.storyId)
             && actorId.equals(current.actorId)
             && status.equals(current.status)
             && portId.equals(current.portId)
+            && taskPlacementId.equals(current.taskPlacementId)
             && previousState.equals(current.previousState);
     }
 

@@ -14,7 +14,7 @@ public sealed class SessionMedia0330InspectorTests
     public void TextSpeedOverrideDefaultsOffSynchronizesAndUndoes()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.IsFalse(inline.IsLineTextSpeedCustom);
@@ -31,7 +31,7 @@ public sealed class SessionMedia0330InspectorTests
     public void AudioGateDefaultsClosedSharesEmptyStateAndSupportsUndo()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.IsFalse(inline.IsLineAudioEnabled);
@@ -57,7 +57,7 @@ public sealed class SessionMedia0330InspectorTests
     {
         var voice = "media/" + new string('b', 64) + ".ogg";
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         using (var setup = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single())) setup.SetLineVoice(voice);
         var before = editor.Host.Session.UndoCount;
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
@@ -71,7 +71,7 @@ public sealed class SessionMedia0330InspectorTests
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
         line.Properties.Remove("voice_volume"); // legacy line fixture
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.AreEqual(1d, inspector.LineVoiceVolumeValue, 0.0001);
         var before = editor.Host.Session.UndoCount;
@@ -91,7 +91,7 @@ public sealed class SessionMedia0330InspectorTests
     public void LivePortraitDropdownPreservesSelectionWhenActorAddsExpressions()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         var image = "media/" + new string('a', 64) + ".png";
         var actor = new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "", [], IndividualActorResource.ResourceType, image, [new("微笑", image)]));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(), [actor]);
@@ -112,7 +112,7 @@ public sealed class SessionMedia0330InspectorTests
     public void PortraitEditsRefreshExistingInlineAndInspectorWithoutGraphEdits()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         var actor = new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "", [], IndividualActorResource.ResourceType));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(), [actor]);
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(), [actor]);
@@ -136,7 +136,7 @@ public sealed class SessionMedia0330InspectorTests
     public void ActorSwitchClearsVariantAtomicallyAndUndoRestoresVoiceAndVariant()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
         var image = "media/" + new string('a', 64) + ".png";
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single(), actorItems:
             [new CanonicalStoryActorItem(new ActorResourceInfo("actor", "Actor", "", [], IndividualActorResource.ResourceType, image, [new("默认头像", image)]))]);

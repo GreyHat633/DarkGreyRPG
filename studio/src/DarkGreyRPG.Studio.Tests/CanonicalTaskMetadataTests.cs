@@ -11,15 +11,14 @@ public sealed class CanonicalTaskMetadataTests
     public void DescriptionSurvivesTaskRepositoryAndPackageExport()
     {
         using var project = new TestProjectDirectory();
-        new DarkGreyRPG.Studio.Core.Stories.StoryRepository(project.Root).CreateStory("story", "Story");
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([new GraphNode("start", "start", "Start")])));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("story"));
-        var task = new CanonicalStoryResourceLifecycleService(store).CreateOwned("story", GraphResourceKind.Task, "task", "任务");
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
+        var task = new CanonicalStoryResourceLifecycleService(store).CreateOwned("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "任务");
         task.TaskMetadata = new CanonicalTaskMetadata("整体任务说明\n保留第二行");
         store.Tasks.Replace(task);
         var output = Path.Combine(project.Root, "out");
-        new DarkGreyRPG.Studio.Core.Packaging.StoryPackageExporter(project.Root).Build("story", output);
+        new DarkGreyRPG.Studio.Core.Packaging.StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output);
         var path = Directory.GetFiles(Path.Combine(output, "resources", "canonical", "tasks"), "*.json", SearchOption.AllDirectories).Single();
         Assert.AreEqual(task.TaskMetadata.Description, GraphResourceEnvelope.FromJson(File.ReadAllText(path)).TaskMetadata!.Description);
     }
@@ -30,13 +29,13 @@ public sealed class CanonicalTaskMetadataTests
         foreach (var type in CanonicalTaskObjectiveSchema.ObjectiveTypes)
         {
             var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "target");
-            Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(node, type, "guard", out _));
+            Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(node, type, "ST-2345-6789-ABCD-EFGH~actor~guard", out _));
             node.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Test objective");
-            if (type == "submit_item") node.Properties["actor_id"] = System.Text.Json.JsonSerializer.SerializeToElement("guard");
-            if (type == "kill_entity") node.Properties["entity"] = System.Text.Json.JsonSerializer.SerializeToElement("guard");
-            if (type is "collect_item" or "submit_item") node.Properties["item"] = System.Text.Json.JsonSerializer.SerializeToElement("apple");
+            if (type == "submit_item") node.Properties["actor_id"] = System.Text.Json.JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~guard");
+            if (type == "kill_entity") node.Properties["entity"] = System.Text.Json.JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~guard");
+            if (type is "collect_item" or "submit_item") node.Properties["item"] = System.Text.Json.JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~item~apple");
             Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(node), type);
-            var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([node]));
+            var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([node]));
             Assert.AreEqual(envelope.ToJson(), GraphResourceEnvelope.FromJson(envelope.ToJson()).ToJson());
             Assert.IsTrue(node.Ports.All(port => port.InterfaceKind == GraphInterfaceKind.Logic));
             if (type == "reach_region")
@@ -55,7 +54,7 @@ public sealed class CanonicalTaskMetadataTests
     [TestMethod]
     public void TaskDescriptionSurvivesEnvelopeAndEditableDocumentRoundTrip()
     {
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "task", "任务", new GraphDocument())
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "任务", new GraphDocument())
             { TaskMetadata = new CanonicalTaskMetadata("背景说明\n第二段🙂") };
         var reopened = GraphResourceEnvelope.FromJson(envelope.ToJson());
         var document = GraphResourceScopeAdapter.OpenDocument(reopened, GraphScope.Task);
@@ -70,14 +69,15 @@ public sealed class CanonicalTaskMetadataTests
     {
         foreach (var kind in Enum.GetValues<GraphResourceKind>())
         {
-            var envelope = new GraphResourceEnvelope(kind, "resource", "资源", new GraphDocument());
+            var envelope = new GraphResourceEnvelope(kind, kind == GraphResourceKind.Story ? "ST-2345-6789-ABCD-EFGH" : "ST-2345-6789-ABCD-EFGH~" + kind.ToString().ToLowerInvariant() + "~resource", "资源", new GraphDocument());
             Assert.IsFalse(envelope.ToJson().Contains("task_metadata"));
             Assert.IsNull(GraphResourceEnvelope.FromJson(envelope.ToJson()).TaskMetadata);
             if (kind == GraphResourceKind.Task) continue;
             envelope.TaskMetadata = new CanonicalTaskMetadata("说明");
             Assert.ThrowsExactly<GraphResourceEnvelopeException>(() => envelope.ToJson());
         }
-        var prefix = "{\"schema_version\":1,\"resource_kind\":\"task\",\"id\":\"t\",\"display_name\":\"T\",\"graph\":{\"nodes\":[],\"connections\":[]},\"task_metadata\":";
+        var validTask = System.Text.Json.Nodes.JsonNode.Parse(new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "T", new GraphDocument()).ToJson())!.ToJsonString();
+        var prefix = validTask[..^1] + ",\"task_metadata\":";
         foreach (var invalid in new[] { "null", "{}", "{\"description\":3}", "{\"description\":\"x\",\"other\":true}", "{\"description\":\"x\",\"description\":\"y\"}" })
             Assert.ThrowsExactly<GraphResourceEnvelopeException>(() => GraphResourceEnvelope.FromJson(prefix + invalid + "}"));
     }

@@ -1,0 +1,50 @@
+[
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\witness-args.json",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\0",
+    "hash": "87feb9edaf8543f13884b99e862f5420e31f1aee5ad41768b07095f3793b0b92",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\server-args.json",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\1",
+    "hash": "d79bc0641ed9077c2b52bad8017f8c752a54b716c0b06a3e53bd1204a8d68c87",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Witness\\options.txt",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\2",
+    "hash": "514d913ff73db0dd3a627815c02756e156bfa2965e8b9d4b0b073a1a45d797a2",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Witness\\DarkGreyRPG\\Config\\darkgrey-rpg-windows.properties",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\3",
+    "hash": "5eacfe962d5e9ea4911b2beba00867319aeedaf27529fedad018670eac36bb66",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Witness\\mods\\darkgrey_rpg-0.3.3.4.jar",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\4",
+    "hash": "9df954343435b1753cec34165a32cfe0434e3f548c96c9a5d7faef8b3de38ae0",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Server\\mods\\darkgrey_rpg-0.3.3.4.jar",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\5",
+    "hash": "9df954343435b1753cec34165a32cfe0434e3f548c96c9a5d7faef8b3de38ae0",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Server\\server.properties",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\6",
+    "hash": "6c4ddca7bc99fa3214a90434cd09ac8d72b5d0417e90ee8795c6ce3f11e5a717",
+    "restored": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\Server\\DarkGreyRPG\\StoryPackages\\Native0334.dgrs",
+    "backup": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0334\\DialogueButtonInset\\Backup\\7",
+    "hash": "6da7ecec9eea7e0887f77463acd60249f1e07f7fed41ff99bd7acadd4f6928d3",
+    "restored": true
+  }
+]

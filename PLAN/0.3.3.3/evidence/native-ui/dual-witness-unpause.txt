@@ -1,0 +1,7 @@
+WINDOW: Minecraft 1.7.10 480,220,978,686
+ControlType.TitleBar id=TitleBar name=Minecraft 1.7.10 enabled=True rect=489,229,960,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=489,229,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=489,229,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1277,221,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=1335,221,57,36
+ControlType.Button id=Close name=Close enabled=True rect=1392,221,58,36

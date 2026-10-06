@@ -1,0 +1,86 @@
+[
+  {
+    "gui_factor": 1,
+    "requested": 1.0,
+    "effective": 1.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 1,
+    "requested": 1.25,
+    "effective": 2.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 1,
+    "requested": 1.5,
+    "effective": 2.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 2,
+    "requested": 1.0,
+    "effective": 1.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 2,
+    "requested": 1.25,
+    "effective": 2.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 2,
+    "requested": 1.5,
+    "effective": 2.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 3,
+    "requested": 1.0,
+    "effective": 1.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 3,
+    "requested": 1.25,
+    "effective": 1.3333333333333333,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 3,
+    "requested": 1.5,
+    "effective": 2.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 4,
+    "requested": 1.0,
+    "effective": 1.0,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 4,
+    "requested": 1.25,
+    "effective": 1.5,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  },
+  {
+    "gui_factor": 4,
+    "requested": 1.5,
+    "effective": 1.5,
+    "nearest": true,
+    "filters_binding_blend_restored": true
+  }
+]

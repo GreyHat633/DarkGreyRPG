@@ -13,85 +13,83 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class CanonicalStoryLifecycleShellTests
 {
     [TestMethod]
-    public void DeleteCanonicalStoryRemovesOwnedResourcesAndPreservesReferencesAndLegacyMirror()
+    public void DeleteCanonicalStoryRemovesOwnedResourcesAndPreservesReferencedOwner()
     {
         using var project = new LifecycleProjectFixture();
-        project.CreateCanonicalStory("shared", "Canonical Shared");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Canonical Shared");
         new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors, project.Session.Stories)
-            .CreateOwned("shared", "owned_actor", "Owned Actor");
+            .CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~owned_actor", "Owned Actor");
         var resources = new CanonicalStoryResourceLifecycleService(project.Store);
-        resources.CreateOwnedSession("shared", "owned_session", "Owned Session");
-        resources.CreateOwnedTask("shared", "owned_task", "Owned Task");
-        var referenced = project.Session.Actors.CreateActor("referenced_actor", "Referenced Actor");
-        project.Session.Actors.SaveActor(referenced);
-        var membership = project.Store.Memberships.Load("shared");
+        resources.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~owned_session", "Owned Session");
+        resources.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~owned_task", "Owned Task");
+        project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Other");
+        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors, project.Session.Stories)
+            .CreateOwned("ST-JKLM-NPQR-STUV-WXYZ", "ST-JKLM-NPQR-STUV-WXYZ~actor~referenced_actor", "Referenced Actor");
+        var membership = project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
         project.Store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "shared",
+            "ST-2345-6789-ABCD-EFGH",
             membership.OwnedResources,
-            new CanonicalStoryMembershipSet { Actors = ["referenced_actor"] }));
-        project.Session.Stories.CreateStory("shared", "Legacy Shared");
+            new CanonicalStoryMembershipSet { Actors = ["ST-JKLM-NPQR-STUV-WXYZ~actor~referenced_actor"] }));
 
         var dialogs = new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = true };
         var shell = project.OpenShell(dialogs);
-        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "shared");
+        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
 
         Assert.IsTrue(shell.DeleteSelectedStoryCommand.CanExecute(null));
         shell.DeleteSelectedStoryCommand.Execute(null);
 
         Assert.AreEqual(1, dialogs.CanonicalDeleteConfirmationCount);
         CollectionAssert.AreEquivalent(
-            new[] { "角色：owned_actor", "会话：owned_session", "任务：owned_task" },
+            new[] { "角色：ST-2345-6789-ABCD-EFGH~actor~owned_actor", "会话：ST-2345-6789-ABCD-EFGH~session~owned_session", "任务：ST-2345-6789-ABCD-EFGH~task~owned_task" },
             dialogs.LastResources.ToArray());
-        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("shared")));
-        Assert.IsFalse(File.Exists(project.Store.Memberships.GetPath("shared")));
-        Assert.IsFalse(File.Exists(project.ActorPath("owned_actor")));
-        Assert.IsFalse(File.Exists(project.Store.Sessions.GetPath("owned_session")));
-        Assert.IsFalse(File.Exists(project.Store.Tasks.GetPath("owned_task")));
-        Assert.IsTrue(File.Exists(project.ActorPath("referenced_actor")));
-        Assert.IsTrue(File.Exists(Path.Combine(project.Root, "stories", "shared.json")));
-        Assert.IsTrue(shell.ProjectHome.SelectedStory?.CanDeleteLegacyStory);
-        Assert.IsFalse(shell.ProjectHome.SelectedStory?.HasCanonicalStory);
+        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("ST-2345-6789-ABCD-EFGH")));
+        Assert.IsFalse(File.Exists(project.Store.Memberships.GetPath("ST-2345-6789-ABCD-EFGH")));
+        Assert.IsFalse(File.Exists(project.ActorPath("ST-2345-6789-ABCD-EFGH~actor~owned_actor")));
+        Assert.IsFalse(File.Exists(project.Store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~owned_session")));
+        Assert.IsFalse(File.Exists(project.Store.Tasks.GetPath("ST-2345-6789-ABCD-EFGH~task~owned_task")));
+        Assert.IsTrue(File.Exists(project.ActorPath("ST-JKLM-NPQR-STUV-WXYZ~actor~referenced_actor")));
+        Assert.IsTrue(File.Exists(project.Store.Stories.GetPath("ST-JKLM-NPQR-STUV-WXYZ")));
     }
 
     [TestMethod]
     public void RejectedStandaloneTransitionLeavesNormalDeletionAvailable()
     {
         using var project = new LifecycleProjectFixture();
-        project.CreateCanonicalStory("target", "Target");
-        project.CreateCanonicalStory("source", "Source");
-        var before = File.ReadAllBytes(project.Store.Stories.GetPath("source"));
+        project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Target");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Source");
+        var before = File.ReadAllBytes(project.Store.Stories.GetPath("ST-2345-6789-ABCD-EFGH"));
         Assert.ThrowsExactly<GraphResourceRepositoryException>(() => project.Store.Stories.Replace(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "source", "Source",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Source",
                 new GraphDocument([new GraphNode("old", "enter_story", "Old")]))));
         var dialogs = new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = true };
         var shell = project.OpenShell(dialogs);
-        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "target");
+        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "ST-JKLM-NPQR-STUV-WXYZ");
         shell.DeleteSelectedStoryCommand.Execute(null);
         Assert.AreEqual(1, dialogs.CanonicalDeleteConfirmationCount);
-        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("target")));
-        CollectionAssert.AreEqual(before, File.ReadAllBytes(project.Store.Stories.GetPath("source")));
+        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("ST-JKLM-NPQR-STUV-WXYZ")));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(project.Store.Stories.GetPath("ST-2345-6789-ABCD-EFGH")));
     }
 
     [TestMethod]
     public void ConfirmedDeletionDiscardsDirtyOwnedActorWithoutRequiringSave()
     {
         using var project = new LifecycleProjectFixture();
-        project.CreateCanonicalStory("opening", "Opening");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Opening");
         new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors, project.Session.Stories)
-            .CreateOwned("opening", "teacher", "Teacher");
+            .CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher");
 
         var dialogs = new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = true };
         var shell = project.OpenShell(dialogs);
-        shell.SelectedActor = shell.Actors.Single(actor => actor.Id == "teacher");
-        shell.CurrentActor!.Notes = "unsaved";
-        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "opening");
+        shell.SelectedActor = shell.Actors.Single(actor => actor.Id == "ST-2345-6789-ABCD-EFGH~actor~teacher");
+        shell.CurrentActor!.DisplayName = "unsaved";
+        shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
 
         shell.DeleteSelectedStoryCommand.Execute(null);
 
         Assert.AreEqual(1, dialogs.CanonicalDeleteConfirmationCount);
-        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("opening")));
-        Assert.IsFalse(File.Exists(project.Store.Memberships.GetPath("opening")));
-        Assert.IsFalse(File.Exists(project.ActorPath("teacher")));
+        Assert.IsFalse(File.Exists(project.Store.Stories.GetPath("ST-2345-6789-ABCD-EFGH")));
+        Assert.IsFalse(File.Exists(project.Store.Memberships.GetPath("ST-2345-6789-ABCD-EFGH")));
+        Assert.IsFalse(File.Exists(project.ActorPath("ST-2345-6789-ABCD-EFGH~actor~teacher")));
         Assert.AreEqual(OutputKind.Success, shell.Output.Entries.Last().Kind);
     }
 
@@ -99,27 +97,27 @@ public sealed class CanonicalStoryLifecycleShellTests
     public void SwitchingStoriesRetainsAllGraphsAndNormalSaveSavesTheWholeProject()
     {
         using var project = new LifecycleProjectFixture();
-        project.CreateCanonicalStory("first", "First");
-        project.CreateCanonicalStory("second", "Second");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "First");
+        project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Second");
         var resources = new CanonicalStoryResourceLifecycleService(project.Store);
-        resources.CreateOwnedSession("first", "session", "Session");
-        resources.CreateOwnedTask("first", "task", "Task");
+        resources.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session", "Session");
+        resources.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~task", "Task");
         var shell = project.OpenShell(new FakeProjectWorkspaceDialogs());
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "first"));
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
         var first = shell.CanonicalStoryWorkspace!;
         foreach (var editor in first.SessionEditors.Concat(first.TaskEditors).Append(first.StoryEditor))
             editor.Host.SetNodePosition(editor.Document.Graph!.Nodes.First().Id, 321, 123);
         Assert.IsTrue(first.HasDirtyEditors);
         shell.ShowProjectHomeCommand.Execute(null);
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "second"));
-        Assert.AreEqual("second", shell.CanonicalStoryWorkspace!.StoryEditor.Id);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-JKLM-NPQR-STUV-WXYZ"));
+        Assert.AreEqual("ST-JKLM-NPQR-STUV-WXYZ", shell.CanonicalStoryWorkspace!.StoryEditor.Id);
         Assert.IsTrue(shell.SaveCurrentResourceCommand.CanExecute(null));
         shell.SaveCurrentResourceCommand.Execute(null);
         Assert.IsFalse(first.HasDirtyEditors, shell.StatusMessage);
         var layouts = new CanonicalGraphLayoutStore(project.Root);
         foreach (var editor in first.SessionEditors.Concat(first.TaskEditors).Append(first.StoryEditor))
             Assert.AreEqual(321d, layouts.Load(editor.ResourceKind, editor.Id)[editor.Document.Graph!.Nodes.First().Id].X);
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "first"));
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
         Assert.IsFalse(shell.CanonicalStoryWorkspace!.HasDirtyEditors);
     }
 
@@ -129,16 +127,16 @@ public sealed class CanonicalStoryLifecycleShellTests
     public void DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory(bool deleteRetained)
     {
         using var project = new LifecycleProjectFixture();
-        project.CreateCanonicalStory("first", "First");
-        project.CreateCanonicalStory("second", "Second");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "First");
+        project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Second");
         var shell = project.OpenShell(new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = true });
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "first"));
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
         var first = shell.CanonicalStoryWorkspace!;
         first.StoryEditor.Host.SetNodePosition(first.StoryEditor.Document.Graph!.Nodes.First().Id, 321, 123);
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "second"));
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-JKLM-NPQR-STUV-WXYZ"));
         var second = shell.CanonicalStoryWorkspace!;
         second.StoryEditor.Host.SetNodePosition(second.StoryEditor.Document.Graph!.Nodes.First().Id, 222, 111);
-        var deletedId = deleteRetained ? "first" : "second";
+        var deletedId = deleteRetained ? "ST-2345-6789-ABCD-EFGH" : "ST-JKLM-NPQR-STUV-WXYZ";
         var survivor = deleteRetained ? second : first;
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == deletedId);
         shell.DeleteSelectedStoryCommand.Execute(null);
@@ -152,15 +150,15 @@ public sealed class CanonicalStoryLifecycleShellTests
     public void CancellingDirtyStoryDeletionPreservesDraftAndDisk()
     {
         using var project = new LifecycleProjectFixture();
-        project.CreateCanonicalStory("story", "Story");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Story");
         var shell = project.OpenShell(new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = false });
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "story"));
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
         var workspace = shell.CanonicalStoryWorkspace!;
         workspace.StoryEditor.Host.SetNodePosition(workspace.StoryEditor.Document.Graph!.Nodes.First().Id, 321, 123);
         shell.DeleteSelectedStoryCommand.Execute(null);
         Assert.AreSame(workspace, shell.CanonicalStoryWorkspace);
         Assert.IsTrue(workspace.HasDirtyEditors);
-        Assert.IsTrue(File.Exists(project.Store.Stories.GetPath("story")));
+        Assert.IsTrue(File.Exists(project.Store.Stories.GetPath("ST-2345-6789-ABCD-EFGH")));
         shell.SaveCurrentResourceCommand.Execute(null);
         Assert.IsFalse(workspace.HasDirtyEditors);
     }
@@ -182,7 +180,7 @@ public sealed class CanonicalStoryLifecycleShellTests
         public string Root { get; }
         public ProjectSession Session { get; }
         public CanonicalProjectGraphStore Store { get; }
-        public string ActorPath(string id) => Path.Combine(Root, "actors", id + ".json");
+        public string ActorPath(string id) => Session.Actors.GetActorPath(id);
 
         public void CreateCanonicalStory(string id, string displayName)
             => new CanonicalStoryLifecycleService(Store, Session.Actors, Session.Stories)

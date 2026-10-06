@@ -1,0 +1,5 @@
+action=snapshot
+world=true
+audioDevices=4
+tile=0:-120:91:200:313b4897-4e94-4bfe-b553-343c62496cad;radius=3;metadata=true;shown=true
+source=jar:file:/E:/Java/MinecraftMod/DarkGreyRPG/.tooling/0333/Client/mods/darkgrey_rpg-0.3.3.3.jar!/darkgrey/rpg/gramophone/GramophoneClient.class

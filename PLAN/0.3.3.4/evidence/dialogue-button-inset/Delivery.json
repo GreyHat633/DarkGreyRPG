@@ -1,0 +1,14 @@
+{
+  "Version": "0.3.3.4",
+  "Size": 1800727,
+  "SHA256": "4BE0EB456D27D8DE709C32FE24980D11002F74786CCBCADE42B125F964DFC43E",
+  "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.4.jar",
+  "CandidateMatchesBuildAndDist": true,
+  "VerifiedAt": "2026-09-30T15:25:35.411022+08:00",
+  "USER_ACCEPTED": "NO",
+  "RELEASE_READY": "NO",
+  "RestoreCount": 8,
+  "NativeClientPID": 14416,
+  "NativeServerPID": 1560,
+  "NativeProcessesExited": true
+}

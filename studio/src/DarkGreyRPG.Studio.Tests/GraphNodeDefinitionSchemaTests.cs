@@ -46,7 +46,7 @@ public sealed class GraphNodeDefinitionSchemaTests
         AssertPorts(GraphScope.Task, "not", ["logic_in", "logic_out"]);
         AssertPorts(GraphScope.Task, "logic_output", ["logic_in"]);
         AssertPorts(GraphScope.Task, "logic_input", ["logic_out"]);
-        AssertPorts(GraphScope.Task, "settle", []);
+        AssertPorts(GraphScope.Task, "settle", ["logic_in"]);
         Assert.IsTrue(GraphNodeDefinitionRegistry.ForScope(GraphScope.Task)
             .SelectMany(definition => definition.FixedPorts)
             .All(port => port.InterfaceKind == GraphInterfaceKind.Logic));
@@ -118,12 +118,12 @@ public sealed class GraphNodeDefinitionSchemaTests
             new[] { "line", "music", "screen", "choice", "and", "or", "not", "logic_input", "logic_output", "condition", "flow_judgment", "end" },
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Select(item => item.Type).ToArray());
         CollectionAssert.AreEqual(
-            new[] { "objective", "and", "or", "not", "logic_output", "logic_input", "reward" },
+            new[] { "objective", "and", "or", "not", "logic_output", "logic_input", "reward", "settle" },
             GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Task).Select(item => item.Type).ToArray());
         Assert.IsTrue(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Any(item => item.Type == "choice"));
         Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Session).Any(item => item.Type is "start" or "legacy_jump"));
         Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.StoryFlow).Any(item => item.Type == "start"));
-        Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Task).Any(item => item.Type is "activate" or "settle"));
+        Assert.IsFalse(GraphNodeDefinitionRegistry.ForAuthoringScope(GraphScope.Task).Any(item => item.Type == "activate"));
         foreach (var scope in new[] { GraphScope.StoryFlow, GraphScope.Session })
         {
             var logicMenu = GraphNodeDefinitionRegistry.ForAuthoringScope(scope)
@@ -143,11 +143,11 @@ public sealed class GraphNodeDefinitionSchemaTests
         AssertProperties(GraphScope.Session, "choice",
             ("prompt", JsonValueKind.String), ("options", JsonValueKind.Array));
         AssertProperties(GraphScope.Session, "end",
-            ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String));
+            ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String), ("display_order", JsonValueKind.Number));
         AssertProperties(GraphScope.Session, "logic_output",
-            ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String));
+            ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String), ("display_order", JsonValueKind.Number));
         AssertProperties(GraphScope.Task, "logic_output",
-            ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String));
+            ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String), ("display_order", JsonValueKind.Number));
         AssertProperties(GraphScope.StoryFlow, "session",
             ("resource_id", JsonValueKind.String));
         AssertProperties(GraphScope.StoryFlow, "task",

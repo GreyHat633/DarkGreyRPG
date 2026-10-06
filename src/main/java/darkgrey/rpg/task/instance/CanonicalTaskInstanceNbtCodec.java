@@ -13,6 +13,9 @@ import java.util.UUID;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
+import darkgrey.rpg.identity.StoryUid;
 import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 import darkgrey.rpg.task.runtime.CanonicalTaskSnapshot;
 import darkgrey.rpg.task.runtime.CanonicalTaskStatus;
@@ -20,7 +23,7 @@ import darkgrey.rpg.task.runtime.CanonicalTaskStatus;
 /** Strict, deterministic schema-version-1 NBT codec for TaskInstance snapshots. */
 public final class CanonicalTaskInstanceNbtCodec {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     private static final int BYTE = 1, INT = 3, LONG = 4, STRING = 8, LIST = 9, COMPOUND = 10;
 
     private CanonicalTaskInstanceNbtCodec() {}
@@ -59,6 +62,7 @@ public final class CanonicalTaskInstanceNbtCodec {
         });
         NBTTagCompound root = new NBTTagCompound();
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         NBTTagList list = new NBTTagList();
         for (CanonicalTaskInstanceSnapshot snapshot : ordered) {
             try {
@@ -72,7 +76,8 @@ public final class CanonicalTaskInstanceNbtCodec {
     }
 
     public static List<CanonicalTaskInstanceSnapshot> decode(NBTTagCompound root) {
-        requireKeys(root, set("schema_version", "instances"), "root");
+        requireKeys(root, set("identity_format", "schema_version", "instances"), "root");
+        ResourceAddressNbt.requireFormat(root);
         requireType(root, "schema_version", INT);
         requireType(root, "instances", LIST);
         if (root.getInteger("schema_version") != SCHEMA_VERSION) throw malformed("unsupported schema_version");
@@ -98,9 +103,14 @@ public final class CanonicalTaskInstanceNbtCodec {
             "player_uuid",
             instance.getPlayerUuid()
                 .toString());
-        tag.setString("story_instance_id", instance.getStoryInstanceId());
+        tag.setString(
+            "story_instance_id",
+            StoryUid.parse(instance.getStoryInstanceId())
+                .getValue());
         tag.setString("task_node_placement_id", instance.getTaskNodePlacementId());
-        tag.setString("task_resource_id", instance.getTaskResourceId());
+        tag.setTag(
+            "task_resource_id",
+            ResourceAddressNbt.write(instance.getTaskResourceId(), ResourceAddress.Kind.TASK));
         tag.setString(
             "status",
             instance.getStatus()
@@ -158,9 +168,10 @@ public final class CanonicalTaskInstanceNbtCodec {
         }
         if (!uuid.toString()
             .equals(player)) throw malformed("invalid player_uuid");
-        String story = string(tag, "story_instance_id");
+        String story = StoryUid.parse(string(tag, "story_instance_id"))
+            .getValue();
         String placement = string(tag, "task_node_placement_id");
-        String resource = string(tag, "task_resource_id");
+        String resource = ResourceAddressNbt.read(tag, "task_resource_id", ResourceAddress.Kind.TASK);
         CanonicalTaskInstanceStatus instanceStatus = enumValue(
             string(tag, "status"),
             CanonicalTaskInstanceStatus.class);

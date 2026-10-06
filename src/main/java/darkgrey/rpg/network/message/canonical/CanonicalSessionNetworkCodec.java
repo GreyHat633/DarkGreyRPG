@@ -28,6 +28,14 @@ final class CanonicalSessionNetworkCodec {
             .isEmpty()) throw invalid(name + " must be non-blank");
         byte[] encoded = value.getBytes(UTF8);
         if (encoded.length > maxBytes) throw invalid(name + " exceeds " + maxBytes + " UTF-8 bytes");
+        if ("story_id".equals(name) && !darkgrey.rpg.identity.StoryUid.isValid(value))
+            throw invalid("story_id requires the current Story UID format");
+        if ("session_resource_id".equals(name)) {
+            if (!darkgrey.rpg.identity.ResourceAddress.isKey(value)
+                || darkgrey.rpg.identity.ResourceAddress.fromKey(value)
+                    .getKind() != darkgrey.rpg.identity.ResourceAddress.Kind.SESSION)
+                throw invalid("session_resource_id requires a current Session address");
+        }
         return value;
     }
 

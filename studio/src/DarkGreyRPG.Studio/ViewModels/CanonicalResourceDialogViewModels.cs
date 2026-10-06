@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Identity;
@@ -19,9 +19,8 @@ public class CanonicalResourceIdentityDialogViewModel : ObservableObject
     {
         EnsureSupportedKind(resourceKind);
         ResourceKind = resourceKind;
-        NamespacePrefix = DgrResourceId.IsFullId(suggestedId) ? DgrResourceId.Namespace(suggestedId) + ":" : string.Empty;
         _id = suggestedId ?? string.Empty;
-        _displayName = displayName ?? DefaultDisplayName(resourceKind);
+        _displayName = displayName ?? string.Empty;
         ApplySuggestionCommand = new RelayCommand(ApplySuggestion, () => HasSuggestion);
     }
 
@@ -34,26 +33,9 @@ public class CanonicalResourceIdentityDialogViewModel : ObservableObject
     public string Description => $"创建独立的新{ChineseTypeLabel}，并归入当前故事。";
     public RelayCommand ApplySuggestionCommand { get; }
 
-    public string NamespacePrefix { get; }
-    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
-    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
-    public string EditableId
-    {
-        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
-            ? Id[NamespacePrefix.Length..] : Id;
-        set => Id = NamespacePrefix + (value ?? string.Empty);
-    }
+    public string EditableId { get => Id; set { } }
 
-    public string Id
-    {
-        get => _id;
-        set
-        {
-            if (!SetProperty(ref _id, value ?? string.Empty)) return;
-            RaiseValidationProperties();
-        }
-    }
-
+    public string Id { get => _id; set { } }
     public string DisplayName
     {
         get => _displayName;
@@ -68,20 +50,16 @@ public class CanonicalResourceIdentityDialogViewModel : ObservableObject
     public string TagsText { get => _tagsText; set => SetProperty(ref _tagsText, value ?? string.Empty); }
     public IReadOnlyList<string> Tags => ResourceTagsInput.Parse(TagsText);
 
-    public string NormalizedSuggestion => NormalizeSuggestion(Id);
-    public bool HasSuggestion => NormalizedSuggestion.Length > 0
-        && !string.Equals(Id, NormalizedSuggestion, StringComparison.Ordinal);
+    public string NormalizedSuggestion => Id;
+    public bool HasSuggestion => false;
 
     public string ValidationText
     {
         get
         {
-            var messages = ActorValidator.ValidateId(Id, ActorIdPolicy.NewResource)
-                .Where(issue => issue.Severity == ValidationSeverity.Error)
-                .Select(issue => issue.Message)
-                .ToList();
-            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
-                messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
+            var messages = new List<string>();
+            if (!ResourceAddress.IsKey(Id) || ResourceAddress.FromKey(Id).Kind != (ResourceKind == GraphResourceKind.Session ? Core.Identity.ResourceKind.Session : Core.Identity.ResourceKind.Task))
+                messages.Add("资源内部地址无效。");
             if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("显示名称不能为空。");
             return string.Join(Environment.NewLine, messages);
         }
@@ -89,10 +67,6 @@ public class CanonicalResourceIdentityDialogViewModel : ObservableObject
 
     public bool CanConfirm => ValidationText.Length == 0;
 
-    private static string NormalizeSuggestion(string id)
-        => DgrResourceId.IsFullId(id) || id.Contains(':')
-            ? id
-            : ActorValidator.NormalizeId(id);
 
     public static CanonicalResourceIdentityDialogViewModel ForCreate(
         GraphResourceKind resourceKind,

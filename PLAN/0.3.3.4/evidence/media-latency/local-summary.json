@@ -1,0 +1,65 @@
+{
+  "events": {
+    "frame_received": 8,
+    "frame_media": 8,
+    "file_check": 5,
+    "first_draw": 8,
+    "local_import": 5,
+    "file_ready": 5,
+    "package_ready": 1,
+    "audio_prepare": 2,
+    "decode_queue": 14,
+    "decode": 14,
+    "upload": 12,
+    "image_ready": 12,
+    "draw_gap": 1,
+    "texture_release": 8,
+    "decode_discard": 2
+  },
+  "first_draw": {
+    "count": 8,
+    "min_ms": 3.424,
+    "max_ms": 14.122
+  },
+  "decode": {
+    "count": 14,
+    "min_ms": 42.114,
+    "max_ms": 56.499
+  },
+  "upload": {
+    "count": 12,
+    "min_ms": 24.727,
+    "max_ms": 36.083
+  },
+  "image_ready": {
+    "count": 12,
+    "min_ms": 77.22,
+    "max_ms": 270.73
+  },
+  "draw_gap": {
+    "count": 1,
+    "min_ms": 50.928,
+    "max_ms": 50.928
+  },
+  "local_import": {
+    "count": 5,
+    "min_ms": 22.227,
+    "max_ms": 88.037
+  },
+  "upload_tick_ids": [
+    1146,
+    1147,
+    1148,
+    1149,
+    2150,
+    2151,
+    2152,
+    2153,
+    3129,
+    3130,
+    3311,
+    3312
+  ],
+  "cold_package_ready_ms": 443.364,
+  "no_network_downloads": true
+}

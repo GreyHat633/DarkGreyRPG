@@ -1,0 +1,11 @@
+{
+  "File": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\resources\\canonical\\sessions\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\session\\r-r8bdcb73bfd086c6c9a952e8c6b8dbf3d.json",
+  "Schema": 2,
+  "Format": "story-uid-v1",
+  "Address": {
+    "story_uid": "ST-2345-6789-ABCD-EFGH",
+    "kind": "session",
+    "local_id": "r8bdcb73bfd086c6c9a952e8c6b8dbf3d"
+  },
+  "Name": "实机新身份会话"
+}

@@ -1,0 +1,5 @@
+action=play
+vanillaMusic=1.0
+dgrMusic=1.0
+vanillaSource=9b9cff67-e8c3-4cb0-b764-f56d43efb7bf;resource=minecraft:music.game;playing=true;gain=1.0
+screen=null

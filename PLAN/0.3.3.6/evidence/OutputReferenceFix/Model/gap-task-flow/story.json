@@ -1,0 +1,228 @@
+{
+  "schema_version": 2,
+  "identity_format": "story-uid-v1",
+  "resource_kind": "story",
+  "id": "ST-2345-6789-ABCD-EFGH",
+  "display_name": "交互验证",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "开始",
+        "ports": [
+          {
+            "port_id": "story_trigger_2abae895e3bb40c6acf0cbf162decc20",
+            "display_name": "启动条件 1",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "repeat_policy": "once",
+          "triggers": [
+            {
+              "port_id": "story_trigger_2abae895e3bb40c6acf0cbf162decc20",
+              "display_name": "启动条件 1",
+              "trigger_type": "enter_region",
+              "trigger_properties": {
+                "dimension": 0,
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "radius": 3
+              },
+              "order": 0
+            }
+          ]
+        }
+      },
+      {
+        "id": "session",
+        "type": "session",
+        "display_name": "会话排序",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "dynamic_port_0505dae446854a27a408141313ab153f",
+            "display_name": "离开",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_9045b71adb4142fd95369472e55c0c68",
+            "display_name": "接受",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_af73b6696b9c46e7907c253397b37448",
+            "display_name": "拒绝",
+            "order": 2,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_e04d663f78b948e4ac39b4ca741450d1",
+            "display_name": "已完成",
+            "order": 3,
+            "kind": "logic",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_4c7d53aed6f64f35b9a584f376c0fb35",
+            "display_name": "可交互",
+            "order": 4,
+            "kind": "logic",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "resource_id": {
+            "story_uid": "ST-2345-6789-ABCD-EFGH",
+            "kind": "session",
+            "local_id": "drag"
+          }
+        }
+      },
+      {
+        "id": "task",
+        "type": "task",
+        "display_name": "任务排序",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "dynamic_port_df6e578380b34e06babd6d7abea78045",
+            "display_name": "拒绝",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_6f168add263740eca7edb0af61883ccb",
+            "display_name": "离开",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_936d594d61e84a4ba865d6b3ddd346aa",
+            "display_name": "接受",
+            "order": 2,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_0e969b2a5c854ab0a5bc9d28f51af605",
+            "display_name": "可交互",
+            "order": 3,
+            "kind": "logic",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_d40de3781e4545f6a14a78fc9cb1f2df",
+            "display_name": "已完成",
+            "order": 4,
+            "kind": "logic",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "resource_id": {
+            "story_uid": "ST-2345-6789-ABCD-EFGH",
+            "kind": "task",
+            "local_id": "drag"
+          }
+        }
+      },
+      {
+        "id": "terminal",
+        "type": "terminate",
+        "display_name": "终止",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "终止",
+          "display_order": 0,
+          "port_id": "dynamic_port_1c63f5c3978b48a686e3cb2753d1fa37"
+        }
+      },
+      {
+        "id": "fixture-放弃",
+        "type": "terminate",
+        "display_name": "终止",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "放弃",
+          "display_order": 1,
+          "port_id": "dynamic_port_89cdd5b09f5946da94afebf086808077"
+        }
+      },
+      {
+        "id": "fixture-完成",
+        "type": "terminate",
+        "display_name": "终止",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "完成",
+          "display_order": 2,
+          "port_id": "dynamic_port_690063641f474730bfa58c78fa27bb2d"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "from_node_id": "start",
+        "from_port_id": "story_trigger_2abae895e3bb40c6acf0cbf162decc20",
+        "to_node_id": "session",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "session",
+        "from_port_id": "dynamic_port_9045b71adb4142fd95369472e55c0c68",
+        "to_node_id": "terminal",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      }
+    ]
+  }
+}

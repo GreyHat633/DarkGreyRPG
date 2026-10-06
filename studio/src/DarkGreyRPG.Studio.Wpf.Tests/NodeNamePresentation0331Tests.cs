@@ -1,4 +1,4 @@
-using DarkGreyRPG.Studio.Core.Graphs;
+﻿using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -13,9 +13,9 @@ public sealed class NodeNamePresentation0331Tests
     {
         foreach (var definition in GraphNodeDefinitionRegistry.All.Where(d => d.Type is "terminate" or "end" or "logic_input" or "logic_output"))
         {
-            var node = GraphNodeFactory.Create(definition.Scope, definition.Type, "node");
+            var node = new GraphNodeAuthoringService().Create(new GraphDocument(), definition.Scope, definition.Type, "node").Candidate!;
             var kind = definition.Scope switch { GraphScope.Session => GraphResourceKind.Session, GraphScope.Task => GraphResourceKind.Task, _ => GraphResourceKind.Story };
-            using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(kind, "resource", "Resource", new GraphDocument([node])));
+            using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(kind, CurrentIdentityFixture.GraphId(kind), "Resource", new GraphDocument([node])));
             using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
             inspector.BoundaryDisplayName = "完成[A]";
             Assert.AreEqual($"{definition.DisplayName}「完成[A]」", inspector.DisplayName);

@@ -1,0 +1,118 @@
+WINDOW: 导入留声机 MP3（不超过 32 MiB / 15 分钟） 0,0,758,543
+ControlType.Text id=1091 name=查找范围(I): enabled=True rect=17,50,114,17
+ControlType.ComboBox id=1137 name=查找范围(I): enabled=True rect=141,46,348,26
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=469,47,19,24
+ControlType.ToolBar id=1088 name= enabled=True rect=505,46,160,28
+ControlType.Button id=Item 40971 name=转到访问的上一个文件夹 enabled=False rect=505,46,23,22
+ControlType.Button id=Item 40961 name=向上一级 enabled=True rect=528,46,23,22
+ControlType.Button id=Item 40962 name=创建新文件夹 enabled=True rect=551,46,23,22
+ControlType.Button id=Item 40970 name=“查看”菜单 enabled=True rect=574,46,36,22
+ControlType.ToolBar id=1184 name= enabled=True rect=17,76,118,450
+ControlType.Button id=Item 41060 name=最近使用的项目 enabled=True rect=17,76,118,73
+ControlType.Button id=Item 41061 name=桌面 enabled=True rect=17,149,118,73
+ControlType.Button id=Item 41062 name=文档 enabled=True rect=17,222,118,73
+ControlType.Button id=Item 41063 name=此电脑 enabled=True rect=17,295,118,73
+ControlType.DataGrid id=1 name=文件夹视图 enabled=True rect=141,82,600,353
+ControlType.Header id=Header name=Header enabled=True rect=141,82,579,24
+ControlType.SplitButton id=HeaderItem 0 name=名称 enabled=True rect=141,82,215,24
+ControlType.SplitButton id=HeaderItem 1 name=# enabled=True rect=372,82,40,24
+ControlType.SplitButton id=HeaderItem 2 name=标题 enabled=True rect=428,82,207,24
+ControlType.SplitButton id=HeaderItem 3 name=参与创作的艺术家 enabled=True rect=651,82,151,24
+ControlType.ScrollBar id=Horizontal ScrollBar name=Horizontal Scroll Bar enabled=True rect=141,414,579,21
+ControlType.Button id=SmallDecrement name=Back by small amount enabled=True rect=141,414,17,21
+ControlType.Button id=LargeDecrement name=Back by large amount enabled=True rect=158,414,4,21
+ControlType.Thumb id=Thumb name=Thumb enabled=True rect=162,414,362,21
+ControlType.Button id=LargeIncrement name=Forward by large amount enabled=True rect=524,414,179,21
+ControlType.Button id=SmallIncrement name=Forward by small amount enabled=True rect=703,414,17,21
+ControlType.ScrollBar id=Vertical ScrollBar name=Vertical Scroll Bar enabled=True rect=720,82,21,332
+ControlType.Button id=SmallDecrement name=Back by small amount enabled=True rect=720,82,21,17
+ControlType.Button id=LargeDecrement name=Back by large amount enabled=True rect=720,99,21,4
+ControlType.Thumb id=Thumb name=Thumb enabled=True rect=720,103,21,35
+ControlType.Button id=LargeIncrement name=Forward by large amount enabled=True rect=720,138,21,259
+ControlType.Button id=SmallIncrement name=Forward by small amount enabled=True rect=720,397,21,17
+ControlType.DataItem id= name=draft001.mp3 enabled=True rect=145,106,855,24
+ControlType.Edit id= name=draft001.mp3 enabled=True rect=145,106,219,24
+ControlType.Edit id= name= enabled=True rect=364,106,56,24
+ControlType.Edit id= name=NativeDraft1 enabled=True rect=420,106,223,24
+ControlType.Edit id= name= enabled=True rect=643,106,167,24
+ControlType.DataItem id= name=draft002.mp3 enabled=True rect=145,130,855,24
+ControlType.Edit id= name=draft002.mp3 enabled=True rect=145,130,219,24
+ControlType.Edit id= name= enabled=True rect=364,130,56,24
+ControlType.Edit id= name=NativeDraft2 enabled=True rect=420,130,223,24
+ControlType.Edit id= name= enabled=True rect=643,130,167,24
+ControlType.DataItem id= name=draft003.mp3 enabled=True rect=145,154,855,24
+ControlType.Edit id= name=draft003.mp3 enabled=True rect=145,154,219,24
+ControlType.Edit id= name= enabled=True rect=364,154,56,24
+ControlType.Edit id= name=NativeDraft3 enabled=True rect=420,154,223,24
+ControlType.Edit id= name= enabled=True rect=643,154,167,24
+ControlType.DataItem id= name=draft004.mp3 enabled=True rect=145,178,855,24
+ControlType.Edit id= name=draft004.mp3 enabled=True rect=145,178,219,24
+ControlType.Edit id= name= enabled=True rect=364,178,56,24
+ControlType.Edit id= name=NativeDraft4 enabled=True rect=420,178,223,24
+ControlType.Edit id= name= enabled=True rect=643,178,167,24
+ControlType.DataItem id= name=draft005.mp3 enabled=True rect=145,202,855,24
+ControlType.Edit id= name=draft005.mp3 enabled=True rect=145,202,219,24
+ControlType.Edit id= name= enabled=True rect=364,202,56,24
+ControlType.Edit id= name=NativeDraft5 enabled=True rect=420,202,223,24
+ControlType.Edit id= name= enabled=True rect=643,202,167,24
+ControlType.DataItem id= name=draft006.mp3 enabled=True rect=145,226,855,24
+ControlType.Edit id= name=draft006.mp3 enabled=True rect=145,226,219,24
+ControlType.Edit id= name= enabled=True rect=364,226,56,24
+ControlType.Edit id= name=NativeDraft6 enabled=True rect=420,226,223,24
+ControlType.Edit id= name= enabled=True rect=643,226,167,24
+ControlType.DataItem id= name=draft007.mp3 enabled=True rect=145,250,855,24
+ControlType.Edit id= name=draft007.mp3 enabled=True rect=145,250,219,24
+ControlType.Edit id= name= enabled=True rect=364,250,56,24
+ControlType.Edit id= name=NativeDraft7 enabled=True rect=420,250,223,24
+ControlType.Edit id= name= enabled=True rect=643,250,167,24
+ControlType.DataItem id= name=draft008.mp3 enabled=True rect=145,274,855,24
+ControlType.Edit id= name=draft008.mp3 enabled=True rect=145,274,219,24
+ControlType.Edit id= name= enabled=True rect=364,274,56,24
+ControlType.Edit id= name=NativeDraft8 enabled=True rect=420,274,223,24
+ControlType.Edit id= name= enabled=True rect=643,274,167,24
+ControlType.DataItem id= name=draft009.mp3 enabled=True rect=145,298,855,24
+ControlType.Edit id= name=draft009.mp3 enabled=True rect=145,298,219,24
+ControlType.Edit id= name= enabled=True rect=364,298,56,24
+ControlType.Edit id= name=NativeDraft9 enabled=True rect=420,298,223,24
+ControlType.Edit id= name= enabled=True rect=643,298,167,24
+ControlType.DataItem id= name=draft010.mp3 enabled=True rect=145,322,855,24
+ControlType.Edit id= name=draft010.mp3 enabled=True rect=145,322,219,24
+ControlType.Edit id= name= enabled=True rect=364,322,56,24
+ControlType.Edit id= name=NativeDraft10 enabled=True rect=420,322,223,24
+ControlType.Edit id= name= enabled=True rect=643,322,167,24
+ControlType.DataItem id= name=draft011.mp3 enabled=True rect=145,346,855,24
+ControlType.Edit id= name=draft011.mp3 enabled=True rect=145,346,219,24
+ControlType.Edit id= name= enabled=True rect=364,346,56,24
+ControlType.Edit id= name=NativeDraft11 enabled=True rect=420,346,223,24
+ControlType.Edit id= name= enabled=True rect=643,346,167,24
+ControlType.DataItem id= name=draft012.mp3 enabled=True rect=145,370,855,24
+ControlType.Edit id= name=draft012.mp3 enabled=True rect=145,370,219,24
+ControlType.Edit id= name= enabled=True rect=364,370,56,24
+ControlType.Edit id= name=NativeDraft12 enabled=True rect=420,370,223,24
+ControlType.Edit id= name= enabled=True rect=643,370,167,24
+ControlType.DataItem id= name=draft013.mp3 enabled=True rect=145,394,855,24
+ControlType.Edit id= name=draft013.mp3 enabled=True rect=145,394,219,24
+ControlType.Edit id= name= enabled=True rect=364,394,56,24
+ControlType.Edit id= name=NativeDraft13 enabled=True rect=420,394,223,24
+ControlType.Edit id= name= enabled=True rect=643,394,167,24
+ControlType.Text id=1090 name=文件名(N): enabled=True rect=143,454,116,17
+ControlType.ComboBox id=1148 name=文件名(N): enabled=True rect=269,446,328,24
+ControlType.Edit id=1148 name=文件名(N): enabled=True rect=273,451,300,15
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=577,447,19,22
+ControlType.Text id=1089 name=文件类型(T): enabled=True rect=143,486,116,17
+ControlType.ComboBox id=1136 name=文件类型(T): enabled=True rect=269,482,328,23
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=577,483,19,21
+ControlType.Button id=1 name=打开(O) enabled=True rect=621,446,120,28
+ControlType.Button id=2 name=取消 enabled=True rect=621,480,120,28
+ControlType.Pane id= name= enabled=True rect=728,513,21,21
+ControlType.TitleBar id=TitleBar name=导入留声机 MP3（不超过 32 MiB / 15 分钟） enabled=True rect=9,9,740,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=9,9,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=9,9,27,27
+ControlType.Button id=Close name=Close enabled=True rect=707,1,43,36
+WINDOW: Minecraft 1.7.10 320,140,1298,846
+ControlType.TitleBar id=TitleBar name=Minecraft 1.7.10 enabled=True rect=329,149,1280,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=329,149,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=329,149,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1437,141,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=1495,141,57,36
+ControlType.Button id=Close name=Close enabled=True rect=1552,141,58,36

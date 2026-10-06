@@ -38,8 +38,7 @@ public final class S2CNominatorInventoryOpen implements IMessage {
             NominatorCatalog.from(
                 DarkGreyRpg.getProjectRepository()
                     .getSnapshot(),
-                DarkGreyRpg.getStoryPackageLoader()
-                    .getPackages()));
+                DarkGreyRpg.getStoryPackageLoader()));
     }
 
     public long getRevision() {

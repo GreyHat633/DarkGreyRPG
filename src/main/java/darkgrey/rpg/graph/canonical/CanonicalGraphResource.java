@@ -1,9 +1,9 @@
 package darkgrey.rpg.graph.canonical;
 
-/** Immutable schema-version-1 canonical Story/Session/Task envelope. */
+/** Immutable current-identity canonical Story/Session/Task envelope. */
 public final class CanonicalGraphResource {
 
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     private final int schemaVersion;
     private final CanonicalGraphResourceKind resourceKind;

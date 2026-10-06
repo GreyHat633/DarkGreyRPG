@@ -16,7 +16,9 @@ import darkgrey.rpg.nominator.NominatorCatalog;
 /** Two clipped lists with a single rendered offset for drawing and hit testing. */
 public final class NominatorBrowser extends Gui {
 
-    private static final int ROW_HEIGHT = 20;
+    private static final int ROW_HEIGHT = RuntimeDirectoryVisuals.ROW_HEIGHT;
+    private final RuntimeDirectoryTree tree = new RuntimeDirectoryTree();
+    private List<RuntimeDirectoryTree.Row> directory = new java.util.ArrayList<RuntimeDirectoryTree.Row>();
 
     private final FontRenderer font;
     private final NominatorCatalog catalog;
@@ -29,10 +31,13 @@ public final class NominatorBrowser extends Gui {
     private long lastFrame = System.nanoTime();
     private NominatorGlobalSearch.Row selected;
     private List<NominatorGlobalSearch.Row> rows;
+    private List<String> tooltip;
+    private final RuntimeRowText.Metrics metrics;
 
     public NominatorBrowser(FontRenderer font, NominatorCatalog catalog, boolean items, int x, int y, int width,
         int height) {
         this.font = font;
+        metrics = RuntimeDirectoryVisuals.metrics(font);
         this.catalog = catalog;
         this.items = items;
         search = new GuiTextField(font, x, y, width, 18);
@@ -42,6 +47,8 @@ public final class NominatorBrowser extends Gui {
                 : catalog.getPackageChoices()
                     .get(0)
                     .getPackageId();
+        NominatorCatalog.PackageChoice initial = catalog.getPackageChoice(selectedPackage);
+        if (initial != null && initial.isGroup()) tree.toggle(initial.getContainerId());
         refresh();
         layout(x, y, width, height);
     }
@@ -60,22 +67,37 @@ public final class NominatorBrowser extends Gui {
     }
 
     private int viewportHeight() {
-        return Math.max(0, height - 40);
+        return Math.max(0, height - 42);
     }
 
     private void clampScroll() {
-        packageMotion.bounds(
-            Math.max(
-                0,
-                catalog.getPackageChoices()
-                    .size() * 20 - viewportHeight()));
-        resourceMotion.bounds(Math.max(0, rows.size() * 20 - viewportHeight()));
+        packageMotion.bounds(Math.max(0, directory.size() * ROW_HEIGHT - viewportHeight()));
+        resourceMotion.bounds(Math.max(0, rows.size() * ROW_HEIGHT - viewportHeight()));
     }
 
     private void refresh() {
         rows = NominatorGlobalSearch.search(catalog, selectedPackage, query, items);
         selected = null;
         resourceMotion.jump(0);
+        java.util.List<RuntimeDirectoryTree.Entry> entries = new java.util.ArrayList<RuntimeDirectoryTree.Entry>();
+        java.util.Set<String> matchingPackages = new java.util.HashSet<String>();
+        for (NominatorGlobalSearch.Row row : rows) matchingPackages.add(row.source.getPackageId());
+        for (NominatorCatalog.PackageChoice choice : catalog.getPackageChoices()) {
+            if (!query.trim()
+                .isEmpty() && !matchingPackages.contains(choice.getPackageId())) continue;
+            entries.add(
+                new RuntimeDirectoryTree.Entry(
+                    choice.getPackageId(),
+                    choice.getDisplayName(),
+                    choice.getContainerId(),
+                    choice.getContainerName(),
+                    choice.isGroup()));
+        }
+        directory = tree.rows(
+            entries,
+            "",
+            !query.trim()
+                .isEmpty());
         clampScroll();
     }
 
@@ -85,6 +107,7 @@ public final class NominatorBrowser extends Gui {
 
     public void restore(NominatorBrowser old) {
         if (old == null) return;
+        tree.restore(old.tree);
         query = old.search.getText();
         search.setText(query);
         search.setFocused(old.search.isFocused());
@@ -100,17 +123,22 @@ public final class NominatorBrowser extends Gui {
     }
 
     public static String resourceLabel(NominatorGlobalSearch.Row row, boolean global) {
-        String type = "NPC".equals(row.type) ? "NPCID" : "Item".equals(row.type) ? "ItemID" : "GroupID";
-        return (global ? "[" + row.source.getDisplayName() + "] " : "") + row.name
-            + "  "
-            + net.minecraft.util.EnumChatFormatting.GRAY
-            + "["
-            + type
-            + "] "
-            + row.id;
+        String type = "NPC".equals(row.type) ? "角色"
+            : "Group".equals(row.type) ? "角色组" : "Item".equals(row.type) ? "物品" : "物品组";
+        return "[" + type + "] " + row.name + (row.source.isReference(row.id) ? " [引用]" : "");
+    }
+
+    public static String sourceLabel(NominatorGlobalSearch.Row row, boolean global, NominatorCatalog catalog) {
+        return row.source.isReference(row.id) ? "来源：" + catalog.ownerName(row.id)
+            : global ? "所属：" + row.source.getDisplayName() : "";
+    }
+
+    public List<String> tooltip() {
+        return tooltip;
     }
 
     public void draw(int mx, int my) {
+        tooltip = null;
         if (!query.equals(search.getText())) {
             query = search.getText();
             refresh();
@@ -121,20 +149,11 @@ public final class NominatorBrowser extends Gui {
         packageMotion.advance(seconds);
         resourceMotion.advance(seconds);
         search.drawTextBox();
-        if (query.isEmpty() && !search.isFocused()) font.drawString(
-            net.minecraft.client.resources.I18n.format("gui.darkgrey_rpg.search_hint"),
-            x + 4,
-            y + 5,
-            0x888888);
+        if (query.isEmpty() && !search.isFocused()) font.drawString("名称 / 标签", x + 4, y + 5, 0x888888);
         drawRect(x, y + 24, x + width, y + height, DgrUiPalette.SUB_PANEL);
         drawRect(x + split, y + 24, x + split + 1, y + height, DgrUiPalette.BORDER);
-        font.drawString("故事包", x + 4, y + 27, DgrUiPalette.SECONDARY);
-        font.drawString(
-            query.trim()
-                .isEmpty() ? "资源" : "全局搜索",
-            x + split + 5,
-            y + 27,
-            DgrUiPalette.SECONDARY);
+        RuntimeDirectoryVisuals.heading(font, "故事包", x + 4, y + 25, split - 8);
+        RuntimeDirectoryVisuals.heading(font, "资源", x + split + 5, y + 25, width - split - 10);
         if (viewportHeight() == 0) return;
         Minecraft mc = Minecraft.getMinecraft();
         int scale = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight).getScaleFactor();
@@ -146,72 +165,102 @@ public final class NominatorBrowser extends Gui {
             Math.max(0, width * scale),
             viewportHeight() * scale);
         try {
-            List<NominatorCatalog.PackageChoice> packages = catalog.getPackageChoices();
-            int first = packageMotion.pixelOffset() / 20;
-            for (int i = first; i < packages.size(); i++) {
-                int top = y + 40 + i * 20 - packageMotion.pixelOffset();
+            int first = packageMotion.pixelOffset() / ROW_HEIGHT;
+            for (int i = first; i < directory.size(); i++) {
+                int top = y + 42 + i * ROW_HEIGHT - packageMotion.pixelOffset();
                 if (top >= y + height) break;
-                NominatorCatalog.PackageChoice p = packages.get(i);
-                if (p.getPackageId()
-                    .equals(selectedPackage) || hovered(mx, my, x, x + split, top))
-                    drawRect(x, top, x + split, top + 18, DgrUiPalette.HOVER);
-                font.drawString(
-                    font.trimStringToWidth(p.getDisplayName(), split - 8),
-                    x + 4,
-                    top + 5,
-                    DgrUiPalette.TEXT);
+                RuntimeDirectoryTree.Row row = directory.get(i);
+                RuntimeDirectoryVisuals.row(
+                    font,
+                    row.name,
+                    row.folder,
+                    row.open,
+                    row.depth,
+                    x,
+                    top,
+                    split,
+                    row.key.equals(selectedPackage),
+                    hovered(mx, my, x, x + split, top, ROW_HEIGHT));
+                if (hovered(mx, my, x, x + split, top, ROW_HEIGHT))
+                    tooltip = java.util.Collections.singletonList(row.name);
             }
-            first = resourceMotion.pixelOffset() / 20;
+            first = resourceMotion.pixelOffset() / ROW_HEIGHT;
             for (int i = first; i < rows.size(); i++) {
-                int top = y + 40 + i * 20 - resourceMotion.pixelOffset();
+                int top = y + 42 + i * ROW_HEIGHT - resourceMotion.pixelOffset();
                 if (top >= y + height) break;
                 NominatorGlobalSearch.Row r = rows.get(i);
-                if (r == selected || hovered(mx, my, x + split + 1, x + width, top))
-                    drawRect(x + split + 1, top, x + width, top + 18, DgrUiPalette.HOVER);
-                font.drawString(
-                    font.trimStringToWidth(
-                        resourceLabel(
-                            r,
-                            !query.trim()
-                                .isEmpty()),
-                        width - split - 10),
-                    x + split + 5,
-                    top + 5,
-                    DgrUiPalette.TEXT);
+                boolean hovered = hovered(mx, my, x + split + 1, x + width, top, ROW_HEIGHT);
+                if (r == selected || hovered) drawRect(
+                    x + split + 1,
+                    top,
+                    x + width,
+                    top + ROW_HEIGHT,
+                    r == selected ? DgrUiPalette.SELECTED_FILL : DgrUiPalette.HOVER);
+                boolean global = !query.trim()
+                    .isEmpty();
+                String label = resourceLabel(r, global), source = sourceLabel(r, global, catalog);
+                RuntimeRowText.ResourceLayout layout = RuntimeRowText
+                    .resource(label, r.source.isReference(r.id), source, width - split - 10, metrics);
+                int left = x + split + 5, textY = RuntimeDirectoryVisuals.textY(font, top);
+                RuntimeDirectoryVisuals.text(font, layout.name, left, textY, layout.nameWidth, DgrUiPalette.TEXT);
+                RuntimeDirectoryVisuals.text(
+                    font,
+                    layout.source,
+                    left + layout.sourceOffset,
+                    textY,
+                    width - split - 10 - layout.sourceOffset,
+                    DgrUiPalette.SECONDARY);
+                if (hovered) {
+                    tooltip = new java.util.ArrayList<String>();
+                    tooltip.add(label);
+                    if (!source.isEmpty()) tooltip.add(source);
+                }
             }
-            if (rows.isEmpty()) font.drawString("无匹配资源", x + split + 5, y + 40, DgrUiPalette.SECONDARY);
+            if (rows.isEmpty()) RuntimeDirectoryVisuals.text(
+                font,
+                "无匹配资源",
+                x + split + 5,
+                RuntimeDirectoryVisuals.textY(font, y + 42),
+                width - split - 10,
+                DgrUiPalette.SECONDARY);
         } finally {
             GL11.glPopAttrib();
         }
     }
 
-    private boolean hovered(int mx, int my, int left, int right, int top) {
-        return mx >= left && mx < right && my >= Math.max(y + 40, top) && my < Math.min(y + height, top + ROW_HEIGHT);
+    private boolean hovered(int mx, int my, int left, int right, int top, int rowHeight) {
+        return mx >= left && mx < right && my >= Math.max(y + 42, top) && my < Math.min(y + height, top + rowHeight);
     }
 
     public void click(int mx, int my, int button) {
         search.mouseClicked(mx, my, button);
-        if (button != 0 || mx < x || mx >= x + width || my < y + 40 || my >= y + height) return;
+        if (button != 0 || mx < x || mx >= x + width || my < y + 42 || my >= y + height) return;
         if (mx < x + split) {
-            int i = packageMotion.rowAt(my - y - 40);
-            if (i < catalog.getPackageChoices()
-                .size()) {
-                selectedPackage = catalog.getPackageChoices()
-                    .get(i)
-                    .getPackageId();
+            int i = (my - y - 42 + packageMotion.pixelOffset()) / ROW_HEIGHT;
+            if (i >= 0 && i < directory.size()) {
+                RuntimeDirectoryTree.Row row = directory.get(i);
+                if (row.folder) {
+                    tree.toggle(row.key);
+                    NominatorGlobalSearch.Row keep = selected;
+                    SmoothScroll position = new SmoothScroll();
+                    position.restore(resourceMotion);
+                    refresh();
+                    selected = keep;
+                    resourceMotion.restore(position);
+                    clampScroll();
+                    return;
+                }
+                selectedPackage = row.key;
                 search.setText("");
                 query = "";
                 refresh();
             }
         } else {
-            int i = resourceMotion.rowAt(my - y - 40);
+            int i = (my - y - 42 + resourceMotion.pixelOffset()) / ROW_HEIGHT;
             if (i >= rows.size()) return;
             selected = rows.get(i);
             selectedPackage = selected.source.getPackageId();
-            int index = catalog.getPackageChoices()
-                .indexOf(selected.source);
-            if (index >= 0 && (index * 20 < packageMotion.position()
-                || (index + 1) * 20 > packageMotion.position() + viewportHeight())) packageMotion.jump(index * 20);
+
         }
     }
 

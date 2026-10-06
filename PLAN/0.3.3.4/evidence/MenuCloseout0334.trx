@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ea0db210-b6f6-4f09-9113-dc842dd1913b" name="GreyHat@LAPTOP-F7PUVUPO 2026-09-24 14:51:42" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-24T14:51:42.3100563+08:00" queuing="2026-09-24T14:51:42.3100566+08:00" start="2026-09-24T14:51:40.8730448+08:00" finish="2026-09-24T14:51:42.3166679+08:00" />
+  <TestSettings name="default" id="f29cacc6-f917-40ea-96f0-f06d145e4efa">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-09-24_14_51_42" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="11775a3c-3222-4963-97fc-d2f8d1df119d" testId="1bf5ff2a-de39-82c1-aa5c-da557ab9cf58" testName="ProjectCanvasMenuOffersOnlyAddStoryAtRequestedPosition" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.3891605" startTime="2026-09-24T14:51:41.5798793+08:00" endTime="2026-09-24T14:51:41.9950128+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="11775a3c-3222-4963-97fc-d2f8d1df119d" />
+    <UnitTestResult executionId="3aaa6c66-533f-45ab-83b4-d99c9f413a9a" testId="1a700215-3752-87b7-9981-8a8a0666e90f" testName="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView (True,False,True)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0069683" startTime="2026-09-24T14:51:42.0162618+08:00" endTime="2026-09-24T14:51:42.0248090+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3aaa6c66-533f-45ab-83b4-d99c9f413a9a" />
+    <UnitTestResult executionId="debcaa59-12fc-47bd-8fdf-f7de36934a3e" testId="16a25c79-eb14-8869-a83c-abcb7fb40945" testName="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView (False,False,False)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0115953" startTime="2026-09-24T14:51:41.9996897+08:00" endTime="2026-09-24T14:51:42.0156412+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="debcaa59-12fc-47bd-8fdf-f7de36934a3e" />
+    <UnitTestResult executionId="bef05307-e029-4a6c-b644-df7978adbb7f" testId="1bfab9ed-07d6-8f64-866f-a0568a17af55" testName="NonProjectCanvasMenuStillUsesAddNodeSubmenu" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0399947" startTime="2026-09-24T14:51:42.0444782+08:00" endTime="2026-09-24T14:51:42.0884834+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bef05307-e029-4a6c-b644-df7978adbb7f" />
+    <UnitTestResult executionId="33cf4ff0-23c4-4068-a578-45e69bd1cff3" testId="1ea7ce5e-dce4-874a-8be4-7d24c2209ff6" testName="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView (True,True,False)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0082427" startTime="2026-09-24T14:51:42.0248668+08:00" endTime="2026-09-24T14:51:42.0349703+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="33cf4ff0-23c4-4068-a578-45e69bd1cff3" />
+    <UnitTestResult executionId="d0ce385a-136e-472d-a548-b55e5629cef4" testId="1be814b2-6bff-8732-8e6b-8811d6b9afd1" testName="ProjectViewRejectsGenericRawNodeCreation" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0074989" startTime="2026-09-24T14:51:42.0350119+08:00" endTime="2026-09-24T14:51:42.0443467+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d0ce385a-136e-472d-a548-b55e5629cef4" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView (True,True,False)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1ea7ce5e-dce4-874a-8be4-7d24c2209ff6">
+      <Execution id="33cf4ff0-23c4-4068-a578-45e69bd1cff3" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectAtlasMenuTests" name="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView" />
+    </UnitTest>
+    <UnitTest name="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView (True,False,True)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1a700215-3752-87b7-9981-8a8a0666e90f">
+      <Execution id="3aaa6c66-533f-45ab-83b4-d99c9f413a9a" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectAtlasMenuTests" name="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView" />
+    </UnitTest>
+    <UnitTest name="ProjectCanvasMenuOffersOnlyAddStoryAtRequestedPosition" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1bf5ff2a-de39-82c1-aa5c-da557ab9cf58">
+      <Execution id="11775a3c-3222-4963-97fc-d2f8d1df119d" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectAtlasMenuTests" name="ProjectCanvasMenuOffersOnlyAddStoryAtRequestedPosition" />
+    </UnitTest>
+    <UnitTest name="NonProjectCanvasMenuStillUsesAddNodeSubmenu" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1bfab9ed-07d6-8f64-866f-a0568a17af55">
+      <Execution id="bef05307-e029-4a6c-b644-df7978adbb7f" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectAtlasMenuTests" name="NonProjectCanvasMenuStillUsesAddNodeSubmenu" />
+    </UnitTest>
+    <UnitTest name="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView (False,False,False)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="16a25c79-eb14-8869-a83c-abcb7fb40945">
+      <Execution id="debcaa59-12fc-47bd-8fdf-f7de36934a3e" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectAtlasMenuTests" name="ProjectCanvasMenuAddStoryIsEnabledOnlyWithCallbackAndWritableView" />
+    </UnitTest>
+    <UnitTest name="ProjectViewRejectsGenericRawNodeCreation" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1be814b2-6bff-8732-8e6b-8811d6b9afd1">
+      <Execution id="d0ce385a-136e-472d-a548-b55e5629cef4" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectAtlasMenuTests" name="ProjectViewRejectsGenericRawNodeCreation" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1bf5ff2a-de39-82c1-aa5c-da557ab9cf58" executionId="11775a3c-3222-4963-97fc-d2f8d1df119d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1a700215-3752-87b7-9981-8a8a0666e90f" executionId="3aaa6c66-533f-45ab-83b4-d99c9f413a9a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="16a25c79-eb14-8869-a83c-abcb7fb40945" executionId="debcaa59-12fc-47bd-8fdf-f7de36934a3e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1bfab9ed-07d6-8f64-866f-a0568a17af55" executionId="bef05307-e029-4a6c-b644-df7978adbb7f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ea7ce5e-dce4-874a-8be4-7d24c2209ff6" executionId="33cf4ff0-23c4-4068-a578-45e69bd1cff3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1be814b2-6bff-8732-8e6b-8811d6b9afd1" executionId="d0ce385a-136e-472d-a548-b55e5629cef4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="6" executed="6" passed="6" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

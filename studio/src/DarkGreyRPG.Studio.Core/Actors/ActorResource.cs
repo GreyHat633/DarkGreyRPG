@@ -10,7 +10,9 @@ public class ActorResource
 {
     public const int LegacySchemaVersion = 1;
     public const int StorySchemaVersion = 2;
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
+    [JsonPropertyName("identity_format")]
+    public string IdentityFormat { get; set; } = "story-uid-v1";
     public const string LegacyResourceType = "legacy";
 
     [JsonPropertyName("schema_version")]
@@ -54,11 +56,13 @@ public class ActorResource
     public string? HomeStoryId { get; set; }
 
     [JsonPropertyName("npc_id")]
+    [JsonConverter(typeof(Identity.ActorAddressKeyJsonConverter))]
     [JsonPropertyOrder(2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? NpcId { get; set; }
 
     [JsonPropertyName("group_id")]
+    [JsonConverter(typeof(Identity.ActorAddressKeyJsonConverter))]
     [JsonPropertyOrder(2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? GroupId { get; set; }

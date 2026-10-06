@@ -1,0 +1,17 @@
+time=1790179296789
+nano=902919975084200
+theme=AZURE
+textScale=1.5
+voiceVolume=1.0
+musicVolume=1.0
+autoWaitSeconds=8.0
+notifications.cards=0
+notifications.pending=0
+notifications.seen=0
+audio.active=1
+source=channel:dgr_gramophone_d36e614a-1f0b-479e-8a23-60974012ea2c;gain:1.0;playing:true;paused:false;position:19.60533333366409;file:E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Client\DarkGreyRPG\Cache\Gramophone\658fb34a-46b3-4e02-a51a-7a446e5b30a6\track-8085352194672672492.dgrmp3;
+session.pins=0
+master=1.0
+model.autoStarted=0
+model.awaiting=false
+model.displayPage=0

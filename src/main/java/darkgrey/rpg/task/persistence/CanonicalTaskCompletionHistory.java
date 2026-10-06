@@ -135,6 +135,10 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
             NBTTagCompound row = (NBTTagCompound) entry.getValue()
                 .copy();
             row.setString("group", entry.getKey());
+            row.setTag(
+                "task_resource_id",
+                darkgrey.rpg.identity.ResourceAddressNbt
+                    .write(row.getString("task_resource_id"), darkgrey.rpg.identity.ResourceAddress.Kind.TASK));
             rows.appendTag(row);
         }
         NBTTagList seen = new NBTTagList();
@@ -144,32 +148,49 @@ public final class CanonicalTaskCompletionHistory extends WorldSavedData {
             row.setLong("activation", entry.getValue());
             seen.appendTag(row);
         }
-        root.setInteger("schema", 1);
+        root.setInteger("schema", 2);
+        root.setString("identity_format", darkgrey.rpg.identity.ResourceAddressNbt.IDENTITY_FORMAT);
         root.setTag("summaries", rows);
         root.setTag("observed", seen);
     }
 
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
-        if (root.getInteger("schema") != 1) throw new IllegalArgumentException("Unsupported completion history schema");
+        darkgrey.rpg.identity.ResourceAddressNbt.requireFormat(root);
+        if (!root.hasKey("schema", 3) || root.getInteger("schema") != 2)
+            throw new IllegalArgumentException("Unsupported completion history schema");
         Map<String, NBTTagCompound> next = new LinkedHashMap<String, NBTTagCompound>();
-        NBTTagList rows = root.getTagList("summaries", 10);
+        NBTTagList rows = darkgrey.rpg.identity.ResourceAddressNbt.compounds(root, "summaries");
         for (int i = 0; i < rows.tagCount(); i++) {
             NBTTagCompound row = (NBTTagCompound) rows.getCompoundTagAt(i)
                 .copy();
             String group = row.getString("group");
             row.removeTag("group");
+            row.setString(
+                "task_resource_id",
+                darkgrey.rpg.identity.ResourceAddressNbt
+                    .read(row, "task_resource_id", darkgrey.rpg.identity.ResourceAddress.Kind.TASK));
             darkgrey.rpg.creator.TaskStoryPresentation.recover(row);
             if (group.isEmpty() || row.getLong("completion_count") <= 0)
                 throw new IllegalArgumentException("Invalid completion summary");
             UUID.fromString(row.getString("player"));
-            next.put(group, row);
+            darkgrey.rpg.identity.StoryUid.parse(row.getString("story"));
+            if (!row.hasKey("task_resource_id", 8)
+                || darkgrey.rpg.identity.ResourceAddress.fromKey(row.getString("task_resource_id"))
+                    .getKind() != darkgrey.rpg.identity.ResourceAddress.Kind.TASK)
+                throw new IllegalArgumentException("Invalid completion Task address");
+            if (next.put(group, row) != null) throw new IllegalArgumentException("Duplicate completion summary");
         }
         Map<String, Long> nextObserved = new HashMap<String, Long>();
-        NBTTagList seen = root.getTagList("observed", 10);
+        NBTTagList seen = darkgrey.rpg.identity.ResourceAddressNbt.compounds(root, "observed");
         for (int i = 0; i < seen.tagCount(); i++) {
             NBTTagCompound row = seen.getCompoundTagAt(i);
-            nextObserved.put(row.getString("identity"), row.getLong("activation"));
+            if (!row.hasKey("identity", 8) || row.getString("identity")
+                .isEmpty()
+                || !row.hasKey("activation", 4)
+                || row.getLong("activation") <= 0
+                || nextObserved.put(row.getString("identity"), row.getLong("activation")) != null)
+                throw new IllegalArgumentException("Invalid completion observation");
         }
         groups.clear();
         groups.putAll(next);

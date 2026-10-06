@@ -1,0 +1,41 @@
+{
+  "Version": "0.3.3.6",
+  "Artifacts": [
+    {
+      "Path": "DarkGreyRPGStudio.exe",
+      "Bytes": 204288,
+      "ProductVersion": "0.3.3.6",
+      "Sha256": "8e8bf253b16b1516616d890b8bd604a907cf9d607469e3785d4ab113a5b3b20c",
+      "CandidateMatches": true
+    },
+    {
+      "Path": "Program/DarkGreyRPGStudio.dll",
+      "Bytes": 1748480,
+      "ProductVersion": "0.3.3.6",
+      "Sha256": "5d0bdc86ae509b0991e80f6fee1c5de1ce837e38a2ed727c13e531196220e3a1",
+      "CandidateMatches": true
+    },
+    {
+      "Path": "Program/DarkGreyRPG.Studio.Core.dll",
+      "Bytes": 1304064,
+      "ProductVersion": "1.0.0+99a3253d7186127bdbe37898824ecbd32219f136",
+      "Sha256": "870616ef7abbedfb33d72338e5e4909e7d58a55a4ca670fb36a98a0fba665899",
+      "CandidateMatches": true
+    }
+  ],
+  "Runtime": {
+    "Path": "dist/darkgrey_rpg-0.3.3.6.jar",
+    "Bytes": 1953317,
+    "Sha256": "b41b414285f9e28d96ebddd64825ddc4690220b53648d69711ac4bb5ee1a5798",
+    "RebuiltThisTurn": false
+  },
+  "DataFilesBefore": 2661,
+  "DataFilesAfter": 2661,
+  "DataBytes": 64211962.0,
+  "DataDifferenceCount": 0,
+  "ProgramManifestCount": 405,
+  "ProgramManifestMissing": 0,
+  "RootFiles": [
+    "DarkGreyRPGStudio.exe"
+  ]
+}

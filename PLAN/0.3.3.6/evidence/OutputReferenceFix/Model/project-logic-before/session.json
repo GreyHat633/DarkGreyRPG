@@ -1,0 +1,126 @@
+{
+  "schema_version": 2,
+  "identity_format": "story-uid-v1",
+  "resource_kind": "session",
+  "id": {
+    "story_uid": "ST-2345-6789-ABCD-EFGH",
+    "kind": "session",
+    "local_id": "drag"
+  },
+  "display_name": "会话排序",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "起始",
+        "ports": [
+          {
+            "port_id": "flow_out",
+            "display_name": "流程输出",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": "boundary1",
+        "type": "end",
+        "display_name": "结束",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "接受",
+          "display_order": 2,
+          "port_id": "dynamic_port_9045b71adb4142fd95369472e55c0c68"
+        }
+      },
+      {
+        "id": "boundary2",
+        "type": "end",
+        "display_name": "结束",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "拒绝",
+          "display_order": 0,
+          "port_id": "dynamic_port_af73b6696b9c46e7907c253397b37448"
+        }
+      },
+      {
+        "id": "boundary3",
+        "type": "end",
+        "display_name": "结束",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "离开",
+          "display_order": 1,
+          "port_id": "dynamic_port_0505dae446854a27a408141313ab153f"
+        }
+      },
+      {
+        "id": "boundary4",
+        "type": "logic_output",
+        "display_name": "逻辑输出",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "逻辑输入",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "可交互",
+          "display_order": 1,
+          "port_id": "dynamic_port_4c7d53aed6f64f35b9a584f376c0fb35"
+        }
+      },
+      {
+        "id": "boundary5",
+        "type": "logic_output",
+        "display_name": "逻辑输出",
+        "ports": [
+          {
+            "port_id": "logic_in",
+            "display_name": "逻辑输入",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "已完成",
+          "display_order": 0,
+          "port_id": "dynamic_port_e04d663f78b948e4ac39b4ca741450d1"
+        }
+      }
+    ],
+    "connections": []
+  }
+}

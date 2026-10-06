@@ -39,21 +39,15 @@ def geometry(width, height, scale):
     wrap = max(1, math.floor((text_width-2*math.ceil(9*scale))/scale))
     rows = max(1, (max(body+1, bottom-13)-body)//math.ceil(9*scale))
     return wrap, rows
-# Legal ScaledResolution starts at 320x240. Width only increases available
-# space at a fixed height. At 320 width the portrait cap bounds wrap; once
-# height exceeds 2160 rows alone dominate every retained shape.
-specs = {}
-for factor in range(1, 33):
-    scale = math.ceil(1.5*factor/2-1e-9)*2/factor
-    for height in range(240, 2161):
-        shape = geometry(320, height, scale)
-        specs.setdefault(shape, {"width":320, "height":height, "gui_factor":factor, "scale":scale})
-shapes = [(w,r) for w,r in specs if not any(w2 <= w and r2 <= r and (w2,r2)!=(w,r) for w2,r2 in specs)]
-worst = min(shapes, key=lambda s:s[0]*s[1])
+# Authoring preview: 1280x720 physical pixels, GUI factor 2, default snapped font scale.
+preview_scale = math.ceil(1.5 * 2 / 2 - 1e-9) * 2 / 2
+worst = geometry(640, 360, preview_scale)
+shapes = [worst]
+specs = {worst: {"width": 640, "height": 360, "gui_factor": 2, "scale": preview_scale}}
 profile = {
- "profile_version": "0335-standard-1", "calibration": "0335-runtime-geometry-effective-font-scale; unicode numeric extraction",
+ "profile_version": "0336-preview-1", "calibration": "0335-runtime-geometry-effective-font-scale; unicode numeric extraction",
  "source": "Minecraft 1.7.10 FontRenderer.getCharWidth; numeric extraction only",
- "logical_width":320,"logical_height":240,"scale":1.5,"line_height":14,
+ "logical_width":640,"logical_height":240,"scale":1.5,"line_height":14,
  "text_left":80,"text_right":296,"body_top":175,"body_bottom":221,
  "wrap_width":worst[0],"rows":worst[1],"unit":1,
  "geometries":[dict(specs[s], wrap_width=s[0], rows=s[1], raw=s[0]*s[1], safe=math.floor(s[0]*s[1]*.9)) for s in sorted(shapes)],
@@ -66,9 +60,9 @@ height, scale = calibration["height"], calibration["scale"]
 bottom = height - max(4, height//40)
 top = max(4, bottom - max(86, height//3))
 body = top + 27 + max(0, math.ceil(9*scale)-9)
-portrait = max(1, min(math.floor(max(1, bottom-6-body)*.9+.5), math.floor((288-16)*.22)))
-profile.update(logical_height=height, scale=scale, line_height=math.ceil(9*scale), text_left=16+portrait+16,
-               text_right=296, body_top=body, body_bottom=max(body+1,bottom-13))
+portrait = max(1, min(math.floor(max(1, bottom-6-body)*.9+.5), math.floor((576-16)*.22)))
+profile.update(logical_height=height, scale=scale, line_height=math.ceil(9*scale), text_left=32+portrait+16,
+               text_right=608, body_top=body, body_bottom=max(body+1,bottom-13))
 samples = ["", "i"*160, "W"*60, "中"*40, "中"*43, "你好，世界！Hello 123", "a  b "+"   "*50, "§l"+"W"*30+"§r"+"i"*30]
 def measure(text, advances):
     row, used, bold, at = 1, 0, False, 0

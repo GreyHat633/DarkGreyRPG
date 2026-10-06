@@ -9,7 +9,7 @@ import java.util.Map;
 
 import net.minecraft.item.ItemStack;
 
-import darkgrey.rpg.identity.DgrResourceId;
+import darkgrey.rpg.identity.ResourceAddress;
 
 /** World-shared server-authoritative bindings for DGR Item IDs and Groups. */
 public final class ItemIdentityRegistry {
@@ -179,7 +179,8 @@ public final class ItemIdentityRegistry {
     }
 
     private static String requireId(String value, String label) {
-        if (!DgrResourceId.isCompatibleId(value))
+        if (!ResourceAddress.isKey(value) || ResourceAddress.fromKey(value)
+            .getKind() != (label.contains("Group") ? ResourceAddress.Kind.ITEM_GROUP : ResourceAddress.Kind.ITEM))
             throw new IllegalArgumentException(label + " must be a valid DGR resource ID.");
         return value;
     }

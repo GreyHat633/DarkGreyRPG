@@ -1,0 +1,12 @@
+{
+  "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "ProcessId": 18664,
+  "WindowTitle": "测试项目 — DarkGrey RPG Studio 0.3.3.6",
+  "NormalExit": true,
+  "ExitCode": 0,
+  "UnexpectedErrorWindows": 0,
+  "DataFilesBefore": 2661,
+  "DataFilesAfter": 2661,
+  "DataDifferenceCount": 0,
+  "Method": "UI Automation and Win32 PrintWindow of authoritative app window"
+}

@@ -1,0 +1,1 @@
+{"schema_version":2,"connections":[{"source_story_id":"ST-JKLM-NPQR-STUV-WXYZ","source_port_id":"dynamic_port_c36cf6bf553b460d8d76dd591a58cbe1","target_story_id":"ST-AAAA-BBBB-CCCC-DDDD","target_port_id":"story_trigger_546a71a394ea4624831a84a85d8d4fda","interface_kind":"Flow"}]}

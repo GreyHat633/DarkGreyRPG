@@ -1,0 +1,202 @@
+{
+  "darkgrey_rpg_canonical_tasks.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "instances": [
+        {
+          "result_port_id": "perfect",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "3c7a22548e6f95190d5b4a38d28c59446049127e02e3ab82c59299dcbac1209c",
+          "runtime_status": "SETTLED",
+          "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward"
+            }
+          ],
+          "settlement_time": 1791175045537,
+          "activation_time": 1791175029536,
+          "task_resource_id": {
+            "local_id": "priority",
+            "kind": "task",
+            "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+          },
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "objective"
+            }
+          ],
+          "task_node_placement_id": "placement",
+          "status": "SETTLED"
+        },
+        {
+          "result_port_id": "ordinary",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "ST-EEEE-FFFF-GGGG-HHHH",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "efc94b359b5fe447136f05a00a869b6a8019210c471082f45a5c894266a212d5",
+          "runtime_status": "SETTLED",
+          "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward"
+            }
+          ],
+          "settlement_time": 1791175045569,
+          "activation_time": 1791175029555,
+          "task_resource_id": {
+            "local_id": "priority",
+            "kind": "task",
+            "story_uid": "ST-EEEE-FFFF-GGGG-HHHH"
+          },
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "objective"
+            }
+          ],
+          "task_node_placement_id": "placement",
+          "status": "SETTLED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_story_completion_history.dat": {
+    "data": {
+      "schema_version": 1,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "terminal": 1791175045539,
+          "activation": 1791175029514,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791175045570,
+          "activation": 1791175029554,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-EEEE-FFFF-GGGG-HHHH",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        }
+      ]
+    }
+  },
+  "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e.dat": {
+    "Spawns": [],
+    "ForgeData": {
+      "SkinOverlayData": [],
+      "PlayerPersisted": {
+        "DGRTaskReceipts": {
+          "996f061871743904d14278eb821ba819999abced0d6bcdedbd113fe2ab31ca19": 1,
+          "cef3ee94c7e86657ab8c9a5fbeaa9aa72d596fccfcb9b71d4504b4e952c7bd89": 1
+        }
+      }
+    },
+    "SleepTimer": 0,
+    "Attributes": [
+      {
+        "Base": 20.0,
+        "Name": "generic.maxHealth"
+      },
+      {
+        "Base": 0.0,
+        "Name": "generic.knockbackResistance"
+      },
+      {
+        "Base": 0.10000000149011612,
+        "Name": "generic.movementSpeed"
+      },
+      {
+        "Base": 1.0,
+        "Name": "generic.attackDamage"
+      }
+    ],
+    "Invulnerable": 0,
+    "PortalCooldown": 0,
+    "AbsorptionAmount": 0.0,
+    "abilities": {
+      "invulnerable": 1,
+      "mayfly": 1,
+      "instabuild": 1,
+      "walkSpeed": 0.10000000149011612,
+      "mayBuild": 1,
+      "flying": 0,
+      "flySpeed": 0.05000000074505806
+    },
+    "FallDistance": 0.0,
+    "DeathTime": 0,
+    "HealF": 20.0,
+    "XpTotal": 14,
+    "playerGameType": 1,
+    "Motion": [
+      0.0,
+      -0.0784000015258789,
+      0.0
+    ],
+    "UUIDLeast": -6324694536220740786,
+    "Health": 20,
+    "foodSaturationLevel": 5.0,
+    "Air": 300,
+    "OnGround": 1,
+    "Dimension": 0,
+    "Rotation": [
+      0.0,
+      0.0
+    ],
+    "XpLevel": 0,
+    "Score": 0,
+    "UUIDMost": 1715228953935035072,
+    "Sleeping": 0,
+    "Pos": [
+      100000.5,
+      4.0,
+      100000.5
+    ],
+    "Fire": -20,
+    "XpP": 0.8235294222831726,
+    "EnderItems": [],
+    "foodLevel": 20,
+    "foodExhaustionLevel": 0.0,
+    "HurtTime": 0,
+    "SelectedItemSlot": 0,
+    "AttackTime": 0,
+    "Inventory": [],
+    "foodTickTimer": 0
+  }
+}

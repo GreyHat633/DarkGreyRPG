@@ -1,0 +1,31 @@
+{
+  "Timestamp": "2026-09-30T23:46:06.6567680+08:00",
+  "Method": "Microsoft.VisualBasic SendToRecycleBin",
+  "Files": [
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\tests\\81462fac-9d10-4380-9749-a7c1f377ef2c\\dotnet_22124_20260930T220447_hangdump.dmp",
+      "Bytes": 2837381976,
+      "RecycleRequested": true,
+      "OriginalPathAbsent": true
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\tests\\eecc5283-4161-43a2-9759-75cf981bd677\\dotnet_10900_20260930T215905_hangdump.dmp",
+      "Bytes": 2161171240,
+      "RecycleRequested": true,
+      "OriginalPathAbsent": true
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\tests\\GreyHat_LAPTOP-F7PUVUPO_2026-09-30_21_57_24\\In\\LAPTOP-F7PUVUPO\\dotnet_10900_20260930T215905_hangdump.dmp",
+      "Bytes": 2161171240,
+      "RecycleRequested": true,
+      "OriginalPathAbsent": true
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\tests\\GreyHat_LAPTOP-F7PUVUPO_2026-09-30_22_02_46\\In\\LAPTOP-F7PUVUPO\\dotnet_22124_20260930T220447_hangdump.dmp",
+      "Bytes": 2837381976,
+      "RecycleRequested": true,
+      "OriginalPathAbsent": true
+    }
+  ],
+  "Bytes": 9997106432.0
+}

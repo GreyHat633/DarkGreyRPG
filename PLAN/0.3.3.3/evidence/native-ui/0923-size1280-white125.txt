@@ -1,0 +1,5 @@
+WINDOW: Minecraft 1.7.10 800,40,1298,846
+ControlType.TitleBar id=TitleBar name=Minecraft 1.7.10 enabled=True rect=809,49,1280,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=809,49,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=809,49,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1917,41,58,36

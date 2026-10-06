@@ -1,0 +1,166 @@
+[
+  {
+    "radius": 128,
+    "inside": true,
+    "measurement": {
+      "label": "0922-range-r128-onlytone-xminus-inside",
+      "time": "2026-09-22T22:40:52",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "side": "minus",
+    "passed": false,
+    "teleportFeet": [
+      -247.9,
+      89.88,
+      200.5
+    ],
+    "label": "0922-range-r128-onlytone-xminus-inside",
+    "axis": "x",
+    "clientPoint": [
+      -247.9,
+      91.5,
+      200.5
+    ]
+  },
+  {
+    "radius": 128,
+    "inside": false,
+    "measurement": {
+      "label": "0922-range-r128-onlytone-xminus-outside",
+      "time": "2026-09-22T22:41:01",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "side": "minus",
+    "passed": true,
+    "teleportFeet": [
+      -248.1,
+      89.88,
+      200.5
+    ],
+    "label": "0922-range-r128-onlytone-xminus-outside",
+    "axis": "x",
+    "clientPoint": [
+      -248.1,
+      91.5,
+      200.5
+    ]
+  },
+  {
+    "radius": 128,
+    "inside": true,
+    "measurement": {
+      "label": "0922-range-r128-onlytone-xplus-inside",
+      "time": "2026-09-22T22:41:09",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "side": "plus",
+    "passed": false,
+    "teleportFeet": [
+      8.9,
+      89.88,
+      200.5
+    ],
+    "label": "0922-range-r128-onlytone-xplus-inside",
+    "axis": "x",
+    "clientPoint": [
+      8.9,
+      91.5,
+      200.5
+    ]
+  },
+  {
+    "radius": 128,
+    "inside": false,
+    "measurement": {
+      "label": "0922-range-r128-onlytone-xplus-outside",
+      "time": "2026-09-22T22:41:18",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "side": "plus",
+    "passed": true,
+    "teleportFeet": [
+      9.1,
+      89.88,
+      200.5
+    ],
+    "label": "0922-range-r128-onlytone-xplus-outside",
+    "axis": "x",
+    "clientPoint": [
+      9.1,
+      91.5,
+      200.5
+    ]
+  }
+]

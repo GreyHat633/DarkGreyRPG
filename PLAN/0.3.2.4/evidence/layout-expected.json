@@ -1,0 +1,46 @@
+{
+  "entity": {
+    "rect": {
+      "x": 105,
+      "y": 90,
+      "width": 350,
+      "height": 220
+    },
+    "fps_min": 60,
+    "fps_max": 60,
+    "no_disk_during_drag": true
+  },
+  "item": {
+    "rect": {
+      "x": 110,
+      "y": 40,
+      "width": 308,
+      "height": 240
+    },
+    "fps_min": 55,
+    "fps_max": 60,
+    "no_disk_during_drag": true
+  },
+  "task": {
+    "rect": {
+      "x": 50,
+      "y": 85,
+      "width": 340,
+      "height": 220
+    },
+    "fps_min": 56,
+    "fps_max": 60,
+    "no_disk_during_drag": true
+  },
+  "copier": {
+    "rect": {
+      "x": 100,
+      "y": 60,
+      "width": 300,
+      "height": 210
+    },
+    "fps_min": 56,
+    "fps_max": 60,
+    "no_disk_during_drag": true
+  }
+}

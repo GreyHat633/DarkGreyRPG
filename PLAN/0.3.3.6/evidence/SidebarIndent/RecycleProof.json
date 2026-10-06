@@ -1,0 +1,34 @@
+{
+  "Method": "SendToRecycleBin",
+  "DirectoryCount": 4,
+  "Bytes": 2374277478.0,
+  "SourcePathsRemoved": true,
+  "VerifiedPayloadCount": 4,
+  "RecycleBinEmptied": false,
+  "Payloads": [
+    {
+      "Original": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\portable-publish-f438c1db3b5949dda5d9844e9d43b714",
+      "Payload": "E:\\$Recycle.Bin\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$R32D6LK",
+      "Exists": true,
+      "RecordedBytes": 593567937
+    },
+    {
+      "Original": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\portable-publish-b367233946244c71a71005f87cb489d7",
+      "Payload": "E:\\$Recycle.Bin\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$R7YD8DL",
+      "Exists": true,
+      "RecordedBytes": 593567937
+    },
+    {
+      "Original": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\organized-publish-6870a53a891340c59b8305ad431433c1",
+      "Payload": "E:\\$Recycle.Bin\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$R9B1TFW",
+      "Exists": true,
+      "RecordedBytes": 593570802
+    },
+    {
+      "Original": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\wpf-build\\organized-publish-f5d7e7a99a394691bf17e9c44f94de5e",
+      "Payload": "E:\\$Recycle.Bin\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$RIR5BFF",
+      "Exists": true,
+      "RecordedBytes": 593570802
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "data": {
+    "schema_version": 1,
+    "generations": [
+      {
+        "story_id": "GreyHat_:test_story",
+        "package_id": "GreyHat_:test_story",
+        "content_fingerprint": "7af7283bbbedd7b9732a5a8072831d761dc102f9ca92fc29e26fdcf2098dee97"
+      }
+    ]
+  }
+}

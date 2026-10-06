@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import darkgrey.rpg.identity.NpcIdentityRegistry;
+import darkgrey.rpg.identity.StoryUid;
+
 /** Persisted nominator selection; identity itself remains in NpcIdentitySavedData. */
 public final class NominatorEntityBinding {
 
@@ -52,6 +55,7 @@ public final class NominatorEntityBinding {
         if (blank(value)) return null;
         if (value.trim()
             .length() > 256) throw new IllegalArgumentException(label + " is too long.");
-        return value.trim();
+        return "Story ID".equals(label) ? StoryUid.parse(value)
+            .getValue() : NpcIdentityRegistry.requireId(value);
     }
 }

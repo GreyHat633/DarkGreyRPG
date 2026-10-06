@@ -1,0 +1,10 @@
+{
+  "Responsive": true,
+  "Title": "测试项目 — DarkGrey RPG Studio 0.3.3.6",
+  "LoadedStudioDll": [
+    "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll"
+  ],
+  "ProductVersion": "0.3.3.6",
+  "Exe": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "UserAccepted": false
+}

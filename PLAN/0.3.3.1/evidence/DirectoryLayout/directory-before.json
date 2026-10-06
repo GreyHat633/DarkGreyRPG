@@ -1,0 +1,415 @@
+[
+  {
+    "Runtime": "run/client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "project.json",
+    "Size": 95,
+    "Sha256": "31C22CD6D83E389BA19C384D841E66A9EABF2FA699F8C71C3CFE32A5AF743663"
+  },
+  {
+    "Runtime": "run/client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png",
+    "Size": 1716129,
+    "Sha256": "71A5CEB415FF4AA85F094E19E8FC81452C043B1C3A55AFD99D65EF33637E26E8"
+  },
+  {
+    "Runtime": "run/client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "usage\\71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png.IMAGE",
+    "Size": 0,
+    "Sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "project.json",
+    "Size": 99,
+    "Sha256": "6B7A6809434BB8B085EFDF2DAC3A0E92752B9FDA5575718E49D8DCEE76507F00"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "actors\\tavern_owner.json",
+    "Size": 156,
+    "Sha256": "98FCD879A3D4C704E8390A4C7FBFC3AB8B8F8A1B0BDE67A3E726B48AE04D16F7"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "dialogues\\tavern_offer.json",
+    "Size": 835,
+    "Sha256": "5B8878B841E7B8C8A9A6CA49BB006BDB6198601EEA87B114C24BAC7C555AB40F"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "quests\\kill_10_slimes.json",
+    "Size": 557,
+    "Sha256": "23FD10BF9EB8A0F21D0544732DDB318027F04E13BAC4220B54882DDD0CE30958"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\.gitkeep",
+    "Size": 1,
+    "Sha256": "01BA4719C80B6FE911B091A7C05124B64EEECE964E09C058EF8F9805DACA546B"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\stage3_tavern.json",
+    "Size": 263,
+    "Sha256": "7DD6C6DDC52D55688690F4FD1591B9AB163A274B6FA311B89C0E10EC555FDE1E"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\stage5_bartender.json",
+    "Size": 313,
+    "Sha256": "712315E3308781184615395010134F53D58195641DAAC69F96FE78E92DEB3E14"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\sessions\\stage3_tavern_session.json",
+    "Size": 6469,
+    "Sha256": "E2C1415096C595F29E8ADCCAD1AC48FC322DBA9FE59889724FDE3099D8BAAA41"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\sessions\\stage5_bartender_offer.json",
+    "Size": 1781,
+    "Sha256": "A5458B6CB5A73B37F2512A3C4C4CED07641B345B86C102F0A8167A9291FBC296"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\sessions\\stage5_bartender_thanks.json",
+    "Size": 1751,
+    "Sha256": "B9748A21B1B76FE982390196AD88AB2818BD7410D6BAA0D8BEA5EE84F7131176"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\stage3_tavern.json",
+    "Size": 2668,
+    "Sha256": "7EE71B9603D4EE9217CAD3C608072456B0D6B18FC53B5507A7FF1ABC93F274C6"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\stage5_bartender.json",
+    "Size": 3983,
+    "Sha256": "F35E015F406C8C382CEBC801A5245897473EF2BF34E8698807C0B3E2809A4B3A"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\tasks\\stage4_iron_trial.json",
+    "Size": 2178,
+    "Sha256": "424CE1D75BA23FA2BA900B8A05352DFD5BCB787161B0E314B1217A3801DFE741"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\tasks\\stage5_slime_task.json",
+    "Size": 1608,
+    "Sha256": "DF0BED974E282AA64421E67618B4A8DD2D37B4B5F914301975D2BB37D654C053"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "stories\\server_interaction.json",
+    "Size": 734,
+    "Sha256": "409E08907B1D1F789ACF6466A60BC6F65657C1581233A2AD9590813A8AE928B0"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "kingdom_route\\manifest.json",
+    "Size": 579,
+    "Sha256": "C102B6D90230E5110CD3112DE04F22E4396103FE7000783F00EDCB0A839B23ED"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "kingdom_route\\project.json",
+    "Size": 106,
+    "Sha256": "E187FA6A9BCAB3EF9F5E0F7D25E749312A15B94707769779A0ECD80679F5DA05"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "kingdom_route\\actors\\detective.json",
+    "Size": 219,
+    "Sha256": "D04645677FDC3FC707F7CE32075E8FB40044356D040AA74DB51D261405D232A3"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "kingdom_route\\resources\\canonical\\memberships\\kingdom_route.json",
+    "Size": 329,
+    "Sha256": "F4180523E3AD6ABD90B68A667E8C025C58278CFF3E5ADCB413B35B2A290A0DA5"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "kingdom_route\\resources\\canonical\\stories\\kingdom_route.json",
+    "Size": 1515,
+    "Sha256": "84552EA2035D7B3328B928CD4794EC1804E61F87BF94AB76BA3E8166CCC467C3"
+  },
+  {
+    "Runtime": "run/server",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "kingdom_route\\stories\\kingdom_route.json",
+    "Size": 803,
+    "Sha256": "53FF9451351FBB31C7AB083164E330CA0774D46A70255BC55C0D375C51860344"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "project.json",
+    "Size": 97,
+    "Sha256": "471B571AFD3A4FF636528FAE77D35A797B28B28E292D7BB0F682EB31DC5C37FF"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "actors\\actor.json",
+    "Size": 245,
+    "Sha256": "51BF85910100406E65E05CC12EC6A4DAF689DA9D6727A603F592FAB9ABFE33C9"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "items\\apple.json",
+    "Size": 123,
+    "Sha256": "4B881B7F9C3BFBA99FDD11100984748B89621511BE2ABCB274C8E1EB19C77C9E"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\live_Collect.json",
+    "Size": 610,
+    "Sha256": "F54BD1DCE3CAD384FDEA1FEEC39AB895C5C44A1977EF1A9E9578D2E7B09459FC"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\live_Region.json",
+    "Size": 609,
+    "Sha256": "ABFD20C3043D9734D6E55782CEB9391FD81C5FDDBBFEC6812A4B476C67AAE23A"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\live_story.json",
+    "Size": 472,
+    "Sha256": "C6F14DA7DFABE3657DBECC44B7B0C3C0507C30619977772D8C533036968D404F"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\live_SubmitA.json",
+    "Size": 610,
+    "Sha256": "7A17097E3F02BD8026BCB0CBBF59D835247550950DF6509F33344F8D1F721FE4"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\memberships\\live_SubmitB.json",
+    "Size": 610,
+    "Sha256": "50A9AB652A6B533DE1142E0E6848DF69E556927ECE081B657980E8A0D410BB27"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\live_Collect.json",
+    "Size": 2287,
+    "Sha256": "57ABC9069D22D09D792C95B8F970237076500BB8BB8F50588B578BE0A9C19A78"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\live_Region.json",
+    "Size": 2283,
+    "Sha256": "3449C1F94C16326B629376FD206F749C9FC9F961A87803EB7F1C990C972BF2C3"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\live_story.json",
+    "Size": 1505,
+    "Sha256": "070960C815C72260445E8BE9AF5ACFB170F2EDFCBFBDA74AF97B644C455F8757"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\live_SubmitA.json",
+    "Size": 2285,
+    "Sha256": "AFA84AA170BEC46A8A4BB4B2C5F99985405A6AC653D4B759332FAAD163EA42D5"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\stories\\live_SubmitB.json",
+    "Size": 2285,
+    "Sha256": "6A27D2E65FA661F38D40FCDC598FE3AF16C2313580A1E966EE7AC0427094EE74"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\tasks\\collect_apple.json",
+    "Size": 854,
+    "Sha256": "AC9370C66D1C99C2B52B8FF70285B44AC9A800A65AB1E056B2BA8A7C7E2AC2AC"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\tasks\\reach_region.json",
+    "Size": 899,
+    "Sha256": "E9775005F88933D723EEF893C14789745189BFB89EF991AA74EB8B5F45675AEC"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_project",
+    "Relative": "resources\\canonical\\tasks\\submit_apple.json",
+    "Size": 921,
+    "Sha256": "C5A352D42FD7F7CEC807026F507CC9D8E5B1EF985CB84221F6E4A042D0D8E13C"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "flow_target.dgrs",
+    "Size": 1624,
+    "Sha256": "4F18390C69EC117F4B8014825D4E6E3DE6F7958EFEDB1EFB361871A296382C88"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "GreyHat_.test_story.dgrs",
+    "Size": 10258543,
+    "Sha256": "F410EDB2E0681ADE437D1FE349433EE609CA05A37AAE6D9319D710BA90AEDBCE"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": "presentation.dgrs",
+    "Size": 18888,
+    "Sha256": "C94AFE909F842E971619E02F544E4283B972AB97E276281F6A88CDB11770F024"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\generations\\a882934b5bf7faa23fb01a34f0f589bd52b1c033b945e9e274aa07ed032ecfe7.dgrs",
+    "Size": 18888,
+    "Sha256": "C94AFE909F842E971619E02F544E4283B972AB97E276281F6A88CDB11770F024"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\generations\\d08e8909ca73c5113675fd416b54335e9edc9a8e2a32fde3880d8930aaf2b90b.dgrs",
+    "Size": 1624,
+    "Sha256": "4F18390C69EC117F4B8014825D4E6E3DE6F7958EFEDB1EFB361871A296382C88"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\generations\\d4c8200cad1d4dd49e36f9b4c3d564c37d877c30b463a6875f952b44273a2b85.dgrs",
+    "Size": 10258543,
+    "Sha256": "F410EDB2E0681ADE437D1FE349433EE609CA05A37AAE6D9319D710BA90AEDBCE"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\media\\3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png",
+    "Size": 1675255,
+    "Sha256": "3433E309026B27C0028DACDEF61161DFCC96B057A2051D14D01D447565B4E46F"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\media\\59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png",
+    "Size": 1793770,
+    "Sha256": "59760106AB29206391D74398E57AAF80FBA41F86652A73EB2C4987784A78F242"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\media\\6eaa5b2c058cb427279d2ba234f661fb53342090b795df103c0ce155baed4e4a.png",
+    "Size": 6219,
+    "Sha256": "6EAA5B2C058CB427279D2BA234F661FB53342090B795DF103C0CE155BAED4E4A"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\media\\71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png",
+    "Size": 1716129,
+    "Sha256": "71A5CEB415FF4AA85F094E19E8FC81452C043B1C3A55AFD99D65EF33637E26E8"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\media\\7d7f03cbf38c3c362d3a8adb08b7e24b4a6052be76db64053af3bb6dbdd54b9c.ogg",
+    "Size": 34711,
+    "Sha256": "7D7F03CBF38C3C362D3A8ADB08B7E24B4A6052BE76DB64053AF3BB6DBDD54B9C"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_story_packages",
+    "Relative": ".dgrs-runtime\\media\\965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg",
+    "Size": 5080224,
+    "Sha256": "965DF6D9CA8089C0D194457943893FB7E635C5A123E34E131F576DD656B2A573"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "story-packages.json",
+    "Size": 955,
+    "Sha256": "A234B48C4DA6E0742443894729CD776887DDCAE8BE85FB53D92F30C8CFF158E8"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png",
+    "Size": 1675255,
+    "Sha256": "3433E309026B27C0028DACDEF61161DFCC96B057A2051D14D01D447565B4E46F"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png",
+    "Size": 1793770,
+    "Sha256": "59760106AB29206391D74398E57AAF80FBA41F86652A73EB2C4987784A78F242"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\6eaa5b2c058cb427279d2ba234f661fb53342090b795df103c0ce155baed4e4a.png",
+    "Size": 6219,
+    "Sha256": "6EAA5B2C058CB427279D2BA234F661FB53342090B795DF103C0CE155BAED4E4A"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png",
+    "Size": 1716129,
+    "Sha256": "71A5CEB415FF4AA85F094E19E8FC81452C043B1C3A55AFD99D65EF33637E26E8"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\7d7f03cbf38c3c362d3a8adb08b7e24b4a6052be76db64053af3bb6dbdd54b9c.ogg",
+    "Size": 34711,
+    "Sha256": "7D7F03CBF38C3C362D3A8ADB08B7E24B4A6052BE76DB64053AF3BB6DBDD54B9C"
+  },
+  {
+    "Runtime": ".tooling/0.3.3.1/live-client",
+    "OldDirectory": "darkgrey_rpg_media_cache",
+    "Relative": "media\\965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg",
+    "Size": 5080224,
+    "Sha256": "965DF6D9CA8089C0D194457943893FB7E635C5A123E34E131F576DD656B2A573"
+  }
+]

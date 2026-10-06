@@ -170,40 +170,42 @@ public sealed class ItemRepository
     {
         ValidateId(baseId);
         if (FindPath(directory, baseId) is null) return baseId;
-        for (var suffix = 2; suffix < int.MaxValue; suffix++)
-        {
-            var candidate = $"{baseId}_{suffix}";
-            if (FindPath(directory, candidate) is null) return candidate;
-        }
-        throw new ItemRepositoryException($"Could not allocate an available item ID based on '{baseId}'.");
+        var original = ResourceAddress.FromKey(baseId);
+        var occupied = CanonicalResourceFileSystem.EnumerateJsonFiles(directory)
+            .Select(path => ResourceAddress.FromKey(ReadResource(path).Id)).ToHashSet();
+        return ResourceAddress.Create(original.StoryUid, original.Kind, occupied).ToKey();
     }
 
     private static void ValidateId(string id)
     {
-        var issues = ItemValidator.ValidateId(id);
-        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error)) throw new ItemValidationException(issues);
+        if (!ResourceAddress.IsKey(id) || ResourceAddress.FromKey(id).Kind is not (ResourceKind.Item or ResourceKind.ItemGroup))
+            throw new ItemValidationException([new("item.address.invalid", "A current Item address is required.")]);
     }
 
     private static string GetPath(string directory, string id)
     {
         ValidateId(id);
-        return FindPath(directory, id) ?? Path.Combine(directory, DgrResourceId.RelativeJsonPath(id));
+        return FindPath(directory, id) ?? Path.Combine(directory, ResourceAddress.FromKey(id).RelativeDefinitionPath);
     }
 
     private static string? FindPath(string directory, string id)
     {
-        if (!DgrResourceId.IsFullId(id))
-        {
-            var legacyPath = Path.Combine(directory, id + ".json");
-            return File.Exists(legacyPath) ? legacyPath : null;
-        }
-        return CanonicalResourceFileSystem.FindUniquePath(
+        var found = CanonicalResourceFileSystem.FindUniquePath(
             directory,
             id,
             path => ReadResource(path).Id,
             (logicalId, paths) => new ItemRepositoryException(
                 $"Item ID '{logicalId}' is present in multiple files: {string.Join(", ", paths)}."),
             exception => exception is ItemValidationException or ItemDataException);
+        var canonical = Path.Combine(directory, ResourceAddress.FromKey(id).RelativeDefinitionPath);
+        if (found is null && File.Exists(canonical))
+        {
+            var occupant = ReadResource(canonical);
+            if (!string.Equals(occupant.Id, id, StringComparison.Ordinal))
+                throw new ItemRepositoryException($"Item path '{canonical}' belongs to '{occupant.Id}', not requested resource '{id}'.");
+            return canonical;
+        }
+        return found;
     }
 
     private static ItemResource ReadResource(string path)
@@ -211,12 +213,6 @@ public sealed class ItemRepository
         try
         {
             var resource = ItemSerializer.Deserialize(File.ReadAllText(path));
-            if (!DgrResourceId.IsFullId(resource.Id)
-                && !string.Equals(Path.GetFileName(path), resource.Id + ".json", StringComparison.Ordinal))
-                throw new ItemValidationException([new(
-                    "item.filename.mismatch",
-                    $"Item file name must match its ID: expected '{resource.Id}.json', got '{Path.GetFileName(path)}'.",
-                    nameof(ItemResource.Type))]);
             return resource;
         }
         catch (ItemValidationException) { throw; }

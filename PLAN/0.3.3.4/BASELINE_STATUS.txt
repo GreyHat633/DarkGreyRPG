@@ -1,0 +1,907 @@
+ M .codex/config.toml
+ D PLAN/0.3.1.2A/A9_AND_NODE_TYPOGRAPHY_FIX_2026-08-31.md
+ D PLAN/0.3.1.2A/BASELINE.md
+ D PLAN/0.3.1.2A/DEVELOPMENT_REPORT.md
+ D PLAN/0.3.1.2A/EVIDENCE_INDEX.md
+ D PLAN/0.3.1.2A/HANDOFF_2026-09-01.md
+ D PLAN/0.3.1.2A/LIVE_ACCEPTANCE_LOG.md
+ D PLAN/0.3.1.2A/MANUAL_ACCEPTANCE.md
+ D PLAN/0.3.1.2A/SECOND_PASS_ACCEPTANCE_2026-08-31.md
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-final-flow-cancel-after-cancel.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-final-flow-cancel-drag-cancel-before-escape.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-final-flow-reconnect-after-commit.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-final-flow-reconnect-drag-before-commit.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-logic-bundle-live-after-cancel.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-logic-bundle-live-drag-cancel-before-escape.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/A9-typography-100-percent-fixed.png
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/core-a9-typography-fix.trx
+ D PLAN/0.3.1.2A/evidence/a9-typography-fix-2026-08-31/wpf-a9-typography-fix.trx
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-01.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-02.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-03.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-04.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-05.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-06.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-07.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-08.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-09.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-10.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-11.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-12.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-13.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-14.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-15.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-16.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-17.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-18.png
+ D PLAN/0.3.1.2A/evidence/baseline/0311-audit/audit-0311-19.png
+ D PLAN/0.3.1.2A/evidence/baseline/test-results/Core/Core-0.3.1.1-baseline.trx
+ D PLAN/0.3.1.2A/evidence/baseline/test-results/Wpf/Wpf-0.3.1.1-baseline.trx
+ D PLAN/0.3.1.2A/evidence/final/test-results/Core/Core-0.3.1.2A-final.trx
+ D PLAN/0.3.1.2A/evidence/final/test-results/Wpf/Wpf-0.3.1.2A-final.trx
+ D PLAN/0.3.1.2A/evidence/live/A1-empty-project-1100x700.png
+ D PLAN/0.3.1.2A/evidence/live/A1-empty-project-1700x980.png
+ D PLAN/0.3.1.2A/evidence/live/A13-DGR-item-saved.png
+ D PLAN/0.3.1.2A/evidence/live/A14-new-binary-role-before-remove.png
+ D PLAN/0.3.1.2A/evidence/live/A14-start-remove-connected-confirmation.png
+ D PLAN/0.3.1.2A/evidence/live/A14-start-role-only-after-connected-remove.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-10-cycle-contact-sheet.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-01.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-02.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-03.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-04.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-05.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-06.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-07.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-08.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-09.png
+ D PLAN/0.3.1.2A/evidence/live/A2-alt-cycle-10.png
+ D PLAN/0.3.1.2A/evidence/live/A3-A11-fixed-folder-headers.png
+ D PLAN/0.3.1.2A/evidence/live/A4-item-resource-context-menu.png
+ D PLAN/0.3.1.2A/evidence/live/A5-session-line-direct-edit-reopened.png
+ D PLAN/0.3.1.2A/evidence/live/A5-story-start-inline.png
+ D PLAN/0.3.1.2A/evidence/live/A5-task-objective-inline-unselected.png
+ D PLAN/0.3.1.2A/evidence/live/A6-dark-objective-dropdown.png
+ D PLAN/0.3.1.2A/evidence/live/A6-light-objective-dropdown.png
+ D PLAN/0.3.1.2A/evidence/live/A7-session-add-node-menu.png
+ D PLAN/0.3.1.2A/evidence/live/A7-story-add-node-menu.png
+ D PLAN/0.3.1.2A/evidence/live/A7-task-add-node-menu.png
+ D PLAN/0.3.1.2A/evidence/live/A8-real-scissors-cursor.png
+ D PLAN/0.3.1.2A/evidence/live/A9-wire-drag-cancelled.png
+ D PLAN/0.3.1.2A/evidence/live/A9-wire-drag-transient.png
+ D PLAN/0.3.1.2A/evidence/live/canonical-dark-settings.json
+ D PLAN/0.3.1.2A/evidence/live/diagnostics/A14-start-added-second-trigger-diagnostic.png
+ D PLAN/0.3.1.2A/evidence/live/diagnostics/A14-start-role-interaction-before-remove.png
+ D PLAN/0.3.1.2A/evidence/live/diagnostics/A3-A5-A6-dark-story-workspace.png
+ D PLAN/0.3.1.2A/evidence/live/diagnostics/A6-light-story-workspace.png
+ D PLAN/0.3.1.2A/evidence/live/empty-project-dark-settings.json
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/00-empty-launch.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A1-125dpi-1100x700.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A1-125dpi-1700x980.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A10-dirty-sequence-return-story.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-newsession-hold-drop.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-newsession-hold-ghost.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-newsession-nopan-drop.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-newsession-nopan-ghost.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-nopan-drop.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-nopan-ghost.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-session-nopan-drop.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A12-100-session-nopan-ghost.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A13-create-actor-type-dialog.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A13-three-objectives-no-minecraft-defaults.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A14-one-start-trigger-remove-disabled.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A14-two-start-triggers-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A15-after-delete-node-and-wire.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A15-cardinality-logic-output-many.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A15-delete-node-confirmation.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A15-give-item-individual-only.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A15-node-context-edit-delete.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-contact-sheet.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-01.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-02.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-03.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-04.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-05.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-06.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-07.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-08.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-09.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A2-cycle-10.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A3-dark-hover-actor.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A3-dark-selected-item.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A3-light-after-theme-switch.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A3-light-hover-session.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A3-light-selected-actor.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A4-actor-context-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A4-item-context-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A4-session-context-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A4-task-context-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A5-action-inline-give-item.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A5-line-inline-edited.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A5-objective-inline-collapse-move.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A5-start-inline-edited.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-action-inspector-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-choice-inspector-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-line-inspector-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-objective-inspector-popup-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-objective-inspector-popup-light.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-settlement-inspector-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A6-start-inspector-dark.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A7-session-add-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A7-story-add-menu-expanded.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A7-story-add-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A7-task-add-menu.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A8-alt-cursor.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A8-scissors-cursor.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-flow-single-existing-after-cancel.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-flow-single-existing-drag-cancel-before-escape.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-flow-single-reconnect-after-commit.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-flow-single-reconnect-drag-before-commit.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-logic-multi-existing-after-cancel.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-logic-multi-existing-drag-cancel-before-escape.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-logic-single-reconnect-after-commit.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-logic-single-reconnect-drag-before-commit.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-new-wire-after-cancel.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-new-wire-after-commit.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-new-wire-drag-before-commit.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/A9-new-wire-drag-cancel-before-escape.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/core-second-pass.trx
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/current-resource-tree.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/debug-current.png
+ D PLAN/0.3.1.2A/evidence/second-pass-2026-08-31/wpf-second-pass.trx
+ D PLAN/0.3.1.2B/DEVELOPMENT_REPORT.md
+ D PLAN/0.3.1.2B/EVIDENCE_INDEX.md
+ D PLAN/0.3.1.2B/MANUAL_ACCEPTANCE.md
+ D PLAN/0.3.1.2B/evidence/live/00-release-startup.png
+ D PLAN/0.3.1.2B/evidence/live/01-story-workspace.png
+ D PLAN/0.3.1.2B/evidence/live/B-S1-dirty-session-before-project.png
+ D PLAN/0.3.1.2B/evidence/live/B-S1-project-home-with-dirty-retained.png
+ D PLAN/0.3.1.2B/evidence/live/B-S1-return-same-story-dirty-session.png
+ D PLAN/0.3.1.2B/evidence/live/B-S1-session-breadcrumb.png
+ D PLAN/0.3.1.2B/evidence/live/B-S2-actor-rename-dialog.png
+ D PLAN/0.3.1.2B/evidence/live/B-S2-four-type-renamed.png
+ D PLAN/0.3.1.2B/evidence/live/B-S3-119dpi-logical-1100x700.png
+ D PLAN/0.3.1.2B/evidence/live/B-S3-region-inline.png
+ D PLAN/0.3.1.2B/evidence/live/B-S3-region-inspector.png
+ D PLAN/0.3.1.2B/evidence/live/B-S4-session-condition-node.png
+ D PLAN/0.3.1.2B/evidence/live/B-S4-session-palette-condition.png
+ D PLAN/0.3.1.2B/evidence/live/B-S4-story-condition-node.png
+ D PLAN/0.3.1.2B/evidence/live/B-S4-story-palette-condition.png
+ D PLAN/0.3.1.2B/evidence/live/B-S5-four-folders-10-items.png
+ D PLAN/0.3.1.2B/evidence/live/B-S5-item-session-10-items.png
+ D PLAN/0.3.1.2B/evidence/live/B-S5-session-10-items.png
+ D PLAN/0.3.1.2B/evidence/live/B-S5-task-10-items.png
+ D PLAN/0.3.1.2B/evidence/live/B-S6-after-20-label-clicks.png
+ D PLAN/0.3.1.2B/evidence/live/B-S6-anchor-drag-connected.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-choice-after-add.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-choice-after-delete.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-choice-after-rename.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-choice-after-reorder.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-choice-before-add.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-settlement-after-add.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-settlement-before-add.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-start-after-add.png
+ D PLAN/0.3.1.2B/evidence/live/B-S7-start-before-add.png
+ D PLAN/0.3.1.2B/evidence/live/B-S8-after-order-drag.png
+ D PLAN/0.3.1.2B/evidence/live/B-S8-after-restart-order-retained.png
+ D PLAN/0.3.1.2B/evidence/live/B-S8-before-order-drag.png
+ D PLAN/0.3.1.2B/evidence/test-results/Core/Core-0.3.1.2B.trx
+ D PLAN/0.3.1.2B/evidence/test-results/Wpf/Wpf-0.3.1.2B.trx
+ D PLAN/0.3.1.3/AUDIT_0312_FINAL_REVIEW.md
+ D PLAN/0.3.1.3/AUDIT_0312_INGEST.md
+ D PLAN/0.3.1.3/DEVELOPMENT_REPORT.md
+ D PLAN/0.3.1.3/EVIDENCE_INDEX.md
+ D PLAN/0.3.1.3/MANUAL_ACCEPTANCE.md
+ D PLAN/0.3.1.3/ROOT_CAUSE_RECORD.md
+ D PLAN/0.3.1.3/SOURCE_AUDIT_FINAL_REVIEW.md
+ D PLAN/0.3.1.3/evidence/audit/final-original-audit-reread.pdf
+ D PLAN/0.3.1.3/evidence/audit/final-original-audit-reread.txt
+ D PLAN/0.3.1.3/evidence/audit/pages/contact-sheet-12-pages.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-01.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-02.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-03.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-04.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-05.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-06.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-07.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-08.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-09.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-10.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-11.png
+ D PLAN/0.3.1.3/evidence/audit/pages/page-12.png
+ D PLAN/0.3.1.3/evidence/automated/Core-final.trx
+ D PLAN/0.3.1.3/evidence/automated/FINAL_TEST_RESULTS.md
+ D PLAN/0.3.1.3/evidence/automated/Wpf-final.trx
+ D PLAN/0.3.1.3/evidence/baseline/Core/Core-baseline.trx
+ D PLAN/0.3.1.3/evidence/baseline/Wpf/Wpf-baseline.trx
+ D PLAN/0.3.1.3/evidence/live/01-project-home-light.png
+ D PLAN/0.3.1.3/evidence/live/02-start-four-conditions-light.png
+ D PLAN/0.3.1.3/evidence/live/03-start-inspector-scroll.png
+ D PLAN/0.3.1.3/evidence/live/04-trigger-type-popup.png
+ D PLAN/0.3.1.3/evidence/live/05-after-actor-select.png
+ D PLAN/0.3.1.3/evidence/live/06-after-actor-create.png
+ D PLAN/0.3.1.3/evidence/live/07-two-actors.png
+ D PLAN/0.3.1.3/evidence/live/08-actors-expanded-before-drag.png
+ D PLAN/0.3.1.3/evidence/live/09-actor-dropped-as-parameter-node-count-unchanged.png
+ D PLAN/0.3.1.3/evidence/live/10-restarted-fixed-build-project-home-dark.png
+ D PLAN/0.3.1.3/evidence/live/11-fixed-actor-parameter-and-node-inspector.png
+ D PLAN/0.3.1.3/evidence/live/12-invalid-radius-near-field-and-compact-inspector.png
+ D PLAN/0.3.1.3/evidence/live/13-invalid-radius-near-field-visible.png
+ D PLAN/0.3.1.3/evidence/live/14-problems-detailed-stable-code.png
+ D PLAN/0.3.1.3/evidence/live/16-session-ghost-during-real-drag.png
+ D PLAN/0.3.1.3/evidence/live/17-session-task-aggregate-nodes.png
+ D PLAN/0.3.1.3/evidence/live/18-normal-reconnect-ctrl-bundle-result.png
+ D PLAN/0.3.1.3/evidence/live/19-session-resource-delete-confirmation.png
+ D PLAN/0.3.1.3/evidence/live/20-session-delete-transaction-result.png
+ D PLAN/0.3.1.3/evidence/live/21-placement-delete-keeps-resource-confirmation.png
+ D PLAN/0.3.1.3/evidence/live/22-post-delete-edit-no-resurrection.png
+ D PLAN/0.3.1.3/evidence/live/23-placement-delete-task-resource-preserved.png
+ D PLAN/0.3.1.3/evidence/live/24-actor-reorder-before-preview.png
+ D PLAN/0.3.1.3/evidence/live/25-story-viewport-restored-125-percent-pan.png
+ D PLAN/0.3.1.3/evidence/live/26-task-viewport-restored-90-percent-pan.png
+ D PLAN/0.3.1.3/evidence/live/27-objective-collect-item-switch.png
+ D PLAN/0.3.1.3/evidence/live/28-objective-actor-parameter-switch.png
+ D PLAN/0.3.1.3/evidence/live/29-actor-dropped-into-objective-parameter-node-count-unchanged.png
+ D PLAN/0.3.1.3/evidence/live/30-light-project-home-1100x700-logical-dpi119.png
+ D PLAN/0.3.1.3/evidence/live/31-light-project-home-1700x980-physical-dpi119.png
+ D PLAN/0.3.1.3/evidence/live/32-dark-project-home-1700x980-physical-dpi119.png
+ D PLAN/0.3.1.3/evidence/live/33-dark-project-home-1100x700-logical-dpi119.png
+ D PLAN/0.3.1.4/AUDIT_0313_FINAL_REVIEW.md
+ D PLAN/0.3.1.4/AUDIT_0313_INGEST.md
+ D PLAN/0.3.1.4/BASELINE.md
+ D PLAN/0.3.1.4/CRASH_0313_07.md
+ D PLAN/0.3.1.4/EVIDENCE_INDEX.md
+ D PLAN/0.3.1.4/HISTORICAL_REGRESSION_BASELINE.md
+ D PLAN/0.3.1.4/HISTORICAL_REGRESSION_FINAL_REVIEW.md
+ D PLAN/0.3.1.4/MANUAL_ACCEPTANCE.md
+ D PLAN/0.3.1.4/ROOT_CAUSE_RECORD.md
+ D PLAN/0.3.1.4/STAGE1_ACCEPTANCE.md
+ D PLAN/0.3.1.4/STAGE2_ACCEPTANCE.md
+ D PLAN/0.3.1.4/STAGE3_ACCEPTANCE.md
+ D PLAN/0.3.1.4/STAGE4_ACCEPTANCE.md
+ D PLAN/0.3.1.4/STAGE5_HISTORICAL_REGRESSION.md
+ D PLAN/0.3.1.4/STAGE6_FINAL_AUDIT.md
+ D PLAN/0.3.1.4/evidence/baseline/Core/Core-0.3.1.3-baseline.trx
+ D PLAN/0.3.1.4/evidence/baseline/Wpf/Wpf-0.3.1.3-baseline.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-dark-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-dark-after-process-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-flow-reconnect-forward-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-flow-reconnect-forward-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-flow-reconnect-forward-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-flow-reconnect-restore-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-flow-reconnect-restore-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-flow-reconnect-restore-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-light-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-aesthetic/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-dark-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-dark-after-process-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-dark-pre-measure.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-flow-reconnect-forward-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-flow-reconnect-forward-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-flow-reconnect-forward-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-flow-reconnect-restore-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-flow-reconnect-restore-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-flow-reconnect-restore-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-light-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-final2/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-label-debug/choice-dark-pre-measure.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-label-debug/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-label-final/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-label-final2/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-dark-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-flow-reconnect-forward-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-flow-reconnect-forward-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-flow-reconnect-forward-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-flow-reconnect-restore-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-flow-reconnect-restore-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-flow-reconnect-restore-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-light-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice-retry/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice/choice-dark-10-options.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice/choice-flow-reconnect-forward-frame1-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice/choice-flow-reconnect-forward-frame2-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice/choice-flow-reconnect-forward-frame3-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/choice/choice-port-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/FinalB122-Core.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/FinalB122-Wpf.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceAesthetic-Core.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceAesthetic-Wpf.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceFit-Core.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceFit-Wpf.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceLabel-Core.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceLabel-Wpf.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceLayout-Core.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/full/PostChoiceLayout-Wpf.trx
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/manual-review/choice-dark-pre-measure.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/failure.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s1-empty-after-two-seconds.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s1-enter-committed.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s1-s3-s5-final-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s3-after-100-switches.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s5-after-delete-no-confirmation.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s5-after-undo-restored.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s1-s3-s5/s5-fixed-settlement-rejected-delete.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/failure.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s13-actor-dark.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s13-actor-group-dark.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s13-item-dark.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s13-item-group-dark.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s13-s16-inspector-theme-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s16-dark-graph-choice-inspector-problems.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s13-s16/s16-light-graph-choice-inspector-problems.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s17-s18-lifecycle-reorder/s17-placement-delete.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s17-s18-lifecycle-reorder/s17-resource-delete.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s17-s18-lifecycle-reorder/s17-s18-lifecycle-reorder-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s17-s18-lifecycle-reorder/s18-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s17-s18-lifecycle-reorder/s18-insertion-preview-before-mouse-up.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/stage2-dark-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/stage2-dark-before-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/stage2-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/stage2-light-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/ui/stage2-dark-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/ui/stage2-dark-before-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/s19-viewport/ui/stage2-light-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage1-inline/stage1-inline-combobox-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage1/objective-target-100-final.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage2-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-multi-ctrl-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-multi-ctrl-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-multi-ctrl-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-multi-ctrl-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-multi-ctrl-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-multi-ctrl-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-post-choice-layout/stage3-wire/ui/logic-single-open.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/draft/s1-empty-after-2s.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/draft/s1-typed-and-committed.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/draft/s2-action-three-types.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/draft/s2-objective-collect-blank-no-duplicate-helper.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/draft/s3-objective-target-stress-final.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/layout/stage2-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-postfix/layout/ui/stage2-dark-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/layout/ui/stage2-dark-before-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/layout/ui/stage2-light-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s13-inspector-actor.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s13-inspector-actor_group.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s13-inspector-item-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s13-inspector-item.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s13-inspector-item_group-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s13-inspector-item_group.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-1.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-10-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-10.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-2-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-2.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-5-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-5.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-option-delete-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s14-choice-option-delete.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-after-long-rename.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-after-process-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-after-reorder-frame-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-after-reorder-frame.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-five-choice-connections-before-rename.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-five-choice-connections-final-before-restart.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-five-unique-boundary-targets.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s15-relayout-choice-left-targets-right-before-save.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s16-dark-graph-choice-inspector.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s16-dark-problems.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s16-light-graph-choice-inspector.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s16-light-problems.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s5-after-delete-no-modal.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s5-after-single-undo.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s5-before-delete.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/stage4/s5-fixed-start-protected.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-multi-ctrl-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-multi-ctrl-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-multi-ctrl-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-multi-ctrl-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-multi-ctrl-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-multi-ctrl-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live-postfix/wire/ui/logic-single-open.png
+ D PLAN/0.3.1.4/evidence/final-live/draft/s1-committed.png
+ D PLAN/0.3.1.4/evidence/final-live/draft/s1-empty-after-2s.png
+ D PLAN/0.3.1.4/evidence/final-live/full/FinalLive-Core-full.trx
+ D PLAN/0.3.1.4/evidence/final-live/full/FinalLive-Wpf-full.trx
+ D PLAN/0.3.1.4/evidence/final-live/layout/stage2-layout-gate.json
+ D PLAN/0.3.1.4/evidence/final-live/layout/ui/stage2-dark-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live/layout/ui/stage2-dark-before-restart.png
+ D PLAN/0.3.1.4/evidence/final-live/layout/ui/stage2-light-after-restart.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/logic-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/logic-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/logic-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/logic-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/logic-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry1/ui/logic-single-open.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/logic-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/logic-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/logic-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/logic-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/logic-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry2/ui/logic-single-open.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-multi-ctrl-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-multi-ctrl-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-multi-ctrl-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-multi-ctrl-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-multi-ctrl-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-multi-ctrl-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-multi-ordinary-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-multi-ordinary-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-multi-ordinary-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire-retry3/ui/logic-single-open.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/final-live/wire/ui/logic-single-open.png
+ D PLAN/0.3.1.4/evidence/pre-fix/00-0313-launch.png
+ D PLAN/0.3.1.4/evidence/pre-fix/01-story-workspace.png
+ D PLAN/0.3.1.4/evidence/pre-fix/02-task-objective-before-switch.png
+ D PLAN/0.3.1.4/evidence/pre-fix/03-after-resource-doubleclick.png
+ D PLAN/0.3.1.4/evidence/pre-fix/0313-07-clrstack.txt
+ D PLAN/0.3.1.4/evidence/s20-canonical-authoring-smoke/failure.png
+ D PLAN/0.3.1.4/evidence/s20-canonical-authoring-smoke/post-restart.png
+ D PLAN/0.3.1.4/evidence/s20-canonical-authoring-smoke/pre-close.png
+ D PLAN/0.3.1.4/evidence/s20-canonical-authoring-smoke/s20-canonical-authoring-smoke.json
+ D PLAN/0.3.1.4/evidence/stage1-chinese-input-ctrl-s.png
+ D PLAN/0.3.1.4/evidence/stage1-current-screen.png
+ D PLAN/0.3.1.4/evidence/stage1-live-current.png
+ D PLAN/0.3.1.4/evidence/stage1-objective-100-fast.png
+ D PLAN/0.3.1.4/evidence/stage1-objective-100-final.png
+ D PLAN/0.3.1.4/evidence/stage1-objective-100-switches.png
+ D PLAN/0.3.1.4/evidence/stage1-objective-consistency-after-wait.png
+ D PLAN/0.3.1.4/evidence/stage1-popup.png
+ D PLAN/0.3.1.4/evidence/stage1-start-a7-actor-final.png
+ D PLAN/0.3.1.4/evidence/stage1-start-trigger-50-final.png
+ D PLAN/0.3.1.4/evidence/stage1/full/Stage1-Core-full.trx
+ D PLAN/0.3.1.4/evidence/stage1/full/Stage1-Wpf-full-final-clean.trx
+ D PLAN/0.3.1.4/evidence/stage1/full/Stage1-Wpf-full-final.trx
+ D PLAN/0.3.1.4/evidence/stage1/full/Stage1-Wpf-full.trx
+ D PLAN/0.3.1.4/evidence/stage1/targeted/Stage1-A9-targeted.trx
+ D PLAN/0.3.1.4/evidence/stage1/ui/final-candidate-action-chinese.png
+ D PLAN/0.3.1.4/evidence/stage1/ui/final-candidate-reopen-action.png
+ D PLAN/0.3.1.4/evidence/stage1/ui/final-candidate-reopen-start.png
+ D PLAN/0.3.1.4/evidence/stage2/full/Stage2-Core-full.trx
+ D PLAN/0.3.1.4/evidence/stage2/full/Stage2-Wpf-full.trx
+ D PLAN/0.3.1.4/evidence/stage2/stage2-layout-gate.json
+ D PLAN/0.3.1.4/evidence/stage2/ui/stage2-dark-after-restart.png
+ D PLAN/0.3.1.4/evidence/stage2/ui/stage2-dark-before-restart.png
+ D PLAN/0.3.1.4/evidence/stage2/ui/stage2-light-after-restart.png
+ D PLAN/0.3.1.4/evidence/stage3/full/Stage3-Core-full.trx
+ D PLAN/0.3.1.4/evidence/stage3/full/Stage3-Wpf-full.trx
+ D PLAN/0.3.1.4/evidence/stage3/stage3-wire-gate.json
+ D PLAN/0.3.1.4/evidence/stage3/ui/flow-single-after-save-all.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/flow-single-frame1-before.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/flow-single-frame2-down.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/flow-single-frame3-moving.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/flow-single-frame4-hover.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/flow-single-frame5-commit.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/glow-frame1-valid.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/glow-frame2-left.png
+ D PLAN/0.3.1.4/evidence/stage3/ui/light-click-20-no-phantom.png
+ D PLAN/0.3.1.4/evidence/stage4/full/Stage4-Core-full.trx
+ D PLAN/0.3.1.4/evidence/stage4/full/Stage4-Wpf-full.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-Delete-lifecycle-targeted-fixed.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-Delete-lifecycle-targeted.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-Delete-targeted-env.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-Delete-targeted.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-Inspector-targeted.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-integrated-targeted-fixed.trx
+ D PLAN/0.3.1.4/evidence/stage4/targeted/Stage4-integrated-targeted.trx
+ D PLAN/0.3.1.4/evidence/stage6-audit-reopen/0313-original/0313-audit-current-original.pdf
+ D PLAN/0.3.1.4/evidence/stage6-audit-reopen/0313-original/page-1.png
+ D PLAN/0.3.1.4/evidence/stage6-audit-reopen/0313-original/page-2.png
+ D PLAN/0.3.1.4/evidence/stage6-audit-reopen/0313-original/page-3.png
+ D PLAN/0.3.1.4/evidence/stage6-audit-reopen/0313-original/page-4.png
+ D PLAN/0.3.1.4/evidence/stage6-audit-reopen/0313-original/page-5.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image1.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image2.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image3.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image4.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image5.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image6.png
+ D PLAN/0.3.1.4/evidence/stage6/audit-media/image7.png
+ D PLAN/0.3.1.4/evidence/stage6/full/Stage6-Core-full.trx
+ D PLAN/0.3.1.4/evidence/stage6/full/Stage6-Wpf-full.trx
+ D PLAN/0.3.1.4/tools/Invoke-ChoicePortLayoutGate.ps1
+ D PLAN/0.3.1.4/tools/Invoke-S13S16InspectorThemeGate.ps1
+ D PLAN/0.3.1.4/tools/Invoke-S17S18LifecycleReorderGate.ps1
+ D PLAN/0.3.1.4/tools/Invoke-S1S3S5FinalGate.ps1
+ D PLAN/0.3.1.4/tools/Invoke-S20CanonicalAuthoringSmoke.ps1
+ D PLAN/0.3.1.4/tools/Invoke-Stage1StartSwitch.ps1
+ D PLAN/0.3.1.4/tools/Invoke-Stage2LayoutGate.ps1
+ D PLAN/0.3.1.4/tools/Invoke-Stage3WireGate.ps1
+ D PLAN/0.3.1.4/tools/New-S17S18Fixture.ps1
+ D PLAN/0.3.1.4/tools/New-S20AuthoringSmokeProject.ps1
+ D PLAN/0.3.1.4/tools/New-Stage2LayoutFixture.ps1
+ D PLAN/0.3.1.4/tools/New-Stage3WireFixture.ps1
+ M build.gradle.kts
+ M gradle.properties
+ M src/main/java/darkgrey/rpg/client/CanonicalTaskClientStore.java
+ M src/main/java/darkgrey/rpg/client/ClientProxy.java
+ M src/main/java/darkgrey/rpg/client/ClientQuestKeyHandler.java
+ M src/main/java/darkgrey/rpg/client/CreatorInspectClient.java
+ M src/main/java/darkgrey/rpg/client/TaskTrackerHud.java
+ M src/main/java/darkgrey/rpg/client/gui/CanonicalDialogueRenderer.java
+ M src/main/java/darkgrey/rpg/client/gui/DgrUiPalette.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiCanonicalSessionScreen.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiCanonicalStoryChooser.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskScreen.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskSubmitChooser.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiCopierTemplates.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiDialogueHistory.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiDialogueScreen.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiDialogueSettings.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiNominatorEntity.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiNominatorInventory.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiQuestJournal.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiRpgButton.java
+ M src/main/java/darkgrey/rpg/client/gui/GuiWrappedChoiceButton.java
+ M src/main/java/darkgrey/rpg/client/gui/TaskObjectiveText.java
+ M src/main/java/darkgrey/rpg/client/gui/UtilityWindowSettings.java
+ M src/main/java/darkgrey/rpg/client/session/CanonicalDialogueLayout.java
+ M src/main/java/darkgrey/rpg/client/session/CanonicalPresentationBridge.java
+ M src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientController.java
+ M src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientModel.java
+ M src/main/java/darkgrey/rpg/client/session/DialogueHistoryClient.java
+ M src/main/java/darkgrey/rpg/client/session/DialoguePreferences.java
+ M src/main/java/darkgrey/rpg/client/session/DialogueTextReveal.java
+ M src/main/java/darkgrey/rpg/client/session/PlayerUiPreferences.java
+ M src/main/java/darkgrey/rpg/creator/CanonicalTaskPresentationServer.java
+ M src/main/java/darkgrey/rpg/creator/CanonicalTaskUiProjection.java
+ M src/main/java/darkgrey/rpg/gramophone/BlockGramophone.java
+ M src/main/java/darkgrey/rpg/gramophone/GramophoneAudio.java
+ M src/main/java/darkgrey/rpg/gramophone/GramophoneClient.java
+ M src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java
+ M src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java
+ M src/main/java/darkgrey/rpg/gramophone/GramophonePacket.java
+ M src/main/java/darkgrey/rpg/gramophone/GramophoneServer.java
+ M src/main/java/darkgrey/rpg/gramophone/GuiGramophone.java
+ M src/main/java/darkgrey/rpg/gramophone/TileGramophone.java
+ M src/main/java/darkgrey/rpg/media/CanonicalSessionAudio.java
+ M src/main/java/darkgrey/rpg/media/CanonicalSessionScene.java
+ M src/main/java/darkgrey/rpg/task/forge/CanonicalTaskForgeManager.java
+ M src/main/java/darkgrey/rpg/task/journal/CanonicalTaskJournalProjector.java
+ M src/test/java/darkgrey/rpg/client/gui/PlayerPreferences0332Probe.java
+ M src/test/java/darkgrey/rpg/client/session/CanonicalSessionClientModelProbe.java
+ M src/test/java/darkgrey/rpg/gramophone/Gramophone0332Probe.java
+ M src/test/java/darkgrey/rpg/gramophone/GramophoneStorageProbe.java
+ M src/test/java/darkgrey/rpg/task/journal/CanonicalTaskJournalProjectionProbe.java
+ M studio/src/DarkGreyRPG.Studio.Core/DarkGreyRPG.Studio.Core.csproj
+ M studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/CanonicalSessionLineSchema.cs
+ M studio/src/DarkGreyRPG.Studio.Core/Packaging/SessionPortraitPackageValidation.cs
+ M studio/src/DarkGreyRPG.Studio.Core/Packaging/StoryPackageExporter.cs
+ M studio/src/DarkGreyRPG.Studio.Core/Packaging/StoryPackageMedia.cs
+ M studio/src/DarkGreyRPG.Studio.Tests/SessionPagesTests.cs
+ M studio/src/DarkGreyRPG.Studio.Tests/StoryPackageTests.cs
+ M studio/src/DarkGreyRPG.Studio.Wpf.Tests/LinePagesAuthoringTests.cs
+ M studio/src/DarkGreyRPG.Studio.Wpf.Tests/ProjectAtlasMenuTests.cs
+ M studio/src/DarkGreyRPG.Studio/DarkGreyRPG.Studio.csproj
+ M studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalGraphClipboard.cs
+ M studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalNodeInspectorViewModel.LinePages.cs
+ M studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalStoryWorkspaceViewModel.Search.cs
+ M studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalStoryWorkspaceView.Search.cs
+ M studio/src/DarkGreyRPG.Studio/Views/Graph/LinePagesEditor.xaml
+ M studio/src/DarkGreyRPG.Studio/Views/Graph/LinePagesEditor.xaml.cs
+?? .agents/skills/story-media-lifecycle/
+?? .dotnet-cli-home/
+?? .dotnet-home/
+?? .nuget-packages/
+?? .zcode/
+?? "PLAN/0.3.1.1\345\256\241\350\256\241.docx"
+?? "PLAN/0.3.1.5\345\256\241\350\256\241.docx"
+?? "PLAN/0.3.2.0_A\345\256\241\350\256\241.docx"
+?? "PLAN/0.3.2.0_B2\345\256\241\350\256\241.docx"
+?? "PLAN/0.3.2.0_B3\345\256\241\350\256\241.docx"
+?? "PLAN/0.3.2.0_B4\345\256\241\350\256\241.docx"
+?? "PLAN/0.3.2.1\345\256\241\350\256\241.docx"
+?? PLAN/0.3.2.2/evidence/07-reconnected-choice.png
+?? PLAN/0.3.2.2/evidence/08-death-choice.png
+?? PLAN/0.3.2.2/evidence/09-respawn-choice.png
+?? PLAN/0.3.2.2/evidence/23-pause-fixed.png
+?? PLAN/0.3.2.2/evidence/26-real-kill-3.png
+?? PLAN/0.3.2.2/evidence/27-task-settled-upper-gui-preserved.png
+?? PLAN/0.3.2.2/evidence/28-task-finish-dialogue.png
+?? PLAN/0.3.2.2/evidence/29-reconnect-no-task-rollback.png
+?? PLAN/0.3.2.2/evidence/30-final-choice.png
+?? PLAN/0.3.2.2/evidence/31-final-remapped-chat-native-key.png
+?? PLAN/0.3.2.2/evidence/32-final-upper-choice-no-click.png
+?? PLAN/0.3.2.2/evidence/33-final-pause.png
+?? PLAN/0.3.2.2/evidence/34-final-parallel-tasks.png
+?? PLAN/0.3.2.2/evidence/35-final-lowres-parallel-tasks.png
+?? PLAN/0.3.2.2/evidence/39-final-copier-confirm.png
+?? PLAN/0.3.2.2/evidence/40-final-copier-deleted.png
+?? PLAN/0.3.2.2/evidence/41-final-nominator-layout.png
+?? PLAN/0.3.2.2/evidence/42-final-nominator-bound.png
+?? PLAN/0.3.2.2/evidence/44-final-narration-transport.png
+?? PLAN/0.3.2.2/evidence/46-final-item-multiple-labels-verified.png
+?? PLAN/0.3.2.2/evidence/47-final-entity-labels.png
+?? PLAN/0.3.2.2/evidence/live-actions.jsonl
+?? PLAN/0.3.2.2/evidence/live-verification.jsonl
+?? PLAN/0.3.2.2/evidence/original-kill_slimes.dgrs
+?? "PLAN/0.3.2.2\345\256\241\350\256\241.docx"
+?? PLAN/0.3.2.3/
+?? "PLAN/0.3.2.3\345\256\241\350\256\241.docx"
+?? PLAN/0.3.2.4/EVIDENCE_HASHES.json
+?? PLAN/0.3.2.4/evidence/
+?? PLAN/0.3.2.4/tools/
+?? "PLAN/0.3.3.0\345\256\241\350\256\241.docx"
+?? PLAN/0.3.3.1/ProjectSaveAndGuiPalette-20260916.md
+?? PLAN/0.3.3.1/evidence/DialogueSettingsArtifacts.json
+?? PLAN/0.3.3.1/evidence/DirectoryLayout/
+?? PLAN/0.3.3.1/evidence/ExperienceArtifacts.json
+?? PLAN/0.3.3.1/evidence/ImageFormatsArtifact.json
+?? PLAN/0.3.3.1/evidence/ToastCompactArtifact.json
+?? PLAN/0.3.3.1/evidence/ToastHierarchy-FinalState.json
+?? PLAN/0.3.3.1/evidence/ToastHierarchy-Interacted.json
+?? PLAN/0.3.3.1/evidence/ToastHierarchy-Killed.json
+?? PLAN/0.3.3.1/evidence/ToastHierarchy-Next.json
+?? PLAN/0.3.3.1/evidence/ToastHierarchy-Received.json
+?? PLAN/0.3.3.1/evidence/ToastHierarchyArtifact.json
+?? PLAN/0.3.3.1/evidence/ToastLabelsArtifact.json
+?? PLAN/0.3.3.1/evidence/ToastStyleArtifact.json
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-CopyMenu.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-Game.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-IdeaRunMenu.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-PKey.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-Reopened.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-Resized.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-StudioLoaded.png
+?? PLAN/0.3.3.1/evidence/live/DialogueSettings-StudioReentered.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Choice.json
+?? PLAN/0.3.3.1/evidence/live/Experience-Choice.png
+?? PLAN/0.3.3.1/evidence/live/Experience-ChoiceClick.json
+?? PLAN/0.3.3.1/evidence/live/Experience-Clipboard-RealPaste.png
+?? PLAN/0.3.3.1/evidence/live/Experience-ConnectedScreenImport.png
+?? PLAN/0.3.3.1/evidence/live/Experience-ConnectedScreenImport.txt
+?? PLAN/0.3.3.1/evidence/live/Experience-Dialogue.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Fixture.json
+?? PLAN/0.3.3.1/evidence/live/Experience-GameStart.json
+?? PLAN/0.3.3.1/evidence/live/Experience-GameStartB.json
+?? PLAN/0.3.3.1/evidence/live/Experience-HotReload.json
+?? PLAN/0.3.3.1/evidence/live/Experience-Idea-BeforeRun.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Idea-Rerun.png
+?? PLAN/0.3.3.1/evidence/live/Experience-IdeaExit.png
+?? PLAN/0.3.3.1/evidence/live/Experience-IdeaExitTarget.png
+?? PLAN/0.3.3.1/evidence/live/Experience-ImageImport-Invalid.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Inspector-ParameterMenu-Verified.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Inspector-ParameterMenu.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Interact.json
+?? PLAN/0.3.3.1/evidence/live/Experience-Line.json
+?? PLAN/0.3.3.1/evidence/live/Experience-NonblockingTitle.json
+?? PLAN/0.3.3.1/evidence/live/Experience-NonblockingTitle.png
+?? PLAN/0.3.3.1/evidence/live/Experience-ObjectiveToast.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Observations.json
+?? PLAN/0.3.3.1/evidence/live/Experience-OfficialShortcut.txt
+?? PLAN/0.3.3.1/evidence/live/Experience-OfficialStudio.png
+?? PLAN/0.3.3.1/evidence/live/Experience-QuantityOnly.json
+?? PLAN/0.3.3.1/evidence/live/Experience-Reconnect.json
+?? PLAN/0.3.3.1/evidence/live/Experience-Reconnect.png
+?? PLAN/0.3.3.1/evidence/live/Experience-RevealCompleteClick.json
+?? PLAN/0.3.3.1/evidence/live/Experience-RevealCompleted.json
+?? PLAN/0.3.3.1/evidence/live/Experience-ScreenA.json
+?? PLAN/0.3.3.1/evidence/live/Experience-ScreenA.png
+?? PLAN/0.3.3.1/evidence/live/Experience-ScreenB-Revealing.json
+?? PLAN/0.3.3.1/evidence/live/Experience-ScreenB.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Studio-Fit.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Studio-NodePaste.png
+?? PLAN/0.3.3.1/evidence/live/Experience-Studio-Session.png
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskAfterTitle.json
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskCompleteToast.png
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskCompleted.json
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskSettledB.json
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskSettledB.png
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskSettlement.json
+?? PLAN/0.3.3.1/evidence/live/Experience-TaskToast.png
+?? PLAN/0.3.3.1/evidence/live/Experience-TitleWaiting.json
+?? PLAN/0.3.3.1/evidence/live/Experience-TitleWaiting.png
+?? PLAN/0.3.3.1/evidence/live/ImageFormats-UserImageImported.png
+?? PLAN/0.3.3.1/evidence/live/NativeEditedProject.png
+?? PLAN/0.3.3.1/evidence/live/NativeExportSuccess.png
+?? PLAN/0.3.3.1/evidence/live/NativeFocusCheck.png
+?? PLAN/0.3.3.1/evidence/live/NativeReopenSaved.png
+?? PLAN/0.3.3.1/evidence/live/RelocationNativeStudioOpened.png
+?? PLAN/0.3.3.1/evidence/live/ToastHierarchy-Baseline.png
+?? PLAN/0.3.3.1/evidence/live/ToastHierarchy-Completed.png
+?? PLAN/0.3.3.1/evidence/live/ToastHierarchy-Next.png
+?? PLAN/0.3.3.1/evidence/live/ToastHierarchy-Received.png
+?? PLAN/0.3.3.1/evidence/live/ToastHierarchy-Scale3.png
+?? PLAN/0.3.3.1/evidence/live/action-default-advanced.png
+?? PLAN/0.3.3.1/evidence/live/action-default-native.png
+?? PLAN/0.3.3.1/evidence/live/atlas-menu-created-manual-wire.png
+?? PLAN/0.3.3.1/evidence/live/atlas-story-only-menu.png
+?? PLAN/0.3.3.1/evidence/live/buff-help-fixed-both.png
+?? PLAN/0.3.3.1/evidence/live/buff-help-fixed.png
+?? PLAN/0.3.3.1/evidence/live/collapsible-media-audio-off.png
+?? PLAN/0.3.3.1/evidence/live/collapsible-media-audio-on.png
+?? PLAN/0.3.3.1/evidence/live/collapsible-media-initial.png
+?? PLAN/0.3.3.1/evidence/live/collapsible-media-inspector-expanded.png
+?? PLAN/0.3.3.1/evidence/live/collapsible-media-inspector-open.png
+?? PLAN/0.3.3.1/evidence/live/collapsible-media-screen-open.png
+?? PLAN/0.3.3.1/evidence/live/layout-close-state.png
+?? PLAN/0.3.3.1/evidence/live/layout-music-screen-100.png
+?? PLAN/0.3.3.1/evidence/live/layout-screen-bottom-100.png
+?? PLAN/0.3.3.1/evidence/live/layout-start-100.png
+?? PLAN/0.3.3.1/evidence/live/media-audio-seek.png
+?? PLAN/0.3.3.1/evidence/live/media-expression-import-rename.png
+?? PLAN/0.3.3.1/evidence/live/media-line-portrait-audio-layout.png
+?? PLAN/0.3.3.1/evidence/live/media-portrait-live-options.png
+?? PLAN/0.3.3.1/evidence/live/media-screen-before-drag.png
+?? PLAN/0.3.3.1/evidence/live/media-screen-during-drag.png
+?? PLAN/0.3.3.1/evidence/live/media-screen-final-preview.png
+?? PLAN/0.3.3.1/evidence/live/readability-session-dark.png
+?? PLAN/0.3.3.1/evidence/live/resource-drop-inline-item.png
+?? PLAN/0.3.3.1/evidence/live/resource-drop-inspector-item.png
+?? PLAN/0.3.3.1/evidence/live/reward-create-before.png
+?? PLAN/0.3.3.1/evidence/live/reward-layout-removed.png
+?? PLAN/0.3.3.1/evidence/live/reward-layout-two-dark.png
+?? PLAN/0.3.3.1/evidence/live/reward-layout-two-light.png
+?? PLAN/0.3.3.1/evidence/live/screen-properties-card.png
+?? PLAN/0.3.3.1/evidence/live/screen-properties-final-card.png
+?? PLAN/0.3.3.1/evidence/live/screen-properties-initial.png
+?? PLAN/0.3.3.1/evidence/live/screen-snap-during-drag.png
+?? PLAN/0.3.3.1/evidence/live/screen-snap-final.png
+?? PLAN/0.3.3.1/evidence/live/screen-toolbar-layout.png
+?? PLAN/0.3.3.1/evidence/live/story-ports-start-state.png
+?? PLAN/0.3.3.1/evidence/live/story-ports-two-inputs-unsaved.png
+?? PLAN/0.3.3.1/evidence/live/text-tones-close-state.png
+?? PLAN/0.3.3.1/evidence/live/top-left-inspector-final.png
+?? PLAN/0.3.3.1/evidence/live/viewport-centre-after.png
+?? PLAN/0.3.3.1/evidence/live/viewport-centre-before.png
+?? PLAN/0.3.3.1/evidence/live/viewport-centre-final.png
+?? PLAN/0.3.3.1/evidence/story-media-policy-0916/
+?? "PLAN/0.3.3.1\345\256\241\350\256\241.docx"
+?? PLAN/0.3.3.2/evidence/
+?? "PLAN/0.3.3.2\345\256\241\350\256\241.docx"
+?? PLAN/0.3.3.3/ARTIFACTS.json
+?? PLAN/0.3.3.3/AUDIT1_FIXES.md
+?? PLAN/0.3.3.3/CACHE_LIVE_0923.md
+?? PLAN/0.3.3.3/CONSTRUCTION_STATUS.md
+?? PLAN/0.3.3.3/CURRENT_ACCEPTANCE_GAPS.md
+?? PLAN/0.3.3.3/DELIVERY_REPORT.md
+?? PLAN/0.3.3.3/DIALOGUE_RENDER_FIXES.md
+?? PLAN/0.3.3.3/E2E_AND_VISUAL_REVIEW.md
+?? PLAN/0.3.3.3/FINISH_0923.md
+?? PLAN/0.3.3.3/GRAMOPHONE_RANGE_FIX.md
+?? PLAN/0.3.3.3/GRAMOPHONE_REMOVAL_FIX.md
+?? PLAN/0.3.3.3/PLAN_RECONCILIATION_0923.md
+?? PLAN/0.3.3.3/REQUIREMENTS_TRACEABILITY.md
+?? PLAN/0.3.3.3/RESUME_0923.md
+?? PLAN/0.3.3.3/SOURCE_SNAPSHOT.json
+?? PLAN/0.3.3.3/TECHNICAL_CONTRACTS.md
+?? PLAN/0.3.3.3/TEST_RESULTS.md
+?? PLAN/0.3.3.3/WORLD_RANGE_VERIFIED.md
+?? PLAN/0.3.3.3/evidence/
+?? PLAN/0.3.3.3/tools/
+?? PLAN/DarkGreyRPG_0.3.3.3_Construction_PLAN.md
+?? PLAN/DarkGreyRPG_0.3.3.4_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.1.1_Studio_Repair_Construction_Plan.md
+?? PLAN/DarkGrey_RPG_0.3.2.0A_Additional_Node_Editor_Features_Construction_Plan.md
+?? PLAN/DarkGrey_RPG_0.3.2.0_A_Studio_Finalization_DGRS_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.2.0_B2_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.2.0_B4_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.2.0_B_Studio_Minecraft_Integration_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.2.2_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.2.3_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_0.3.2.4_Construction_PLAN.md
+?? PLAN/DarkGrey_RPG_Studio_2.1.3_Plan.md
+?? "PLAN/~$3.1.2\345\256\241\350\256\241.docx"
+?? PLAN/~WRL0753.tmp
+?? "PLAN/\177\345\211\252\345\210\200\351\274\240\346\240\207\347\256\255\345\244\264.jpg"
+?? "PLAN/\344\270\264\346\227\266\345\256\241\350\256\2411.docx"
+?? "PLAN/\345\256\241\350\256\241\346\270\205\345\215\225.docx"
+?? "PLAN/\345\267\245\344\275\234\346\265\201\345\222\214\346\246\202\345\277\265\350\276\250\346\236\220/"
+?? "PLAN/\346\236\204\346\200\235.docx"
+?? "PLAN/\351\252\214\346\224\266\346\270\205\345\215\225_0.3.0.0_0.3.1.0.md"
+?? config/
+?? repo/
+?? schema/dialogue-capacity-profile.json
+?? scripts/generate-dialogue-capacity-profile.py
+?? src/main/java/darkgrey/rpg/client/ClientResourceRevision.java
+?? src/main/java/darkgrey/rpg/client/gui/DgrUiText.java
+?? src/main/java/darkgrey/rpg/client/session/DialogueDisplayPages.java
+?? src/main/java/darkgrey/rpg/creator/TaskRewardPreview.java
+?? src/main/java/darkgrey/rpg/gramophone/GramophoneRenderer.java
+?? src/main/resources/assets/darkgrey_rpg/textures/blocks/
+?? src/test/java/darkgrey/rpg/client/NetworkQueueRaceProbe.java
+?? src/test/java/darkgrey/rpg/client/session/Dialogue0333Probe.java
+?? src/test/java/darkgrey/rpg/gramophone/GramophoneCachePolicyProbe.java
+?? src/test/java/darkgrey/rpg/gramophone/GramophoneDownloadCompletionProbe.java
+?? src/test/java/darkgrey/rpg/gramophone/GramophoneRangeMetadataProbe.java
+?? src/test/java/darkgrey/rpg/gramophone/GramophoneRemovalProbe.java
+?? studio/.tooling/
+?? studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/DialogueCapacityProfile.cs
+?? studio/src/DarkGreyRPG.Studio.Tests/DialogueCapacity0333Tests.cs

@@ -113,9 +113,8 @@ public static class CanonicalTaskObjectiveSchema
                 issues.Add(Issue("graph.objective.property.missing", $"Objective property '{key}' is required for type '{type}'.", $"properties.{key}", node.Id));
 
         if (!properties.TryGetValue(DescriptionProperty, out var description)
-            || description.ValueKind != JsonValueKind.String
-            || string.IsNullOrWhiteSpace(description.GetString()))
-            issues.Add(Issue("graph.objective.description.invalid", "Objective description must be a nonblank string.", $"properties.{DescriptionProperty}", node.Id));
+            || description.ValueKind != JsonValueKind.String)
+            issues.Add(Issue("graph.objective.description.invalid", "Objective description must be a string; empty text is allowed.", $"properties.{DescriptionProperty}", node.Id));
 
         if (type is KillEntity or CollectItem or SubmitItem)
         {

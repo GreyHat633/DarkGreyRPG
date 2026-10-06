@@ -1,0 +1,2 @@
+command=time set day
+result=1

@@ -1,0 +1,62 @@
+[
+  {
+    "Snapshot": "main-page2",
+    "Key": "darkgrey_rpg_canonical_sessions",
+    "Equal": true
+  },
+  {
+    "Snapshot": "main-page2",
+    "Key": "darkgrey_rpg_canonical_tasks",
+    "Equal": true
+  },
+  {
+    "Snapshot": "main-page2",
+    "Key": "a99b827f-b024-3719-b92d-611120c4cea4",
+    "Equal": true
+  },
+  {
+    "Snapshot": "main-page2",
+    "Key": "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c",
+    "Equal": true
+  },
+  {
+    "Snapshot": "local-last",
+    "Key": "darkgrey_rpg_canonical_sessions",
+    "Equal": true
+  },
+  {
+    "Snapshot": "local-last",
+    "Key": "darkgrey_rpg_canonical_tasks",
+    "Equal": true
+  },
+  {
+    "Snapshot": "local-last",
+    "Key": "a99b827f-b024-3719-b92d-611120c4cea4",
+    "Equal": true
+  },
+  {
+    "Snapshot": "local-last",
+    "Key": "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c",
+    "Equal": true
+  },
+  {
+    "Snapshot": "reconnected",
+    "Key": "darkgrey_rpg_canonical_sessions",
+    "Equal": true
+  },
+  {
+    "Snapshot": "reconnected",
+    "Key": "darkgrey_rpg_canonical_tasks",
+    "Equal": true
+  },
+  {
+    "Snapshot": "reconnected",
+    "Key": "a99b827f-b024-3719-b92d-611120c4cea4",
+    "Equal": true
+  },
+  {
+    "Snapshot": "reconnected",
+    "Key": "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c",
+    "Equal": true
+  }
+]

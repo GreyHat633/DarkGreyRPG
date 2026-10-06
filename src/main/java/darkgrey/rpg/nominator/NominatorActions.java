@@ -31,10 +31,7 @@ public final class NominatorActions {
 
     public static void handle(EntityPlayerMP player, NBTTagCompound request) {
         ProjectRepository repo = DarkGreyRpg.getProjectRepository();
-        NominatorCatalog catalog = NominatorCatalog.from(
-            repo.getSnapshot(),
-            DarkGreyRpg.getStoryPackageLoader()
-                .getPackages());
+        NominatorCatalog catalog = NominatorCatalog.from(repo.getSnapshot(), DarkGreyRpg.getStoryPackageLoader());
         NominatorSavedData selections = NominatorSavedData.get();
         NpcIdentitySavedData npc = NpcIdentitySavedData.get();
         ItemIdentitySavedData items = ItemIdentitySavedData.get();
@@ -68,6 +65,10 @@ public final class NominatorActions {
                 String id = npc.getNpcId(uuid);
                 response.setString("individual", id == null ? "" : id);
                 NominatorEntityBinding binding = selections.get(uuid);
+                net.minecraft.nbt.NBTTagList groupIds = new net.minecraft.nbt.NBTTagList();
+                if (binding != null) for (String group : binding.getGroupIds())
+                    groupIds.appendTag(new net.minecraft.nbt.NBTTagString(group));
+                response.setTag("groupIds", groupIds);
                 response.setString(
                     "groups",
                     binding == null ? ""
@@ -129,7 +130,7 @@ public final class NominatorActions {
             else if ("Item".equals(type)) {
                 ItemStackDefinition definition = ItemStackDefinition.capture(stack), old = items.getItem(id);
                 if (old != null && !old.equals(definition) && !"transfer".equals(op))
-                    return fail("transfer_required", "ItemID 已被占用，是否转移到指名槽中的物品？");
+                    return fail("transfer_required", "物品绑定已被占用，是否转移到指名槽中的物品？");
                 changed = "transfer".equals(op) ? items.transferItem(id, definition) : items.bindItem(id, definition);
             } else {
                 if ("transfer".equals(op)) return fail("invalid_request", "物品组不支持转移。");
@@ -161,7 +162,7 @@ public final class NominatorActions {
             NpcHostIdentity host = npc.getHost(id);
             if (host != null && !host.getEntityUuid()
                 .equals(entity.getUniqueID()) && !"transfer".equals(op))
-                return fail("transfer_required", "NPCID 已被占用，是否转移到当前实体？");
+                return fail("transfer_required", "角色绑定已被占用，是否转移到当前实体？");
             individual = id;
         } else if (!groups.contains(id)) groups.add(id);
         return NominatorService.bindEntity(

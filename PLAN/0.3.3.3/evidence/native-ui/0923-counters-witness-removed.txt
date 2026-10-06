@@ -1,0 +1,4 @@
+operation=remove
+time=1790106880838
+darkgrey/rpg/client/gui/CanonicalDialogueRenderer.draw=12532
+darkgrey/rpg/client/session/DialogueDisplayPages.measure=1

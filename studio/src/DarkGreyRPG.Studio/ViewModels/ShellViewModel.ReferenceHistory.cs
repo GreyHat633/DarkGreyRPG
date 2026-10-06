@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.IO;
 using System.IO;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -8,7 +9,7 @@ namespace DarkGreyRPG.Studio.ViewModels;
 
 public sealed partial class ShellViewModel
 {
-    private sealed record ReferenceHistory(string Project, long Sequence, IReadOnlyList<NamespaceFileChange> Changes, string Label = "引用");
+    private sealed record ReferenceHistory(string Project, long Sequence, IReadOnlyList<ProjectFileChange> Changes, string Label = "引用", IReadOnlyCollection<string>? DeletedStories = null);
     private readonly Stack<ReferenceHistory> _referenceUndo = [];
     private readonly Stack<ReferenceHistory> _referenceRedo = [];
     private long _referenceRedoEpoch;
@@ -16,7 +17,7 @@ public sealed partial class ShellViewModel
         && string.Equals(Path.GetFullPath(ProjectDirectory), entry.Project, StringComparison.OrdinalIgnoreCase);
     private bool CanUndoReference() => _referenceUndo.TryPeek(out var entry) && IsCurrentReferenceHistory(entry);
     private bool CanRedoReference() => _referenceRedo.TryPeek(out var entry) && IsCurrentReferenceHistory(entry)
-        && _referenceRedoEpoch == EditHistoryClock.Current;
+        && _referenceRedoEpoch == WorkspaceHistorySequence;
 
     private Dictionary<string, byte[]> CaptureReferenceFiles(string? storyId = null)
     {
@@ -27,7 +28,9 @@ public sealed partial class ShellViewModel
         }
         var directory = Path.Combine(ProjectDirectory, "references");
         return Directory.Exists(directory)
-            ? Directory.EnumerateFiles(directory, "*.dgrs").ToDictionary(path => Path.GetRelativePath(ProjectDirectory, path), File.ReadAllBytes, StringComparer.OrdinalIgnoreCase)
+            ? Directory.EnumerateFiles(directory, "*").Where(path => path.EndsWith(".dgrs", StringComparison.OrdinalIgnoreCase)
+                || path.EndsWith(".dgrs.g", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(path => Path.GetRelativePath(ProjectDirectory, path), File.ReadAllBytes, StringComparer.OrdinalIgnoreCase)
             : new(StringComparer.OrdinalIgnoreCase);
     }
 
@@ -35,7 +38,7 @@ public sealed partial class ShellViewModel
     {
         var after = CaptureReferenceFiles(storyId);
         var changes = before.Keys.Union(after.Keys, StringComparer.OrdinalIgnoreCase).Select(path =>
-            new NamespaceFileChange(path, before.GetValueOrDefault(path), after.GetValueOrDefault(path)))
+            new ProjectFileChange(path, before.GetValueOrDefault(path), after.GetValueOrDefault(path)))
             .Where(change => !(change.ExpectedBytes ?? []).SequenceEqual(change.DesiredBytes ?? [])).ToArray();
         if (changes.Length == 0) return;
         _referenceUndo.Push(new(Path.GetFullPath(ProjectDirectory), EditHistoryClock.Next(), changes));
@@ -49,7 +52,7 @@ public sealed partial class ShellViewModel
         var after = File.ReadAllBytes(path);
         if (before.SequenceEqual(after)) return;
         _referenceUndo.Push(new(Path.GetFullPath(ProjectDirectory), EditHistoryClock.Next(),
-            [new NamespaceFileChange(Path.GetRelativePath(ProjectDirectory, path), before, after)], "资源编辑"));
+            [new ProjectFileChange(Path.GetRelativePath(ProjectDirectory, path), before, after)], "资源编辑"));
         _referenceRedo.Clear();
         UndoCurrentCommand.RaiseCanExecuteChanged(); RedoCurrentCommand.RaiseCanExecuteChanged();
     }
@@ -61,12 +64,13 @@ public sealed partial class ShellViewModel
         if (ActiveEditor is CanonicalGraphResourceEditorViewModel editor && editor.Host.UndoSequence > entry.Sequence) return false;
         try
         {
-            new NamespaceFileTransaction().Apply(ProjectDirectory,
-                entry.Changes.Select(change => new NamespaceFileChange(change.RelativePath, change.DesiredBytes, change.ExpectedBytes)).ToArray(), () => { });
+            new ProjectFileTransaction().Apply(ProjectDirectory,
+                entry.Changes.Select(change => new ProjectFileChange(change.RelativePath, change.DesiredBytes, change.ExpectedBytes)).ToArray(), () => { });
             _referenceUndo.Pop();
             _referenceRedo.Push(entry);
             RefreshOfflineWorkspace();
-            _referenceRedoEpoch = EditHistoryClock.Current;
+            if (entry.Label == "故事组删除") { LoadActorList(); LoadStoryList(); }
+            _referenceRedoEpoch = WorkspaceHistorySequence;
             if (entry.Label == "资源编辑") LoadActorList();
             ReportSuccess($"已撤销{entry.Label}操作。", entry.Label);
         }
@@ -79,23 +83,26 @@ public sealed partial class ShellViewModel
     private void RedoCurrent()
     {
         if (CanonicalStoryWorkspace?.InspectorPortraitEditor is { } portrait) { portrait.RedoCommand.Execute(null); return; }
-        if (ActiveProjectGraphHost is { CanRedo: true } graph) { graph.Redo(); return; }
-        if (CanRedoReference() && (ActiveEditor is not CanonicalGraphResourceEditorViewModel editor
-            || editor.Host.RedoSequence > _referenceRedo.Peek().Sequence))
+        if (NextCanonicalRedoHost is { } graph
+            && (!CanRedoReference() || graph.RedoSequence < _referenceRedo.Peek().Sequence))
+        { graph.Redo(); RaiseCurrentEditorStates(); return; }
+        if (CanRedoReference())
         {
             try
             {
                 var entry = _referenceRedo.Peek();
-                new NamespaceFileTransaction().Apply(ProjectDirectory, entry.Changes, () => { });
+                new ProjectFileTransaction().Apply(ProjectDirectory, entry.Changes, () => { });
                 _referenceRedo.Pop();
                 _referenceUndo.Push(entry);
+                if (entry.DeletedStories is not null) ReleaseDeletedStoryWorkspaces(entry.DeletedStories);
                 RefreshOfflineWorkspace();
+                if (entry.Label == "故事组删除") { LoadActorList(); LoadStoryList(); }
                 if (entry.Label == "资源编辑") LoadActorList();
                 ReportSuccess($"已重做{entry.Label}操作。", entry.Label);
             }
             catch (Exception exception) { ReportFailure("重做引用操作", exception); }
         }
-        else ActiveEditor?.RedoCommand.Execute(null);
+        else if (ActiveEditor is not CanonicalGraphResourceEditorViewModel) ActiveEditor?.RedoCommand.Execute(null);
     }
 
     private bool TryRemoveIndependentReference(ICanonicalStoryTreeItem item)

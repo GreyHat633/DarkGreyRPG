@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Identity;
 
@@ -28,9 +27,6 @@ public class GraphResourceRepositoryException : Exception
 /// </summary>
 public sealed class GraphResourceRepository
 {
-    private static readonly Regex LegacyIdPattern = new(
-        "^[a-z0-9][a-z0-9_-]*$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private readonly IAtomicFileWriter _writer;
     private readonly object _writeGate = new();
 
@@ -139,13 +135,10 @@ public sealed class GraphResourceRepository
         ValidateId(baseId);
         EnsureDirectory();
         if (FindExistingPath(baseId) is null) return baseId;
-        for (var suffix = 2; suffix < int.MaxValue; suffix++)
-        {
-            var candidate = $"{baseId}_{suffix}";
-            if (FindExistingPath(candidate) is null) return candidate;
-        }
-        throw Failure("graph.resource.repository.id.unavailable",
-            $"Could not allocate a canonical resource ID based on '{baseId}'.");
+        if (ExpectedKind == GraphResourceKind.Story)
+            return StoryUid.Create(List().Select(item => StoryUid.Parse(item.Id)).ToHashSet()).Value;
+        var address = ResourceAddress.FromKey(baseId);
+        return ResourceAddress.Create(address.StoryUid, address.Kind, List().Select(item => ResourceAddress.FromKey(item.Id)).ToHashSet()).ToKey();
     }
 
     public string GetPath(string id)
@@ -160,10 +153,6 @@ public sealed class GraphResourceRepository
         {
             var envelope = GraphResourceEnvelopeSerializer.Deserialize(File.ReadAllText(path));
             ValidateEnvelope(envelope);
-            if (!DgrResourceId.IsFullId(envelope.Id)
-                && !string.Equals(Path.GetFileName(path), envelope.Id + ".json", StringComparison.Ordinal))
-                throw Failure("graph.resource.repository.filename.mismatch",
-                    $"Canonical resource file name '{Path.GetFileNameWithoutExtension(path)}' does not match ID '{envelope.Id}'.");
             return envelope;
         }
         catch (GraphResourceRepositoryException)
@@ -215,13 +204,13 @@ public sealed class GraphResourceRepository
 
     private void ValidateEnvelope(GraphResourceEnvelope envelope)
     {
-        ValidateId(envelope.Id);
         if (!GraphResourceScopeAdapter.TryGetScope(envelope.ResourceKind, out var actualScope))
             throw Failure("graph.resource.repository.kind.mismatch",
                 $"Resource kind value '{envelope.ResourceKind}' is not supported by this repository.");
         if (envelope.ResourceKind != ExpectedKind)
             throw Failure("graph.resource.repository.kind.mismatch",
                 $"Resource kind '{GraphResourceEnvelopeSerializer.FormatResourceKind(envelope.ResourceKind)}' does not match repository kind '{KindText()}'.");
+        ValidateId(envelope.Id);
         try
         {
             _ = GraphResourceScopeAdapter.Open(envelope, actualScope);
@@ -239,20 +228,18 @@ public sealed class GraphResourceRepository
         return FindExistingPath(id) ?? CanonicalPath(id);
     }
 
-    private static void ValidateId(string? id)
+    private void ValidateId(string? id)
     {
-        if (!DgrResourceId.IsFullId(id) && !LegacyIdPattern.IsMatch(id ?? string.Empty))
+        var valid = ExpectedKind == GraphResourceKind.Story ? StoryUid.IsValid(id)
+            : ResourceAddress.IsKey(id) && ResourceAddress.FromKey(id!).Kind ==
+                (ExpectedKind == GraphResourceKind.Session ? ResourceKind.Session : ResourceKind.Task);
+        if (!valid)
             throw Failure("graph.resource.repository.id.invalid",
-                $"Canonical resource ID '{id}' must be a valid full DGR ID or a compatible legacy ID.");
+                $"Canonical resource identity '{id}' must use the current Story UID/address format and matching kind.");
     }
 
     private string? FindExistingPath(string id)
     {
-        if (!DgrResourceId.IsFullId(id))
-        {
-            var legacyPath = Path.Combine(ResourceDirectory, id + ".json");
-            return File.Exists(legacyPath) ? legacyPath : null;
-        }
         var found = CanonicalResourceFileSystem.FindUniquePath(
             ResourceDirectory,
             id,
@@ -265,7 +252,10 @@ public sealed class GraphResourceRepository
             var canonical = CanonicalPath(id);
             if (File.Exists(canonical))
             {
-                _ = ReadAndValidate(canonical);
+                var occupant = ReadAndValidate(canonical);
+                if (!string.Equals(occupant.Id, id, StringComparison.Ordinal))
+                    throw Failure("graph.resource.repository.path.occupied",
+                        $"Canonical path '{canonical}' belongs to '{occupant.Id}', not requested resource '{id}'.");
                 return canonical;
             }
         }
@@ -279,7 +269,8 @@ public sealed class GraphResourceRepository
                 $"Canonical resource ID '{id}' is present in multiple files, including '{path}'.");
     }
 
-    private string CanonicalPath(string id) => Path.Combine(ResourceDirectory, DgrResourceId.RelativeJsonPath(id));
+    private string CanonicalPath(string id) => Path.Combine(ResourceDirectory,
+        ExpectedKind == GraphResourceKind.Story ? StoryUid.Parse(id).Value + ".json" : ResourceAddress.FromKey(id).RelativeDefinitionPath);
 
     private void EnsureDirectory()
     {

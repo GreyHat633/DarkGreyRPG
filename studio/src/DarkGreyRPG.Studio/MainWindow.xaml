@@ -15,6 +15,10 @@
         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
         PreviewKeyDown="MainWindow_OnPreviewKeyDown">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Views/DirectoryTreeStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
         <Style x:Key="ReferenceFolderExpanderStyle" TargetType="{x:Type Expander}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -160,6 +164,7 @@
                 </DockPanel>
             </Border>
         </DataTemplate>
+            </ResourceDictionary>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="N" Modifiers="Control" Command="{x:Static ApplicationCommands.New}" />
@@ -227,9 +232,9 @@
                 <MenuItem Header="底部面板" IsCheckable="True" IsChecked="{Binding BottomPanel.IsExpanded, Mode=OneWay}" Command="{Binding ToggleBottomPanelCommand}" />
             </MenuItem>
             <MenuItem Header="项目(_P)">
-                <MenuItem Header="NameSpace 设置…" Command="{Binding ChangeGlobalNamespaceCommand}" />
                 <MenuItem Header="新建故事…" Command="{Binding CreateStoryCommand}" />
                 <MenuItem Header="引用故事包…" Command="{Binding ReferencePackageCommand}" AutomationProperties.AutomationId="ReferencePackage" />
+                <MenuItem Header="迁移故事内容…" Command="{Binding CopyStoryContentCommand}" AutomationProperties.AutomationId="CopyStoryContent" />
                 <MenuItem Header="导入故事包…" Command="{Binding ImportPackageCommand}" AutomationProperties.AutomationId="ImportPackage" />
                 <MenuItem Header="导出故事包…" Command="{Binding ExportSelectedStoryPackageCommand}"
                           AutomationProperties.Name="导出故事包" AutomationProperties.AutomationId="ExportSelectedStoryPackage" />
@@ -431,9 +436,9 @@
                                         <ToggleButton Padding="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="引用故事包" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                                             <DockPanel><TextBlock DockPanel.Dock="Right"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="⌄"/><Style.Triggers><DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True"><Setter Property="Text" Value="⌃"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><TextBlock Text="{TemplateBinding Header}" /></DockPanel>
                                         </ToggleButton>
-                                        <Border x:Name="PART_Reveal" Height="0" ClipToBounds="True">
+                                        <graphViews:AnimatedLinePageBody x:Name="PART_Reveal" IsExpanded="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}">
                                             <ContentPresenter x:Name="PART_Content" Content="{TemplateBinding Content}" VerticalAlignment="Top" />
-                                        </Border>
+                                        </graphViews:AnimatedLinePageBody>
                                     </StackPanel>
                                 </ControlTemplate>
                             </views:AnimatedPackageExpander.Template>
@@ -465,23 +470,73 @@
                                    Text="请先从“文件”菜单新建或打开项目。">
                             <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding HasProject}" Value="False"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                         </TextBlock>
-                        <ListBox x:Name="StoryList" ItemsSource="{Binding ProjectHome.FilteredStories}" SelectedItem="{Binding ProjectHome.SelectedStory}"
+                        <views:StoryNavigationList x:Name="StoryList" ItemsSource="{Binding ProjectHome.GroupedStories}" SelectedItem="{Binding ProjectHome.SelectedStory}"
                                  BorderThickness="0" HorizontalContentAlignment="Stretch" MouseDoubleClick="StoryList_OnMouseDoubleClick"
+                                 ItemContainerStyle="{StaticResource StoryNavigationItemStyle}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  PreviewMouseLeftButtonDown="StoryList_OnPreviewMouseLeftButtonDown"
                                  PreviewMouseRightButtonDown="StoryList_OnPreviewMouseRightButtonDown"
+                                 PreviewMouseMove="StoryNavigation_OnMouseMove" AllowDrop="True"
                                  AutomationProperties.Name="故事导航列表"
                                  Background="{DynamicResource ControlFillColorDefaultBrush}">
                             <ListBox.Style><Style TargetType="ListBox"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding HasProject}" Value="True" /><Condition Binding="{Binding ProjectHome.HasFilteredStories}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></ListBox.Style>
+                            <ListBox.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.ContainerStyle>
+                                        <Style TargetType="GroupItem">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="GroupItem">
+                                                        <StackPanel x:Name="GroupSection" Margin="0,7,0,5">
+                                                            <DockPanel x:Name="GroupHeader" Margin="3,0,3,2" MinHeight="36" Background="Transparent" PreviewMouseLeftButtonDown="StoryNavigation_OnDragStart" PreviewMouseLeftButtonUp="StoryNavigation_OnHeaderRelease" LostMouseCapture="StoryNavigation_OnHeaderCaptureLost" ContextMenuOpening="StoryGroupName_OnContextMenuOpening">
+                                                                <DockPanel.ContextMenu><ContextMenu /></DockPanel.ContextMenu>
+                                                                <TextBlock x:Name="GroupDragHandle" Text="⠿" DockPanel.Dock="Right" Width="24" TextAlignment="Center" VerticalAlignment="Center" Cursor="SizeNS" ToolTip="拖动整个故事组调整顺序" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                                <ToggleButton x:Name="GroupToggle" IsChecked="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="展开或收起故事组">
+                                                                    <ToggleButton.Template><ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="HeaderSurface" Background="Transparent" Padding="5,6" CornerRadius="3"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Path x:Name="Arrow" Data="M 0 0 L 5 4 L 0 8 Z" Fill="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5" /><ContentPresenter Grid.Column="1" VerticalAlignment="Center"/></Grid></Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90" /></Setter.Value></Setter></Trigger>
+                                                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="HeaderSurface" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" /></Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate></ToggleButton.Template>
+                                                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="22"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                                        <Path Width="15" Height="13" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Data="{StaticResource DirectoryFolderIconGeometry}" Stroke="{DynamicResource AccentFillColorDefaultBrush}" StrokeThickness="1.3" />
+                                                                        <TextBlock x:Name="GroupName" Grid.Column="1" Text="{Binding Name.DisplayName}" Style="{StaticResource DirectoryFolderLabelStyle}" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name.DisplayName}" />
+                                                                        <TextBlock Grid.Column="2" Margin="8,0,3,0" Text="{Binding Name.Members.Count, StringFormat={}{0} 个故事}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                                    </Grid>
+                                                                </ToggleButton>
+                                                            </DockPanel>
+                                                            <graphViews:AnimatedLinePageBody IsExpanded="{Binding IsChecked, ElementName=GroupToggle}">
+                                                                <Border x:Name="MemberGuide" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource TextFillColorTertiaryBrush}" Margin="20,0,0,1">
+                                                                    <ItemsPresenter />
+                                                                </Border>
+                                                            </graphViews:AnimatedLinePageBody>
+                                                        </StackPanel>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding Name.IsGroup}" Value="False"><Setter TargetName="GroupHeader" Property="Visibility" Value="Collapsed" /><Setter TargetName="GroupSection" Property="Margin" Value="0" /><Setter TargetName="MemberGuide" Property="BorderThickness" Value="0" /><Setter TargetName="MemberGuide" Property="Margin" Value="0" /></DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </GroupStyle.ContainerStyle>
+                                </GroupStyle>
+                            </ListBox.GroupStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Margin="5,7">
-                                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
-                                        <TextBlock Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" />
-                                        <TextBlock Margin="0,2,0,0" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding TagsText}" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
+                                    <Grid MinHeight="34"><Grid.ColumnDefinitions><ColumnDefinition Width="22"/><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/></Grid.ColumnDefinitions>
+                                    <Path Width="13" Height="16" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,1,0,0" Data="{StaticResource DirectoryDocumentIconGeometry}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Opacity="0.7" StrokeThickness="1.2" />
+                                    <TextBlock Grid.Column="2" Text="⠿" VerticalAlignment="Center" HorizontalAlignment="Right" Cursor="SizeNS" ToolTip="拖动调整故事或故事组的顺序" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Opacity="0.7"/>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Style="{StaticResource DirectoryLeafLabelStyle}" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}" />
+                                        <TextBlock Margin="0,2,0,0" Style="{StaticResource DirectoryAuxiliaryLabelStyle}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Text="{Binding Id, StringFormat=UID: {0}}" ToolTip="{Binding Id}" />
+                                        <TextBlock Margin="0,2,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding TagsText}" TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger></Style.Triggers></Style></TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel></Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
-                        </ListBox>
+                        </views:StoryNavigationList>
                     </DockPanel>
 
                     <DockPanel>
@@ -529,7 +584,7 @@
                             <StackPanel>
                                 <TextBlock FontSize="26" FontWeight="SemiBold" Text="项目故事图谱" />
                                 <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Text="左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。" />
+                                           Text="左侧选择故事，中央整理故事布局，右侧查看当前故事详情。" />
                             </StackPanel>
                         </DockPanel>
                         <Grid Grid.Row="1" Margin="0,18,0,0">
@@ -544,6 +599,7 @@
                                     <TextBlock Margin="0,4,0,0" FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}"
                                                TextWrapping="Wrap" AutomationProperties.Name="选中故事完整概览" />
                                     <TextBlock Margin="0,4,0,18" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" TextWrapping="Wrap" />
+                                    <graphViews:PublicOutputsEditor DataContext="{Binding DataContext.ProjectHome.Graph.SelectedOutputs, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     <ItemsControl ItemsSource="{Binding DataContext.HomeResourceFolders, RelativeSource={RelativeSource AncestorType=Window}}">
                                         <ItemsControl.ItemTemplate><DataTemplate>
                                             <Expander Header="{Binding DisplayName}" IsExpanded="False" IsEnabled="{Binding HasResources}"
@@ -586,7 +642,7 @@
                                                                     ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}"
                                                                     MouseDoubleClick="ReferencedResource_OnMouseDoubleClick">
                                                                 <TextBlock TextAlignment="Left" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
-                                                                    <Run Text="{Binding Resource.DisplayName, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  "/><Run Text="{Binding Resource.Id, Mode=OneWay}" FontSize="11"/>
+                                                                    <Run Text="{Binding Resource.DisplayName, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  "/><Run Text="{Binding Resource.TypeLabel, Mode=OneWay}" FontSize="11"/>
                                                                 </TextBlock>
                                                             </Button>
                                                         </DataTemplate></ItemsControl.ItemTemplate>

@@ -1,0 +1,2 @@
+command=setblock -160 90 200 minecraft:air
+setblock -160 90 200 minecraft:air result=1

@@ -1,0 +1,24 @@
+{
+  "TaskStateByteEquivalentAfterRestart": true,
+  "Results": [
+    "perfect",
+    "ordinary"
+  ],
+  "RewardReceipts": [
+    [
+      {
+        "value": 1,
+        "key": "reward"
+      }
+    ],
+    [
+      {
+        "value": 1,
+        "key": "reward"
+      }
+    ]
+  ],
+  "XPBefore": 14,
+  "XPAfter": 14,
+  "Passed": true
+}

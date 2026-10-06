@@ -8,8 +8,6 @@ import net.minecraft.entity.Entity;
 /** Optional, linkage-safe bridge to the legacy CustomNPC+ API. */
 public final class CustomNpcActorBinding {
 
-    public static final String ACTOR_ID_KEY = "darkgrey_rpg.actor_id";
-
     private CustomNpcActorBinding() {}
 
     public static boolean isCustomNpc(Entity entity) {
@@ -20,31 +18,6 @@ public final class CustomNpcActorBinding {
         } catch (LinkageError ignored) {
             return false;
         }
-    }
-
-    public static String getActorId(Entity entity) {
-        Object npc = requireCustomNpc(entity);
-        Object value = invoke(npc, "getStoredData", new Class<?>[] { String.class }, ACTOR_ID_KEY);
-        if (value == null) {
-            return null;
-        }
-        String actorId = String.valueOf(value)
-            .trim();
-        return actorId.isEmpty() ? null : actorId;
-    }
-
-    public static void bind(Entity entity, String actorId) {
-        if (actorId == null || actorId.trim()
-            .isEmpty()) throw new IllegalArgumentException("Actor ID is required.");
-        Object npc = requireCustomNpc(entity);
-        invoke(npc, "setStoredData", new Class<?>[] { String.class, Object.class }, ACTOR_ID_KEY, actorId.trim());
-        updateClient(npc);
-    }
-
-    public static void unbind(Entity entity) {
-        Object npc = requireCustomNpc(entity);
-        invoke(npc, "removeStoredData", new Class<?>[] { String.class }, ACTOR_ID_KEY);
-        updateClient(npc);
     }
 
     public static String getNpcName(Entity entity) {
@@ -99,7 +72,4 @@ public final class CustomNpcActorBinding {
         }
     }
 
-    private static void updateClient(Object npc) {
-        invoke(npc, "updateClient", new Class<?>[0]);
-    }
 }

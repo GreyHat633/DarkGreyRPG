@@ -1,0 +1,7 @@
+WINDOW: Minecraft 1.7.10 -9,-9,1938,1048
+ControlType.TitleBar id=TitleBar name=Minecraft 1.7.10 enabled=True rect=0,0,1920,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=0,0,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=0,0,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1746,9,58,18
+ControlType.Button id=Restore name=Restore enabled=True rect=1804,9,57,18
+ControlType.Button id=Close name=Close enabled=True rect=1861,9,68,18

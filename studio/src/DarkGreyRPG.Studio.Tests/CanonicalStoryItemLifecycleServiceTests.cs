@@ -12,57 +12,57 @@ public sealed class CanonicalStoryItemLifecycleServiceTests
     public void CreatesIndividualAndGroupWithoutChangingMembershipSchema()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
-        var store = NewStore(project.Root, "story");
-        var original = store.Memberships.Load("story");
+        var store = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH");
+        var original = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
             original.StoryId,
             original.OwnedResources,
             original.ReferencedResources)
         {
-            SchemaVersion = CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion,
+            SchemaVersion = CanonicalStoryMembershipManifest.CurrentSchemaVersion,
         });
         var service = new CanonicalStoryItemLifecycleService(store);
 
-        var item = service.CreateOwned("story", CanonicalStoryItemKind.Individual, "key", "钥匙", ["quest", "key"]);
-        var group = service.CreateOwned("story", CanonicalStoryItemKind.Collective, "weapon", "武器组", ["combat"]);
+        var item = service.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~key", "钥匙", ["quest", "key"]);
+        var group = service.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Collective, "ST-2345-6789-ABCD-EFGH~item_group~weapon", "武器组", ["combat"]);
 
         Assert.IsInstanceOfType<IndividualItemResource>(item);
         Assert.IsInstanceOfType<CollectiveItemResource>(group);
-        Assert.AreEqual(1, item.SchemaVersion);
+        Assert.AreEqual(2, item.SchemaVersion);
         CollectionAssert.AreEqual(new[] { "quest", "key" }, item.Tags.ToArray());
-        var membership = store.Memberships.Load("story");
-        Assert.AreEqual(CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion, membership.SchemaVersion);
-        CollectionAssert.AreEqual(new[] { "key" }, membership.OwnedResources.Items);
-        CollectionAssert.AreEqual(new[] { "weapon" }, membership.OwnedResources.ItemGroups);
-        StringAssert.Contains(File.ReadAllText(new ItemRepository(project.Root).GetGroupPath("weapon")), "\"group_id\": \"weapon\"");
+        var membership = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
+        Assert.AreEqual(CanonicalStoryMembershipManifest.CurrentSchemaVersion, membership.SchemaVersion);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item~key" }, membership.OwnedResources.Items);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item_group~weapon" }, membership.OwnedResources.ItemGroups);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item_group~weapon", new ItemRepository(project.Root).LoadGroup("ST-2345-6789-ABCD-EFGH~item_group~weapon").GroupId);
     }
 
     [TestMethod]
     public void DeleteAndCreatePreservePersistedDisplayOrderAndAppendMembership()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
-        var store = NewStore(project.Root, "story");
+        var store = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH");
         var service = new CanonicalStoryItemLifecycleService(store);
-        service.CreateOwnedItem("story", "item_a", "物品 A");
-        service.CreateOwnedItem("story", "item_b", "物品 B");
-        service.CreateOwnedItem("story", "item_c", "物品 C");
+        service.CreateOwnedItem("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~item~item_a", "物品 A");
+        service.CreateOwnedItem("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~item~item_b", "物品 B");
+        service.CreateOwnedItem("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~item~item_c", "物品 C");
 
-        var membership = store.Memberships.Load("story");
+        var membership = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
         membership.DisplayOrder = new CanonicalStoryDisplayOrder
         {
-            Items = ["item:item_c", "item:item_b", "item:item_a"],
+            Items = ["item:ST-2345-6789-ABCD-EFGH~item~item_c", "item:ST-2345-6789-ABCD-EFGH~item~item_b", "item:ST-2345-6789-ABCD-EFGH~item~item_a"],
         };
         store.Memberships.Replace(membership);
 
-        service.DeleteOwnedItem("story", "item_b");
-        service.CreateOwnedItem("story", "item_d", "物品 D");
+        service.DeleteOwnedItem("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~item~item_b");
+        service.CreateOwnedItem("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~item~item_d", "物品 D");
 
-        var reloaded = store.Memberships.Load("story");
+        var reloaded = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
         Assert.AreEqual(CanonicalStoryMembershipManifest.CurrentSchemaVersion, reloaded.SchemaVersion);
         CollectionAssert.AreEqual(
-            new[] { "item:item_c", "item:item_b", "item:item_a" },
+            new[] { "item:ST-2345-6789-ABCD-EFGH~item~item_c", "item:ST-2345-6789-ABCD-EFGH~item~item_b", "item:ST-2345-6789-ABCD-EFGH~item~item_a" },
             reloaded.DisplayOrder.Items);
-        CollectionAssert.AreEqual(new[] { "item_a", "item_c", "item_d" }, reloaded.OwnedResources.Items);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item~item_a", "ST-2345-6789-ABCD-EFGH~item~item_c", "ST-2345-6789-ABCD-EFGH~item~item_d" }, reloaded.OwnedResources.Items);
 
     }
 
@@ -70,61 +70,61 @@ public sealed class CanonicalStoryItemLifecycleServiceTests
     public void ReferenceDetachKeepsItemFileAndDeleteBlocksCrossStoryUse()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
-        var store = NewStore(project.Root, "owner", "other");
+        var store = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ");
         var service = new CanonicalStoryItemLifecycleService(store);
-        service.CreateOwned("owner", CanonicalStoryItemKind.Individual, "coin", "铜币");
-        service.AddReference("other", CanonicalStoryItemKind.Individual, "coin");
+        service.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin", "铜币");
+        service.AddReference("ST-JKLM-NPQR-STUV-WXYZ", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin");
 
-        var plan = service.GetDeletionPlan("owner", CanonicalStoryItemKind.Individual, "coin");
+        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin");
         Assert.IsFalse(plan.CanDelete);
-        CollectionAssert.AreEqual(new[] { "other" }, plan.ReferencingStoryIds.ToArray());
+        CollectionAssert.AreEqual(new[] { "ST-JKLM-NPQR-STUV-WXYZ" }, plan.ReferencingStoryIds.ToArray());
         var blocked = Assert.ThrowsExactly<CanonicalStoryItemLifecycleException>(
-            () => service.DeleteOwned("owner", CanonicalStoryItemKind.Individual, "coin"));
+            () => service.DeleteOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin"));
         Assert.AreEqual("story.item.delete.blocked", blocked.Code);
 
-        service.RemoveReference("other", CanonicalStoryItemKind.Individual, "coin");
-        service.DeleteOwned("owner", CanonicalStoryItemKind.Individual, "coin");
-        Assert.IsFalse(File.Exists(new ItemRepository(project.Root).GetItemPath("coin")));
+        service.RemoveReference("ST-JKLM-NPQR-STUV-WXYZ", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin");
+        service.DeleteOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin");
+        Assert.IsFalse(File.Exists(new ItemRepository(project.Root).GetItemPath("ST-2345-6789-ABCD-EFGH~item~coin")));
     }
 
     [TestMethod]
     public void DeleteRestoresFileWhenMembershipWriteFails()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
-        var normal = NewStore(project.Root, "story");
+        var normal = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH");
         var normalService = new CanonicalStoryItemLifecycleService(normal);
-        normalService.CreateOwned("story", CanonicalStoryItemKind.Collective, "keys", "钥匙组");
+        normalService.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Collective, "ST-2345-6789-ABCD-EFGH~item_group~keys", "钥匙组");
         var repository = new ItemRepository(project.Root);
-        var itemPath = repository.GetGroupPath("keys");
+        var itemPath = repository.GetGroupPath("ST-2345-6789-ABCD-EFGH~item_group~keys");
         var original = File.ReadAllBytes(itemPath);
-        var failing = NewStore(project.Root, "story", new AlwaysFailingWriter());
+        var failing = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH", new AlwaysFailingWriter());
         var exception = Assert.ThrowsExactly<CanonicalStoryItemLifecycleException>(
-            () => new CanonicalStoryItemLifecycleService(failing).DeleteOwned("story", CanonicalStoryItemKind.Collective, "keys"));
+            () => new CanonicalStoryItemLifecycleService(failing).DeleteOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Collective, "ST-2345-6789-ABCD-EFGH~item_group~keys"));
 
         Assert.AreEqual("story.item.membership_replace_failed", exception.Code);
         CollectionAssert.AreEqual(original, File.ReadAllBytes(itemPath));
-        CollectionAssert.AreEqual(new[] { "keys" }, failing.Memberships.Load("story").OwnedResources.ItemGroups);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item_group~keys" }, failing.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.ItemGroups);
     }
 
     [TestMethod]
     public void CreateRemovesResourceWhenSaveFailsAfterWriting()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
-        var store = NewStore(project.Root, "story");
+        var store = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH");
         var items = new ItemRepository(project.Root, new FailAfterWriteWriter());
         var service = new CanonicalStoryItemLifecycleService(store, items);
 
         var itemException = Assert.ThrowsExactly<CanonicalStoryItemLifecycleException>(
-            () => service.CreateOwned("story", CanonicalStoryItemKind.Individual, "coin", "铜币", ["loot"]));
+            () => service.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Individual, "ST-2345-6789-ABCD-EFGH~item~coin", "铜币", ["loot"]));
 
         var groupException = Assert.ThrowsExactly<CanonicalStoryItemLifecycleException>(
-            () => service.CreateOwned("story", CanonicalStoryItemKind.Collective, "weapons", "武器组", ["combat"]));
+            () => service.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Collective, "ST-2345-6789-ABCD-EFGH~item_group~weapons", "武器组", ["combat"]));
 
         Assert.AreEqual("story.item.create_failed", itemException.Code);
         Assert.AreEqual("story.item.create_failed", groupException.Code);
-        Assert.IsFalse(File.Exists(items.GetItemPath("coin")));
-        Assert.IsFalse(File.Exists(items.GetGroupPath("weapons")));
-        var membership = store.Memberships.Load("story");
+        Assert.IsFalse(File.Exists(items.GetItemPath("ST-2345-6789-ABCD-EFGH~item~coin")));
+        Assert.IsFalse(File.Exists(items.GetGroupPath("ST-2345-6789-ABCD-EFGH~item_group~weapons")));
+        var membership = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
         CollectionAssert.AreEqual(Array.Empty<string>(), membership.OwnedResources.Items);
         CollectionAssert.AreEqual(Array.Empty<string>(), membership.ReferencedResources.Items);
     }
@@ -133,18 +133,18 @@ public sealed class CanonicalStoryItemLifecycleServiceTests
     public void CreateRestoresMembershipWhenMembershipWriteFailsAfterWriting()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
-        var normal = NewStore(project.Root, "story");
-        var membershipPath = normal.Memberships.GetPath("story");
+        var normal = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH");
+        var membershipPath = normal.Memberships.GetPath("ST-2345-6789-ABCD-EFGH");
         var originalMembership = File.ReadAllBytes(membershipPath);
-        var failing = NewStore(project.Root, "story", new FailAfterWriteWriter());
+        var failing = NewStore(project.Root, "ST-2345-6789-ABCD-EFGH", new FailAfterWriteWriter());
         var items = new ItemRepository(project.Root);
         var service = new CanonicalStoryItemLifecycleService(failing, items);
 
         var exception = Assert.ThrowsExactly<CanonicalStoryItemLifecycleException>(
-            () => service.CreateOwned("story", CanonicalStoryItemKind.Collective, "weapons", "武器组"));
+            () => service.CreateOwned("ST-2345-6789-ABCD-EFGH", CanonicalStoryItemKind.Collective, "ST-2345-6789-ABCD-EFGH~item_group~weapons", "武器组"));
 
         Assert.AreEqual("story.item.membership_replace_failed", exception.Code);
-        Assert.IsFalse(File.Exists(items.GetGroupPath("weapons")));
+        Assert.IsFalse(File.Exists(items.GetGroupPath("ST-2345-6789-ABCD-EFGH~item_group~weapons")));
         CollectionAssert.AreEqual(originalMembership, File.ReadAllBytes(membershipPath));
     }
 

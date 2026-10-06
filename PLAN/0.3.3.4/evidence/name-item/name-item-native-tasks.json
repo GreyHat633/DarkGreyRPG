@@ -1,0 +1,343 @@
+{
+  "": {
+    "data": {
+      "schema_version": 1,
+      "instances": [
+        {
+          "result_port_id": "goal_0",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "64a3715d0449444f90031f3c36e0fcab380e2b6a2b39fe6788b6fe0a426cc042",
+          "runtime_status": "SETTLED",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward_0"
+            },
+            {
+              "value": 1,
+              "key": "reward_1"
+            },
+            {
+              "value": 1,
+              "key": "reward_2"
+            }
+          ],
+          "settlement_time": 1790681818046,
+          "activation_time": 1790681754904,
+          "task_resource_id": "Native0332:icon_submit_b",
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 10,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "check_b",
+          "status": "SETTLED"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "64a3715d0449444f90031f3c36e0fcab380e2b6a2b39fe6788b6fe0a426cc042",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "activation_time": 1790681765742,
+          "task_resource_id": "Native0332:icon_submit_b",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 0,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "check_b2",
+          "status": "CANCELLED_BY_STORY_TERMINATION"
+        },
+        {
+          "result_port_id": "goal_0",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "7b0353c09af93d8e5acdacb310267becdf35700dc49f3b210c97659acf9de36a",
+          "runtime_status": "SETTLED",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward_0"
+            },
+            {
+              "value": 1,
+              "key": "reward_1"
+            },
+            {
+              "value": 1,
+              "key": "reward_2"
+            }
+          ],
+          "settlement_time": 1790681675047,
+          "activation_time": 1790681674807,
+          "task_resource_id": "Native0332:icon_submit_a",
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 10,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "final_a",
+          "status": "SETTLED"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "64a3715d0449444f90031f3c36e0fcab380e2b6a2b39fe6788b6fe0a426cc042",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "activation_time": 1790681674969,
+          "task_resource_id": "Native0332:icon_submit_b",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 0,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "final_b",
+          "status": "CANCELLED_BY_STORY_TERMINATION"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "335e3447e4442dc11927b5d3f1ff3c8546ea4a453c4a3e5466b85fc69d14aa47",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "activation_time": 1790679330665,
+          "task_resource_id": "Native0332:icon_collect",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 10,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "story_collect",
+          "status": "CANCELLED_BY_STORY_TERMINATION"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "89d90c70b0dd751285563c47b160aa3c24dd0d0d2e442cb23bfcc25cb4874f67",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "activation_time": 1790679330849,
+          "task_resource_id": "Native0332:icon_group_collect",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 26,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "story_group",
+          "status": "CANCELLED_BY_STORY_TERMINATION"
+        },
+        {
+          "result_port_id": "goal_0",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "7b0353c09af93d8e5acdacb310267becdf35700dc49f3b210c97659acf9de36a",
+          "runtime_status": "SETTLED",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward_0"
+            },
+            {
+              "value": 1,
+              "key": "reward_1"
+            },
+            {
+              "value": 1,
+              "key": "reward_2"
+            }
+          ],
+          "settlement_time": 1790681414534,
+          "activation_time": 1790681295247,
+          "task_resource_id": "Native0332:icon_submit_a",
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 10,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "submit_a",
+          "status": "SETTLED"
+        },
+        {
+          "result_port_id": "goal_0",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "7b0353c09af93d8e5acdacb310267becdf35700dc49f3b210c97659acf9de36a",
+          "runtime_status": "SETTLED",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward_0"
+            },
+            {
+              "value": 1,
+              "key": "reward_1"
+            },
+            {
+              "value": 1,
+              "key": "reward_2"
+            }
+          ],
+          "settlement_time": 1790681647054,
+          "activation_time": 1790681633079,
+          "task_resource_id": "Native0332:icon_submit_a",
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 10,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "submit_a2",
+          "status": "SETTLED"
+        },
+        {
+          "objective_statuses": [
+            {
+              "value": "ACTIVE",
+              "key": "objective_0"
+            }
+          ],
+          "activation_logic": 1,
+          "story_instance_id": "icons",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "64a3715d0449444f90031f3c36e0fcab380e2b6a2b39fe6788b6fe0a426cc042",
+          "runtime_status": "ACTIVE",
+          "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+          "activation_time": 1790681295411,
+          "task_resource_id": "Native0332:icon_submit_b",
+          "internal_logic_values": [
+            {
+              "value": 0,
+              "key": "objective_0:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 0,
+              "key": "objective_0"
+            }
+          ],
+          "task_node_placement_id": "submit_b",
+          "status": "CANCELLED_BY_STORY_TERMINATION"
+        }
+      ]
+    }
+  }
+}

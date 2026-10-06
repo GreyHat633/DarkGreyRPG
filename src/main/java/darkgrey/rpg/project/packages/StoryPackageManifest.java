@@ -16,18 +16,18 @@ import java.util.Set;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import darkgrey.rpg.project.ProjectLoadException;
 
 /** Strict server-side manifest for a Story Package. */
 public final class StoryPackageManifest {
 
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
     public static final String CURRENT_FORMAT = "dgrs";
-    public static final int CURRENT_FORMAT_VERSION = 1;
+    public static final int CURRENT_FORMAT_VERSION = 2;
     public static final String CURRENT_PRODUCER = "DarkGreyRPGStudio";
     private static final Set<String> ROOT_FIELDS = set(
+        "identity_format",
         "format",
         "format_version",
         "producer",
@@ -111,14 +111,16 @@ public final class StoryPackageManifest {
     }
 
     private static StoryPackageManifest parse(InputStreamReader reader, File file) throws ProjectLoadException {
-        JsonElement root = new JsonParser().parse(reader);
+        JsonElement root = StrictPackageJson.read(reader);
         if (!root.isJsonObject()) throw failure(file, "Manifest root must be an object");
         JsonObject json = root.getAsJsonObject();
         rejectUnknown(file, json, ROOT_FIELDS);
-        String format = optionalString(file, json, "format");
-        Integer formatVersion = optionalInt(file, json, "format_version");
-        String producer = optionalString(file, json, "producer");
-        String producerVersion = optionalString(file, json, "producer_version");
+        if (!"story-uid-v1".equals(requiredString(file, json, "identity_format")))
+            throw failure(file, "Unsupported identity format");
+        String format = requiredString(file, json, "format");
+        Integer formatVersion = Integer.valueOf(requiredInt(file, json, "format_version"));
+        String producer = requiredString(file, json, "producer");
+        String producerVersion = requiredString(file, json, "producer_version");
         boolean hasDgrsIdentity = format != null || formatVersion != null
             || producer != null
             || producerVersion != null;
@@ -136,7 +138,7 @@ public final class StoryPackageManifest {
         String packageVersion = requiredString(file, json, "package_version");
         String storyId = requiredId(file, json, "story_id");
         int storySchema = requiredInt(file, json, "story_schema_version");
-        if (storySchema <= 0) throw failure(file, "story_schema_version must be positive");
+        if (storySchema != 2) throw failure(file, "story_schema_version must be positive");
         JsonObject resources = requiredObject(file, json, "required_resources");
         rejectUnknown(file, resources, RESOURCE_FIELDS);
         RequiredResources required = new RequiredResources(
@@ -152,6 +154,20 @@ public final class StoryPackageManifest {
             paths(file, resources, "tasks"),
             optionalPath(file, resources, "story_logic_graph"),
             paths(file, resources, "media"));
+        if (!packageId.equals(storyId) || !required.getDialogues()
+            .isEmpty()
+            || !required.getQuests()
+                .isEmpty()
+            || required.getCanonicalStories()
+                .size() != 1
+            || !required.getCanonicalStories()
+                .get(0)
+                .equals(required.getStory())
+            || required.getCanonicalMemberships()
+                .size() != 1
+            || !required.getStory()
+                .startsWith("resources/canonical/stories/"))
+            throw failure(file, "Single container requires exactly one current Story and membership");
         return new StoryPackageManifest(
             format,
             formatVersion,
@@ -355,7 +371,11 @@ public final class StoryPackageManifest {
             || !e.getAsJsonPrimitive()
                 .isNumber())
             throw failure(file, field + " must be an integer");
-        return e.getAsInt();
+        try {
+            return new java.math.BigDecimal(e.getAsString()).intValueExact();
+        } catch (ArithmeticException | NumberFormatException exception) {
+            throw failure(file, field + " must be an exact integer");
+        }
     }
 
     private static Integer optionalInt(File file, JsonObject json, String field) throws ProjectLoadException {
@@ -383,7 +403,7 @@ public final class StoryPackageManifest {
 
     private static String requiredId(File file, JsonObject json, String field) throws ProjectLoadException {
         String value = requiredString(file, json, field);
-        if (!darkgrey.rpg.identity.DgrResourceId.isCompatibleId(value))
+        if (!darkgrey.rpg.identity.StoryUid.isValid(value))
             throw failure(file, "Invalid " + field + " '" + value + "'");
         return value;
     }

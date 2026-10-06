@@ -1,0 +1,18 @@
+ControlType.Text|引用资源|553,204,815,34
+ControlType.Text|展开故事文件夹，选择要引用的资源。|553,246,815,17
+ControlType.Edit|搜索引用资源|553,283,815,40
+ControlType.Button||1326,288,37,30
+ControlType.Pane|故事资源文件夹|553,338,815,457
+ControlType.List||553,338,815,457
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,338,815,115
+ControlType.Custom||564,349,793,83
+ControlType.Button|组内乙 (1)|564,349,793,37
+ControlType.Text|组内乙 (1)|574,356,741,22
+ControlType.List|故事内可引用资源|564,393,793,39
+ControlType.ListItem|资源测试 99|564,393,793,39
+ControlType.Text|资源测试 99|575,402,720,22
+ControlType.Text|[角色]|1310,404,36,17
+ControlType.Button|选择|1140,815,109,39
+ControlType.Text|选择|1177,823,35,22
+ControlType.Button|取消|1259,815,109,39
+ControlType.Text|取消|1296,823,35,22

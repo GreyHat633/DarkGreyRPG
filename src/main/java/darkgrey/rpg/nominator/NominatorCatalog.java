@@ -93,6 +93,58 @@ public final class NominatorCatalog {
         return from(packages, snapshot);
     }
 
+    public static NominatorCatalog from(ProjectSnapshot snapshot,
+        darkgrey.rpg.project.packages.StoryPackageLoader loader) {
+        NominatorCatalog base = from(snapshot, loader.getPackages());
+        List<PackageChoice> choices = new ArrayList<PackageChoice>();
+        for (PackageChoice choice : base.getPackageChoices()) {
+            darkgrey.rpg.project.packages.StoryPackageInventoryEntry owner = null;
+            for (darkgrey.rpg.project.packages.StoryPackageInventoryEntry entry : loader.getInventory())
+                if (entry.getStoryUids()
+                    .contains(choice.getStoryId())) {
+                        owner = entry;
+                        break;
+                    }
+            choices.add(
+                owner == null ? choice
+                    : new PackageChoice(
+                        choice.packageId,
+                        choice.storyId,
+                        choice.displayName,
+                        choice.actorIds,
+                        choice.itemIds,
+                        choice.itemGroupIds,
+                        owner.getSourceName(),
+                        owner.getDisplayName(),
+                        owner.getSourceName()
+                            .toLowerCase(java.util.Locale.ROOT)
+                            .endsWith(".dgrs.g"),
+                        choice.referenceIds));
+        }
+        return new NominatorCatalog(base.stories, base.actors, base.items, base.itemGroups, choices);
+    }
+
+    public String resourceLabel(String id) {
+        for (Actor actor : actors) if (actor.id.equals(id))
+            return ("collective".equalsIgnoreCase(actor.type) ? "[角色组] " : "[角色] ") + actor.displayName;
+        for (Item item : items) if (item.id.equals(id)) return "[物品] " + item.displayName;
+        for (Item item : itemGroups) if (item.id.equals(id)) return "[物品组] " + item.displayName;
+        return "资源不可用";
+    }
+
+    public String ownerName(String id) {
+        try {
+            darkgrey.rpg.identity.ResourceAddress address = darkgrey.rpg.identity.ResourceAddress.fromKey(id);
+            for (Story story : stories) if (story.id.equals(
+                address.getStoryUid()
+                    .toString()))
+                return story.title;
+        } catch (IllegalArgumentException unavailable) {
+            // Unavailable metadata must never expose a persisted identity as a display fallback.
+        }
+        return "来源故事未加载";
+    }
+
     /** Convenience overload for callers holding the accepted package values. */
     public static NominatorCatalog from(Iterable<LoadedStoryPackage> packages, ProjectSnapshot snapshot) {
         if (packages == null) throw new IllegalArgumentException("Loaded Story Packages are required.");
@@ -148,13 +200,29 @@ public final class NominatorCatalog {
                 .keySet(),
             "Item Group",
             value.getPackageId());
+        List<String> references = new ArrayList<String>();
+        if (membership != null) {
+            references.addAll(
+                membership.getReferencedResources()
+                    .getActors());
+            references.addAll(
+                membership.getReferencedResources()
+                    .getItems());
+            references.addAll(
+                membership.getReferencedResources()
+                    .getItemGroups());
+        }
         return new PackageChoice(
             value.getPackageId(),
             storyId,
             displayName,
             new ArrayList<String>(actorIds),
             new ArrayList<String>(itemIds),
-            new ArrayList<String>(itemGroupIds));
+            new ArrayList<String>(itemGroupIds),
+            storyId,
+            displayName,
+            false,
+            references);
     }
 
     private static void addMembership(darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet values,
@@ -309,15 +377,63 @@ public final class NominatorCatalog {
         private final List<String> actorIds;
         private final List<String> itemIds;
         private final List<String> itemGroupIds;
+        private final String containerId, containerName;
+        private final boolean group;
+        private final List<String> referenceIds;
 
         public PackageChoice(String packageId, String storyId, String displayName, List<String> actorIds,
             List<String> itemIds, List<String> itemGroupIds) {
+            this(
+                packageId,
+                storyId,
+                displayName,
+                actorIds,
+                itemIds,
+                itemGroupIds,
+                storyId,
+                displayName,
+                false,
+                Collections.<String>emptyList());
+        }
+
+        public PackageChoice(String packageId, String storyId, String displayName, List<String> actorIds,
+            List<String> itemIds, List<String> itemGroupIds, String containerId, String containerName, boolean group,
+            List<String> referenceIds) {
+            this.containerId = requiredText(containerId, "containerId");
+            this.containerName = requiredText(containerName, "containerName");
+            this.group = group;
+            this.referenceIds = boundedIds(referenceIds);
             this.packageId = requiredText(packageId, "packageId");
             this.storyId = requiredText(storyId, "storyId");
             this.displayName = requiredText(displayName, "displayName");
             this.actorIds = boundedIds(actorIds);
             this.itemIds = boundedIds(itemIds);
             this.itemGroupIds = boundedIds(itemGroupIds);
+            Set<String> closure = new LinkedHashSet<String>(this.actorIds);
+            closure.addAll(this.itemIds);
+            closure.addAll(this.itemGroupIds);
+            if (!closure.containsAll(this.referenceIds))
+                throw new IllegalArgumentException("Referenced resources must belong to the package closure.");
+        }
+
+        public String getContainerId() {
+            return containerId;
+        }
+
+        public String getContainerName() {
+            return containerName;
+        }
+
+        public boolean isGroup() {
+            return group;
+        }
+
+        public List<String> getReferenceIds() {
+            return referenceIds;
+        }
+
+        public boolean isReference(String id) {
+            return referenceIds.contains(id);
         }
 
         public String getPackageId() {

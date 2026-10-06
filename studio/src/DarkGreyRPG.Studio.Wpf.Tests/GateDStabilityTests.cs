@@ -1,3 +1,6 @@
+using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.ViewModels.Graph;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Services;
@@ -14,7 +17,7 @@ public sealed class GateDStabilityTests
         using var project = new GateDProjectDirectory();
         var projectService = new ProjectService();
         projectService.CreateProject(project.Root, "gate_d", "Gate D");
-        projectService.CreateStory("intro", "开场");
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(project.Root)).Create("ST-2345-6789-ABCD-EFGH", "开场");
         var logSettingsPath = Path.Combine(project.Root, "settings", "settings.json");
         var logger = new CrashLogService(
             logSettingsPath,
@@ -23,15 +26,13 @@ public sealed class GateDStabilityTests
         var shell = new ShellViewModel(
             projectService,
             new FixedFolderPicker(project.Root),
-            resourceWorkspaceDialogs: new ThrowingResourceDialogs(),
+            canonicalStoryResourceDialogs: new ThrowingResourceDialogs(),
             crashLogService: logger);
 
         shell.OpenProjectCommand.Execute(null);
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single();
         shell.OpenSelectedStoryCommand.Execute(null);
-        shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Dialogues);
-
-        shell.NewStoryResourceCommand.Execute(null);
+        shell.CanonicalStoryWorkspace!.RequestCreate(CanonicalStoryFolderKind.Sessions);
 
         Assert.IsTrue(shell.Output.Entries.Any(entry => entry.Kind == OutputKind.Error));
         Assert.IsTrue(shell.Problems.Problems.Any(problem => problem.Code == "operation.failure"));
@@ -42,7 +43,7 @@ public sealed class GateDStabilityTests
         StringAssert.Contains(text, nameof(InvalidOperationException));
         StringAssert.Contains(text, "Injected dialog failure");
         StringAssert.Contains(text, nameof(ShellViewModel));
-        StringAssert.Contains(text, "NewStoryResource");
+        StringAssert.Contains(text, "CreateCanonicalStoryResource");
     }
 
     [TestMethod]
@@ -96,21 +97,15 @@ public sealed class GateDStabilityTests
         public string? PickProjectFolder() => folder;
     }
 
-    private sealed class ThrowingResourceDialogs : IResourceWorkspaceDialogs
+    private sealed class ThrowingResourceDialogs : ICanonicalStoryResourceDialogs
     {
-        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName) =>
-            throw new InvalidOperationException("Injected dialog failure");
-
-        public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) =>
-            throw new InvalidOperationException("Injected dialog failure");
-        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
-        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
-        public bool ConfirmDelete(ResourceDescriptor resource) => false;
-        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
-        public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
-        public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
-        public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
+        public CanonicalGraphResourceIdentityRequest? RequestCreate(GraphResourceKind kind, string suggestedId)
+            => throw new InvalidOperationException("Injected dialog failure");
+        public CanonicalGraphResourceChoice? PickReference(GraphResourceKind kind, IReadOnlyList<GraphResourceInfo> candidates, string storyDisplayName) => null;
+        public bool ConfirmRemoveReference(CanonicalGraphResourceChoice resource, string storyDisplayName) => false;
+        public bool ConfirmDeleteOwned(CanonicalGraphResourceChoice resource) => false;
+        public bool ConfirmAggregateInterfaceRemoval(CanonicalGraphResourceChoice resource, IReadOnlyList<GraphConnection> affectedConnections) => false;
+        public void ShowDeleteBlocked(CanonicalGraphResourceChoice resource, IReadOnlyList<string> storyIds) { }
     }
 
     private sealed class GateDProjectDirectory : IDisposable

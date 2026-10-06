@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Windows;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -241,8 +241,8 @@ public sealed class UiReview0335Tests
     [STATestMethod]
     public void MarqueeShowsSummaryCoalescesAndReusesSingleInspector()
     {
-        using var workspace = new CanonicalStoryWorkspaceViewModel(new(GraphResourceKind.Story, "s", "故事", new([])),
-            sessions: [new(GraphResourceKind.Session, "session", "会话", new([GraphNodeFactory.Create(GraphScope.Session, "line", "a"), GraphNodeFactory.Create(GraphScope.Session, "line", "b")]))]);
+        using var workspace = new CanonicalStoryWorkspaceViewModel(new(GraphResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ", "故事", new([])),
+            sessions: [new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "会话", new([GraphNodeFactory.Create(GraphScope.Session, "line", "a"), GraphNodeFactory.Create(GraphScope.Session, "line", "b")]))]);
         workspace.OpenGraphResource(workspace.SessionItems.Single());
         var view = new CanonicalStoryWorkspaceView(workspace);
         var root = new System.Windows.Controls.Grid { Width = 1280, Height = 720 };

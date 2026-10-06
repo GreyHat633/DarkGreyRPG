@@ -1,0 +1,11 @@
+{
+  "source": "PlanHarnessAgent stdout observed in tool result; same-name native screenshot subsequently replaced .txt with window metadata",
+  "time": 1790126074132,
+  "dimension": 0,
+  "context": "server:127.0.0.1:25595|player:402a58fd-2297-4c98-ae0c-ad091aa83333",
+  "devices": [],
+  "corroboration": [
+    "plan-gr05-server-b.png",
+    "plan-context-b server log"
+  ]
+}

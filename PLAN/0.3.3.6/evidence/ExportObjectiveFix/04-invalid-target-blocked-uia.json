@@ -1,0 +1,821 @@
+[
+  {
+    "Type": "ControlType.Menu",
+    "Id": "",
+    "Name": "",
+    "Bounds": "0,28,1920,64",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "文件(F)",
+    "Bounds": "7,30,93,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "文件(_F)",
+    "Bounds": "26,49,56,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "编辑(E)",
+    "Bounds": "100,30,93,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "编辑(_E)",
+    "Bounds": "119,49,56,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "视图(V)",
+    "Bounds": "193,30,95,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "视图(_V)",
+    "Bounds": "212,49,58,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "项目(P)",
+    "Bounds": "288,30,95,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目(_P)",
+    "Bounds": "307,49,57,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "帮助(H)",
+    "Bounds": "383,30,96,60",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "帮助(_H)",
+    "Bounds": "401,49,60,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "导出未完成，共 1 项内容需要修正。双击“问题”中的条目可定位。",
+    "Bounds": "15,999,1890,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "0,939,1920,52",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }",
+    "Bounds": "2,944,62,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "输出",
+    "Bounds": "16,954,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }",
+    "Bounds": "67,944,90,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "问题",
+    "Bounds": "81,954,34,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "1",
+    "Bounds": "130,955,7,19",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }",
+    "Bounds": "160,944,79,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "调试器",
+    "Bounds": "173,954,52,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }",
+    "Bounds": "242,944,112,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Minecraft",
+    "Bounds": "255,954,85,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "新建故事",
+    "Bounds": "267,107,39,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目首页",
+    "Bounds": "17,114,250,26",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "引用故事包",
+    "Bounds": "15,873,291,49",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "StorySearchBox",
+    "Name": "搜索故事",
+    "Bounds": "15,159,291,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "StoryList",
+    "Name": "故事导航列表",
+    "Bounds": "15,209,291,649",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Bounds": "16,210,289,63",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Bounds": "20,211,281,61",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "⠿",
+    "Bounds": "278,231,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "测试故事",
+    "Bounds": "71,220,191,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "UID: ST-KD3A-X344-8D79-L772",
+    "Bounds": "71,244,191,19",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.Core.Graphs.Resources.StoryGroup",
+    "Bounds": "16,273,289,190",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Bounds": "46,330,255,61",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "⠿",
+    "Bounds": "278,350,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "故事组A",
+    "Bounds": "97,339,165,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "UID: ST-8SHM-YRLG-FF2K-UV3S",
+    "Bounds": "97,363,165,19",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Bounds": "46,393,255,61",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "⠿",
+    "Bounds": "278,413,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "故事组B",
+    "Bounds": "97,402,165,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "UID: ST-S2H3-3QDN-35HH-MVTP",
+    "Bounds": "97,427,165,19",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "GroupToggle",
+    "Name": "展开或收起故事组",
+    "Bounds": "20,284,251,40",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "ResourceBrowserSplitter",
+    "Name": "",
+    "Bounds": "322,92,10,845",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "进入选中故事",
+    "Bounds": "1738,144,144,42",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "进入故事",
+    "Bounds": "1775,153,69,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目故事图谱",
+    "Bounds": "367,131,1371,41",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "左侧选择故事，中央整理故事布局，右侧查看当前故事详情。",
+    "Bounds": "367,177,1371,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "故事图谱自由布局画布",
+    "Bounds": "367,221,1133,678",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "3 个故事 · 1 条连接",
+    "Bounds": "367,221,1133,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Editor",
+    "Name": "节点图编辑器",
+    "Bounds": "367,253,1133,584",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "图编辑器缩放到百分之百",
+    "Bounds": "367,253,68,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "100%",
+    "Bounds": "378,259,46,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "适应全部图节点",
+    "Bounds": "440,253,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "适应",
+    "Bounds": "451,259,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "重置图视图",
+    "Bounds": "502,253,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "重置",
+    "Bounds": "513,259,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "ScissorsButton",
+    "Name": "剪断连线",
+    "Bounds": "564,253,57,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "剪刀",
+    "Bounds": "575,259,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "拖动端口连线 · Ctrl 剪线 · 拖动整理布局 · 中键平移 · 滚轮缩放",
+    "Bounds": "636,260,864,27",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "",
+    "Name": "",
+    "Bounds": "499,583,690,174",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "故事组（1）",
+    "Bounds": "509,589,670,28",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_ST-8SHM-YRLG-FF2K-UV3S",
+    "Name": "图节点 故事「故事组A」 ST-8SHM-YRLG-FF2K-UV3S",
+    "Bounds": "518,624,288,114",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "故事「故事组A」",
+    "Bounds": "530,632,263,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_ST-8SHM-YRLG-FF2K-UV3S_dynamic_port_29b68cd8da954c83805070bb3a4abf42",
+    "Name": "ST-8SHM-YRLG-FF2K-UV3S 输出端口 dynamic_port_29b68cd8da954c83805070bb3a4abf42 (Flow)",
+    "Bounds": "662,669,134,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "终止",
+    "Bounds": "737,673,28,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_ST-KD3A-X344-8D79-L772",
+    "Name": "图节点 故事「测试故事」 ST-KD3A-X344-8D79-L772",
+    "Bounds": "520,405,288,114",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "故事「测试故事」",
+    "Bounds": "532,413,263,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_ST-KD3A-X344-8D79-L772_dynamic_port_c078bae7edf441178e675cc62d9008b2",
+    "Name": "ST-KD3A-X344-8D79-L772 输出端口 dynamic_port_c078bae7edf441178e675cc62d9008b2 (Flow)",
+    "Bounds": "664,450,134,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "完成委托",
+    "Bounds": "712,454,55,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_ST-KD3A-X344-8D79-L772_dynamic_port_fd55cb925c234f73bc8aea865c80ded5",
+    "Name": "ST-KD3A-X344-8D79-L772 输出端口 dynamic_port_fd55cb925c234f73bc8aea865c80ded5 (Flow)",
+    "Bounds": "664,475,134,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "拒绝委托",
+    "Bounds": "712,479,55,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_ST-S2H3-3QDN-35HH-MVTP",
+    "Name": "图节点 故事「故事组B」 ST-S2H3-3QDN-35HH-MVTP",
+    "Bounds": "883,624,288,114",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "故事「故事组B」",
+    "Bounds": "895,633,263,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_ST-S2H3-3QDN-35HH-MVTP_story_trigger_63949bba12de46b795e9dc5bbca914e1",
+    "Name": "ST-S2H3-3QDN-35HH-MVTP 输入端口 story_trigger_63949bba12de46b795e9dc5bbca914e1 (Flow)",
+    "Bounds": "893,670,134,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "启动条件 1",
+    "Bounds": "924,674,66,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CanonicalGraphPort_ST-S2H3-3QDN-35HH-MVTP_dynamic_port_3cbcb85db4e2493281780169f71c9350",
+    "Name": "ST-S2H3-3QDN-35HH-MVTP 输出端口 dynamic_port_3cbcb85db4e2493281780169f71c9350 (Flow)",
+    "Bounds": "1027,670,134,25",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "终止",
+    "Bounds": "1102,674,28,17",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "Help",
+    "Name": "介绍说明",
+    "Bounds": "367,847,1133,52",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "介绍说明",
+    "Bounds": "368,848,1131,50",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "介绍说明",
+    "Bounds": "382,862,1088,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1500,221,10,678",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1531,242,330,636",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "故事详情",
+    "Bounds": "1531,242,330,19",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "选中故事完整概览",
+    "Bounds": "1531,266,330,34",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "ST-KD3A-X344-8D79-L772",
+    "Bounds": "1531,305,330,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1531,350,330,204",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "输出端口",
+    "Bounds": "1531,360,330,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Root",
+    "Name": "",
+    "Bounds": "1542,403,307,138",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "流程输出",
+    "Bounds": "1542,403,307,37",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "流程输出",
+    "Bounds": "1552,410,255,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1542,447,307,94",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.PublicOutputRow",
+    "Bounds": "1542,447,307,47",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "⠿",
+    "Bounds": "1550,459,13,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "完成委托",
+    "Bounds": "1577,459,267,23",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.Graph.PublicOutputRow",
+    "Bounds": "1542,494,307,47",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "⠿",
+    "Bounds": "1550,506,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "拒绝委托",
+    "Bounds": "1577,506,267,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "",
+    "Bounds": "1531,554,330,148",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 角色, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Bounds": "1531,554,330,37",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "角色",
+    "Bounds": "1531,557,330,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "角色",
+    "Bounds": "1531,557,59,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "角色",
+    "Bounds": "1552,562,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 物品, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Bounds": "1531,591,330,37",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "物品",
+    "Bounds": "1531,594,330,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "物品",
+    "Bounds": "1531,594,59,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "物品",
+    "Bounds": "1552,599,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 会话, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Bounds": "1531,628,330,37",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "会话",
+    "Bounds": "1531,631,330,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "会话",
+    "Bounds": "1531,631,59,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "会话",
+    "Bounds": "1552,636,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 任务, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Bounds": "1531,665,330,37",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "任务",
+    "Bounds": "1531,668,330,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "任务",
+    "Bounds": "1531,668,59,32",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "任务",
+    "Bounds": "1552,673,35,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "×",
+    "Bounds": "1837,71,35,35",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "×",
+    "Bounds": "1852,79,13,22",
+    "Offscreen": false
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "导出未完成，共 1 项内容需要修正。双击“问题”中的条目可定位。",
+    "Bounds": "1320,78,502,22",
+    "Offscreen": false
+  }
+]

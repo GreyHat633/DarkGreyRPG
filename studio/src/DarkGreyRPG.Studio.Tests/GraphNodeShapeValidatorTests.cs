@@ -102,10 +102,10 @@ public sealed class GraphNodeShapeValidatorTests
                 $"Role {role.Scope}/{role.NodeType}/{role.Direction}/{role.InterfaceKind} should meet its minimum.");
         }
 
-        var deficient = Node(GraphScope.Task, "settle");
+        var deficient = Node(GraphScope.Task, "and");
         var issue = GraphNodeShapeValidator.Validate(deficient, GraphScope.Task)
             .Single(item => item.Code == "graph.node.shape.dynamic_port.minimum");
-        StringAssert.Contains(issue.Message, "requires at least 1");
+        StringAssert.Contains(issue.Message, "requires at least 2");
 
         var mutatedFixedPort = Node(GraphScope.Task, "and");
         mutatedFixedPort.Ports.Single(port => port.Id == "logic_out").IsInput = true;

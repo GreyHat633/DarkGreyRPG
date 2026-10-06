@@ -1,0 +1,1 @@
+§b[DarkGrey RPG] §rCanonical Story state: ST-NNNN-PPPP-QQQQ-RRRR status=TERMINATED, wait=NONE, node=end_dynamic_port_43cd756344fb4516b812f54a65d8cb5e, logic={}

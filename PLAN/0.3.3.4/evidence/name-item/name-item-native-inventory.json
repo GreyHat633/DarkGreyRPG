@@ -1,0 +1,114 @@
+{
+  "": {
+    "Spawns": [],
+    "ForgeData": {
+      "SkinOverlayData": [],
+      "PlayerPersisted": {
+        "DGRTaskReceipts": {
+          "85df1f9ec59e5ddd665299bf5e0b807f3a3a87ce98b7b3accce4e21d60bfd042": 1,
+          "276b9fd909db967b04c02568db0f2abedf2bf2a8b5315da044faf916321c114e": 1,
+          "6a908e7b1d4220db27bf13341e225278b5c12842f86ccf6d718418ebd428b5d0": 1,
+          "c1282c69fb72f40476238974540fbe36d5d04bb9cda026d85eaff691a88d7b32": 1,
+          "92df698e8f8cd2b2223aaf2857957c9e40eca9ac2ab66fdd1ae33454d1ea1a7c": 1,
+          "544ea4067203e2287f3ddf3d96a38cf0edb6752ca238b0092d050aa107a04612": 1,
+          "fa1946c2d11564f51d0915359354e10a786b104e8d8110872417b3cbd27c076b": 1,
+          "15cba38e3fa94d4929302b968dab4a731ad0c9a5c63e6b4acbda73ecf3d3696e": 1,
+          "49ed8dff8c3360ebebdb1f72eda3cfd791d981fce2819b2ac6fe3c3d3fd27962": 1,
+          "68844208911eab4e9a6acfa43e06b4d5f61c8cd1cc406919fc919eeb4d9bf8f1": 1,
+          "ca5c51c09437e55ef98c9f7d91d9d3efeb167963885f4ce73cf053e06caeaa5e": 1,
+          "977adc127f843d013500f1bbad4b5411b262a3af6cb841d26bca4e9ad613e6e4": 1,
+          "048fb677d925422a78902eb4aba82f8cbb0b4c4e366bb68878054bd08ee8a4f2": 1,
+          "8cecf6eababb2a4e24e23fc2fcb4817e88ad749d6a9854ed5a1dcf81f81cb5c8": 1,
+          "a4b98114474fed46214f7c697da0eedbb45a42379a25f9f1b494cfc0471a9330": 1,
+          "f0e77b01ca7e0fd8dd93b5294344f7d2a09b07dd461d1b60fa3caaddecd70d8b": 1,
+          "64e577c087b73cc79f29390b6ca22358797c3ba1396dd217ef88be599243d614": 1,
+          "952d74cfbf9ac53da212659a5d175daef6526d3e736aa902de2070d01b2905c2": 1,
+          "bcbd5b6970f114e7cccd9700338564e361760bc57881d6bd065beb85d11c16ec": 1
+        }
+      }
+    },
+    "SleepTimer": 0,
+    "Attributes": [
+      {
+        "Base": 20.0,
+        "Name": "generic.maxHealth"
+      },
+      {
+        "Base": 0.0,
+        "Name": "generic.knockbackResistance"
+      },
+      {
+        "Base": 0.10000000149011612,
+        "Name": "generic.movementSpeed"
+      },
+      {
+        "Base": 1.0,
+        "Name": "generic.attackDamage"
+      }
+    ],
+    "Invulnerable": 0,
+    "PortalCooldown": 0,
+    "AbsorptionAmount": 0.0,
+    "abilities": {
+      "invulnerable": 1,
+      "mayfly": 1,
+      "instabuild": 1,
+      "walkSpeed": 0.10000000149011612,
+      "mayBuild": 1,
+      "flying": 0,
+      "flySpeed": 0.05000000074505806
+    },
+    "FallDistance": 0.0,
+    "DeathTime": 0,
+    "HealF": 20.0,
+    "XpTotal": 146,
+    "playerGameType": 1,
+    "Motion": [
+      0.0,
+      -0.0784000015258789,
+      0.0
+    ],
+    "UUIDLeast": -8497146309372639561,
+    "Health": 20,
+    "foodSaturationLevel": 5.0,
+    "Air": 300,
+    "OnGround": 1,
+    "Dimension": 0,
+    "Rotation": [
+      36.150062561035156,
+      2.1000003814697266
+    ],
+    "XpLevel": 8,
+    "Score": 0,
+    "UUIDMost": -6557128885749009116,
+    "Sleeping": 0,
+    "Pos": [
+      -102.5,
+      4.0,
+      207.5
+    ],
+    "Fire": -20,
+    "XpP": 0.5882353186607361,
+    "EnderItems": [],
+    "foodLevel": 20,
+    "foodExhaustionLevel": 0.0,
+    "HurtTime": 0,
+    "SelectedItemSlot": 0,
+    "AttackTime": 0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "id": 388,
+        "Count": 6,
+        "Damage": 0
+      },
+      {
+        "Slot": 1,
+        "id": 1,
+        "Count": 26,
+        "Damage": 0
+      }
+    ],
+    "foodTickTimer": 0
+  }
+}

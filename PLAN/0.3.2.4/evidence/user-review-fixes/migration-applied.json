@@ -1,0 +1,34 @@
+{
+  "status": "APPLIED_VERIFIED",
+  "changes": [
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\run\\client\\darkgrey_rpg_story_packages\\kill_slimes.dgrs",
+      "candidate": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\migration-candidate\\kill_slimes.dgrs",
+      "backup": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\backup\\kill_slimes.dgrs",
+      "before_sha256": "9b0f08c48bd702fe1f6060c52a455790dd7b0151e677ee72101c87852669eabd",
+      "after_sha256": "2d18468e5ed257e0c711741bd1a7b6449ae7071fb4ac8a4f7ddb322de6ac0d4f"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\RPGProject\\TestProject\\resources\\canonical\\tasks\\x477265794861745f\\x4b696c6c536c696d6573.json",
+      "candidate": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\migration-candidate\\KillSlimes-source.json",
+      "backup": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\backup\\KillSlimes-source.json",
+      "before_sha256": "11943975ec29f67f73f9bc3ce9ead364e0493a6dda75d3b942c0ce7f60d945f0",
+      "after_sha256": "ca7eb692633a0bcb28d77be375890fca579bf83caf21fc3bbf0f9a704c2aa518"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\run\\client\\saves\\新的世界\\data\\darkgrey_rpg_canonical_tasks.dat",
+      "candidate": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\migration-candidate\\darkgrey_rpg_canonical_tasks.dat",
+      "backup": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\backup\\darkgrey_rpg_canonical_tasks.dat",
+      "before_sha256": "50d3e6720570957be5cbb5a31e5067fe91df2c9d07cbe4973e6d9d532dd51eb8",
+      "after_sha256": "e3dd4447c889c5ff7aa221ad3455451a6e90e473db1001926e43a6cabdb4ad56"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\run\\client\\saves\\新的世界\\data\\darkgrey_rpg_story_package_generations.dat",
+      "candidate": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\migration-candidate\\darkgrey_rpg_story_package_generations.dat",
+      "backup": "E:\\Java\\MinecraftMod\\DarkGrey_RPG\\PLAN\\0.3.2.4\\evidence\\user-review-fixes\\backup\\darkgrey_rpg_story_package_generations.dat",
+      "before_sha256": "9ccea49c6a6ba79649f3fe17f92afed54cfc9a7653dee6ed8e245f7309982ad3",
+      "after_sha256": "eda5602e2ce1aac6440018c34883e264a2091a5a18bfd37566720257072c03b3"
+    }
+  ],
+  "progress": "all decompressed NBT bytes unchanged except two validated 64-byte fingerprints"
+}

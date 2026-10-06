@@ -1,0 +1,21 @@
+{
+  "exeSha256": "EA53EC45DB51E95B9CAA1FDD0F8DB3E283FE3EE867ECAAD7878B06F536723894",
+  "sameDisplayName": "0334 Test Stone",
+  "distinctIds": [
+    "Native0332:stone",
+    "Native0332:stone_same_name"
+  ],
+  "wrongTypeDropPreservesSelection": true,
+  "validDropsSwitchStableId": true,
+  "savedPayload": "same-name-saved-story.json",
+  "storyRestoredByteIdentical": true,
+  "membershipRestoredByteIdentical": true,
+  "nativeEvidence": [
+    "same-name-options.png",
+    "same-name-selected.png",
+    "same-name-wrong-type.png",
+    "same-name-valid-drop.png",
+    "same-name-second-drop.png",
+    "same-name-save.png"
+  ]
+}

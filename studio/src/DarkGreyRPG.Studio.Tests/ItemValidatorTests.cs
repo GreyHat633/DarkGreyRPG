@@ -14,7 +14,7 @@ public sealed class ItemValidatorTests
         var issues = ItemValidator.Validate(resource);
 
         Assert.IsTrue(issues.Any(issue => issue.Code == "item.schema.unsupported" && issue.Severity == ValidationSeverity.Error));
-        Assert.IsTrue(issues.Any(issue => issue.Code == "item.item_id.invalid" && issue.Severity == ValidationSeverity.Error));
+        Assert.IsTrue(issues.Any(issue => issue.Code == "item.address.invalid" && issue.Severity == ValidationSeverity.Error));
         Assert.ThrowsExactly<ItemValidationException>(() => ItemSerializer.Serialize(resource));
     }
 
@@ -23,7 +23,7 @@ public sealed class ItemValidatorTests
     {
         var resource = new IndividualItemResource
         {
-            ItemId = "iron_sword",
+            ItemId = "ST-2345-6789-ABCD-EFGH~item~iron_sword",
             DisplayName = "Iron Sword",
             Tags = ["weapon", "weapon"],
         };
@@ -36,8 +36,8 @@ public sealed class ItemValidatorTests
     [TestMethod]
     public void StackCountIsNotRepresentedByItemIdentity()
     {
-        var one = new IndividualItemResource { ItemId = "apple", DisplayName = "Apple" };
-        var same = new IndividualItemResource { ItemId = "apple", DisplayName = "Apple" };
+        var one = new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~apple", DisplayName = "Apple" };
+        var same = new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~apple", DisplayName = "Apple" };
 
         Assert.AreEqual(ItemSerializer.Serialize(one), ItemSerializer.Serialize(same));
     }

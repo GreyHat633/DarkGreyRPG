@@ -1,0 +1,17 @@
+{
+  "InitialExpanded": true,
+  "TextClickCollapsed": true,
+  "InspectorPreservedOnCollapse": true,
+  "BlankClickExpanded": true,
+  "HandleClickDoesNotFold": true,
+  "TriangleClickCollapsed": true,
+  "TriangleClickExpanded": true,
+  "EndSelectsBottom": true,
+  "HomeSelectsTop": true,
+  "InspectorImageUnchanged": true,
+  "GroupDragMovesWholeSectionAboveSingleStory": true,
+  "ReorderUndoRestoresSectionOrder": true,
+  "MemberStoriesAreIndented": true,
+  "DoubleClickOpensStoryWorkspace": true,
+  "RenameUndoRestoresGroupNames": true
+}

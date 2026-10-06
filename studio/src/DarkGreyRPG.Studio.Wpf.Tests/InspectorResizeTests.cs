@@ -112,7 +112,7 @@ public sealed class InspectorResizeTests
     public void LibraryAndInspectorSplittersPreserveRenderedGraphCamera()
     {
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([
                 new GraphNode("source", "start", "Source", [
                     new("out", "Output", false, GraphInterfaceKind.Flow)])])));
         var view = new CanonicalStoryWorkspaceView(workspace);
@@ -168,7 +168,7 @@ public sealed class InspectorResizeTests
     public void InspectorSplitterShrinksGraphViewport()
     {
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()));
         var view = new CanonicalStoryWorkspaceView(workspace);
         const double width = 867;
         var root = new Grid { Width = width, Height = 720 };

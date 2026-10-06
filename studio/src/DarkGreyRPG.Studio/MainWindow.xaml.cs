@@ -55,8 +55,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             new CanonicalStoryResourceDialogs(() => this),
             itemWorkspaceDialogs: new ItemWorkspaceDialogs(() => this),
             dgrsExportPathPicker: new DgrsExportPathPicker(() => this, settingsService),
-            namespaceSettings: settingsService,
-            namespaceDialogs: new NamespaceDialogs(() => this),
             offlinePackageDialogs: new OfflinePackageDialogs(() => this, settingsService),
             portableProjects: new PortableProjectStore(StudioStoragePaths.Default));
         DataContext = _shell;
@@ -65,13 +63,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _toastTimer.Tick += ToastTimer_OnTick;
         Closing += MainWindow_OnClosing;
         ApplyPersistedSettings(themeSettings.CurrentSettings);
-        Loaded += InitializeNamespaceOnLoaded;
+        Loaded += RestoreWorkspaceOnLoaded;
     }
 
-    private void InitializeNamespaceOnLoaded(object sender, RoutedEventArgs e)
+    private void RestoreWorkspaceOnLoaded(object sender, RoutedEventArgs e)
     {
-        Loaded -= InitializeNamespaceOnLoaded;
-        _shell.InitializeNamespaceWorkspace(ThemeSettings.CurrentSettings.LastProject);
+        Loaded -= RestoreWorkspaceOnLoaded;
+        _shell.RestoreLastProject(ThemeSettings.CurrentSettings.LastProject);
     }
 
     public ThemeSettingsViewModel ThemeSettings { get; }
@@ -178,10 +176,62 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void StoryList_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is ShellViewModel shell) shell.SelectedReferencedPackage = null;
+        _navigationDragKey = FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject)?.DataContext
+            is StoryListItemViewModel story ? story.NavigationKey : null;
+        _navigationDragOrigin = e.GetPosition(this);
+    }
+
+    private string? _navigationDragKey;
+    private Point _navigationDragOrigin;
+    private FrameworkElement? _navigationPressedHeader;
+    private System.Windows.Controls.Primitives.ToggleButton? _navigationPendingToggle;
+    private void StoryNavigation_OnDragStart(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: System.Windows.Data.CollectionViewGroup
+            { Name: Core.Graphs.Resources.StoryGroup group } })
+        {
+            _navigationDragKey = group.Key; _navigationDragOrigin = e.GetPosition(this);
+            _navigationPressedHeader = (FrameworkElement)sender;
+            var container = FindVisualAncestor<GroupItem>(_navigationPressedHeader);
+            var onHandle = FindVisualAncestor<TextBlock>(e.OriginalSource as DependencyObject)?.Name == "GroupDragHandle";
+            _navigationPendingToggle = onHandle ? null : container?.Template.FindName("GroupToggle", container)
+                as System.Windows.Controls.Primitives.ToggleButton;
+            _navigationPressedHeader.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+    private void StoryNavigation_OnHeaderRelease(object sender, MouseButtonEventArgs e)
+    {
+        if (_navigationPressedHeader is not { } header) return;
+        var point = e.GetPosition(header);
+        var toggle = _navigationPendingToggle;
+        _navigationPendingToggle = null; _navigationPressedHeader = null; _navigationDragKey = null;
+        header.ReleaseMouseCapture();
+        if (toggle is not null && point.X >= 0 && point.Y >= 0 && point.X <= header.ActualWidth && point.Y <= header.ActualHeight)
+            toggle.SetCurrentValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, toggle.IsChecked != true);
+        e.Handled = true;
+    }
+    private void StoryNavigation_OnHeaderCaptureLost(object sender, MouseEventArgs e)
+    {
+        _navigationPendingToggle = null; _navigationPressedHeader = null; _navigationDragKey = null;
+    }
+    private void StoryNavigation_OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _navigationDragKey is null) return;
+        var delta = e.GetPosition(this) - _navigationDragOrigin;
+        if (Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance
+            && Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        var key = _navigationDragKey; _navigationDragKey = null;
+        _navigationPendingToggle = null;
+        var header = _navigationPressedHeader; _navigationPressedHeader = null;
+        header?.ReleaseMouseCapture();
+        if (DataContext is ShellViewModel shell)
+            StoryNavigationDrag.Begin(StoryList, key, shell.ProjectHome.Graph.MoveNavigationEntry);
     }
 
     private void StoryList_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
+        if (FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is null) return;
         if (DataContext is ShellViewModel shell &&
             ((sender as ListBox)?.SelectedItem ?? shell.ProjectHome.SelectedStory) is StoryListItemViewModel story)
         {
@@ -190,11 +240,37 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private void StoryGroupName_OnContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (sender is not FrameworkElement title || title.DataContext is not System.Windows.Data.CollectionViewGroup
+            { Name: Core.Graphs.Resources.StoryGroup group } || DataContext is not ShellViewModel shell) return;
+        var menu = new ContextMenu();
+        var rename = new MenuItem { Header = "重命名" };
+        rename.Click += (_, _) =>
+        {
+            var box = new TextBox { Text = group.DisplayName, MaxLength = 128, MinWidth = 240, Margin = new Thickness(12) };
+            var save = new Button { Content = "保存", IsDefault = true, Margin = new Thickness(12) };
+            var panel = new StackPanel(); panel.Children.Add(box); panel.Children.Add(save);
+            var dialog = new Window { Title = "重命名故事组", Owner = this, Content = panel,
+                SizeToContent = SizeToContent.WidthAndHeight, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+            save.Click += (_, _) => {
+                if (string.IsNullOrWhiteSpace(box.Text)) return;
+                shell.ProjectHome.Graph.RenameStoryGroup(group.Key, box.Text.Trim());
+                dialog.DialogResult = true;
+            };
+            dialog.ShowDialog();
+        };
+        menu.Items.Add(rename); title.ContextMenu = menu;
+    }
+
     private void StoryList_OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is not ShellViewModel shell) return;
 
         var item = FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
+        // Let the group header open its own menu rather than swallowing it as list whitespace.
+        if (item is null && FindVisualAncestor<GroupItem>(e.OriginalSource as DependencyObject)?.DataContext
+            is System.Windows.Data.CollectionViewGroup { Name: Core.Graphs.Resources.StoryGroup { IsGroup: true } }) return;
         var menuTarget = item ?? sender as UIElement ?? StoryList;
         var menu = FluentContextMenuFactory.Create(menuTarget);
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
@@ -225,15 +301,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
         menu.Items.Add(openItem);
         menu.Items.Add(FluentContextMenuFactory.CreateItem(
-            "修改 NameSpace…",
-            () => shell.ChangeStoryNamespace(story.Id, returnToGlobal: false),
-            enabled: story.HasCanonicalStory));
-        menu.Items.Add(FluentContextMenuFactory.CreateItem(
-            "使用全局 NameSpace",
-            () => shell.ChangeStoryNamespace(story.Id, returnToGlobal: true),
-            enabled: story.HasCanonicalStory));
-        menu.Items.Add(FluentContextMenuFactory.CreateItem(
-            "添加外部资源引用…",
+            "引用资源…",
             () => shell.AddExternalReference(story.Id),
             enabled: story.HasCanonicalStory));
         menu.Items.Add(FluentContextMenuFactory.CreateSeparator());
@@ -284,6 +352,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void Shell_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(ShellViewModel.ProjectHome))
+            Dispatcher.BeginInvoke(() =>
+            {
+                // Rebuilding the project graph after a file transaction removes its focused canvas.
+                // Restore a live focus target so the next Ctrl+Z/Y still reaches the window bindings.
+                if (IsActive && (Keyboard.FocusedElement is not DependencyObject focused || Window.GetWindow(focused) != this))
+                    StoryList.Focus();
+            });
         if (e.PropertyName == nameof(ShellViewModel.EffectiveResourceBrowserVisible) && sender is ShellViewModel shell)
         {
             ApplyResourceBrowserVisibility(shell.EffectiveResourceBrowserVisible);

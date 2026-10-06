@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Text;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Stories.Definitions;
 using DarkGreyRPG.Studio.Core.Dialogues;
@@ -102,9 +103,13 @@ public sealed class ProjectService
 
         var projectPath = Path.Combine(root, "project.json");
         var resource = ReadProjectFile(projectPath);
-        ProjectMigration.MigrateIfRequired(root, _atomicFileWriter);
-        resource = ReadProjectFile(projectPath);
         ValidateProjectIdentity(resource.Id, resource.DisplayName, ActorIdPolicy.ExistingResource);
+        foreach (var retiredDirectory in new[] { "stories", "dialogues", "quests" })
+        {
+            var retiredPath = Path.Combine(root, retiredDirectory);
+            if (Directory.Exists(retiredPath) && CanonicalResourceFileSystem.EnumerateJsonFiles(retiredPath).Count != 0)
+                throw new ProjectException($"旧资源目录 '{retiredDirectory}' 含有不受支持的数据；当前版本不会自动转换或覆盖。");
+        }
 
         var actorsDirectory = Path.Combine(root, "actors");
         if (!Directory.Exists(actorsDirectory))
@@ -274,7 +279,9 @@ public sealed class ProjectService
     public ActorDocument CreateActor(string id, string displayName, string homeStoryId)
     {
         var current = RequireCurrentProject();
-        _ = current.Stories.LoadStory(homeStoryId); // validate before creating the document
+        _ = new CanonicalProjectGraphStore(current.ProjectDirectory).Stories.Load(homeStoryId);
+        if (ResourceAddress.FromKey(id).StoryUid.Value != homeStoryId)
+            throw new ProjectException("Actor address must belong to the selected Story.");
         var document = current.Actors.CreateActor(id, displayName);
         document.HomeStoryId = homeStoryId;
         return RegisterOpenDocument(document);
@@ -288,32 +295,61 @@ public sealed class ProjectService
     public ActorDocument ImportActorAsNew(string sourceId, string newId, string storyId)
     {
         var current = RequireCurrentProject();
-        var imported = current.Registry.ImportAsNew(sourceId, newId, storyId);
-        return RegisterOpenDocument(current.Actors.LoadActor(imported.Id));
+        var source = current.Actors.LoadActor(sourceId);
+        var imported = CreateActor(newId, source.DisplayName, storyId);
+        if (source.ToResource().Type == CollectiveActorResource.ResourceType)
+        {
+            UnregisterOpenDocument(imported);
+            imported = RegisterOpenDocument(current.Actors.CreateCollective(newId, source.DisplayName));
+        }
+        imported.SetTags(source.Tags);
+        imported.DefaultPortraitRef = source.DefaultPortraitRef;
+        imported.SetPortraitVariants(source.PortraitVariants);
+        try { return SaveActor(imported); }
+        catch { UnregisterOpenDocument(imported); throw; }
     }
 
     public void AddActorReference(string storyId, string actorId) =>
-        RequireCurrentProject().Registry.AddReference(storyId, ProjectResourceType.Actor, actorId);
+        CurrentActorLifecycle().AddReference(storyId, actorId);
 
     public void RemoveActorReference(string storyId, string actorId) =>
-        RequireCurrentProject().Registry.RemoveReference(storyId, ProjectResourceType.Actor, actorId);
+        CurrentActorLifecycle().RemoveReference(storyId, actorId);
 
-    public IReadOnlyList<ResourceDescriptor> GetActorReferences(string actorId) =>
-        RequireCurrentProject().Registry.GetReferences(ProjectResourceType.Actor, actorId);
+    public IReadOnlyList<ResourceDescriptor> GetActorReferences(string actorId)
+    {
+        var current = RequireCurrentProject();
+        var store = new CanonicalProjectGraphStore(current.ProjectDirectory);
+        var owner = current.Actors.LoadActor(actorId).HomeStoryId;
+        return CurrentActorLifecycle().EnumerateBlockers(owner, actorId).Select(reference =>
+            new ResourceDescriptor(ProjectResourceType.Story, reference.StoryId,
+                store.Stories.Load(reference.StoryId).DisplayName, store.Stories.GetPath(reference.StoryId))).ToArray();
+    }
 
     public bool CanDeleteActor(string actorId) =>
-        RequireCurrentProject().Registry.CanDelete(ProjectResourceType.Actor, actorId);
+        GetActorReferences(actorId).Count == 0;
+
+    private CanonicalStoryActorLifecycleService CurrentActorLifecycle()
+    {
+        var current = RequireCurrentProject();
+        return new(new CanonicalProjectGraphStore(current.ProjectDirectory, _atomicFileWriter), current.Actors);
+    }
 
     public ActorDocument DuplicateActor(string sourceId)
     {
         var current = RequireCurrentProject();
         var source = current.Actors.LoadActor(sourceId);
-        var duplicateId = current.Actors.GetAvailableId(source.Id + "_copy");
-        EnsureRegistryIdAvailable(duplicateId);
-
-        var document = current.Actors.DuplicateActor(sourceId);
-        current.Registry.AddReference(document.HomeStoryId, ProjectResourceType.Actor, document.Id, owned: true);
-        return RegisterOpenDocument(document);
+        var address = ResourceAddress.FromKey(source.Id);
+        var duplicateId = ResourceAddress.Create(address.StoryUid, ResourceKind.Actor,
+            current.Actors.ListActors().Select(actor => ResourceAddress.FromKey(actor.Id)).ToHashSet()).ToKey();
+        var document = source.ToResource().Type == IndividualActorResource.ResourceType
+            ? current.Actors.CreateIndividual(duplicateId, source.DisplayName)
+            : current.Actors.CreateCollective(duplicateId, source.DisplayName);
+        document.SetTags(source.Tags);
+        document.DefaultPortraitRef = source.DefaultPortraitRef;
+        document.SetPortraitVariants(source.PortraitVariants);
+        RegisterOpenDocument(document);
+        try { return SaveActor(document); }
+        catch { UnregisterOpenDocument(document); throw; }
     }
 
     public ActorDocument RenameActor(string sourceId, string targetId)
@@ -343,15 +379,7 @@ public sealed class ProjectService
         EnsureCanDiscardOpenDocument(id, document, "delete");
 
         var actor = current.Actors.LoadActor(id);
-        var references = current.Registry.GetReferences(ProjectResourceType.Actor, id);
-        if (references.Count > 0)
-        {
-            throw new ProjectException(
-                $"Cannot delete Actor '{id}' because it is still referenced by: {string.Join(", ", references.Select(reference => reference.Id))}.");
-        }
-
-        current.Actors.DeleteActor(id);
-        current.Registry.RemoveOwnership(actor.HomeStoryId, ProjectResourceType.Actor, id);
+        CurrentActorLifecycle().DeleteOwned(actor.HomeStoryId, id);
         if (document is not null)
         {
             UnregisterOpenDocument(document);
@@ -446,28 +474,33 @@ public sealed class ProjectService
 
         EnsureRegistryIdAvailable(document.Id, document);
         var current = RequireCurrentProject();
-        string? previousHomeStoryId = null;
-        if (!document.IsNew)
-        {
-            previousHomeStoryId = current.Actors.LoadActor(document.Id).HomeStoryId;
-        }
-
-        // A changed home Story is part of the Actor mutation; reject it before writing the Actor file.
-        var targetStory = current.Stories.LoadStory(document.HomeStoryId);
-        if (targetStory.ReferencedResources.Actors.Contains(document.Id, StringComparer.Ordinal))
-        {
-            throw new ProjectException(
-                $"Actor '{document.Id}' is already referenced by Story '{targetStory.Id}' and cannot be owned there.");
-        }
-        var saved = current.Actors.SaveActor(document);
-        if (!string.IsNullOrWhiteSpace(previousHomeStoryId)
-            && !string.Equals(previousHomeStoryId, saved.HomeStoryId, StringComparison.Ordinal))
-        {
-            current.Registry.RemoveOwnership(previousHomeStoryId, ProjectResourceType.Actor, saved.Id);
-        }
-        current.Registry.AddReference(saved.HomeStoryId, ProjectResourceType.Actor, saved.Id, owned: true);
-        UnregisterOpenDocument(document);
-        return RegisterOpenDocument(saved);
+        var store = new CanonicalProjectGraphStore(current.ProjectDirectory);
+        _ = store.Stories.Load(document.HomeStoryId);
+        var membership = store.Memberships.Load(document.HomeStoryId);
+        if (membership.ReferencedResources.Actors.Contains(document.Id, StringComparer.Ordinal))
+            throw new ProjectException($"Actor '{document.Id}' is already referenced by Story '{document.HomeStoryId}'.");
+        var actorPath = current.Actors.GetActorPath(document.Id);
+        if (!document.IsNew && !string.Equals(Path.GetFullPath(document.SourcePath!),
+                Path.GetFullPath(actorPath), StringComparison.OrdinalIgnoreCase))
+            throw new ActorRepositoryException("Persisted Actor identity is immutable; edit its display name instead.");
+        if (document.IsNew && File.Exists(actorPath)) throw new ActorCollisionException(document.Id);
+        var actorJson = ActorSerializer.Serialize(document.ToResource(), ActorIdPolicy.ExistingResource);
+        var owned = membership.OwnedResources;
+        if (!owned.Actors.Contains(document.Id, StringComparer.Ordinal)) owned.Actors.Add(document.Id);
+        var updated = new CanonicalStoryMembershipManifest(membership.StoryId, owned, membership.ReferencedResources)
+        { DisplayOrder = membership.DisplayOrder };
+        var membershipJson = CanonicalStoryMembershipSerializer.Serialize(updated);
+        var membershipPath = store.Memberships.GetPath(document.HomeStoryId);
+        new ProjectFileTransaction(writeFile: (path, bytes) =>
+            _atomicFileWriter.Write(path, Encoding.UTF8.GetString(bytes))).Apply(current.ProjectDirectory,
+        [
+            new(Path.GetRelativePath(current.ProjectDirectory, actorPath),
+                File.Exists(actorPath) ? File.ReadAllBytes(actorPath) : null, Encoding.UTF8.GetBytes(actorJson)),
+            new(Path.GetRelativePath(current.ProjectDirectory, membershipPath),
+                File.ReadAllBytes(membershipPath), Encoding.UTF8.GetBytes(membershipJson)),
+        ], () => { _ = ActorSerializer.Deserialize(actorJson); _ = CanonicalStoryMembershipSerializer.Deserialize(membershipJson); });
+        document.MarkSaved(actorPath);
+        return document;
     }
 
     public DialogueDocument OpenDialogue(string id)
@@ -966,7 +999,17 @@ public sealed class ProjectService
     {
         try
         {
-            var resource = JsonSerializer.Deserialize<ProjectResource>(File.ReadAllText(path), JsonOptions)
+            var text = File.ReadAllText(path);
+            using var document = JsonDocument.Parse(text);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object
+                || root.EnumerateObject().Select(property => property.Name).Distinct(StringComparer.Ordinal).Count() != root.EnumerateObject().Count()
+                || !root.TryGetProperty("schema_version", out var schema) || schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var version)
+                || version != ProjectResource.CurrentSchemaVersion
+                || !root.TryGetProperty("identity_format", out var identity)
+                || identity.ValueKind != JsonValueKind.String || identity.GetString() != ProjectResource.CurrentIdentityFormat)
+                throw new JsonException("Project requires schema 3 and identity_format story-uid-v1; legacy projects are not migrated.");
+            var resource = JsonSerializer.Deserialize<ProjectResource>(text, JsonOptions)
                 ?? throw new JsonException("Project JSON root cannot be null.");
             return resource;
         }

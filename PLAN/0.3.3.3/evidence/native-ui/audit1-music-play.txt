@@ -1,0 +1,4 @@
+action=play
+vanillaMusic=1.0
+dgrMusic=1.0
+ERROR=java.lang.IllegalAccessException: Class native0333.Audit1ClientAgent can not access a member of class net.minecraft.client.audio.SoundManager$SoundSystemStarterThread with modifiers "public"

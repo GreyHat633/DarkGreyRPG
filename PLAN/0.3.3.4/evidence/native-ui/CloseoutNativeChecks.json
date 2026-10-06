@@ -1,0 +1,17 @@
+{
+  "ime": {
+    "candidate": "ime-page-candidate.png",
+    "oneBackspace": "ime-page-backspace.png",
+    "candidateClearedPages": 4,
+    "setup": "Two empty test pages inserted between two original pages; all remained after clearing five composition letters.",
+    "restoredOriginalPages": 2
+  },
+  "atomicInspector": {
+    "selection": "atomic-forward-selection.png",
+    "successfulCut": "atomic-cut2.png",
+    "cutSavedText": "",
+    "undoRestoredByteIdentical": true
+  },
+  "sessionRestoredSha256": "a05745055ecdbb977817a7b7b77014c272894ec363f516a5972427940cb173cf",
+  "excludedAttempts": "Reverse-selection attempt lost foreground and did not cut; later paste duplication was undone. Inline Run click exposed a real defect tracked by InlineClick0334-fixed."
+}

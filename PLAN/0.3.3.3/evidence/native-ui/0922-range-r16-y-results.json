@@ -1,0 +1,166 @@
+[
+  {
+    "passed": true,
+    "side": "minus",
+    "measurement": {
+      "label": "0922-range-r16-yminus-inside",
+      "time": "2026-09-22T22:20:38",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.35517426043114025,
+      "peak": 1.0,
+      "tone440": 0.004175828457495055,
+      "tone880": 0.0023710713734401293
+    },
+    "clientPoint": [
+      -119.5,
+      75.1,
+      200.5
+    ],
+    "label": "0922-range-r16-yminus-inside",
+    "radius": 16,
+    "teleportFeet": [
+      -119.5,
+      73.47999999999999,
+      200.5
+    ],
+    "axis": "y",
+    "inside": true
+  },
+  {
+    "passed": false,
+    "side": "minus",
+    "measurement": {
+      "label": "0922-range-r16-yminus-outside",
+      "time": "2026-09-22T22:20:46",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.3582388091510544,
+      "peak": 1.0,
+      "tone440": 0.003673918853407975,
+      "tone880": 0.0031751803494891213
+    },
+    "clientPoint": [
+      -119.5,
+      74.9,
+      200.5
+    ],
+    "label": "0922-range-r16-yminus-outside",
+    "radius": 16,
+    "teleportFeet": [
+      -119.5,
+      73.28,
+      200.5
+    ],
+    "axis": "y",
+    "inside": false
+  },
+  {
+    "passed": true,
+    "side": "plus",
+    "measurement": {
+      "label": "0922-range-r16-yplus-inside",
+      "time": "2026-09-22T22:20:55",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004762795355667757,
+      "peak": 0.0008144378662109375,
+      "tone440": 0.0006289504460433625,
+      "tone880": 1.0310973039076826E-07
+    },
+    "clientPoint": [
+      -119.5,
+      107.9,
+      200.5
+    ],
+    "label": "0922-range-r16-yplus-inside",
+    "radius": 16,
+    "teleportFeet": [
+      -119.5,
+      106.28,
+      200.5
+    ],
+    "axis": "y",
+    "inside": true
+  },
+  {
+    "passed": true,
+    "side": "plus",
+    "measurement": {
+      "label": "0922-range-r16-yplus-outside",
+      "time": "2026-09-22T22:21:04",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "clientPoint": [
+      -119.5,
+      108.1,
+      200.5
+    ],
+    "label": "0922-range-r16-yplus-outside",
+    "radius": 16,
+    "teleportFeet": [
+      -119.5,
+      106.47999999999999,
+      200.5
+    ],
+    "axis": "y",
+    "inside": false
+  }
+]

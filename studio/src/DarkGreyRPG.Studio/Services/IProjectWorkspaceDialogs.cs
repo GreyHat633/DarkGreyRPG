@@ -27,4 +27,7 @@ public interface IProjectWorkspaceDialogs
         IReadOnlyList<string> resourcesToDelete)
         => ConfirmDeleteStory(storyId, displayName, resourcesToDelete);
 
+    bool ConfirmDeleteStoryGroups(string groupNames, string summary, IReadOnlyList<string> affectedPaths)
+        => ConfirmDeleteCanonicalStory(groupNames, summary, affectedPaths);
+
 }

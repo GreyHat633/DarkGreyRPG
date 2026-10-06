@@ -1,0 +1,53 @@
+{
+  "status": "PASS_NATIVE_REFERENCE_AND_BOUNDARY_EXPORT",
+  "reference_source": "StudioExportedFlowBoundary0336.dgrs.g",
+  "reference_members": 3,
+  "npc_only_export": {
+    "file": "StudioExportedNpcOnly0336.dgrs",
+    "bytes": 3864,
+    "sha256": "5f3370d6126a44476ed1891db5a6946465b7a5a91311923ea3de27d51ad6d67e",
+    "story_count": 1
+  },
+  "native_boundary": "Mouse drag X.finished -> referenced B.from_a Flow",
+  "closure_export": {
+    "file": "StudioExportedReferenceClosure0336.dgrs.g",
+    "bytes": 24558,
+    "sha256": "7c2a03785957bf061abb37b918db9a33ce8b0747a18482bca12192e846b6a7e1",
+    "members": [
+      "ST-8Q7T-6EWT-PEPM-WYKS",
+      "ST-AAAA-BBBB-CCCC-DDDD",
+      "ST-YGZK-MYX4-UKGL-68UW",
+      "ST-YPL7-HP2E-E9PA-PZG6"
+    ],
+    "edges": [
+      {
+        "source_story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+        "source_port_id": "finished",
+        "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+        "target_port_id": "from_a",
+        "interface_kind": "Flow"
+      },
+      {
+        "source_story_id": "ST-8Q7T-6EWT-PEPM-WYKS",
+        "source_port_id": "group_output",
+        "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+        "target_port_id": "group_input",
+        "interface_kind": "Logic"
+      },
+      {
+        "source_story_id": "ST-YGZK-MYX4-UKGL-68UW",
+        "source_port_id": "group_output",
+        "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+        "target_port_id": "group_input_c",
+        "interface_kind": "Logic"
+      },
+      {
+        "source_story_id": "ST-8Q7T-6EWT-PEPM-WYKS",
+        "source_port_id": "finished",
+        "target_story_id": "ST-YPL7-HP2E-E9PA-PZG6",
+        "target_port_id": "from_a",
+        "interface_kind": "Flow"
+      }
+    ]
+  }
+}

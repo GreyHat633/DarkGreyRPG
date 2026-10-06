@@ -1,0 +1,17 @@
+{
+  "status": "PASS_REAL_INFLIGHT_CONFLICT_AND_RECOVERY",
+  "retired_story_records": 12,
+  "retired_sessions": 11,
+  "error_histories": 11,
+  "unrelated_task_active": true,
+  "no_budget_instances_after_restore": true,
+  "late_results_no_bundle_revival": true,
+  "manager_screenshot": "media-conflict-manager.png",
+  "duplicate_recycled": true,
+  "evidence": [
+    "media-conflict-client.log",
+    "media-conflict-retired.json",
+    "media-conflict-restored.json",
+    "media-conflict-inflight-reload.log"
+  ]
+}

@@ -26,7 +26,9 @@ public sealed class PresentationPackage0330Tests
         var start = GraphNodeFactory.CreateStoryStart("start");
         var title = GraphNodeFactory.Create(GraphScope.StoryFlow, "title", "title");
         var end = GraphNodeFactory.Create(GraphScope.StoryFlow, "terminate", "terminate");
-        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "presentation_story", "Presentation", new GraphDocument([start, title, end])));
+        end.Properties["port_id"] = JsonSerializer.SerializeToElement("complete");
+        end.Properties["display_name"] = JsonSerializer.SerializeToElement("Complete");
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Presentation", new GraphDocument([start, title, end])));
         var music = GraphNodeFactory.Create(GraphScope.Session, "music", "music");
         var screen = GraphNodeFactory.Create(GraphScope.Session, "screen", "screen");
         screen.Properties["layers"] = JsonSerializer.SerializeToElement(new[] { new { media_ref = image, x = 0.5, y = 0.5, width = 0.5, height = 1, anchor_x = 0.5, anchor_y = 0.5, z = 0 } });
@@ -37,11 +39,11 @@ public sealed class PresentationPackage0330Tests
         sessionEnd.Properties["port_id"] = JsonSerializer.SerializeToElement("done"); sessionEnd.Properties["display_name"] = JsonSerializer.SerializeToElement("完成");
         var nodes = new[] { GraphNodeFactory.Create(GraphScope.Session, "start", "start"), music, screen, line, sessionEnd };
         var edges = nodes.Zip(nodes.Skip(1), (a, b) => new GraphConnection(a.Id, "flow_out", b.Id, "flow_in", GraphInterfaceKind.Flow));
-        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "presentation_session", "Session", new GraphDocument(nodes, edges)));
-        var membership = new CanonicalStoryMembershipManifest("presentation_story") { OwnedResources = new CanonicalStoryMembershipSet { Sessions = ["presentation_session"] } };
+        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~presentation", "Session", new GraphDocument(nodes, edges)));
+        var membership = new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH") { OwnedResources = new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~presentation"] } };
         store.Memberships.Create(membership);
         string archive = Path.Combine(project.Root, "presentation_story.dgrs");
-        new DgrsStoryPackageExporter(project.Root).Build("presentation_story", archive);
+        new DgrsStoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", archive);
         var fixture = Environment.GetEnvironmentVariable("DGR_PRESENTATION_PACKAGE_FIXTURE");
         if (!string.IsNullOrWhiteSpace(fixture)) { Directory.CreateDirectory(Path.GetDirectoryName(fixture)!); File.Copy(archive, fixture, true); }
     }

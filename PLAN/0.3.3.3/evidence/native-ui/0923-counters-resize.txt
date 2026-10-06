@@ -1,0 +1,4 @@
+operation=snapshot
+time=1790106730514
+darkgrey/rpg/client/gui/CanonicalDialogueRenderer.draw=3519
+darkgrey/rpg/client/session/DialogueDisplayPages.measure=1

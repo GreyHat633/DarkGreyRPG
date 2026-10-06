@@ -12,7 +12,7 @@ public sealed class ContinuousLine0334Tests
     public void InsertAfterMiddlePreservesDraftAndUndoIdentity()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var vm = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         var a = vm.LinePages[0].PageId;
         var b = vm.AddLinePage();
@@ -30,7 +30,7 @@ public sealed class ContinuousLine0334Tests
     public void ShortcutProtectsCountAndNeverProtectsOriginalIdentity()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var vm = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         var a = vm.LinePages[0].PageId;
         var b = vm.AddLinePage()!;

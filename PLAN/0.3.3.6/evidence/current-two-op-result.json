@@ -1,0 +1,20 @@
+{
+  "status": "PASS_TARGETED_NATIVE_TWO_OP",
+  "players": [
+    "Native0336",
+    "Operator0336"
+  ],
+  "steps": [
+    "Operator0336 selected Media0336.dgrs.g and obtained delete confirmation",
+    "Native0336 disabled the same container",
+    "Operator0336 submitted old confirmation",
+    "server retained file; client cleared confirmation, refreshed counts and showed persistent inventory-changed message"
+  ],
+  "remaining_file_sha256": "6ce9982264b57b1546ebfb52c437a7c5d395092aedffca000e2cd848ea01b66a",
+  "evidence": "op2-stale-confirm-fixed.png",
+  "runtime_jar": {
+    "path": "build\\libs\\darkgrey_rpg-0.3.3.6.jar",
+    "bytes": 1948418,
+    "sha256": "55f18cbec66dc2d7e8dfd53673edd3014bb8cfbaadc12ea51a1c1e375d5fd919"
+  }
+}

@@ -20,13 +20,12 @@ public final class EntityDgrIdentityResolver {
         NPC_IDENTITY,
         NOMINATOR_INDIVIDUAL,
         NOMINATOR_GROUP,
-        LEGACY_CUSTOMNPC,
         NONE
     }
 
     private EntityDgrIdentityResolver() {}
 
-    /** Resolves against server-owned external registries, then legacy CNPC data. */
+    /** Resolves exclusively against server-owned external identity registries. */
     public static Resolution resolve(Entity entity) {
         if (entity == null) return Resolution.none();
         NpcIdentitySavedData identities = null;
@@ -35,7 +34,7 @@ public final class EntityDgrIdentityResolver {
             identities = NpcIdentitySavedData.get();
             selections = NominatorSavedData.get();
         } catch (RuntimeException ignored) {
-            // Offline/client probes have no server SavedData; legacy fallback remains safe.
+            // Offline/client callers have no server-owned identities.
         }
         return resolve(entity, identities, selections);
     }
@@ -82,14 +81,6 @@ public final class EntityDgrIdentityResolver {
         if (!resolved.isEmpty()) return new Resolution(
             primarySource == Source.NONE ? Source.NOMINATOR_GROUP : primarySource,
             new ArrayList<String>(resolved));
-        try {
-            String legacy = CustomNpcActorBinding.getActorId(entity);
-            if (!blank(legacy)) return Resolution.single(Source.LEGACY_CUSTOMNPC, legacy);
-        } catch (RuntimeException ignored) {
-            // Optional bridge failures must never abort Forge event dispatch.
-        } catch (LinkageError ignored) {
-            // Optional bridge failures must never abort Forge event dispatch.
-        }
         return Resolution.none();
     }
 
@@ -150,10 +141,6 @@ public final class EntityDgrIdentityResolver {
         private Resolution(Source source, List<String> actorIds) {
             this.source = source;
             this.actorIds = Collections.unmodifiableList(new ArrayList<String>(actorIds));
-        }
-
-        private static Resolution single(Source source, String actorId) {
-            return new Resolution(source, Collections.singletonList(actorId.trim()));
         }
 
         private static Resolution none() {

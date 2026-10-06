@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "resource_kind": "session",
+  "id": "Native0332:conversation",
+  "display_name": "NativeConversation",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "起始",
+        "ports": [
+          {
+            "port_id": "flow_out",
+            "display_name": "流程输出",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": "node_311203e4e0894920bc9b0c2c9189a743",
+        "type": "line",
+        "display_name": "台词",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "flow_out",
+            "display_name": "流程输出",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "pages": [
+            {
+              "page_id": "page_cb44660e2c2c49c6841e1ad55f3ad896",
+              "text": "\u001EDGR1\u001F[\"Hello \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"}]",
+              "voice_volume": 1,
+              "text_speed": 30,
+              "custom_text_speed": false
+            },
+            {
+              "page_id": "46a2dadc2c9a4aca81ccbfdc5cee19af",
+              "text": "\u001EDGR1\u001F[{\"type\":\"player_name\"},{\"type\":\"player_level\"},\"\\u4F60\\u597D\"]",
+              "voice_volume": 1,
+              "text_speed": 30,
+              "custom_text_speed": false
+            }
+          ],
+          "speaker_actor_id": null
+        }
+      },
+      {
+        "id": "node_b56adbff2ddf4c9aa469eaa493ba4df8",
+        "type": "line",
+        "display_name": "台词",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "flow_out",
+            "display_name": "流程输出",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "pages": [
+            {
+              "page_id": "page_684b1e0fbf1846e59f08bf75664c5721",
+              "text": "Native0334draftnihao",
+              "voice_volume": 1,
+              "text_speed": 30,
+              "custom_text_speed": false
+            },
+            {
+              "page_id": "055dd6f31dd14f0ea35b927dab10eaae",
+              "text": "\u001EDGR1\u001F[\"Hello \",{\"type\":\"player_level\"}]",
+              "voice_volume": 1,
+              "text_speed": 30,
+              "custom_text_speed": false
+            }
+          ],
+          "speaker_actor_id": null
+        }
+      },
+      {
+        "id": "native_end",
+        "type": "end",
+        "display_name": "验收结束",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "验收完成",
+          "port_id": "native_done"
+        }
+      },
+      {
+        "id": "choice_0334",
+        "type": "choice",
+        "display_name": "choice_0334",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "flow_in",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "choice_continue",
+            "display_name": "\u001EDGR1\u001F[\"Continue \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"},\"!\"]",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "options": [
+            {
+              "option_id": "option_0334",
+              "display_text": "\u001EDGR1\u001F[\"Continue \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"},\"!\"]",
+              "flow_port_id": "choice_continue"
+            }
+          ],
+          "prompt": "\u001EDGR1\u001F[\"Choose \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"}]"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "from_node_id": "start",
+        "from_port_id": "flow_out",
+        "to_node_id": "node_311203e4e0894920bc9b0c2c9189a743",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "node_311203e4e0894920bc9b0c2c9189a743",
+        "from_port_id": "flow_out",
+        "to_node_id": "node_b56adbff2ddf4c9aa469eaa493ba4df8",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "node_b56adbff2ddf4c9aa469eaa493ba4df8",
+        "from_port_id": "flow_out",
+        "to_node_id": "choice_0334",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "choice_0334",
+        "from_port_id": "choice_continue",
+        "to_node_id": "native_end",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      }
+    ]
+  }
+}

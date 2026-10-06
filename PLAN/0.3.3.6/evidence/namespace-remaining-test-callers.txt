@@ -1,0 +1,41 @@
+studio/src\DarkGreyRPG.Studio.Core\Identity\ResourceAddress.cs:82:/// <summary>Only structured current-format addresses; no string or Namespace fallback.</summary>
+studio/src\DarkGreyRPG.Studio.Core\Identity\CurrentProjectInventory.cs:7:/// <summary>Detached current-format content; no Namespace policy or migration side effects.</summary>
+studio/src\DarkGreyRPG.Studio.Tests\CanonicalTaskRewardTests.cs:36:    public void NamespaceRewritePreservesTaskDescriptionAndChangesOnlyRewardItemReferences()
+studio/src\DarkGreyRPG.Studio.Tests\CanonicalTaskRewardTests.cs:42:        var map = new ResourceRenameMap(); map.Add(DgrResourceKind.Item, "Author:apple", "Other:apple");
+studio/src\DarkGreyRPG.Studio.Tests\DynamicReferences0334Tests.cs:20:        var rename = new ResourceRenameMap();
+studio/src\DarkGreyRPG.Studio.Tests\DynamicReferences0334Tests.cs:32:        var rename = new ResourceRenameMap();
+studio/src\DarkGreyRPG.Studio.Tests\DynamicReferences0334Tests.cs:54:        var rename = new ResourceRenameMap(); rename.Add(DgrResourceKind.Item, "Old:coin", "New:coin");
+studio/src\DarkGreyRPG.Studio.Tests\ExternalReferencePackageExportTests.cs:57:        var path = Path.Combine(root, "actors", DarkGreyRPG.Studio.Core.Identity.DgrResourceId.RelativeJsonPath(id));
+studio/src\DarkGreyRPG.Studio.Tests\GraphResourceMetadataTests.cs:30:        var service = new NamespaceProjectMigrationService();
+studio/src\DarkGreyRPG.Studio.Tests\NamespacedResourceRepositoryTests.cs:11:public sealed class NamespacedResourceRepositoryTests
+studio/src\DarkGreyRPG.Studio.Tests\NamespacedResourceRepositoryTests.cs:59:    public void ActorItemAndStoryRepositoriesAcceptNamespacedIdsAndKeepRoots()
+studio/src\DarkGreyRPG.Studio.Tests\NamespacedResourceRepositoryTests.cs:65:        Assert.AreEqual(Path.GetFullPath(Path.Combine(project.Root, "actors", DgrResourceId.RelativeJsonPath(actor.Id))), actor.SourcePath);
+studio/src\DarkGreyRPG.Studio.Tests\NamespacedResourceRepositoryTests.cs:71:        Assert.AreEqual(Path.GetFullPath(Path.Combine(project.Root, "items", DgrResourceId.RelativeJsonPath("demo:key"))),
+studio/src\DarkGreyRPG.Studio.Tests\NamespacedResourceRepositoryTests.cs:77:        Assert.AreEqual(Path.GetFullPath(Path.Combine(project.Root, "stories", DgrResourceId.RelativeJsonPath("demo:quest"))),
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:34:    public void ImportSelectsOwnedResourcesPreservesNamespaceAndConvertsReferenceAtomically()
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:50:        Assert.IsTrue(NamespacePolicyStore.Load(consumer.Root)!.IsCustom("B:story"));
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:162:    public void ImportedCustomNamespaceSurvivesGlobalNamespaceChange()
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:167:        var policyPath = Path.Combine(consumer.Root, NamespacePolicyStore.RelativePath);
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:169:        File.WriteAllBytes(policyPath, NamespacePolicyStore.Encode(new NamespacePolicy("A")));
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:172:        var migration = new NamespaceProjectMigrationService();
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:174:        var policy = NamespacePolicyStore.Load(consumer.Root)!;
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:175:        Assert.AreEqual("A2", policy.GlobalNamespace);
+studio/src\DarkGreyRPG.Studio.Tests\OfflineImportedDeletionTests.cs:12:    public void ImportedStoryDeletesOwnedItemsAndGroupsAndOnlyItsNamespaceOverride()
+studio/src\DarkGreyRPG.Studio.Tests\OfflineImportedDeletionTests.cs:29:        var policyPath = Path.Combine(project.Root, NamespacePolicyStore.RelativePath);
+studio/src\DarkGreyRPG.Studio.Tests\OfflineImportedDeletionTests.cs:31:        File.WriteAllBytes(policyPath, NamespacePolicyStore.Encode(new NamespacePolicy(
+studio/src\DarkGreyRPG.Studio.Tests\OfflineImportedDeletionTests.cs:52:        var policy = NamespacePolicyStore.Load(project.Root)!;
+studio/src\DarkGreyRPG.Studio.Tests\OfflineImportedDeletionTests.cs:102:        var policyPath = Path.Combine(project.Root, NamespacePolicyStore.RelativePath);
+studio/src\DarkGreyRPG.Studio.Tests\OfflineImportedDeletionTests.cs:104:        File.WriteAllBytes(policyPath, NamespacePolicyStore.Encode(new NamespacePolicy(
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:48:        var migration = new NamespaceProjectMigrationService();
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:63:            var snapshot = NamespaceProjectMigrationService.ReadProject(root);
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:64:            Assert.IsTrue(NamespaceMigrationPlanner.Inventory(snapshot).Contains(new DgrResourceKey(kind, next)));
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:65:            Assert.IsFalse(NamespaceMigrationPlanner.Inventory(snapshot).Contains(new DgrResourceKey(kind, id)));
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:66:            Assert.IsTrue(NamespaceMigrationPlanner.Members(store.Memberships.Load("B:story").OwnedResources).Contains(new DgrResourceKey(kind, next)));
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:211:        Assert.IsTrue(NamespacePolicyStore.Load(fixture.A)!.IsCustom("B:story"));
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:349:                var policy = Path.Combine(directory, NamespacePolicyStore.RelativePath);
+studio/src\DarkGreyRPG.Studio.Wpf.Tests\OfflineShellWorkflowTests.cs:350:                File.WriteAllBytes(policy, NamespacePolicyStore.Encode(new NamespacePolicy(ns)));
+studio/src\DarkGreyRPG.Studio.Tests\ResourceRenameMapTests.cs:9:public sealed class ResourceRenameMapTests
+studio/src\DarkGreyRPG.Studio.Tests\ResourceRenameMapTests.cs:14:        var map = new ResourceRenameMap();
+studio/src\DarkGreyRPG.Studio.Tests\ResourceRenameMapTests.cs:40:        var map = new ResourceRenameMap();
+studio/src\DarkGreyRPG.Studio.Tests\ResourceRenameMapTests.cs:57:        var map = new ResourceRenameMap();
+studio/src\DarkGreyRPG.Studio.Tests\ResourceRenameMapTests.cs:68:        var map = new ResourceRenameMap();

@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.Identity;
 using System.Text;
 using System.Text.RegularExpressions;
 using DarkGreyRPG.Studio.Core.Validation;
@@ -13,14 +14,14 @@ public static partial class ItemValidator
         ArgumentNullException.ThrowIfNull(resource);
         var issues = new List<ValidationIssue>();
 
-        if (resource.SchemaVersion != ItemResource.CurrentSchemaVersion)
+        if (resource.SchemaVersion != ItemResource.CurrentSchemaVersion || resource.IdentityFormat != "story-uid-v1")
         {
             issues.Add(new("item.schema.unsupported", $"Item schema_version must be {ItemResource.CurrentSchemaVersion}.", nameof(ItemResource.SchemaVersion)));
         }
 
         if (resource is IndividualItemResource individual)
         {
-            ValidateId(individual.ItemId, "item_id", issues);
+            ValidateAddress(individual.ItemId, ResourceKind.Item, issues);
             if (!string.Equals(individual.Type, IndividualItemResource.ResourceType, StringComparison.Ordinal))
             {
                 issues.Add(new("item.type.unsupported", $"Item type must be '{IndividualItemResource.ResourceType}'.", nameof(ItemResource.Type)));
@@ -28,7 +29,7 @@ public static partial class ItemValidator
         }
         else if (resource is CollectiveItemResource collective)
         {
-            ValidateId(collective.GroupId, "group_id", issues);
+            ValidateAddress(collective.GroupId, ResourceKind.ItemGroup, issues);
             if (!string.Equals(collective.Type, CollectiveItemResource.ResourceType, StringComparison.Ordinal))
             {
                 issues.Add(new("item.type.unsupported", $"Item type must be '{CollectiveItemResource.ResourceType}'.", nameof(ItemResource.Type)));
@@ -67,6 +68,12 @@ public static partial class ItemValidator
         return issues;
     }
 
+    private static void ValidateAddress(string id, ResourceKind kind, ICollection<ValidationIssue> issues)
+    {
+        if (!ResourceAddress.IsKey(id) || ResourceAddress.FromKey(id).Kind != kind)
+            issues.Add(new("item.address.invalid", "A current address of the matching resource kind is required."));
+    }
+
     public static IReadOnlyList<ValidationIssue> ValidateId(string? id)
     {
         var issues = new List<ValidationIssue>();
@@ -103,9 +110,9 @@ public static partial class ItemValidator
         {
             issues.Add(new($"item.{field}.required", $"Item {field} is required.", field));
         }
-        else if (!DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsFullId(id) && !IdRegex().IsMatch(id))
+        else if (!ResourceAddress.IsKey(id) || ResourceAddress.FromKey(id).Kind is not (ResourceKind.Item or ResourceKind.ItemGroup))
         {
-            issues.Add(new($"item.{field}.invalid", $"Item {field} '{id}' is not valid. Expected {IdPattern}.", field));
+            issues.Add(new($"item.{field}.invalid", "A current Item or ItemGroup address is required.", field));
         }
     }
 

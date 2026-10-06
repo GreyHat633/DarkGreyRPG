@@ -1,0 +1,166 @@
+[
+  {
+    "measurement": {
+      "label": "0922-range-r16-xminus-inside",
+      "time": "2026-09-22T22:19:33",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.00047582591288519217,
+      "peak": 0.0008071660995483398,
+      "tone440": 0.0006283369269768838,
+      "tone880": 1.7636752480171833E-07
+    },
+    "teleportFeet": [
+      -135.9,
+      89.88,
+      200.5
+    ],
+    "clientPoint": [
+      -135.9,
+      91.5,
+      200.5
+    ],
+    "axis": "x",
+    "radius": 16,
+    "label": "0922-range-r16-xminus-inside",
+    "passed": true,
+    "side": "minus",
+    "inside": true
+  },
+  {
+    "measurement": {
+      "label": "0922-range-r16-xminus-outside",
+      "time": "2026-09-22T22:19:42",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "teleportFeet": [
+      -136.1,
+      89.88,
+      200.5
+    ],
+    "clientPoint": [
+      -136.1,
+      91.5,
+      200.5
+    ],
+    "axis": "x",
+    "radius": 16,
+    "label": "0922-range-r16-xminus-outside",
+    "passed": true,
+    "side": "minus",
+    "inside": false
+  },
+  {
+    "measurement": {
+      "label": "0922-range-r16-xplus-inside",
+      "time": "2026-09-22T22:19:51",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.045338408535337646,
+      "peak": 0.3195613622665405,
+      "tone440": 0.002288747324671771,
+      "tone880": 0.0008467325810442156
+    },
+    "teleportFeet": [
+      -103.1,
+      89.88,
+      200.5
+    ],
+    "clientPoint": [
+      -103.1,
+      91.5,
+      200.5
+    ],
+    "axis": "x",
+    "radius": 16,
+    "label": "0922-range-r16-xplus-inside",
+    "passed": true,
+    "side": "plus",
+    "inside": true
+  },
+  {
+    "measurement": {
+      "label": "0922-range-r16-xplus-outside",
+      "time": "2026-09-22T22:20:00",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "teleportFeet": [
+      -102.9,
+      89.88,
+      200.5
+    ],
+    "clientPoint": [
+      -102.9,
+      91.5,
+      200.5
+    ],
+    "axis": "x",
+    "radius": 16,
+    "label": "0922-range-r16-xplus-outside",
+    "passed": true,
+    "side": "plus",
+    "inside": false
+  }
+]

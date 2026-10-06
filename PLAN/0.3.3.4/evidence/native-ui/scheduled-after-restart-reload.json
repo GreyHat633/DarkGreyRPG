@@ -1,0 +1,61 @@
+{
+  "": {
+    "data": {
+      "schema_version": 6,
+      "terminal_routes": [
+        {
+          "key": "a5006605-027a-3524-8a14-1273915286b7��Native0332:acceptance��1790229238855��native_finished"
+        }
+      ],
+      "presentation_texts": {
+        "7": {
+          "values": {
+            "option:option_0334": "Continue Witness0334 level 7 count 8!",
+            "prompt": "Choose Witness0334 level 7 count 8"
+          },
+          "stamp": "a5006605-027a-3524-8a14-1273915286b7:choice_0334:4:0"
+        }
+      },
+      "sessions": {
+        "schema_version": 1,
+        "next_transport_id": 8,
+        "instances": []
+      },
+      "stories": {
+        "schema_version": 1,
+        "instances": [
+          {
+            "story_id": "Native0332:acceptance",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "791d6d9d29c06764d92415c8fa3ec8cde79688bbe6ec54e5fb2f6f9263c9db59",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "Native0332:acceptance",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+              "current_node_id": "native_terminate",
+              "repeat_policy": "repeatable",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+            "terminal_time": 1790229277501,
+            "activation_time": 1790229238855
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  }
+}

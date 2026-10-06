@@ -1,0 +1,46 @@
+[
+  {
+    "page_id": "integrated_short",
+    "text": "续作排序草稿 0923",
+    "voice_volume": 1,
+    "text_speed": 30,
+    "custom_text_speed": false
+  },
+  {
+    "page_id": "profile_page_0",
+    "text": "WWWWWWWWWWWWWWWWWWWWliWWWWWWWWWWWWWWWWWWWWliWWWWWWWWWWWWWWii",
+    "voice_volume": 1,
+    "text_speed": 30,
+    "custom_text_speed": false
+  },
+  {
+    "page_id": "profile_page_1",
+    "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "voice_volume": 1,
+    "text_speed": 30,
+    "custom_text_speed": false
+  },
+  {
+    "page_id": "profile_page_2",
+    "text": "UNICODE_BEGIN 你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r  你好，世界！Hello 123 §lWW§r   UNICODE_END",
+    "voice_volume": 1,
+    "text_speed": 30,
+    "custom_text_speed": false
+  },
+  {
+    "page_id": "audio_chirp_page",
+    "text": "CHIRP_BEGIN WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW CHIRP_END",
+    "voice_ref": "media/8cd8bac95dd6228cb535fe533b410a9372e4b1c1d7c3bde0b0538a4aecf74f19.ogg",
+    "voice_volume": 1,
+    "text_speed": 30,
+    "custom_text_speed": false
+  },
+  {
+    "page_id": "audio_next_page",
+    "text": "VOICE_880_NEXT_AUTHOR_PAGE",
+    "voice_ref": "media/c7c97cee4f97ccad252e103bbffb4871a9a8d1b033fe3c6caffbae99cfa396e7.ogg",
+    "voice_volume": 1,
+    "text_speed": 30,
+    "custom_text_speed": false
+  }
+]

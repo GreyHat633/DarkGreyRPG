@@ -13,6 +13,7 @@ import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.identity.NpcIdentitySavedData;
+import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.nominator.NominatorPermission;
 import darkgrey.rpg.nominator.NominatorResult;
@@ -120,48 +121,44 @@ public final class C2SNominatorEntityBind implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buffer) {
+        if (buffer.readInt() != 0x44475236)
+            throw new IllegalArgumentException("Unsupported Nominator identity protocol");
         entityId = buffer.readInt();
         entityUuid = new UUID(buffer.readLong(), buffer.readLong());
-        individualId = readString(buffer);
-        storyId = readString(buffer);
+        individualId = NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR);
+        storyId = NominatorIdentityCodec.story(buffer);
         groups = new ArrayList<String>();
         int count = buffer.readByte() & 255;
         if (count > 32) throw new IllegalArgumentException("Too many groups.");
-        for (int i = 0; i < count; i++) groups.add(readString(buffer));
-        if (buffer.readableBytes() > 0) transfer = buffer.readBoolean();
-        if (buffer.readableBytes() >= 8) expectedRevision = buffer.readLong();
-        else if (buffer.readableBytes() > 0) throw new IllegalArgumentException("Invalid nominator revision.");
-        if (buffer.isReadable()) {
-            typeScope = buffer.readBoolean();
-            if (typeScope) {
-                typeGroupId = readString(buffer);
-                if (!buffer.isReadable()) throw new IllegalArgumentException("Missing type group mode.");
-                addTypeGroup = buffer.readBoolean();
-            }
+        for (int i = 0; i < count; i++) groups.add(NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR));
+        transfer = buffer.readBoolean();
+        expectedRevision = buffer.readLong();
+        typeScope = buffer.readBoolean();
+        if (typeScope) {
+            typeGroupId = NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR);
+            addTypeGroup = buffer.readBoolean();
         }
-        if (buffer.isReadable()) {
-            packageId = readString(buffer);
-            if (buffer.readableBytes() < 8) throw new IllegalArgumentException("Missing nominator catalog revision.");
-            expectedCatalogRevision = buffer.readLong();
-        }
+        packageId = readString(buffer);
+        expectedCatalogRevision = buffer.readLong();
         if (buffer.isReadable()) throw new IllegalArgumentException("Trailing nominator bind data.");
     }
 
     @Override
     public void toBytes(ByteBuf buffer) {
+        buffer.writeInt(0x44475236);
         buffer.writeInt(entityId);
         buffer.writeLong(entityUuid.getMostSignificantBits());
         buffer.writeLong(entityUuid.getLeastSignificantBits());
-        writeString(buffer, individualId);
-        writeString(buffer, storyId);
+        NominatorIdentityCodec.write(buffer, individualId, ResourceAddress.Kind.ACTOR);
+        NominatorIdentityCodec.story(buffer, storyId);
         if (groups.size() > 32) throw new IllegalArgumentException("Too many groups.");
         buffer.writeByte(groups.size());
-        for (String group : groups) writeString(buffer, group);
+        for (String group : groups) NominatorIdentityCodec.write(buffer, group, ResourceAddress.Kind.ACTOR);
         buffer.writeBoolean(transfer);
         buffer.writeLong(expectedRevision);
         buffer.writeBoolean(typeScope);
         if (typeScope) {
-            writeString(buffer, typeGroupId);
+            NominatorIdentityCodec.write(buffer, typeGroupId, ResourceAddress.Kind.ACTOR);
             buffer.writeBoolean(addTypeGroup);
         }
         writeString(buffer, packageId);
@@ -214,10 +211,7 @@ public final class C2SNominatorEntityBind implements IMessage {
                             return;
                         }
                         darkgrey.rpg.nominator.NominatorCatalog.PackageChoice choice = darkgrey.rpg.nominator.NominatorCatalog
-                            .from(
-                                repository.getSnapshot(),
-                                DarkGreyRpg.getStoryPackageLoader()
-                                    .getPackages())
+                            .from(repository.getSnapshot(), DarkGreyRpg.getStoryPackageLoader())
                             .getPackageChoice(message.packageId);
                         if (choice == null || !choice.getStoryId()
                             .equals(message.storyId) || !withinPackage(choice, message.individualId, message.groups)) {

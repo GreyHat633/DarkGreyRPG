@@ -1,0 +1,27 @@
+{
+  "data_files_before": 2454,
+  "data_files_after": 2454,
+  "data_difference_count": 0,
+  "program_mismatches": 0,
+  "exe": {
+    "Length": 204288,
+    "version": "0.3.3.6"
+  },
+  "hashes": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "8E8BF253B16B1516616D890B8BD604A907CF9D607469E3785D4AB113A5B3B20C",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "8169BE9193C428D1073B2ED6F631B7DC190B0323B72A59FE2955DC8A708F4BA9",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "77E3673A48DDE35B5C3B7EB80D278AC8746D0A238690E5B8907E3F4846449ACD",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll"
+    }
+  ]
+}

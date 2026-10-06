@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 
@@ -115,7 +115,7 @@ public static class GraphNodeDefinitionRegistry
                 ]),
             Node("terminate", GraphScope.StoryFlow, "终止", "流程", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
-                properties: [StringProperty("port_id"), StringProperty("display_name")]),
+                properties: [StringProperty("port_id"), StringProperty("display_name"), NumberProperty("display_order", 0)]),
             Node("session", GraphScope.StoryFlow, "会话", "聚合", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
                 properties: [StringProperty("resource_id")]),
@@ -143,7 +143,7 @@ public static class GraphNodeDefinitionRegistry
                 properties: [StringProperty("port_id"), StringProperty("display_name")]),
             Node("logic_output", GraphScope.StoryFlow, "逻辑输出", "逻辑", kinds: logicOnly,
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0)],
-                properties: [StringProperty("port_id"), StringProperty("display_name")]),
+                properties: [StringProperty("port_id"), StringProperty("display_name"), NumberProperty("display_order", 0)]),
             Node("condition", GraphScope.StoryFlow, "条件判断", "逻辑", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), In("logic_in", "Logic In", GraphInterfaceKind.Logic, 1), Out("flow_true", "True", GraphInterfaceKind.Flow, 2), Out("flow_false", "False", GraphInterfaceKind.Flow, 3)]),
             Node(FlowJudgmentSchema.NodeType, GraphScope.StoryFlow, "流程判断", "逻辑", kinds: all,
@@ -153,7 +153,7 @@ public static class GraphNodeDefinitionRegistry
                     Out(FlowJudgmentSchema.ExecutedPortId, FlowJudgmentSchema.ExecutedDisplayName, GraphInterfaceKind.Logic, 2),
                 ]),
 
-            Node("title", GraphScope.StoryFlow, "标题", "流程", kinds: flowOnly,
+            Node("title", GraphScope.StoryFlow, "标题", "演出", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), Out("flow_out", "Flow Out", GraphInterfaceKind.Flow, 1)],
                 properties: [new GraphPropertyDefinition("main", JsonValueKind.String, true, Json("\"标题\"")), StringProperty("subtitle"),
                     NumberProperty("fade_in", 1), NumberProperty("stay", 3), NumberProperty("fade_out", 1)]),
@@ -185,7 +185,7 @@ public static class GraphNodeDefinitionRegistry
                 properties: [StringProperty("port_id"), StringProperty("display_name")]),
             Node("logic_output", GraphScope.Session, "逻辑输出", "逻辑", kinds: [GraphInterfaceKind.Logic],
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0)],
-                properties: [StringProperty("port_id"), StringProperty("display_name")]),
+                properties: [StringProperty("port_id"), StringProperty("display_name"), NumberProperty("display_order", 0)]),
             Node("condition", GraphScope.Session, "条件判断", "逻辑", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0), In("logic_in", "Logic In", GraphInterfaceKind.Logic, 1), Out("flow_true", "True", GraphInterfaceKind.Flow, 2), Out("flow_false", "False", GraphInterfaceKind.Flow, 3)]),
             Node(FlowJudgmentSchema.NodeType, GraphScope.Session, "流程判断", "逻辑", kinds: all,
@@ -194,9 +194,9 @@ public static class GraphNodeDefinitionRegistry
                     Out(FlowJudgmentSchema.FlowOutputPortId, "Flow Out", GraphInterfaceKind.Flow, 1),
                     Out(FlowJudgmentSchema.ExecutedPortId, FlowJudgmentSchema.ExecutedDisplayName, GraphInterfaceKind.Logic, 2),
                 ]),
-            Node("end", GraphScope.Session, "结束", "结束", kinds: flowOnly,
+            Node("end", GraphScope.Session, "结束", "流程", kinds: flowOnly,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
-                properties: [StringProperty("port_id"), StringProperty("display_name")]),
+                properties: [StringProperty("port_id"), StringProperty("display_name"), NumberProperty("display_order", 0)]),
             Node("legacy_jump", GraphScope.Session, "旧 Jump", "兼容", compatibilityOnly: true, kinds: all),
 
             Node("activate", GraphScope.Task, "激活", "兼容", compatibilityOnly: true, kinds: logicOnly,
@@ -219,7 +219,7 @@ public static class GraphNodeDefinitionRegistry
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0), Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 1)]),
             Node("logic_output", GraphScope.Task, "逻辑输出", "逻辑", kinds: [GraphInterfaceKind.Logic],
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0)],
-                properties: [StringProperty("port_id"), StringProperty("display_name")]),
+                properties: [StringProperty("port_id"), StringProperty("display_name"), NumberProperty("display_order", 0)]),
             Node("logic_input", GraphScope.Task, "逻辑输入", "逻辑", kinds: [GraphInterfaceKind.Logic],
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)],
                 properties: [StringProperty("port_id"), StringProperty("display_name"),
@@ -227,7 +227,9 @@ public static class GraphNodeDefinitionRegistry
             Node("reward", GraphScope.Task, "奖励", "任务", kinds: logicOnly,
                 ports: [In("logic_in", "Logic In", GraphInterfaceKind.Logic, 0)],
                 properties: [ArrayProperty(CanonicalTaskRewardSchema.EntriesProperty)]),
-            Node("settle", GraphScope.Task, "结算", "任务", required: true, unique: true, kinds: logicOnly),
+            Node("settle", GraphScope.Task, "结算", "流程", kinds: logicOnly,
+                ports: [In("logic_in", "结算条件", GraphInterfaceKind.Logic, 0)],
+                properties: [StringProperty("port_id"), StringProperty("display_name"), NumberProperty("display_order", 0)]),
         ];
     }
 }

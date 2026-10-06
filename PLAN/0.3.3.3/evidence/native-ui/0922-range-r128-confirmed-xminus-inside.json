@@ -1,0 +1,23 @@
+{
+  "label": "0922-range-r128-confirmed-xminus-inside",
+  "time": "2026-09-22T22:44:38",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.0004758237454488892,
+  "peak": 0.0008085966110229492,
+  "tone440": 0.0006283913812693136,
+  "tone880": 1.3480068936812203e-07
+}

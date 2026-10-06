@@ -28,6 +28,7 @@ public static class GraphScopePolicy
         // Scope validation deliberately composes generic validation, so a
         // caller gets both malformed graph and scope diagnostics in one pass.
         issues.AddRange(GraphValidator.Validate(nodeList, connectionList));
+        if (scope != GraphScope.Project) issues.AddRange(PublicOutputSchema.Validate(nodeList));
 
         var counts = nodeList
             .Where(node => node is not null)
@@ -139,6 +140,10 @@ public static class GraphScopePolicy
 
     public static bool CanDeleteNode(GraphScope scope, string? type, GraphDocument? graph = null)
     {
+        // Content append may temporarily retain several Starts. Keep the final
+        // required Start, but allow the author to repair the copied draft.
+        if (scope == GraphScope.StoryFlow && type == "start" && graph is not null)
+            return graph.Nodes.Count(node => node.Type == "start") > 1;
         if (!GraphNodeDefinitionRegistry.TryGet(scope, type, out var definition) || definition.NonDeletable)
             return false;
         return graph is null || !definition.Required;

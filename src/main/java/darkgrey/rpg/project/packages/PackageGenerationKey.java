@@ -52,8 +52,7 @@ public final class PackageGenerationKey {
     }
 
     private static String requireId(String value, String label) {
-        if (!darkgrey.rpg.identity.DgrResourceId.isCompatibleId(value))
-            throw new IllegalArgumentException(label + " is invalid.");
+        if (!darkgrey.rpg.identity.StoryUid.isValid(value)) throw new IllegalArgumentException(label + " is invalid.");
         return value;
     }
 }

@@ -99,7 +99,7 @@ public sealed class EmptyResourceInspectorTests
     }
 
     private static CanonicalGraphResourceEditorViewModel Editor(GraphScope scope, GraphNode node)
-        => new(new GraphResourceEnvelope(scope switch { GraphScope.Task => GraphResourceKind.Task, GraphScope.Session => GraphResourceKind.Session, _ => GraphResourceKind.Story }, "resource", "Resource", new GraphDocument([node])));
+        => new(new GraphResourceEnvelope(scope switch { GraphScope.Task => GraphResourceKind.Task, GraphScope.Session => GraphResourceKind.Session, _ => GraphResourceKind.Story }, CurrentIdentityFixture.GraphId(scope), "Resource", new GraphDocument([node])));
     private static CanonicalNodeInspectorViewModel Inspector(CanonicalGraphResourceEditorViewModel editor)
         => new(editor.Host, editor.Host.Nodes.Single());
 }

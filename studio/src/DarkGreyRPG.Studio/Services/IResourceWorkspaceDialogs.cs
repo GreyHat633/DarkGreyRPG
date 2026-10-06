@@ -12,6 +12,7 @@ public enum ResourceCreationMode
 
 public enum ResourcePickerMode
 {
+    CopyIntoStory,
     Reference,
     ImportAsNew,
 }

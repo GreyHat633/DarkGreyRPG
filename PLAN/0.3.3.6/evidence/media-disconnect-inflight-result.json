@@ -1,0 +1,12 @@
+{
+  "status": "PASS_REAL_INFLIGHT_DISCONNECT",
+  "request_observed_before_kick": true,
+  "after_disconnect": {
+    "downloading": 0,
+    "queued": 0,
+    "protected": 0,
+    "ready": 0
+  },
+  "unfinished_media_not_published": true,
+  "late_ready_events": false
+}

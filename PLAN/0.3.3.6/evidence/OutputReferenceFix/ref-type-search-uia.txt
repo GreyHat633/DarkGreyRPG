@@ -1,0 +1,56 @@
+ControlType.Text|引用资源|553,204,815,34
+ControlType.Text|展开故事文件夹，选择要引用的资源。|553,246,815,17
+ControlType.Edit|搜索引用资源|553,283,815,40
+ControlType.Button||1326,288,37,30
+ControlType.Pane|故事资源文件夹|553,338,815,457
+ControlType.List||553,338,815,579
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,338,815,115
+ControlType.Custom||564,349,793,83
+ControlType.Button|交互验证 (1)|564,349,793,37
+ControlType.Text|交互验证 (1)|574,356,741,22
+ControlType.List|故事内可引用资源|564,393,793,39
+ControlType.ListItem|剑|564,393,793,39
+ControlType.Text|剑|575,402,706,22
+ControlType.Text|[物品组]|1296,404,50,17
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,453,815,116
+ControlType.Custom||564,465,793,83
+ControlType.Button|组内甲 (1)|564,465,793,37
+ControlType.Text|组内甲 (1)|574,472,741,22
+ControlType.List|故事内可引用资源|564,509,793,39
+ControlType.ListItem|剑|564,509,793,39
+ControlType.Text|剑|575,518,706,22
+ControlType.Text|[物品组]|1296,520,50,17
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,569,815,116
+ControlType.Custom||564,581,793,83
+ControlType.Button|外部组甲 (1)|564,581,793,37
+ControlType.Text|外部组甲 (1)|574,588,741,22
+ControlType.List|故事内可引用资源|564,625,793,39
+ControlType.ListItem|外部剑|564,625,793,39
+ControlType.Text|外部剑|575,634,706,22
+ControlType.Text|[物品组]|1296,636,50,17
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,685,815,116
+ControlType.Custom||564,697,793,83
+ControlType.Button|外部组乙 (1)|564,697,793,37
+ControlType.Text|外部组乙 (1)|574,704,741,22
+ControlType.List|故事内可引用资源|564,741,793,39
+ControlType.ListItem|外部剑|564,741,793,39
+ControlType.Text|外部剑|575,750,706,22
+ControlType.Text|[物品组]|1296,752,50,17
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,801,815,116
+ControlType.Custom||564,813,793,83
+ControlType.Button|外部单故事 (1)|564,813,793,36
+ControlType.Text|外部单故事 (1)|574,820,741,22
+ControlType.List|故事内可引用资源|564,857,793,39
+ControlType.ListItem|外部剑|564,857,793,39
+ControlType.Text|外部剑|575,866,706,22
+ControlType.Text|[物品组]|1296,868,50,17
+ControlType.ScrollBar||1353,338,15,457
+ControlType.Button|Scroll Up|1353,339,15,15
+ControlType.Button||Empty
+ControlType.Thumb||1358,355,5,333
+ControlType.Button||1358,688,5,89
+ControlType.Button|Scroll Down|1353,779,15,15
+ControlType.Button|选择|1140,815,109,39
+ControlType.Text|选择|1177,823,35,22
+ControlType.Button|取消|1259,815,109,39
+ControlType.Text|取消|1296,823,35,22

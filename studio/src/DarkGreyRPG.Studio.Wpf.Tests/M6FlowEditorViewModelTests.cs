@@ -10,23 +10,13 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class M6FlowEditorViewModelTests
 {
     [TestMethod]
-    public void BuildsSavesAndReloadsCompleteMysteryBranchFlow()
+    public void DetachedBranchModelSerializesAndRestoresCompleteFlow()
     {
-        using var directory = new M6ProjectDirectory();
-        var service = new ProjectService();
-        var session = service.CreateProject(directory.Root, "m6_flow", "M6 Flow");
-        session.Stories.CreateStory("mystery", "王城迷案");
-        session.Stories.CreateStory("kingdom", "王国线");
-        session.Stories.CreateStory("empire", "帝国线");
-        service.CreateActorInStory("mystery", "detective", "侦探");
-        service.CreateDialogueInStory("mystery", "final_confrontation", "最终质询");
-        service.CreateQuestInStory("mystery", "evidence", "搜集证物");
-
         var editor = new StoryFlowEditorViewModel(
-            session.Stories.LoadStoryDocument("mystery"),
+            StoryDocument.CreateNew("ST-2345-6789-ABCD-EFGH"),
             ["detective"], ["final_confrontation"], ["evidence"], ["mystery", "kingdom", "empire"]);
 
-        editor.SelectOnly(editor.Nodes.Single());
+        editor.SelectAll();
         editor.DeleteSelectionCommand.Execute(null);
         editor.AddStoryStartCommand.Execute(null);
         editor.AddStartQuestCommand.Execute(null);
@@ -59,10 +49,7 @@ public sealed class M6FlowEditorViewModelTests
 
         Assert.IsTrue(editor.IsDirty);
         Assert.IsEmpty(editor.ValidationErrors);
-        session.Stories.SaveStory(editor.Document);
-        Assert.IsFalse(editor.IsDirty);
-
-        var restored = session.Stories.LoadStory("mystery");
+        var restored = StorySerializer.Deserialize(StorySerializer.Serialize(editor.Document.ToResource()));
         Assert.HasCount(8, restored.Nodes);
         Assert.HasCount(7, restored.Connections);
         Assert.AreEqual("start", restored.Entry);
@@ -74,22 +61,19 @@ public sealed class M6FlowEditorViewModelTests
     [TestMethod]
     public void SupportsCopyPasteDeleteAndUndoRedo()
     {
-        using var directory = new M6ProjectDirectory();
-        var service = new ProjectService();
-        var session = service.CreateProject(directory.Root, "m6_history", "M6 History");
-        session.Stories.CreateStory("flow", "Flow");
-        var editor = new StoryFlowEditorViewModel(session.Stories.LoadStoryDocument("flow"), [], [], [], ["flow"]);
+        var editor = new StoryFlowEditorViewModel(StoryDocument.CreateNew("ST-2345-6789-ABCD-EFGH"), [], [], [], ["ST-2345-6789-ABCD-EFGH"]);
+        var before = editor.Nodes.Count;
         editor.AddEndCommand.Execute(null);
         var added = editor.SelectedNode!;
         editor.CopyCommand.Execute(null);
         editor.PasteCommand.Execute(null);
-        Assert.HasCount(3, editor.Nodes);
+        Assert.HasCount(before + 2, editor.Nodes);
         editor.UndoCommand.Execute(null);
-        Assert.HasCount(2, editor.Nodes);
+        Assert.HasCount(before + 1, editor.Nodes);
         editor.RedoCommand.Execute(null);
-        Assert.HasCount(3, editor.Nodes);
+        Assert.HasCount(before + 2, editor.Nodes);
         editor.DeleteSelectionCommand.Execute(null);
-        Assert.HasCount(2, editor.Nodes);
+        Assert.HasCount(before + 1, editor.Nodes);
     }
 
     [TestMethod]
@@ -97,7 +81,7 @@ public sealed class M6FlowEditorViewModelTests
     {
         var resource = new StoryResource
         {
-            Id = "legacy", Entry = "condition",
+            Id = "ST-2345-6789-ABCD-EFGH", Entry = "condition",
             Nodes =
             [
                 new StoryNodeResource { Id = "condition", Type = "quest_state", Position = new() { X = 10, Y = 20 }, Properties = StringProperties(("quest_id", "quest"), ("state", "COMPLETED")) },
@@ -110,7 +94,7 @@ public sealed class M6FlowEditorViewModelTests
                 new StoryConnectionResource { From = "branch", Output = "true", To = "message" },
             ],
         };
-        var editor = new StoryFlowEditorViewModel(StoryDocument.FromResource(resource), [], [], ["quest"], ["legacy"]);
+        var editor = new StoryFlowEditorViewModel(StoryDocument.FromResource(resource), [], [], ["quest"], ["ST-2345-6789-ABCD-EFGH"]);
 
         editor.SelectOnly(editor.Nodes.Single(node => node.Id == "message"));
         editor.MoveSelection(new Dictionary<string, (double X, double Y)> { ["message"] = (480, 60) });
@@ -126,7 +110,7 @@ public sealed class M6FlowEditorViewModelTests
     [TestMethod]
     public void RenamingNodeUpdatesConnectionsAndConnectionDeleteCanBeUndone()
     {
-        var editor = new StoryFlowEditorViewModel(StoryDocument.CreateNew("rename"), [], [], [], ["rename"]);
+        var editor = new StoryFlowEditorViewModel(StoryDocument.CreateNew("ST-2345-6789-ABCD-EFGH"), [], [], [], ["ST-2345-6789-ABCD-EFGH"]);
         var start = editor.Nodes.Single(node => node.CanonicalType == "StoryStart");
         start.Id = "begin";
 

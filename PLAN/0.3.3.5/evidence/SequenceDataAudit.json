@@ -1,0 +1,14 @@
+{
+  "package_sha256": "38F0E37E50CE51289B05884D3BED79526DB04F8A68ECAC27E06E09DEDAA16935",
+  "screens": 15,
+  "images": 149,
+  "animation_steps": 131,
+  "persisted_condition_switches": 5,
+  "saved_session_matches_export": true,
+  "legacy_screen_format_absent_in_export": true,
+  "wpf_latest_per_test": {
+    "Passed": 629,
+    "NotExecuted": 1
+  },
+  "notes": "Full run 627 passed / 2 failed / 1 skipped; corrected affected group 83 passed. Aggregation does not claim one clean full run."
+}

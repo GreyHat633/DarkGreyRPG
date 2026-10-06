@@ -34,7 +34,6 @@ public sealed class GraphDynamicPortEditTests
             (GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
-            (GraphScope.Task, "settle", GraphPortDirection.Input, GraphInterfaceKind.Logic, 1),
         };
         Assert.HasCount(expected.Length, GraphDynamicPortPolicy.Roles);
         foreach (var item in expected)
@@ -96,7 +95,7 @@ public sealed class GraphDynamicPortEditTests
     [TestMethod]
     public void MoveDynamicPortShiftsContiguousRoleAsOneUndoUnit()
     {
-        var graph = new GraphDocument([new GraphNode("settle", "settle", "Settle", [
+        var graph = new GraphDocument([new GraphNode("settle", "and", "And", [
             new("first", "First", true, GraphInterfaceKind.Logic, 0),
             new("second", "Second", true, GraphInterfaceKind.Logic, 1),
             new("third", "Third", true, GraphInterfaceKind.Logic, 2)])]);
@@ -112,43 +111,23 @@ public sealed class GraphDynamicPortEditTests
     }
 
     [TestMethod]
-    public void TaskSettleDynamicPortRejectsPublicIdsAndDisplayNameCollisionsWithoutUndo()
+    public void TaskSettlementRejectsResultSlotsWithoutMutation()
     {
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
-        settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
-        var output = GraphNodeFactory.Create(GraphScope.Task, "logic_output", "output");
-        output.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("public_id");
-        output.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Public");
-        var graph = new GraphDocument([settle, output]);
-        var session = new GraphEditSession(graph, GraphScope.Task, dynamicPortIdSource: () => "public_id");
+        var node = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Task, "settle", "settle").Candidate!;
+        var graph = new GraphDocument([node]);
+        var session = new GraphEditSession(graph, GraphScope.Task);
         var before = graph.ToJson();
-
         Assert.IsFalse(session.AddDynamicPort("settle", "Another", GraphPortDirection.Input, GraphInterfaceKind.Logic));
-        Assert.AreEqual("graph.dynamic_port.port_id.unavailable", session.LastValidationIssues.Single().Code);
-        Assert.AreEqual(before, graph.ToJson());
-        Assert.AreEqual(0, session.UndoCount);
-
-        Assert.IsFalse(session.AddDynamicPort("settle", "Public", GraphPortDirection.Input, GraphInterfaceKind.Logic));
-        Assert.AreEqual("graph.dynamic_port.label.duplicate", session.LastValidationIssues.Single().Code);
-        Assert.AreEqual(before, graph.ToJson());
-        Assert.AreEqual(0, session.UndoCount);
-
-        Assert.IsFalse(session.RenamePortDisplayName("settle", "result", "Public"));
-        Assert.AreEqual("graph.dynamic_port.label.duplicate", session.LastValidationIssues.Single().Code);
-        Assert.AreEqual(before, graph.ToJson());
-        Assert.AreEqual(0, session.UndoCount);
-
-        Assert.IsFalse(session.SetNodeProperty("output", "display_name",
-            System.Text.Json.JsonSerializer.SerializeToElement("Result")));
-        Assert.AreEqual("graph.dynamic_port.label.duplicate", session.LastValidationIssues.Single().Code);
+        Assert.AreEqual("graph.dynamic_port.role.disallowed", session.LastValidationIssues.Single().Code);
+        Assert.IsFalse(session.RemoveDynamicPort("settle", "logic_in", true));
         Assert.AreEqual(before, graph.ToJson());
         Assert.AreEqual(0, session.UndoCount);
     }
 
     [TestMethod]
-    public void RemovingMiddleTaskSettleSlotReindexesAndUndoRestoresEdgesAndOrder()
+    public void RemovingMiddleLogicInputReindexesAndUndoRestoresEdgesAndOrder()
     {
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "and", "settle");
         settle.Ports.Add(new GraphPort("first", "First", true, GraphInterfaceKind.Logic, 0));
         settle.Ports.Add(new GraphPort("middle", "Middle", true, GraphInterfaceKind.Logic, 1));
         settle.Ports.Add(new GraphPort("last", "Last", true, GraphInterfaceKind.Logic, 2));
@@ -161,20 +140,20 @@ public sealed class GraphDynamicPortEditTests
         Assert.AreEqual("graph.dynamic_port.references.confirmation_required", session.LastValidationIssues.Single().Code);
         Assert.IsTrue(session.RemoveDynamicPort("settle", "middle", confirmReferencedRemoval: true));
         CollectionAssert.AreEqual(new[] { "first", "last" },
-            graph.Nodes.Single(node => node.Id == "settle").Ports.OrderBy(port => port.Order).Select(port => port.Id).ToArray());
+            graph.Nodes.Single(node => node.Id == "settle").Ports.Where(port => port.IsInput).OrderBy(port => port.Order).Select(port => port.Id).ToArray());
         CollectionAssert.AreEqual(new[] { 0, 1 },
-            graph.Nodes.Single(node => node.Id == "settle").Ports.OrderBy(port => port.Order).Select(port => port.Order).ToArray());
+            graph.Nodes.Single(node => node.Id == "settle").Ports.Where(port => port.IsInput).OrderBy(port => port.Order).Select(port => port.Order).ToArray());
         Assert.IsEmpty(graph.Connections);
         Assert.IsTrue(session.MoveDynamicPort("settle", "last", 0));
         CollectionAssert.AreEqual(new[] { "last", "first" },
-            graph.Nodes.Single(node => node.Id == "settle").Ports.OrderBy(port => port.Order).Select(port => port.Id).ToArray());
+            graph.Nodes.Single(node => node.Id == "settle").Ports.Where(port => port.IsInput).OrderBy(port => port.Order).Select(port => port.Id).ToArray());
 
         Assert.IsTrue(session.Undo());
         Assert.IsTrue(session.Undo());
         CollectionAssert.AreEqual(new[] { "first", "middle", "last" },
-            graph.Nodes.Single(node => node.Id == "settle").Ports.OrderBy(port => port.Order).Select(port => port.Id).ToArray());
+            graph.Nodes.Single(node => node.Id == "settle").Ports.Where(port => port.IsInput).OrderBy(port => port.Order).Select(port => port.Id).ToArray());
         CollectionAssert.AreEqual(new[] { 0, 1, 2 },
-            graph.Nodes.Single(node => node.Id == "settle").Ports.OrderBy(port => port.Order).Select(port => port.Order).ToArray());
+            graph.Nodes.Single(node => node.Id == "settle").Ports.Where(port => port.IsInput).OrderBy(port => port.Order).Select(port => port.Order).ToArray());
         Assert.HasCount(1, graph.Connections);
     }
 

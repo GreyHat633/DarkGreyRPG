@@ -1,0 +1,321 @@
+{
+  "time": 1789077880.5133877,
+  "request": {
+    "op": "audit0323"
+  },
+  "response": {
+    "screen": "darkgrey.rpg.client.gui.GuiNominatorEntity",
+    "width": 550,
+    "height": 370,
+    "player": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "position": [
+      0.0,
+      5.620000004768372,
+      0.0
+    ],
+    "inspect_enabled": "false",
+    "inspect_revision": "-1",
+    "inspect_entities": "{}",
+    "heldSlot": 0,
+    "tooltip": [
+      "铁剑 (#0267)",
+      "",
+      "§9攻击伤害 +6",
+      "Durability: 249 / 250"
+    ],
+    "heldTooltip": [
+      "指名器 (#4453)",
+      "右键生物：指名剧情角色",
+      "右键空气：指名背包物品",
+      "仅 OP 或 DGR 编辑权限可用"
+    ],
+    "audit": {
+      "npc": [
+        {
+          "npcId": "GreyHat_:TarvenBoss",
+          "host": {
+            "entityUuid": "663ad293-f4d8-43de-a936-c89a48ffe2cf",
+            "entityType": "customnpcs.CustomNpc",
+            "lastKnownDimension": 0
+          }
+        }
+      ],
+      "entities": [
+        {
+          "entityUuid": "663ad293-f4d8-43de-a936-c89a48ffe2cf",
+          "individualId": "GreyHat_:TarvenBoss",
+          "groupIds": [],
+          "storyId": "GreyHat_:test_story"
+        }
+      ],
+      "typeGroups": {},
+      "A": "663ad293-f4d8-43de-a936-c89a48ffe2cf",
+      "B": "f910fa1a-6627-45cd-974c-e21e6b9bd635",
+      "Adead": true,
+      "Aloaded": false,
+      "matches": {
+        "sword1Items": [],
+        "sword1Groups": [],
+        "sword2Items": [],
+        "sword2Groups": [],
+        "stickItems": [],
+        "stickGroups": []
+      },
+      "revision": 0,
+      "items": "{schema_version:1,groups:[],items:[],revision:0L,}",
+      "packages": [
+        {
+          "packageId": "GreyHat_:test_story",
+          "storyId": "GreyHat_:test_story",
+          "displayName": "测试故事",
+          "actorIds": [
+            "GreyHat_:TarvenBoss",
+            "GreyHat_:Slimes"
+          ],
+          "itemIds": [
+            "GreyHat_:CopperCoin"
+          ],
+          "itemGroupIds": []
+        },
+        {
+          "packageId": "Consumer:story",
+          "storyId": "Consumer:story",
+          "displayName": "Consumer",
+          "actorIds": [
+            "Consumer:guard",
+            "Provider:guard"
+          ],
+          "itemIds": [
+            "Provider:key"
+          ],
+          "itemGroupIds": [
+            "Provider:keys",
+            "Provider:tools"
+          ]
+        },
+        {
+          "packageId": "kill_slimes",
+          "storyId": "kill_slimes",
+          "displayName": "消灭史莱姆",
+          "actorIds": [
+            "tarven_boss",
+            "slimes"
+          ],
+          "itemIds": [
+            "copper_coin"
+          ],
+          "itemGroupIds": []
+        },
+        {
+          "packageId": "Provider:story",
+          "storyId": "Provider:story",
+          "displayName": "Provider",
+          "actorIds": [
+            "Provider:guard"
+          ],
+          "itemIds": [
+            "Provider:key"
+          ],
+          "itemGroupIds": [
+            "Provider:keys",
+            "Provider:tools"
+          ]
+        }
+      ],
+      "inventory": [
+        "1xitem.darkgrey_rpg.nominator@0",
+        "16xitem.stick@0",
+        "1xitem.swordIron@1",
+        "1xitem.swordIron@2",
+        "16xitem.diamond@0",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    "nominator": {
+      "pending": false,
+      "initialized": true,
+      "revision": 2,
+      "catalogRevision": 2,
+      "npcRevision": 2,
+      "message": "ID已释放，资源保留。",
+      "modal": "",
+      "left": {
+        "width": 135,
+        "height": 22,
+        "xPosition": 135,
+        "yPosition": 207,
+        "displayString": "ID释放",
+        "id": 90,
+        "enabled": true,
+        "visible": true,
+        "field_146123_n": false,
+        "packedFGColour": 0,
+        "zLevel": 0.0
+      },
+      "right": {
+        "width": 135,
+        "height": 22,
+        "xPosition": 280,
+        "yPosition": 207,
+        "displayString": "取消",
+        "id": 91,
+        "enabled": true,
+        "visible": true,
+        "field_146123_n": false,
+        "packedFGColour": 0,
+        "zLevel": 0.0
+      },
+      "search": "",
+      "x": 14,
+      "y": 39,
+      "width": 522,
+      "height": 232,
+      "split": 174,
+      "selectedPackage": "GreyHat_:test_story",
+      "packageScroll": 0,
+      "resourceScroll": 0,
+      "selected": {
+        "source": {
+          "packageId": "GreyHat_:test_story",
+          "storyId": "GreyHat_:test_story",
+          "displayName": "测试故事",
+          "actorIds": [
+            "GreyHat_:TarvenBoss",
+            "GreyHat_:Slimes"
+          ],
+          "itemIds": [
+            "GreyHat_:CopperCoin"
+          ],
+          "itemGroupIds": []
+        },
+        "id": "GreyHat_:TarvenBoss",
+        "name": "酒馆老板",
+        "type": "NPC"
+      },
+      "rows": [
+        {
+          "source": {
+            "packageId": "GreyHat_:test_story",
+            "storyId": "GreyHat_:test_story",
+            "displayName": "测试故事",
+            "actorIds": [
+              "GreyHat_:TarvenBoss",
+              "GreyHat_:Slimes"
+            ],
+            "itemIds": [
+              "GreyHat_:CopperCoin"
+            ],
+            "itemGroupIds": []
+          },
+          "id": "GreyHat_:Slimes",
+          "name": "史莱姆群",
+          "type": "Group"
+        },
+        {
+          "source": {
+            "packageId": "GreyHat_:test_story",
+            "storyId": "GreyHat_:test_story",
+            "displayName": "测试故事",
+            "actorIds": [
+              "GreyHat_:TarvenBoss",
+              "GreyHat_:Slimes"
+            ],
+            "itemIds": [
+              "GreyHat_:CopperCoin"
+            ],
+            "itemGroupIds": []
+          },
+          "id": "GreyHat_:TarvenBoss",
+          "name": "酒馆老板",
+          "type": "NPC"
+        }
+      ]
+    },
+    "taskRevision": 1,
+    "tasks": "{dimension:0,tasks:[],revision:1L,}",
+    "buttons": [
+      {
+        "width": 76,
+        "height": 20,
+        "xPosition": 14,
+        "yPosition": 277,
+        "displayString": "ID释放",
+        "id": 3,
+        "enabled": true,
+        "visible": true,
+        "field_146123_n": false,
+        "packedFGColour": 0,
+        "zLevel": 0.0
+      },
+      {
+        "width": 82,
+        "height": 20,
+        "xPosition": 454,
+        "yPosition": 277,
+        "displayString": "实体指名",
+        "id": 1,
+        "enabled": true,
+        "visible": true,
+        "field_146123_n": false,
+        "packedFGColour": 0,
+        "zLevel": 0.0
+      },
+      {
+        "width": 76,
+        "height": 20,
+        "xPosition": 14,
+        "yPosition": 329,
+        "displayString": "实体解绑",
+        "id": 2,
+        "enabled": true,
+        "visible": true,
+        "field_146123_n": false,
+        "packedFGColour": 0,
+        "zLevel": 0.0
+      },
+      {
+        "width": 76,
+        "height": 20,
+        "xPosition": 460,
+        "yPosition": 329,
+        "displayString": "关闭",
+        "id": 0,
+        "enabled": true,
+        "visible": true,
+        "field_146123_n": false,
+        "packedFGColour": 0,
+        "zLevel": 0.0
+      }
+    ]
+  }
+}

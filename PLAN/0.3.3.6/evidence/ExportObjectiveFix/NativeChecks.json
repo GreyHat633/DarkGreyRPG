@@ -1,0 +1,49 @@
+{
+  "SourceProjectFiles": 31,
+  "SourceDifferenceCount": 0,
+  "IsolatedDifferenceCount": 0,
+  "NativeExportPackages": [
+    {
+      "Name": "测试故事.dgrs",
+      "Bytes": 3946025,
+      "Sha256": "4b03cf0eb7acd0f867b9bd542fbf19b462303d30b9d606720695fcb40c894e3a"
+    },
+    {
+      "Name": "故事组（1）.dgrs.g",
+      "Bytes": 386546,
+      "Sha256": "8351d3e841d7ae870d287db41d5067a1f0a055bc864300187cffcd9fe8e307df"
+    }
+  ],
+  "ProcessNormalExit": true,
+  "Method": "UIA and Win32, actual project byte-identical isolated copy",
+  "InvalidTargetBlocked": true,
+  "InvalidTargetMessage": "故事“测试故事” → 任务“讨伐3只史莱姆” → 节点“目标”：请选择有效的击杀目标；未配置的目标不能接入任务逻辑。",
+  "ExistingArchivePreserved": true,
+  "DiagnosticFocusLabels": [
+    "故事“测试故事” → 任务“讨伐3只史莱姆” → 节点“目标”：请选择有效的击杀目标；未配置的目标不能接入任务逻辑。",
+    "任务",
+    "讨伐3只史莱姆  [任务]",
+    "啊  [任务]",
+    "啊  [任务]",
+    "讨伐3只史莱姆",
+    "目标",
+    "目标描述",
+    "讨伐三只史莱姆",
+    "玩家将在游戏中看到的目标文字。",
+    "目标类型",
+    "目标角色",
+    "目标",
+    "目标描述",
+    "找酒馆老板交任务",
+    "玩家将在游戏中看到的目标文字。",
+    "目标类型",
+    "目标角色",
+    "正数给予，负数扣除，零不操作。每个任务实例只发放一次。",
+    "目标",
+    "目标描述",
+    "玩家将在游戏中看到的目标文字。",
+    "目标类型",
+    "目标角色"
+  ],
+  "DiagnosticFixtureRestoredDifferenceCount": 0
+}

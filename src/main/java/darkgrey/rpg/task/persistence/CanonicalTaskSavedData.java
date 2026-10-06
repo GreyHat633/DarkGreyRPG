@@ -364,6 +364,22 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         if (playerUuid == null || event == null)
             throw new IllegalArgumentException("Player and Task event are required.");
         List<CanonicalTaskInstanceIdentity> candidates = index.query(playerUuid, event);
+        return dispatchCandidates(event, eventTime, candidates);
+    }
+
+    /** Actor arbitration dispatches to the captured placement, never newly unlocked tasks. */
+    public synchronized CanonicalTaskDispatchResult dispatchScoped(UUID playerUuid, String storyId, String placementId,
+        CanonicalTaskEvent event, long eventTime) {
+        requireBound();
+        if (playerUuid == null || event == null) throw new IllegalArgumentException("Player and Task event required.");
+        return dispatchCandidates(
+            event,
+            eventTime,
+            java.util.Collections.singletonList(new CanonicalTaskInstanceIdentity(playerUuid, storyId, placementId)));
+    }
+
+    private CanonicalTaskDispatchResult dispatchCandidates(CanonicalTaskEvent event, long eventTime,
+        List<CanonicalTaskInstanceIdentity> candidates) {
         int changed = 0;
         List<CanonicalTaskInstanceSnapshot> settled = new ArrayList<CanonicalTaskInstanceSnapshot>();
         Map<CanonicalTaskInstanceIdentity, String> results = new LinkedHashMap<CanonicalTaskInstanceIdentity, String>();

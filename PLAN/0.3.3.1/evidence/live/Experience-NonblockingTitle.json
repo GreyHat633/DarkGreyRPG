@@ -1,0 +1,351 @@
+{
+  "screen": "world",
+  "server_result": "interact entity 136942 => false",
+  "fixture_entity_ids": [
+    136942,
+    136943
+  ],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    -805.5,
+    5.620000004768372,
+    -1609.5
+  ],
+  "inventory": [],
+  "task_client_visible_text": "",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": -1,
+    "musicRevision": -1,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "sources": {
+      "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb": {
+        "sourcename": "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 24498.682
+      },
+      "98b526c8-7b48-407c-89a1-a295eb249543": {
+        "sourcename": "98b526c8-7b48-407c-89a1-a295eb249543",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 259.97733
+      },
+      "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d": {
+        "sourcename": "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "ec66e3d3-a1bd-46c5-920e-33c891ad77eb": {
+        "sourcename": "ec66e3d3-a1bd-46c5-920e-33c891ad77eb",
+        "toStream": false,
+        "sourceVolume": 0.4,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 85.71429
+      },
+      "94679000-30be-471f-8705-25c786cd04bf": {
+        "sourcename": "94679000-30be-471f-8705-25c786cd04bf",
+        "toStream": false,
+        "sourceVolume": 0.25,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 119.977325
+      }
+    },
+    "textures_ready": [
+      "media/3bd754dd71da64a2d17ab14406276ed54283535fd23333c7431aa4380809e094.png",
+      "media/aaccb768908bceb78d2c239a1e0df424c6bd61afc9fe20509d7cc33ae26faaf1.png",
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+    ],
+    "downloads": {
+      "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3bd754dd71da64a2d17ab14406276ed54283535fd23333c7431aa4380809e094.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/aaccb768908bceb78d2c239a1e0df424c6bd61afc9fe20509d7cc33ae26faaf1.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+        "ready": true,
+        "offset": 0
+      }
+    },
+    "master_level": 1.0,
+    "players_level": 1.0,
+    "music_level": 1.0,
+    "cached_packages": 2,
+    "preloading_packages": 0,
+    "queued_packages": 0,
+    "package_entries": [
+      {
+        "id": "local:ExperiencePlan0916|GreyHat_:test_story",
+        "ready": false,
+        "running": false,
+        "refs": 4
+      },
+      {
+        "id": "local:ExperiencePlan0916B|GreyHat_:test_story",
+        "ready": true,
+        "running": true,
+        "refs": 6
+      }
+    ],
+    "cache_hits": 4,
+    "local_hits": 2,
+    "network_requests": 0,
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      -805.5,
+      4.0,
+      -1609.5
+    ],
+    "tick": 1001,
+    "tick_p95_ms": 21.8947,
+    "tick_max_ms": 35.8158,
+    "heap": {
+      "used": 339025408,
+      "free": 2542461440,
+      "total": 2881486848,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 1,
+      "task_presentation_generation": 1
+    },
+    "inventory": [],
+    "tasks": [
+      {
+        "story_id": "GreyHat_:test_story",
+        "placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "task_id": "GreyHat_:KillSlimes",
+        "status": "ACTIVE",
+        "activation_time": 1789531850988,
+        "runtime": {
+          "status": "ACTIVE",
+          "progress": {
+            "node_cfc0a454a1ef4168890d4ce6fbb3e803": 0,
+            "node_4feb6ff8c4944e078f9914cd808c9f17": 0
+          },
+          "objective_statuses": {
+            "node_cfc0a454a1ef4168890d4ce6fbb3e803": "ACTIVE",
+            "node_4feb6ff8c4944e078f9914cd808c9f17": "INACTIVE"
+          }
+        }
+      }
+    ],
+    "journal": [
+      {
+        "task_id": "GreyHat_:KillSlimes",
+        "story_id": "GreyHat_:test_story",
+        "placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "title": "击杀3只史莱姆",
+        "status": "ACTIVE",
+        "objectives": [
+          {
+            "id": "node_cfc0a454a1ef4168890d4ce6fbb3e803",
+            "type": "kill_entity",
+            "description": "消灭史莱姆",
+            "status": "ACTIVE",
+            "current": 0,
+            "required": 3
+          }
+        ]
+      }
+    ],
+    "entities": [
+      {
+        "entity_id": 136942,
+        "uuid": "722acb2a-8fa2-4339-b8fa-3ed3f9e99004",
+        "name": "Koshi Tatsu",
+        "dimension": 0,
+        "pos": [
+          -803.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      },
+      {
+        "entity_id": 136943,
+        "uuid": "081b1245-86e3-4b5e-9d87-7e766ad27c1b",
+        "name": "Barbara",
+        "dimension": 0,
+        "pos": [
+          -802.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      }
+    ],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": -1,
+      "musicRevision": -1,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 0.0,
+      "engine_ready": true,
+      "playing": {
+        "dgr_session_voice": false,
+        "dgr_session_music_a": false,
+        "dgr_session_music_b": false
+      },
+      "sources": {
+        "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb": {
+          "sourcename": "d9c7b4cd-ab2e-4fc6-a41b-381708ccd2eb",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 24498.682
+        },
+        "98b526c8-7b48-407c-89a1-a295eb249543": {
+          "sourcename": "98b526c8-7b48-407c-89a1-a295eb249543",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 259.97733
+        },
+        "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d": {
+          "sourcename": "b7ea404b-b91b-4f71-91ba-e2f7b2155a4d",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "ec66e3d3-a1bd-46c5-920e-33c891ad77eb": {
+          "sourcename": "ec66e3d3-a1bd-46c5-920e-33c891ad77eb",
+          "toStream": false,
+          "sourceVolume": 0.4,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 85.71429
+        },
+        "94679000-30be-471f-8705-25c786cd04bf": {
+          "sourcename": "94679000-30be-471f-8705-25c786cd04bf",
+          "toStream": false,
+          "sourceVolume": 0.25,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 119.977325
+        }
+      },
+      "textures_ready": [
+        "media/3bd754dd71da64a2d17ab14406276ed54283535fd23333c7431aa4380809e094.png",
+        "media/aaccb768908bceb78d2c239a1e0df424c6bd61afc9fe20509d7cc33ae26faaf1.png",
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+      ],
+      "downloads": {
+        "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/3bd754dd71da64a2d17ab14406276ed54283535fd23333c7431aa4380809e094.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/aaccb768908bceb78d2c239a1e0df424c6bd61afc9fe20509d7cc33ae26faaf1.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+          "ready": true,
+          "offset": 0
+        }
+      },
+      "master_level": 1.0,
+      "players_level": 1.0,
+      "music_level": 1.0,
+      "cached_packages": 2,
+      "preloading_packages": 0,
+      "queued_packages": 0,
+      "package_entries": [
+        {
+          "id": "local:ExperiencePlan0916|GreyHat_:test_story",
+          "ready": false,
+          "running": false,
+          "refs": 4
+        },
+        {
+          "id": "local:ExperiencePlan0916B|GreyHat_:test_story",
+          "ready": true,
+          "running": true,
+          "refs": 6
+        }
+      ],
+      "cache_hits": 4,
+      "local_hits": 2,
+      "network_requests": 0,
+      "worker_queue": 0,
+      "worker_active": 0,
+      "in_flight": 0
+    },
+    "server_result": "interact entity 136942 => false"
+  }
+}

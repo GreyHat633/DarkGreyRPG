@@ -1,0 +1,33 @@
+ControlType.Text|引用资源|553,204,815,34
+ControlType.Text|展开故事文件夹，选择要引用的资源。|553,246,815,17
+ControlType.Edit|搜索引用资源|553,283,815,40
+ControlType.Button||1326,288,37,30
+ControlType.Pane|故事资源文件夹|553,338,815,457
+ControlType.List||553,338,815,457
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,338,815,312
+ControlType.Custom||564,349,793,280
+ControlType.Button|外部单故事 (6)|564,349,793,37
+ControlType.Text|外部单故事 (6)|574,356,741,22
+ControlType.List|故事内可引用资源|564,393,793,236
+ControlType.ListItem|外部群|564,393,793,39
+ControlType.Text|外部群|575,402,706,22
+ControlType.Text|[角色组]|1296,404,50,17
+ControlType.ListItem|外部老板|564,432,793,40
+ControlType.Text|外部老板|575,441,720,22
+ControlType.Text|[角色]|1310,443,36,18
+ControlType.ListItem|外部铜币|564,472,793,39
+ControlType.Text|外部铜币|575,480,720,23
+ControlType.Text|[物品]|1310,483,36,17
+ControlType.ListItem|外部剑|564,511,793,40
+ControlType.Text|外部剑|575,520,706,22
+ControlType.Text|[物品组]|1296,522,50,18
+ControlType.ListItem|外部会话|564,551,793,39
+ControlType.Text|外部会话|575,559,720,22
+ControlType.Text|[会话]|1310,562,36,17
+ControlType.ListItem|外部任务|564,590,793,39
+ControlType.Text|外部任务|575,599,720,22
+ControlType.Text|[任务]|1310,601,36,17
+ControlType.Button|选择|1140,815,109,39
+ControlType.Text|选择|1177,823,35,22
+ControlType.Button|取消|1259,815,109,39
+ControlType.Text|取消|1296,823,35,22

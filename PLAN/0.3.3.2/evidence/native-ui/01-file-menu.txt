@@ -1,0 +1,65 @@
+﻿WINDOW:  1567,986,320,53
+WINDOW: DarkGrey RPG Studio 0.3.3.2 229,44,1463,942
+ControlType.Window id= name= enabled=True rect=236,139,263,338
+ControlType.MenuItem id= name=新建项目… enabled=True rect=252,144,231,42
+ControlType.Text id= name=新建项目… enabled=True rect=268,154,87,22
+ControlType.MenuItem id= name=打开项目… enabled=True rect=252,186,231,42
+ControlType.Text id= name=打开项目… enabled=True rect=268,196,87,22
+ControlType.MenuItem id= name=最近项目 enabled=True rect=252,228,231,42
+ControlType.Text id= name=最近项目 enabled=True rect=268,238,87,22
+ControlType.Separator id= name= enabled=False rect=252,271,231,4
+ControlType.MenuItem id= name=保存 enabled=False rect=252,276,231,42
+ControlType.Text id= name=保存 enabled=False rect=268,286,87,22
+ControlType.MenuItem id= name=保存全部 enabled=False rect=252,318,231,42
+ControlType.Text id= name=保存全部 enabled=False rect=268,328,87,22
+ControlType.MenuItem id= name=项目文件夹 enabled=False rect=252,360,231,41
+ControlType.Text id= name=项目文件夹 enabled=False rect=268,369,87,22
+ControlType.Separator id= name= enabled=False rect=252,403,231,3
+ControlType.MenuItem id= name=退出 enabled=True rect=252,408,231,41
+ControlType.Text id= name=退出 enabled=True rect=268,418,87,22
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.MenuItem id= name=新建项目… enabled=True rect=252,144,231,42
+ControlType.Text id= name=新建项目… enabled=True rect=268,154,87,22
+ControlType.MenuItem id= name=打开项目… enabled=True rect=252,186,231,42
+ControlType.Text id= name=打开项目… enabled=True rect=268,196,87,22
+ControlType.MenuItem id= name=最近项目 enabled=True rect=252,228,231,42
+ControlType.Text id= name=最近项目 enabled=True rect=268,238,87,22
+ControlType.Separator id= name= enabled=False rect=252,271,231,4
+ControlType.MenuItem id= name=保存 enabled=False rect=252,276,231,42
+ControlType.Text id= name=保存 enabled=False rect=268,286,87,22
+ControlType.MenuItem id= name=保存全部 enabled=False rect=252,318,231,42
+ControlType.Text id= name=保存全部 enabled=False rect=268,328,87,22
+ControlType.MenuItem id= name=项目文件夹 enabled=False rect=252,360,231,41
+ControlType.Text id= name=项目文件夹 enabled=False rect=268,369,87,22
+ControlType.Separator id= name= enabled=False rect=252,403,231,3
+ControlType.MenuItem id= name=退出 enabled=True rect=252,408,231,41
+ControlType.Text id= name=退出 enabled=True rect=268,418,87,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=就绪 enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,62,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=369,891,80,42
+ControlType.Text id= name=调试器 enabled=True rect=383,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=451,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=465,901,85,22
+ControlType.Button id= name=新建故事 enabled=False rect=505,160,39,40
+ControlType.Text id= name=项目首页 enabled=True rect=255,167,250,26
+ControlType.Button id= name=引用故事包 enabled=True rect=253,820,291,49
+ControlType.Pane id= name= enabled=True rect=Empty
+ControlType.List id= name=引用故事包区域 enabled=True rect=Empty
+ControlType.Edit id=StorySearchBox name=搜索故事 enabled=True rect=253,212,291,40
+ControlType.Text id= name=请先从“文件”菜单新建或打开项目。 enabled=True rect=253,522,273,22
+ControlType.Thumb id=ResourceBrowserSplitter name= enabled=True rect=560,145,10,739
+ControlType.Text id= name=DarkGrey RPG Studio enabled=True rect=952,477,346,41
+ControlType.Text id= name=从“文件”菜单新建或打开项目。 enabled=True rect=952,530,346,22

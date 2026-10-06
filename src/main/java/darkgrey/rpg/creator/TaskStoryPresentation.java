@@ -36,21 +36,7 @@ public final class TaskStoryPresentation {
 
     public static void recover(NBTTagCompound row) {
         String story = row.getString("story");
-        if (story.isEmpty()) {
-            String id = row.getString("id");
-            if (id.startsWith("history:")) {
-                try {
-                    int start = 8;
-                    for (int part = 0; part < 2; part++) {
-                        int colon = id.indexOf(':', start);
-                        int size = Integer.parseInt(id.substring(start, colon));
-                        String value = id.substring(colon + 1, colon + 1 + size);
-                        if (part == 1) story = value;
-                        start = colon + 1 + size;
-                    }
-                } catch (RuntimeException invalid) { /* Unresolvable legacy records stay visible. */ }
-            }
-        }
+        darkgrey.rpg.identity.StoryUid.parse(story);
         if (row.getString("story_title")
             .isEmpty()) fill(row, story);
         else if (!story.isEmpty()) row.setString("story", story);

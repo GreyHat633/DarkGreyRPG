@@ -1,0 +1,390 @@
+{
+  "darkgrey_rpg_canonical_sessions.dat": {
+    "data": {
+      "schema_version": 7,
+      "identity_format": "story-uid-v1",
+      "terminal_routes": [
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-2345-6789-ABCD-EFGH\u00001791115089677\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-8Q7T-6EWT-PEPM-WYKS\u00001791129445732\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-AAAA-BBBB-CCCC-DDDD\u00001791124932764\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-JKLM-NPQR-STUV-WXYZ\u00001791115226110\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-JKLM-NPQR-STUV-WXYZ\u00001791115309893\u0000finished"
+        },
+        {
+          "key": "d7f2f16c-f628-31dd-96ea-e7321250c55d\u0000ST-2345-6789-ABCD-EFGH\u00001791127239555\u0000finished"
+        },
+        {
+          "key": "d7f2f16c-f628-31dd-96ea-e7321250c55d\u0000ST-YGZK-MYX4-UKGL-68UW\u00001791129445781\u0000finished"
+        }
+      ],
+      "sessions": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "next_transport_id": 9,
+        "instances": [
+          {
+            "activation_logic": 0,
+            "session_resource_id": {
+              "local_id": "shared",
+              "kind": "session",
+              "story_uid": "ST-2345-6789-ABCD-EFGH"
+            },
+            "story_id": "ST-2345-6789-ABCD-EFGH",
+            "transport_id": 8,
+            "public_logic_outputs": [],
+            "executed_flow_judgment_node_ids": [],
+            "player_uuid": "cfe57a53-ce21-360a-9d46-11da60d98f71",
+            "aggregate_placement_id": "session_placement",
+            "presentation": "{\"revision\":0,\"music_revision\":0,\"media_ref\":null,\"loop\":false,\"fade_in\":0.0,\"fade_out\":0.0,\"volume\":1.0,\"layers\":[],\"screen_revision\":0,\"transition\":{\"type\":\"none\",\"direction\":\"left\",\"duration\":0.0}}",
+            "line_page_index": 0,
+            "selected_option_ids": [],
+            "waiting_condition": 0,
+            "external_logic_inputs": [],
+            "internal_logic_values": [],
+            "selected_choice_node_ids": [],
+            "line_epoch": 1,
+            "current_node_id": "session_line",
+            "status": "ACTIVE",
+            "latest_choice_selections": []
+          }
+        ]
+      },
+      "stories": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "instances": [
+          {
+            "story_id": "ST-2345-6789-ABCD-EFGH",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "14bbec4a30e1de37d85ab72439f8d7eb016ffc6a305a58fffb8c7137edf5f75d",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-2345-6789-ABCD-EFGH",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "story_done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791115158955,
+            "activation_time": 1791115089677
+          },
+          {
+            "story_id": "ST-8Q7T-6EWT-PEPM-WYKS",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "b3905e0698bc5e8c5e47d2d85070836d43a6633ef9086d4a0741de1e66e6600f",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-8Q7T-6EWT-PEPM-WYKS",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "story_done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791132154444,
+            "activation_time": 1791129445732
+          },
+          {
+            "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "219ee168a925f3987c08b3587a08ba20a0502fb89486b33811f7ad56bac75b0e",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-AAAA-BBBB-CCCC-DDDD",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791124969787,
+            "activation_time": 1791124932764
+          },
+          {
+            "story_id": "ST-JKLM-NPQR-STUV-WXYZ",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "211806ea8819789501ce7024a065096eef77d233bc434574a45d3c17ec5656ae",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-JKLM-NPQR-STUV-WXYZ",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "story_done",
+              "repeat_policy": "repeatable",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791115309893,
+            "activation_time": 1791115309893
+          },
+          {
+            "story_id": "ST-2345-6789-ABCD-EFGH",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "14bbec4a30e1de37d85ab72439f8d7eb016ffc6a305a58fffb8c7137edf5f75d",
+              "wait_resource_id": {
+                "local_id": "shared",
+                "kind": "session",
+                "story_uid": "ST-2345-6789-ABCD-EFGH"
+              },
+              "wait_kind": "SESSION",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-2345-6789-ABCD-EFGH",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "session_placement",
+              "repeat_policy": "once",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "cfe57a53-ce21-360a-9d46-11da60d98f71",
+            "terminal_time": 0,
+            "activation_time": 1791132106930
+          },
+          {
+            "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "219ee168a925f3987c08b3587a08ba20a0502fb89486b33811f7ad56bac75b0e",
+              "wait_resource_id": {
+                "local_id": "journey",
+                "kind": "task",
+                "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+              },
+              "wait_kind": "TASK",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-AAAA-BBBB-CCCC-DDDD",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "task_placement",
+              "repeat_policy": "once",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "cfe57a53-ce21-360a-9d46-11da60d98f71",
+            "terminal_time": 0,
+            "activation_time": 1791132106935
+          },
+          {
+            "story_id": "ST-2345-6789-ABCD-EFGH",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "14bbec4a30e1de37d85ab72439f8d7eb016ffc6a305a58fffb8c7137edf5f75d",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-2345-6789-ABCD-EFGH",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "story_done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "d7f2f16c-f628-31dd-96ea-e7321250c55d",
+            "terminal_time": 1791127756294,
+            "activation_time": 1791127239555
+          },
+          {
+            "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "219ee168a925f3987c08b3587a08ba20a0502fb89486b33811f7ad56bac75b0e",
+              "wait_resource_id": {
+                "local_id": "journey",
+                "kind": "task",
+                "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+              },
+              "wait_kind": "TASK",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-AAAA-BBBB-CCCC-DDDD",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "task_placement",
+              "repeat_policy": "once",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "d7f2f16c-f628-31dd-96ea-e7321250c55d",
+            "terminal_time": 0,
+            "activation_time": 1791127239558
+          },
+          {
+            "story_id": "ST-YGZK-MYX4-UKGL-68UW",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "b996676aa5887ac023ff73e296ca0d05da78d5729c7662dc0b2c82092f16f8f9",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-YGZK-MYX4-UKGL-68UW",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "d7f2f16c-f628-31dd-96ea-e7321250c55d",
+            "terminal_time": 1791132158981,
+            "activation_time": 1791129445781
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  },
+  "darkgrey_rpg_story_completion_history.dat": {
+    "data": {
+      "schema_version": 1,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "terminal": 1791115158955,
+          "activation": 1791115089677,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-2345-6789-ABCD-EFGH",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791132154444,
+          "activation": 1791129445732,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-8Q7T-6EWT-PEPM-WYKS",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791127331161,
+          "activation": 1791126912057,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-9427-YJUA-UKY9-34P6",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791124969787,
+          "activation": 1791124932764,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791115309893,
+          "activation": 1791115309893,
+          "completed_count": 2,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791127756294,
+          "activation": 1791127239555,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-2345-6789-ABCD-EFGH",
+          "player": "d7f2f16c-f628-31dd-96ea-e7321250c55d",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791132158981,
+          "activation": 1791129445781,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "player": "d7f2f16c-f628-31dd-96ea-e7321250c55d",
+          "status": "TERMINATED"
+        }
+      ]
+    }
+  }
+}

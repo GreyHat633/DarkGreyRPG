@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -22,7 +22,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void ClipboardUsesWorkspacePropertyEvenWithShellDataContext()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var session = workspace.SessionItems.Single();
         Assert.IsTrue(session.Editor.Host.AddNode(GraphNodeFactory.Create(GraphScope.Session, "line", "copy-line")));
         var view = Arrange(workspace);
@@ -40,7 +40,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void ThreeColumnViewBindsStoryHomeGraphByDefault()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
 
         Assert.AreSame(workspace.ActiveGraphHost, view.GraphView.Host);
@@ -50,25 +50,28 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
-    public void InstantFolderTemplateKeepsEveryFolderHeaderVisible()
+    public void DirectoryFolderTemplateKeepsEveryHeaderVisibleAndUsesAnimatedBody()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
         var visibleHeaders = Descendants<ToggleButton>(view)
             .Where(toggle => toggle.Name == "HeaderToggle")
             .Select(toggle => toggle.Content)
-            .OfType<TextBlock>()
+            .OfType<FrameworkElement>()
+            .SelectMany(header => Descendants<TextBlock>(header))
             .Select(text => text.Text)
             .ToArray();
 
         foreach (var expected in new[] { "角色", "物品", "会话", "任务" })
             CollectionAssert.Contains(visibleHeaders, expected);
+        Assert.IsTrue(Descendants<Expander>(view).Take(4)
+            .All(folder => Descendants<AnimatedLinePageBody>(folder).Any()));
     }
 
     [STATestMethod]
     public void ActorSelectionIsInspectorOnlyAndSessionActivationChangesGraphHost()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
         var storyHost = view.GraphView.Host;
 
@@ -86,7 +89,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void StorySessionAndTaskRestoreIndependentTransientViewports()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
         view.GraphView.ViewportController.PanX = 10;
         view.GraphView.ViewportController.PanY = 20;
@@ -115,7 +118,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void GraphNodeSelectionRoutesNodeInspectorAndClearRestoresActiveResource()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var session = workspace.SessionItems.Single();
         Assert.IsTrue(session.Editor.Host.AddNode(GraphNodeFactory.Create(GraphScope.Session, "line", "line-1")));
         var view = Arrange(workspace);
@@ -134,19 +137,32 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void ResourceSelectionClearsVisualNodeSoSameNodeCanRestoreInspector()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
 
-        Assert.IsTrue(view.GraphView.SelectNode("story-a"));
+        Assert.IsTrue(view.GraphView.SelectNode("ST-2345-6789-ABCD-EFGH"));
         Assert.IsNotNull(workspace.NodeInspector);
 
         Assert.IsTrue(view.SelectResourceItem(workspace.ActorItems.Single()));
         Assert.IsNull(view.GraphView.SelectedNode);
         Assert.AreSame(workspace.ActorItems.Single(), workspace.InspectorSelection);
 
-        Assert.IsTrue(view.GraphView.SelectNode("story-a"));
+        Assert.IsTrue(view.GraphView.SelectNode("ST-2345-6789-ABCD-EFGH"));
         Assert.IsNotNull(workspace.NodeInspector);
-        Assert.AreEqual("story-a", workspace.NodeInspector!.NodeId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", workspace.NodeInspector!.NodeId);
+    }
+
+    [STATestMethod]
+    public void BlankCanvasClickClearsResourceEvenWhenNoGraphNodeWasSelected()
+    {
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
+        var view = Arrange(workspace);
+        Assert.IsTrue(view.SelectResourceItem(workspace.ActorItems.Single()));
+        Assert.IsNull(view.GraphView.SelectedNode);
+        Assert.IsTrue(view.GraphView.BeginMarqueeSelection(new Point(700, 500)));
+        Assert.IsTrue(view.GraphView.CompleteMarqueeSelection());
+        Assert.IsNull(workspace.SelectedTreeItem);
+        Assert.AreSame(workspace.ActiveEditor, workspace.InspectorSelection);
     }
 
     [STATestMethod]
@@ -154,10 +170,10 @@ public sealed class CanonicalStoryWorkspaceViewTests
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "actor-trigger");
         Assert.IsTrue(new GraphEditSession(new GraphDocument([start]), GraphScope.StoryFlow)
-            .SetStoryStartTriggerType("start", "actor-trigger", StoryStartSchema.ActorInteraction, "actor"));
+            .SetStoryStartTriggerType("start", "actor-trigger", StoryStartSchema.ActorInteraction, "ST-2345-6789-ABCD-EFGH~actor~actor"));
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])),
-            [new ActorResourceInfo("actor", "Actor", "actor.json", [])]);
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])),
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", [])]);
         var view = Arrange(workspace);
         var visual = Descendants<CanonicalGraphNodeControl>(view).Single();
         var original = visual.InlineEditor;
@@ -169,7 +185,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.IsTrue(selected);
         Assert.IsNotNull(visual.InlineEditor);
         Assert.AreNotSame(original, visual.InlineEditor);
-        Assert.AreEqual("actor", visual.InlineEditor!.StoryStartTriggers.Single().SelectedActor?.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor", visual.InlineEditor!.StoryStartTriggers.Single().SelectedActor?.Id);
         Assert.AreEqual("start", view.GraphView.SelectedNode?.NodeId);
         Assert.AreEqual(viewport, Viewport(view));
         Assert.HasCount(1, workspace.StoryEditor.Host.Graph.Nodes);
@@ -180,7 +196,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     {
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "opaque-start");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])));
         var view = Arrange(workspace);
         var visual = Descendants<CanonicalGraphNodeControl>(view).Single();
         var inlineToggle = Descendants<ComboBox>(visual).Single(control =>
@@ -219,7 +235,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
             CreateAction("send-message", CanonicalStoryActionSchema.SendMessage),
         };
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument(actions)));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument(actions)));
         var view = Arrange(workspace);
         var cases = new[]
         {
@@ -257,12 +273,12 @@ public sealed class CanonicalStoryWorkspaceViewTests
         choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
         choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
-        var target = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic");
-        target.Properties["port_id"] = JsonSerializer.SerializeToElement("known");
+        var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
+        target.Properties["port_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~known");
         target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
                 new GraphDocument([choice, target], [new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic)]))]);
         var view = Arrange(workspace);
         var prompts = 0;
@@ -396,7 +412,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var start = GraphNodeFactory.CreateStoryStart("start", triggerPortId: "region");
         var target = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "target");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story",
                 new GraphDocument([start, target],
                     [new GraphConnection("start", "region", "target", "flow_in", GraphInterfaceKind.Flow)])));
         var view = Arrange(workspace);
@@ -410,7 +426,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var inline = view.GraphView.NodeVisuals.Single(visual => visual.Node?.NodeId == "start").InlineEditor
             ?? throw new AssertFailedException("Start node inline inspector was not created.");
         Assert.IsTrue(inline.AddStoryStartTrigger("角色触发", StoryStartSchema.ActorInteraction,
-            StoryStartSchema.DefaultTriggerProperties(StoryStartSchema.ActorInteraction, "actor")));
+            StoryStartSchema.DefaultTriggerProperties(StoryStartSchema.ActorInteraction, "ST-2345-6789-ABCD-EFGH~actor~actor")));
 
         Assert.IsTrue(inline.RemoveStoryStartTrigger("region"));
         Assert.AreEqual(1, prompts);
@@ -422,7 +438,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void DirtyGraphAllowsVisualActivationAndKeepsOriginalDraft()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
         var storyHost = view.GraphView.Host;
         Assert.IsTrue(workspace.StoryEditor.Host.AddNode(
@@ -439,23 +455,23 @@ public sealed class CanonicalStoryWorkspaceViewTests
     [STATestMethod]
     public void ReplacingWorkspaceDependencyPropertyRebindsCanonicalHost()
     {
-        using var first = Workspace("story-a");
-        using var second = Workspace("story-b");
+        using var first = Workspace("ST-2345-6789-ABCD-EFGH");
+        using var second = Workspace("ST-JKLM-NPQR-STUV-WXYZ");
         var view = Arrange(first);
 
         view.Workspace = second;
         view.UpdateLayout();
 
         Assert.AreSame(second.ActiveGraphHost, view.GraphView.Host);
-        Assert.AreEqual("story-b", view.GraphView.Host!.Graph.Nodes.Single().Id);
+        Assert.AreEqual("ST-JKLM-NPQR-STUV-WXYZ", view.GraphView.Host!.Graph.Nodes.Single().Id);
     }
 
     [STATestMethod]
     public void ResourceSelectionKeepsVisibleHighlightAndInspectorInSync()
     {
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument())],
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument())],
             items: [new IndividualItemResource { ItemId = "item", DisplayName = "Item" }]);
         var view = Arrange(workspace);
         view.Resources["AccentFillColorSecondaryBrush"] = Brushes.LightBlue;
@@ -468,7 +484,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var itemTitle = Descendants<TextBlock>(itemButton).Single();
         var runs = itemTitle.Inlines.OfType<System.Windows.Documents.Run>().Select(run => run.Text).ToArray();
         CollectionAssert.Contains(runs, "Item");
-        CollectionAssert.Contains(runs, "[Item_ID] item");
+        Assert.IsFalse(runs.Any(text => text.Contains("Item_ID", StringComparison.Ordinal)));
         Assert.AreEqual(TextTrimming.CharacterEllipsis, itemTitle.TextTrimming);
         Assert.AreEqual(TextAlignment.Left, itemTitle.TextAlignment);
 
@@ -479,34 +495,36 @@ public sealed class CanonicalStoryWorkspaceViewTests
 
         Assert.AreSame(item, workspace.SelectedTreeItem);
         Assert.AreSame(item, workspace.InspectorSelection);
-        Assert.AreNotEqual(Brushes.Transparent, itemButton.Background);
-        Assert.AreNotEqual(Brushes.Transparent, itemButton.BorderBrush);
+        var surface = Descendants<Border>(itemButton).Single(border => border.Name == "RowSurface");
+        var marker = Descendants<Border>(itemButton).Single(border => border.Name == "SelectionMarker");
+        Assert.AreEqual(Brushes.LightBlue, surface.Background);
+        Assert.AreEqual(Visibility.Visible, marker.Visibility);
         Assert.AreEqual(Brushes.White, itemTitle.Foreground);
 
         Assert.IsTrue(view.SelectResourceItem(workspace.SessionItems.Single()));
         view.UpdateLayout();
-        Assert.AreEqual(Brushes.Transparent, itemButton.Background);
-        Assert.AreEqual(Brushes.Transparent, itemButton.BorderBrush);
+        Assert.AreEqual(Brushes.Transparent, surface.Background);
+        Assert.AreEqual(Visibility.Collapsed, marker.Visibility);
         Assert.AreEqual(Brushes.Black, itemTitle.Foreground);
     }
 
     [STATestMethod]
     public void PendingProjectGraphFocusSelectsCanonicalStoryNode()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         var view = Arrange(workspace);
 
-        Assert.IsTrue(workspace.RequestStoryNodeFocus("story-a", "target_story_id"));
+        Assert.IsTrue(workspace.RequestStoryNodeFocus("ST-2345-6789-ABCD-EFGH", "target_story_id"));
         view.UpdateLayout();
 
         Assert.IsTrue(view.ApplyPendingStoryNodeFocus());
-        Assert.AreEqual("story-a", view.GraphView.SelectedNode?.NodeId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", view.GraphView.SelectedNode?.NodeId);
     }
 
     [STATestMethod]
     public void ViewRoutesFolderAndItemActionsWithoutChangingGraphHost()
     {
-        using var workspace = Workspace("story-a");
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
         GraphResourceKind? created = null;
         GraphResourceKind? referenced = null;
         var actorCreated = 0;
@@ -553,11 +571,11 @@ public sealed class CanonicalStoryWorkspaceViewTests
         var session = nodes.Single(node => node.Id == "session-placement");
         var task = nodes.Single(node => node.Id == "task-placement");
         Assert.AreEqual("session", session.Type);
-        Assert.AreEqual("session", session.Properties["resource_id"].GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~session~session", session.Properties["resource_id"].GetString());
         CollectionAssert.AreEqual(new[] { "flow_in", "session_done", "session_known" },
             session.Ports.Select(port => port.Id).ToArray());
         Assert.AreEqual("task", task.Type);
-        Assert.AreEqual("task", task.Properties["resource_id"].GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~task~task", task.Properties["resource_id"].GetString());
         CollectionAssert.AreEqual(new[] { "flow_in", "task_done", "task_known" },
             task.Ports.Select(port => port.Id).ToArray());
         Assert.AreEqual(new GraphEditorNodePosition(120.5, 240.25), workspace.StoryEditor.Host.Layout["session-placement"]);
@@ -631,7 +649,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
         Assert.IsFalse(view.CanPlaceResource(workspace.ActorItems.Single()));
         Assert.IsFalse(view.PlaceResourceAt(workspace.ActorItems.Single(), 10, 20));
         using var foreignEditor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "foreign", "Foreign", new GraphDocument()));
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~foreign", "Foreign", new GraphDocument()));
         Assert.IsFalse(view.PlaceResourceAt(new CanonicalStoryGraphItem(foreignEditor), 10, 20));
         Assert.AreEqual(0, idCalls);
 
@@ -654,8 +672,8 @@ public sealed class CanonicalStoryWorkspaceViewTests
         line.Properties.Remove("pages");
         line.Properties["text"] = JsonSerializer.SerializeToElement("原值");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
                 new GraphDocument([line]))]);
         var view = Arrange(workspace);
         Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
@@ -694,8 +712,8 @@ public sealed class CanonicalStoryWorkspaceViewTests
         line.Properties.Remove("pages");
         line.Properties["text"] = JsonSerializer.SerializeToElement("原值");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
                 new GraphDocument([line]))]);
         var view = Arrange(workspace);
         Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
@@ -725,18 +743,18 @@ public sealed class CanonicalStoryWorkspaceViewTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(
-            objective, CanonicalTaskObjectiveSchema.InteractActor, "actor", out _));
+            objective, CanonicalTaskObjectiveSchema.InteractActor, "ST-2345-6789-ABCD-EFGH~actor~actor", out _));
         objective.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
             JsonSerializer.SerializeToElement(3);
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
             actors:
             [
-                new ActorResourceInfo("actor", "测试角色", "actor.json", []),
+                new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "测试角色", "actor.json", []),
                 new ActorResourceInfo("group", "测试角色组", "group.json", [],
                     CollectiveActorResource.ResourceType),
             ],
-            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task",
+            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task",
                 new GraphDocument([objective]))]);
         var view = Arrange(workspace);
         Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
@@ -767,8 +785,8 @@ public sealed class CanonicalStoryWorkspaceViewTests
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
                 new GraphDocument([line]))]);
         var view = Arrange(workspace);
         Assert.IsTrue(view.ActivateResourceItem(workspace.SessionItems.Single()));
@@ -791,8 +809,8 @@ public sealed class CanonicalStoryWorkspaceViewTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task",
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task",
                 new GraphDocument([objective]))]);
         var view = Arrange(workspace);
         Assert.IsTrue(view.ActivateResourceItem(workspace.TaskItems.Single()));
@@ -861,9 +879,9 @@ public sealed class CanonicalStoryWorkspaceViewTests
                 storyId,
                 storyId,
                 new GraphDocument([new GraphNode(storyId, "action", storyId)])),
-            [new ActorResourceInfo("actor", "Actor", "actor.json", [])],
-            [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument())],
-            [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument())]);
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", [])],
+            [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument())],
+            [new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument())]);
 
     private static CanonicalStoryWorkspaceViewModel ChoiceWorkspace(int count)
     {
@@ -879,29 +897,30 @@ public sealed class CanonicalStoryWorkspaceViewTests
         }
         choice.Properties[SessionChoiceSchema.OptionsProperty] = JsonSerializer.SerializeToElement(options);
         return new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([choice]))]);
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([choice]))]);
     }
 
     private static CanonicalStoryWorkspaceViewModel AggregateWorkspace()
     {
-        var sessionEnd = GraphNodeFactory.Create(GraphScope.Session, "end", "session-end");
+        var sessionEnd = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "end", "session-end").Candidate!;
         sessionEnd.Properties["port_id"] = JsonSerializer.SerializeToElement("session_done");
         sessionEnd.Properties["display_name"] = JsonSerializer.SerializeToElement("Session Done");
-        var sessionLogic = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "session-logic");
+        var sessionLogic = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "session-logic").Candidate!;
         sessionLogic.Properties["port_id"] = JsonSerializer.SerializeToElement("session_known");
         sessionLogic.Properties["display_name"] = JsonSerializer.SerializeToElement("Session Known");
 
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "task-settle");
-        settle.Ports.Add(new GraphPort("task_done", "Task Done", true, GraphInterfaceKind.Logic, 0));
-        var taskLogic = GraphNodeFactory.Create(GraphScope.Task, "logic_output", "task-logic");
+        var settle = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Task, "settle", "task-settle").Candidate!;
+        settle.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("task_done");
+        settle.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Task Done");
+        var taskLogic = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Task, "logic_output", "task-logic").Candidate!;
         taskLogic.Properties["port_id"] = JsonSerializer.SerializeToElement("task_known");
         taskLogic.Properties["display_name"] = JsonSerializer.SerializeToElement("Task Known");
 
         return new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            [new ActorResourceInfo("actor", "Actor", "actor.json", [])],
-            [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([sessionEnd, sessionLogic]))],
-            [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([settle, taskLogic]))]);
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", [])],
+            [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([sessionEnd, sessionLogic]))],
+            [new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([settle, taskLogic]))]);
     }
 }

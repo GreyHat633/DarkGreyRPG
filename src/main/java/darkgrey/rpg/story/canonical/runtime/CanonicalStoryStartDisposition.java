@@ -9,7 +9,8 @@ public enum CanonicalStoryStartDisposition {
     ERROR_TERMINAL,
     REPEAT_WAITING,
     INVALID_REPEAT_TIME,
-    REPEATABLE_RESTART;
+    REPEATABLE_RESTART,
+    CONTAINER_BLOCKED;
 
     public boolean isEligible() {
         return this == NEW || this == REPEATABLE_RESTART;

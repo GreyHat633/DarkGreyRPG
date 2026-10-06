@@ -1,4 +1,4 @@
-﻿using DarkGreyRPG.Studio.Core.Actors;
+using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
@@ -16,10 +16,10 @@ public sealed class CanonicalStoryActorShellTests
     public void CreateReferenceAndRemoveReferenceReloadTheCanonicalActorFolder()
     {
         using var project = new CanonicalActorProjectFixture();
-        var shared = project.SaveActor("shared_actor", "Shared Actor", "opening");
+        var shared = project.SaveActor("ST-2345-6789-ABCD-EFGH~actor~shared_actor", "Shared Actor", "ST-2345-6789-ABCD-EFGH");
         var dialogs = new FakeActorDialogs
         {
-            CreateResult = new ActorIdentityRequest("owned_actor", "Owned Actor"),
+            CreateResult = new ActorIdentityRequest("ST-2345-6789-ABCD-EFGH~actor~owned_actor", "Owned Actor"),
             PickResult = shared,
             RemoveReferenceConfirmed = true,
         };
@@ -27,76 +27,73 @@ public sealed class CanonicalStoryActorShellTests
 
         Assert.IsTrue(shell.CanonicalStoryWorkspace!.RequestCreate(CanonicalStoryFolderKind.Actors));
 
-        var created = project.Actors.LoadActor("owned_actor");
-        Assert.AreEqual("opening", created.HomeStoryId);
-        CollectionAssert.Contains(
-            project.Store.Memberships.Load("opening").OwnedResources.Actors,
-            "owned_actor");
-        Assert.AreEqual("owned_actor", shell.CanonicalStoryWorkspace!.SelectedTreeItem?.Id);
-        Assert.IsTrue(shell.CanonicalStoryWorkspace.ActorItems.Single(item => item.Id == "owned_actor").IsOwned);
+        var createdId = shell.CanonicalStoryWorkspace!.ActorItems.Single(item => item.IsOwned).Id;
+        var created = project.Actors.LoadActor(createdId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", created.HomeStoryId);
+        CollectionAssert.Contains(project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Actors, createdId);
+        Assert.AreEqual(createdId, shell.CanonicalStoryWorkspace.SelectedTreeItem?.Id);
 
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestReference(CanonicalStoryFolderKind.Actors));
 
         CollectionAssert.Contains(
-            project.Store.Memberships.Load("opening").ReferencedResources.Actors,
-            "shared_actor");
-        var referenced = shell.CanonicalStoryWorkspace!.ActorItems.Single(item => item.Id == "shared_actor");
+            project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH").ReferencedResources.Actors,
+            "ST-2345-6789-ABCD-EFGH~actor~shared_actor");
+        var referenced = shell.CanonicalStoryWorkspace!.ActorItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~actor~shared_actor");
         Assert.IsTrue(referenced.IsReferenced);
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestDelete(referenced));
 
         CollectionAssert.DoesNotContain(
-            project.Store.Memberships.Load("opening").ReferencedResources.Actors,
-            "shared_actor");
-        Assert.AreEqual("shared_actor", project.Actors.LoadActor("shared_actor").Id);
+            project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH").ReferencedResources.Actors,
+            "ST-2345-6789-ABCD-EFGH~actor~shared_actor");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~shared_actor", project.Actors.LoadActor("ST-2345-6789-ABCD-EFGH~actor~shared_actor").Id);
         Assert.AreEqual(0, dialogs.RemoveReferenceConfirmationCount); // Reversible membership removal needs no extra confirmation.
     }
 
     [TestMethod]
-    public void LegacyStoryBlocksOwnedDeleteButDirtyGraphAllowsActorCreation()
+    public void OtherStoryReferenceBlocksOwnedDeleteButDirtyGraphAllowsActorCreation()
     {
         using var project = new CanonicalActorProjectFixture();
-        project.SaveActor("owned_actor", "Owned Actor", "opening");
+        project.SaveActor("ST-2345-6789-ABCD-EFGH~actor~owned_actor", "Owned Actor", "ST-2345-6789-ABCD-EFGH");
         project.Store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "opening",
-            new CanonicalStoryMembershipSet { Actors = ["owned_actor"] }));
-        project.ProjectService.CreateStory("legacy_other", "Legacy Other");
-        project.ProjectService.AddActorReference("legacy_other", "owned_actor");
+            "ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~owned_actor"] }));
+        new CanonicalStoryLifecycleService(project.Store).Create("ST-JKLM-NPQR-STUV-WXYZ", "Other");
+        project.ProjectService.AddActorReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~actor~owned_actor");
         var dialogs = new FakeActorDialogs
         {
             CreateResult = new ActorIdentityRequest("must_not_create", "Must Not Create"),
             DeleteConfirmed = true,
         };
-        var shell = project.OpenShell(dialogs, "owned_actor");
+        var shell = project.OpenShell(dialogs, "ST-2345-6789-ABCD-EFGH~actor~owned_actor");
         Assert.HasCount(1, project.ShellProjectService!.OpenActorDocuments);
         var owned = shell.CanonicalStoryWorkspace!.ActorItems.Single();
 
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestDelete(owned));
 
-        Assert.AreEqual("owned_actor", project.Actors.LoadActor("owned_actor").Id);
-        CollectionAssert.Contains(dialogs.LastReferenceStoryIds.ToArray(), "legacy_other");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~owned_actor", project.Actors.LoadActor("ST-2345-6789-ABCD-EFGH~actor~owned_actor").Id);
+        CollectionAssert.Contains(dialogs.LastReferenceStoryIds.ToArray(), "ST-JKLM-NPQR-STUV-WXYZ");
         Assert.AreEqual(0, dialogs.DeleteConfirmationCount);
 
-        project.ProjectService.RemoveActorReference("legacy_other", "owned_actor");
-        Assert.IsEmpty(project.ProjectService.CurrentProject!.Stories
-            .LoadStory("legacy_other").ReferencedResources.Actors);
+        project.ProjectService.RemoveActorReference("ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH~actor~owned_actor");
+        Assert.IsEmpty(project.Store.Memberships.Load("ST-JKLM-NPQR-STUV-WXYZ").ReferencedResources.Actors);
         var remainingBlockers = new CanonicalStoryActorLifecycleService(project.Store)
-            .GetDeletionPlan("opening", "owned_actor").Blockers;
+            .GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~owned_actor").Blockers;
         Assert.IsEmpty(
             remainingBlockers,
             string.Join(", ", remainingBlockers.Select(blocker =>
                 $"{blocker.Source}/{blocker.MembershipKind}/{blocker.StoryId}")));
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestDelete(owned));
-        Assert.IsFalse(File.Exists(project.ActorPath("owned_actor")), shell.StatusMessage);
+        Assert.IsFalse(File.Exists(project.ActorPath("ST-2345-6789-ABCD-EFGH~actor~owned_actor")), shell.StatusMessage);
         Assert.IsEmpty(project.ShellProjectService!.OpenActorDocuments);
         CollectionAssert.DoesNotContain(
-            project.Store.Memberships.Load("opening").OwnedResources.Actors,
-            "owned_actor");
+            project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH").OwnedResources.Actors,
+            "ST-2345-6789-ABCD-EFGH~actor~owned_actor");
 
         Assert.IsTrue(shell.CanonicalStoryWorkspace!.StoryEditor.Host.AddNode(
             GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "dirty_action")));
         Assert.IsTrue(shell.CanonicalStoryWorkspace.RequestCreate(CanonicalStoryFolderKind.Actors));
         Assert.AreEqual(1, dialogs.CreateRequestCount);
-        Assert.IsTrue(File.Exists(project.ActorPath("must_not_create")));
+        Assert.IsTrue(File.Exists(project.ActorPath(shell.CanonicalStoryWorkspace.ActorItems.Single().Id)));
         Assert.IsTrue(shell.CanonicalStoryWorkspace.StoryEditor.IsDirty);
         Assert.IsTrue(shell.CanonicalStoryWorkspace.StoryEditor.Host.Graph.Nodes.Any(node => node.Id == "dirty_action"));
         Assert.IsFalse(shell.StatusMessage.Contains("请先保存", StringComparison.Ordinal));
@@ -112,15 +109,14 @@ public sealed class CanonicalStoryActorShellTests
                 "canonical-actor-shell-" + Guid.NewGuid().ToString("N"));
             ProjectService = new ProjectService();
             ProjectService.CreateProject(Root, "test_project", "Test Project");
-            ProjectService.CreateStory("opening", "Opening");
             Actors = ProjectService.CurrentProject!.Actors;
             Store = new CanonicalProjectGraphStore(Root);
             Store.Stories.Create(new GraphResourceEnvelope(
                 GraphResourceKind.Story,
-                "opening",
+                "ST-2345-6789-ABCD-EFGH",
                 "Opening",
                 new GraphDocument([GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start")])));
-            Store.Memberships.Create(new CanonicalStoryMembershipManifest("opening"));
+            Store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
         }
 
         public string Root { get; }
@@ -129,7 +125,7 @@ public sealed class CanonicalStoryActorShellTests
         public CanonicalProjectGraphStore Store { get; }
         public ProjectService? ShellProjectService { get; private set; }
 
-        public string ActorPath(string id) => Path.Combine(Root, "actors", id + ".json");
+        public string ActorPath(string id) => Actors.GetActorPath(id);
 
         public ActorResourceInfo SaveActor(string id, string displayName, string homeStoryId)
         {
@@ -148,7 +144,7 @@ public sealed class CanonicalStoryActorShellTests
                 actorWorkspaceDialogs: dialogs);
             shell.OpenProjectCommand.Execute(null);
             if (cacheActorId is not null) _ = ShellProjectService.OpenActor(cacheActorId);
-            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "opening"));
+            shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
             Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
             return shell;
         }

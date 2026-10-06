@@ -1,0 +1,166 @@
+[
+  {
+    "measurement": {
+      "label": "0922-range-r16-isolated-yminus-inside",
+      "time": "2026-09-22T22:30:45",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.3707680080465881,
+      "peak": 1.0,
+      "tone440": 0.00141498090199572,
+      "tone880": 0.0001994959344326518
+    },
+    "teleportFeet": [
+      -119.5,
+      73.47999999999999,
+      200.5
+    ],
+    "axis": "y",
+    "passed": true,
+    "label": "0922-range-r16-isolated-yminus-inside",
+    "radius": 16,
+    "clientPoint": [
+      -119.5,
+      75.1,
+      200.5
+    ],
+    "side": "minus",
+    "inside": true
+  },
+  {
+    "measurement": {
+      "label": "0922-range-r16-isolated-yminus-outside",
+      "time": "2026-09-22T22:30:54",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.3703622450450697,
+      "peak": 1.0,
+      "tone440": 0.0014541353550553303,
+      "tone880": 0.00022188611703759145
+    },
+    "teleportFeet": [
+      -119.5,
+      73.28,
+      200.5
+    ],
+    "axis": "y",
+    "passed": false,
+    "label": "0922-range-r16-isolated-yminus-outside",
+    "radius": 16,
+    "clientPoint": [
+      -119.5,
+      74.9,
+      200.5
+    ],
+    "side": "minus",
+    "inside": false
+  },
+  {
+    "measurement": {
+      "label": "0922-range-r16-isolated-yplus-inside",
+      "time": "2026-09-22T22:31:03",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004754659097384927,
+      "peak": 0.0008119344711303711,
+      "tone440": 0.0006279666272288694,
+      "tone880": 1.0419358747277206E-07
+    },
+    "teleportFeet": [
+      -119.5,
+      106.28,
+      200.5
+    ],
+    "axis": "y",
+    "passed": true,
+    "label": "0922-range-r16-isolated-yplus-inside",
+    "radius": 16,
+    "clientPoint": [
+      -119.5,
+      107.9,
+      200.5
+    ],
+    "side": "plus",
+    "inside": true
+  },
+  {
+    "measurement": {
+      "label": "0922-range-r16-isolated-yplus-outside",
+      "time": "2026-09-22T22:31:12",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "teleportFeet": [
+      -119.5,
+      106.47999999999999,
+      200.5
+    ],
+    "axis": "y",
+    "passed": true,
+    "label": "0922-range-r16-isolated-yplus-outside",
+    "radius": 16,
+    "clientPoint": [
+      -119.5,
+      108.1,
+      200.5
+    ],
+    "side": "plus",
+    "inside": false
+  }
+]

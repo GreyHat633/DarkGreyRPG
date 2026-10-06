@@ -32,8 +32,7 @@ public sealed record OfflineProviderResource(
     public string SourcePath { get; init; } = string.Empty;
     public string StoryId { get; init; } = string.Empty;
     public string PackagePath { get; init; } = string.Empty;
-    public string Namespace => DgrResourceId.IsFullId(Id) ? DgrResourceId.Namespace(Id) : string.Empty;
-    public string FullId => Id;
+    public string OwnerStoryUid => Kind == DgrResourceKind.Story ? StoryUid.Parse(Id).Value : ResourceAddress.FromKey(Id).StoryUid.Value;
     public string ProviderPackageId => PackageIdentity.PackageId;
     public byte[] DefinitionBytes => Encoding.UTF8.GetBytes(DefinitionJson);
     public GraphResourceEnvelope? ReadGraphDefinition()
@@ -58,6 +57,9 @@ public sealed record OfflineDgrsPackage(
     IReadOnlyList<OfflineProviderResource> Resources)
 {
     internal byte[] ArchiveBytes { get; init; } = [];
+    public string? GroupDisplayName { get; init; }
+    public IReadOnlyList<string> ContainerMembers { get; init; } = [];
+    public CanonicalStoryLogicGraph ContainerConnections { get; init; } = CanonicalStoryLogicGraph.Empty;
     public byte[] GetEntry(string relativePath)
         => Entries.TryGetValue(relativePath, out var bytes)
             ? bytes.ToArray()
@@ -67,6 +69,34 @@ public sealed record OfflineDgrsPackage(
 /// <summary>Reads and validates a DGRS archive without extracting it.</summary>
 public static class OfflineDgrsPackageReader
 {
+    public static IReadOnlyList<OfflineDgrsPackage> ReadContainer(string packagePath)
+    {
+        if (!packagePath.EndsWith(".dgrs.g", StringComparison.OrdinalIgnoreCase)) return [Read(packagePath)];
+        using var lockedArchive = File.Open(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var validation = DgrsGroupPackageValidator.Validate(packagePath);
+        using var archive = new ZipArchive(lockedArchive, ZipArchiveMode.Read, leaveOpen: true);
+        var entries = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var entry in archive.Entries)
+        {
+            using var input = entry.Open(); using var output = new MemoryStream(); input.CopyTo(output);
+            entries.Add(entry.FullName, output.ToArray());
+        }
+        var archiveBytes = File.ReadAllBytes(packagePath);
+        var members = validation.Manifest.Members.Select(member => member.StoryId).ToArray();
+        return validation.Manifest.Members.Select(manifest =>
+        {
+            var origin = ReadProjectOrigin(entries["project.json"], manifest.StoryId);
+            var fingerprint = ComputeFingerprint(manifest, entries, validation.Connections);
+            return new OfflineDgrsPackage(validation.PackagePath, manifest, new(manifest.PackageId, manifest.PackageVersion),
+                origin, fingerprint, new ReadOnlyDictionary<string, byte[]>(entries),
+                ReadResources(manifest, entries, origin, fingerprint, validation.PackagePath))
+            {
+                ArchiveBytes = archiveBytes, GroupDisplayName = validation.Manifest.DisplayName,
+                ContainerMembers = members, ContainerConnections = validation.Connections,
+            };
+        }).ToArray();
+    }
+
     public static OfflineDgrsPackage Read(string packagePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
@@ -100,30 +130,9 @@ public static class OfflineDgrsPackageReader
             new ReadOnlyCollection<OfflineProviderResource>(resources)) { ArchiveBytes = File.ReadAllBytes(packagePath) };
     }
 
-    public static string ComputeFingerprint(StoryPackageManifest manifest, IReadOnlyDictionary<string, byte[]> entries)
-    {
-        ArgumentNullException.ThrowIfNull(manifest);
-        ArgumentNullException.ThrowIfNull(entries);
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        hash.AppendData(Encoding.ASCII.GetBytes("DGR-PACKAGE-CONTENT-FINGERPRINT-V1\0"));
-        AddText(hash, manifest.Format ?? string.Empty);
-        AddText(hash, manifest.FormatVersion.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        AddText(hash, manifest.SchemaVersion.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        AddText(hash, manifest.StorySchemaVersion.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        var records = RequiredRecords(manifest).OrderBy(value => value.Role, StringComparer.Ordinal).ThenBy(value => value.Path, StringComparer.Ordinal);
-        Span<byte> recordLength = stackalloc byte[8];
-        foreach (var record in records)
-        {
-            if (!entries.TryGetValue(record.Path, out var content))
-                throw new StoryPackageException($"Missing authoritative bytes for Story Package fingerprint entry '{record.Role}' at '{record.Path}'.");
-            AddBytes(hash, Encoding.UTF8.GetBytes(record.Role));
-            AddBytes(hash, Encoding.UTF8.GetBytes(record.Path));
-            BinaryPrimitives.WriteInt64BigEndian(recordLength, content.LongLength);
-            hash.AppendData(recordLength);
-            hash.AppendData(content);
-        }
-        return Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
-    }
+    public static string ComputeFingerprint(StoryPackageManifest manifest, IReadOnlyDictionary<string, byte[]> entries,
+        CanonicalStoryLogicGraph? containerConnections = null)
+        => StoryPackageSemanticFingerprint.Compute(manifest, entries, containerConnections);
 
     private static string ReadProjectOrigin(byte[]? bytes, string fallback)
     {
@@ -174,7 +183,7 @@ public static class OfflineDgrsPackageReader
         }
     }
 
-    private static (string Id, string DisplayName) Identity(DgrResourceKind kind, byte[] bytes, string sourcePath)
+    internal static (string Id, string DisplayName) Identity(DgrResourceKind kind, byte[] bytes, string sourcePath)
     {
         var json = Encoding.UTF8.GetString(bytes);
         try
@@ -245,7 +254,8 @@ public sealed class OfflineProviderCatalog
         ProjectDirectory = Path.GetFullPath(projectDirectory);
         Providers = providers;
         Diagnostics = diagnostics;
-        Resources = new ReadOnlyCollection<OfflineProviderResource>(providers.SelectMany(provider => provider.Resources).ToList());
+        Resources = new ReadOnlyCollection<OfflineProviderResource>(providers.SelectMany(provider => provider.Resources)
+            .DistinctBy(resource => (resource.PackagePath, resource.Kind, resource.Id)).ToList());
     }
 
     public string ProjectDirectory { get; }
@@ -264,20 +274,23 @@ public sealed class OfflineProviderCatalog
             return new OfflineProviderCatalog(root, providers, diagnostics);
         }
         if (Directory.Exists(references))
-            foreach (var path in Directory.EnumerateFiles(references, "*.dgrs", SearchOption.TopDirectoryOnly).OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+            foreach (var path in Directory.EnumerateFiles(references, "*", SearchOption.TopDirectoryOnly)
+                .Where(path => path.EndsWith(".dgrs", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".dgrs.g", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
             {
                 try
                 {
                     if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
                         throw new StoryPackageException("Referenced package must be a physical project-local file.");
-                    providers.Add(OfflineDgrsPackageReader.Read(path));
+                    providers.AddRange(OfflineDgrsPackageReader.ReadContainer(path));
                 }
                 catch (Exception exception) when (exception is StoryPackageException or IOException or UnauthorizedAccessException or InvalidDataException)
                 { diagnostics.Add(new("provider.invalid", exception.Message, Path.GetFullPath(path))); }
             }
         var duplicate = providers.GroupBy(provider => provider.Identity.PackageId, StringComparer.Ordinal).Where(group => group.Count() > 1);
         foreach (var group in duplicate) diagnostics.Add(new("provider.identity.duplicate", $"Package identity '{group.Key}' is referenced more than once.", string.Join(";", group.Select(item => item.PackagePath))));
-        foreach (var group in providers.SelectMany(provider => provider.Resources).GroupBy(resource => new DgrResourceKey(resource.Kind, resource.Id)).Where(group => group.Count() > 1))
+        foreach (var group in providers.SelectMany(provider => provider.Resources).GroupBy(resource => new DgrResourceKey(resource.Kind, resource.Id))
+            .Where(group => group.Select(resource => resource.PackagePath).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1))
             diagnostics.Add(new("provider.resource.ambiguous", $"Ambiguous {group.Key.Kind} full ID '{group.Key.Id}' in multiple referenced packages.", string.Join(";", group.Select(resource => resource.PackagePath))));
         return new OfflineProviderCatalog(root, providers, diagnostics);
     }
@@ -293,7 +306,7 @@ public sealed class OfflineProviderCatalog
 /// <summary>Enumerates project-owned native content for the Studio source picker.</summary>
 public sealed record OfflineNativeResource(DgrResourceKind Kind, string Id, string DisplayName, string DefinitionJson)
 {
-    public string Namespace => DgrResourceId.IsFullId(Id) ? DgrResourceId.Namespace(Id) : string.Empty;
+    public string OwnerStoryUid => Kind == DgrResourceKind.Story ? StoryUid.Parse(Id).Value : ResourceAddress.FromKey(Id).StoryUid.Value;
     public bool IsOwned => true;
     public bool IsReadOnly => false;
 }

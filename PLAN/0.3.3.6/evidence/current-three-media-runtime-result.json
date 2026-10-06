@@ -1,0 +1,19 @@
+{
+  "status": "PASS_TARGETED_REAL_TWO_CLIENTS",
+  "members": {"A":"ST-8Q7T-6EWT-PEPM-WYKS","B":"ST-YPL7-HP2E-E9PA-PZG6","C":"ST-YGZK-MYX4-UKGL-68UW"},
+  "source_export": "StudioExportedThreeMedia0336BUpdated.dgrs.g",
+  "replacement_export": "StudioExportedThreeMedia0336.dgrs.g",
+  "only_changed_entry": "resources/canonical/stories/ST-YPL7-HP2E-E9PA-PZG6.json",
+  "generation_B_before": "93daca40ac17",
+  "generation_B_after": "55c25608593c",
+  "unchanged_active_transports": [6,7],
+  "line_epochs": [1,1],
+  "both_portraits_visible": true,
+  "explicit_admin_reset_reentry": "PASS",
+  "history_preserved": true,
+  "before": "three-media-reset-controlled-before.json",
+  "after": "three-media-reset-controlled-after.json",
+  "directed_preload_evidence": "three-media-A-cache.json",
+  "excluded_setup_failure": "three-media-after-B-update.dat used the wrong selected Group export; it is not passing evidence",
+  "audio_scope": "Preparation and playback queue logs; no human listening claim"
+}

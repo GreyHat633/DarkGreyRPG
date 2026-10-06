@@ -1,4 +1,4 @@
-﻿using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.IO;
@@ -62,6 +62,8 @@ public sealed class CanonicalStoryResourceLifecycleService
         {
             var (story, membership) = RequireStory(storyId);
             EnsureResourceId(resourceId);
+            if (ResourceAddress.FromKey(resourceId).StoryUid.Value != storyId)
+                throw Failure("resource.owner.mismatch", "New resource address must belong to the target Story.");
             EnsureDisplayName(displayName);
             var members = Members(membership, resourceKind);
             if (members.Owned.Contains(resourceId, StringComparer.Ordinal)
@@ -500,7 +502,7 @@ public sealed class CanonicalStoryResourceLifecycleService
         GraphNode[] nodes = scope switch
         {
             GraphScope.Session => [GraphNodeFactory.Create(scope, "start", "start")],
-            GraphScope.Task => [CreateInitialTaskSettleNode()],
+            GraphScope.Task => [CreateInitialTaskObjectiveNode()],
             _ => throw Failure("story.resource.kind.unsupported", "Story resources cannot be created by this service."),
         };
         var graph = new GraphDocument(nodes);
@@ -509,18 +511,18 @@ public sealed class CanonicalStoryResourceLifecycleService
         return graph;
     }
 
-    private static GraphNode CreateInitialTaskSettleNode()
+    private static GraphNode CreateInitialTaskObjectiveNode()
     {
         var result = new GraphNodeAuthoringService().Create(
             new GraphDocument(),
             GraphScope.Task,
-            "settle",
-            "settle");
+            "objective",
+            "objective");
         if (!result.IsSuccess)
         {
             var issue = result.Issues.FirstOrDefault();
             throw Failure("story.resource.graph.invalid",
-                issue?.Message ?? "Task settlement node could not be initialized.");
+                issue?.Message ?? "Task objective node could not be initialized.");
         }
 
         return result.Candidate!;
@@ -598,11 +600,8 @@ public sealed class CanonicalStoryResourceLifecycleService
 
     private static void EnsureResourceId(string id)
     {
-        var validLegacy = !string.IsNullOrWhiteSpace(id)
-            && id[0] is >= 'a' and <= 'z' or >= '0' and <= '9'
-            && id.All(character => character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-');
-        if (!DgrResourceId.IsFullId(id) && !validLegacy)
-            throw Failure("story.resource.id.invalid", $"Canonical resource ID '{id}' must be a valid full DGR ID or a compatible legacy ID.");
+        if (!ResourceAddress.IsKey(id) || !(ResourceAddress.FromKey(id).Kind is ResourceKind.Session or ResourceKind.Task))
+            throw Failure("resource.address.invalid", "A current resource address of the matching kind is required.");
     }
 
     private static void EnsureDisplayName(string displayName)

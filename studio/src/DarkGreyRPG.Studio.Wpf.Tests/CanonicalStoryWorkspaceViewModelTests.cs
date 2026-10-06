@@ -1,4 +1,4 @@
-using DarkGreyRPG.Studio.Core.Actors;
+﻿using DarkGreyRPG.Studio.Core.Actors;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -18,25 +18,25 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         using var directory = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(directory.Path);
         var items = new ItemRepository(directory.Path);
-        items.SaveItem(new IndividualItemResource { ItemId = "item_a", DisplayName = "A" });
-        items.SaveItem(new IndividualItemResource { ItemId = "item_b", DisplayName = "B" });
-        items.SaveGroup(new CollectiveItemResource { GroupId = "group_a", DisplayName = "Group" });
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_a", DisplayName = "A" });
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_b", DisplayName = "B" });
+        items.SaveGroup(new CollectiveItemResource { GroupId = "ST-2345-6789-ABCD-EFGH~item_group~group_a", DisplayName = "Group" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"));
         var membership = new CanonicalStoryMembershipManifest(
-            "story",
-            new CanonicalStoryMembershipSet { Items = ["item_a", "item_b"] },
-            new CanonicalStoryMembershipSet { ItemGroups = ["group_a"] })
+            "ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Items = ["ST-2345-6789-ABCD-EFGH~item~item_a", "ST-2345-6789-ABCD-EFGH~item~item_b"] },
+            new CanonicalStoryMembershipSet { ItemGroups = ["ST-2345-6789-ABCD-EFGH~item_group~group_a"] })
         {
             DisplayOrder = new CanonicalStoryDisplayOrder
             {
-                Items = ["item_group:group_a", "item:item_b", "item:item_a"],
+                Items = ["item_group:ST-2345-6789-ABCD-EFGH~item_group~group_a", "item:ST-2345-6789-ABCD-EFGH~item~item_b", "item:ST-2345-6789-ABCD-EFGH~item~item_a"],
             },
         };
         store.Memberships.Create(membership);
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new CanonicalStoryWorkspaceLoader(store, items: items).Load("story"));
+            new CanonicalStoryWorkspaceLoader(store, items: items).Load("ST-2345-6789-ABCD-EFGH"));
         var folder = workspace.Folders.Single(candidate => candidate.Kind == CanonicalStoryFolderKind.Items);
-        CollectionAssert.AreEqual(new[] { "group_a", "item_b", "item_a" },
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item_group~group_a", "ST-2345-6789-ABCD-EFGH~item~item_b", "ST-2345-6789-ABCD-EFGH~item~item_a" },
             folder.Items.Select(item => item.Id).ToArray());
         IReadOnlyList<string>? persisted = null;
         workspace.ResourceOrderChangeRequested = (kind, handles) =>
@@ -48,12 +48,12 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
 
         Assert.IsTrue(workspace.ReorderResource(folder.Items[2], folder.Items[0]));
 
-        CollectionAssert.AreEqual(new[] { "item_a", "group_a", "item_b" },
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item~item_a", "ST-2345-6789-ABCD-EFGH~item_group~group_a", "ST-2345-6789-ABCD-EFGH~item~item_b" },
             folder.Items.Select(item => item.Id).ToArray());
-        CollectionAssert.AreEqual(new[] { "item:item_a", "item_group:group_a", "item:item_b" },
+        CollectionAssert.AreEqual(new[] { "item:ST-2345-6789-ABCD-EFGH~item~item_a", "item_group:ST-2345-6789-ABCD-EFGH~item_group~group_a", "item:ST-2345-6789-ABCD-EFGH~item~item_b" },
             persisted!.ToArray());
-        Assert.IsTrue(workspace.ItemItems.Single(item => item.Id == "item_a").IsOwned);
-        Assert.IsTrue(workspace.ItemItems.Single(item => item.Id == "group_a").IsReferenced);
+        Assert.IsTrue(workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item~item_a").IsOwned);
+        Assert.IsTrue(workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item_group~group_a").IsReferenced);
     }
 
     [TestMethod]
@@ -62,25 +62,25 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         using var directory = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(directory.Path);
         var items = new ItemRepository(directory.Path);
-        items.SaveItem(new IndividualItemResource { ItemId = "item_a", DisplayName = "A" });
-        items.SaveItem(new IndividualItemResource { ItemId = "item_c", DisplayName = "C" });
-        items.SaveItem(new IndividualItemResource { ItemId = "item_d", DisplayName = "D" });
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_a", DisplayName = "A" });
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_c", DisplayName = "C" });
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_d", DisplayName = "D" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "story",
-            new CanonicalStoryMembershipSet { Items = ["item_a", "item_c", "item_d"] })
+            "ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Items = ["ST-2345-6789-ABCD-EFGH~item~item_a", "ST-2345-6789-ABCD-EFGH~item~item_c", "ST-2345-6789-ABCD-EFGH~item~item_d"] })
         {
             DisplayOrder = new CanonicalStoryDisplayOrder
             {
-                Items = ["item:item_c", "item:item_b", "item:item_a"],
+                Items = ["item:ST-2345-6789-ABCD-EFGH~item~item_c", "item:ST-2345-6789-ABCD-EFGH~item~item_b", "item:ST-2345-6789-ABCD-EFGH~item~item_a"],
             },
         });
 
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new CanonicalStoryWorkspaceLoader(store, items: items).Load("story"));
+            new CanonicalStoryWorkspaceLoader(store, items: items).Load("ST-2345-6789-ABCD-EFGH"));
 
         CollectionAssert.AreEqual(
-            new[] { "item_c", "item_a", "item_d" },
+            new[] { "ST-2345-6789-ABCD-EFGH~item~item_c", "ST-2345-6789-ABCD-EFGH~item~item_a", "ST-2345-6789-ABCD-EFGH~item~item_d" },
             workspace.ItemItems.Select(item => item.Id).ToArray());
     }
 
@@ -91,27 +91,27 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         var store = new CanonicalProjectGraphStore(directory.Path);
         var actors = new ActorRepository(directory.Path);
         var items = new ItemRepository(directory.Path);
-        actors.SaveActor(actors.CreateActor("actor_a", "Actor A"));
-        actors.SaveActor(actors.CreateActor("actor_b", "Actor B"));
-        items.SaveItem(new IndividualItemResource { ItemId = "item_a", DisplayName = "Item A" });
-        items.SaveItem(new IndividualItemResource { ItemId = "item_b", DisplayName = "Item B" });
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
-        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session_a", "Session A"));
-        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session_b", "Session B"));
-        store.Tasks.Create(Envelope(GraphResourceKind.Task, "task_a", "Task A"));
-        store.Tasks.Create(Envelope(GraphResourceKind.Task, "task_b", "Task B"));
+        actors.SaveActor(actors.CreateActor("ST-2345-6789-ABCD-EFGH~actor~actor_a", "Actor A"));
+        actors.SaveActor(actors.CreateActor("ST-2345-6789-ABCD-EFGH~actor~actor_b", "Actor B"));
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_a", DisplayName = "Item A" });
+        items.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_b", DisplayName = "Item B" });
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session_a", "Session A"));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session_b", "Session B"));
+        store.Tasks.Create(Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task_a", "Task A"));
+        store.Tasks.Create(Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task_b", "Task B"));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembershipSet
             {
-                Actors = ["actor_a"],
-                Items = ["item_a"],
-                Sessions = ["session_a"],
-                Tasks = ["task_a"],
+                Actors = ["ST-2345-6789-ABCD-EFGH~actor~actor_a"],
+                Items = ["ST-2345-6789-ABCD-EFGH~item~item_a"],
+                Sessions = ["ST-2345-6789-ABCD-EFGH~session~session_a"],
+                Tasks = ["ST-2345-6789-ABCD-EFGH~task~task_a"],
             },
             new CanonicalStoryMembershipSet()));
         var loader = new CanonicalStoryWorkspaceLoader(store, actors, items);
-        using var workspace = new CanonicalStoryWorkspaceViewModel(loader.Load("story"));
+        using var workspace = new CanonicalStoryWorkspaceViewModel(loader.Load("ST-2345-6789-ABCD-EFGH"));
         var folders = workspace.Folders.ToDictionary(folder => folder.Kind);
         var actorA = workspace.ActorItems.Single();
         var itemA = workspace.ItemItems.Single();
@@ -120,23 +120,23 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsTrue(workspace.OpenGraphResource(sessionA));
 
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembershipSet
             {
-                Actors = ["actor_a", "actor_b"],
-                Items = ["item_a", "item_b"],
-                Sessions = ["session_a", "session_b"],
-                Tasks = ["task_a", "task_b"],
+                Actors = ["ST-2345-6789-ABCD-EFGH~actor~actor_a", "ST-2345-6789-ABCD-EFGH~actor~actor_b"],
+                Items = ["ST-2345-6789-ABCD-EFGH~item~item_a", "ST-2345-6789-ABCD-EFGH~item~item_b"],
+                Sessions = ["ST-2345-6789-ABCD-EFGH~session~session_a", "ST-2345-6789-ABCD-EFGH~session~session_b"],
+                Tasks = ["ST-2345-6789-ABCD-EFGH~task~task_a", "ST-2345-6789-ABCD-EFGH~task~task_b"],
             },
             new CanonicalStoryMembershipSet()));
-        workspace.ApplyResourceSnapshot(loader.Load("story"), CanonicalStoryFolderKind.Sessions, "session_a");
+        workspace.ApplyResourceSnapshot(loader.Load("ST-2345-6789-ABCD-EFGH"), CanonicalStoryFolderKind.Sessions, "ST-2345-6789-ABCD-EFGH~session~session_a");
 
         foreach (var folder in workspace.Folders)
             Assert.AreSame(folders[folder.Kind], folder);
-        Assert.AreSame(actorA, workspace.ActorItems.Single(item => item.Id == "actor_a"));
-        Assert.AreSame(itemA, workspace.ItemItems.Single(item => item.Id == "item_a"));
-        Assert.AreSame(sessionA, workspace.SessionItems.Single(item => item.Id == "session_a"));
-        Assert.AreSame(taskA, workspace.TaskItems.Single(item => item.Id == "task_a"));
+        Assert.AreSame(actorA, workspace.ActorItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~actor~actor_a"));
+        Assert.AreSame(itemA, workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item~item_a"));
+        Assert.AreSame(sessionA, workspace.SessionItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~session~session_a"));
+        Assert.AreSame(taskA, workspace.TaskItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~task~task_a"));
         Assert.AreSame(sessionA.Editor, workspace.ActiveEditor);
         Assert.AreSame(sessionA, workspace.SelectedTreeItem);
         Assert.HasCount(2, workspace.ActorItems);
@@ -150,12 +150,12 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     {
         using var directory = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(directory.Path);
-        var session = Envelope(GraphResourceKind.Session, "session", "Session");
+        var session = Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session");
         var start = GraphNodeFactory.CreateStoryStart("start", "trigger");
         var aggregate = CanonicalAggregateNodeFactory.Create(session, "session-placement").Candidate!;
         var story = new GraphResourceEnvelope(
             GraphResourceKind.Story,
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             "Story",
             new GraphDocument(
                 [start, aggregate],
@@ -163,9 +163,9 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         store.Stories.Create(story);
         store.Sessions.Create(session);
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "story", new CanonicalStoryMembershipSet { Sessions = ["session"] }));
+            "ST-2345-6789-ABCD-EFGH", new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~session"] }));
         var loader = new CanonicalStoryWorkspaceLoader(store);
-        using var workspace = new CanonicalStoryWorkspaceViewModel(loader.Load("story"));
+        using var workspace = new CanonicalStoryWorkspaceViewModel(loader.Load("ST-2345-6789-ABCD-EFGH"));
         var storyEditor = workspace.StoryEditor;
 
         Assert.IsTrue(storyEditor.Host.SetStoryStartRepeatPolicy("start", StoryStartSchema.Repeatable));
@@ -173,8 +173,8 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         storyEditor.MarkSaved();
         Assert.IsTrue(storyEditor.Host.CanUndo);
 
-        new CanonicalStoryResourceLifecycleService(store).DeleteOwnedSession("story", "session");
-        workspace.ApplyResourceSnapshot(loader.Load("story"), CanonicalStoryFolderKind.Sessions);
+        new CanonicalStoryResourceLifecycleService(store).DeleteOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~session");
+        workspace.ApplyResourceSnapshot(loader.Load("ST-2345-6789-ABCD-EFGH"), CanonicalStoryFolderKind.Sessions);
 
         Assert.AreSame(storyEditor, workspace.StoryEditor);
         CollectionAssert.AreEqual(new[] { "start" }, storyEditor.Host.Graph.Nodes.Select(node => node.Id).ToArray());
@@ -187,7 +187,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsFalse(storyEditor.IsDirty);
         CollectionAssert.AreEqual(
             new[] { "start" },
-            new CanonicalGraphLayoutStore(directory.Path).Load(GraphResourceKind.Story, "story").Keys.ToArray());
+            new CanonicalGraphLayoutStore(directory.Path).Load(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH").Keys.ToArray());
 
         Assert.IsTrue(storyEditor.Host.SetStoryStartRepeatPolicy("start", StoryStartSchema.Once));
         CollectionAssert.AreEqual(new[] { "start" }, storyEditor.CreatePersistenceSnapshot().Graph!.Nodes.Select(node => node.Id).ToArray());
@@ -230,12 +230,12 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line-1");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            Envelope(GraphResourceKind.Story, "story", "Story"),
+            Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"),
             [
-                new ActorResourceInfo("referenced", "参考角色", "referenced.json", []),
-                new ActorResourceInfo("owned", "自有角色", "owned.json", []),
+                new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~referenced", "参考角色", "referenced.json", []),
+                new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~owned", "自有角色", "owned.json", []),
             ],
-            [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+            [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
                 new GraphDocument([line]))]);
 
         var session = workspace.SessionItems.Single();
@@ -243,7 +243,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
 
         Assert.IsNotNull(workspace.NodeInspector);
-        CollectionAssert.AreEqual(new[] { "referenced", "owned" },
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~actor~referenced", "ST-2345-6789-ABCD-EFGH~actor~owned" },
             workspace.NodeInspector!.SpeakerOptions.Select(option => option.Id).ToArray());
     }
 
@@ -380,11 +380,11 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     [TestMethod]
     public void WrongKindsDuplicatesAndForeignItemsFailClosed()
     {
-        var story = Envelope(GraphResourceKind.Story, "story", "Story");
-        var wrong = Envelope(GraphResourceKind.Task, "wrong", "Wrong");
+        var story = Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story");
+        var wrong = Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~wrong", "Wrong");
         Assert.ThrowsExactly<ArgumentException>(
             () => new CanonicalStoryWorkspaceViewModel(story, sessions: [wrong]));
-        var duplicate = Envelope(GraphResourceKind.Session, "same", "Same");
+        var duplicate = Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~same", "Same");
         Assert.ThrowsExactly<ArgumentException>(
             () => new CanonicalStoryWorkspaceViewModel(story, sessions: [duplicate, duplicate]));
         var actor = new ActorResourceInfo("same", "Same", "same.json", []);
@@ -396,7 +396,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
             new ActorResourceInfo("foreign", "Foreign", "foreign.json", []));
         Assert.IsFalse(workspace.SelectTreeItem(foreign));
         using var foreignEditor = new CanonicalGraphResourceEditorViewModel(
-            Envelope(GraphResourceKind.Session, "foreign", "Foreign"));
+            Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~foreign", "Foreign"));
         Assert.IsFalse(workspace.OpenGraphResource(new CanonicalStoryGraphItem(foreignEditor)));
         Assert.IsNull(workspace.SelectedTreeItem);
         Assert.IsTrue(workspace.IsStoryFlowActive);
@@ -408,31 +408,31 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         using var directory = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(directory.Path);
         var actors = new ActorRepository(directory.Path);
-        actors.SaveActor(actors.CreateActor("actor", "Actor"));
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
-        store.Sessions.Create(Envelope(GraphResourceKind.Session, "session", "Session"));
+        actors.SaveActor(actors.CreateActor("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"));
+        store.Sessions.Create(Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session"));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembershipSet
             {
-                Actors = ["missing_actor", "actor"],
-                Tasks = ["missing_task"],
+                Actors = ["ST-2345-6789-ABCD-EFGH~actor~missing_actor", "ST-2345-6789-ABCD-EFGH~actor~actor"],
+                Tasks = ["ST-2345-6789-ABCD-EFGH~task~missing_task"],
             },
-            new CanonicalStoryMembershipSet { Sessions = ["session"] }));
+            new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~session"] }));
 
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new CanonicalStoryWorkspaceLoader(store, actors).Load("story"));
+            new CanonicalStoryWorkspaceLoader(store, actors).Load("ST-2345-6789-ABCD-EFGH"));
 
         var actorFolder = workspace.Folders.Single(folder => folder.Kind == CanonicalStoryFolderKind.Actors);
         CollectionAssert.AreEqual(
-            new[] { "missing_actor", "actor" },
+            new[] { "ST-2345-6789-ABCD-EFGH~actor~missing_actor", "ST-2345-6789-ABCD-EFGH~actor~actor" },
             actorFolder.Items.Select(item => item.Id).ToArray());
         Assert.IsTrue(workspace.ActorItems.Single().IsOwned);
         Assert.IsTrue(workspace.SessionItems.Single().IsReferenced);
         Assert.HasCount(2, workspace.MissingItems);
         Assert.HasCount(2, workspace.ValidationIssues);
 
-        var missing = workspace.MissingItems.Single(item => item.Id == "missing_task");
+        var missing = workspace.MissingItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~task~missing_task");
         var storyHost = workspace.ActiveGraphHost;
         Assert.IsTrue(workspace.SelectTreeItem(missing));
         Assert.AreSame(storyHost, workspace.ActiveGraphHost);
@@ -440,7 +440,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsFalse(workspace.OpenSelectedResourceCommand.CanExecute(null));
         Assert.AreEqual("缺失任务", workspace.InspectorKindText);
         Assert.AreEqual("资源缺失", workspace.InspectorSaveStateText);
-        StringAssert.Contains(workspace.InspectorValidationText, "missing_task");
+        StringAssert.Contains(workspace.InspectorValidationText, "ST-2345-6789-ABCD-EFGH~task~missing_task");
     }
 
     [TestMethod]
@@ -449,17 +449,17 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         using var directory = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(directory.Path);
         var actors = new ActorRepository(directory.Path);
-        actors.SaveActor(actors.CreateCollective("guards", "守卫组"));
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Story"));
+        actors.SaveActor(actors.CreateCollective("ST-2345-6789-ABCD-EFGH~actor~guards", "守卫组"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "story", new CanonicalStoryMembershipSet { Actors = ["guards"] }));
+            "ST-2345-6789-ABCD-EFGH", new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~guards"] }));
 
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new CanonicalStoryWorkspaceLoader(store, actors).Load("story"));
+            new CanonicalStoryWorkspaceLoader(store, actors).Load("ST-2345-6789-ABCD-EFGH"));
         var actor = workspace.ActorItems.Single();
 
         Assert.AreEqual(CollectiveActorResource.ResourceType, actor.Actor.Type);
-        Assert.AreEqual("[Group_ID] guards", actor.IdentityText);
+        Assert.AreEqual("[角色组]", actor.IdentityText);
         Assert.IsTrue(workspace.SelectTreeItem(actor));
         Assert.AreEqual("角色组", workspace.InspectorKindText);
         Assert.AreEqual("Group_ID", workspace.InspectorIdentityLabel);
@@ -469,11 +469,11 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     public void ActorDropUpdatesSessionSpeakerWithoutChangingInspectorContext()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("old_actor");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~old_actor");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            Envelope(GraphResourceKind.Story, "story", "Story"),
-            [new ActorResourceInfo("actor", "Actor", "actor.json", [])],
-            [new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line]))]);
+            Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"),
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", [])],
+            [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line]))]);
         Assert.IsTrue(workspace.OpenGraphResource(workspace.SessionItems.Single()));
         var node = workspace.ActiveGraphHost.Nodes.Single();
         Assert.IsTrue(workspace.SelectGraphNode(node));
@@ -482,7 +482,7 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsTrue(workspace.ApplyResourceToNodeParameter(node, workspace.ActorItems.Single()));
 
         Assert.AreSame(inspector, workspace.NodeInspector);
-        Assert.AreEqual("actor", workspace.ActiveGraphHost.Graph.Nodes.Single()
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor", workspace.ActiveGraphHost.Graph.Nodes.Single()
             .Properties["speaker_actor_id"].GetString());
         StringAssert.Contains(workspace.ParameterDropMessage, "Actor");
     }
@@ -499,19 +499,19 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
                 port_id = "actor-trigger",
                 display_name = "角色交互",
                 trigger_type = StoryStartSchema.ActorInteraction,
-                trigger_properties = new { actor_id = "old_actor" },
+                trigger_properties = new { actor_id = "ST-2345-6789-ABCD-EFGH~actor~old_actor" },
                 order = 0,
             },
         });
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([start])),
-            [new ActorResourceInfo("actor", "Actor", "actor.json", [])]);
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])),
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", [])]);
         var node = workspace.ActiveGraphHost.Nodes.Single();
 
         Assert.IsTrue(workspace.ApplyResourceToNodeParameter(node, workspace.ActorItems.Single()));
 
         var slot = StoryStartSchema.ReadTriggers(workspace.ActiveGraphHost.Graph.Nodes.Single()).Single();
-        Assert.AreEqual("actor", slot.TriggerProperties.GetProperty(StoryStartSchema.ActorIdProperty).GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor", slot.TriggerProperties.GetProperty(StoryStartSchema.ActorIdProperty).GetString());
     }
 
     [TestMethod]
@@ -521,24 +521,24 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(
             action, CanonicalStoryActionSchema.GiveItem, out var issues), string.Join("; ", issues));
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([action])),
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([action])),
             items:
             [
-                new IndividualItemResource { ItemId = "coin", DisplayName = "铜币" },
-                new CollectiveItemResource { GroupId = "ore", DisplayName = "矿石组" },
+                new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~coin", DisplayName = "铜币" },
+                new CollectiveItemResource { GroupId = "ST-2345-6789-ABCD-EFGH~item_group~ore", DisplayName = "矿石组" },
             ]);
         var node = workspace.ActiveGraphHost.Nodes.Single();
         Assert.IsTrue(workspace.SelectGraphNode(node));
         var inspector = workspace.NodeInspector;
 
         Assert.IsTrue(workspace.ApplyResourceToNodeParameter(
-            node, workspace.ItemItems.Single(item => item.Id == "coin")));
-        Assert.AreEqual("coin", workspace.ActiveGraphHost.Graph.Nodes.Single()
+            node, workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item~coin")));
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item~coin", workspace.ActiveGraphHost.Graph.Nodes.Single()
             .Properties[CanonicalStoryActionSchema.ItemProperty].GetString());
         var beforeInvalidDrop = workspace.ActiveGraphHost.Graph.ToJson();
 
         Assert.IsFalse(workspace.ApplyResourceToNodeParameter(
-            node, workspace.ItemItems.Single(item => item.Id == "ore")));
+            node, workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item_group~ore")));
 
         Assert.AreEqual(beforeInvalidDrop, workspace.ActiveGraphHost.Graph.ToJson());
         Assert.AreSame(inspector, workspace.NodeInspector);
@@ -550,15 +550,15 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, CanonicalTaskObjectiveSchema.NodeType, "objective");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            Envelope(GraphResourceKind.Story, "story", "Story"),
-            [new ActorResourceInfo("slime_group", "史莱姆组", "slime_group.json", [])],
-            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([objective]))]);
+            Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"),
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~slime_group", "史莱姆组", "slime_group.json", [])],
+            tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective]))]);
         Assert.IsTrue(workspace.OpenGraphResource(workspace.TaskItems.Single()));
         var node = workspace.ActiveGraphHost.Nodes.Single();
 
         Assert.IsTrue(workspace.ApplyResourceToNodeParameter(node, workspace.ActorItems.Single()));
 
-        Assert.AreEqual("slime_group", workspace.ActiveGraphHost.Graph.Nodes.Single()
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~slime_group", workspace.ActiveGraphHost.Graph.Nodes.Single()
             .Properties[CanonicalTaskObjectiveSchema.EntityProperty].GetString());
     }
 
@@ -571,18 +571,18 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
         Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(
             action, CanonicalStoryActionSchema.GiveItem, out var issues), string.Join("; ", issues));
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("bartender");
+        line.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~bartender");
         line.Properties.Remove("pages");
         line.Properties["text"] = JsonSerializer.SerializeToElement("欢迎来到酒馆");
 
         using var storyStart = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "start-story", "Story", new GraphDocument([start])));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([start])));
         using var task = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var storyAction = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "action-story", "Story", new GraphDocument([action])));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ", "Story", new GraphDocument([action])));
         using var session = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", new GraphDocument([line])));
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([line])));
 
         StringAssert.Contains(storyStart.Host.Nodes.Single().ParameterSummary, "进入区域");
         StringAssert.Contains(task.Host.Nodes.Single().ParameterSummary, "击杀实体");
@@ -597,18 +597,18 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
     {
         using var directory = new TemporaryProjectDirectory();
         var story = new GraphResourceEnvelope(
-            GraphResourceKind.Story, "story", "Story",
+            GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story",
             new GraphDocument([GraphNodeFactory.CreateStoryStart("story-node", "trigger")]));
         var session = new GraphResourceEnvelope(
-            GraphResourceKind.Session, "session", "Session",
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
             new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "line", "session-node")]));
         var task = new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task",
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task",
             new GraphDocument([GraphNodeFactory.Create(GraphScope.Task, "objective", "task-node")]));
         var layoutStore = new CanonicalGraphLayoutStore(directory.Path);
-        layoutStore.Save(GraphResourceKind.Story, "story", Positions(("story-node", 101, 201), ("deleted", 9, 9)));
-        layoutStore.Save(GraphResourceKind.Session, "session", Positions(("session-node", 302, 402)));
-        layoutStore.Save(GraphResourceKind.Task, "task", Positions(("task-node", 503, 603)));
+        layoutStore.Save(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", Positions(("story-node", 101, 201), ("deleted", 9, 9)));
+        layoutStore.Save(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", Positions(("session-node", 302, 402)));
+        layoutStore.Save(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", Positions(("task-node", 503, 603)));
 
         using var reopened = new CanonicalStoryWorkspaceViewModel(
             story, sessions: [session], tasks: [task], layoutStore: layoutStore);
@@ -631,10 +631,10 @@ public sealed class CanonicalStoryWorkspaceViewModelTests
 
     private static CanonicalStoryWorkspaceViewModel Workspace()
         => new(
-            Envelope(GraphResourceKind.Story, "story", "Story"),
-            [new ActorResourceInfo("actor", "Actor", "actor.json", [])],
-            [Envelope(GraphResourceKind.Session, "session", "Session")],
-            [Envelope(GraphResourceKind.Task, "task", "Task")]);
+            Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story"),
+            [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "Actor", "actor.json", [])],
+            [Envelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session")],
+            [Envelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task")]);
 
     private static GraphResourceEnvelope Envelope(GraphResourceKind kind, string id, string name)
         => new(kind, id, name, new GraphDocument());

@@ -72,11 +72,10 @@ public final class NominatorControls extends Gui {
         drawRect(x, y, x + w, y + h, DgrUiPalette.SELECTED_BORDER);
         drawRect(x + 1, y + 1, x + w - 1, y + h - 1, DgrUiPalette.SUB_PANEL);
         String title = "group".equals(modal) ? "匹配方式"
-            : "transfer".equals(modal) ? ("NPC".equals(request.getString("type")) ? "NPCID 已被占用" : "ItemID 已被占用")
-                : "ID释放";
+            : "transfer".equals(modal) ? ("NPC".equals(request.getString("type")) ? "角色绑定已被占用" : "物品绑定已被占用") : "释放绑定";
         font.drawString(title, x + 10, y + 10, DgrUiPalette.TEXT);
         font.drawString(
-            font.trimStringToWidth(request.getString("resource"), w - 20),
+            font.trimStringToWidth(request.getString("label"), w - 20),
             x + 10,
             y + 29,
             DgrUiPalette.SECONDARY);
@@ -90,7 +89,7 @@ public final class NominatorControls extends Gui {
             y + 77,
             bw,
             22,
-            "group".equals(modal) ? "精准匹配" : "transfer".equals(modal) ? "转移" : "ID释放");
+            "group".equals(modal) ? "精准匹配" : "transfer".equals(modal) ? "转移" : "释放绑定");
         right = new GuiRpgButton(91, x + 20 + bw, y + 77, bw, 22, "group".equals(modal) ? "模糊匹配" : "取消");
         left.drawButton(mc, mx, my);
         right.drawButton(mc, mx, my);

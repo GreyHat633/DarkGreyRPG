@@ -211,7 +211,7 @@ public final class CanonicalTaskJournalProjector {
             throw new IllegalArgumentException("Malformed canonical Task objective node.");
         Map<String, JsonElement> properties = node.getProperties();
         String type = string(properties, "objective_type");
-        String description = string(properties, "description");
+        String description = CanonicalTaskRuntime.objectiveDescription(node);
         int required = ("interact_actor".equals(type) || "reach_region".equals(type))
             && !properties.containsKey("required") ? 1 : integer(properties, "required");
         if (required <= 0) throw new IllegalArgumentException("Task objective required progress must be positive.");

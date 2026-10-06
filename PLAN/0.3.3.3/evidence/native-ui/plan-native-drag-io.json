@@ -1,0 +1,11 @@
+{
+  "Pid": 11656,
+  "DurationMs": 10153.4559,
+  "Moves": 160,
+  "ReadBytes": 0,
+  "WriteBytes": 0,
+  "ReadOps": 0,
+  "WriteOps": 0,
+  "OtherBytes": 0,
+  "Scope": "Entire process counters during held drag; includes pipe IO; excludes mouse-up commit"
+}

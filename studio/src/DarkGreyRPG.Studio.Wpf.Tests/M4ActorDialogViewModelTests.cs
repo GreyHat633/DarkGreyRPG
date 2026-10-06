@@ -44,9 +44,9 @@ public sealed class M4ActorDialogViewModelTests
     [TestMethod]
     public void ImportIdentityMakesIndependentCopySemanticsExplicit()
     {
-        var viewModel = ActorIdentityDialogViewModel.ForImport("侦探", "detective_copy");
+        var viewModel = ActorIdentityDialogViewModel.ForImport("侦探", "ST-2345-6789-ABCD-EFGH~actor~detective_copy");
 
-        Assert.AreEqual("detective_copy", viewModel.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~detective_copy", viewModel.Id);
         Assert.AreEqual("侦探", viewModel.DisplayName);
         Assert.IsTrue(viewModel.Description.Contains("独立资源", StringComparison.Ordinal));
         Assert.IsTrue(viewModel.Description.Contains("不会影响原角色", StringComparison.Ordinal));

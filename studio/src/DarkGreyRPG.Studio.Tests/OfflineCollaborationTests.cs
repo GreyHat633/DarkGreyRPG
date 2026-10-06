@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -20,17 +21,17 @@ public sealed class OfflineCollaborationTests
         File.Delete(package);
 
         var catalog = OfflineProviderCatalog.Load(consumer.Root);
-        var actor = catalog.Resolve(DgrResourceKind.Actor, "B:boss");
+        var actor = catalog.Resolve(DgrResourceKind.Actor, "ST-2345-6789-ABCD-EFGH~actor~boss");
         Assert.IsNotNull(actor);
         Assert.AreEqual("Guard v1", actor.DisplayName);
-        Assert.AreEqual("B", actor.Namespace);
+        Assert.AreEqual(ResourceAddress.FromKey(actor.Id).StoryUid.Value, actor.OwnerStoryUid);
         Assert.AreEqual(imported.Fingerprint, catalog.Providers.Single().Fingerprint);
         Assert.IsTrue(actor.IsReadOnly);
-        Assert.AreEqual("B:boss", actor.FullId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~boss", actor.Id);
     }
 
     [TestMethod]
-    public void ImportSelectsOwnedResourcesPreservesNamespaceAndConvertsReferenceAtomically()
+    public void ImportAllocatesNewIdentitiesAndPreservesOriginalReference()
     {
         using var provider = BuildProvider("Guard");
         using var consumer = new TestProjectDirectory();
@@ -39,29 +40,35 @@ public sealed class OfflineCollaborationTests
 
         var plan = new OfflineStoryPackageImportService().BuildPlan(consumer.Root, package);
         Assert.IsTrue(plan.CanApply);
-        Assert.IsNotNull(plan.ReferencedPackagePath);
+        var referencePath = OfflineProviderCatalog.Load(consumer.Root).Providers.Single().PackagePath;
+        var referenceBytes = File.ReadAllBytes(referencePath);
         new OfflineStoryPackageImportService().Apply(plan);
 
         var store = new CanonicalProjectGraphStore(consumer.Root);
-        Assert.AreEqual("B:story", store.Stories.Load("B:story").Id);
-        Assert.AreEqual("B:boss", new ActorRepository(consumer.Root).LoadIndividual("B:boss").Id);
-        Assert.IsFalse(File.Exists(plan.ReferencedPackagePath));
-        Assert.IsTrue(NamespacePolicyStore.Load(consumer.Root)!.IsCustom("B:story"));
+        Assert.AreNotEqual("ST-2345-6789-ABCD-EFGH", plan.ImportedStoryId);
+        Assert.AreEqual(plan.ImportedStoryId, store.Stories.Load(plan.ImportedStoryId).Id);
+        var importedActor = store.Memberships.Load(plan.ImportedStoryId).OwnedResources.Actors.Single();
+        Assert.AreEqual(plan.ImportedStoryId, ResourceAddress.FromKey(importedActor).StoryUid.Value);
+        Assert.AreEqual("Guard", new ActorRepository(consumer.Root).LoadIndividual(importedActor).DisplayName);
+        CollectionAssert.AreEqual(referenceBytes, File.ReadAllBytes(referencePath));
     }
 
     [TestMethod]
-    public void ImportConflictIsReportedBeforeMutationAndLeavesProjectUnchanged()
+    public void RepeatedImportAllocatesIndependentStoriesAndPreservesExistingContent()
     {
         using var provider = BuildProvider("Guard");
         using var consumer = new TestProjectDirectory();
         var package = BuildPackage(provider.Root, "Guard");
         var service = new OfflineStoryPackageImportService();
-        service.Import(consumer.Root, package);
-        var before = File.ReadAllBytes(new CanonicalProjectGraphStore(consumer.Root).Stories.GetPath("B:story"));
-        var conflict = service.BuildPlan(consumer.Root, package);
-        Assert.IsFalse(conflict.CanApply);
-        StringAssert.Contains(conflict.Conflicts.First(item => item.Id == "B:story").Message, "already exists");
-        CollectionAssert.AreEqual(before, File.ReadAllBytes(new CanonicalProjectGraphStore(consumer.Root).Stories.GetPath("B:story")));
+        var first = service.Import(consumer.Root, package);
+        var store = new CanonicalProjectGraphStore(consumer.Root);
+        var before = File.ReadAllBytes(store.Stories.GetPath(first.ImportedStoryId));
+        var second = service.BuildPlan(consumer.Root, package);
+        Assert.IsTrue(second.CanApply);
+        Assert.AreNotEqual(first.ImportedStoryId, second.ImportedStoryId);
+        service.Apply(second);
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(store.Stories.GetPath(first.ImportedStoryId)));
+        Assert.HasCount(2, store.Stories.List());
     }
 
     [TestMethod]
@@ -72,7 +79,7 @@ public sealed class OfflineCollaborationTests
         var package = BuildPackage(provider.Root, "Guard");
         var service = new OfflineStoryPackageImportService();
         var plan = service.BuildPlan(consumer.Root, package);
-        var storyPath = new CanonicalProjectGraphStore(consumer.Root).Stories.GetPath("B:story");
+        var storyPath = new CanonicalProjectGraphStore(consumer.Root).Stories.GetPath(plan.ImportedStoryId);
         Directory.CreateDirectory(Path.GetDirectoryName(storyPath)!);
         File.WriteAllText(storyPath, "changed-before-apply");
         Assert.ThrowsExactly<InvalidOperationException>(() => service.Apply(plan));
@@ -80,19 +87,22 @@ public sealed class OfflineCollaborationTests
     }
 
     [TestMethod]
-    public void ImportPlanDetectsLogicalIdentityAtAnArbitraryCanonicalPath()
+    public void ImportPreservesExistingLogicalIdentityAtAnArbitraryCanonicalPath()
     {
         using var provider = BuildProvider("Guard");
         using var consumer = new TestProjectDirectory();
         var package = BuildPackage(provider.Root, "Guard");
         var arbitrary = Path.Combine(consumer.Root, "resources", "canonical", "stories", "moved.json");
         Directory.CreateDirectory(Path.GetDirectoryName(arbitrary)!);
-        var source = new CanonicalProjectGraphStore(provider.Root).Stories.Load("B:story");
+        var source = new CanonicalProjectGraphStore(provider.Root).Stories.Load("ST-2345-6789-ABCD-EFGH");
         File.WriteAllText(arbitrary, source.ToJson());
+        new CanonicalProjectGraphStore(consumer.Root).Memberships.Create(new CanonicalStoryMembershipManifest(source.Id));
 
         var plan = new OfflineStoryPackageImportService().BuildPlan(consumer.Root, package);
-        Assert.IsFalse(plan.CanApply);
-        StringAssert.Contains(plan.Conflicts.Single(item => item.Kind == DgrResourceKind.Story).Message, "moved.json");
+        Assert.IsTrue(plan.CanApply);
+        Assert.AreNotEqual(source.Id, plan.ImportedStoryId);
+        new OfflineStoryPackageImportService().Apply(plan);
+        Assert.AreEqual(source.ToJson(), File.ReadAllText(arbitrary));
     }
 
     [TestMethod]
@@ -105,7 +115,7 @@ public sealed class OfflineCollaborationTests
         _ = service.AddOrUpdate(consumer.Root, first);
         var old = OfflineProviderCatalog.Load(consumer.Root).Providers.Single();
 
-        var actor = new ActorRepository(provider.Root).LoadIndividual("B:boss");
+        var actor = new ActorRepository(provider.Root).LoadIndividual("ST-2345-6789-ABCD-EFGH~actor~boss");
         actor.DisplayName = "Guard v2";
         new ActorRepository(provider.Root).SaveActor(actor);
         var second = BuildPackage(provider.Root, "Guard v2");
@@ -113,25 +123,26 @@ public sealed class OfflineCollaborationTests
         var current = OfflineProviderCatalog.Load(consumer.Root);
         Assert.AreEqual(old.Identity.PackageId, updated.Identity.PackageId);
         Assert.AreNotEqual(old.Fingerprint, current.Providers.Single().Fingerprint);
-        Assert.AreEqual("Guard v2", current.Resolve(DgrResourceKind.Actor, "B:boss")!.DisplayName);
+        Assert.AreEqual("Guard v2", current.Resolve(DgrResourceKind.Actor, "ST-2345-6789-ABCD-EFGH~actor~boss")!.DisplayName);
         Assert.AreEqual(1, current.Providers.Count);
     }
 
     [TestMethod]
-    public void ConversionRejectsDifferentFingerprintAndRetainsReference()
+    public void ImportOfNewSnapshotPreservesExistingReferenceSnapshot()
     {
         using var provider = BuildProvider("Guard v1");
         using var consumer = new TestProjectDirectory();
         var first = BuildPackage(provider.Root, "Guard v1");
         _ = new OfflineReferencePackageService().AddOrUpdate(consumer.Root, first);
         var old = OfflineProviderCatalog.Load(consumer.Root).Providers.Single();
-        var actor = new ActorRepository(provider.Root).LoadIndividual("B:boss");
+        var actor = new ActorRepository(provider.Root).LoadIndividual("ST-2345-6789-ABCD-EFGH~actor~boss");
         actor.DisplayName = "Guard v2";
         new ActorRepository(provider.Root).SaveActor(actor);
         var second = BuildPackage(provider.Root, "Guard v2");
 
-        Assert.ThrowsExactly<OfflineStoryPackageImportException>(() =>
-            new OfflineStoryPackageImportService().BuildPlan(consumer.Root, second));
+        var imported = new OfflineStoryPackageImportService().Import(consumer.Root, second);
+        var actorId = new CanonicalProjectGraphStore(consumer.Root).Memberships.Load(imported.ImportedStoryId).OwnedResources.Actors.Single();
+        Assert.AreEqual("Guard v2", new ActorRepository(consumer.Root).LoadActor(actorId).DisplayName);
         Assert.AreEqual(old.Fingerprint, OfflineProviderCatalog.Load(consumer.Root).Providers.Single().Fingerprint);
     }
 
@@ -143,8 +154,10 @@ public sealed class OfflineCollaborationTests
         var package = BuildPackage(provider.Root, "Guard");
         _ = new OfflineReferencePackageService().AddOrUpdate(consumer.Root, package);
         var plan = new OfflineStoryPackageImportService().BuildPlan(consumer.Root, package);
+        var referencePath = OfflineProviderCatalog.Load(consumer.Root).Providers.Single().PackagePath;
+        var referenceBytes = File.ReadAllBytes(referencePath);
         var writes = 0;
-        var transaction = new NamespaceFileTransaction(
+        var transaction = new ProjectFileTransaction(
             writeFile: (path, bytes) =>
             {
                 File.WriteAllBytes(path, bytes);
@@ -152,55 +165,37 @@ public sealed class OfflineCollaborationTests
             });
 
         Assert.ThrowsExactly<IOException>(() => new OfflineStoryPackageImportService(transaction).Apply(plan));
-        Assert.IsTrue(File.Exists(plan.ReferencedPackagePath));
-        Assert.IsFalse(File.Exists(new CanonicalProjectGraphStore(consumer.Root).Stories.GetPath("B:story")));
-        Assert.IsFalse(File.Exists(new ActorRepository(consumer.Root).GetActorPath("B:boss")));
+        CollectionAssert.AreEqual(referenceBytes, File.ReadAllBytes(referencePath));
+        foreach (var change in plan.Changes.Where(change => change.ExpectedBytes is null))
+            Assert.IsFalse(File.Exists(Path.Combine(consumer.Root, change.RelativePath)));
+        Assert.IsFalse(File.Exists(new CanonicalProjectGraphStore(consumer.Root).Stories.GetPath("ST-2345-6789-ABCD-EFGH")));
+        Assert.IsFalse(File.Exists(new ActorRepository(consumer.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~boss")));
     }
 
     [TestMethod]
-    public void ImportedCustomNamespaceSurvivesGlobalNamespaceChange()
+    public void ExportRejectsUnresolvedDependencyAndPreservesPreviousPackage()
     {
-        using var provider = BuildProvider("Guard");
+        using var provider = BuildProvider("Guard", "ST-JKLM-NPQR-STUV-WXYZ~actor~princess");
         using var consumer = new TestProjectDirectory();
-        var package = BuildPackage(provider.Root, "Guard");
-        var policyPath = Path.Combine(consumer.Root, NamespacePolicyStore.RelativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(policyPath)!);
-        File.WriteAllBytes(policyPath, NamespacePolicyStore.Encode(new NamespacePolicy("A")));
-        new OfflineStoryPackageImportService().Import(consumer.Root, package);
-
-        var migration = new NamespaceProjectMigrationService();
-        migration.Apply(migration.PreviewGlobal(consumer.Root, "A2"));
-        var policy = NamespacePolicyStore.Load(consumer.Root)!;
-        Assert.AreEqual("A2", policy.GlobalNamespace);
-        Assert.AreEqual("B", policy.StoryOverrides["B:story"]);
-        Assert.AreEqual("B:story", new CanonicalProjectGraphStore(consumer.Root).Stories.Load("B:story").Id);
-    }
-
-    [TestMethod]
-    public void ImportKeepsExternalReferencedResourceUnresolvedWithoutCopyingIt()
-    {
-        using var provider = BuildProvider("Guard", "C:princess");
-        using var consumer = new TestProjectDirectory();
-        var package = BuildPackage(provider.Root, "Guard");
-
-        new OfflineStoryPackageImportService().Import(consumer.Root, package);
-        var membership = new CanonicalProjectGraphStore(consumer.Root).Memberships.Load("B:story");
-        CollectionAssert.Contains(membership.ReferencedResources.Actors.ToArray(), "C:princess");
-        Assert.IsFalse(File.Exists(new ActorRepository(consumer.Root).GetActorPath("C:princess")));
-        Assert.IsNull(OfflineNativeContentCatalog.Load(consumer.Root).SingleOrDefault(resource => resource.Id == "C:princess"));
+        var output = Path.Combine(provider.Root, "exports", "input.dgrs");
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+        File.WriteAllText(output, "previous export");
+        Assert.ThrowsExactly<StoryPackageException>(() => BuildPackage(provider.Root, "Guard"));
+        Assert.AreEqual("previous export", File.ReadAllText(output));
+        Assert.IsEmpty(new CanonicalProjectGraphStore(consumer.Root).Stories.List());
     }
 
     private static TestProjectDirectory BuildProvider(string actorName, string? referencedActor = null)
     {
         var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "B:story", "Story",
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story",
             new GraphDocument([GraphNodeFactory.CreateStoryStart("start")] )));
-        var actor = new ActorRepository(project.Root).CreateIndividual("B:boss", actorName);
-        actor.HomeStoryId = "B:story";
+        var actor = new ActorRepository(project.Root).CreateIndividual("ST-2345-6789-ABCD-EFGH~actor~boss", actorName);
+        actor.HomeStoryId = "ST-2345-6789-ABCD-EFGH";
         new ActorRepository(project.Root).SaveActor(actor);
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("B:story",
-            new CanonicalStoryMembershipSet { Actors = ["B:boss"] },
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~boss"] },
             new CanonicalStoryMembershipSet { Actors = referencedActor is null ? [] : [referencedActor] }));
         return project;
     }
@@ -208,7 +203,7 @@ public sealed class OfflineCollaborationTests
     private static string BuildPackage(string projectRoot, string version)
     {
         var output = Path.Combine(projectRoot, "exports", "input.dgrs");
-        _ = new DgrsStoryPackageExporter(projectRoot).Build("B:story", output, version);
+        _ = new DgrsStoryPackageExporter(projectRoot).Build("ST-2345-6789-ABCD-EFGH", output, version);
         return output;
     }
 }

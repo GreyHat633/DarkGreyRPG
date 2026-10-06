@@ -1,0 +1,92 @@
+[
+  {
+    "Case": "Experience-Line",
+    "Node": "node_dc9924050ade449d8f1c65d2ea30d994",
+    "Speed": 30.0,
+    "VisibleLength": 5,
+    "TextLength": 16,
+    "Layers": 0,
+    "Task": "",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-RevealCompleted",
+    "Node": "node_951bd309563344519024ae4296ae93c1",
+    "Speed": 30.0,
+    "VisibleLength": 42,
+    "TextLength": 42,
+    "Layers": 0,
+    "Task": "",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-TitleWaiting",
+    "Node": null,
+    "Speed": null,
+    "VisibleLength": 0,
+    "TextLength": 0,
+    "Layers": null,
+    "Task": "",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-TaskAfterTitle",
+    "Node": null,
+    "Speed": null,
+    "VisibleLength": 0,
+    "TextLength": 0,
+    "Layers": null,
+    "Task": "ACTIVE",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-ScreenA",
+    "Node": "node_dc9924050ade449d8f1c65d2ea30d994",
+    "Speed": 0.0,
+    "VisibleLength": 16,
+    "TextLength": 16,
+    "Layers": 1,
+    "Task": "",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-ScreenB-Revealing",
+    "Node": "experience-line-b",
+    "Speed": 120.0,
+    "VisibleLength": 9,
+    "TextLength": 327,
+    "Layers": 1,
+    "Task": "",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-NonblockingTitle",
+    "Node": null,
+    "Speed": null,
+    "VisibleLength": 0,
+    "TextLength": 0,
+    "Layers": null,
+    "Task": "ACTIVE",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-TaskSettledB",
+    "Node": "node_713eb756c18a4bd59f731a39062fd14a",
+    "Speed": 30.0,
+    "VisibleLength": 6,
+    "TextLength": 11,
+    "Layers": 0,
+    "Task": "SETTLED",
+    "Voice": false
+  },
+  {
+    "Case": "Experience-Reconnect",
+    "Node": "node_713eb756c18a4bd59f731a39062fd14a",
+    "Speed": 30.0,
+    "VisibleLength": 11,
+    "TextLength": 11,
+    "Layers": 0,
+    "Task": "SETTLED",
+    "Voice": false
+  }
+]

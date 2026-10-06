@@ -1,0 +1,58 @@
+﻿WINDOW:  1567,986,320,53
+WINDOW: DarkGrey RPG Studio 0.3.3.2 229,44,1463,942
+ControlType.Window id= name=新建项目 enabled=True rect=576,180,769,669
+ControlType.Text id= name=新建项目 enabled=True rect=615,247,691,34
+ControlType.Text id= name=选择父文件夹并填写项目文件夹名，或直接填写完整目标路径。完整目标路径优先。 enabled=True rect=615,296,691,22
+ControlType.Text id= name=父文件夹 enabled=True rect=615,337,161,22
+ControlType.Edit id= name= enabled=True rect=788,328,427,40
+ControlType.Button id= name=浏览… enabled=True rect=1225,330,81,37
+ControlType.Text id= name=浏览… enabled=True rect=1241,337,49,22
+ControlType.Text id= name=项目文件夹名 enabled=True rect=615,387,161,22
+ControlType.Edit id= name= enabled=True rect=788,378,518,39
+ControlType.Text id= name=完整目标路径 enabled=True rect=615,446,161,22
+ControlType.Edit id= name= enabled=True rect=788,437,427,40
+ControlType.Button id=DeleteButton name= enabled=True rect=1173,442,37,30
+ControlType.Button id= name=浏览… enabled=True rect=1225,439,81,37
+ControlType.Text id= name=浏览… enabled=True rect=1241,446,49,22
+ControlType.Text id= name=目标： enabled=True rect=776,487,52,22
+ControlType.Text id= name=E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0332-ui\Project enabled=True rect=828,487,508,22
+ControlType.Text id= name=项目 ID enabled=True rect=615,628,161,22
+ControlType.Edit id= name= enabled=True rect=776,620,530,39
+ControlType.Text id= name=显示名称 enabled=True rect=615,688,161,22
+ControlType.Edit id= name= enabled=True rect=776,679,530,40
+ControlType.Text id= name= enabled=True rect=776,731,530,22
+ControlType.Button id= name=取消 enabled=True rect=1041,768,119,42
+ControlType.Text id= name=取消 enabled=True rect=1083,778,35,22
+ControlType.Button id= name=创建项目 enabled=True rect=1170,768,136,42
+ControlType.Text id= name=创建项目 enabled=True rect=1203,778,70,22
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=就绪 enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,62,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=369,891,80,42
+ControlType.Text id= name=调试器 enabled=True rect=383,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=451,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=465,901,85,22
+ControlType.Button id= name=新建故事 enabled=False rect=505,160,39,40
+ControlType.Text id= name=项目首页 enabled=True rect=255,167,250,26
+ControlType.Button id= name=引用故事包 enabled=True rect=253,820,291,49
+ControlType.Pane id= name= enabled=True rect=Empty
+ControlType.List id= name=引用故事包区域 enabled=True rect=Empty
+ControlType.Edit id=StorySearchBox name=搜索故事 enabled=True rect=253,212,291,40
+ControlType.Text id= name=请先从“文件”菜单新建或打开项目。 enabled=True rect=253,522,273,22
+ControlType.Thumb id=ResourceBrowserSplitter name= enabled=True rect=560,145,10,739
+ControlType.Text id= name=DarkGrey RPG Studio enabled=True rect=952,477,346,41
+ControlType.Text id= name=从“文件”菜单新建或打开项目。 enabled=True rect=952,530,346,22

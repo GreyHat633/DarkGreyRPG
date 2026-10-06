@@ -1,0 +1,38 @@
+{
+  "status": "PASS_TARGETED_TWO_MEMBERS",
+  "native_import": "two fresh UIDs, shared PNG and OGG retained",
+  "native_export_extension": "exact .dgrs.g after picker fix",
+  "packages": [
+    {
+      "path": "StudioExportedMediaGroup0336.dgrs.g",
+      "bytes": 19866,
+      "sha256": "6f19e7b4ff4f0512d9ce5b4a033145d13fd653694b5af58d3ee197a38900aa11",
+      "story_uids": [
+        "ST-9427-YJUA-UKY9-34P6",
+        "ST-HGM8-UFVY-MHA7-S3Y5"
+      ]
+    },
+    {
+      "path": "StudioExportedMediaGroup0336Updated.dgrs.g",
+      "bytes": 19893,
+      "sha256": "6ce9982264b57b1546ebfb52c437a7c5d395092aedffca000e2cd848ea01b66a",
+      "story_uids": [
+        "ST-9427-YJUA-UKY9-34P6",
+        "ST-HGM8-UFVY-MHA7-S3Y5"
+      ]
+    }
+  ],
+  "sibling_update": "A generation unchanged 30abac47e0d9, B changed 196bdf821347 -> 32f6d20a5c25",
+  "active_session_byte_semantics_equal": true,
+  "portrait": "visible before and after update",
+  "voice": "verified and audio_prepare play_commands_queued in real client log; not human listening acceptance",
+  "limitations": [
+    "Three-member variant, slow in-flight update, full 3/10 real-client matrix pending"
+  ],
+  "manual_disable_two_clients": {
+    "existing_session_retained": true,
+    "second_player_entry_rejected": true,
+    "native_continue_terminated_existing_story": true,
+    "manager_disabled_active_count": 1
+  }
+}

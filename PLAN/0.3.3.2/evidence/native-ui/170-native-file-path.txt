@@ -1,0 +1,18 @@
+﻿WINDOW: 导入留声机 MP3（不超过 32 MiB / 15 分钟） 0,0,758,543
+ControlType.Pane id=1091 name=查找范围(I): enabled=True rect=17,50,114,17
+ControlType.Pane id=1137 name=文档 enabled=True rect=141,46,348,26
+ControlType.Pane id=1088 name= enabled=True rect=505,46,160,28
+ControlType.Pane id=1184 name= enabled=True rect=17,76,118,450
+ControlType.Pane id=1121 name= enabled=True rect=141,82,600,353
+ControlType.Pane id=1 name=FolderView enabled=True rect=141,82,600,353
+ControlType.Pane id= name= enabled=True rect=141,82,579,24
+ControlType.Pane id=1090 name=文件名(N): enabled=True rect=143,454,116,17
+ControlType.Pane id=1148 name=E:\Java\MinecraftMod\DarkGreyRPG\src\test\resources\gramophone\tone.mp3 enabled=True rect=269,446,328,24
+ControlType.Pane id=1148 name= enabled=True rect=269,446,328,24
+ControlType.Pane id=1148 name=E:\Java\MinecraftMod\DarkGreyRPG\src\test\resources\gramophone\tone.mp3 enabled=True rect=273,451,300,15
+ControlType.Pane id=1089 name=文件类型(T): enabled=True rect=143,486,116,17
+ControlType.Pane id=1136 name=所有文件 (*.*) enabled=True rect=269,482,328,23
+ControlType.Pane id=1 name=打开(O) enabled=True rect=621,446,120,28
+ControlType.Pane id=2 name=取消 enabled=True rect=621,480,120,28
+ControlType.Pane id= name= enabled=True rect=728,513,21,21
+WINDOW: Minecraft 1.7.10 320,140,1298,846

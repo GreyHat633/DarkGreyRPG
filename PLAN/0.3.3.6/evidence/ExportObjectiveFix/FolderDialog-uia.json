@@ -1,0 +1,278 @@
+[
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "9,105,941,411"
+  },
+  {
+    "Type": "ControlType.ToolBar",
+    "Name": "命令模块",
+    "Id": "FolderBandModuleInner",
+    "Bounds": "9,105,941,38"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "帮助(&H)",
+    "Id": "HelpButton",
+    "Bounds": "905,107,34,32"
+  },
+  {
+    "Type": "ControlType.SplitButton",
+    "Name": "视图",
+    "Id": "ViewControl",
+    "Bounds": "831,107,64,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "视图滑块",
+    "Id": "SplitMenuButton",
+    "Bounds": "864,107,19,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "组织​​",
+    "Id": "{7DDC1264-7E4D-4F74-BBC0-D191987C8D0F}",
+    "Bounds": "13,107,80,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "新建​​文件夹​​",
+    "Id": "{E44616AD-6DF1-4B94-85A4-E465AE8A19DB}",
+    "Bounds": "93,107,111,32"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "控制项宿主",
+    "Id": "ProperTreeHost",
+    "Bounds": "9,143,193,373"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "树视图",
+    "Id": "100",
+    "Bounds": "9,143,193,373"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "Shell 文件夹视图",
+    "Id": "listview",
+    "Bounds": "207,143,743,373"
+  },
+  {
+    "Type": "ControlType.List",
+    "Name": "项目视图",
+    "Id": "",
+    "Bounds": "207,143,743,373"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "水平滚动条",
+    "Id": "HorizontalScrollBar",
+    "Bounds": "207,495,743,21"
+  },
+  {
+    "Type": "ControlType.Header",
+    "Name": "标题",
+    "Id": "",
+    "Bounds": "207,143,776,32"
+  },
+  {
+    "Type": "ControlType.SplitButton",
+    "Name": "名称",
+    "Id": "System.ItemNameDisplay",
+    "Bounds": "207,143,337,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "筛选器下拉列表",
+    "Id": "DropDown",
+    "Bounds": "524,143,19,32"
+  },
+  {
+    "Type": "ControlType.SplitButton",
+    "Name": "修改日期",
+    "Id": "System.DateModified",
+    "Bounds": "544,143,179,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "筛选器下拉列表",
+    "Id": "DropDown",
+    "Bounds": "703,143,19,32"
+  },
+  {
+    "Type": "ControlType.SplitButton",
+    "Name": "类型",
+    "Id": "System.ItemTypeText",
+    "Bounds": "723,143,149,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "筛选器下拉列表",
+    "Id": "DropDown",
+    "Bounds": "852,143,19,32"
+  },
+  {
+    "Type": "ControlType.SplitButton",
+    "Name": "大小",
+    "Id": "System.Size",
+    "Bounds": "872,143,99,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "筛选器下拉列表",
+    "Id": "DropDown",
+    "Bounds": "951,143,19,32"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Name": "没有与搜索条件匹配的项。",
+    "Id": "EmptyText",
+    "Bounds": "207,182,743,42"
+  },
+  {
+    "Type": "ControlType.Tree",
+    "Name": "应用程序控件",
+    "Id": "AppControlsModuleInner",
+    "Bounds": "Empty"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "文件夹:",
+    "Id": "1090",
+    "Bounds": "176,537,49,20"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "1152",
+    "Bounds": "232,532,696,30"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "选择文件夹",
+    "Id": "1",
+    "Bounds": "681,568,123,32"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "取消",
+    "Id": "2",
+    "Bounds": "819,568,109,32"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "929,594,21,21"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "9,66,941,39"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "40965",
+    "Bounds": "9,66,941,39"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "9,68,83,32"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "导航按钮",
+    "Id": "",
+    "Bounds": "14,70,78,30"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "92,66,30,36"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "向上一级区段工具栏",
+    "Id": "",
+    "Bounds": "92,71,30,36"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "41477",
+    "Bounds": "122,67,554,33"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "124,71,550,27"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "124,71,510,27"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "地址: E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-ui-followup\\ExportObjectiveFix\\Exports",
+    "Id": "1001",
+    "Bounds": "124,71,510,27"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "地址区段工具栏",
+    "Id": "",
+    "Bounds": "634,71,40,27"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "680,83,6,1"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "686,67,253,33"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "686,70,253,29"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "691,70,243,29"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Name": "搜索框",
+    "Id": "SearchEditBox",
+    "Bounds": "693,74,219,20"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Name": "搜索",
+    "Id": "SearchBoxSearchButton",
+    "Bounds": "916,70,16,29"
+  },
+  {
+    "Type": "ControlType.Pane",
+    "Name": "",
+    "Id": "",
+    "Bounds": "943,83,7,1"
+  }
+]

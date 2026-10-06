@@ -1,0 +1,12 @@
+[
+  {
+    "Action": "撤销",
+    "Starts": 1,
+    "Passed": true
+  },
+  {
+    "Action": "重做",
+    "Starts": 2,
+    "Passed": true
+  }
+]

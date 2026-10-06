@@ -1,0 +1,91 @@
+WINDOW: Native0333Integrated — DarkGrey RPG Studio 0.3.3.3 229,44,1463,942
+ControlType.TitleBar id=TitleBar name=Native0333Integrated — DarkGrey RPG Studio 0.3.3.3 enabled=True rect=238,53,1445,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=238,53,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=238,53,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1511,45,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=1569,45,57,36
+ControlType.Button id=Close name=Close enabled=True rect=1626,45,58,36
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=打开故事失败：Canonical resource file 'E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Native\GroupLiveProject\resources\canonical\sessions\x4e617469766530333332/x696e74656772617465645f73657373696f6e.json' is invalid. enabled=True rect=253,946,1915,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,90,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.Text id= name=2 enabled=True rect=368,902,7,19
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=398,891,79,42
+ControlType.Text id= name=调试器 enabled=True rect=411,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=480,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=493,901,85,22
+ControlType.Button id= name=新建故事 enabled=True rect=505,160,39,40
+ControlType.Text id= name=项目首页 enabled=True rect=255,167,250,26
+ControlType.Button id= name=引用故事包 enabled=True rect=253,820,291,49
+ControlType.Pane id= name= enabled=True rect=Empty
+ControlType.List id= name=引用故事包区域 enabled=True rect=Empty
+ControlType.Edit id=StorySearchBox name=搜索故事 enabled=True rect=253,212,291,40
+ControlType.List id=StoryList name=故事导航列表 enabled=True rect=253,262,291,543
+ControlType.ListItem id= name=DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel enabled=True rect=254,263,289,116
+ControlType.Text id= name=NativeAcceptance enabled=True rect=276,288,245,22
+ControlType.Text id= name=Native0332:integrated enabled=True rect=276,312,245,22
+ControlType.Text id= name=新格式 enabled=True rect=276,337,245,17
+ControlType.Thumb id=ResourceBrowserSplitter name= enabled=True rect=560,145,10,739
+ControlType.Button id= name=进入选中故事 enabled=True rect=1501,197,144,42
+ControlType.Text id= name=进入故事 enabled=True rect=1538,206,69,22
+ControlType.Text id= name=项目故事图谱 enabled=True rect=605,184,896,41
+ControlType.Text id= name=左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。 enabled=True rect=605,230,896,22
+ControlType.Custom id= name=故事图谱自由布局画布 enabled=True rect=605,274,658,572
+ControlType.Text id= name=1 个故事 · 0 条连接 enabled=True rect=605,274,658,22
+ControlType.Custom id=Editor name=节点图编辑器 enabled=True rect=605,306,658,478
+ControlType.Button id= name=图编辑器缩放到百分之百 enabled=True rect=605,314,68,35
+ControlType.Text id= name=100% enabled=True rect=616,321,46,22
+ControlType.Button id= name=适应全部图节点 enabled=True rect=678,314,57,35
+ControlType.Text id= name=适应 enabled=True rect=689,321,35,22
+ControlType.Button id= name=重置图视图 enabled=True rect=740,314,57,35
+ControlType.Text id= name=重置 enabled=True rect=751,321,35,22
+ControlType.Button id=ScissorsButton name=剪断连线 enabled=True rect=802,314,57,35
+ControlType.Text id= name=剪刀 enabled=True rect=813,321,35,22
+ControlType.Button id=CombineSelection name=组合 enabled=True rect=864,314,57,35
+ControlType.Text id= name=组合 enabled=True rect=875,321,35,22
+ControlType.Text id= name=拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放 enabled=True rect=936,313,327,44
+ControlType.Custom id=CanonicalGraphNode_Native0332:integrated name=图节点 故事「NativeAcceptance」 Native0332:integrated enabled=True rect=705,455,288,114
+ControlType.Text id=HeaderTitle name=故事「NativeAcceptance」 enabled=True rect=718,464,263,22
+ControlType.Button id=CanonicalGraphPort_Native0332:integrated_native_finished name=Native0332:integrated 输出端口 native_finished (Flow) enabled=True rect=849,501,134,25
+ControlType.Text id= name=验收结束 enabled=True rect=897,505,55,17
+ControlType.Group id=Help name=介绍说明 enabled=True rect=605,794,658,52
+ControlType.Button id=HeaderSite name=介绍说明 enabled=True rect=606,795,656,50
+ControlType.Text id= name=介绍说明 enabled=True rect=620,809,613,22
+ControlType.Thumb id= name= enabled=True rect=1263,274,10,572
+ControlType.Pane id= name= enabled=True rect=1294,295,330,530
+ControlType.Text id= name=故事详情 enabled=True rect=1294,295,330,19
+ControlType.Text id= name=选中故事完整概览 enabled=True rect=1294,319,330,34
+ControlType.Text id= name=Native0332:integrated enabled=True rect=1294,358,330,22
+ControlType.List id= name= enabled=True rect=1294,403,330,147
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 角色, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = False } enabled=True rect=1294,403,330,37
+ControlType.Group id= name=角色 enabled=False rect=1294,405,330,32
+ControlType.Button id=HeaderToggle name=角色 enabled=False rect=1294,405,59,32
+ControlType.Text id= name=角色 enabled=False rect=1315,410,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 物品, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = False } enabled=True rect=1294,440,330,37
+ControlType.Group id= name=物品 enabled=False rect=1294,442,330,32
+ControlType.Button id=HeaderToggle name=物品 enabled=False rect=1294,442,59,32
+ControlType.Text id= name=物品 enabled=False rect=1315,447,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 会话, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = False } enabled=True rect=1294,477,330,36
+ControlType.Group id= name=会话 enabled=False rect=1294,479,330,32
+ControlType.Button id=HeaderToggle name=会话 enabled=False rect=1294,479,59,32
+ControlType.Text id= name=会话 enabled=False rect=1315,484,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 任务, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = False } enabled=True rect=1294,513,330,37
+ControlType.Group id= name=任务 enabled=False rect=1294,516,330,32
+ControlType.Button id=HeaderToggle name=任务 enabled=False rect=1294,516,59,32
+ControlType.Text id= name=任务 enabled=False rect=1315,521,35,22
+ControlType.Button id= name=× enabled=True rect=1600,151,35,35
+ControlType.Text id= name=× enabled=True rect=1615,159,13,22
+ControlType.Text id= name=打开故事失败：Canonical resource file 'E:\Java\MinecraftMod\DarkGreyRPG\.tooling\0333\Native\GroupLiveProject\resources\canonical\sessions\x4e617469766530333332/x696e74656772617465645f73657373696f6e.json' is invalid. enabled=True rect=1084,124,501,89

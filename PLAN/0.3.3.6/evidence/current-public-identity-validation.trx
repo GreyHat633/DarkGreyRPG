@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="4a0a76be-4a50-48fb-bd01-10ec39926ba2" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-04 20:04:39" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-04T20:04:39.4370316+08:00" queuing="2026-10-04T20:04:39.4370319+08:00" start="2026-10-04T20:04:38.7074111+08:00" finish="2026-10-04T20:04:40.7802718+08:00" />
+  <TestSettings name="default" id="16dbcdd0-8edf-48b6-94ff-f1fc383ee73b">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-04_20_04_39" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="94627569-5a9b-4ab5-8974-d7b93694308c" testId="1697010c-7566-84b3-b630-e967c809adcd" testName="NormalizeIdProducesRuntimeCompatibleSuggestion" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071699" startTime="2026-10-04T20:04:39.3594106+08:00" endTime="2026-10-04T20:04:39.3895498+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="94627569-5a9b-4ab5-8974-d7b93694308c" />
+    <UnitTestResult executionId="2d75c0b9-ee76-4c2f-85ae-953323297471" testId="19332ecd-bb33-8b4c-8d1f-69acecc1ff23" testName="InvalidNewActorIdHasAnError (&quot;&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071298" startTime="2026-10-04T20:04:39.3594204+08:00" endTime="2026-10-04T20:04:39.3895602+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2d75c0b9-ee76-4c2f-85ae-953323297471" />
+    <UnitTestResult executionId="27527bbb-0541-405e-8cea-17fccae289a8" testId="1624e9d8-f513-894a-9e85-24edd1bc784b" testName="InvalidNewActorIdHasAnError (&quot;老师&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0005639" startTime="2026-10-04T20:04:39.3855367+08:00" endTime="2026-10-04T20:04:39.3895464+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="27527bbb-0541-405e-8cea-17fccae289a8" />
+    <UnitTestResult executionId="249cc790-c8d6-40b6-94e7-667de4d66b55" testId="12329102-9a7e-8adc-b861-703cbb5b3f44" testName="LegacyDotIdIsRejectedWithoutCompatibilityFallback" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071820" startTime="2026-10-04T20:04:39.3593984+08:00" endTime="2026-10-04T20:04:39.3895464+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="249cc790-c8d6-40b6-94e7-667de4d66b55" />
+    <UnitTestResult executionId="4bd6b4e0-f2c4-4f4e-8d06-39b5deb39caa" testId="12802238-f3a9-84dd-b68b-b9cf82f98921" testName="InvalidNewActorIdHasAnError (&quot;-teacher&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071817" startTime="2026-10-04T20:04:39.3593162+08:00" endTime="2026-10-04T20:04:39.3895464+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4bd6b4e0-f2c4-4f4e-8d06-39b5deb39caa" />
+    <UnitTestResult executionId="39e6f5cd-5ac1-4a3b-b9f5-eafacfbe7c8e" testId="1713d877-bd75-8a15-80ce-0e483a8d1a44" testName="FlatGroupRoundTripValidatesWholeConnectedComponentAndSharedBytes" computerName="LAPTOP-F7PUVUPO" duration="00:00:01.3272183" startTime="2026-10-04T20:04:39.4003300+08:00" endTime="2026-10-04T20:04:40.7284740+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="39e6f5cd-5ac1-4a3b-b9f5-eafacfbe7c8e" />
+    <UnitTestResult executionId="f33f6b6c-6ac3-4174-b0d2-11fb106baa58" testId="1e069626-c8e4-8de7-a0d3-2020d02b3174" testName="EmptyDisplayNameIsRejected" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071696" startTime="2026-10-04T20:04:39.3592745+08:00" endTime="2026-10-04T20:04:39.3895463+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f33f6b6c-6ac3-4174-b0d2-11fb106baa58" />
+    <UnitTestResult executionId="313ab39b-45e1-4512-8547-be1001d8aecc" testId="18a55e3d-2187-8cbd-84ce-de91e4993d54" testName="InvalidNewActorIdHasAnError (&quot;Teacher NPC&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071773" startTime="2026-10-04T20:04:39.3594153+08:00" endTime="2026-10-04T20:04:39.3895463+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="313ab39b-45e1-4512-8547-be1001d8aecc" />
+    <UnitTestResult executionId="0a36f4ca-d681-4139-ad90-bf873d577da7" testId="1dab2e79-58a4-84d7-baa7-e0fc6a55618f" testName="ValidNewActorIdHasNoErrors" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071352" startTime="2026-10-04T20:04:39.3594035+08:00" endTime="2026-10-04T20:04:39.3895535+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0a36f4ca-d681-4139-ad90-bf873d577da7" />
+    <UnitTestResult executionId="ff9f513f-ccb2-4433-8549-002b1ee492cf" testId="19d0345e-e34e-87db-86c8-dca3e1956a91" testName="InvalidNewActorIdHasAnError (&quot;_teacher&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0005590" startTime="2026-10-04T20:04:39.3855451+08:00" endTime="2026-10-04T20:04:39.3895651+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ff9f513f-ccb2-4433-8549-002b1ee492cf" />
+    <UnitTestResult executionId="d4ad6a85-8b91-47c6-9f09-52fdf11d16a9" testId="13ff010b-9ccc-8ac9-b531-be62654af89d" testName="InvalidNewActorIdHasAnError (&quot;teacher/&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071866" startTime="2026-10-04T20:04:39.3593090+08:00" endTime="2026-10-04T20:04:39.3895477+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d4ad6a85-8b91-47c6-9f09-52fdf11d16a9" />
+    <UnitTestResult executionId="c7ad9d96-5b3c-40f8-adf1-c574901ad926" testId="140654cc-5618-8bc5-b716-c480a4634d13" testName="InvalidNewActorIdHasAnError (&quot;teacher.npc&quot;)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0071686" startTime="2026-10-04T20:04:39.3593239+08:00" endTime="2026-10-04T20:04:39.3895595+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c7ad9d96-5b3c-40f8-adf1-c574901ad926" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;-teacher&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="12802238-f3a9-84dd-b68b-b9cf82f98921">
+      <Execution id="4bd6b4e0-f2c4-4f4e-8d06-39b5deb39caa" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+    <UnitTest name="ValidNewActorIdHasNoErrors" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1dab2e79-58a4-84d7-baa7-e0fc6a55618f">
+      <Execution id="0a36f4ca-d681-4139-ad90-bf873d577da7" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="ValidNewActorIdHasNoErrors" />
+    </UnitTest>
+    <UnitTest name="LegacyDotIdIsRejectedWithoutCompatibilityFallback" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="12329102-9a7e-8adc-b861-703cbb5b3f44">
+      <Execution id="249cc790-c8d6-40b6-94e7-667de4d66b55" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="LegacyDotIdIsRejectedWithoutCompatibilityFallback" />
+    </UnitTest>
+    <UnitTest name="FlatGroupRoundTripValidatesWholeConnectedComponentAndSharedBytes" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1713d877-bd75-8a15-80ce-0e483a8d1a44">
+      <Execution id="39e6f5cd-5ac1-4a3b-b9f5-eafacfbe7c8e" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.DgrsGroup0336Tests" name="FlatGroupRoundTripValidatesWholeConnectedComponentAndSharedBytes" />
+    </UnitTest>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;Teacher NPC&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="18a55e3d-2187-8cbd-84ce-de91e4993d54">
+      <Execution id="313ab39b-45e1-4512-8547-be1001d8aecc" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;老师&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1624e9d8-f513-894a-9e85-24edd1bc784b">
+      <Execution id="27527bbb-0541-405e-8cea-17fccae289a8" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="19332ecd-bb33-8b4c-8d1f-69acecc1ff23">
+      <Execution id="2d75c0b9-ee76-4c2f-85ae-953323297471" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;teacher.npc&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="140654cc-5618-8bc5-b716-c480a4634d13">
+      <Execution id="c7ad9d96-5b3c-40f8-adf1-c574901ad926" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;teacher/&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="13ff010b-9ccc-8ac9-b531-be62654af89d">
+      <Execution id="d4ad6a85-8b91-47c6-9f09-52fdf11d16a9" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+    <UnitTest name="EmptyDisplayNameIsRejected" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1e069626-c8e4-8de7-a0d3-2020d02b3174">
+      <Execution id="f33f6b6c-6ac3-4174-b0d2-11fb106baa58" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="EmptyDisplayNameIsRejected" />
+    </UnitTest>
+    <UnitTest name="NormalizeIdProducesRuntimeCompatibleSuggestion" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1697010c-7566-84b3-b630-e967c809adcd">
+      <Execution id="94627569-5a9b-4ab5-8974-d7b93694308c" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="NormalizeIdProducesRuntimeCompatibleSuggestion" />
+    </UnitTest>
+    <UnitTest name="InvalidNewActorIdHasAnError (&quot;_teacher&quot;)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="19d0345e-e34e-87db-86c8-dca3e1956a91">
+      <Execution id="ff9f513f-ccb2-4433-8549-002b1ee492cf" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorValidatorTests" name="InvalidNewActorIdHasAnError" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1697010c-7566-84b3-b630-e967c809adcd" executionId="94627569-5a9b-4ab5-8974-d7b93694308c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19332ecd-bb33-8b4c-8d1f-69acecc1ff23" executionId="2d75c0b9-ee76-4c2f-85ae-953323297471" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1624e9d8-f513-894a-9e85-24edd1bc784b" executionId="27527bbb-0541-405e-8cea-17fccae289a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="12329102-9a7e-8adc-b861-703cbb5b3f44" executionId="249cc790-c8d6-40b6-94e7-667de4d66b55" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="12802238-f3a9-84dd-b68b-b9cf82f98921" executionId="4bd6b4e0-f2c4-4f4e-8d06-39b5deb39caa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1713d877-bd75-8a15-80ce-0e483a8d1a44" executionId="39e6f5cd-5ac1-4a3b-b9f5-eafacfbe7c8e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e069626-c8e4-8de7-a0d3-2020d02b3174" executionId="f33f6b6c-6ac3-4174-b0d2-11fb106baa58" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18a55e3d-2187-8cbd-84ce-de91e4993d54" executionId="313ab39b-45e1-4512-8547-be1001d8aecc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1dab2e79-58a4-84d7-baa7-e0fc6a55618f" executionId="0a36f4ca-d681-4139-ad90-bf873d577da7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19d0345e-e34e-87db-86c8-dca3e1956a91" executionId="ff9f513f-ccb2-4433-8549-002b1ee492cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13ff010b-9ccc-8ac9-b531-be62654af89d" executionId="d4ad6a85-8b91-47c6-9f09-52fdf11d16a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="140654cc-5618-8bc5-b716-c480a4634d13" executionId="c7ad9d96-5b3c-40f8-adf1-c574901ad926" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="12" executed="12" passed="12" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

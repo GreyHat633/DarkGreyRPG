@@ -1,0 +1,71 @@
+{
+  "Stage": "CurrentCandidateCopy",
+  "Starts": 2,
+  "SourceFilesUnchanged": true,
+  "Membership": {
+    "schema_version": 4,
+    "identity_format": "story-uid-v1",
+    "story_id": "ST-JKLM-NPQR-STUV-WXYZ",
+    "owned_resources": {
+      "actors": [
+        {
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "kind": "actor",
+          "local_id": "shared"
+        }
+      ],
+      "items": [
+        {
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "kind": "item",
+          "local_id": "shared"
+        }
+      ],
+      "item_groups": [
+        {
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "kind": "item_group",
+          "local_id": "shared"
+        }
+      ],
+      "sessions": [
+        {
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "kind": "session",
+          "local_id": "shared"
+        },
+        {
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "kind": "session",
+          "local_id": "r8bdcb73bfd086c6c9a952e8c6b8dbf3d"
+        }
+      ],
+      "tasks": [
+        {
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "kind": "task",
+          "local_id": "shared"
+        }
+      ]
+    },
+    "referenced_resources": {
+      "actors": [
+        {
+          "story_uid": "ST-2345-6789-ABCD-EFGH",
+          "kind": "actor",
+          "local_id": "shared"
+        }
+      ],
+      "items": [],
+      "item_groups": [],
+      "sessions": [],
+      "tasks": []
+    },
+    "display_order": {
+      "actors": [],
+      "items": [],
+      "sessions": [],
+      "tasks": []
+    }
+  }
+}

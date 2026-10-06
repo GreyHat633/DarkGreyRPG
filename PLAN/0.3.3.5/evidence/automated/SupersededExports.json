@@ -1,0 +1,32 @@
+[
+  {
+    "Source": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\IntegratedStudio0335-Final.dgrs",
+    "Destination": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\DiagnosticExports\\IntegratedStudio0335-Final.dgrs",
+    "SHA256": "1957D23A2D6D18ECA85A814DF02C34D34EFA40A5E76FFBF15B1B3220D2FE8820",
+    "Preserved": true
+  },
+  {
+    "Source": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\IntegratedStudio0335-Routed.dgrs",
+    "Destination": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\DiagnosticExports\\IntegratedStudio0335-Routed.dgrs",
+    "SHA256": "E526DA0509F8D9ADE18AA400AFDBE0B24A8FF6E52672913F3DF960E0263C1A4F",
+    "Preserved": true
+  },
+  {
+    "Source": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\IntegratedStudio0335-Verified.dgrs",
+    "Destination": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\DiagnosticExports\\IntegratedStudio0335-Verified.dgrs",
+    "SHA256": "1957D23A2D6D18ECA85A814DF02C34D34EFA40A5E76FFBF15B1B3220D2FE8820",
+    "Preserved": true
+  },
+  {
+    "Source": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\IntegratedStudio0335.dgrs",
+    "Destination": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\DiagnosticExports\\IntegratedStudio0335.dgrs",
+    "SHA256": "62D7B9DA17838D7E3C5059AE272837E5DE1B0B904A022C34CA49139D6699B092",
+    "Preserved": true
+  },
+  {
+    "Source": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.3.5\\NativeStudio0335.dgrs",
+    "Destination": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0335\\DiagnosticExports\\NativeStudio0335.dgrs",
+    "SHA256": "DA5CA8239F8BBA002428961829C1551C38B39DF8D932D6C94B51E04AD6ACEF35",
+    "Preserved": true
+  }
+]

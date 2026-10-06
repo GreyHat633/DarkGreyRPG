@@ -17,8 +17,8 @@ namespace DarkGreyRPG.Studio.ViewModels.Graph;
 public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, IDisposable
 {
     private readonly GraphEditorHostViewModel _host;
-    private readonly IReadOnlyList<CanonicalStoryActorItem> _actorItems;
-    private readonly IReadOnlyList<CanonicalStoryItemItem> _itemItems;
+    private IReadOnlyList<CanonicalStoryActorItem> _actorItems;
+    private IReadOnlyList<CanonicalStoryItemItem> _itemItems;
     private string _lineText = string.Empty;
     private string _speakerActorId = string.Empty;
     private string _choicePrompt = string.Empty;
@@ -70,7 +70,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
             .Select(item => new CanonicalResourceSelectionOption(item.Id, item.DisplayName, true, item)).ToArray();
         _subscribeToHostChanges = subscribeToHostChanges;
         AddChoiceOptionCommand = new RelayCommand(() => AddChoiceOption(), () => IsChoice);
-        AddTaskResultSlotCommand = new RelayCommand(() => AddTaskResultSlot(), () => IsTaskSettle);
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
         AddRewardEntryCommand = new RelayCommand(AddRewardEntry, () => IsTaskReward);
         AudioState.Changed += OnLineAudioStateChanged;
@@ -78,6 +77,48 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         RefreshFromHost();
         if (_subscribeToHostChanges) _host.NodesChanged += HostOnNodesChanged;
         _host.PropertyChanged += HostOnPropertyChanged;
+    }
+
+    public PublicOutputsViewModel? PublicOutputs { get; private set; }
+    public void ConfigurePublicOutputs(GraphEditorHostViewModel source)
+    {
+        if (ReferenceEquals(PublicOutputs?.SourceHost, source)) return;
+        PublicOutputs?.Dispose();
+        PublicOutputs = new(source, canRename: true);
+        OnPropertyChanged(nameof(PublicOutputs)); OnPropertyChanged(nameof(HasEditableFields)); OnPropertyChanged(nameof(HasInlineFields));
+    }
+
+    /// <summary>Refresh resource choices without replacing editors, text drafts or output cards.</summary>
+    public void UpdateResourceOptions(IEnumerable<CanonicalStoryActorItem> actors, IEnumerable<CanonicalStoryItemItem> items)
+    {
+        if (_disposed) return;
+        var nextActors = actors.ToArray();
+        var nextItems = items.ToArray();
+        if (_actorItems.SequenceEqual(nextActors) && _itemItems.SequenceEqual(nextItems)) return;
+        foreach (var actor in _actorItems) actor.PortraitsChanged -= OnActorPortraitsChanged;
+        _actorItems = nextActors;
+        _itemItems = nextItems;
+        foreach (var actor in _actorItems) actor.PortraitsChanged += OnActorPortraitsChanged;
+        _isProjectingCanonicalChange = true;
+        try
+        {
+            RebuildSpeakerOptions();
+            RebuildObjectiveActorOptions();
+            RebuildItemOptions();
+            RewardItemOptions = _itemItems.Where(item => item.Item is IndividualItemResource)
+                .Select(item => new CanonicalResourceSelectionOption(item.Id, item.DisplayName, true, item)).ToArray();
+            NotifySpeakerPropertiesChanged();
+            OnPropertyChanged(nameof(ObjectiveActorOptions));
+            OnPropertyChanged(nameof(SelectedObjectiveActor));
+            OnPropertyChanged(nameof(ObjectiveItemOptions));
+            OnPropertyChanged(nameof(SelectedObjectiveItem));
+            OnPropertyChanged(nameof(StoryActionItemOptions));
+            OnPropertyChanged(nameof(SelectedStoryActionItem));
+            OnPropertyChanged(nameof(RewardItemOptions));
+            foreach (var trigger in StoryStartTriggers) trigger.RefreshResourceOptions();
+            foreach (var reward in RewardEntries) reward.RefreshResourceOptions();
+        }
+        finally { _isProjectingCanonicalChange = false; }
     }
 
     public GraphEditorNodeViewModel Node { get; }
@@ -91,7 +132,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public bool IsLine => IsSessionNode && string.Equals(NodeType, "line", StringComparison.Ordinal);
     public bool IsChoice => IsSessionNode && string.Equals(NodeType, "choice", StringComparison.Ordinal);
     public bool IsEnd => IsSessionNode && string.Equals(NodeType, "end", StringComparison.Ordinal);
-    public bool IsPublicBoundary => NodeType is "terminate" or "end" or "logic_input" or "logic_output";
+    public bool IsPublicBoundary => NodeType is "terminate" or "end" or "logic_input" or "logic_output" or "settle";
     public string BoundaryDisplayName
     {
         get => Node.Properties.TryGetValue("display_name", out var value) ? value.GetString() ?? "" : "";
@@ -118,7 +159,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public bool IsReachRegionObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.ReachRegion;
     public bool IsInteractActorObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.InteractActor;
     public bool HasEditableFields => IsLine || IsChoice || IsEnd || IsLogicOutput || IsTaskSettle || IsObjective
-        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle || IsPublicBoundary;
+        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle || IsPublicBoundary || PublicOutputs is not null;
     public bool HasInlineFields => HasEditableFields;
 
     public CanonicalStoryActionTypeOption? SelectedStoryActionType
@@ -475,12 +516,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public IReadOnlyList<CanonicalChoiceOptionViewModel> Options => ChoiceOptions;
     public RelayCommand AddChoiceOptionCommand { get; }
 
-    /// <summary>Visible priority-ordered result slots on a Task settle node.</summary>
-    public ObservableCollection<CanonicalTaskResultSlotViewModel> TaskResultSlots { get; } = [];
-    public IReadOnlyList<CanonicalTaskResultSlotViewModel> ResultSlots => TaskResultSlots;
-    public IReadOnlyList<CanonicalTaskResultSlotViewModel> SettlementResultSlots => TaskResultSlots;
-    public RelayCommand AddTaskResultSlotCommand { get; }
-    public RelayCommand AddResultSlotCommand => AddTaskResultSlotCommand;
     public ObservableCollection<CanonicalStoryStartTriggerViewModel> StoryStartTriggers { get; } = [];
     public IReadOnlyList<CanonicalStoryStartTriggerViewModel> TriggerSlots => StoryStartTriggers;
     public RelayCommand AddStoryStartTriggerCommand { get; }
@@ -493,12 +528,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     /// </summary>
     public Func<CanonicalChoiceOptionRemovalConfirmation, bool>? ChoiceOptionRemovalConfirmationRequested { get; set; }
 
-    /// <summary>
-    /// Optional UI confirmation boundary for removing a referenced Task result
-    /// slot. Core remains fail-closed until this callback accepts the exact
-    /// confirmation-required result.
-    /// </summary>
-    public Func<CanonicalTaskResultSlotRemovalConfirmation, bool>? TaskResultSlotRemovalConfirmationRequested { get; set; }
+
     public Func<CanonicalStoryStartTriggerRemovalConfirmation, bool>? StoryStartTriggerRemovalConfirmationRequested { get; set; }
 
     public bool AddStoryStartTrigger(string? displayName = null,
@@ -612,71 +642,14 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         return true;
     }
 
-    public bool AddTaskResultSlot(string? displayName = null)
-        => IsTaskSettle && Execute(() => _host.AddDynamicPort(
-            NodeId, string.IsNullOrWhiteSpace(displayName) ? NextAvailableResultName() : displayName,
-            GraphPortDirection.Input, GraphInterfaceKind.Logic));
-
-    public bool AddResultSlot(string? displayName = null) => AddTaskResultSlot(displayName);
-
-    private string NextAvailableResultName()
-    {
-        var used = TaskResultSlots.Select(slot => slot.DisplayName).ToHashSet(StringComparer.Ordinal);
-        for (var index = 1; ; index++)
-        {
-            var candidate = $"结果 {index}";
-            if (!used.Contains(candidate)) return candidate;
-        }
-    }
-
-    public bool RenameTaskResultSlot(string portId, string displayName)
-        => IsTaskSettle && Execute(() => _host.RenamePortDisplayName(NodeId, portId, displayName));
-
-    public bool RenameResultSlot(string portId, string displayName)
-        => RenameTaskResultSlot(portId, displayName);
-
-    public bool ReorderTaskResultSlot(string portId, int order)
-        => IsTaskSettle && Execute(() => _host.MoveDynamicPort(NodeId, portId, order));
-
-    public bool ReorderResultSlot(string portId, int order)
-        => ReorderTaskResultSlot(portId, order);
-
-    public bool RemoveTaskResultSlot(string portId)
-    {
-        if (!IsTaskSettle || !Execute(() => _host.RemoveDynamicPort(NodeId, portId)))
-        {
-            if (!IsTaskSettle || !HasTaskResultSlotReferenceConfirmationRequired()) return false;
-
-            var slot = TaskResultSlots.FirstOrDefault(candidate =>
-                string.Equals(candidate.PortId, portId, StringComparison.Ordinal));
-            if (slot is null) return false;
-
-            var confirmation = TaskResultSlotRemovalConfirmationRequested;
-            if (confirmation is null || !confirmation(new CanonicalTaskResultSlotRemovalConfirmation(
-                    slot.DisplayName)))
-                return false;
-
-            return Execute(() => _host.RemoveDynamicPort(NodeId, portId, confirmReferencedRemoval: true));
-        }
-
-        return true;
-    }
-
-    public bool RemoveResultSlot(string portId) => RemoveTaskResultSlot(portId);
-
-    public bool RemoveTaskResultSlot(CanonicalTaskResultSlotViewModel slot)
-        => slot is not null && RemoveTaskResultSlot(slot.PortId);
-
     internal bool CanMoveChoiceOptionDown(int order)
         => IsChoice && order >= 0 && order < ChoiceOptions.Count - 1;
-
-    internal bool CanMoveTaskResultSlotDown(int order)
-        => IsTaskSettle && order >= 0 && order < TaskResultSlots.Count - 1;
 
     public void Dispose()
     {
         Selection.Changed -= OnPageSelectionChanged;
         if (_disposed) return;
+        PublicOutputs?.Dispose();
         _disposed = true;
         foreach (var page in LinePages) page.Dispose();
         AudioState.Changed -= OnLineAudioStateChanged;
@@ -768,6 +741,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     private void SetSelectedStoryActionItemId(string? id)
     {
+        if (_isProjectingCanonicalChange) return;
         var next = id ?? string.Empty;
         if (!IsGiveItemAction || string.IsNullOrWhiteSpace(next)
             || string.Equals(next, _actionItem, StringComparison.Ordinal)) return;
@@ -777,6 +751,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     private void SetSelectedObjectiveActorId(string? id)
     {
+        if (_isProjectingCanonicalChange) return;
         var next = id ?? string.Empty;
         if (!HasObjectiveActor
             || string.IsNullOrWhiteSpace(next)
@@ -788,6 +763,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     private void SetSelectedObjectiveItemId(string? id)
     {
+        if (_isProjectingCanonicalChange) return;
         var next = id ?? string.Empty;
         if (!IsItemObjective || string.IsNullOrWhiteSpace(next)
             || string.Equals(next, _objectiveTarget, StringComparison.Ordinal)) return;
@@ -806,6 +782,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     private void SetSelectedSpeakerId(string? id)
     {
+        if (_isProjectingCanonicalChange) return;
         if (_disposed || !IsLine) return;
         var next = id ?? string.Empty;
         if (string.Equals(_speakerActorId, next, StringComparison.Ordinal)) return;
@@ -824,12 +801,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         => _host.LastValidationIssues.Any(issue => string.Equals(
             issue.Code,
             "graph.session.choice.references.confirmation_required",
-            StringComparison.Ordinal));
-
-    private bool HasTaskResultSlotReferenceConfirmationRequired()
-        => _host.LastValidationIssues.Any(issue => string.Equals(
-            issue.Code,
-            "graph.dynamic_port.references.confirmation_required",
             StringComparison.Ordinal));
 
     private void HostOnNodesChanged(object? sender, GraphNodesChangedEventArgs args)
@@ -1016,23 +987,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         }
         for (var i = ChoiceOptions.Count - 1; i >= 0; i--) if (!seenChoices.Contains(ChoiceOptions[i].OptionId)) ChoiceOptions.RemoveAt(i);
 
-        var seenResults = new HashSet<string>(StringComparer.Ordinal);
-        if (IsTaskSettle)
-        {
-            foreach (var port in current.Inputs
-                .Where(port => port.GraphInterfaceKind == GraphInterfaceKind.Logic)
-                .OrderBy(port => port.Order)
-                .ThenBy(port => port.PortId, StringComparer.Ordinal))
-            {
-                seenResults.Add(port.PortId);
-                var row = TaskResultSlots.FirstOrDefault(item => item.PortId == port.PortId);
-                var index = seenResults.Count - 1;
-                if (row is null) { row = new(this, port.PortId, port.DisplayName, port.Order); TaskResultSlots.Insert(index, row); }
-                else { if (TaskResultSlots.IndexOf(row) != index) TaskResultSlots.Move(TaskResultSlots.IndexOf(row), index); row.Project(port.DisplayName, port.Order); }
-            }
-        }
-        for (var i = TaskResultSlots.Count - 1; i >= 0; i--) if (!seenResults.Contains(TaskResultSlots[i].PortId)) TaskResultSlots.RemoveAt(i);
-
         RefreshLinePages();
         OnPropertyChanged(nameof(PortraitVariantOptions));
         OnPropertyChanged(nameof(SelectedPortraitMediaRef));
@@ -1120,7 +1074,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(HelpText));
         OnPropertyChanged(nameof(BoundaryDisplayName));
         AddChoiceOptionCommand.RaiseCanExecuteChanged();
-        AddTaskResultSlotCommand.RaiseCanExecuteChanged();
     }
 
     private void RebuildSpeakerOptions()
@@ -1383,7 +1336,7 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         get => ActorOptions.FirstOrDefault(option => string.Equals(option.Id, ActorId, StringComparison.Ordinal));
         set
         {
-            if (value is not null) ActorId = value.Id;
+            if (!_refreshingResourceOptions && value is not null) ActorId = value.Id;
         }
     }
     public string DimensionText
@@ -1562,6 +1515,14 @@ public sealed class CanonicalStoryStartTriggerViewModel : ObservableObject
         return JsonSerializer.SerializeToElement(properties);
     }
 
+    private bool _refreshingResourceOptions;
+    internal void RefreshResourceOptions()
+    {
+        _refreshingResourceOptions = true;
+        try { OnPropertyChanged(nameof(ActorOptions)); OnPropertyChanged(nameof(SelectedActor)); }
+        finally { _refreshingResourceOptions = false; }
+    }
+
     private void NotifyPropertyFields()
     {
         OnPropertyChanged(nameof(TriggerProperties));
@@ -1664,61 +1625,4 @@ public sealed class CanonicalChoiceOptionViewModel : ObservableObject
     public RelayCommand MoveDownCommand { get; }
 }
 
-/// <summary>Visible Task settlement result slot; PortId is stable identity.</summary>
-public sealed class CanonicalTaskResultSlotViewModel : ObservableObject
-{
-    private readonly CanonicalNodeInspectorViewModel _owner;
-    private string _displayName;
-    private int _order;
 
-    internal CanonicalTaskResultSlotViewModel(CanonicalNodeInspectorViewModel owner,
-        string portId, string displayName, int order)
-    {
-        _owner = owner;
-        PortId = portId;
-        _displayName = displayName;
-        _order = order;
-        RemoveCommand = new RelayCommand(() => _owner.RemoveTaskResultSlot(this));
-        MoveUpCommand = new RelayCommand(() => _owner.ReorderTaskResultSlot(PortId, Order - 1),
-            () => Order > 0);
-        MoveDownCommand = new RelayCommand(() => _owner.ReorderTaskResultSlot(PortId, Order + 1),
-            () => _owner.CanMoveTaskResultSlotDown(Order));
-    }
-
-    public string PortId { get; }
-    public string StablePortId => PortId;
-    internal void Project(string text, int order) { _displayName = text; Order = order; OnPropertyChanged(nameof(DisplayName)); OnPropertyChanged(nameof(EditorText)); MoveUpCommand.RaiseCanExecuteChanged(); MoveDownCommand.RaiseCanExecuteChanged(); }
-    public string EditorText { get => DisplayName; set => DisplayName = value; }
-    public bool MoveTo(int index) => _owner.ReorderTaskResultSlot(PortId, index);
-    public string DisplayName
-    {
-        get => _displayName;
-        set
-        {
-            if (string.Equals(_displayName, value, StringComparison.Ordinal)) return;
-            if (_owner.RenameTaskResultSlot(PortId, value))
-            {
-                _displayName = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public int Order
-    {
-        get => _order;
-        internal set
-        {
-            if (!SetProperty(ref _order, value)) return;
-            MoveUpCommand.RaiseCanExecuteChanged();
-            MoveDownCommand.RaiseCanExecuteChanged();
-        }
-    }
-
-    public RelayCommand RemoveCommand { get; }
-    public RelayCommand MoveUpCommand { get; }
-    public RelayCommand MoveDownCommand { get; }
-}
-
-/// <summary>Author-facing details for destructive Task result-slot confirmation.</summary>
-public sealed record CanonicalTaskResultSlotRemovalConfirmation(string DisplayName);

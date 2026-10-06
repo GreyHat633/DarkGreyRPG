@@ -1,0 +1,11 @@
+{
+  "jarSha256": "88413C691FC36AAFB389139D136C23F9258ECBC3BA635388636784583DFB666C",
+  "boundCount8": "history-active.png",
+  "boundCount0": "zero-count-journal.png",
+  "completedTaskText": "history-completed-current.png",
+  "unboundWithEightStones": "unbound-history.png",
+  "identityRestoredSha256": "F7503499A10F0AC7E8D14DF4096D5679E6EDE157627767C45BE5C0FAAD3D0B40",
+  "fixtureTaskPlacement": "completion_0334_closeout",
+  "fixtureTaskFinalStatus": "SETTLED",
+  "scope": "Actual task journal/history native UI. Kill event used the existing debug command; this does not prove physical kill or NPC submission UI. Inventory restored to eight stones. Server stopped gracefully."
+}

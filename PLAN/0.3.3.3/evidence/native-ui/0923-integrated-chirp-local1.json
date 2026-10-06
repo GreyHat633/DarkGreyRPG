@@ -1,0 +1,25 @@
+{
+  "label": "0923-integrated-chirp-local1",
+  "time": "2026-09-23T03:12:53",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.056843745210012196,
+  "peak": 0.12241685390472412,
+  "tone440": 0.07206790752857722,
+  "tone880": 1.3345758453179542e-06,
+  "dominantVoiceHz": 1040.524732620321,
+  "dominantVoiceAmplitude": 0.004625172090256178
+}

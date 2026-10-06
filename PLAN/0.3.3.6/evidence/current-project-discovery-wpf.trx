@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ca9ba743-12ca-4b3a-a4e1-fb9d92888263" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-04 22:25:58" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-04T22:25:58.3313919+08:00" queuing="2026-10-04T22:25:58.3313922+08:00" start="2026-10-04T22:25:56.3891547+08:00" finish="2026-10-04T22:25:58.3436381+08:00" />
+  <TestSettings name="default" id="935e11d3-d7d4-4863-bb3e-4700a4478df5">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-04_22_25_58" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="b9d00365-b20e-40b6-acff-b5fe69840e9f" testId="1645f53f-1b48-887f-87e7-270e1d5d8c4b" testName="ProjectGraphCannotReintroduceRetiredStandaloneTransitions" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.5439424" startTime="2026-10-04T22:25:56.9885736+08:00" endTime="2026-10-04T22:25:57.5676692+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b9d00365-b20e-40b6-acff-b5fe69840e9f" />
+    <UnitTestResult executionId="8ed6b4bc-0c4f-4344-98c9-a4bb7cfcdf21" testId="15840cfd-5100-867e-ab77-4dcb41a0fb71" testName="LocalSourceMayConnectToReferencedTargetButReferencedSourceIsReadOnly" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.2619924" startTime="2026-10-04T22:25:57.8546813+08:00" endTime="2026-10-04T22:25:58.1175311+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8ed6b4bc-0c4f-4344-98c9-a4bb7cfcdf21" />
+    <UnitTestResult executionId="09f9ad70-9fe7-4926-b0d8-c69a678cca52" testId="1d222b03-f079-89b6-b2b7-8aae7865949d" testName="ProjectProjectionAllowsLayoutOnlyAndRejectsContentCrud" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0726929" startTime="2026-10-04T22:25:57.5941263+08:00" endTime="2026-10-04T22:25:57.6669716+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="09f9ad70-9fe7-4926-b0d8-c69a678cca52" />
+    <UnitTestResult executionId="17eb63e2-b5fb-4492-9e55-f183005e7a0e" testId="123f37b7-bc08-8612-bd01-27aa53897ba7" testName="ProjectHomeListsAndOpensCanonicalOnlyStoryWithoutLegacyAlias" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.5439441" startTime="2026-10-04T22:25:56.9885692+08:00" endTime="2026-10-04T22:25:57.5676692+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="17eb63e2-b5fb-4492-9e55-f183005e7a0e" />
+    <UnitTestResult executionId="2063e338-4c9a-470d-bad6-d4a16d9e3a85" testId="1914fa0b-8b48-8946-b063-73738beff1d5" testName="ProjectGraphConnectUndoRedoAndReopenPersistsTypedEdge" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1870703" startTime="2026-10-04T22:25:57.6670498+08:00" endTime="2026-10-04T22:25:57.8546298+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2063e338-4c9a-470d-bad6-d4a16d9e3a85" />
+    <UnitTestResult executionId="7920cc94-3f0b-493f-980e-011b8d2b5e4b" testId="1135cbc7-c99d-80a8-b98d-95ef5def0043" testName="CanonicalStoryAndIncompleteRootRemainVisibleButIncompleteFailsClosed" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.5717479" startTime="2026-10-04T22:25:56.9886045+08:00" endTime="2026-10-04T22:25:57.5936790+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7920cc94-3f0b-493f-980e-011b8d2b5e4b" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="LocalSourceMayConnectToReferencedTargetButReferencedSourceIsReadOnly" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="15840cfd-5100-867e-ab77-4dcb41a0fb71">
+      <Execution id="8ed6b4bc-0c4f-4344-98c9-a4bb7cfcdf21" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectGraph0331Tests" name="LocalSourceMayConnectToReferencedTargetButReferencedSourceIsReadOnly" />
+    </UnitTest>
+    <UnitTest name="ProjectGraphCannotReintroduceRetiredStandaloneTransitions" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1645f53f-1b48-887f-87e7-270e1d5d8c4b">
+      <Execution id="b9d00365-b20e-40b6-acff-b5fe69840e9f" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryDiscoveryShellTests" name="ProjectGraphCannotReintroduceRetiredStandaloneTransitions" />
+    </UnitTest>
+    <UnitTest name="ProjectProjectionAllowsLayoutOnlyAndRejectsContentCrud" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1d222b03-f079-89b6-b2b7-8aae7865949d">
+      <Execution id="09f9ad70-9fe7-4926-b0d8-c69a678cca52" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectGraph0331Tests" name="ProjectProjectionAllowsLayoutOnlyAndRejectsContentCrud" />
+    </UnitTest>
+    <UnitTest name="CanonicalStoryAndIncompleteRootRemainVisibleButIncompleteFailsClosed" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1135cbc7-c99d-80a8-b98d-95ef5def0043">
+      <Execution id="7920cc94-3f0b-493f-980e-011b8d2b5e4b" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryDiscoveryShellTests" name="CanonicalStoryAndIncompleteRootRemainVisibleButIncompleteFailsClosed" />
+    </UnitTest>
+    <UnitTest name="ProjectHomeListsAndOpensCanonicalOnlyStoryWithoutLegacyAlias" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="123f37b7-bc08-8612-bd01-27aa53897ba7">
+      <Execution id="17eb63e2-b5fb-4492-9e55-f183005e7a0e" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryDiscoveryShellTests" name="ProjectHomeListsAndOpensCanonicalOnlyStoryWithoutLegacyAlias" />
+    </UnitTest>
+    <UnitTest name="ProjectGraphConnectUndoRedoAndReopenPersistsTypedEdge" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1914fa0b-8b48-8946-b063-73738beff1d5">
+      <Execution id="2063e338-4c9a-470d-bad6-d4a16d9e3a85" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ProjectGraph0331Tests" name="ProjectGraphConnectUndoRedoAndReopenPersistsTypedEdge" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1645f53f-1b48-887f-87e7-270e1d5d8c4b" executionId="b9d00365-b20e-40b6-acff-b5fe69840e9f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15840cfd-5100-867e-ab77-4dcb41a0fb71" executionId="8ed6b4bc-0c4f-4344-98c9-a4bb7cfcdf21" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d222b03-f079-89b6-b2b7-8aae7865949d" executionId="09f9ad70-9fe7-4926-b0d8-c69a678cca52" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="123f37b7-bc08-8612-bd01-27aa53897ba7" executionId="17eb63e2-b5fb-4492-9e55-f183005e7a0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1914fa0b-8b48-8946-b063-73738beff1d5" executionId="2063e338-4c9a-470d-bad6-d4a16d9e3a85" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1135cbc7-c99d-80a8-b98d-95ef5def0043" executionId="7920cc94-3f0b-493f-980e-011b8d2b5e4b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="6" executed="6" passed="6" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

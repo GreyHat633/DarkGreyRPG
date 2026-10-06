@@ -26,8 +26,8 @@ public static class StoryValidator
             issues.Add(new("story.schema.unsupported", "Story schema_version must be 1 or 2.", nameof(resource.SchemaVersion)));
         if (string.IsNullOrWhiteSpace(resource.Id))
             issues.Add(new("story.id.required", "Story ID is required.", nameof(resource.Id)));
-        else if (!DgrResourceId.IsCompatibleId(resource.Id))
-            issues.Add(new("story.id.invalid", $"Story ID '{resource.Id}' must be a valid full DGR ID or a compatible legacy ID.", nameof(resource.Id)));
+        else if (!StoryUid.IsValid(resource.Id))
+            issues.Add(new("story.id.invalid", $"Story ID '{resource.Id}' must be a current Story UID.", nameof(resource.Id)));
 
         var nodes = resource.Nodes ?? [];
         var ids = new HashSet<string>(StringComparer.Ordinal);

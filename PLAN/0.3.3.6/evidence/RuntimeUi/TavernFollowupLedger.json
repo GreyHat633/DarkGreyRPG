@@ -1,0 +1,214 @@
+{
+  "darkgrey_rpg_canonical_sessions": {
+    "data": {
+      "schema_version": 7,
+      "identity_format": "story-uid-v1",
+      "terminal_routes": [
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791258403452\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791258405851\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791258410956\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791266460087\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791266763839\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-KD3A-X344-8D79-L772\u00001791268675232\u0000dynamic_port_fd55cb925c234f73bc8aea865c80ded5"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-S2H3-3QDN-35HH-MVTP\u00001791258338753\u0000dynamic_port_3cbcb85db4e2493281780169f71c9350"
+        },
+        {
+          "key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-S2H3-3QDN-35HH-MVTP\u00001791266461135\u0000dynamic_port_3cbcb85db4e2493281780169f71c9350"
+        }
+      ],
+      "presentation_texts": {
+        "15": {
+          "values": {
+            "line": "你的名字叫DgrRuntimeUI对吗？我想委托你一个任务好吧好吧。"
+          },
+          "stamp": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11:node_21b1f862209b4fe5b4dba560823b5cb1:2:1"
+        }
+      },
+      "sessions": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "next_transport_id": 17,
+        "instances": [
+          {
+            "activation_logic": 0,
+            "session_resource_id": {
+              "local_id": "r2241f47919468125fa2ee06c1c3f7f9d",
+              "kind": "session",
+              "story_uid": "ST-KD3A-X344-8D79-L772"
+            },
+            "story_id": "ST-KD3A-X344-8D79-L772",
+            "transport_id": 16,
+            "public_logic_outputs": [],
+            "executed_flow_judgment_node_ids": [],
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "aggregate_placement_id": "aggregate_47fb828d9cad46d38227366929fc41e9",
+            "presentation": "{\"revision\":0,\"music_revision\":0,\"media_ref\":null,\"loop\":false,\"fade_in\":0.0,\"fade_out\":0.0,\"volume\":1.0,\"layers\":[],\"screen_revision\":0,\"transition\":{\"type\":\"none\",\"direction\":\"left\",\"duration\":0.0}}",
+            "line_page_index": 0,
+            "selected_option_ids": [],
+            "waiting_condition": 0,
+            "external_logic_inputs": [],
+            "internal_logic_values": [],
+            "selected_choice_node_ids": [],
+            "line_epoch": 1,
+            "current_node_id": "node_21b1f862209b4fe5b4dba560823b5cb1",
+            "status": "ACTIVE",
+            "latest_choice_selections": []
+          }
+        ]
+      },
+      "stories": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "instances": [
+          {
+            "story_id": "ST-8SHM-YRLG-FF2K-UV3S",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "40b90658f0824b85568126734f8099049335cba06396901e965d3e7ab82c5e7d",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-8SHM-YRLG-FF2K-UV3S",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_acb3ffec96fa45dabeac6b8defa88291",
+              "current_node_id": "node_051713838e634a7fb34114e8be6b5b05",
+              "repeat_policy": "repeatable",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "terminal_time": 1791266765037,
+            "activation_time": 1791266763839
+          },
+          {
+            "story_id": "ST-KD3A-X344-8D79-L772",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "11975b5308013d7e476d1c9fc4fab0ecdaa2d74250206391a6b909b8445f5e2c",
+              "wait_resource_id": {
+                "local_id": "r2241f47919468125fa2ee06c1c3f7f9d",
+                "kind": "session",
+                "story_uid": "ST-KD3A-X344-8D79-L772"
+              },
+              "wait_kind": "SESSION",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-KD3A-X344-8D79-L772",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_041cba27f1844cdb9191c068ad5fe710",
+              "current_node_id": "aggregate_47fb828d9cad46d38227366929fc41e9",
+              "repeat_policy": "repeatable",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "terminal_time": 0,
+            "activation_time": 1791268739295
+          },
+          {
+            "story_id": "ST-S2H3-3QDN-35HH-MVTP",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "f31c7f9196fc9eb967270325c81199d842ee3a9866a73884746494aa1b9956ff",
+              "wait_resource_id": {
+                "local_id": "r64f81607fb0ce134e00dc76e5f923557",
+                "kind": "task",
+                "story_uid": "ST-S2H3-3QDN-35HH-MVTP"
+              },
+              "wait_kind": "TASK",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-S2H3-3QDN-35HH-MVTP",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_63949bba12de46b795e9dc5bbca914e1",
+              "current_node_id": "aggregate_c49ec74e7f7a449a99f59f94ab63fd5f",
+              "repeat_policy": "repeatable",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+            "terminal_time": 0,
+            "activation_time": 1791266765038
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [
+        {
+          "target_key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-S2H3-3QDN-35HH-MVTP\u00001791266461135",
+          "source_key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791266460087\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        },
+        {
+          "target_key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-S2H3-3QDN-35HH-MVTP\u00001791266765038",
+          "source_key": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11\u0000ST-8SHM-YRLG-FF2K-UV3S\u00001791266763839\u0000dynamic_port_29b68cd8da954c83805070bb3a4abf42"
+        }
+      ],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  },
+  "darkgrey_rpg_story_completion_history": {
+    "data": {
+      "schema_version": 1,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "terminal": 1791266765037,
+          "activation": 1791266763839,
+          "completed_count": 10,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-8SHM-YRLG-FF2K-UV3S",
+          "player": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791268738359,
+          "activation": 1791268675232,
+          "completed_count": 2,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-KD3A-X344-8D79-L772",
+          "player": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791266726334,
+          "activation": 1791266461135,
+          "completed_count": 2,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-S2H3-3QDN-35HH-MVTP",
+          "player": "b1cb6147-e2e7-3d98-81bd-f29b9f66ee11",
+          "status": "TERMINATED"
+        }
+      ]
+    }
+  }
+}

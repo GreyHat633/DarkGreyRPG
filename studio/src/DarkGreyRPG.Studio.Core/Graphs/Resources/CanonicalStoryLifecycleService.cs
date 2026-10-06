@@ -1,6 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using System.Text;
-using System.Text.Json;
+using DarkGreyRPG.Studio.Core.IO;
+using System.Collections.ObjectModel;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -156,6 +155,21 @@ public sealed class CanonicalStoryLifecycleService
 
     public CanonicalProjectGraphStore Store => _store;
 
+    /// <summary>Allocates against local and referenced identities without changing existing Stories.</summary>
+    public StoryUid AllocateStoryUid()
+    {
+        var visible = _store.Stories.List().Select(story => StoryUid.Parse(story.Id)).ToHashSet();
+        var providers = Packaging.OfflineProviderCatalog.Load(_store.ProjectDirectory);
+        if (providers.Diagnostics.Count != 0)
+            throw Failure("story.lifecycle.identity_inventory.invalid", "Referenced Story identities could not be inventoried safely.");
+        foreach (var resource in providers.Resources
+                     .Where(resource => resource.Kind == DgrResourceKind.Story))
+            visible.Add(StoryUid.Parse(resource.Id));
+        return StoryUid.Create(visible);
+    }
+
+    public GraphResourceEnvelope CreateNew(string displayName) => Create(AllocateStoryUid().Value, displayName);
+
     /// <summary>Creates a minimum scope-valid Story Flow and empty membership.</summary>
     public GraphResourceEnvelope Create(string storyId, string displayName)
     {
@@ -163,6 +177,12 @@ public sealed class CanonicalStoryLifecycleService
         EnsureDisplayName(displayName);
         lock (_lifecycleGate)
         {
+            // An occupied canonical filename remains a collision even when its bytes
+            // cannot be parsed. Never overwrite a damaged root while creating a Story.
+            if (File.Exists(Path.Combine(_store.StoriesDirectory, storyId + ".json"))
+                || File.Exists(Path.Combine(_store.MembershipsDirectory, storyId + ".json")))
+                throw Failure("story.lifecycle.collision",
+                    $"Canonical Story '{storyId}' already has a Story or membership root.");
             var storyPath = _store.Stories.GetPath(storyId);
             var membershipPath = _store.Memberships.GetPath(storyId);
             if (File.Exists(storyPath) || File.Exists(membershipPath))
@@ -237,7 +257,6 @@ public sealed class CanonicalStoryLifecycleService
             ValidateOwnedFiles(storyId, owned, blockers);
             ValidateOtherCanonicalMemberships(storyId, owned, blockers);
             ValidateLegacyActorMemberships(storyId, owned.Actors, blockers);
-            ValidateNamespacePolicy(storyId, blockers);
 
             var transitions = new List<CanonicalStoryDeletionIncomingTransition>();
             ValidateCanonicalStoryGraphs(storyId, transitions, blockers);
@@ -266,6 +285,19 @@ public sealed class CanonicalStoryLifecycleService
         => GetDeletionPlan(storyId).Blockers;
     public bool CanDelete(string storyId) => GetDeletionPlan(storyId).CanDelete;
 
+    /// <summary>Plans local members together, ignoring only dependencies that are also removed.</summary>
+    public IReadOnlyList<ProjectFileChange> PlanGroupDeletion(IReadOnlyCollection<string> storyIds)
+    {
+        var ids = storyIds.ToHashSet(StringComparer.Ordinal);
+        var plans = ids.Select(GetDeletionPlan).ToArray();
+        var blockers = plans.SelectMany(plan => plan.Blockers).Where(blocker =>
+            blocker.Code != "story.lifecycle.owned_resource.in_use" || !ids.Contains(blocker.SourceStoryId ?? "")).ToArray();
+        if (blockers.Length != 0)
+            throw Failure("story.group.delete.dependencies", string.Join(Environment.NewLine, blockers.Select(b => b.Message)));
+        return plans.SelectMany(SnapshotFiles).DistinctBy(file => file.Path, StringComparer.OrdinalIgnoreCase)
+            .Select(file => new ProjectFileChange(Path.GetRelativePath(_store.ProjectDirectory, file.Path), file.Bytes, null)).ToArray();
+    }
+
     /// <summary>
     /// Recomputes the plan, then removes only canonical owned files. Every
     /// removed file is snapshotted and independently restored on ordinary
@@ -283,34 +315,45 @@ public sealed class CanonicalStoryLifecycleService
 
             var snapshots = SnapshotFiles(plan);
             var changes = snapshots
-                .Select(snapshot => new NamespaceFileChange(
+                .Select(snapshot => new ProjectFileChange(
                     Path.GetRelativePath(_store.ProjectDirectory, snapshot.Path),
                     snapshot.Bytes,
                     null))
                 .ToList();
-            var policyChange = BuildNamespacePolicyChange(plan);
-            if (policyChange is not null) changes.Add(policyChange);
+            var graphPath = _store.StoryLogicGraph.Path;
+            if (File.Exists(graphPath))
+            {
+                var before = File.ReadAllBytes(graphPath);
+                var graph = _store.StoryLogicGraph.Load();
+                var remaining = graph.Connections.Where(edge => edge.SourceStoryId != storyId
+                    && edge.TargetStoryId != storyId).ToArray();
+                if (remaining.Length != graph.Connections.Count)
+                    changes.Add(new ProjectFileChange(Path.GetRelativePath(_store.ProjectDirectory, graphPath),
+                        before, System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(
+                            new CanonicalStoryLogicGraph(2, remaining),
+                            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }))));
+            }
             try
             {
-                new NamespaceFileTransaction(deleteFile: path =>
+                new ProjectFileTransaction(deleteFile: path =>
                     {
                         _deleteFile(path);
                         if (File.Exists(path)) throw new IOException($"File '{path}' remained after deletion.");
                     })
-                    .Apply(_store.ProjectDirectory, changes, () => { });
+                    .Apply(_store.ProjectDirectory, changes, () => _store.StoryLogicGraph.Load());
             }
-            catch (NamespaceFileTransactionException exception) when (IsOrdinaryFailure(exception))
+            catch (ProjectFileTransactionException exception) when (IsOrdinaryFailure(exception))
             {
                 if (exception.RollbackFailures.Count != 0)
                     throw Failure("story.lifecycle.rollback_failed",
                         $"Canonical Story '{storyId}' deletion failed and rollback was incomplete.", exception);
                 throw Failure("story.lifecycle.delete_failed",
-                    $"Canonical Story '{storyId}' deletion failed; all resources and policy bytes were restored.", exception);
+                    $"Canonical Story '{storyId}' deletion failed; all resource bytes were restored.", exception);
             }
             catch (Exception exception) when (IsOrdinaryFailure(exception))
             {
                 throw Failure("story.lifecycle.delete_failed",
-                    $"Canonical Story '{storyId}' deletion failed; all resources and policy bytes were restored.", exception);
+                    $"Canonical Story '{storyId}' deletion failed; all resource bytes were restored.", exception);
             }
         }
     }
@@ -353,25 +396,6 @@ public sealed class CanonicalStoryLifecycleService
         ValidateOwnedGraphFiles(storyId, owned.Tasks, _store.Tasks, "task", blockers);
         ValidateOwnedItemFiles(storyId, owned.Items, item => _items.LoadItem(item), "item", blockers);
         ValidateOwnedItemFiles(storyId, owned.ItemGroups, group => _items.LoadGroup(group), "item_group", blockers);
-    }
-
-    private void ValidateNamespacePolicy(
-        string storyId,
-        ICollection<CanonicalStoryDeletionBlocker> blockers)
-    {
-        var path = Path.Combine(_store.ProjectDirectory, NamespacePolicyStore.RelativePath);
-        if (!File.Exists(path)) return;
-        try
-        {
-            _ = NamespacePolicyStore.Decode(File.ReadAllBytes(path));
-        }
-        catch (Exception exception) when (exception is InvalidDataException or JsonException
-            or IOException or UnauthorizedAccessException)
-        {
-            AddBlocker(blockers, "story.lifecycle.namespace_policy.invalid",
-                $"Namespace policy for canonical Story '{storyId}' is malformed and cannot be updated safely.",
-                storyId, inner: exception);
-        }
     }
 
     private static void ValidateOwnedItemFiles<T>(
@@ -540,36 +564,6 @@ public sealed class CanonicalStoryLifecycleService
         return snapshots;
     }
 
-    private NamespaceFileChange? BuildNamespacePolicyChange(CanonicalStoryDeletionPlan plan)
-    {
-        if (!DgrResourceId.IsFullId(plan.StoryId)) return null;
-        var path = Path.Combine(_store.ProjectDirectory, NamespacePolicyStore.RelativePath);
-        if (!File.Exists(path)) return null;
-
-        byte[] original;
-        NamespacePolicy current;
-        try
-        {
-            original = File.ReadAllBytes(path);
-            current = NamespacePolicyStore.Decode(original);
-        }
-        catch (Exception exception) when (exception is InvalidDataException or JsonException
-            or IOException or UnauthorizedAccessException)
-        {
-            throw Failure("story.lifecycle.namespace_policy.snapshot_failed",
-                $"Could not snapshot namespace policy before deleting Story '{plan.StoryId}'.", exception);
-        }
-
-        if (!current.StoryOverrides.ContainsKey(plan.StoryId)) return null;
-        var overrides = current.StoryOverrides
-            .Where(pair => !string.Equals(pair.Key, plan.StoryId, StringComparison.Ordinal))
-            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-        return new NamespaceFileChange(
-            Path.GetRelativePath(_store.ProjectDirectory, path),
-            original,
-            NamespacePolicyStore.Encode(new NamespacePolicy(current.GlobalNamespace, overrides)));
-    }
-
     private static void AddSnapshot<T>(ICollection<FileSnapshot> snapshots, string path, Func<string, T> validate, string id)
     {
         byte[] bytes;
@@ -620,11 +614,8 @@ public sealed class CanonicalStoryLifecycleService
 
     private static void EnsureId(string id)
     {
-        var validLegacy = !string.IsNullOrWhiteSpace(id)
-            && id[0] is >= 'a' and <= 'z' or >= '0' and <= '9'
-            && id.All(character => character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-');
-        if (!DgrResourceId.IsFullId(id) && !validLegacy)
-            throw Failure("story.lifecycle.id.invalid", $"Story ID '{id}' must be a valid full DGR ID or a compatible legacy ID.");
+        if (!StoryUid.IsValid(id))
+            throw Failure("story.lifecycle.id.invalid", $"Story ID '{id}' must be a current-format Story UID.");
     }
 
     private static string LogicalId(string path, bool membership)

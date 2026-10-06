@@ -13,7 +13,7 @@ public partial class OfflineReadOnlyResourceDialog : Window
         PreviewGraph.NodeEditRequested += node => viewModel.TryOpenSubgraph(node);
         viewModel.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(viewModel.GraphPreview))
+            if (args.PropertyName == nameof(viewModel.PreviewHost))
                 Dispatcher.BeginInvoke(new Action(() => PreviewGraph.FitAllNodes()));
         };
         Closed += (_, _) => viewModel.Dispose();

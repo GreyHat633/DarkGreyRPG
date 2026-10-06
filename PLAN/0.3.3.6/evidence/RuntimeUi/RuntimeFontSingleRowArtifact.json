@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-06",
+  "version": "0.3.3.6",
+  "scope": "Runtime native font and single-line nominator resource layout",
+  "artifact": "E:/Java/MinecraftMod/DarkGreyRPG/dist/darkgrey_rpg-0.3.3.6.jar",
+  "sizeBytes": 1981658,
+  "sha256": "DE9DF67E86499F6D121EAAA0885C6F021784C78F97C810B35E59653A494B2BE0",
+  "sameHashPaths": [
+    "E:/Java/MinecraftMod/DarkGreyRPG/build/libs/darkgrey_rpg-0.3.3.6.jar",
+    "E:/Java/MinecraftMod/DarkGreyRPG/.tooling/0336-runtime-ui/Client/mods/darkgrey_rpg-0.3.3.6.jar",
+    "E:/Java/MinecraftMod/DarkGreyRPG/.tooling/0336-runtime-ui/Server/mods/darkgrey_rpg-0.3.3.6.jar"
+  ],
+  "rowHeightLogicalPixels": 22,
+  "fontScale": 1.0,
+  "sourceMaxWidthFraction": 0.4,
+  "nameMinimumBudgetLogicalPixels": 64,
+  "nameSourceGapLogicalPixels": 8,
+  "build": { "status": "passed", "log": "FontFinalBuild.log" },
+  "passedProbeEntrypoints": [
+    "RuntimeFontResourceRows0336Probe",
+    "DialogueFontScaleProbe",
+    "RuntimeInteractionUi0336Probe",
+    "CurrentNominatorWireProbe",
+    "SmoothScroll0324Probe",
+    "UtilityWindow0324Probe"
+  ],
+  "additionalProbe": {
+    "name": "Dialogue0333Probe",
+    "status": "existing_failure",
+    "assertion": "shared profile geometry including rounded quote gutters",
+    "log": "FontKnownDialogue0333Failure.log"
+  },
+  "fullProbeSuiteRerun": false,
+  "nativeChecks": [
+    {
+      "theme": "CHARCOAL",
+      "guiScaleFactor": 4,
+      "screenPixels": [1900, 960],
+      "runtimeTextScale": 1.0,
+      "sha256": "DE9DF67E86499F6D121EAAA0885C6F021784C78F97C810B35E59653A494B2BE0",
+      "status": "passed_tested_scenarios",
+      "clientLog": "FontNativeFinalClient.log",
+      "screenshots": [
+        "141-Font-Task-Final-Gui4.png",
+        "142-Font-Manager-Final-Inheritance.png",
+        "144-Font-Manager-Final-InlineStates.png",
+        "149-Font-Global-Final-Gui4.png",
+        "153-Font-Mixed-Final-Selected.png",
+        "154-Font-Reference-Final-SourceTooltip.png"
+      ]
+    },
+    {
+      "theme": "WHITE",
+      "guiScaleFactor": 2,
+      "screenPixels": [1280, 800],
+      "runtimeTextScale": 1.0,
+      "sha256": "DE9DF67E86499F6D121EAAA0885C6F021784C78F97C810B35E59653A494B2BE0",
+      "status": "passed_tested_scenarios",
+      "clientLog": "FontNativeFinalGui2Client.log",
+      "screenshots": [
+        "158-Font-Manager-Final-Light-Inheritance.png",
+        "159-Font-Task-Final-Light-Gui2.png",
+        "162-Font-Items-Final-Owned-Gui2.png",
+        "165-Font-Global-Final-Light-Gui2.png",
+        "166-Font-Actors-Final-Light-Gui2.png"
+      ]
+    }
+  ],
+  "longSyntheticTextCoverage": "automatic_probe_using_captured_font_advances",
+  "userAcceptance": "pending",
+  "isolatedNativeProcessesStopped": true,
+  "studioModifiedThisRound": false,
+  "protocolPackageSaveFormatsChanged": false,
+  "finishedReleasePackageCreated": false
+}

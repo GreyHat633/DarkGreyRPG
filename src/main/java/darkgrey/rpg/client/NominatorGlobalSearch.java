@@ -31,13 +31,22 @@ public final class NominatorGlobalSearch {
         for (NominatorCatalog.PackageChoice source : catalog.getPackageChoices()) {
             if (!global && !source.getPackageId()
                 .equals(selectedPackage)) continue;
+            String scopeQuery = query;
+            if (global && (source.getDisplayName()
+                .toLowerCase(java.util.Locale.ROOT)
+                .contains(query.toLowerCase(java.util.Locale.ROOT))
+                || source.getContainerName()
+                    .toLowerCase(java.util.Locale.ROOT)
+                    .contains(query.toLowerCase(java.util.Locale.ROOT))))
+                scopeQuery = "";
             if (items) {
                 for (boolean group : new boolean[] { false, true })
                     for (NominatorStorySearch.ItemChoice item : NominatorStorySearch
-                        .items(catalog, source, query, group))
+                        .items(catalog, source, scopeQuery, group))
                         rows.add(new Row(source, item.getId(), item.getDisplayName(), group ? "Item Group" : "Item"));
             } else {
-                for (NominatorStorySearch.ActorChoice actor : NominatorStorySearch.actors(catalog, source, query)) {
+                for (NominatorStorySearch.ActorChoice actor : NominatorStorySearch
+                    .actors(catalog, source, scopeQuery)) {
                     if ("individual".equals(actor.getType()) || "collective".equals(actor.getType())) rows.add(
                         new Row(
                             source,

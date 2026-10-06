@@ -21,9 +21,13 @@ public sealed class GroupFrame0333Tests
     [STATestMethod]
     public void VisibleRenderingDuringMoveAndPageCollapsePreservesGroups()
     {
+        var stageLog = System.IO.Path.Combine(TestContext.ResultsDirectory!, "group-render-stages.txt");
+        void Stage(string value) => System.IO.File.AppendAllText(stageLog, $"{DateTime.UtcNow:O} {value}\n");
+        Stage($"begin renderMode={RenderOptions.ProcessRenderMode}");
         // WPF UI rendering intervals, not GPU-present latency or a guaranteed display FPS.
         foreach (int groups in new[] { 0, 300 })
         {
+            Stage($"groups={groups} create");
             var nodes = Enumerable.Range(0, 300)
                 .Select(i => GraphNodeFactory.Create(GraphScope.Session, "line", "frame_" + i)).ToArray();
             var host = new GraphEditorHostViewModel(new(nodes), GraphScope.Session);
@@ -31,13 +35,16 @@ public sealed class GroupFrame0333Tests
             host.RestoreFrames(Enumerable.Range(0, groups)
                 .Select(i => new GraphCommentFrame("group_" + i, "Frame " + i, 0, 0, 100, 100, [nodes[i].Id])).ToArray());
             var view = new CanonicalGraphEditorView(host);
+            Stage($"groups={groups} view-created");
             var window = new Window { Content = view, Width = 1000, Height = 800, Left = 200, Top = 40, ShowInTaskbar = false };
             try
             {
                 window.Show(); window.UpdateLayout();
+                Stage($"groups={groups} shown");
                 // Complete deferred editor creation before measuring steady-state interaction.
                 // Otherwise Loaded-priority work can enter the move phase after its frame warmup.
                 window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                Stage($"groups={groups} idle");
                 window.UpdateLayout();
                 view.SelectNodes(["frame_0"]);
                 var toggle = Descendants(view).OfType<Button>()
@@ -73,6 +80,7 @@ public sealed class GroupFrame0333Tests
                 timer.Start();
                 try { Dispatcher.PushFrame(loop); }
                 finally { timer.Stop(); CompositionTarget.Rendering -= render; }
+                Stage($"groups={groups} rendered={frames}");
                 if (failure != null) throw failure;
                 Assert.AreEqual(200, frames, "Visible rendering timed out");
                 Assert.AreEqual(5, toggles);

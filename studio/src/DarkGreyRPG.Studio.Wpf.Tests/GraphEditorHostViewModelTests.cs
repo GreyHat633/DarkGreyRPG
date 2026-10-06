@@ -11,6 +11,33 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class GraphEditorHostViewModelTests
 {
     [TestMethod]
+    public void RejectedPersistencePreservesGraphAndBothHistoryStacks()
+    {
+        var host = new GraphEditorHostViewModel(ScopedGraph(GraphScope.StoryFlow), GraphScope.StoryFlow);
+        Assert.IsTrue(host.AddNode(GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "saved")));
+        Assert.IsTrue(host.AddNode(GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "redo")));
+        Assert.IsTrue(host.Undo());
+        var before = host.Graph.ToJson();
+        var undoSequence = host.UndoSequence;
+        var redoSequence = host.RedoSequence;
+        host.CommitGraphChange = () => false;
+        Assert.IsFalse(host.AddNode(GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "rejected")));
+        Assert.AreEqual(before, host.Graph.ToJson());
+        Assert.AreEqual(undoSequence, host.UndoSequence);
+        Assert.AreEqual(redoSequence, host.RedoSequence);
+        Assert.IsFalse(host.Undo());
+        Assert.AreEqual(before, host.Graph.ToJson());
+        Assert.AreEqual(undoSequence, host.UndoSequence);
+        Assert.IsFalse(host.Redo());
+        Assert.AreEqual(before, host.Graph.ToJson());
+        Assert.AreEqual(redoSequence, host.RedoSequence);
+        host.CommitGraphChange = () => true;
+        Assert.IsTrue(host.Redo());
+        Assert.IsTrue(host.Graph.Nodes.Any(node => node.Id == "redo"));
+        Assert.IsFalse(host.Graph.Nodes.Any(node => node.Id == "rejected"));
+    }
+
+    [TestMethod]
     public void SuccessfulMutationsReconcileCollectionsWithoutReset()
     {
         var host = new GraphEditorHostViewModel(ScopedGraph(GraphScope.StoryFlow), GraphScope.StoryFlow);

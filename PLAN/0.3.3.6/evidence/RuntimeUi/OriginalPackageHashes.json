@@ -1,0 +1,14 @@
+[
+  {
+    "name": "故事组（1）.dgrs.g",
+    "bytes": 386577,
+    "source_sha256": "ca7a30e7ed35f07019e966299409cbdafbc0275c731173a133b5ec771a76034b",
+    "candidate_sha256": "ca7a30e7ed35f07019e966299409cbdafbc0275c731173a133b5ec771a76034b"
+  },
+  {
+    "name": "测试故事.dgrs",
+    "bytes": 3946025,
+    "source_sha256": "4b03cf0eb7acd0f867b9bd542fbf19b462303d30b9d606720695fcb40c894e3a",
+    "candidate_sha256": "4b03cf0eb7acd0f867b9bd542fbf19b462303d30b9d606720695fcb40c894e3a"
+  }
+]

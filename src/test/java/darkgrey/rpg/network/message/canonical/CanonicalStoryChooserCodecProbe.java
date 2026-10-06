@@ -23,28 +23,28 @@ public final class CanonicalStoryChooserCodecProbe {
         CanonicalStoryChooserFrame frame = new CanonicalStoryChooserFrame(
             42L,
             Arrays.asList(
-                new CanonicalStoryChooserFrame.Option("故事-继续", "继续的故事", "continue"),
-                new CanonicalStoryChooserFrame.Option("story-start", "New story", "start"),
-                new CanonicalStoryChooserFrame.Option("story-restart", "Old story", "restart"),
-                new CanonicalStoryChooserFrame.Option("Team:Guard", "Guard", "start"),
-                new CanonicalStoryChooserFrame.Option("Team:guard", "guard", "start")));
+                new CanonicalStoryChooserFrame.Option("ST-2345-6789-ABCD-EFG2", "继续的故事", "continue"),
+                new CanonicalStoryChooserFrame.Option("ST-2345-6789-ABCD-EFG3", "New story", "start"),
+                new CanonicalStoryChooserFrame.Option("ST-2345-6789-ABCD-EFG4", "Old story", "restart"),
+                new CanonicalStoryChooserFrame.Option("ST-2345-6789-ABCD-EFG5", "Guard", "start"),
+                new CanonicalStoryChooserFrame.Option("ST-2345-6789-ABCD-EFG6", "guard", "start")));
         CanonicalStoryChooserFrame decoded = roundTrip(frame);
         require(
             decoded.getToken() == 42L && decoded.getOptions()
                 .size() == 5,
             "frame round-trip");
         require(
-            "故事-继续".equals(
+            "ST-2345-6789-ABCD-EFG2".equals(
                 decoded.getOptions()
                     .get(0)
                     .getStoryId()),
             "full story ID round-trip");
         require(
-            "Team:Guard".equals(
+            "ST-2345-6789-ABCD-EFG5".equals(
                 decoded.getOptions()
                     .get(3)
                     .getStoryId())
-                && "Team:guard".equals(
+                && "ST-2345-6789-ABCD-EFG6".equals(
                     decoded.getOptions()
                         .get(4)
                         .getStoryId()),
@@ -52,8 +52,12 @@ public final class CanonicalStoryChooserCodecProbe {
         require(roundTrip(new CanonicalStoryChooserSelection(42L, -1)).getOptionIndex() == -1, "cancel round-trip");
         require(roundTrip(new CanonicalStoryChooserSelection(42L, 0)).getOptionIndex() == 0, "first option round-trip");
         ArrayList<CanonicalStoryChooserFrame.Option> many = new ArrayList<CanonicalStoryChooserFrame.Option>();
-        for (int index = 0; index < 256; index++)
-            many.add(new CanonicalStoryChooserFrame.Option("story-" + index, "Story " + index, "start"));
+        for (int index = 0; index < 256; index++) many.add(
+            new CanonicalStoryChooserFrame.Option(
+                "ST-2345-6789-ABCD-EF" + darkgrey.rpg.identity.StoryUid.ALPHABET.charAt(index / 31)
+                    + darkgrey.rpg.identity.StoryUid.ALPHABET.charAt(index % 31),
+                "Story " + index,
+                "start"));
         require(
             roundTrip(new CanonicalStoryChooserFrame(1L, many)).getOptions()
                 .size() == 256,
@@ -97,14 +101,15 @@ public final class CanonicalStoryChooserCodecProbe {
         ByteBuf unknownStatus = Unpooled.buffer()
             .writeLong(1L)
             .writeShort(1);
-        write(unknownStatus, "story");
+        write(unknownStatus, "ST-2345-6789-ABCD-EFG7");
         write(unknownStatus, "Story");
         write(unknownStatus, "unknown");
         reject(new CanonicalStoryChooserFrame(), unknownStatus, "unknown status");
         ByteBuf frameTrailing = encode(
             new CanonicalStoryChooserFrame(
                 1L,
-                Collections.singletonList(new CanonicalStoryChooserFrame.Option("story", "Story", "start"))));
+                Collections
+                    .singletonList(new CanonicalStoryChooserFrame.Option("ST-2345-6789-ABCD-EFG7", "Story", "start"))));
         frameTrailing.writeByte(1);
         reject(new CanonicalStoryChooserFrame(), frameTrailing, "frame trailing bytes");
     }

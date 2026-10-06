@@ -1,0 +1,1 @@
+��b[DarkGrey RPG] ��rCanonical Story state: ST-2345-6789-ABCD-EFGH status=TERMINATED, wait=NONE, node=story_done, logic={}

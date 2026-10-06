@@ -16,48 +16,47 @@ public sealed class CanonicalStoryDiscoveryShellTests
     public void ProjectHomeListsAndOpensCanonicalOnlyStoryWithoutLegacyAlias()
     {
         using var project = new DiscoveryProjectFixture();
-        project.CreateLegacyStory("legacy", "Legacy");
-        project.CreateCanonicalStory("canonical_only", "Canonical Only");
+        project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Other");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Canonical Only");
 
         var shell = project.OpenShell();
 
         CollectionAssert.AreEquivalent(
-            new[] { "legacy", "canonical_only" },
+            new[] { "ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH" },
             shell.ProjectHome.Stories.Select(story => story.Id).ToArray());
-        var canonical = shell.ProjectHome.Stories.Single(story => story.Id == "canonical_only");
+        var canonical = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
         Assert.IsTrue(canonical.IsCanonicalOnly);
         Assert.IsFalse(canonical.CanDeleteLegacyStory);
         shell.OpenStory(canonical);
         Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
-        Assert.AreEqual("canonical_only", shell.CanonicalStoryWorkspace!.StoryEditor.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", shell.CanonicalStoryWorkspace!.StoryEditor.Id);
         Assert.IsTrue(shell.DeleteSelectedStoryCommand.CanExecute(null));
     }
 
     [TestMethod]
-    public void SameIdCanonicalStoryWinsAndIncompleteRootRemainsVisibleButFailsClosed()
+    public void CanonicalStoryAndIncompleteRootRemainVisibleButIncompleteFailsClosed()
     {
         using var project = new DiscoveryProjectFixture();
-        project.CreateLegacyStory("shared", "Old Shared");
-        project.CreateCanonicalStory("shared", "Canonical Shared");
-        project.Store.Memberships.Create(new CanonicalStoryMembershipManifest("membership_only"));
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Canonical Shared");
+        project.Store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-JKLM-NPQR-STUV-WXYZ"));
 
         var shell = project.OpenShell();
 
-        Assert.AreEqual(1, shell.ProjectHome.Stories.Count(story => story.Id == "shared"));
-        var shared = shell.ProjectHome.Stories.Single(story => story.Id == "shared");
+        Assert.AreEqual(1, shell.ProjectHome.Stories.Count(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
+        var shared = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
         Assert.AreEqual("Canonical Shared", shared.DisplayName);
-        Assert.IsTrue(shared.HasLegacyStory);
+        Assert.IsFalse(shared.HasLegacyStory);
         Assert.IsTrue(shared.HasCanonicalStory);
         shell.ProjectHome.SelectedStory = shared;
         Assert.IsTrue(shell.DeleteSelectedStoryCommand.CanExecute(null));
         shell.OpenStory(shared);
         Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
 
-        var incomplete = shell.ProjectHome.Stories.Single(story => story.Id == "membership_only");
+        var incomplete = shell.ProjectHome.Stories.Single(story => story.Id == "ST-JKLM-NPQR-STUV-WXYZ");
         Assert.IsTrue(incomplete.IsCanonicalOnly);
-        Assert.AreEqual("新格式 · 数据不完整", incomplete.TagsText);
+        Assert.AreEqual("数据不完整", incomplete.TagsText);
         Assert.IsTrue(shell.Problems.Problems.Any(problem =>
-            problem.Source == "canonical-discovery/membership_only"
+            problem.Source == "canonical-discovery/ST-JKLM-NPQR-STUV-WXYZ"
             && problem.Code == "story.discovery.root.missing"));
         shell.OpenStory(incomplete);
         Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
@@ -68,15 +67,15 @@ public sealed class CanonicalStoryDiscoveryShellTests
     public void ProjectGraphCannotReintroduceRetiredStandaloneTransitions()
     {
         using var project = new DiscoveryProjectFixture();
-        project.CreateCanonicalStory("source", "Source");
-        project.CreateCanonicalStory("target", "Target");
+        project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Source");
+        project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Target");
         Assert.ThrowsExactly<GraphResourceRepositoryException>(() => project.Store.Stories.Replace(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "source", "Source",
-                new GraphDocument([Enter("old", "target")]))));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Source",
+                new GraphDocument([Enter("old", "ST-JKLM-NPQR-STUV-WXYZ")]))));
         var shell = project.OpenShell();
-        CollectionAssert.AreEquivalent(new[] { "source", "target" }, shell.ProjectHome.Graph.Nodes.Select(node => node.Id).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ" }, shell.ProjectHome.Graph.Nodes.Select(node => node.Id).ToArray());
         Assert.IsEmpty(shell.ProjectHome.Graph.Edges);
-        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "source"));
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
         Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
     }
 

@@ -3,93 +3,77 @@ using DarkGreyRPG.Studio.Services;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
+public sealed class OfflineResourceFolder : ObservableObject
+{
+    private bool _expanded;
+    internal OfflineResourceFolder(string name, IReadOnlyList<OfflineResourceChoice> resources)
+    { DisplayName = name; Resources = resources; }
+    public string DisplayName { get; }
+    internal IReadOnlyList<OfflineResourceChoice> Resources { get; }
+    public ObservableCollection<OfflineResourceChoice> Matches { get; } = [];
+    public string Header => $"{DisplayName} ({Matches.Count})";
+    public bool IsExpanded { get => _expanded; set => SetProperty(ref _expanded, value); }
+    internal void Filter(string query)
+    {
+        var matches = Resources.Where(choice => query.Length == 0 ||
+            choice.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+            choice.TypeLabel.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+            DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+        Matches.Clear(); foreach (var choice in matches) Matches.Add(choice);
+        OnPropertyChanged(nameof(Header));
+    }
+}
+
 public sealed class OfflineResourcePickerViewModel : ObservableObject
 {
-    private readonly IReadOnlyList<OfflineResourceChoice> _native;
-    private readonly IReadOnlyList<OfflineResourceChoice> _external;
+    private readonly OfflineResourceFolder[] _folders;
+    private readonly Dictionary<OfflineResourceFolder, bool> _beforeSearch = [];
     private string _searchText = string.Empty;
     private OfflineResourceChoice? _selectedChoice;
-
-    public OfflineResourcePickerViewModel(
-        IReadOnlyList<OfflineResourceChoice> native,
-        IReadOnlyList<OfflineResourceChoice> external,
-        string title)
+    public OfflineResourcePickerViewModel(IReadOnlyList<OfflineResourceChoice> resources, string title)
     {
-        _native = native ?? throw new ArgumentNullException(nameof(native));
-        _external = external ?? throw new ArgumentNullException(nameof(external));
+        ArgumentNullException.ThrowIfNull(resources);
         Title = string.IsNullOrWhiteSpace(title) ? "选择资源" : title.Trim();
+        _folders = resources.GroupBy(choice => choice.SourceStoryId)
+            .Select(group => new OfflineResourceFolder(group.First().SourceStoryName, group.ToArray())).ToArray();
         RefreshFilter();
     }
-
     public string Title { get; }
-    public string Explanation => "选择当前项目中的资源，或选择已引用故事包中的资源。";
-    public string NativeTabHeader => $"项目内引用 ({_native.Count})";
-    public string ExternalTabHeader => $"项目外引用 ({_external.Count})";
-    public ObservableCollection<OfflineResourceChoice> FilteredNative { get; } = [];
-    public ObservableCollection<OfflineResourceChoice> FilteredExternal { get; } = [];
-
+    public string Explanation => "展开故事文件夹，选择要引用的资源。";
+    public ObservableCollection<OfflineResourceFolder> Folders { get; } = [];
+    public bool HasMatches => Folders.Count != 0;
+    public string EmptyText => _folders.Length == 0 ? "项目中没有可引用的资源。" : "没有匹配的资源。";
     public string SearchText
     {
         get => _searchText;
         set
         {
-            if (SetProperty(ref _searchText, value ?? string.Empty)) RefreshFilter();
+            var next = value ?? string.Empty;
+            if (next.Trim().Length != 0 && _searchText.Trim().Length == 0)
+                foreach (var folder in _folders) _beforeSearch[folder] = folder.IsExpanded;
+            if (SetProperty(ref _searchText, next)) RefreshFilter();
         }
     }
-
     public OfflineResourceChoice? SelectedChoice
     {
         get => _selectedChoice;
-        set
-        {
-            if (!SetProperty(ref _selectedChoice, value)) return;
-            OnPropertyChanged(nameof(CanConfirm));
-        }
+        set { if (SetProperty(ref _selectedChoice, value)) OnPropertyChanged(nameof(CanConfirm)); }
     }
-
     public bool CanConfirm => SelectedChoice is not null;
-    public bool HasFilteredNative => FilteredNative.Count > 0;
-    public bool HasFilteredExternal => FilteredExternal.Count > 0;
-
-    public string NativeEmptyText => _native.Count == 0 ? "当前项目没有可引用的原生资源。" : "没有匹配的项目内资源。";
-    public string ExternalEmptyText => _external.Count == 0 ? "references/ 中没有可引用的外部资源。" : "没有匹配的项目外资源。";
-
     public void Select(OfflineResourceChoice? choice) => SelectedChoice = choice;
-
     private void RefreshFilter()
     {
         var query = SearchText.Trim();
-        Replace(FilteredNative, _native.Where(choice => Matches(choice, query)));
-        Replace(FilteredExternal, _external.Where(choice => Matches(choice, query)));
-
-        if (SelectedChoice is not null &&
-            !FilteredNative.Contains(SelectedChoice) &&
-            !FilteredExternal.Contains(SelectedChoice))
+        Folders.Clear();
+        foreach (var folder in _folders)
         {
-            SelectedChoice = null;
+            folder.Filter(query);
+            if (query.Length != 0) folder.IsExpanded = true;
+            else if (_beforeSearch.TryGetValue(folder, out var expanded)) folder.IsExpanded = expanded;
+            if (folder.Matches.Count != 0) Folders.Add(folder);
         }
-
-        OnPropertyChanged(nameof(HasFilteredNative));
-        OnPropertyChanged(nameof(HasFilteredExternal));
-    }
-
-    private static bool Matches(OfflineResourceChoice choice, string query)
-    {
-        if (query.Length == 0) return true;
-        return Contains(choice.DisplayName, query) ||
-               Contains(choice.Id, query) ||
-               Contains(choice.Kind, query) ||
-               Contains(choice.Provider, query);
-    }
-
-    private static bool Contains(string value, string query) =>
-        value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
-
-    private static void Replace(
-        ObservableCollection<OfflineResourceChoice> target,
-        IEnumerable<OfflineResourceChoice> values)
-    {
-        target.Clear();
-        foreach (var value in values) target.Add(value);
+        if (query.Length == 0) _beforeSearch.Clear();
+        if (SelectedChoice is not null && !Folders.Any(folder => folder.Matches.Contains(SelectedChoice))) SelectedChoice = null;
+        OnPropertyChanged(nameof(HasMatches)); OnPropertyChanged(nameof(EmptyText));
     }
 }

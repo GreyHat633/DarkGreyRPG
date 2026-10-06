@@ -1,0 +1,30 @@
+[
+  {
+    "Name": "是(Y)",
+    "Type": "ControlType.Pane",
+    "Id": "6",
+    "Bounds": "1011,620,100,35",
+    "Focused": false
+  },
+  {
+    "Name": "否(N)",
+    "Type": "ControlType.Pane",
+    "Id": "7",
+    "Bounds": "1121,620,100,35",
+    "Focused": true
+  },
+  {
+    "Name": "",
+    "Type": "ControlType.Pane",
+    "Id": "20",
+    "Bounds": "725,492,40,40",
+    "Focused": false
+  },
+  {
+    "Name": "文件已存在：E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-ui-followup\\ResourceTreeExport\\Exports\\显示名称导出验收.dgrs\n是否替换？",
+    "Type": "ControlType.Pane",
+    "Id": "65535",
+    "Bounds": "775,492,428,83",
+    "Focused": false
+  }
+]

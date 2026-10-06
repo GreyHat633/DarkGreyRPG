@@ -9,9 +9,12 @@ public sealed record ProblemItem(
     string Code,
     string Message,
     string? Field = null,
-    string? Source = null)
+    string? Source = null,
+    string? NodeId = null,
+    string? GraphResourceId = null)
 {
-    public string DisplayMessage => ValidationIssuePresentation.Format(Code, Message);
+    public string DisplayMessage => Source?.StartsWith("export/story/", StringComparison.Ordinal) == true
+        ? Message : ValidationIssuePresentation.Format(Code, Message);
 
     public bool IsError => Severity == ValidationSeverity.Error;
 

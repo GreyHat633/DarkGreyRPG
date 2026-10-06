@@ -1,0 +1,23 @@
+studio/src\DarkGreyRPG.Studio.Tests\ActorSerializationTests.cs:83:    public void CurrentSchemaRejectsOldNamespaceAndMismatchedOwner()
+studio/src\DarkGreyRPG.Studio.Core\Identity\CurrentProjectInventory.cs:7:/// <summary>Detached current-format content; no Namespace policy or migration side effects.</summary>
+studio/src\DarkGreyRPG.Studio.Core\Identity\ResourceAddress.cs:82:/// <summary>Only structured current-format addresses; no string or Namespace fallback.</summary>
+studio/src\DarkGreyRPG.Studio.Tests\CurrentGraphIdentity0336Tests.cs:91:        Assert.ThrowsExactly<FormatException>(() => DynamicContentText.Parse("\u001eDGR1\u001f[]"));
+studio/src\DarkGreyRPG.Studio.Tests\CurrentGraphIdentity0336Tests.cs:92:        Assert.AreEqual("\u001eDGR1\u001f[]", DynamicContentText.Parse(DynamicContentText.Encode([new(Text: "\u001eDGR1\u001f[]")])).Single().Text);
+studio/src\DarkGreyRPG.Studio.Core\Packaging\OfflineDgrs.cs:298:    public OfflineProviderResource? Resolve(DgrResourceKind kind, string fullId)
+studio/src\DarkGreyRPG.Studio.Core\Packaging\OfflineDgrs.cs:300:        var candidates = Resources.Where(resource => resource.Kind == kind && string.Equals(resource.Id, fullId, StringComparison.Ordinal)).ToArray();
+studio/src\DarkGreyRPG.Studio.Tests\OfflineCollaborationTests.cs:15:    public void ReferenceCopiesPackageAndCatalogKeepsFullIdentityAndReadOnlyDefinition()
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Definitions\DynamicContentText.cs:18:        if (value.StartsWith("\u001eDGR1\u001f", StringComparison.Ordinal)) throw new FormatException("旧动态内容身份格式不受支持。");
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Definitions\DynamicContentText.cs:49:            if (!text.StartsWith(Prefix, StringComparison.Ordinal) && !text.StartsWith("\u001eDGR1\u001f", StringComparison.Ordinal)) return text;
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:35:    public void AddReference(string storyId, DgrResourceKind kind, string fullId)
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:38:        if (!CurrentProjectInventory.IsValid(new(kind, fullId)))
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:40:                $"External {KindText(kind)} ID '{fullId}' must be a current typed resource address.");
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:61:            if (ownedIds.Contains(fullId, StringComparer.Ordinal))
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:63:                    $"Resource '{fullId}' is owned by Story '{storyId}' and cannot be referenced there.");
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:64:            if (referencedIds.Contains(fullId, StringComparer.Ordinal))
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:66:                    $"Resource '{fullId}' is already referenced by Story '{storyId}'.");
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:69:            if (providers.Diagnostics.Count != 0 || providers.Resolve(kind, fullId) is null)
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:71:            referencedIds.Add(fullId);
+studio/src\DarkGreyRPG.Studio.Core\Graphs\Resources\CanonicalExternalReferenceService.cs:84:                    $"Could not add external {KindText(kind)} '{fullId}' to Story '{storyId}'.", exception);
+src/main/java\darkgrey\rpg\session\runtime\DynamicContentText.java:25:        if (value != null && value.startsWith("\u001eDGR1\u001f"))
+src/main/java\darkgrey\rpg\identity\ResourceAddressJson.java:13:/** Strict structured address codec. Never accepts old Namespace IDs or omitted owners. */
+src/main/java\darkgrey\rpg\identity\ResourceAddress.java:89:    /** Lossless internal graph/index key, never a Namespace ID or an author-editable field. */

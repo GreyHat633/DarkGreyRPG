@@ -1,0 +1,88 @@
+studio/src/DarkGreyRPG.Studio.Core\Items\ItemValidator.cs:113:        else if (!DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsFullId(id) && !IdRegex().IsMatch(id))
+studio/src/DarkGreyRPG.Studio.Core\Identity\DgrResourceId.cs:5:public static class DgrResourceId
+studio/src/DarkGreyRPG.Studio.Core\Actors\ActorValidator.cs:152:        if (!DgrResourceId.IsFullId(id) && !RuntimeIdRegex().IsMatch(id))
+studio/src/DarkGreyRPG.Studio.Core\Actors\ActorValidator.cs:161:        if (idPolicy == ActorIdPolicy.NewResource && !DgrResourceId.IsFullId(id) && !NewResourceIdRegex().IsMatch(id))
+studio/src/DarkGreyRPG.Studio.Core\Actors\ActorValidator.cs:168:        else if (idPolicy == ActorIdPolicy.ExistingResource && !DgrResourceId.IsFullId(id) && !NewResourceIdRegex().IsMatch(id))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:8:public sealed record NamespaceProjectSnapshot(
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:14:    NamespacePolicy? Policy);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:16:public sealed record NamespaceMigrationPlan(ResourceRenameMap Renames, NamespaceProjectSnapshot Result);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:18:public static class NamespaceMigrationPlanner
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:20:    public static NamespaceMigrationPlan ChangeGlobal(NamespaceProjectSnapshot project, string newNamespace)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:23:    public static NamespaceMigrationPlan ChangeStory(NamespaceProjectSnapshot project, string storyId, string customNamespace)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:27:    public static NamespaceMigrationPlan ReturnToGlobal(NamespaceProjectSnapshot project, string storyId)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:31:    private static NamespaceMigrationPlan Plan(NamespaceProjectSnapshot project, string global, string? selectedStory, string? custom)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:34:        if (!DgrResourceId.IsValidNamespace(global) || custom is not null && !DgrResourceId.IsValidNamespace(custom))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:55:        var map = new ResourceRenameMap();
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:62:            if (affected) map.Add(DgrResourceKind.Story, story, DgrResourceId.Qualify(destinationNamespace, DgrResourceId.LocalId(story)));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:65:                var destination = affected ? DgrResourceId.Qualify(destinationNamespace, DgrResourceId.LocalId(owned.Id)) : owned.Id;
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:82:        var result = new NamespaceProjectSnapshot(
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:85:            map.Rewrite(project.Logic), new NamespacePolicy(global, overrides));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:87:            if (!DgrResourceId.IsFullId(resource.Id))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:92:    public static IEnumerable<DgrResourceKey> Inventory(NamespaceProjectSnapshot project)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceMigrationPlanner.cs:93:        => project.Graphs.Select(resource => new DgrResourceKey(ResourceRenameMap.Kind(resource.ResourceKind), resource.Id))
+studio/src/DarkGreyRPG.Studio.Core\Stories\StoryValidator.cs:29:        else if (!DgrResourceId.IsCompatibleId(resource.Id))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:5:public sealed class NamespacePolicy
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:7:    public NamespacePolicy(string globalNamespace)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:12:    public NamespacePolicy(string globalNamespace, IReadOnlyDictionary<string, string>? storyOverrides)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:14:        if (!DgrResourceId.IsValidNamespace(globalNamespace))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:24:                if (!DgrResourceId.IsFullId(pair.Key))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:29:                if (!DgrResourceId.IsValidNamespace(pair.Value))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicy.cs:65:        if (!DgrResourceId.IsFullId(storyId))
+studio/src/DarkGreyRPG.Studio.Core\Stories\StoryRepository.cs:137:        return FindStoryPath(id) ?? Path.Combine(StoriesDirectory, DgrResourceId.RelativeJsonPath(id));
+studio/src/DarkGreyRPG.Studio.Core\Stories\StoryRepository.cs:142:        if (!DgrResourceId.IsFullId(id))
+studio/src/DarkGreyRPG.Studio.Core\Stories\StoryRepository.cs:161:            if (!DgrResourceId.IsFullId(resource.Id)
+studio/src/DarkGreyRPG.Studio.Core\Packaging\OfflineDgrs.cs:35:    public string Namespace => DgrResourceId.IsFullId(Id) ? DgrResourceId.Namespace(Id) : string.Empty;
+studio/src/DarkGreyRPG.Studio.Core\Packaging\OfflineDgrs.cs:310:    public string Namespace => DgrResourceId.IsFullId(Id) ? DgrResourceId.Namespace(Id) : string.Empty;
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:12:public static class NamespaceProjectValidator
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:14:    public static void Validate(NamespaceProjectSnapshot project)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:16:        var resources = NamespaceMigrationPlanner.Inventory(project).ToArray();
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:17:        if (resources.Distinct().Count() != resources.Length || resources.Any(key => !DgrResourceId.IsFullId(key.Id)))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:20:        var graphs = project.Graphs.ToDictionary(graph => new DgrResourceKey(ResourceRenameMap.Kind(graph.ResourceKind), graph.Id));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:37:            foreach (var key in NamespaceMigrationPlanner.Members(membership.OwnedResources))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:39:            var declared = NamespaceMigrationPlanner.Members(membership.OwnedResources)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:40:                .Concat(NamespaceMigrationPlanner.Members(membership.ReferencedResources)).ToHashSet();
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:42:                if (!DgrResourceId.IsFullId(key.Id)) throw new InvalidDataException($"Invalid referenced full ID '{key.Id}'.");
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:120:            if (!storyIds.Contains(pair.Key) || DgrResourceId.Namespace(pair.Key) != pair.Value)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectValidator.cs:123:            if (DgrResourceId.Namespace(story) != project.Policy.GlobalNamespace)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:12:public sealed class NamespaceMigrationPreview
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:14:    internal NamespaceMigrationPreview(string root, NamespaceMigrationPlan plan,
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:28:    internal NamespaceProjectSnapshot FinalProject { get; }
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:34:public sealed class NamespaceProjectMigrationService
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:37:    public NamespaceProjectMigrationService(ProjectFileTransaction? transaction = null) => _transaction = transaction ?? new();
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:39:    public NamespaceMigrationPreview PreviewGlobal(string projectDirectory, string newNamespace)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:40:        => Preview(projectDirectory, source => NamespaceMigrationPlanner.ChangeGlobal(source, newNamespace));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:41:    public NamespaceMigrationPreview PreviewCustom(string projectDirectory, string storyId, string customNamespace)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:42:        => Preview(projectDirectory, source => NamespaceMigrationPlanner.ChangeStory(source, storyId, customNamespace));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:43:    public NamespaceMigrationPreview PreviewReturnToGlobal(string projectDirectory, string storyId)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:44:        => Preview(projectDirectory, source => NamespaceMigrationPlanner.ReturnToGlobal(source, storyId));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:46:    public NamespaceMigrationPreview PreviewResourceRename(string projectDirectory, DgrResourceKind kind, string id, string newId, string? displayName = null, IReadOnlyList<string>? tags = null)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:49:            if (!DgrResourceId.IsFullId(newId)) throw new ArgumentException("资源 ID 格式无效。");
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:50:            var inventory = NamespaceMigrationPlanner.Inventory(source).ToArray();
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:54:            var map = new ResourceRenameMap();
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:57:            var result = new NamespaceProjectSnapshot(
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:84:                        if (ResourceRenameMap.Kind(graph.ResourceKind) != kind || graph.Id != newId) return graph;
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:91:            return new NamespaceMigrationPlan(map, result);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:94:    public void Apply(NamespaceMigrationPreview preview)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:103:            NamespaceProjectValidator.Validate(preview.FinalProject);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:108:    public void Undo(NamespaceMigrationPreview preview)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:125:    public static NamespaceProjectSnapshot ReadProject(string projectDirectory) => Read(Path.GetFullPath(projectDirectory)).Project;
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:127:    private static NamespaceMigrationPreview Preview(string directory, Func<NamespaceProjectSnapshot, NamespaceMigrationPlan> plan)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:132:        NamespaceProjectValidator.Validate(migration.Result);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:144:            var kind = ResourceRenameMap.Kind(before.ResourceKind);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:148:            var path = after.Id == before.Id ? oldPath : $"resources/canonical/{folder}/{DgrResourceId.RelativeJsonPath(after.Id)}";
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:155:            Output(oldPath, after.StoryId == before.StoryId ? oldPath : $"resources/canonical/memberships/{DgrResourceId.RelativeJsonPath(after.StoryId)}", after.ToJson());
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:161:            Output(oldPath, after.Id == before.Id ? oldPath : $"actors/{DgrResourceId.RelativeJsonPath(after.Id)}", ActorSerializer.Serialize(after, ActorIdPolicy.ExistingResource));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:168:            Output(oldPath, after.Id == before.Id ? oldPath : $"{(kind == DgrResourceKind.Item ? "items" : "item_groups")}/{DgrResourceId.RelativeJsonPath(after.Id)}", ItemSerializer.Serialize(after));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:174:        desired[NamespacePolicyStore.RelativePath] = NamespacePolicyStore.Encode(migration.Result.Policy!);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:182:    private static string RewriteLayout(string path, byte[] bytes, ResourceRenameMap map)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:196:                    key = key[..(split + 1)] + map.Resolve(ResourceRenameMap.Kind(GraphResourceEnvelopeSerializer.ParseResourceKind(key[..split])), key[(split + 1)..]);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:236:                paths.Add(new(ResourceRenameMap.Kind(graph.ResourceKind), graph.Id), Relative(info.SourcePath));
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:262:        var policyPath = Path.Combine(root, NamespacePolicyStore.RelativePath);
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:263:        var policy = File.Exists(policyPath) ? NamespacePolicyStore.Decode(ReadFile(policyPath)) : null;
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespaceProjectMigrationService.cs:269:    private sealed record Source(NamespaceProjectSnapshot Project, Dictionary<string, byte[]> Files,
+studio/src/DarkGreyRPG.Studio.Core\Identity\ResourceRenameMap.cs:15:public sealed class ResourceRenameMap
+studio/src/DarkGreyRPG.Studio.Core\Identity\ResourceRenameMap.cs:22:        if (!DgrResourceId.IsCompatibleId(oldId) || !DgrResourceId.IsFullId(newId))
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicyStore.cs:7:public static class NamespacePolicyStore
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicyStore.cs:16:    public static NamespacePolicy? Load(string projectDirectory)
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicyStore.cs:22:    public static byte[] Encode(NamespacePolicy policy) => JsonSerializer.SerializeToUtf8Bytes(new PolicyDocument
+studio/src/DarkGreyRPG.Studio.Core\Identity\NamespacePolicyStore.cs:29:    public static NamespacePolicy Decode(byte[] bytes)

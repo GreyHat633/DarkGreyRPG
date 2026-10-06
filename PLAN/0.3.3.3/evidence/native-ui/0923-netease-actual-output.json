@@ -1,0 +1,25 @@
+{
+  "label": "0923-netease-actual-output",
+  "time": "2026-09-23T00:35:51",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.3392165335761848,
+  "peak": 1.0,
+  "tone440": 0.0008154381982983806,
+  "tone880": 0.0017509095778979495,
+  "dominantVoiceHz": 740.975935828877,
+  "dominantVoiceAmplitude": 0.012054065068944738
+}

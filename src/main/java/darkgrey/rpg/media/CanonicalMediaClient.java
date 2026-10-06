@@ -62,6 +62,7 @@ public final class CanonicalMediaClient {
     private static long planRevision = -1;
     private static long appliedRevision = -1;
     private static String scope = "";
+    private static String lastBudgetTrace;
     private static final Set<String> VISIBLE = new HashSet<String>();
     private static final Set<String> RUNNING = new HashSet<String>();
     private static final Set<String> PRELOAD = new HashSet<String>();
@@ -93,6 +94,7 @@ public final class CanonicalMediaClient {
         Object next = mc.getNetHandler();
         if (connection == next) return;
         connection = next;
+        lastBudgetTrace = null;
         scope = mc.isSingleplayer() && mc.getIntegratedServer() != null ? "local:" + mc.getIntegratedServer()
             .getFolderName() + "|"
             : "server:" + (mc.func_147104_D() == null ? "unknown" : mc.func_147104_D().serverIP) + "|";
@@ -333,6 +335,35 @@ public final class CanonicalMediaClient {
         packages.pump();
         Set<String> owned = packages.ownedRefs();
         List<StoryMediaCacheIndex.Entry> downloading = packages.downloading();
+        if (MediaLatencyTrace.ENABLED) {
+            List<StoryMediaCacheIndex.Entry> admitted = packages.entries();
+            int protectedCount = 0;
+            int readyCount = 0;
+            StringBuilder identities = new StringBuilder();
+            for (StoryMediaCacheIndex.Entry entry : admitted) {
+                if (entry.isRunning()) protectedCount++;
+                if (entry.isReady()) readyCount++;
+                if (identities.length() != 0) identities.append(',');
+                identities.append(entry.id)
+                    .append('@')
+                    .append(entry.version);
+            }
+            String budget = "admitted=" + admitted.size()
+                + " downloading="
+                + downloading.size()
+                + " queued="
+                + packages.queuedCount()
+                + " protected="
+                + protectedCount
+                + " ready="
+                + readyCount
+                + " ids="
+                + identities;
+            if (!budget.equals(lastBudgetTrace)) {
+                lastBudgetTrace = budget;
+                MediaLatencyTrace.event("package_budget", scope, 0, budget);
+            }
+        }
         Set<String> transferring = new HashSet<String>();
         for (StoryMediaCacheIndex.Entry entry : downloading) transferring.addAll(entry.refs);
         DELETE_PENDING.addAll(packages.drainEvictedRefs());

@@ -63,9 +63,8 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     {
         EnsureSupportedKind(kind);
         Kind = kind;
-        NamespacePrefix = DgrResourceId.IsFullId(suggestedId) ? DgrResourceId.Namespace(suggestedId) + ":" : string.Empty;
         _id = suggestedId ?? string.Empty;
-        _displayName = displayName ?? DefaultDisplayName(kind);
+        _displayName = displayName ?? string.Empty;
         _tagsText = string.Join(", ", tags ?? []);
         ApplySuggestionCommand = new RelayCommand(ApplySuggestion, () => HasSuggestion);
     }
@@ -74,30 +73,13 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     public CanonicalStoryItemKind ItemKind => Kind;
     public string ChineseTypeLabel => Kind == CanonicalStoryItemKind.Individual ? "物品" : "物品组";
     public string TypeLabel => Kind == CanonicalStoryItemKind.Individual ? "Item" : "Item Group";
-    public string IdentityLabel => Kind == CanonicalStoryItemKind.Individual ? "Item ID" : "Group ID";
+    public string IdentityLabel => ChineseTypeLabel;
     public string Title => $"新建 {ChineseTypeLabel}";
-    public string Description => Kind == CanonicalStoryItemKind.Individual
-        ? "创建精确匹配一个物品身份的 Item ID，并归入当前故事。"
-        : "创建可包含多个物品身份的 Group ID，并归入当前故事。";
+    public string Description => $"创建{ChineseTypeLabel}，并归入当前故事。";
     public string ActionText => "创建";
     public RelayCommand ApplySuggestionCommand { get; }
-
-    public string NamespacePrefix { get; }
-    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
-    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
-    public string EditableId
-    {
-        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
-            ? Id[NamespacePrefix.Length..] : Id;
-        set => Id = NamespacePrefix + (value ?? string.Empty);
-    }
-
-    public string Id
-    {
-        get => _id;
-        set { if (SetProperty(ref _id, value ?? string.Empty)) RaiseValidationProperties(); }
-    }
-
+    public string EditableId { get => Id; set { } }
+    public string Id { get => _id; set { } }
     public string DisplayName
     {
         get => _displayName;
@@ -111,20 +93,16 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
     }
 
     public IReadOnlyList<string> Tags => ParseTags(TagsText);
-    public string NormalizedSuggestion => NormalizeSuggestion(Id);
-    public bool HasSuggestion => NormalizedSuggestion.Length > 0
-        && !string.Equals(Id, NormalizedSuggestion, StringComparison.Ordinal);
+    public string NormalizedSuggestion => Id;
+    public bool HasSuggestion => false;
 
     public string ValidationText
     {
         get
         {
-            var messages = ItemValidator.ValidateId(Id)
-                .Where(issue => issue.Severity == ValidationSeverity.Error)
-                .Select(issue => issue.Message)
-                .ToList();
-            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
-                messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
+            var messages = new List<string>();
+            if (!ResourceAddress.IsKey(Id) || ResourceAddress.FromKey(Id).Kind != (Kind == CanonicalStoryItemKind.Individual ? Core.Identity.ResourceKind.Item : Core.Identity.ResourceKind.ItemGroup))
+                messages.Add("资源内部地址无效。");
             if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("资源名称不能为空。");
             if (Tags.Any(string.IsNullOrWhiteSpace)) messages.Add("标签不能为空。");
             if (Tags.Count != Tags.Distinct(StringComparer.Ordinal).Count()) messages.Add("标签不能重复。");
@@ -134,10 +112,6 @@ public sealed class CanonicalItemIdentityDialogViewModel : ObservableObject
 
     public bool CanConfirm => ValidationText.Length == 0;
 
-    private static string NormalizeSuggestion(string id)
-        => DgrResourceId.IsFullId(id) || id.Contains(':')
-            ? id
-            : ItemValidator.NormalizeId(id);
 
     public static CanonicalItemIdentityDialogViewModel ForCreate(
         CanonicalStoryItemKind kind,

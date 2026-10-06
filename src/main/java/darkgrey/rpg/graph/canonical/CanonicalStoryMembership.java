@@ -5,7 +5,7 @@ public final class CanonicalStoryMembership {
 
     public static final int LEGACY_SCHEMA_VERSION = 1;
     public static final int ITEM_MEMBERSHIP_SCHEMA_VERSION = 2;
-    public static final int CURRENT_SCHEMA_VERSION = 3;
+    public static final int CURRENT_SCHEMA_VERSION = 4;
 
     private final int schemaVersion;
     private final String storyId;

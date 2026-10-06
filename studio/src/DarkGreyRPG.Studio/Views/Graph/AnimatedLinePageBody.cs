@@ -22,6 +22,7 @@ public sealed class AnimatedLinePageBody : Decorator
         Loaded += (_, _) => Snap();
         Unloaded += (_, _) => Snap();
     }
+    public void SynchronizeExpansion() => Snap();
     private void Snap()
     {
         BeginAnimation(ProgressProperty, null);

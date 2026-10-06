@@ -1,0 +1,27 @@
+{
+  "artifact": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.6.jar",
+  "bytes": 1972534,
+  "sha256": "0dc43d497175a85f38f9e809387cb03b64216e9bdb20f4009e58febaa576cab9",
+  "mcmod": [
+    {
+      "modid": "darkgrey_rpg",
+      "name": "DarkGrey RPG",
+      "description": "Story-first RPG authoring framework with canonical Story Flow, Session, and Task runtime support.",
+      "version": "0.3.3.6",
+      "mcversion": "1.7.10",
+      "url": "",
+      "updateUrl": "",
+      "authorList": [
+        "GreyHat"
+      ],
+      "credits": "",
+      "logoFile": "",
+      "screenshots": [],
+      "dependencies": [
+        "after:customnpcs"
+      ]
+    }
+  ],
+  "candidate_server_sha256": "0dc43d497175a85f38f9e809387cb03b64216e9bdb20f4009e58febaa576cab9",
+  "candidate_client_sha256": "0dc43d497175a85f38f9e809387cb03b64216e9bdb20f4009e58febaa576cab9"
+}

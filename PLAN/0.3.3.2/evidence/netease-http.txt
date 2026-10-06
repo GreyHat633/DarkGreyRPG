@@ -1,0 +1,60 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+
+  0 5429k    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+HTTP/1.1 302 Found
+Server: nginx
+Date: Thu, 17 Sep 2026 01:45:58 GMT
+Content-Length: 0
+Connection: keep-alive
+Location: [temporary provider audio URL redacted]
+MConfig-Bucket: 999999
+X-TraceId-V2: a26ba534edc9c5ed0fdb8c3772add795^1788329314903^-5634591102
+X-TraceId: 000001a0ad0ac0b4008e0ab0f0620007
+Set-Cookie: NMTID=00Oti-zyHd9If4qCkQ9m4E-tMH7RD0AAAGgrQrAwQ; Max-Age=315360000; Expires=Sun, 14 Sep 2036 01:45:58 GMT; Path=/; Domain=music.163.com
+cache-control: no-cache
+cache-control: no-store
+expires: Thu, 01 Jan 1970 00:00:00 GMT
+GW-Thread: 882802
+GW-Time: 1789609558198
+X-From-Src: 171.34.217.232
+X-Via: MusicServer
+
+HTTP/1.1 200 OK
+Server: Tengine
+Content-Type: audio/mpeg
+Content-Length: 5559319
+Connection: keep-alive
+Date: Sun, 26 Apr 2026 12:32:29 GMT
+x-nos-request-id: a31271f4-d78b-42a6-a08b-60850e4e9bc4
+x-nos-requesttype: GetObject
+x-nos-object-name: aeda%2F01f0%2F7918%2F9950334759ca9462e15cf25c03b10b2a.mp3
+x-nos-storage-class: STANDARD_IA
+Content-Disposition: inline; filename="aeda%2F01f0%2F7918%2F9950334759ca9462e15cf25c03b10b2a.mp3"
+Via: ens-cache25.l2nu20-20[202,202,304-0,H], ens-cache13.l2nu20-20[204,0], ens-cache13.l2nu20-20[207,0], ens-cache37.l2hk12[0,0,206-0,H], ens-cache17.l2hk12[0,0], ens-cache21.hk49[3,3,200-0,M], ens-cache9.hk49[6,0]
+ETag: 9950334759ca9462e15cf25c03b10b2a
+Last-Modified: Wed, 26 Oct 2016 22:06:44 Asia/Shanghai
+Age: 12402809
+Ali-Swift-Global-Savetime: 1777206749
+X-Cache: MISS TCP_MISS dirn:-2:-2 mlen:5559319
+X-Swift-SaveTime: Thu, 17 Sep 2026 01:45:58 GMT
+X-Swift-CacheTime: 18701191
+cdn-user-ip: 171.34.217.232
+x-cdn-server-time: 6
+Access-Control-Allow-Methods: GET,POST,OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: Content-Range, Last-Modified
+Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range
+cdn-source: ali
+Access-Control-Allow-Credentials: true
+Accept-Ranges: bytes
+cdn-ip: 43.109.70.191
+Timing-Allow-Origin: *
+EagleId: 2b6d469d17896095588801204e
+
+

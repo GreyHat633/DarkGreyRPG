@@ -1,0 +1,241 @@
+WINDOW: Native0333History251 — DarkGrey RPG Studio 0.3.3.3 229,44,1463,942
+ControlType.Window id= name=导出故事包 enabled=True rect=238,81,959,595
+ControlType.Pane id= name= enabled=True rect=247,157,941,441
+ControlType.ToolBar id=FolderBandModuleInner name=命令模块 enabled=True rect=247,157,941,38
+ControlType.Button id=HelpButton name=帮助(&H) enabled=True rect=1143,159,34,32
+ControlType.SplitButton id=ViewControl name=视图 enabled=True rect=1069,159,64,32
+ControlType.Button id=SplitMenuButton name=视图滑块 enabled=True rect=1102,159,19,32
+ControlType.Button id={7DDC1264-7E4D-4F74-BBC0-D191987C8D0F} name=组织​​ enabled=True rect=251,159,80,32
+ControlType.Button id={E44616AD-6DF1-4B94-85A4-E465AE8A19DB} name=新建​​文件夹​​ enabled=True rect=331,159,111,32
+ControlType.Pane id=ProperTreeHost name=控制项宿主 enabled=True rect=247,195,193,322
+ControlType.Tree id=100 name=命名空间树状控制项 enabled=True rect=247,195,193,322
+ControlType.ScrollBar id=Vertical ScrollBar name=Vertical Scroll Bar enabled=True rect=419,195,21,322
+ControlType.Button id=SmallDecrement name=Back by small amount enabled=True rect=419,195,21,17
+ControlType.Button id=LargeDecrement name=Back by large amount enabled=True rect=419,212,21,169
+ControlType.Thumb id=Thumb name=Thumb enabled=True rect=419,381,21,70
+ControlType.Button id=LargeIncrement name=Forward by large amount enabled=True rect=419,451,21,49
+ControlType.Button id=SmallIncrement name=Forward by small amount enabled=True rect=419,500,21,17
+ControlType.TreeItem id= name=OneDrive - Personal enabled=True rect=300,205,148,30
+ControlType.TreeItem id= name=附件 enabled=True rect=310,235,34,30
+ControlType.TreeItem id= name=图片 enabled=True rect=310,265,34,30
+ControlType.TreeItem id= name=文档 enabled=True rect=310,295,34,30
+ControlType.TreeItem id= name=此电脑 enabled=True rect=300,335,49,30
+ControlType.TreeItem id= name=3D 对象 enabled=True rect=310,365,58,30
+ControlType.TreeItem id= name=视频 enabled=True rect=310,395,34,30
+ControlType.TreeItem id= name=图片 enabled=True rect=310,425,34,30
+ControlType.TreeItem id= name=文档 enabled=True rect=310,455,34,30
+ControlType.TreeItem id= name=下载 enabled=True rect=310,485,34,30
+ControlType.TreeItem id= name=音乐 enabled=True rect=310,515,34,30
+ControlType.Pane id=listview name=Shell 文件夹视图 enabled=True rect=445,195,743,322
+ControlType.List id= name=项目视图 enabled=True rect=445,195,743,322
+ControlType.ScrollBar id=HorizontalScrollBar name=水平滚动条 enabled=True rect=445,496,722,21
+ControlType.Button id= name=左移一列 enabled=True rect=445,496,21,21
+ControlType.Custom id= name=位置 enabled=True rect=466,496,633,21
+ControlType.Button id= name=向右翻页 enabled=True rect=1099,496,47,21
+ControlType.Button id= name=右移一列 enabled=True rect=1146,496,21,21
+ControlType.ScrollBar id=VerticalScrollBar name=垂直滚动条 enabled=True rect=1167,195,21,301
+ControlType.Button id= name=上一行 enabled=True rect=1167,195,21,21
+ControlType.Custom id= name=位置 enabled=True rect=1167,216,21,153
+ControlType.Button id= name=向下翻页 enabled=True rect=1167,369,21,106
+ControlType.Button id= name=下一行 enabled=True rect=1167,475,21,21
+ControlType.Header id= name=标题 enabled=True rect=445,195,776,32
+ControlType.SplitButton id=System.ItemNameDisplay name=名称 enabled=True rect=445,195,337,32
+ControlType.Button id=DropDown name=筛选器下拉列表 enabled=True rect=762,195,19,32
+ControlType.SplitButton id=System.DateModified name=修改日期 enabled=True rect=782,195,179,32
+ControlType.Button id=DropDown name=筛选器下拉列表 enabled=True rect=941,195,19,32
+ControlType.SplitButton id=System.ItemTypeText name=类型 enabled=True rect=961,195,149,32
+ControlType.Button id=DropDown name=筛选器下拉列表 enabled=True rect=1090,195,19,32
+ControlType.SplitButton id=System.Size name=大小 enabled=True rect=1110,195,99,32
+ControlType.ListItem id=0 name=Native0333.dgrs enabled=True rect=462,234,742,27
+ControlType.Image id= name= enabled=True rect=467,234,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,234,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,234,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,234,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,234,99,27
+ControlType.ListItem id=1 name=Native0333Audio.dgrs enabled=True rect=462,260,742,27
+ControlType.Image id= name= enabled=True rect=467,260,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,260,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,260,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,260,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,260,99,27
+ControlType.ListItem id=2 name=Native0333Boundary338.dgrs enabled=True rect=462,286,742,27
+ControlType.Image id= name= enabled=True rect=467,286,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,286,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,286,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,286,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,286,99,27
+ControlType.ListItem id=3 name=Native0333Choices.dgrs enabled=True rect=462,312,742,27
+ControlType.Image id= name= enabled=True rect=467,312,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,312,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,312,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,312,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,312,99,27
+ControlType.ListItem id=4 name=Native0333FullInventory.dgrs enabled=True rect=462,338,742,27
+ControlType.Image id= name= enabled=True rect=467,338,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,338,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,338,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,338,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,338,99,27
+ControlType.ListItem id=5 name=Native0333Integrated.dgrs enabled=True rect=462,364,742,27
+ControlType.Image id= name= enabled=True rect=467,364,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,364,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,364,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,364,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,364,99,27
+ControlType.ListItem id=6 name=Native0333LiveKills.dgrs enabled=True rect=462,390,742,27
+ControlType.Image id= name= enabled=True rect=467,390,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,390,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,390,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,390,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,390,99,27
+ControlType.ListItem id=7 name=Native0333Long.dgrs enabled=True rect=462,416,742,27
+ControlType.Image id= name= enabled=True rect=467,416,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,416,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,416,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,416,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,416,99,27
+ControlType.ListItem id=8 name=Native0333Npc.dgrs enabled=True rect=462,442,742,27
+ControlType.Image id= name= enabled=True rect=467,442,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,442,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,442,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,442,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,442,99,27
+ControlType.ListItem id=9 name=Native0333Placed.dgrs enabled=True rect=462,468,742,27
+ControlType.Image id= name= enabled=True rect=467,468,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,468,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,468,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,468,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,468,99,27
+ControlType.ListItem id=10 name=Native0333Profile.dgrs enabled=True rect=462,494,742,27
+ControlType.Image id= name= enabled=True rect=467,494,22,27
+ControlType.Edit id=System.ItemNameDisplay name=名称 enabled=True rect=489,494,293,27
+ControlType.Edit id=System.DateModified name=修改日期 enabled=True rect=782,494,179,27
+ControlType.Edit id=System.ItemTypeText name=类型 enabled=True rect=961,494,149,27
+ControlType.Edit id=System.Size name=大小 enabled=True rect=1110,494,99,27
+ControlType.Text id=SaveDialogLabel name=文件名: enabled=True rect=259,530,143,28
+ControlType.ComboBox id=FileNameControlHost name=文件名: enabled=True rect=402,530,780,28
+ControlType.Edit id=1001 name=文件名: enabled=True rect=405,533,753,22
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=1162,531,19,26
+ControlType.Text id=SaveDialogLabel name=保存类型: enabled=True rect=259,560,143,28
+ControlType.ComboBox id=FileTypeControlHost name=保存类型: enabled=True rect=402,560,780,28
+ControlType.Button id=DropDown name=Drop Down Button enabled=True rect=1162,561,19,26
+ControlType.ToolBar id= name= enabled=True rect=257,626,115,26
+ControlType.Button id=Item 103 name=隐藏文件夹 enabled=True rect=257,626,103,26
+ControlType.Button id=1 name=保存(S) enabled=True rect=933,620,109,32
+ControlType.Button id=2 name=取消 enabled=True rect=1057,620,109,32
+ControlType.Pane id= name= enabled=True rect=1167,646,21,21
+ControlType.Pane id=40965 name= enabled=True rect=247,118,941,39
+ControlType.ToolBar id= name=导航按钮 enabled=True rect=252,122,78,30
+ControlType.Button id=Item 256 name=后退 (Alt + 向左键) enabled=False rect=252,122,30,30
+ControlType.Button id=Item 257 name=前进 (Alt + 向右键) enabled=False rect=282,122,30,30
+ControlType.Button id=Item 258 name=最近浏览的位置 enabled=False rect=312,122,15,30
+ControlType.ToolBar id= name=向上一级区段工具栏 enabled=True rect=330,123,30,36
+ControlType.Button id=Item 256 name=上移到“evidence”(Alt + 向上键) enabled=True rect=330,123,30,30
+ControlType.ProgressBar id= name= enabled=True rect=362,123,550,27
+ControlType.Pane id= name= enabled=True rect=362,123,510,27
+ControlType.ToolBar id=1001 name=地址: E:\Java\MinecraftMod\DarkGreyRPG\PLAN\0.3.3.3\evidence\native-ui enabled=True rect=362,123,510,27
+ControlType.SplitButton id=Item 1280 name=所有位置 enabled=True rect=362,123,43,26
+ControlType.SplitButton id=Item 1286 name=‎PLAN enabled=True rect=405,123,67,26
+ControlType.SplitButton id=Item 1287 name=‎0.3.3.3 enabled=True rect=472,123,75,26
+ControlType.SplitButton id=Item 1288 name=‎evidence enabled=True rect=547,123,93,26
+ControlType.MenuItem id=Item 1289 name=‎native-ui enabled=True rect=640,123,71,26
+ControlType.ToolBar id= name=地址区段工具栏 enabled=True rect=872,123,40,27
+ControlType.Button id=Item 202 name=上一个位置 enabled=True rect=872,123,20,27
+ControlType.Button id=Item 102 name=刷新“native-ui”(F5) enabled=True rect=892,123,20,27
+ControlType.Pane id= name= enabled=True rect=918,135,6,1
+ControlType.Pane id= name= enabled=True rect=924,122,253,29
+ControlType.Pane id= name= enabled=True rect=929,122,243,29
+ControlType.Edit id=SearchEditBox name=搜索框 enabled=True rect=931,126,219,20
+ControlType.Button id=SearchBoxSearchButton name=搜索 enabled=True rect=1154,122,16,29
+ControlType.Pane id= name= enabled=True rect=1181,135,7,1
+ControlType.TitleBar id=TitleBar name=导出故事包 enabled=True rect=247,90,941,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=247,90,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=247,90,27,27
+ControlType.Button id=Close name=Close enabled=True rect=1146,82,43,36
+ControlType.TitleBar id=TitleBar name=Native0333History251 — DarkGrey RPG Studio 0.3.3.3 enabled=False rect=238,53,1445,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=False rect=238,53,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=False rect=238,53,27,27
+ControlType.Button id=Minimize name=Minimize enabled=False rect=1511,45,58,36
+ControlType.Button id=Maximize name=Maximize enabled=False rect=1569,45,57,36
+ControlType.Button id=Close name=Close enabled=False rect=1626,45,58,36
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=项目已打开，共 1 个 Actor。 enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,90,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.Text id= name=1 enabled=True rect=368,902,7,19
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=398,891,79,42
+ControlType.Text id= name=调试器 enabled=True rect=411,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=480,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=493,901,85,22
+ControlType.Button id= name=新建故事 enabled=True rect=505,160,39,40
+ControlType.Text id= name=项目首页 enabled=True rect=255,167,250,26
+ControlType.Button id= name=引用故事包 enabled=True rect=253,820,291,49
+ControlType.Pane id= name= enabled=True rect=Empty
+ControlType.List id= name=引用故事包区域 enabled=True rect=Empty
+ControlType.Edit id=StorySearchBox name=搜索故事 enabled=True rect=253,212,291,40
+ControlType.List id=StoryList name=故事导航列表 enabled=True rect=253,262,291,543
+ControlType.ListItem id= name=DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel enabled=True rect=254,263,289,116
+ControlType.Text id= name=251条历史FIFO enabled=True rect=276,288,245,22
+ControlType.Text id= name=Native0332:history251 enabled=True rect=276,312,245,22
+ControlType.Text id= name=新格式 enabled=True rect=276,337,245,17
+ControlType.Thumb id=ResourceBrowserSplitter name= enabled=True rect=560,145,10,739
+ControlType.Button id= name=进入选中故事 enabled=True rect=1501,197,144,42
+ControlType.Text id= name=进入故事 enabled=True rect=1538,206,69,22
+ControlType.Text id= name=项目故事图谱 enabled=True rect=605,184,896,41
+ControlType.Text id= name=左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。 enabled=True rect=605,230,896,22
+ControlType.Custom id= name=故事图谱自由布局画布 enabled=True rect=605,274,658,572
+ControlType.Text id= name=1 个故事 · 0 条连接 enabled=True rect=605,274,658,22
+ControlType.Custom id=Editor name=节点图编辑器 enabled=True rect=605,306,658,478
+ControlType.Button id= name=图编辑器缩放到百分之百 enabled=True rect=605,314,68,35
+ControlType.Text id= name=100% enabled=True rect=616,321,46,22
+ControlType.Button id= name=适应全部图节点 enabled=True rect=678,314,57,35
+ControlType.Text id= name=适应 enabled=True rect=689,321,35,22
+ControlType.Button id= name=重置图视图 enabled=True rect=740,314,57,35
+ControlType.Text id= name=重置 enabled=True rect=751,321,35,22
+ControlType.Button id=ScissorsButton name=剪断连线 enabled=True rect=802,314,57,35
+ControlType.Text id= name=剪刀 enabled=True rect=813,321,35,22
+ControlType.Button id=CombineSelection name=组合 enabled=True rect=864,314,57,35
+ControlType.Text id= name=组合 enabled=True rect=875,321,35,22
+ControlType.Text id= name=拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放 enabled=True rect=936,313,327,44
+ControlType.Custom id=CanonicalGraphNode_Native0332:history251 name=图节点 故事「251条历史FIFO」 Native0332:history251 enabled=True rect=705,455,288,114
+ControlType.Text id=HeaderTitle name=故事「251条历史FIFO」 enabled=True rect=718,464,263,22
+ControlType.Button id=CanonicalGraphPort_Native0332:history251_native_finished name=Native0332:history251 输出端口 native_finished (Flow) enabled=True rect=849,501,134,25
+ControlType.Text id= name=验收结束 enabled=True rect=897,505,55,17
+ControlType.Group id=Help name=介绍说明 enabled=True rect=605,794,658,52
+ControlType.Button id=HeaderSite name=介绍说明 enabled=True rect=606,795,656,50
+ControlType.Text id= name=介绍说明 enabled=True rect=620,809,613,22
+ControlType.Thumb id= name= enabled=True rect=1263,274,10,572
+ControlType.Pane id= name= enabled=True rect=1294,295,330,530
+ControlType.Text id= name=故事详情 enabled=True rect=1294,295,330,19
+ControlType.Text id= name=选中故事完整概览 enabled=True rect=1294,319,330,34
+ControlType.Text id= name=Native0332:history251 enabled=True rect=1294,358,330,22
+ControlType.List id= name= enabled=True rect=1294,403,330,147
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 角色, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1294,403,330,37
+ControlType.Group id= name=角色 enabled=True rect=1294,405,330,32
+ControlType.Button id=HeaderToggle name=角色 enabled=True rect=1294,405,59,32
+ControlType.Text id= name=角色 enabled=True rect=1315,410,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 物品, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1294,440,330,37
+ControlType.Group id= name=物品 enabled=True rect=1294,442,330,32
+ControlType.Button id=HeaderToggle name=物品 enabled=True rect=1294,442,59,32
+ControlType.Text id= name=物品 enabled=True rect=1315,447,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 会话, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1294,477,330,36
+ControlType.Group id= name=会话 enabled=True rect=1294,479,330,32
+ControlType.Button id=HeaderToggle name=会话 enabled=True rect=1294,479,59,32
+ControlType.Text id= name=会话 enabled=True rect=1315,484,35,22
+ControlType.DataItem id= name=HomeStoryResourceFolder { DisplayName = 任务, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True } enabled=True rect=1294,513,330,37
+ControlType.Group id= name=任务 enabled=True rect=1294,516,330,32
+ControlType.Button id=HeaderToggle name=任务 enabled=True rect=1294,516,59,32
+ControlType.Text id= name=任务 enabled=True rect=1315,521,35,22

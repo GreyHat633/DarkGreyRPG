@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-17",
+  "backend": "JavaSound 48000Hz stereo 512-frame mixer",
+  "qq": {
+    "capture": "mixer-qq-output.wav",
+    "correlation": 0.8285702714875813,
+    "referenceSeconds": 11.289
+  },
+  "resumed": {
+    "capture": "mixer-qq-resumed.wav",
+    "correlation": 0.8014283926319099,
+    "referenceSeconds": 53.414
+  },
+  "witness": {
+    "capture": "mixer-witness-only.wav",
+    "correlation": 0.711289868533409,
+    "referenceSeconds": 23.776
+  },
+  "netease": {
+    "capture": "mixer-netease-output.wav",
+    "correlation": 0.4730966070300921,
+    "referenceSeconds": 11.1085
+  },
+  "limit": "System output includes vanilla music; objective correlation is not subjective listening acceptance",
+  "productJar": {
+    "path": "dist/darkgrey_rpg-0.3.3.2.jar",
+    "bytes": 1667283,
+    "sha256": "718E2D347E7FA4A94A7D189DD884CDC81F225D4B169DDCE2E6C8AA03880E0968"
+  }
+}

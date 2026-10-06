@@ -37,6 +37,40 @@ public sealed class GraphEditSession
     public bool CompatibilityMode { get; }
     public bool CanUndo => _undo.Count != 0;
     public bool CanRedo => _redo.Count != 0;
+
+    /// <summary>Refreshes derived port captions/order without creating an independent user edit.
+    /// Historical Story snapshots receive the same presentation so undo cannot resurrect stale projections.</summary>
+    public bool RefreshAggregatePresentation(GraphResourceEnvelope resource)
+    {
+        if (Scope != GraphScope.StoryFlow) return false;
+        var projection = CanonicalAggregateNodeFactory.Create(resource, "projection").Candidate;
+        if (projection is null) return false;
+        bool Update(GraphDocument graph)
+        {
+            var changed = false;
+            foreach (var node in graph.Nodes.Where(node => node.Type == projection.Type
+                && node.Properties.TryGetValue("resource_id", out var id) && id.GetString() == resource.Id))
+            {
+                // Structural changes retain the explicit synchronization/removal-confirmation path.
+                if (node.Ports.Count != projection.Ports.Count || node.Ports.Any(port => !projection.Ports.Any(other =>
+                    other.Id == port.Id && other.IsInput == port.IsInput && other.Kind == port.Kind))) continue;
+                if (JsonSerializer.Serialize(node.Ports) == JsonSerializer.Serialize(projection.Ports)) continue;
+                node.Ports = projection.Ports.Select(Clone).ToList();
+                changed = true;
+            }
+            return changed;
+        }
+        var changed = Update(Document);
+        var visited = new HashSet<EditHistory>(ReferenceEqualityComparer.Instance);
+        void UpdateHistory(EditHistory entry)
+        {
+            if (!visited.Add(entry)) return;
+            Update(entry.Before); Update(entry.After);
+            foreach (var displaced in entry.DisplacedRedo) UpdateHistory(displaced);
+        }
+        foreach (var entry in _undo.Concat(_redo)) UpdateHistory(entry);
+        return changed;
+    }
     public int UndoCount => _undo.Count;
     public int RedoCount => _redo.Count;
     public IReadOnlyList<ValidationIssue> LastValidationIssues => _lastValidationIssues;
@@ -343,7 +377,7 @@ public sealed class GraphEditSession
         // migrated draft can be repaired. Only a canonical definition in this
         // scope may grant the non-deletable protection.
         if (GraphNodeDefinitionRegistry.TryGet(Scope.Value, node.Type, out var definition)
-            && (definition.NonDeletable || definition.Required))
+            && !GraphScopePolicy.CanDeleteNode(Scope.Value, node.Type, Document))
             return Fail([new("graph.node.not_deletable",
                 $"Node type '{node.Type}' cannot be deleted in scope '{Scope.Value}'.", "node_id", NodeId: node.Id)]);
 
@@ -402,9 +436,14 @@ public sealed class GraphEditSession
             resolved.Add(matches[0]);
         }
 
-        var deletable = resolved.Where(node =>
+        var deletableCandidates = resolved.Where(node =>
             !GraphNodeDefinitionRegistry.TryGet(Scope.Value, node.Type, out var definition)
-            || !definition.NonDeletable && !definition.Required).ToArray();
+            || GraphScopePolicy.CanDeleteNode(Scope.Value, node.Type, Document)).ToArray();
+        // A multi-selection must not remove the last Start even when every
+        // individual Start was deletable in the original draft.
+        var startsRemaining = (Document.Nodes ?? []).Count(node => node.Type == "start");
+        var deletable = deletableCandidates.Where(node =>
+            Scope != GraphScope.StoryFlow || node.Type != "start" || startsRemaining-- > 1).ToArray();
         if (deletable.Length == 0)
         {
             var protectedNode = resolved[0];
@@ -512,10 +551,17 @@ public sealed class GraphEditSession
     public bool ReplaceConnections(
         IReadOnlyList<GraphConnection> originals,
         IReadOnlyList<GraphConnection> replacements)
+        => ReplaceConnectionsCore(originals, replacements, allowEmptyOriginal: false);
+
+    public bool ReplaceAllConnections(IReadOnlyList<GraphConnection> replacements)
+        => ReplaceConnectionsCore((Document.Connections ?? []).ToArray(), replacements, allowEmptyOriginal: true);
+
+    private bool ReplaceConnectionsCore(IReadOnlyList<GraphConnection> originals,
+        IReadOnlyList<GraphConnection> replacements, bool allowEmptyOriginal)
     {
         ArgumentNullException.ThrowIfNull(originals);
         ArgumentNullException.ThrowIfNull(replacements);
-        if (originals.Count == 0)
+        if (originals.Count == 0 && !allowEmptyOriginal)
             return Fail([]);
 
         var uniqueOriginals = originals.Where(connection => connection is not null).Distinct().ToArray();
@@ -556,7 +602,7 @@ public sealed class GraphEditSession
         var current = (Document.Connections ?? []).Where(connection => connection is not null).ToList();
         var firstOriginalIndex = current.FindIndex(connection =>
             uniqueOriginals.Any(original => original.Equals(connection)));
-        var insertionIndex = current.Take(firstOriginalIndex)
+        var insertionIndex = current.Take(Math.Max(0, firstOriginalIndex))
             .Count(connection => !uniqueOriginals.Any(original => original.Equals(connection)));
         current.RemoveAll(connection => uniqueOriginals.Any(original => original.Equals(connection)));
         current.InsertRange(insertionIndex, replacements.Select(Clone));
@@ -596,18 +642,28 @@ public sealed class GraphEditSession
                 return Fail([new("graph.dynamic_port.label.duplicate",
                     $"Display name '{displayName}' is already used on node '{nodeId}'.", "display_name", NodeId: nodeId)]);
             }
-            if (Scope == GraphScope.Task
-                && string.Equals((Document.Nodes ?? []).SingleOrDefault(candidate => candidate is not null
-                    && string.Equals(candidate.Id, nodeId, StringComparison.Ordinal))?.Type,
-                    "settle", StringComparison.Ordinal)
-                && IsTaskPublicDisplayNameUsed(nodeId, displayName, port))
-            {
-                return Fail([TaskPublicDisplayNameDuplicateIssue(nodeId, displayName)]);
-            }
+
         }
         if (string.Equals(port.DisplayName, displayName, StringComparison.Ordinal)) return Fail([]);
         var before = DeepClone(Document);
         port.DisplayName = displayName;
+        Commit(before);
+        return true;
+    }
+
+    public bool MovePublicOutput(string portId, int index)
+    {
+        var node = Document.Nodes.SingleOrDefault(n => PublicOutputSchema.IsOutput(n)
+            && n.Properties.TryGetValue("port_id", out var p) && p.GetString() == portId);
+        if (node is null) return Fail([]);
+        var issues = PublicOutputSchema.Validate(Document.Nodes);
+        if (issues.Count != 0) return Fail(issues);
+        var outputs = Document.Nodes.Where(n => PublicOutputSchema.IsOutput(n) && PublicOutputSchema.Kind(n) == PublicOutputSchema.Kind(node))
+            .OrderBy(PublicOutputSchema.Order).ToList();
+        if (index < 0 || index >= outputs.Count || outputs.IndexOf(node) == index) return Fail([]);
+        var before = DeepClone(Document);
+        outputs.Remove(node); outputs.Insert(index, node);
+        for (var at = 0; at < outputs.Count; at++) outputs[at].Properties["display_order"] = JsonSerializer.SerializeToElement(at);
         Commit(before);
         return true;
     }
@@ -698,6 +754,14 @@ public sealed class GraphEditSession
             return Fail([new("graph.node.property.value.undefined", "Node property value cannot be undefined.", "value", NodeId: NullIfBlank(nodeId))]);
         if (!TryResolvePropertyNode(nodeId, out var node, out var issues)) return Fail(issues);
 
+        if (PublicOutputSchema.IsOutput(node!) && property == "display_order")
+        {
+            var candidate = Clone(node!);
+            candidate.Properties[property] = value.Clone();
+            var outputIssues = PublicOutputSchema.Validate(Document.Nodes.Select(item => item.Id == nodeId ? candidate : item));
+            if (outputIssues.Count != 0) return Fail(outputIssues);
+        }
+
         if (Scope == GraphScope.Task && string.Equals(node!.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
         {
             if (string.Equals(property, CanonicalTaskObjectiveSchema.TypeProperty, StringComparison.Ordinal))
@@ -764,7 +828,7 @@ public sealed class GraphEditSession
             if (lineIssues.Any(issue => issue.Severity == ValidationSeverity.Error)) return Fail(lineIssues);
         }
 
-        var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate"
+        var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate" or "settle"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         var isSessionEndDisplayName = Scope == GraphScope.Session
             && string.Equals(node.Type, "end", StringComparison.Ordinal)
@@ -1104,7 +1168,7 @@ public sealed class GraphEditSession
         if (string.IsNullOrWhiteSpace(property))
             return Fail([new("graph.node.property.key.required", "Node property key is required.", "property", NodeId: NullIfBlank(nodeId))]);
         if (!TryResolvePropertyNode(nodeId, out var node, out var issues)) return Fail(issues);
-        var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate"
+        var isPublicBoundary = node!.Type is "logic_input" or "logic_output" or "terminate" or "settle"
             || (Scope == GraphScope.Session && string.Equals(node.Type, "end", StringComparison.Ordinal));
         if (Scope == GraphScope.Task && string.Equals(node!.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal))
             return Fail([ObjectivePropertyIssue("graph.objective.property.immutable",
@@ -1117,7 +1181,7 @@ public sealed class GraphEditSession
                 ? TaskLogicOutputPortIdImmutableIssue(node.Id)
                 : TaskLogicOutputDisplayNameImmutableIssue(node.Id)]);
         }
-        if (isPublicBoundary && property is ("port_id" or "display_name"))
+        if (isPublicBoundary && property is ("port_id" or "display_name" or "display_order"))
         {
             return Fail([new("graph.public_boundary.property.immutable",
                 "Public boundary port_id and display_name are required stable boundary metadata.",
@@ -1628,11 +1692,6 @@ public sealed class GraphEditSession
             return Fail([new("graph.dynamic_port.label.duplicate",
                 $"Display name '{displayName}' is already used on node '{node.Id}'.", "display_name", NodeId: node.Id)]);
         }
-        if (Scope == GraphScope.Task && string.Equals(node.Type, "settle", StringComparison.Ordinal)
-            && IsTaskPublicDisplayNameUsed(node.Id, displayName))
-        {
-            return Fail([TaskPublicDisplayNameDuplicateIssue(node.Id, displayName)]);
-        }
 
         var usedOrders = (node.Ports ?? [])
             .Where(port => port is not null && MatchesRole(port, role))
@@ -1641,10 +1700,7 @@ public sealed class GraphEditSession
         var order = 0;
         while (usedOrders.Contains(order)) order++;
 
-        var portId = Scope == GraphScope.Task
-            && string.Equals(node.Type, "settle", StringComparison.Ordinal)
-            ? AllocateTaskSettlePortId()
-            : AllocateDynamicPortId();
+        var portId = AllocateDynamicPortId();
         if (portId is null)
             return Fail([new("graph.dynamic_port.port_id.unavailable",
                 "No unique generated dynamic port ID was available.", "port_id", NodeId: node.Id)]);
@@ -1888,13 +1944,7 @@ public sealed class GraphEditSession
     {
         foreach (var node in (Document.Nodes ?? []).Where(candidate => candidate is not null))
         {
-            if (string.Equals(node.Type, "settle", StringComparison.Ordinal)
-                && (node.Ports ?? []).Any(port => port is not null
-                    && !ReferenceEquals(port, ignoredPort)
-                    && string.Equals(port.DisplayName, displayName, StringComparison.Ordinal)))
-                return true;
-
-            if (!string.Equals(node.Type, "logic_output", StringComparison.Ordinal)
+            if (node.Type is not ("logic_output" or "settle")
                 || string.Equals(node.Id, nodeId, StringComparison.Ordinal))
                 continue;
             if ((node.Properties ?? []).TryGetValue("display_name", out var value)
@@ -1966,30 +2016,6 @@ public sealed class GraphEditSession
         }
         return null;
     }
-
-    private string? AllocateTaskSettlePortId()
-    {
-        for (var attempt = 0; attempt < 256; attempt++)
-        {
-            var candidate = AllocateDynamicPortId();
-            if (candidate is null) return null;
-            if (candidate is GraphAggregatePortProjection.FlowInputId
-                or GraphAggregatePortProjection.LogicInputId)
-                continue;
-            if (IsTaskPublicPortIdUsed(candidate)) continue;
-            return candidate;
-        }
-
-        return null;
-    }
-
-    private bool IsTaskPublicPortIdUsed(string portId)
-        => (Document.Nodes ?? []).Where(node => node is not null).Any(node =>
-            (node.Type == "settle" && (node.Ports ?? []).Any(port => port is not null
-                && string.Equals(port.Id, portId, StringComparison.Ordinal)))
-            || (node.Properties ?? []).TryGetValue("port_id", out var value)
-                && value.ValueKind == JsonValueKind.String
-                && string.Equals(value.GetString(), portId, StringComparison.Ordinal));
 
     private string NextDefaultDynamicPortId()
         => $"dynamic_port_{Guid.NewGuid():N}";

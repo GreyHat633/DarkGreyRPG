@@ -1,0 +1,12 @@
+{
+  "schema_version": 2,
+  "connections": [
+    {
+      "source_story_id": "ST-2345-6789-ABCD-EFGH",
+      "source_port_id": "dynamic_port_1c63f5c3978b48a686e3cb2753d1fa37",
+      "target_story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+      "target_port_id": "story_trigger_546a71a394ea4624831a84a85d8d4fda",
+      "interface_kind": "Flow"
+    }
+  ]
+}

@@ -1,0 +1,402 @@
+WINDOW: Native0332Acceptance — DarkGrey RPG Studio 0.3.3.5 229,44,1463,942
+ControlType.TitleBar id=TitleBar name=Native0332Acceptance — DarkGrey RPG Studio 0.3.3.5 enabled=True rect=238,53,1445,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=238,53,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=238,53,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1511,45,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=1569,45,57,36
+ControlType.Button id=Close name=Close enabled=True rect=1626,45,58,36
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=已打开故事：Native0332:acceptance enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,62,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=369,891,80,42
+ControlType.Text id= name=调试器 enabled=True rect=383,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=451,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=465,901,85,22
+ControlType.Custom id=CanonicalStoryWorkspace name= enabled=True rect=283,184,1362,662
+ControlType.Text id= name=NativeAcceptance enabled=True rect=300,198,207,26
+ControlType.Text id= name=Native0332:acceptance enabled=True rect=300,227,207,22
+ControlType.Button id=CanonicalCreateResource name=新建资源 enabled=True rect=509,208,33,32
+ControlType.Button id=CanonicalReferenceResource name=引用已有资源 enabled=True rect=544,208,32,32
+ControlType.Button id=CanonicalDeleteResource name=删除资源或解除引用 enabled=True rect=579,208,32,32
+ControlType.Button id= name=搜索 enabled=True rect=562,268,52,32
+ControlType.Text id= name=搜索 enabled=True rect=570,273,35,22
+ControlType.Edit id=AuthoringSearchBox name= enabled=True rect=298,264,264,40
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Pane id= name= enabled=True rect=298,314,316,517
+ControlType.List id= name= enabled=True rect=298,314,316,517
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,314,316,49
+ControlType.Group id= name=角色 enabled=True rect=298,316,316,45
+ControlType.Button id=HeaderToggle name=角色 enabled=True rect=298,316,64,35
+ControlType.Text id= name=角色 enabled=True rect=319,321,39,25
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,363,316,86
+ControlType.Group id= name=物品 enabled=True rect=298,366,316,81
+ControlType.Button id=HeaderToggle name=物品 enabled=True rect=298,366,64,34
+ControlType.Text id= name=物品 enabled=True rect=319,371,39,24
+ControlType.List id= name= enabled=True rect=310,403,304,37
+ControlType.DataItem id= name=CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.IndividualItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = Native0332:stone, DisplayName = 0334 Test Stone, IdentityText = [Item_ID] Native0332 : stone, Type = individual, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False } enabled=True rect=310,403,304,37
+ControlType.Button id= name=0334 Test Stone  [Item_ID] Native0332 : stone enabled=True rect=310,404,300,34
+ControlType.Text id= name=0334 Test Stone  [Item_ID] Native0332 : stone enabled=True rect=321,410,278,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,449,316,87
+ControlType.Group id= name=会话 enabled=True rect=298,452,316,81
+ControlType.Button id=HeaderToggle name=会话 enabled=True rect=298,452,64,34
+ControlType.Text id= name=会话 enabled=True rect=319,457,39,24
+ControlType.List id= name= enabled=True rect=310,489,304,37
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,489,304,37
+ControlType.Button id= name=NativeConversation  [Session_ID] Native0332 : conversation enabled=True rect=310,490,298,34
+ControlType.Text id= name=NativeConversation  [Session_ID] Native0332 : conversation enabled=True rect=321,496,276,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,536,316,197
+ControlType.Group id= name=任务 enabled=True rect=298,538,316,192
+ControlType.Button id=HeaderToggle name=任务 enabled=True rect=298,538,64,35
+ControlType.Text id= name=任务 enabled=True rect=319,543,39,25
+ControlType.List id= name= enabled=True rect=310,575,304,148
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,575,304,37
+ControlType.Button id= name=短目标  [Task_ID] Native0332 : short_task enabled=True rect=310,576,299,35
+ControlType.Text id= name=短目标  [Task_ID] Native0332 : short_task enabled=True rect=321,582,277,23
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,612,304,37
+ControlType.Button id= name=长目标排版  [Task_ID] Native0332 : long_task enabled=True rect=310,613,302,35
+ControlType.Text id= name=长目标排版  [Task_ID] Native0332 : long_task enabled=True rect=321,619,280,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,649,304,37
+ControlType.Button id= name=并行目标  [Task_ID] Native0332 : multi_task enabled=True rect=310,650,298,35
+ControlType.Text id= name=并行目标  [Task_ID] Native0332 : multi_task enabled=True rect=321,656,276,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,686,304,37
+ControlType.Button id= name=实机击杀验证  [Task_ID] Native0332 : live_kill_task enabled=True rect=310,687,303,34
+ControlType.Text id= name=实机击杀验证  [Task_ID] Native0332 : live_kill_task enabled=True rect=321,693,280,22
+ControlType.Thumb id= name= enabled=True rect=630,184,10,662
+ControlType.List id= name= enabled=True rect=652,192,623,30
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = native0332, DisplayName = Native0332Acceptance, Kind = Project, ResourceKind = , IsFirst = True, IsCurrent = False } enabled=True rect=652,192,205,30
+ControlType.Button id= name=Native0332Acceptance enabled=True rect=652,192,205,30
+ControlType.Text id= name=Native0332Acceptance enabled=True rect=659,196,191,22
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = Native0332:acceptance, DisplayName = NativeAcceptance, Kind = Story, ResourceKind = Story, IsFirst = False, IsCurrent = False } enabled=True rect=857,192,185,30
+ControlType.Text id= name=> enabled=True rect=861,196,13,22
+ControlType.Button id= name=NativeAcceptance enabled=True rect=877,192,165,30
+ControlType.Text id= name=NativeAcceptance enabled=True rect=885,196,150,22
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = Native0332:conversation, DisplayName = NativeConversation, Kind = Session, ResourceKind = Session, IsFirst = False, IsCurrent = True } enabled=True rect=1042,192,198,30
+ControlType.Text id= name=> enabled=True rect=1046,196,13,22
+ControlType.Button id= name=NativeConversation enabled=True rect=1062,192,178,30
+ControlType.Text id= name=NativeConversation enabled=True rect=1070,196,163,22
+ControlType.Custom id=CanonicalStoryWorkspaceGraph name=节点图编辑器 enabled=True rect=640,232,648,614
+ControlType.Button id= name=图编辑器缩放到百分之百 enabled=True rect=640,240,68,35
+ControlType.Text id= name=100% enabled=True rect=651,246,46,22
+ControlType.Button id= name=适应全部图节点 enabled=True rect=713,240,57,35
+ControlType.Text id= name=适应 enabled=True rect=724,246,35,22
+ControlType.Button id= name=重置图视图 enabled=True rect=775,240,57,35
+ControlType.Text id= name=重置 enabled=True rect=786,246,35,22
+ControlType.Button id=ScissorsButton name=剪断连线 enabled=True rect=837,240,57,35
+ControlType.Text id= name=剪刀 enabled=True rect=848,246,35,22
+ControlType.Button id=CombineSelection name=组合 enabled=True rect=899,240,57,35
+ControlType.Text id= name=组合 enabled=True rect=910,246,35,22
+ControlType.Text id= name=拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放 enabled=True rect=971,239,317,44
+ControlType.Thumb id= name= enabled=True rect=642,280,743,1023
+ControlType.Text id= name=组合 enabled=True rect=652,287,723,28
+ControlType.Thumb id= name= enabled=True rect=661,323,325,173
+ControlType.Text id= name=分组注释 enabled=True rect=671,329,305,28
+ControlType.Thumb id= name= enabled=True rect=790,543,575,740
+ControlType.Text id= name=组合 enabled=True rect=800,549,555,29
+ControlType.Custom id=CanonicalGraphNode_start name=图节点 起始 start enabled=True rect=680,364,288,114
+ControlType.Text id=HeaderTitle name=起始 enabled=True rect=692,372,263,22
+ControlType.Button id=CanonicalGraphPort_start_flow_out name=start 输出端口 flow_out (Flow) enabled=True rect=824,409,134,25
+ControlType.Text id= name=流程输出 enabled=True rect=872,413,55,17
+ControlType.Custom id=CanonicalGraphNode_node_311203e4e0894920bc9b0c2c9189a743 name=图节点 台词 node_311203e4e0894920bc9b0c2c9189a743 enabled=True rect=1059,584,288,680
+ControlType.Text id=HeaderTitle name=台词 enabled=True rect=1071,593,263,22
+ControlType.Button id=CanonicalGraphPort_node_311203e4e0894920bc9b0c2c9189a743_flow_in name=node_311203e4e0894920bc9b0c2c9189a743 输入端口 flow_in (Flow) enabled=True rect=1069,630,134,24
+ControlType.Text id= name=流程输入 enabled=True rect=1100,633,54,18
+ControlType.Button id=CanonicalGraphPort_node_311203e4e0894920bc9b0c2c9189a743_flow_out name=node_311203e4e0894920bc9b0c2c9189a743 输出端口 flow_out (Flow) enabled=True rect=1203,630,134,24
+ControlType.Text id= name=流程输出 enabled=True rect=1251,633,55,18
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=1069,663,268,592
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=1071,666,263,23
+ControlType.Text id= name=参数 enabled=True rect=1100,666,35,22
+ControlType.Custom id=Root name= enabled=True rect=1074,695,258,557
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=说话角色 enabled=True rect=1074,708,258,22
+ControlType.ComboBox id=InlineLineActorSelector name=Session Line Actor selector enabled=True rect=1074,733,258,40
+ControlType.Custom id= name= enabled=True rect=1074,773,258,479
+ControlType.Text id= name=台词文本 enabled=True rect=1074,788,69,22
+ControlType.Button id=AddLinePage name=+ enabled=True rect=1153,786,30,27
+ControlType.Text id= name=+ enabled=True rect=1162,788,13,22
+ControlType.Button id=RemoveSelectedLinePages name=删除选中台词 enabled=False rect=1188,786,31,27
+ControlType.Text id= name=− enabled=False rect=1197,788,13,22
+ControlType.Button id=InsertLineDynamicContent name=动态内容 enabled=False rect=1224,786,86,27
+ControlType.Text id= name=动态内容 enabled=False rect=1232,788,70,22
+ControlType.List id=Pages name= enabled=True rect=1074,819,258,433
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1074,819,258,205
+ControlType.Button id=page_cb44660e2c2c49c6841e1ad55f3ad896 name=拖动第 1 句 enabled=True rect=1085,832,26,27
+ControlType.Text id= name=⠿ enabled=True rect=1091,835,13,22
+ControlType.Button id=ToggleLinePage name=收起第 1 句 enabled=True rect=1113,830,208,32
+ControlType.Text id= name=第 1 句 enabled=True rect=1120,835,158,22
+ControlType.Custom id=LinePageText name= enabled=True rect=1085,868,236,74
+ControlType.Text id= name=Hello {玩家名称} level {玩家经验等级} count {持有数量：0334 Test Stone} enabled=True rect=1085,868,236,74
+ControlType.Text id= name=容量 432 / 156 enabled=True rect=1221,919,93,18
+ControlType.Group id= name=详细设置 enabled=True rect=1085,949,236,52
+ControlType.Button id=HeaderSite name=详细设置 enabled=True rect=1086,950,233,50
+ControlType.Text id= name=详细设置 enabled=True rect=1100,964,191,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=1074,1024,258,228
+ControlType.Button id=46a2dadc2c9a4aca81ccbfdc5cee19af name=拖动第 2 句 enabled=True rect=1085,1038,26,27
+ControlType.Text id= name=⠿ enabled=True rect=1091,1040,13,23
+ControlType.Button id=ToggleLinePage name=收起第 2 句 enabled=True rect=1113,1036,208,31
+ControlType.Text id= name=第 2 句 enabled=True rect=1120,1040,158,23
+ControlType.Custom id=LinePageText name= enabled=True rect=1085,1074,236,95
+ControlType.Text id= name=第二句：搜索定位 BetaUnique{0334 Test Stone}0332；折叠不会丢失正文。 enabled=True rect=1085,1074,236,95
+ControlType.Text id= name=容量 375 / 156 enabled=True rect=1221,1147,93,17
+ControlType.Group id= name=详细设置 enabled=True rect=1085,1177,236,51
+ControlType.Button id=HeaderSite name=详细设置 enabled=True rect=1086,1178,233,49
+ControlType.Text id= name=详细设置 enabled=True rect=1100,1192,191,22
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_node_b56adbff2ddf4c9aa469eaa493ba4df8 name=图节点 台词 node_b56adbff2ddf4c9aa469eaa493ba4df8 enabled=True rect=809,674,288,581
+ControlType.Text id=HeaderTitle name=台词 enabled=True rect=821,683,263,22
+ControlType.Button id=CanonicalGraphPort_node_b56adbff2ddf4c9aa469eaa493ba4df8_flow_in name=node_b56adbff2ddf4c9aa469eaa493ba4df8 输入端口 flow_in (Flow) enabled=True rect=819,720,134,24
+ControlType.Text id= name=流程输入 enabled=True rect=850,723,54,18
+ControlType.Button id=CanonicalGraphPort_node_b56adbff2ddf4c9aa469eaa493ba4df8_flow_out name=node_b56adbff2ddf4c9aa469eaa493ba4df8 输出端口 flow_out (Flow) enabled=True rect=953,720,134,24
+ControlType.Text id= name=流程输出 enabled=True rect=1001,723,55,18
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=819,753,268,492
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=821,756,263,23
+ControlType.Text id= name=参数 enabled=True rect=850,756,35,22
+ControlType.Custom id=Root name= enabled=True rect=824,785,258,457
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=说话角色 enabled=True rect=824,798,258,22
+ControlType.ComboBox id=InlineLineActorSelector name=Session Line Actor selector enabled=True rect=824,823,258,40
+ControlType.Custom id= name= enabled=True rect=824,863,258,379
+ControlType.Text id= name=台词文本 enabled=True rect=824,878,69,22
+ControlType.Button id=AddLinePage name=+ enabled=True rect=903,876,30,27
+ControlType.Text id= name=+ enabled=True rect=912,878,13,22
+ControlType.Button id=RemoveSelectedLinePages name=删除选中台词 enabled=False rect=938,876,31,27
+ControlType.Text id= name=− enabled=False rect=947,878,13,22
+ControlType.Button id=InsertLineDynamicContent name=动态内容 enabled=False rect=974,876,86,27
+ControlType.Text id= name=动态内容 enabled=False rect=982,878,70,22
+ControlType.List id=Pages name= enabled=True rect=824,909,258,333
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=824,909,258,167
+ControlType.Button id=page_684b1e0fbf1846e59f08bf75664c5721 name=拖动第 1 句 enabled=True rect=835,922,26,27
+ControlType.Text id= name=⠿ enabled=True rect=841,925,13,22
+ControlType.Button id=ToggleLinePage name=收起第 1 句 enabled=True rect=863,920,208,32
+ControlType.Text id= name=第 1 句 enabled=True rect=870,925,158,22
+ControlType.Custom id=LinePageText name= enabled=True rect=835,958,236,35
+ControlType.Text id= name=Native0334draftnihao enabled=True rect=835,958,236,35
+ControlType.Text id= name=容量 107 / 156 enabled=True rect=971,970,93,18
+ControlType.Group id= name=详细设置 enabled=True rect=835,1000,236,52
+ControlType.Button id=HeaderSite name=详细设置 enabled=True rect=836,1001,233,50
+ControlType.Text id= name=详细设置 enabled=True rect=850,1015,191,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalLinePageViewModel enabled=True rect=824,1076,258,166
+ControlType.Button id=055dd6f31dd14f0ea35b927dab10eaae name=拖动第 2 句 enabled=True rect=835,1089,26,27
+ControlType.Text id= name=⠿ enabled=True rect=841,1092,13,22
+ControlType.Button id=ToggleLinePage name=收起第 2 句 enabled=True rect=863,1087,208,32
+ControlType.Text id= name=第 2 句 enabled=True rect=870,1092,158,22
+ControlType.Custom id=LinePageText name= enabled=True rect=835,1125,236,35
+ControlType.Text id= name=Hello {玩家经验等级} enabled=True rect=835,1125,236,35
+ControlType.Text id= name=容量 93 / 156 enabled=True rect=979,1137,85,18
+ControlType.Group id= name=详细设置 enabled=True rect=835,1167,236,52
+ControlType.Button id=HeaderSite name=详细设置 enabled=True rect=836,1168,233,50
+ControlType.Text id= name=详细设置 enabled=True rect=850,1182,191,22
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_native_end name=图节点 结束「验收完成」 native_end enabled=True rect=740,394,288,201
+ControlType.Text id=HeaderTitle name=结束「验收完成」 enabled=True rect=752,402,263,22
+ControlType.Button id=CanonicalGraphPort_native_end_flow_in name=native_end 输入端口 flow_in (Flow) enabled=True rect=750,439,134,25
+ControlType.Text id= name=流程输入 enabled=True rect=781,443,54,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=750,473,268,112
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=752,475,263,24
+ControlType.Text id= name=参数 enabled=True rect=781,476,35,22
+ControlType.Custom id=Root name= enabled=True rect=755,505,258,78
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Text id= name=名称 enabled=True rect=755,517,258,22
+ControlType.Edit id= name= enabled=True rect=755,543,258,40
+ControlType.Custom id=CanonicalGraphNode_choice_0334 name=图节点 选择「choice_0334」 choice_0334 enabled=True rect=740,394,288,492
+ControlType.Text id=HeaderTitle name=选择「choice_0334」 enabled=True rect=752,402,263,22
+ControlType.Button id=CanonicalGraphPort_choice_0334_condition_0 name=choice_0334 输入端口 condition_0 (Logic) enabled=True rect=750,439,134,25
+ControlType.Text id= name=条件 · DGR1["Continue ",{"type":"player_name"}," level ",{"type":"player_level"}," count ",{"type":"item_count","item_id":"Native0332:stone"},"!"] enabled=True rect=781,443,921,17
+ControlType.Button id=CanonicalGraphPort_choice_0334_flow_in name=choice_0334 输入端口 flow_in (Flow) enabled=True rect=750,464,134,25
+ControlType.Text id= name=flow_in enabled=True rect=781,468,46,17
+ControlType.Button id=CanonicalGraphPort_choice_0334_choice_continue name=choice_0334 输出端口 choice_continue (Flow) enabled=True rect=993,439,25,25
+ControlType.Text id= name=Continue 〔玩家名称〕 level 〔玩家经验等级〕 count 〔持有数量：Native0332:stone〕! enabled=True rect=993,443,551,17
+ControlType.Text id= name=Continue 〔玩家名称〕 level 〔玩家经验等级〕 count 〔持有数量：Native0332:stone〕! enabled=True rect=902,443,88,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=750,497,268,379
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=752,500,263,23
+ControlType.Text id= name=参数 enabled=True rect=781,501,35,22
+ControlType.Custom id=Root name= enabled=True rect=755,530,258,344
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=选择提示 enabled=True rect=755,542,258,22
+ControlType.Custom id= name= enabled=True rect=755,568,258,76
+ControlType.Document id= name= enabled=True rect=755,568,258,76
+ControlType.Button id= name={玩家名称} enabled=True rect=835,573,85,22
+ControlType.Text id= name={玩家名称} enabled=True rect=836,573,83,22
+ControlType.Button id= name={玩家经验等级} enabled=True rect=767,595,120,22
+ControlType.Text id= name={玩家经验等级} enabled=True rect=769,595,117,22
+ControlType.Button id= name={持有数量：0334 Test Stone} enabled=True rect=767,617,233,22
+ControlType.Text id= name={持有数量：0334 Test Stone} enabled=True rect=769,617,240,22
+ControlType.Text id= name=选项 enabled=True rect=755,654,35,27
+ControlType.Button id= name=+ enabled=True rect=800,654,30,27
+ControlType.Text id= name=+ enabled=True rect=808,656,13,22
+ControlType.Custom id=Root name= enabled=True rect=755,684,258,190
+ControlType.List id= name= enabled=True rect=755,684,258,190
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalChoiceOptionViewModel enabled=True rect=755,684,258,190
+ControlType.Button id= name=⠿ enabled=True rect=755,742,25,27
+ControlType.Text id= name=⠿ enabled=True rect=761,745,13,22
+ControlType.Custom id= name= enabled=True rect=785,687,199,137
+ControlType.Document id= name= enabled=True rect=785,687,199,120
+ControlType.Button id= name={玩家名称} enabled=True rect=879,692,85,22
+ControlType.Text id= name={玩家名称} enabled=True rect=880,692,83,22
+ControlType.Button id= name={玩家经验等级} enabled=True rect=841,714,120,22
+ControlType.Text id= name={玩家经验等级} enabled=True rect=842,714,118,22
+ControlType.Button id= name={持有数量：0334 Test Stone} enabled=True rect=798,758,173,22
+ControlType.Text id= name={持有数量：0334 Test Stone} enabled=True rect=799,758,240,22
+ControlType.Text id= name=动态内容 3 项 enabled=True rect=785,807,199,17
+ControlType.Button id= name=− enabled=True rect=987,742,26,27
+ControlType.Text id= name=− enabled=True rect=994,745,13,22
+ControlType.CheckBox id= name=条件设置 enabled=True rect=785,828,149,40
+ControlType.Text id= name=条件设置 enabled=True rect=821,835,70,23
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_screen_source name=图节点 画面「转场 screen_source」 screen_source enabled=True rect=2029,394,288,926
+ControlType.Text id=HeaderTitle name=画面「转场 screen_source」 enabled=True rect=2042,402,262,22
+ControlType.Button id=CanonicalGraphPort_screen_source_flow_in name=screen_source 输入端口 flow_in (Flow) enabled=True rect=2039,439,134,25
+ControlType.Text id= name=flow_in enabled=True rect=2070,443,46,17
+ControlType.Button id=CanonicalGraphPort_screen_source_flow_out name=screen_source 输出端口 flow_out (Flow) enabled=True rect=2173,439,134,25
+ControlType.Text id= name=flow_out enabled=True rect=2220,443,56,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=2039,473,268,837
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=2042,475,262,24
+ControlType.Text id= name=参数 enabled=True rect=2070,476,35,22
+ControlType.Custom id=Root name= enabled=True rect=2044,505,258,803
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=2044,505,258,803
+ControlType.Custom id= name= enabled=True rect=2044,517,258,121
+ControlType.Text id= name=进入转场 enabled=True rect=2044,517,258,22
+ControlType.ComboBox id= name= enabled=True rect=2044,543,258,40
+ControlType.Text id= name=转场与台词并行；连续画面节点只显示最后的完整目标。复制画面后移动／缩放图片，使用平滑自然过渡。 enabled=True rect=2044,586,258,52
+ControlType.Text id= name=完整画面（空列表清除画面） enabled=True rect=2044,638,258,22
+ControlType.Button id= name=添加 enabled=True rect=2044,663,125,38
+ControlType.Text id= name=添加 enabled=True rect=2089,670,35,22
+ControlType.Button id= name=移除 enabled=True rect=2177,663,125,38
+ControlType.Text id= name=移除 enabled=True rect=2222,670,35,22
+ControlType.List id= name=画面图片列表 enabled=True rect=2044,706,258,176
+ControlType.Image id= name= enabled=True rect=2063,723,42,42
+ControlType.Text id= name=图片 1 · 图层 0 enabled=True rect=2111,727,175,22
+ControlType.Button id= name=上移 enabled=True rect=2218,887,39,32
+ControlType.Text id= name=▲ enabled=True rect=2229,892,17,22
+ControlType.Button id= name=下移 enabled=True rect=2262,887,40,32
+ControlType.Text id= name=▼ enabled=True rect=2273,892,18,22
+ControlType.Image id= name= enabled=True rect=2071,891,75,100
+ControlType.Thumb id= name= enabled=True rect=2070,890,77,102
+ControlType.Thumb id= name= enabled=True rect=2065,885,10,10
+ControlType.Thumb id= name= enabled=True rect=2104,885,9,10
+ControlType.Thumb id= name= enabled=True rect=2142,885,10,10
+ControlType.Thumb id= name= enabled=True rect=2142,936,10,10
+ControlType.Thumb id= name= enabled=True rect=2142,987,10,9
+ControlType.Thumb id= name= enabled=True rect=2104,987,9,9
+ControlType.Thumb id= name= enabled=True rect=2065,987,10,9
+ControlType.Thumb id= name= enabled=True rect=2065,936,10,10
+ControlType.Text id= name=头像 enabled=True rect=2059,1042,23,14
+ControlType.Text id= name=角色 enabled=True rect=2090,1034,195,15
+ControlType.Text id= name=「这里显示对话文本。」 enabled=True rect=2090,1049,195,14
+ControlType.CheckBox id= name=对话框 enabled=True rect=2049,1079,149,39
+ControlType.Text id= name=对话框 enabled=True rect=2085,1086,52,22
+ControlType.CheckBox id= name=选项框 enabled=True rect=2049,1118,149,40
+ControlType.Text id= name=选项框 enabled=True rect=2085,1126,52,22
+ControlType.ComboBox id= name=转场预览源画面 enabled=True rect=2044,1166,131,39
+ControlType.Button id= name=播放转场 enabled=True rect=2180,1166,100,38
+ControlType.Text id= name=播放转场 enabled=True rect=2195,1174,70,22
+ControlType.Button id= name=返回编辑 enabled=True rect=2044,1205,99,38
+ControlType.Text id= name=返回编辑 enabled=True rect=2059,1213,69,22
+ControlType.Button id= name=图片属性 enabled=True rect=2055,1264,159,32
+ControlType.Text id= name=▸ 图片属性 · 图片 1 enabled=True rect=2055,1264,159,22
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_screen_target name=图节点 画面「转场 screen_target」 screen_target enabled=True rect=740,604,288,974
+ControlType.Text id=HeaderTitle name=画面「转场 screen_target」 enabled=True rect=752,613,263,22
+ControlType.Button id=CanonicalGraphPort_screen_target_flow_in name=screen_target 输入端口 flow_in (Flow) enabled=True rect=750,650,134,25
+ControlType.Text id= name=flow_in enabled=True rect=781,654,46,17
+ControlType.Button id=CanonicalGraphPort_screen_target_flow_out name=screen_target 输出端口 flow_out (Flow) enabled=True rect=884,650,134,25
+ControlType.Text id= name=flow_out enabled=True rect=931,654,56,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=750,683,268,885
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=752,686,263,23
+ControlType.Text id= name=参数 enabled=True rect=781,687,35,22
+ControlType.Custom id=Root name= enabled=True rect=755,716,258,849
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=755,716,258,849
+ControlType.Custom id= name= enabled=True rect=755,728,258,168
+ControlType.Text id= name=进入转场 enabled=True rect=755,728,258,22
+ControlType.ComboBox id= name= enabled=True rect=755,754,258,39
+ControlType.Edit id= name= enabled=True rect=755,801,258,39
+ControlType.Text id= name=转场与台词并行；连续画面节点只显示最后的完整目标。复制画面后移动／缩放图片，使用平滑自然过渡。 enabled=True rect=755,844,258,52
+ControlType.Text id= name=完整画面（空列表清除画面） enabled=True rect=755,896,258,22
+ControlType.Button id= name=添加 enabled=True rect=755,921,125,38
+ControlType.Text id= name=添加 enabled=True rect=800,928,35,22
+ControlType.Button id= name=移除 enabled=True rect=888,921,125,38
+ControlType.Text id= name=移除 enabled=True rect=933,928,34,22
+ControlType.List id= name=画面图片列表 enabled=True rect=755,964,258,176
+ControlType.Image id= name= enabled=True rect=774,981,42,42
+ControlType.Text id= name=图片 1 · 图层 0 enabled=True rect=822,985,175,22
+ControlType.Button id= name=上移 enabled=True rect=928,1145,40,32
+ControlType.Text id= name=▲ enabled=True rect=940,1150,17,22
+ControlType.Button id= name=下移 enabled=True rect=973,1145,40,32
+ControlType.Text id= name=▼ enabled=True rect=984,1150,17,22
+ControlType.Image id= name= enabled=True rect=872,1149,153,100
+ControlType.Thumb id= name= enabled=True rect=871,1148,155,101
+ControlType.Thumb id= name= enabled=True rect=866,1143,10,10
+ControlType.Thumb id= name= enabled=True rect=943,1143,10,10
+ControlType.Thumb id= name= enabled=True rect=1021,1143,9,10
+ControlType.Thumb id= name= enabled=True rect=1021,1194,9,9
+ControlType.Thumb id= name= enabled=True rect=1021,1245,9,9
+ControlType.Thumb id= name= enabled=True rect=943,1245,10,9
+ControlType.Thumb id= name= enabled=True rect=866,1245,10,9
+ControlType.Thumb id= name= enabled=True rect=866,1194,10,9
+ControlType.Text id= name=头像 enabled=True rect=770,1299,23,15
+ControlType.Text id= name=角色 enabled=True rect=801,1292,195,14
+ControlType.Text id= name=「这里显示对话文本。」 enabled=True rect=801,1306,195,15
+ControlType.CheckBox id= name=对话框 enabled=True rect=760,1337,149,39
+ControlType.Text id= name=对话框 enabled=True rect=796,1344,52,22
+ControlType.CheckBox id= name=选项框 enabled=True rect=760,1376,149,40
+ControlType.Text id= name=选项框 enabled=True rect=796,1384,52,22
+ControlType.ComboBox id= name=转场预览源画面 enabled=True rect=755,1423,131,40
+ControlType.Button id= name=播放转场 enabled=True rect=891,1424,99,38
+ControlType.Text id= name=播放转场 enabled=True rect=906,1432,70,22
+ControlType.Button id= name=返回编辑 enabled=True rect=755,1463,99,38
+ControlType.Text id= name=返回编辑 enabled=True rect=770,1470,69,23
+ControlType.Button id= name=图片属性 enabled=True rect=766,1522,158,32
+ControlType.Text id= name=▸ 图片属性 · 图片 1 enabled=True rect=766,1522,158,22
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Thumb id= name= enabled=True rect=1288,184,9,662
+ControlType.Text id= name=NativeConversation enabled=True rect=1319,208,306,30
+ControlType.Text id= name=已保存 enabled=True rect=1319,238,306,22
+ControlType.Pane id=CanonicalInspectorScrollViewer name= enabled=True rect=1319,278,306,548
+ControlType.Text id=ResourceInspectorIdentityLine name=[Session_ID] Native0332 : conversation enabled=True rect=1319,278,306,44
+ControlType.Text id=ResourceInspectorTagsLabel name=标签： enabled=True rect=1319,337,52,22
+ControlType.Text id=ResourceInspectorTagsValue name=— enabled=True rect=1371,337,254,22
+ControlType.CheckBox id=ResourceUsageExpand name=使用位置（2） enabled=True rect=1319,374,151,39
+ControlType.Text id= name=使用位置（2） enabled=True rect=1355,381,114,22
+ControlType.Text id= name=查询当前可读取项目内的使用位置，包含未打开内容和已加载的只读引用。点击结果定位原位置；查询范围随当前项目变化。 enabled=True rect=1319,413,306,52
+ControlType.List id=ResourceUsageResults name= enabled=True rect=1319,465,306,109
+ControlType.ListItem id= name=ResourceUsage { Key = UsageKey { Kind = session, Id = Native0332:conversation }, Location = AuthoringSearchHit { StoryId = Native0332:acceptance, Kind = Story, ResourceId = Native0332:acceptance, NodeId = aggregate_5c6dba9d366e498b836f86b681901f85, PageId = , OptionId = , Path = NativeAcceptance ＞ NativeAcceptance ＞ NativeConversation, Snippet = , GroupId = , FieldPath = resource_id }, Use = 图资源引用, IsReadOnly = False, Caption = NativeAcceptance ＞ NativeAcceptance ＞ NativeConversation ＞ 图资源引用 } enabled=True rect=1319,465,664,54
+ControlType.Text id= name=NativeAcceptance ＞ NativeAcceptance ＞ NativeConversation ＞ 图资源引用 enabled=True rect=1335,481,632,22
+ControlType.ListItem id= name=ResourceUsage { Key = UsageKey { Kind = session, Id = Native0332:conversation }, Location = AuthoringSearchHit { StoryId = Native0332:acceptance, Kind = Story, ResourceId = Native0332:acceptance, NodeId = , PageId = , OptionId = , Path = NativeAcceptance ＞ NativeConversation, Snippet = , GroupId = , FieldPath = membership:session:Native0332:conversation }, Use = 故事资源声明, IsReadOnly = False, Caption = NativeAcceptance ＞ NativeConversation ＞ 故事资源声明 } enabled=True rect=1319,519,664,55
+ControlType.Text id= name=NativeAcceptance ＞ NativeConversation ＞ 故事资源声明 enabled=True rect=1335,536,472,22

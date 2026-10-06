@@ -1,0 +1,23 @@
+[
+  {
+    "Suite": "FocusedFinal",
+    "Passed": 125,
+    "Failed": 0,
+    "Skipped": 0,
+    "Total": 125
+  },
+  {
+    "Suite": "Core",
+    "Passed": 496,
+    "Failed": 0,
+    "Skipped": 0,
+    "Total": 496
+  },
+  {
+    "Suite": "WpfFinal",
+    "Passed": 683,
+    "Failed": 0,
+    "Skipped": 1,
+    "Total": 684
+  }
+]

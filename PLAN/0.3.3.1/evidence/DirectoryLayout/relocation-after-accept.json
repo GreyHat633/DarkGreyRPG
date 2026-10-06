@@ -1,0 +1,344 @@
+{
+  "screen": "darkgrey.rpg.client.gui.GuiCanonicalSessionScreen",
+  "server_result": "interact entity 72716 => false",
+  "fixture_entity_ids": [
+    72716,
+    72717
+  ],
+  "player": "Developer",
+  "health": 20.0,
+  "pos": [
+    -805.5,
+    5.620000004768372,
+    -1609.5
+  ],
+  "inventory": [],
+  "width": 427,
+  "height": 267,
+  "buttons": [],
+  "task_client_frame": {
+    "presentation": {
+      "revision": 0,
+      "musicRevision": 0,
+      "loop": false,
+      "fadeIn": 0.0,
+      "fadeOut": 0.0,
+      "musicVolume": 1.0,
+      "layers": []
+    },
+    "lineEpoch": 2,
+    "playVoice": false,
+    "voiceVolume": 1.0,
+    "portraitRef": "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png",
+    "transportId": 1,
+    "storyId": "GreyHat_:test_story",
+    "sessionResourceId": "GreyHat_:Firest",
+    "currentNodeId": "node_951bd309563344519024ae4296ae93c1",
+    "kind": "LINE",
+    "speaker": "酒馆老板",
+    "text": "郊外的森林最近出现了好多史莱姆，生意不好做啊，能否替我讨伐3只，我给你铜币作为奖励。",
+    "choices": []
+  },
+  "task_client_visible_text": "郊外的森林最近出现了好多史莱姆，生意不好做啊，能否替我讨伐3只，我给你铜币作为奖励。",
+  "media": {
+    "musicStarted": false,
+    "voiceConsumed": true,
+    "lineEpoch": 2,
+    "musicRevision": 0,
+    "suspended": false,
+    "musicChannel": "dgr_session_music_a",
+    "currentVolume": 0.0,
+    "engine_ready": true,
+    "playing": {
+      "dgr_session_voice": false,
+      "dgr_session_music_a": false,
+      "dgr_session_music_b": false
+    },
+    "sources": {
+      "5c768367-4f54-468f-a5ae-18b60ae1a59f": {
+        "sourcename": "5c768367-4f54-468f-a5ae-18b60ae1a59f",
+        "toStream": true,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "3d65fd83-ca93-49d3-96b5-fcac8d7444f6": {
+        "sourcename": "3d65fd83-ca93-49d3-96b5-fcac8d7444f6",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "b00ee4a7-8965-44df-ab13-330829bccbef": {
+        "sourcename": "b00ee4a7-8965-44df-ab13-330829bccbef",
+        "toStream": false,
+        "sourceVolume": 1.0,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 194.26305
+      },
+      "4ea787c9-1de9-4dac-a2ab-207e4ee8e93f": {
+        "sourcename": "4ea787c9-1de9-4dac-a2ab-207e4ee8e93f",
+        "toStream": false,
+        "sourceVolume": 0.15,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": false,
+        "milliseconds": 0.0
+      },
+      "fdebf31f-813d-499f-bb0b-2ee3f4e91759": {
+        "sourcename": "fdebf31f-813d-499f-bb0b-2ee3f4e91759",
+        "toStream": false,
+        "sourceVolume": 0.4,
+        "preLoad": false,
+        "toLoop": false,
+        "actual_playing": true,
+        "milliseconds": 100.0
+      }
+    },
+    "textures_ready": [
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+    ],
+    "downloads": {
+      "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+        "ready": true,
+        "offset": 0
+      },
+      "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+        "ready": true,
+        "offset": 0
+      }
+    },
+    "master_level": 1.0,
+    "players_level": 1.0,
+    "music_level": 1.0,
+    "cached_packages": 4,
+    "preloading_packages": 0,
+    "queued_packages": 0,
+    "package_entries": [
+      {
+        "id": "local:DGR0331PackagePolicy0916|QA0330:presentation",
+        "ready": false,
+        "running": false,
+        "refs": 2
+      },
+      {
+        "id": "local:DGR0331PackagePolicy0916|LiveHarness:FlowTarget",
+        "ready": false,
+        "running": false,
+        "refs": 0
+      },
+      {
+        "id": "local:DGR0331PackagePolicy0916|GreyHat_:test_story",
+        "ready": false,
+        "running": false,
+        "refs": 4
+      },
+      {
+        "id": "local:DGRRelocation0916|GreyHat_:test_story",
+        "ready": true,
+        "running": true,
+        "refs": 4
+      }
+    ],
+    "cache_hits": 4,
+    "local_hits": 0,
+    "network_requests": 0,
+    "worker_queue": 0,
+    "worker_active": 0,
+    "in_flight": 0
+  },
+  "server": {
+    "player": "Developer",
+    "uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+    "dimension": 0,
+    "pos": [
+      -805.5,
+      4.0,
+      -1609.5
+    ],
+    "tick": 2148,
+    "tick_p95_ms": 6.4438,
+    "tick_max_ms": 8.7538,
+    "heap": {
+      "used": 295208912,
+      "free": 2629269552,
+      "total": 2924478464,
+      "max": 5726797824
+    },
+    "generation": {
+      "project_snapshot_revision": 2,
+      "task_presentation_generation": 0
+    },
+    "inventory": [],
+    "tasks": [],
+    "journal": [],
+    "entities": [
+      {
+        "entity_id": 72716,
+        "uuid": "d0d60709-44c9-4ea2-818a-ea54ad46a91c",
+        "name": "Gościbora",
+        "dimension": 0,
+        "pos": [
+          -803.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      },
+      {
+        "entity_id": 72717,
+        "uuid": "d798f7cb-3655-433a-babb-9f4fcb503460",
+        "name": "Suzuoki Mitsuko",
+        "dimension": 0,
+        "pos": [
+          -802.5,
+          4.0,
+          -1609.5
+        ],
+        "actor_ids": [
+          "GreyHat_:TarvenBoss"
+        ],
+        "identity_source": "LEGACY_CUSTOMNPC"
+      }
+    ],
+    "media": {
+      "musicStarted": false,
+      "voiceConsumed": true,
+      "lineEpoch": 2,
+      "musicRevision": 0,
+      "suspended": false,
+      "musicChannel": "dgr_session_music_a",
+      "currentVolume": 0.0,
+      "engine_ready": true,
+      "playing": {
+        "dgr_session_voice": false,
+        "dgr_session_music_a": false,
+        "dgr_session_music_b": false
+      },
+      "sources": {
+        "5c768367-4f54-468f-a5ae-18b60ae1a59f": {
+          "sourcename": "5c768367-4f54-468f-a5ae-18b60ae1a59f",
+          "toStream": true,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "3d65fd83-ca93-49d3-96b5-fcac8d7444f6": {
+          "sourcename": "3d65fd83-ca93-49d3-96b5-fcac8d7444f6",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "b00ee4a7-8965-44df-ab13-330829bccbef": {
+          "sourcename": "b00ee4a7-8965-44df-ab13-330829bccbef",
+          "toStream": false,
+          "sourceVolume": 1.0,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 194.26305
+        },
+        "4ea787c9-1de9-4dac-a2ab-207e4ee8e93f": {
+          "sourcename": "4ea787c9-1de9-4dac-a2ab-207e4ee8e93f",
+          "toStream": false,
+          "sourceVolume": 0.15,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": false,
+          "milliseconds": 0.0
+        },
+        "fdebf31f-813d-499f-bb0b-2ee3f4e91759": {
+          "sourcename": "fdebf31f-813d-499f-bb0b-2ee3f4e91759",
+          "toStream": false,
+          "sourceVolume": 0.4,
+          "preLoad": false,
+          "toLoop": false,
+          "actual_playing": true,
+          "milliseconds": 100.0
+        }
+      },
+      "textures_ready": [
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png"
+      ],
+      "downloads": {
+        "media/965df6d9ca8089c0d194457943893fb7e635c5a123e34e131f576dd656b2a573.ogg": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/59760106ab29206391d74398e57aaf80fba41f86652a73eb2c4987784a78f242.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/3433e309026b27c0028dacdef61161dfcc96b057a2051d14d01d447565b4e46f.png": {
+          "ready": true,
+          "offset": 0
+        },
+        "media/71a5ceb415ff4aa85f094e19e8fc81452c043b1c3a55afd99d65ef33637e26e8.png": {
+          "ready": true,
+          "offset": 0
+        }
+      },
+      "master_level": 1.0,
+      "players_level": 1.0,
+      "music_level": 1.0,
+      "cached_packages": 4,
+      "preloading_packages": 0,
+      "queued_packages": 0,
+      "package_entries": [
+        {
+          "id": "local:DGR0331PackagePolicy0916|QA0330:presentation",
+          "ready": false,
+          "running": false,
+          "refs": 2
+        },
+        {
+          "id": "local:DGR0331PackagePolicy0916|LiveHarness:FlowTarget",
+          "ready": false,
+          "running": false,
+          "refs": 0
+        },
+        {
+          "id": "local:DGR0331PackagePolicy0916|GreyHat_:test_story",
+          "ready": false,
+          "running": false,
+          "refs": 4
+        },
+        {
+          "id": "local:DGRRelocation0916|GreyHat_:test_story",
+          "ready": true,
+          "running": true,
+          "refs": 4
+        }
+      ],
+      "cache_hits": 4,
+      "local_hits": 0,
+      "network_requests": 0,
+      "worker_queue": 0,
+      "worker_active": 0,
+      "in_flight": 0
+    },
+    "server_result": "interact entity 72716 => false"
+  }
+}

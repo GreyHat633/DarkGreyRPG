@@ -14,7 +14,7 @@ import net.minecraft.world.storage.MapStorage;
 public final class StoryPackageGenerationSavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_story_package_generations";
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private static final int COMPOUND = 10;
     private Map<String, PackageGenerationKey> generations = Collections.emptyMap();
     private boolean initialized;
@@ -58,9 +58,11 @@ public final class StoryPackageGenerationSavedData extends WorldSavedData {
     public synchronized void readFromNBT(NBTTagCompound root) {
         if (root == null || !root.hasKey("schema_version", 3)
             || root.getInteger("schema_version") != SCHEMA_VERSION
+            || !root.hasKey("identity_format", 8)
+            || !"story-uid-v1".equals(root.getString("identity_format"))
             || !root.hasKey("generations", 9))
             throw new IllegalArgumentException("Malformed Story Package generation registry.");
-        NBTTagList list = root.getTagList("generations", COMPOUND);
+        NBTTagList list = (NBTTagList) root.getTag("generations");
         if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND)
             throw new IllegalArgumentException("Malformed Story Package generation entries.");
         Map<String, PackageGenerationKey> replacement = new LinkedHashMap<String, PackageGenerationKey>();
@@ -84,6 +86,7 @@ public final class StoryPackageGenerationSavedData extends WorldSavedData {
     public synchronized void writeToNBT(NBTTagCompound root) {
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", "story-uid-v1");
         NBTTagList list = new NBTTagList();
         for (PackageGenerationKey value : new TreeMap<String, PackageGenerationKey>(generations).values()) {
             NBTTagCompound entry = new NBTTagCompound();

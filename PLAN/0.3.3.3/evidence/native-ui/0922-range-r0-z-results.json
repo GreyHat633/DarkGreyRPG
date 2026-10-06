@@ -1,0 +1,166 @@
+[
+  {
+    "inside": true,
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      200.1
+    ],
+    "radius": 0,
+    "axis": "z",
+    "clientPoint": [
+      -119.5,
+      91.5,
+      200.1
+    ],
+    "label": "0922-range-r0-zminus-inside",
+    "measurement": {
+      "label": "0922-range-r0-zminus-inside",
+      "time": "2026-09-22T22:17:17",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.00047583553195432523,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.0006284298003816642,
+      "tone880": 9.979485472053366E-08
+    },
+    "passed": true,
+    "side": "minus"
+  },
+  {
+    "inside": false,
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      199.9
+    ],
+    "radius": 0,
+    "axis": "z",
+    "clientPoint": [
+      -119.5,
+      91.5,
+      199.9
+    ],
+    "label": "0922-range-r0-zminus-outside",
+    "measurement": {
+      "label": "0922-range-r0-zminus-outside",
+      "time": "2026-09-22T22:17:26",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "passed": true,
+    "side": "minus"
+  },
+  {
+    "inside": true,
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      200.9
+    ],
+    "radius": 0,
+    "axis": "z",
+    "clientPoint": [
+      -119.5,
+      91.5,
+      200.9
+    ],
+    "label": "0922-range-r0-zplus-inside",
+    "measurement": {
+      "label": "0922-range-r0-zplus-inside",
+      "time": "2026-09-22T22:17:35",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004758361284899126,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.0006284290625686233,
+      "tone880": 1.0018217819841033E-07
+    },
+    "passed": true,
+    "side": "plus"
+  },
+  {
+    "inside": false,
+    "teleportFeet": [
+      -119.5,
+      89.88,
+      201.1
+    ],
+    "radius": 0,
+    "axis": "z",
+    "clientPoint": [
+      -119.5,
+      91.5,
+      201.1
+    ],
+    "label": "0922-range-r0-zplus-outside",
+    "measurement": {
+      "label": "0922-range-r0-zplus-outside",
+      "time": "2026-09-22T22:17:44",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "passed": true,
+    "side": "plus"
+  }
+]

@@ -1,0 +1,493 @@
+{
+  "device": [
+    -120,
+    91,
+    200
+  ],
+  "coordinate_note": "Minecraft 1.7.10 client player.posY / eye point, not F3 feet",
+  "cases": 48,
+  "passed": 48,
+  "failed": 0,
+  "cases_detail": [
+    {
+      "radius": 0,
+      "axis": "x",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r0-xminus-inside.json",
+      "rms": 0.0004758358919505191,
+      "tone440": 0.0006284293395715012
+    },
+    {
+      "radius": 0,
+      "axis": "x",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r0-xminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 0,
+      "axis": "x",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r0-xplus-inside.json",
+      "rms": 0.0004758606795368709,
+      "tone440": 0.0006284283943464013
+    },
+    {
+      "radius": 0,
+      "axis": "x",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r0-xplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 0,
+      "axis": "y",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r0-yminus-inside.json",
+      "rms": 0.0004758573750728439,
+      "tone440": 0.0006284297048754458
+    },
+    {
+      "radius": 0,
+      "axis": "y",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r0-yminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 0,
+      "axis": "y",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r0-yplus-inside.json",
+      "rms": 0.0004758529257343601,
+      "tone440": 0.0006284295155819308
+    },
+    {
+      "radius": 0,
+      "axis": "y",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r0-yplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 0,
+      "axis": "z",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r0-zminus-inside.json",
+      "rms": 0.00047583553195432523,
+      "tone440": 0.0006284298003816642
+    },
+    {
+      "radius": 0,
+      "axis": "z",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r0-zminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 0,
+      "axis": "z",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r0-zplus-inside.json",
+      "rms": 0.0004758361284899126,
+      "tone440": 0.0006284290625686233
+    },
+    {
+      "radius": 0,
+      "axis": "z",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r0-zplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 1,
+      "axis": "x",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-confirmed-xminus-inside.json",
+      "rms": 0.0004758530535871391,
+      "tone440": 0.0006284027948274204
+    },
+    {
+      "radius": 1,
+      "axis": "x",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-confirmed-xminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 1,
+      "axis": "x",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-confirmed-xplus-inside.json",
+      "rms": 0.0004758366547886713,
+      "tone440": 0.0006284295236854317
+    },
+    {
+      "radius": 1,
+      "axis": "x",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-confirmed-xplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 1,
+      "axis": "y",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-confirmed-yminus-inside.json",
+      "rms": 0.00047583898144026035,
+      "tone440": 0.0006284300445144008
+    },
+    {
+      "radius": 1,
+      "axis": "y",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-confirmed-yminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 1,
+      "axis": "y",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-confirmed-yplus-inside.json",
+      "rms": 0.0004758349041356186,
+      "tone440": 0.0006284295706469468
+    },
+    {
+      "radius": 1,
+      "axis": "y",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-confirmed-yplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 1,
+      "axis": "z",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-confirmed-zminus-inside.json",
+      "rms": 0.0004758346566171222,
+      "tone440": 0.0006284299746340588
+    },
+    {
+      "radius": 1,
+      "axis": "z",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-confirmed-zminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 1,
+      "axis": "z",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-confirmed-zplus-inside.json",
+      "rms": 0.00047583816420330007,
+      "tone440": 0.0006284294284679009
+    },
+    {
+      "radius": 1,
+      "axis": "z",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-confirmed-zplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 16,
+      "axis": "x",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r16-isolated-xminus-inside.json",
+      "rms": 0.0004746734517557475,
+      "tone440": 0.0006270770264147446
+    },
+    {
+      "radius": 16,
+      "axis": "x",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r16-isolated-xminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 16,
+      "axis": "x",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r16-isolated-xplus-inside.json",
+      "rms": 0.00047583615701224575,
+      "tone440": 0.0006284289485625975
+    },
+    {
+      "radius": 16,
+      "axis": "x",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r16-isolated-xplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 16,
+      "axis": "y",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-yminus-inside.json",
+      "rms": 0.00047586290921298536,
+      "tone440": 0.0006284296017132482
+    },
+    {
+      "radius": 16,
+      "axis": "y",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-yminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 16,
+      "axis": "y",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-yplus-inside.json",
+      "rms": 0.000475834971234952,
+      "tone440": 0.0006284297441836798
+    },
+    {
+      "radius": 16,
+      "axis": "y",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-yplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 16,
+      "axis": "z",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-zminus-inside.json",
+      "rms": 0.0004758732596727569,
+      "tone440": 0.0006284289955767735
+    },
+    {
+      "radius": 16,
+      "axis": "z",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-zminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 16,
+      "axis": "z",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-zplus-inside.json",
+      "rms": 0.000475849011934043,
+      "tone440": 0.0006284293717016084
+    },
+    {
+      "radius": 16,
+      "axis": "z",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r16-onlytone-zplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 128,
+      "axis": "x",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-xminus-inside.json",
+      "rms": 0.0004758237454488892,
+      "tone440": 0.0006283913812693136
+    },
+    {
+      "radius": 128,
+      "axis": "x",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-xminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 128,
+      "axis": "x",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-xplus-inside.json",
+      "rms": 0.0004758443143072528,
+      "tone440": 0.0006284295212065725
+    },
+    {
+      "radius": 128,
+      "axis": "x",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-xplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 128,
+      "axis": "y",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-yminus-inside.json",
+      "rms": 0.0004758353304836099,
+      "tone440": 0.0006284295682002021
+    },
+    {
+      "radius": 128,
+      "axis": "y",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-yminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 128,
+      "axis": "y",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-yplus-inside.json",
+      "rms": 0.00047585763527179317,
+      "tone440": 0.0006284286944069843
+    },
+    {
+      "radius": 128,
+      "axis": "y",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-yplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 128,
+      "axis": "z",
+      "side": "minus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-zminus-inside.json",
+      "rms": 0.0004758572286405169,
+      "tone440": 0.0006284297242756573
+    },
+    {
+      "radius": 128,
+      "axis": "z",
+      "side": "minus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-zminus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    },
+    {
+      "radius": 128,
+      "axis": "z",
+      "side": "plus",
+      "inside": true,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-zplus-inside.json",
+      "rms": 0.0004758453643489259,
+      "tone440": 0.000628429304414977
+    },
+    {
+      "radius": 128,
+      "axis": "z",
+      "side": "plus",
+      "inside": false,
+      "passed": true,
+      "evidence": "0922-range-r128-confirmed-zplus-outside.json",
+      "rms": 0.0,
+      "tone440": 0.0
+    }
+  ]
+}

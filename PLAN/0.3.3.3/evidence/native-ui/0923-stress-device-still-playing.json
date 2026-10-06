@@ -1,0 +1,25 @@
+{
+  "label": "0923-stress-device-still-playing",
+  "time": "2026-09-23T00:27:16",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.0004752206161923619,
+  "peak": 0.000805974006652832,
+  "tone440": 0.0006274915521695662,
+  "tone880": 3.5562565147728306e-08,
+  "dominantVoiceHz": 1320.0200534759358,
+  "dominantVoiceAmplitude": 4.5249365774728355e-06
+}

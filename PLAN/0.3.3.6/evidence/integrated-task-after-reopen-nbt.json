@@ -1,0 +1,443 @@
+{
+  "darkgrey_rpg_canonical_sessions.dat": {
+    "data": {
+      "schema_version": 7,
+      "identity_format": "story-uid-v1",
+      "terminal_routes": [
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-AAAA-BBBB-CCCC-DDDD\u00001791124932764\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-YQGT-ZYHR-DRNN-9HF3\u00001791125482442\u0000finished"
+        }
+      ],
+      "sessions": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "next_transport_id": 2,
+        "instances": []
+      },
+      "stories": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "instances": [
+          {
+            "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "219ee168a925f3987c08b3587a08ba20a0502fb89486b33811f7ad56bac75b0e",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-AAAA-BBBB-CCCC-DDDD",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791124969787,
+            "activation_time": 1791124932764
+          },
+          {
+            "story_id": "ST-YQGT-ZYHR-DRNN-9HF3",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "65c9ad3ee2af5f6c0047f9db642c42528c6e34fe61047eadccf823e47dc2efc1",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-YQGT-ZYHR-DRNN-9HF3",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791125575973,
+            "activation_time": 1791125482442
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  },
+  "darkgrey_rpg_canonical_tasks.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "instances": [
+        {
+          "result_port_id": "dynamic_port_caae34a4f3d94a96ab6c0fbd8290b5c5",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "reach"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "f8b643dc3a11ae9fe307006f46cfda0ba1b58b8530d11aacfb73abb8ec27d58a",
+          "runtime_status": "SETTLED",
+          "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward"
+            }
+          ],
+          "settlement_time": 1791124969787,
+          "activation_time": 1791124932776,
+          "task_resource_id": {
+            "local_id": "journey",
+            "kind": "task",
+            "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+          },
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "reach:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "reach"
+            }
+          ],
+          "task_node_placement_id": "task_placement",
+          "status": "SETTLED"
+        },
+        {
+          "result_port_id": "dynamic_port_caae34a4f3d94a96ab6c0fbd8290b5c5",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "reach"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "ST-YQGT-ZYHR-DRNN-9HF3",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "abc74767c3d7928051a5cc6125db7d89996ef166a26d9976d3890615d5022fe8",
+          "runtime_status": "SETTLED",
+          "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward"
+            }
+          ],
+          "settlement_time": 1791125575972,
+          "activation_time": 1791125482454,
+          "task_resource_id": {
+            "local_id": "journey",
+            "kind": "task",
+            "story_uid": "ST-YQGT-ZYHR-DRNN-9HF3"
+          },
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "reach:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "reach"
+            }
+          ],
+          "task_node_placement_id": "task_placement",
+          "status": "SETTLED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_item_identities.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "groups": [],
+      "items": [
+        {
+          "item_id": {
+            "local_id": "shared",
+            "kind": "item",
+            "story_uid": "ST-2345-6789-ABCD-EFGH"
+          },
+          "definition": {
+            "damage": 0,
+            "registry_name": "minecraft:stone"
+          }
+        }
+      ],
+      "revision": 1
+    }
+  },
+  "darkgrey_rpg_player_names.dat": {
+    "data": {
+      "names": {
+        "native0336": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e"
+      }
+    }
+  },
+  "darkgrey_rpg_story_completion_history.dat": {
+    "data": {
+      "schema_version": 1,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "terminal": 1791115158955,
+          "activation": 1791115089677,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-2345-6789-ABCD-EFGH",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791124969787,
+          "activation": 1791124932764,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791115309893,
+          "activation": 1791115309893,
+          "completed_count": 2,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791125575973,
+          "activation": 1791125482442,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-YQGT-ZYHR-DRNN-9HF3",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_story_package_generations.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "generations": [
+        {
+          "story_id": "ST-2345-6789-ABCD-EFGH",
+          "package_id": "ST-2345-6789-ABCD-EFGH",
+          "content_fingerprint": "0fd881c57a257830f6600665bd5a3cd9f9529be0d194ecbe333631d751924129"
+        },
+        {
+          "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "package_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "content_fingerprint": "2a38e2de635023b928d9bc9ea4e1f56ad500bc6c1cac8013e4d79c8bc0743ff3"
+        },
+        {
+          "story_id": "ST-JKLM-NPQR-STUV-WXYZ",
+          "package_id": "ST-JKLM-NPQR-STUV-WXYZ",
+          "content_fingerprint": "b95f520912092430b0f140143ef9ffa366f38b1debb4da3b17a68a707326489b"
+        },
+        {
+          "story_id": "ST-YQGT-ZYHR-DRNN-9HF3",
+          "package_id": "ST-YQGT-ZYHR-DRNN-9HF3",
+          "content_fingerprint": "b35e43406b52cf7ddf4e616783fa6f76cb748903398d395dc0a0a360254b0c33"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_task_completion_history.dat": {
+    "data": {
+      "schema": 2,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "description": "",
+          "completion_count": 1,
+          "title": "Reach the reward region",
+          "settlement": 1791124969787,
+          "task_resource_id": {
+            "local_id": "journey",
+            "kind": "task",
+            "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+          },
+          "result": "dynamic_port_caae34a4f3d94a96ab6c0fbd8290b5c5",
+          "story_title": "Runtime Task Reward",
+          "story_package": "ST-AAAA-BBBB-CCCC-DDDD",
+          "objectives": [
+            {
+              "current": 1,
+              "text": "Reach X=20, Y=4, Z=0 for 7 XP",
+              "type": "reach_region",
+              "required": 1
+            }
+          ],
+          "id": "history:36:17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e22:ST-AAAA-BBBB-CCCC-DDDD14:task_placement35:ST-AAAA-BBBB-CCCC-DDDD~task~journey",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "story": "ST-AAAA-BBBB-CCCC-DDDD",
+          "status": "SETTLED",
+          "group": "36:17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e22:ST-AAAA-BBBB-CCCC-DDDD14:task_placement35:ST-AAAA-BBBB-CCCC-DDDD~task~journey"
+        },
+        {
+          "description": "",
+          "completion_count": 1,
+          "title": "Reach the reward region",
+          "settlement": 1791125575972,
+          "task_resource_id": {
+            "local_id": "journey",
+            "kind": "task",
+            "story_uid": "ST-YQGT-ZYHR-DRNN-9HF3"
+          },
+          "result": "dynamic_port_caae34a4f3d94a96ab6c0fbd8290b5c5",
+          "story_title": "Runtime Task Reward",
+          "story_package": "ST-YQGT-ZYHR-DRNN-9HF3",
+          "objectives": [
+            {
+              "current": 1,
+              "text": "Reach X=20, Y=4, Z=0 for 7 XP",
+              "type": "reach_region",
+              "required": 1
+            }
+          ],
+          "id": "history:36:17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e22:ST-YQGT-ZYHR-DRNN-9HF314:task_placement35:ST-YQGT-ZYHR-DRNN-9HF3~task~journey",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "story": "ST-YQGT-ZYHR-DRNN-9HF3",
+          "status": "SETTLED",
+          "group": "36:17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e22:ST-YQGT-ZYHR-DRNN-9HF314:task_placement35:ST-YQGT-ZYHR-DRNN-9HF3~task~journey"
+        }
+      ],
+      "observed": [
+        {
+          "identity": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-YQGT-ZYHR-DRNN-9HF3\u0000task_placement",
+          "activation": 1791125482454
+        },
+        {
+          "identity": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-AAAA-BBBB-CCCC-DDDD\u0000task_placement",
+          "activation": 1791124932776
+        }
+      ]
+    }
+  },
+  "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e.dat": {
+    "Spawns": [],
+    "ForgeData": {
+      "SkinOverlayData": [],
+      "PlayerPersisted": {
+        "DGRTaskReceipts": {
+          "77ea92defe7df900d2c6e713858248e45ac679e8cbcd54bd8045dd01c617be4b": 1,
+          "729b1403c89482765ce6a27f984a2ab6bb96ef514106b9f56ffe30aa2885cdb7": 1
+        }
+      }
+    },
+    "SleepTimer": 0,
+    "Attributes": [
+      {
+        "Base": 20.0,
+        "Name": "generic.maxHealth"
+      },
+      {
+        "Base": 0.0,
+        "Name": "generic.knockbackResistance"
+      },
+      {
+        "Base": 0.10000000149011612,
+        "Name": "generic.movementSpeed"
+      },
+      {
+        "Base": 1.0,
+        "Name": "generic.attackDamage"
+      }
+    ],
+    "Invulnerable": 0,
+    "PortalCooldown": 0,
+    "AbsorptionAmount": 0.0,
+    "abilities": {
+      "invulnerable": 1,
+      "mayfly": 1,
+      "instabuild": 1,
+      "walkSpeed": 0.10000000149011612,
+      "mayBuild": 1,
+      "flying": 0,
+      "flySpeed": 0.05000000074505806
+    },
+    "FallDistance": 0.0,
+    "DeathTime": 0,
+    "HealF": 20.0,
+    "XpTotal": 14,
+    "playerGameType": 1,
+    "Motion": [
+      0.0,
+      -0.0784000015258789,
+      0.0
+    ],
+    "UUIDLeast": -6324694536220740786,
+    "Health": 20,
+    "foodSaturationLevel": 5.0,
+    "Air": 300,
+    "OnGround": 1,
+    "Dimension": 0,
+    "Rotation": [
+      -192.0,
+      -13.5
+    ],
+    "XpLevel": 0,
+    "Score": 0,
+    "UUIDMost": 1715228953935035072,
+    "Sleeping": 0,
+    "Pos": [
+      20.500000000000032,
+      4.0,
+      0.5
+    ],
+    "Fire": -20,
+    "XpP": 0.8235294222831726,
+    "EnderItems": [],
+    "foodLevel": 20,
+    "foodExhaustionLevel": 0.0,
+    "HurtTime": 0,
+    "SelectedItemSlot": 0,
+    "AttackTime": 0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "id": 4453,
+        "Count": 1,
+        "Damage": 0
+      },
+      {
+        "Slot": 1,
+        "id": 1,
+        "Count": 1,
+        "Damage": 0
+      }
+    ],
+    "foodTickTimer": 0
+  }
+}

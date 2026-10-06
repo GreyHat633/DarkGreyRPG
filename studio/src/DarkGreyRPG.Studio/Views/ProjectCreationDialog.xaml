@@ -51,9 +51,9 @@
         </Grid>
         </ScrollViewer>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Width="96" Height="34" Margin="0,0,8,0" IsCancel="True" Content="取消" />
-            <Button x:Name="CreateProjectButton" Width="110" Height="34" IsDefault="True" IsEnabled="{Binding CanConfirm}"
+            <Button Margin="0,0,8,0" x:Name="CreateProjectButton" Width="110" Height="34" IsDefault="True" IsEnabled="{Binding CanConfirm}"
                     Style="{DynamicResource AccentButtonStyle}" Click="ConfirmButton_OnClick" Content="{Binding ActionText}" />
+            <Button Width="96" Height="34" IsCancel="True" Content="取消" />
         </StackPanel>
     </Grid>
 </Window>

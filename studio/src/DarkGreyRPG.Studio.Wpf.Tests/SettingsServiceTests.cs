@@ -7,23 +7,6 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class SettingsServiceTests
 {
     [TestMethod]
-    public void NamespaceRoundTripsExactlyAndInvalidChangePreservesSavedSettings()
-    {
-        var path = CreateTempSettingsPath();
-        try
-        {
-            var service = new SettingsService(path);
-            service.Save(new StudioSettings { GlobalNamespace = "MixedCase_1", Theme = ThemePreference.Dark });
-            var bytes = File.ReadAllBytes(path);
-            Assert.AreEqual("MixedCase_1", service.Load().GlobalNamespace);
-            Assert.Throws<ArgumentException>(() => service.Save(service.Load() with { GlobalNamespace = " MixedCase_1 " }));
-            CollectionAssert.AreEqual(bytes, File.ReadAllBytes(path));
-            Assert.AreEqual(ThemePreference.Dark, service.Load().Theme);
-        }
-        finally { DeleteTempDirectory(path); }
-    }
-
-    [TestMethod]
     public void DefaultSettingsPath_IsLocalToThisStudioCopy()
     {
         var service = new SettingsService();
@@ -254,7 +237,8 @@ public sealed class SettingsServiceTests
             var loaded = new SettingsService(settingsPath).Load();
 
             Assert.AreEqual(ThemePreference.Dark, loaded.Theme);
-            Assert.AreEqual("GreyHat_", loaded.GlobalNamespace);
+            new SettingsService(settingsPath).Save(loaded);
+            Assert.IsFalse(File.ReadAllText(settingsPath).Contains("global_namespace", StringComparison.Ordinal));
             Assert.AreEqual(1440, loaded.WindowWidth);
             Assert.AreEqual(900, loaded.WindowHeight);
             Assert.IsTrue(loaded.WindowMaximized);

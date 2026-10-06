@@ -1,0 +1,25 @@
+{
+  "label": "0922-session-voice1-bgm0",
+  "time": "2026-09-22T23:02:00",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.005103494150848506,
+  "peak": 0.007825136184692383,
+  "tone440": 3.56404996366526e-07,
+  "tone880": 0.006360753044709025,
+  "dominantVoiceHz": 879.846256684492,
+  "dominantVoiceAmplitude": 0.006360753044709025
+}

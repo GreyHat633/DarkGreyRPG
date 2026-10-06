@@ -19,8 +19,8 @@ public sealed class RewardContextMenu0331Tests
         var store = new CanonicalProjectGraphStore(directory.Root);
         var original = GraphNodeFactory.Create(GraphScope.Task, "reward", "existing");
         original.Properties["entries"] = JsonSerializer.SerializeToElement(new[] { new { type = "xp", amount = 1 } });
-        store.Tasks.Create(new(GraphResourceKind.Task, "task", "任务", new GraphDocument([original])));
-        using var editor = new CanonicalGraphResourceEditorViewModel(store.Tasks.Load("task"));
+        store.Tasks.Create(new(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "任务", new GraphDocument([original])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(store.Tasks.Load("ST-2345-6789-ABCD-EFGH~task~task"));
         var view = new CanonicalGraphEditorView { Host = editor.Host };
         var menu = view.CreateCanvasContextMenu(new Point(320, 180));
         var add = menu.Items.OfType<MenuItem>().Single(item => (string)item.Header == "添加");
@@ -43,7 +43,7 @@ public sealed class RewardContextMenu0331Tests
         row.AmountText = "12";
         Assert.IsEmpty(CanonicalTaskRewardSchema.Validate(editor.Host.Graph.Nodes.Single(n => n.Id == created.NodeId)));
         new CanonicalGraphResourceSaveCoordinator(store).Replace(editor);
-        var reopened = store.Tasks.Load("task").Graph!;
+        var reopened = store.Tasks.Load("ST-2345-6789-ABCD-EFGH~task~task").Graph!;
         Assert.HasCount(2, reopened.Nodes);
         Assert.AreEqual(12, reopened.Nodes.Single(n => n.Id == created.NodeId).Properties["entries"][0].GetProperty("amount").GetInt32());
     }

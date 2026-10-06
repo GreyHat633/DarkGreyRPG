@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ed9072b3-296c-42e9-9d85-86b539cb7723" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-04 22:50:57" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-04T22:50:57.6250069+08:00" queuing="2026-10-04T22:50:57.6250072+08:00" start="2026-10-04T22:50:56.6960537+08:00" finish="2026-10-04T22:50:57.6325642+08:00" />
+  <TestSettings name="default" id="ab3a8cdc-4551-4c50-8b12-22bf47b6f882">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-04_22_50_57" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="7f8a5377-6619-4ae7-8260-83bf8e9819b5" testId="1ec7f7dd-e448-84ff-9077-d90e73e9c1c9" testName="WangChengMianAnBranchFlowValidates" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0339896" startTime="2026-10-04T22:50:57.4180996+08:00" endTime="2026-10-04T22:50:57.4712667+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7f8a5377-6619-4ae7-8260-83bf8e9819b5" />
+    <UnitTestResult executionId="ddd2ba15-76ad-4eee-96fa-506a5495fb12" testId="1ad336c7-08a9-83d9-bcf5-58d6ff510af9" testName="ValidatorRejectsInvalidReferencesConnectionsAndPositions" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0238354" startTime="2026-10-04T22:50:57.4181271+08:00" endTime="2026-10-04T22:50:57.4641117+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ddd2ba15-76ad-4eee-96fa-506a5495fb12" />
+    <UnitTestResult executionId="836289c3-dcce-454a-a002-4b2acefdb7aa" testId="1f80752b-d553-84c6-abf7-48dc257a30ad" testName="RepositorySavesAtomicallyAndReloadsNonFlowFields" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0654162" startTime="2026-10-04T22:50:57.4181209+08:00" endTime="2026-10-04T22:50:57.5039386+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="836289c3-dcce-454a-a002-4b2acefdb7aa" />
+    <UnitTestResult executionId="b6c7475d-b792-48c1-b2e2-aff818cf611d" testId="18954578-4461-8e5f-a73f-0d3ff1f028e0" testName="DocumentSupportsEditSnapshotAndDirtyState" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0351176" startTime="2026-10-04T22:50:57.4181133+08:00" endTime="2026-10-04T22:50:57.4723670+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b6c7475d-b792-48c1-b2e2-aff818cf611d" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="DocumentSupportsEditSnapshotAndDirtyState" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="18954578-4461-8e5f-a73f-0d3ff1f028e0">
+      <Execution id="b6c7475d-b792-48c1-b2e2-aff818cf611d" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.M6FlowCoreTests" name="DocumentSupportsEditSnapshotAndDirtyState" />
+    </UnitTest>
+    <UnitTest name="RepositorySavesAtomicallyAndReloadsNonFlowFields" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1f80752b-d553-84c6-abf7-48dc257a30ad">
+      <Execution id="836289c3-dcce-454a-a002-4b2acefdb7aa" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.M6FlowCoreTests" name="RepositorySavesAtomicallyAndReloadsNonFlowFields" />
+    </UnitTest>
+    <UnitTest name="ValidatorRejectsInvalidReferencesConnectionsAndPositions" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1ad336c7-08a9-83d9-bcf5-58d6ff510af9">
+      <Execution id="ddd2ba15-76ad-4eee-96fa-506a5495fb12" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.M6FlowCoreTests" name="ValidatorRejectsInvalidReferencesConnectionsAndPositions" />
+    </UnitTest>
+    <UnitTest name="WangChengMianAnBranchFlowValidates" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\debug\net10.0\darkgreyrpg.studio.tests.dll" id="1ec7f7dd-e448-84ff-9077-d90e73e9c1c9">
+      <Execution id="7f8a5377-6619-4ae7-8260-83bf8e9819b5" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.M6FlowCoreTests" name="WangChengMianAnBranchFlowValidates" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1ec7f7dd-e448-84ff-9077-d90e73e9c1c9" executionId="7f8a5377-6619-4ae7-8260-83bf8e9819b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ad336c7-08a9-83d9-bcf5-58d6ff510af9" executionId="ddd2ba15-76ad-4eee-96fa-506a5495fb12" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f80752b-d553-84c6-abf7-48dc257a30ad" executionId="836289c3-dcce-454a-a002-4b2acefdb7aa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18954578-4461-8e5f-a73f-0d3ff1f028e0" executionId="b6c7475d-b792-48c1-b2e2-aff818cf611d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="4" executed="4" passed="4" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Debug\net10.0\DarkGreyRPG.Studio.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

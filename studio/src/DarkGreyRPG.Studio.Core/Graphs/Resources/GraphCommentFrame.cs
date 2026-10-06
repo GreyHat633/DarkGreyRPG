@@ -5,6 +5,7 @@ public sealed record GraphCommentFrame(string Id, string Title, double X, double
 {
     public static readonly string[] Palette = ["#5CA6CC", "#63B598", "#B68ACC", "#CC9D63", "#CC7D87", "#8EA65E"];
     public string Color { get; init; } = "#82919B";
+    public bool Collapsed { get; init; }
     public static string RandomColor() => Palette[Random.Shared.Next(Palette.Length)];
     public string[] Groups { get; init; } = [];
     public bool IsValid => !string.IsNullOrWhiteSpace(Id) && Title is not null && Title.Length <= 1024

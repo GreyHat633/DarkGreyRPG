@@ -1,0 +1,22 @@
+ControlType.DataItem |  | ProblemItem { Severity = Error, Code = graph.story.start.trigger.authoring_invalid, Message = 半径必须是大于 0 的数字。, Field = radius, Source = canonical/story/ST-8Q7T-6EWT-PEPM-WYKS, NodeId = story_start, GraphResourceId = ST-8Q7T-6EWT-PEPM-WYKS, DisplayMessage = Story 开始节点的启动条件配置有误。
+[graph.story.start.trigger.authoring_invalid]
+技术详情：半径必须是大于 0 的数字。, IsError = True, IsWarning = False }
+ControlType.Text |  | Story 开始节点的启动条件配置有误。
+[graph.story.start.trigger.authoring_invalid]
+技术详情：半径必须是大于 0 的数字。
+ControlType.Custom | CanonicalStoryWorkspaceGraph | 节点图编辑器
+ControlType.Button |  | 适应全部图节点
+ControlType.Text |  | 拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放
+ControlType.Custom | CanonicalGraphNode_story_start | 图节点 开始 story_start
+ControlType.Text | HeaderTitle | 开始
+ControlType.Text |  | 半径
+ControlType.Text |  | 半径必须是大于 0 的数字。
+ControlType.Custom | CanonicalGraphNode_session_placement | 图节点 会话「测试会话」 session_placement
+ControlType.Custom | CanonicalGraphNode_story_done | 图节点 终止「Completed」 story_done
+ControlType.Custom | CanonicalGraphNode_output | 图节点 逻辑输出「Group output」 output
+ControlType.Text |  | 开始
+ControlType.Text |  | 故事开始节点的启动条件配置有误。
+请在“问题”面板查看详情。
+ControlType.Pane | CanonicalInspectorScrollViewer | 
+ControlType.Text |  | 节点属性
+ControlType.Text |  | 半径

@@ -63,6 +63,28 @@ public final class CanonicalTaskEvent {
         return new CanonicalTaskEvent(INTERACT_ACTOR, "actor_id", actorId);
     }
 
+    /** One physical click, including all identities bound to the same entity. */
+    public static CanonicalTaskEvent interactActors(java.util.Collection<String> actorIds) {
+        if (actorIds == null || actorIds.isEmpty()) throw new IllegalArgumentException("Actor identities required.");
+        Map<String, String> values = new LinkedHashMap<String, String>();
+        StringBuilder joined = new StringBuilder();
+        for (String id : actorIds) {
+            if (id == null || id.indexOf('\u0000') >= 0) throw new IllegalArgumentException("Invalid actor identity.");
+            if (!values.containsKey("actor_id")) values.put("actor_id", id);
+            if (joined.length() > 0) joined.append('\u0000');
+            joined.append(id);
+        }
+        values.put("actor_ids", joined.toString());
+        return new CanonicalTaskEvent(INTERACT_ACTOR, values, 1);
+    }
+
+    public boolean targetsActor(String actorId) {
+        if (actorId.equals(get("actor_id"))) return true;
+        String ids = get("actor_ids");
+        if (ids != null) for (String id : ids.split("\u0000", -1)) if (actorId.equals(id)) return true;
+        return false;
+    }
+
     public static CanonicalTaskEvent interact(String actorId) {
         return interactActor(actorId);
     }

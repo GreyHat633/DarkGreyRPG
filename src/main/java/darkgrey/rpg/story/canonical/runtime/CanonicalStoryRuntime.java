@@ -969,6 +969,7 @@ public final class CanonicalStoryRuntime {
     }
 
     private static String fingerprint(CanonicalGraphResource resource) {
+        resource = darkgrey.rpg.graph.canonical.CanonicalGraphExecutionOrder.normalize(resource);
         StringBuilder text = new StringBuilder();
         text.append(resource.getSchemaVersion())
             .append('|')

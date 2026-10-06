@@ -47,26 +47,40 @@ public final class CreatorUxProbe {
 
         NominatorCatalog.PackageChoice p = new NominatorCatalog.PackageChoice(
             "A",
-            "A:story",
+            "ST-AAAA-BBBB-CCCC-DDDD",
             "Alpha",
-            Arrays.asList("X:npc"),
-            Arrays.asList("X:key"),
-            Arrays.asList("X:keys"));
+            Arrays.asList("ST-AAAA-BBBB-CCCC-DDDD~actor~r11111111111111111111111111111111"),
+            Arrays.asList("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222"),
+            Arrays.asList("ST-AAAA-BBBB-CCCC-DDDD~item_group~r33333333333333333333333333333333"));
         NominatorCatalog.PackageChoice q = new NominatorCatalog.PackageChoice(
             "B",
-            "B:story",
+            "ST-EEEE-FFFF-GGGG-HHHH",
             "Beta",
-            Arrays.asList("X:npc"),
-            Arrays.asList("X:key"),
-            Arrays.asList("X:keys"));
+            Arrays.asList("ST-AAAA-BBBB-CCCC-DDDD~actor~r11111111111111111111111111111111"),
+            Arrays.asList("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222"),
+            Arrays.asList("ST-AAAA-BBBB-CCCC-DDDD~item_group~r33333333333333333333333333333333"));
         NominatorCatalog catalog = new NominatorCatalog(
             Collections.<NominatorCatalog.Story>emptyList(),
             Arrays.asList(
-                new NominatorCatalog.Actor("X:npc", "Keeper", "individual", "A:story", "", Arrays.asList("tavern"))),
-            Arrays.asList(new NominatorCatalog.Item("X:key", "Silver", Arrays.asList("unlock"))),
-            Arrays.asList(new NominatorCatalog.Item("X:keys", "Keys", Arrays.asList("unlock"))),
+                new NominatorCatalog.Actor(
+                    "ST-AAAA-BBBB-CCCC-DDDD~actor~r11111111111111111111111111111111",
+                    "Keeper",
+                    "individual",
+                    "ST-AAAA-BBBB-CCCC-DDDD",
+                    "",
+                    Arrays.asList("tavern"))),
+            Arrays.asList(
+                new NominatorCatalog.Item(
+                    "ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222",
+                    "Silver",
+                    Arrays.asList("unlock"))),
+            Arrays.asList(
+                new NominatorCatalog.Item(
+                    "ST-AAAA-BBBB-CCCC-DDDD~item_group~r33333333333333333333333333333333",
+                    "Keys",
+                    Arrays.asList("unlock"))),
             Arrays.asList(p, q));
-        for (String query : new String[] { "X:npc", "Keeper", "tavern" }) {
+        for (String query : new String[] { "角色", "Keeper", "tavern" }) {
             java.util.List<NominatorGlobalSearch.Row> rows = NominatorGlobalSearch.search(catalog, "A", query, false);
             require(rows.size() == 2 && rows.get(1).source == q, "global package-scoped actor search");
         }
@@ -86,9 +100,13 @@ public final class CreatorUxProbe {
 
         ItemIdentitySavedData items = new ItemIdentitySavedData();
         ItemStackDefinition definition = new ItemStackDefinition("minecraft:stick", 0, null);
-        items.bindItem("X:key", definition);
-        items.addGroupMember("X:keys", new ItemGroupMember(ItemMatchMode.EXACT, definition));
-        items.addGroupMember("Y:tools", new ItemGroupMember(ItemMatchMode.FUZZY, definition));
+        items.bindItem("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222", definition);
+        items.addGroupMember(
+            "ST-AAAA-BBBB-CCCC-DDDD~item_group~r33333333333333333333333333333333",
+            new ItemGroupMember(ItemMatchMode.EXACT, definition));
+        items.addGroupMember(
+            "ST-EEEE-FFFF-GGGG-HHHH~item_group~r44444444444444444444444444444444",
+            new ItemGroupMember(ItemMatchMode.FUZZY, definition));
         NBTTagCompound itemTag = new NBTTagCompound();
         items.writeToNBT(itemTag);
         ByteBuf bytes = Unpooled.buffer();
@@ -99,11 +117,11 @@ public final class CreatorUxProbe {
         ItemIdentitySavedData client = new ItemIdentitySavedData();
         client.readFromNBT(decoded.data);
         require(
-            client.getItem("X:key")
+            client.getItem("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222")
                 .equals(definition)
-                && client.getGroup("X:keys")
+                && client.getGroup("ST-AAAA-BBBB-CCCC-DDDD~item_group~r33333333333333333333333333333333")
                     .size() == 1
-                && client.getGroup("Y:tools")
+                && client.getGroup("ST-EEEE-FFFF-GGGG-HHHH~item_group~r44444444444444444444444444444444")
                     .size() == 1,
             "matcher catalog survives transport with groups");
         require(client.getRevision() == items.getRevision(), "catalog revision survives transport");
@@ -111,7 +129,7 @@ public final class CreatorUxProbe {
             net.minecraft.item.ItemStack stick = new net.minecraft.item.ItemStack(net.minecraft.init.Items.stick);
             require(
                 client.matchingItemIds(stick)
-                    .contains("X:key"),
+                    .contains("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222"),
                 "exact stack matching");
             require(
                 client.matchingGroupIds(stick)
@@ -124,11 +142,11 @@ public final class CreatorUxProbe {
             stick.stackSize = 16;
             require(
                 client.matchingItemIds(stick)
-                    .contains("X:key"),
+                    .contains("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222"),
                 "stack count not identity");
             System.out.println("ITEM_INSPECT_LIVE_MATCH_PROBE=PASS");
         }
-        items.unbindItem("X:key");
+        items.unbindItem("ST-AAAA-BBBB-CCCC-DDDD~item~r22222222222222222222222222222222");
         require(items.getRevision() != client.getRevision(), "revision invalidates old catalog");
         for (byte[] invalid : new byte[][] { {}, { 2, 0, 0, 0, 1, 0 }, { 0, 0 }, { 1, 0, 0, 99 }, { 0, 0, 0, 0, 0 },
             { 0, 0, 0, 0, 2, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 16, 0, 1, 0 } }) {

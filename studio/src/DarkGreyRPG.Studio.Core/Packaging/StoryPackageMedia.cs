@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -43,14 +43,19 @@ internal static class StoryPackageMedia
         return refs;
     }
 
-    internal static void CopyReachable(string projectRoot, string packageRoot, StoryPackageRequiredResources required)
+    internal static void CopyReachable(string projectRoot, string packageRoot, StoryPackageRequiredResources required, Func<string, byte[]?>? externalMedia = null)
     {
         foreach (var mediaRef in Collect(required, path => File.ReadAllText(Path.Combine(packageRoot, path))))
         {
             var source = Path.Combine(projectRoot, "resources", mediaRef);
             var target = Path.Combine(packageRoot, mediaRef);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(source, target, false);
+            if (File.Exists(source)) File.Copy(source, target, false);
+            else
+            {
+                var bytes = externalMedia?.Invoke(mediaRef) ?? throw new StoryPackageException("Referenced media is missing: " + mediaRef);
+                File.WriteAllBytes(target, bytes);
+            }
             using (var stream = File.OpenRead(target)) Validate(mediaRef, stream);
             required.Media.Add(mediaRef);
         }

@@ -1,0 +1,32 @@
+{
+  "frames": {},
+  "schema_version": 1,
+  "graphs": {
+    "story:ST-2345-6789-ABCD-EFGH": {
+      "start": {
+        "x": 15,
+        "y": 20
+      },
+      "session": {
+        "x": 340,
+        "y": 20
+      },
+      "task": {
+        "x": 665,
+        "y": 20
+      },
+      "terminal": {
+        "x": 1020,
+        "y": 20
+      },
+      "fixture-放弃": {
+        "x": 15,
+        "y": 1000
+      },
+      "fixture-完成": {
+        "x": 340,
+        "y": 1000
+      }
+    }
+  }
+}

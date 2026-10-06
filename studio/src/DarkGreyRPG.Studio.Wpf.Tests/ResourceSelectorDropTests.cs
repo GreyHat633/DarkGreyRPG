@@ -31,15 +31,15 @@ public sealed class ResourceSelectorDropTests
             (GraphScope.Task, "objective", CanonicalTaskObjectiveSchema.SubmitItem) })
         {
             var node = GraphNodeFactory.Create(scope, type, "node");
-            if (type == "start") StoryStartSchema.InitializeDefault(node, "entry", StoryStartSchema.ActorInteraction, "actor_a");
+            if (type == "start") StoryStartSchema.InitializeDefault(node, "entry", StoryStartSchema.ActorInteraction, "ST-2345-6789-ABCD-EFGH~actor~actor_a");
             if (type == "action") Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(node, subtype, out _));
-            if (type == "objective") Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(node, subtype, "actor_a", out _));
+            if (type == "objective") Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(node, subtype, "ST-2345-6789-ABCD-EFGH~actor~actor_a", out _));
             using var workspace = new CanonicalStoryWorkspaceViewModel(
-                new(GraphResourceKind.Story, "story", "Story", new GraphDocument(scope == GraphScope.StoryFlow ? [node] : [])),
-                actors: [new ActorResourceInfo("actor_a", "同名角色", "a.json", []), new ActorResourceInfo("actor_b", "同名角色", "b.json", [])],
-                sessions: scope == GraphScope.Session ? [new(GraphResourceKind.Session, "session", "Session", new GraphDocument([node]))] : [],
-                tasks: scope == GraphScope.Task ? [new(GraphResourceKind.Task, "task", "Task", new GraphDocument([node]))] : [],
-                items: [new IndividualItemResource { ItemId = "item_a", DisplayName = "同名物品" }, new IndividualItemResource { ItemId = "item_b", DisplayName = "同名物品" }]);
+                new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument(scope == GraphScope.StoryFlow ? [node] : [])),
+                actors: [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor_a", "同名角色", "a.json", []), new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor_b", "同名角色", "b.json", [])],
+                sessions: scope == GraphScope.Session ? [new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument([node]))] : [],
+                tasks: scope == GraphScope.Task ? [new(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([node]))] : [],
+                items: [new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_a", DisplayName = "同名物品" }, new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_b", DisplayName = "同名物品" }]);
             if (scope == GraphScope.Session) workspace.OpenGraphResource(workspace.SessionItems.Single());
             if (scope == GraphScope.Task) workspace.OpenGraphResource(workspace.TaskItems.Single());
             var full = new CanonicalStoryWorkspaceView(workspace) { Width = 1500, Height = 1000 };
@@ -69,7 +69,7 @@ public sealed class ResourceSelectorDropTests
                 {
                     Assert.IsTrue(selector.AllowDrop, $"{type}/{subtype}: selector must enable native drops");
                     var isActor = selector.Items.OfType<CanonicalSessionSpeakerOption>().Any();
-                    ICanonicalStoryTreeItem resource = isActor ? workspace.ActorItems.Single(a => a.Id == "actor_b") : workspace.ItemItems.Single(i => i.Id == "item_b");
+                    ICanonicalStoryTreeItem resource = isActor ? workspace.ActorItems.Single(a => a.Id == "ST-2345-6789-ABCD-EFGH~actor~actor_b") : workspace.ItemItems.Single(i => i.Id == "ST-2345-6789-ABCD-EFGH~item~item_b");
                     var before = workspace.ActiveGraphHost.Graph.ToJson();
                     var moduleProperty = type == "reward" ? "entries" : type == "start" ? "triggers" : null;
                     var beforeModules = moduleProperty is null ? [] : workspace.ActiveGraphHost.Graph.Nodes.Single().Properties[moduleProperty].EnumerateArray().Select(e => e.GetRawText()).ToArray();

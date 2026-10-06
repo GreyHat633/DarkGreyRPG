@@ -12,13 +12,12 @@
             <Button Content="返回上级流程" Command="{Binding BackCommand}" Margin="0,0,12,0" Padding="10,5"/>
             <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="20" TextTrimming="CharacterEllipsis"/>
         </DockPanel>
-        <graph:CanonicalGraphEditorView x:Name="PreviewGraph" Grid.Row="1" Host="{Binding GraphPreview.Host}" IsReadOnly="True">
+        <graph:CanonicalGraphEditorView x:Name="PreviewGraph" Grid.Row="1" Host="{Binding PreviewHost}" IsReadOnly="True">
             <graph:CanonicalGraphEditorView.Style><Style TargetType="graph:CanonicalGraphEditorView"><Style.Triggers><DataTrigger Binding="{Binding HasGraph}" Value="False"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></graph:CanonicalGraphEditorView.Style>
         </graph:CanonicalGraphEditorView>
         <StackPanel Grid.Row="1">
             <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasGraph}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-            <TextBlock Text="{Binding Choice.Kind}" FontSize="12"/>
-            <TextBlock Text="{Binding Choice.Id}" Margin="0,8,0,16" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Choice.TypeLabel}" FontSize="12"/>
             <TextBlock Text="{Binding Choice.Provider}" TextWrapping="Wrap"/>
         </StackPanel>
         <Button Grid.Row="2" HorizontalAlignment="Right" Margin="0,12,0,0" Width="88" Height="32" IsCancel="True" Content="关闭"/>

@@ -13,6 +13,8 @@ public class CommonProxy {
 
     public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {}
 
+    public void acceptPackageManager(long request, net.minecraft.nbt.NBTTagCompound data) {}
+
     public void acceptGramophone(darkgrey.rpg.gramophone.GramophonePacket packet) {}
 
     public void acceptGramophoneMedia(darkgrey.rpg.gramophone.GramophoneMediaPacket packet) {}

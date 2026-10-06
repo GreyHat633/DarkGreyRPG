@@ -1,0 +1,9 @@
+{
+  "Start": "2026-09-23T07:10:11.5187883+08:00",
+  "End": "2026-09-23T07:10:35.6296327+08:00",
+  "ProcessId": 82020,
+  "ReadBytesDelta": 11184,
+  "WriteBytesDelta": 6848,
+  "ReadOperationsDelta": 338,
+  "WriteOperationsDelta": 320
+}

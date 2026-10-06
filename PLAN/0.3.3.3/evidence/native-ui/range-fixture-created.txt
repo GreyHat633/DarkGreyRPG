@@ -1,0 +1,13 @@
+command=fixture
+tp Native0333 -154 94 206 result=1
+time set day result=1
+weather clear result=1
+setblock -160 90 200 darkgrey_rpg:gramophone 0 replace {radius:2,enabled:0} result=1
+setblock -162 88 198 minecraft:wool 14 result=1
+setblock -162 88 203 minecraft:wool 14 result=1
+setblock -162 93 198 minecraft:wool 14 result=1
+setblock -162 93 203 minecraft:wool 14 result=1
+setblock -157 88 198 minecraft:wool 14 result=1
+setblock -157 88 203 minecraft:wool 14 result=1
+setblock -157 93 198 minecraft:wool 14 result=1
+setblock -157 93 203 minecraft:wool 14 result=1

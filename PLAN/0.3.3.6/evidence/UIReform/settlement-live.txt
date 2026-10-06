@@ -1,0 +1,14 @@
+dgr debug task emit_kill Native0336 ST-AAAA-BBBB-CCCC-DDDD~actor~target 1
+§a[DarkGrey RPG] §rDebug Task event: candidates=1, changed=1, settled=0
+dgr debug story state Native0336 ST-AAAA-BBBB-CCCC-DDDD
+§b[DarkGrey RPG] §rCanonical Story state: ST-AAAA-BBBB-CCCC-DDDD status=ACTIVE, wait=TASK, node=placement, logic={}
+dgr debug task emit_kill Native0336 ST-EEEE-FFFF-GGGG-HHHH~actor~target 1
+§a[DarkGrey RPG] §rDebug Task event: candidates=1, changed=1, settled=0
+dgr debug story state Native0336 ST-EEEE-FFFF-GGGG-HHHH
+§b[DarkGrey RPG] §rCanonical Story state: ST-EEEE-FFFF-GGGG-HHHH status=ACTIVE, wait=TASK, node=placement, logic={}
+dgr debug task emit_kill Native0336 ST-AAAA-BBBB-CCCC-DDDD~actor~target 3
+§a[DarkGrey RPG] §rDebug Task event: candidates=0, changed=0, settled=0
+dgr debug task emit_kill Native0336 ST-EEEE-FFFF-GGGG-HHHH~actor~target 3
+§a[DarkGrey RPG] §rDebug Task event: candidates=0, changed=0, settled=0
+save-all
+Saving...Saved the world

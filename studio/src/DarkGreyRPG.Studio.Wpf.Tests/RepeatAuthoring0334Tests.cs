@@ -11,7 +11,7 @@ public sealed class RepeatAuthoring0334Tests
     [STATestMethod]
     public void ChangingDetailModeInterpolatesFromCurrentHeightInBothDirections()
     {
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Story, "story", "Story", new([GraphNodeFactory.CreateStoryStart("start")])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new([GraphNodeFactory.CreateStoryStart("start")])));
         using var owner = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         owner.RepeatMode = "cooldown";
         var view = new DarkGreyRPG.Studio.Views.Graph.StoryRepeatEditor { DataContext = owner, VerticalAlignment = System.Windows.VerticalAlignment.Top };
@@ -64,7 +64,7 @@ public sealed class RepeatAuthoring0334Tests
     public void ModeChangeCommitsPolicyAndConditionInOneUndoAndPreservesDisabledRule()
     {
         var start = GraphNodeFactory.CreateStoryStart("start");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Story, "story", "Story", new([start])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new([start])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.AreEqual("once", inline.RepeatMode);
@@ -87,7 +87,7 @@ public sealed class RepeatAuthoring0334Tests
     {
         var start = GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start");
         StoryStartSchema.InitializeDefault(start, "trigger");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Story, "story", "Story", new([start])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new([start])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         inline.IsRepeatable = true;

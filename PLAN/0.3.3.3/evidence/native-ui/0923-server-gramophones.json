@@ -1,0 +1,74 @@
+[
+  {
+    "instance": "ddde957f-887b-45b6-a213-0245ab06c459",
+    "x": -118,
+    "y": 93,
+    "z": 203,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "https://music.163.com/song?id=416892104",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 0,
+    "revision": 0
+  },
+  {
+    "instance": "e3291d2b-c634-4a22-b9ba-77d2c324da0d",
+    "x": -120,
+    "y": 91,
+    "z": 200,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "local:c94ef1650398eed82bb2a8d59d9818cdd510c56a91b53f98c19af9ba849f496b",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 1,
+    "revision": 14
+  },
+  {
+    "instance": "ff1e4bb6-671c-4f08-854f-077ec7d53b22",
+    "x": -116,
+    "y": 93,
+    "z": 203,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "https://music.163.com/song?id=416892104",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 0,
+    "revision": 0
+  },
+  {
+    "instance": "ac763732-349a-47fe-b318-b4e45c1c553e",
+    "x": -114,
+    "y": 91,
+    "z": 208,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 0,
+    "revision": 0
+  },
+  {
+    "instance": "e3431236-34d0-45e7-87b1-4b019beeb6b0",
+    "x": -105,
+    "y": 69,
+    "z": 208,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "https://y.qq.com/n/ryqq/songDetail/001ES52Q3qN0u7",
+    "radius": 16,
+    "enabled": 0,
+    "redstone": 1,
+    "revision": 7
+  },
+  {
+    "instance": "e6bf1f66-4fb3-483e-87ed-bd659c345f77",
+    "x": -104,
+    "y": 70,
+    "z": 208,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 0,
+    "revision": 0
+  }
+]

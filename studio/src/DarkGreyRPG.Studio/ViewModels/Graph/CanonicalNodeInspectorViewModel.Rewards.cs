@@ -12,7 +12,7 @@ public sealed partial class CanonicalNodeInspectorViewModel
     public bool IsTaskReward => IsTaskNode && NodeType == CanonicalTaskRewardSchema.NodeType;
     public ObservableCollection<CanonicalTaskRewardEntryViewModel> RewardEntries { get; } = [];
     public RelayCommand AddRewardEntryCommand { get; }
-    public IReadOnlyList<CanonicalResourceSelectionOption> RewardItemOptions { get; }
+    public IReadOnlyList<CanonicalResourceSelectionOption> RewardItemOptions { get; private set; }
 
     private void AddRewardEntry()
     {
@@ -112,6 +112,12 @@ public sealed class CanonicalTaskRewardEntryViewModel : ObservableObject
     }
     public bool IsItem => _type == "item";
     public IReadOnlyList<CanonicalResourceSelectionOption> ItemOptions => _owner.RewardItemOptions;
+    internal void RefreshResourceOptions()
+    {
+        _projecting = true;
+        try { OnPropertyChanged(nameof(ItemOptions)); OnPropertyChanged(nameof(SelectedItem)); }
+        finally { _projecting = false; }
+    }
     public CanonicalResourceSelectionOption? SelectedItem
     {
         get => ItemOptions.FirstOrDefault(item => item.Id == _item)

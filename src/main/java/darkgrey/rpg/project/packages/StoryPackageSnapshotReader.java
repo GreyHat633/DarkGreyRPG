@@ -37,14 +37,26 @@ final class StoryPackageSnapshotReader {
     private StoryPackageSnapshotReader() {}
 
     static Result read(DgrsArchiveReader archive, StoryPackageManifest manifest) throws ProjectLoadException {
+        return read(archive, manifest, true);
+    }
+
+    static Result read(DgrsArchiveReader archive, StoryPackageManifest manifest, boolean completeContainer)
+        throws ProjectLoadException {
         if (archive == null || manifest == null)
             throw new IllegalArgumentException("archive and manifest are required");
         StoryPackageManifest.RequiredResources required = manifest.getRequiredResources();
-        for (String path : archive.getEntryNames()) if (path.startsWith("media/") && !path.endsWith("/")
+        for (String path : archive.getEntryNames()) if (completeContainer && path.startsWith("media/")
+            && !path.endsWith("/")
             && !required.getMedia()
                 .contains(path))
             throw new ProjectLoadException("Unreachable media entry: " + path);
         Map<String, byte[]> declaredBytes = requiredBytes(archive, required);
+        Set<String> completePaths = new LinkedHashSet<String>(declaredBytes.keySet());
+        completePaths.addAll(required.getMedia());
+        completePaths.add("manifest.json");
+        completePaths.add("project.json");
+        if (completeContainer && !completePaths.equals(new LinkedHashSet<String>(archive.getEntryNames())))
+            throw new ProjectLoadException("DGRS contains undeclared entries");
         StoryPackageMediaValidation.validate(manifest, archive, declaredBytes);
         declaredBytes.put("project.json", archive.readBytes("project.json"));
         ProjectDefinition project = ProjectRepository
@@ -111,23 +123,14 @@ final class StoryPackageSnapshotReader {
         CanonicalProjectContent canonical;
         try {
             CanonicalProjectContentLoader loader = new CanonicalProjectContentLoader();
-            canonical = manifest.isDgrsV1()
-                ? loader.loadPackageContentPartial(
-                    canonicalStories,
-                    sessions,
-                    tasks,
-                    memberships,
-                    actors.keySet(),
-                    items.keySet(),
-                    itemGroups.keySet())
-                : loader.loadPackageContent(
-                    canonicalStories,
-                    sessions,
-                    tasks,
-                    memberships,
-                    actors.keySet(),
-                    items.keySet(),
-                    itemGroups.keySet());
+            canonical = loader.loadPackageContent(
+                canonicalStories,
+                sessions,
+                tasks,
+                memberships,
+                actors.keySet(),
+                items.keySet(),
+                itemGroups.keySet());
         } catch (CanonicalProjectContentException exception) {
             throw new ProjectLoadException(
                 "Could not load canonical DGRS content: " + exception.getMessage(),

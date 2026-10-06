@@ -6,10 +6,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressJson;
+
 /** Paired with Studio DynamicContentText. Unmarked historical strings are always literal. */
 public final class DynamicContentText {
 
-    public static final String PREFIX = "\u001eDGR1\u001f";
+    public static final String PREFIX = "\u001eDGR2\u001f";
 
     public interface Resolver {
 
@@ -19,6 +22,8 @@ public final class DynamicContentText {
     private DynamicContentText() {}
 
     public static String resolve(String value, Resolver resolver) {
+        if (value != null && value.startsWith("\u001eDGR1\u001f"))
+            throw new IllegalArgumentException("Legacy dynamic identity format is unsupported.");
         if (value == null || !value.startsWith(PREFIX)) return value == null ? "" : value;
         if (value.length() > 1048576) throw new IllegalArgumentException("Dynamic envelope is too long.");
         validateJson(value.substring(PREFIX.length()));
@@ -43,7 +48,7 @@ public final class DynamicContentText {
                 if (!"type".equals(field.getKey()) && !(item && "item_id".equals(field.getKey()))
                     && !(actor && "actor_id".equals(field.getKey())))
                     throw new IllegalArgumentException("Unknown dynamic content field.");
-            String id = item ? string(object, "item_id") : actor ? string(object, "actor_id") : null;
+            String id = item || actor ? address(object, actor ? "actor_id" : "item_id", actor) : null;
             if (id != null && id.trim()
                 .isEmpty()) throw new IllegalArgumentException("Missing item identity.");
             String resolved = resolver.resolve(type, id);
@@ -67,11 +72,14 @@ public final class DynamicContentText {
                     reader.beginObject();
                     java.util.Set<String> fields = new java.util.HashSet<String>();
                     while (reader.hasNext()) {
-                        if (!fields.add(reader.nextName()))
-                            throw new IllegalArgumentException("Duplicate dynamic field.");
-                        if (reader.peek() != com.google.gson.stream.JsonToken.STRING)
-                            throw new IllegalArgumentException("Expected dynamic string.");
-                        reader.nextString();
+                        String field = reader.nextName();
+                        if (!fields.add(field)) throw new IllegalArgumentException("Duplicate dynamic field.");
+                        if ("item_id".equals(field) || "actor_id".equals(field)) ResourceAddressJson.read(reader);
+                        else {
+                            if (reader.peek() != com.google.gson.stream.JsonToken.STRING)
+                                throw new IllegalArgumentException("Expected dynamic string.");
+                            reader.nextString();
+                        }
                     }
                     reader.endObject();
                 }
@@ -82,6 +90,21 @@ public final class DynamicContentText {
             reader.close();
         } catch (java.io.IOException invalid) {
             throw new IllegalArgumentException("Invalid dynamic JSON.", invalid);
+        }
+    }
+
+    private static String address(JsonObject object, String field, boolean actor) {
+        try {
+            ResourceAddress address = ResourceAddressJson.parse(
+                object.has(field) ? object.get(field)
+                    .toString() : null);
+            if (actor ? address.getKind() != ResourceAddress.Kind.ACTOR
+                : address.getKind() != ResourceAddress.Kind.ITEM
+                    && address.getKind() != ResourceAddress.Kind.ITEM_GROUP)
+                throw new IllegalArgumentException("Dynamic resource kind mismatch");
+            return address.toKey();
+        } catch (java.io.IOException exception) {
+            throw new IllegalArgumentException("Invalid dynamic resource address", exception);
         }
     }
 

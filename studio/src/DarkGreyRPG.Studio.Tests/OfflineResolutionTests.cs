@@ -8,23 +8,23 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class OfflineResolutionTests
 {
     [TestMethod]
-    public void MissingCanonicalMemberDiagnosticNamesConsumerKindAndFullId()
+    public void MissingCanonicalMemberDiagnosticNamesConsumerKindAndResourceAddress()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "A:story", "Story A"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story A"));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(
-            "A:story",
-            new CanonicalStoryMembershipSet { Actors = ["B:boss"] }));
+            "ST-2345-6789-ABCD-EFGH",
+            referencedResources: new CanonicalStoryMembershipSet { Actors = ["ST-JKLM-NPQR-STUV-WXYZ~actor~boss"] }));
 
-        var snapshot = new CanonicalStoryWorkspaceLoader(store).Load("A:story");
+        var snapshot = new CanonicalStoryWorkspaceLoader(store).Load("ST-2345-6789-ABCD-EFGH");
         var issue = snapshot.ValidationErrors.Single();
 
         Assert.AreEqual("story.workspace.member.missing", issue.Code);
-        StringAssert.Contains(issue.Message, "A:story");
+        StringAssert.Contains(issue.Message, "ST-2345-6789-ABCD-EFGH");
         StringAssert.Contains(issue.Message, "Actor");
-        StringAssert.Contains(issue.Message, "B:boss");
-        Assert.AreEqual("B:boss", issue.NodeId);
+        StringAssert.Contains(issue.Message, "ST-JKLM-NPQR-STUV-WXYZ~actor~boss");
+        Assert.AreEqual("ST-JKLM-NPQR-STUV-WXYZ~actor~boss", issue.NodeId);
     }
 
     [TestMethod]

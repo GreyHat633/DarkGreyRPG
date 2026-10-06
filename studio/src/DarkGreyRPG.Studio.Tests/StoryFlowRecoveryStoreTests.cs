@@ -89,8 +89,11 @@ public sealed class StoryFlowRecoveryStoreTests
         using var project = new TestProjectDirectory();
         var official = new StoryRepository(project.Root);
         var resource = new StoryResource { Id = "official_story", DisplayName = "Official" };
-        official.SaveStory(resource);
         var officialPath = Path.Combine(official.StoriesDirectory, "official_story.json");
+        // Recovery inspection must preserve pre-existing legacy bytes; opening
+        // them as a current project is deliberately unsupported in 0.3.3.6.
+        Directory.CreateDirectory(official.StoriesDirectory);
+        File.WriteAllText(officialPath, StorySerializer.Serialize(resource));
         var before = SHA256.HashData(File.ReadAllBytes(officialPath));
 
         new StoryFlowRecoveryStore(project.Root).Save(new StoryResource

@@ -1,0 +1,30 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+    "Size": 204288,
+    "Version": "0.3.3.6",
+    "HashMatches": true,
+    "SizeMatches": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+    "Size": 1716224,
+    "Version": "0.3.3.6",
+    "HashMatches": true,
+    "SizeMatches": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+    "Size": 1303040,
+    "Version": "1.0.0+99a3253d7186127bdbe37898824ecbd32219f136",
+    "HashMatches": true,
+    "SizeMatches": true
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.6.jar",
+    "Size": 1953461,
+    "Version": null,
+    "HashMatches": true,
+    "SizeMatches": true
+  }
+]

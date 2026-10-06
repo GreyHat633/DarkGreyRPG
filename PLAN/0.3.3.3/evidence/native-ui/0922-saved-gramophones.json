@@ -1,0 +1,38 @@
+[
+  {
+    "instance": "e3291d2b-c634-4a22-b9ba-77d2c324da0d",
+    "x": -120,
+    "y": 91,
+    "z": 200,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "local:5ed750249ec796e71944b80860a7f3054fbd3138b98ece939b17b3d1cbcfd361",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 0,
+    "revision": 6
+  },
+  {
+    "instance": "ac763732-349a-47fe-b318-b4e45c1c553e",
+    "x": -114,
+    "y": 91,
+    "z": 208,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 0,
+    "revision": 0
+  },
+  {
+    "instance": "e3431236-34d0-45e7-87b1-4b019beeb6b0",
+    "x": -105,
+    "y": 69,
+    "z": 208,
+    "id": "darkgrey_rpg.gramophone",
+    "source": "https://y.qq.com/n/ryqq/songDetail/001ES52Q3qN0u7",
+    "radius": 16,
+    "enabled": 1,
+    "redstone": 1,
+    "revision": 6
+  }
+]

@@ -1,0 +1,34 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\actors\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\actor\\r-shared.json",
+    "SHA256": "D91F11EEB137E96CE58068553D3E415CE021B1C25576137EC5E3A6CFB5563A0E"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\items\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\item\\r-shared.json",
+    "SHA256": "0A8E6E79F5C217B63E6A4A3F21FB70F0499C76B2B424C1EBE5ADD21AC57C09D2"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\item_groups\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\item_group\\r-shared.json",
+    "SHA256": "EED88B3294AC872DF6961282E9229FBCF64EE077714515EF84001445FA75FE41"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\resources\\canonical\\memberships\\ST-2345-6789-ABCD-EFGH.json",
+    "SHA256": "FE3FBF2CE956BF55968F6C3C5CF36C9ADD46EF05E7ADE9EF1D31292940169463"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\resources\\canonical\\sessions\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\session\\r-r8bdcb73bfd086c6c9a952e8c6b8dbf3d.json",
+    "SHA256": "20993C28716D786097B8618A64D19CE1AEE20E637D2A91BD8AA0CF3FA9F222E2"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\resources\\canonical\\sessions\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\session\\r-shared.json",
+    "SHA256": "50B76015F48F2A546EAD54B7ADD950DF26C108273612D5F96EF691FCDA163DDB"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\resources\\canonical\\stories\\ST-2345-6789-ABCD-EFGH.json",
+    "SHA256": "F475482BB0B6AB1B3B222BF352A1368F7AC54D74DCD05D62D89ADF9D4255FAB4"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-studio-candidate\\Data\\Projects\\IdentityLive\\resources\\canonical\\tasks\\stories\\ST-2345-6789-ABCD-EFGH\\resources\\task\\r-shared.json",
+    "SHA256": "F1C3FCDE6EF946A5D4446D1B3FED972342F4168FD8B07F1B581FD62218C5AE97"
+  }
+]

@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="911bb681-b1cf-414b-9386-8953d06093fb" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-04 20:42:27" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-04T20:42:27.3805355+08:00" queuing="2026-10-04T20:42:27.3805357+08:00" start="2026-10-04T20:42:26.4885626+08:00" finish="2026-10-04T20:42:27.3867632+08:00" />
+  <TestSettings name="default" id="59d3e91a-9e59-46d7-80e2-780782d6caf7">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-04_20_42_27" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="350b9cfd-d468-4947-9f04-245720d5f07c" testId="189c47f3-5b6d-81aa-8be3-805472915b78" testName="InvalidSavePreservesExistingFileAndDirtyDocument" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1098942" startTime="2026-10-04T20:42:27.1004745+08:00" endTime="2026-10-04T20:42:27.2298459+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="350b9cfd-d468-4947-9f04-245720d5f07c" />
+    <UnitTestResult executionId="9e79044b-201e-4999-a59e-4732274466c8" testId="138ac9b3-a92b-84a1-8e09-67ee5fec5c6c" testName="DeleteRemovesActorFromDiskAndList" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1122269" startTime="2026-10-04T20:42:27.1004537+08:00" endTime="2026-10-04T20:42:27.2298445+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9e79044b-201e-4999-a59e-4732274466c8" />
+    <UnitTestResult executionId="e238a61c-ad7b-4ef7-b961-eeda6ab60f87" testId="19ae6b51-f1a6-84ed-b775-0aec9fa64c99" testName="ChangingSavedIdIsRejected" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1098915" startTime="2026-10-04T20:42:27.1004489+08:00" endTime="2026-10-04T20:42:27.2298445+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e238a61c-ad7b-4ef7-b961-eeda6ab60f87" />
+    <UnitTestResult executionId="923139b4-d8e5-485e-8d69-51067abb2656" testId="127d6678-f500-8fc0-9cf7-69812f2bbb79" testName="DuplicateIdCannotOverwriteExistingActor" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1099055" startTime="2026-10-04T20:42:27.1004589+08:00" endTime="2026-10-04T20:42:27.2298445+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="923139b4-d8e5-485e-8d69-51067abb2656" />
+    <UnitTestResult executionId="028c6396-7e28-44e7-a739-8ab7888b220c" testId="13d80617-2057-86f8-954b-0e582c5a8ee3" testName="DuplicateCopiesFieldsAndAllocatesUniqueIds" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1456742" startTime="2026-10-04T20:42:27.1004642+08:00" endTime="2026-10-04T20:42:27.2632701+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="028c6396-7e28-44e7-a739-8ab7888b220c" />
+    <UnitTestResult executionId="d6817659-400d-4b24-bc79-66f080cfb975" testId="1581fbd4-5162-82c1-878b-e67e623de19d" testName="RenameCollisionPreservesBothExistingActors" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1245017" startTime="2026-10-04T20:42:27.1004800+08:00" endTime="2026-10-04T20:42:27.2408727+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d6817659-400d-4b24-bc79-66f080cfb975" />
+    <UnitTestResult executionId="7281aaec-355b-423f-8dbb-22be77baa759" testId="1bb14fb8-3439-8daa-af53-19cb44507311" testName="CreateAndSavePersistsActorAndClearsDirtyState" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1098838" startTime="2026-10-04T20:42:27.1004697+08:00" endTime="2026-10-04T20:42:27.2298445+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7281aaec-355b-423f-8dbb-22be77baa759" />
+    <UnitTestResult executionId="e668de5b-a999-424f-8f4f-6835989af6cc" testId="1aacf621-4dc7-831e-b9fc-286bebe5700d" testName="ListActorsIsSortedAndContainsPersistedMetadata" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1161543" startTime="2026-10-04T20:42:27.1004847+08:00" endTime="2026-10-04T20:42:27.2325124+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e668de5b-a999-424f-8f4f-6835989af6cc" />
+    <UnitTestResult executionId="66ad7941-c203-4d0a-b5cb-67e7b861f57a" testId="1e10c6c0-dad8-8e65-a82c-b4988538bb9e" testName="PersistedIdentityRenameIsRejectedWithoutChangingTheActor" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1103314" startTime="2026-10-04T20:42:27.1004885+08:00" endTime="2026-10-04T20:42:27.2298445+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="66ad7941-c203-4d0a-b5cb-67e7b861f57a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PersistedIdentityRenameIsRejectedWithoutChangingTheActor" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="1e10c6c0-dad8-8e65-a82c-b4988538bb9e">
+      <Execution id="66ad7941-c203-4d0a-b5cb-67e7b861f57a" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="PersistedIdentityRenameIsRejectedWithoutChangingTheActor" />
+    </UnitTest>
+    <UnitTest name="ChangingSavedIdIsRejected" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="19ae6b51-f1a6-84ed-b775-0aec9fa64c99">
+      <Execution id="e238a61c-ad7b-4ef7-b961-eeda6ab60f87" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="ChangingSavedIdIsRejected" />
+    </UnitTest>
+    <UnitTest name="CreateAndSavePersistsActorAndClearsDirtyState" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="1bb14fb8-3439-8daa-af53-19cb44507311">
+      <Execution id="7281aaec-355b-423f-8dbb-22be77baa759" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="CreateAndSavePersistsActorAndClearsDirtyState" />
+    </UnitTest>
+    <UnitTest name="DuplicateIdCannotOverwriteExistingActor" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="127d6678-f500-8fc0-9cf7-69812f2bbb79">
+      <Execution id="923139b4-d8e5-485e-8d69-51067abb2656" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="DuplicateIdCannotOverwriteExistingActor" />
+    </UnitTest>
+    <UnitTest name="InvalidSavePreservesExistingFileAndDirtyDocument" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="189c47f3-5b6d-81aa-8be3-805472915b78">
+      <Execution id="350b9cfd-d468-4947-9f04-245720d5f07c" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="InvalidSavePreservesExistingFileAndDirtyDocument" />
+    </UnitTest>
+    <UnitTest name="ListActorsIsSortedAndContainsPersistedMetadata" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="1aacf621-4dc7-831e-b9fc-286bebe5700d">
+      <Execution id="e668de5b-a999-424f-8f4f-6835989af6cc" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="ListActorsIsSortedAndContainsPersistedMetadata" />
+    </UnitTest>
+    <UnitTest name="RenameCollisionPreservesBothExistingActors" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="1581fbd4-5162-82c1-878b-e67e623de19d">
+      <Execution id="d6817659-400d-4b24-bc79-66f080cfb975" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="RenameCollisionPreservesBothExistingActors" />
+    </UnitTest>
+    <UnitTest name="DuplicateCopiesFieldsAndAllocatesUniqueIds" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="13d80617-2057-86f8-954b-0e582c5a8ee3">
+      <Execution id="028c6396-7e28-44e7-a739-8ab7888b220c" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="DuplicateCopiesFieldsAndAllocatesUniqueIds" />
+    </UnitTest>
+    <UnitTest name="DeleteRemovesActorFromDiskAndList" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.tests\bin\release\net10.0\darkgreyrpg.studio.tests.dll" id="138ac9b3-a92b-84a1-8e09-67ee5fec5c6c">
+      <Execution id="9e79044b-201e-4999-a59e-4732274466c8" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Tests.ActorRepositoryTests" name="DeleteRemovesActorFromDiskAndList" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="189c47f3-5b6d-81aa-8be3-805472915b78" executionId="350b9cfd-d468-4947-9f04-245720d5f07c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="138ac9b3-a92b-84a1-8e09-67ee5fec5c6c" executionId="9e79044b-201e-4999-a59e-4732274466c8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19ae6b51-f1a6-84ed-b775-0aec9fa64c99" executionId="e238a61c-ad7b-4ef7-b961-eeda6ab60f87" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="127d6678-f500-8fc0-9cf7-69812f2bbb79" executionId="923139b4-d8e5-485e-8d69-51067abb2656" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13d80617-2057-86f8-954b-0e582c5a8ee3" executionId="028c6396-7e28-44e7-a739-8ab7888b220c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1581fbd4-5162-82c1-878b-e67e623de19d" executionId="d6817659-400d-4b24-bc79-66f080cfb975" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1bb14fb8-3439-8daa-af53-19cb44507311" executionId="7281aaec-355b-423f-8dbb-22be77baa759" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1aacf621-4dc7-831e-b9fc-286bebe5700d" executionId="e668de5b-a999-424f-8f4f-6835989af6cc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e10c6c0-dad8-8e65-a82c-b4988538bb9e" executionId="66ad7941-c203-4d0a-b5cb-67e7b861f57a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="9" executed="9" passed="9" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Tests\bin\Release\net10.0\DarkGreyRPG.Studio.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

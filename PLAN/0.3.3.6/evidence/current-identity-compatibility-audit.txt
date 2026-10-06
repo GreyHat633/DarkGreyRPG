@@ -1,0 +1,37 @@
+studio/src/DarkGreyRPG.Studio.Core/Packaging/OfflineDgrs.cs:14:namespace DarkGreyRPG.Studio.Core.Packaging;
+studio/src/DarkGreyRPG.Studio.Core/Identity\DgrResourceKey.cs:1:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\ResourceAddressKeyJsonConverter.cs:4:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\CurrentProjectInventory.cs:5:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\CurrentProjectInventory.cs:7:/// <summary>Detached current-format content; no Namespace policy or migration side effects.</summary>
+studio/src/DarkGreyRPG.Studio.Core/Identity\CurrentProjectValidator.cs:9:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\CurrentProjectValidator.cs:26:            var errors = GraphScopePolicy.Validate(graph.Graph!, GraphResourceScopeAdapter.GetScope(graph.ResourceKind), compatibilityMode: true)
+studio/src/DarkGreyRPG.Studio.Core/Identity\CurrentProjectValidator.cs:27:                .Concat(GraphNodeShapeValidator.Validate(graph.Graph!, GraphResourceScopeAdapter.GetScope(graph.ResourceKind), compatibilityMode: true))
+studio/src/DarkGreyRPG.Studio.Core/Identity\ResourceAddress.cs:5:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\ResourceAddress.cs:82:/// <summary>Only structured current-format addresses; no string or Namespace fallback.</summary>
+studio/src/DarkGreyRPG.Studio.Core/Identity\StoryUid.cs:5:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\StoryResourceCopyMap.cs:3:namespace DarkGreyRPG.Studio.Core.Identity;
+studio/src/DarkGreyRPG.Studio.Core/Identity\ResourceCopyRemapper.cs:9:namespace DarkGreyRPG.Studio.Core.Identity;
+src/main/java/darkgrey/rpg/identity\EntityDgrIdentityResolver.java:29:    /** Resolves against server-owned external registries, then legacy CNPC data. */
+src/main/java/darkgrey/rpg/identity\EntityDgrIdentityResolver.java:38:            // Offline/client probes have no server SavedData; legacy fallback remains safe.
+src/main/java/darkgrey/rpg/identity\EntityDgrIdentityResolver.java:48:    /** Test/compatibility seam when the authoritative registry type is already known. */
+src/main/java/darkgrey/rpg/identity\EntityDgrIdentityResolver.java:86:            String legacy = CustomNpcActorBinding.getActorId(entity);
+src/main/java/darkgrey/rpg/identity\EntityDgrIdentityResolver.java:87:            if (!blank(legacy)) return Resolution.single(Source.LEGACY_CUSTOMNPC, legacy);
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:11: * only for diagnostics and compatibility-assisted transfers.
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:19:    private final String compatibilityKey;
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:25:    public NpcHostIdentity(UUID entityUuid, String entityType, int lastKnownDimension, String compatibilityKey) {
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:28:        if (compatibilityKey != null && compatibilityKey.trim()
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:29:            .isEmpty()) throw new IllegalArgumentException("Compatibility key cannot be blank.");
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:33:        this.compatibilityKey = compatibilityKey == null ? null : compatibilityKey.trim();
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:48:    public String getCompatibilityKey() {
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:49:        return compatibilityKey;
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:59:            && equal(compatibilityKey, other.compatibilityKey);
+src/main/java/darkgrey/rpg/identity\NpcHostIdentity.java:67:        return 31 * result + (compatibilityKey == null ? 0 : compatibilityKey.hashCode());
+src/main/java/darkgrey/rpg/identity\ResourceAddress.java:89:    /** Lossless internal graph/index key, never a Namespace ID or an author-editable field. */
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:125:                set("npc_id", "entity_uuid", "entity_type", "last_dimension", "compatibility_key"),
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:131:            if (value.hasKey("compatibility_key") && !value.hasKey("compatibility_key", 8))
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:132:                throw new IllegalArgumentException("NPC compatibility_key must be a string.");
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:139:            String compatibility = value.hasKey("compatibility_key") ? value.getString("compatibility_key") : null;
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:147:                        compatibility)));
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:171:            if (host.getCompatibilityKey() != null) value.setString("compatibility_key", host.getCompatibilityKey());
+src/main/java/darkgrey/rpg/identity\NpcIdentitySavedData.java:184:        for (String key : expected) if (!key.equals("compatibility_key") && !value.hasKey(key))
+src/main/java/darkgrey/rpg/identity\ResourceAddressJson.java:13:/** Strict structured address codec. Never accepts old Namespace IDs or omitted owners. */

@@ -1,0 +1,232 @@
+[
+  {
+    "FileName": "故事组（2）.dgrs.g",
+    "Manifest": {
+      "format": "dgrs.g",
+      "format_version": 2,
+      "identity_format": "story-uid-v1",
+      "display_name": "故事组（2）",
+      "connections": "resources/group-connections.json",
+      "members": [
+        {
+          "identity_format": "story-uid-v1",
+          "format": "dgrs",
+          "format_version": 2,
+          "producer": "DarkGreyRPGStudio",
+          "producer_version": "0.3.3.6",
+          "schema_version": 2,
+          "package_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "package_version": "0.3.3.6",
+          "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "story_schema_version": 2,
+          "required_resources": {
+            "story": "resources/canonical/stories/ST-AAAA-BBBB-CCCC-DDDD.json",
+            "actors": [
+              "actors/stories/ST-5555-6666-7777-8888/resources/actor/r-npc.json",
+              "actors/stories/ST-9999-AAAA-BBBB-CCCC/resources/actor/r-group.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-collective.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra0.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra1.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra10.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra11.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra12.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra13.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra14.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra15.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra16.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra17.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra18.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra19.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra2.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra20.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra21.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra22.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra23.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra24.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra25.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra26.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra27.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra28.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra29.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra3.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra30.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra31.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra32.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra33.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra34.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra35.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra36.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra37.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra38.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra39.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra4.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra40.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra41.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra42.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra43.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra44.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra45.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra46.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra47.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra48.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra49.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra5.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra50.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra51.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra52.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra53.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra54.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra55.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra56.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra57.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra58.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra59.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra6.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra60.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra61.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra62.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra63.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra64.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra65.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra66.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra67.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra68.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra69.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra7.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra70.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra71.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra72.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra73.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra74.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra75.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra76.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra77.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra78.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra79.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra8.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra80.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra81.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra82.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra83.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra84.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra85.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra86.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra87.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra88.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra89.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra9.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra90.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra91.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra92.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra93.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra94.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra95.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra96.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra97.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra98.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-extra99.json",
+              "actors/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/actor/r-individual.json",
+              "actors/stories/ST-JKLM-NPQR-STUV-WXYZ/resources/actor/r-individual.json"
+            ],
+            "items": [
+              "items/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/item/r-coin.json"
+            ],
+            "item_groups": [
+              "item_groups/stories/ST-AAAA-BBBB-CCCC-DDDD/resources/item_group/r-sword.json"
+            ],
+            "dialogues": [],
+            "quests": [],
+            "canonical_stories": [
+              "resources/canonical/stories/ST-AAAA-BBBB-CCCC-DDDD.json"
+            ],
+            "canonical_memberships": [
+              "resources/canonical/memberships/ST-AAAA-BBBB-CCCC-DDDD.json"
+            ],
+            "sessions": [
+              "resources/canonical/sessions/stories/ST-2345-6789-ABCD-EFGH/resources/session/r-drag.json"
+            ],
+            "tasks": [
+              "resources/canonical/tasks/stories/ST-2345-6789-ABCD-EFGH/resources/task/r-drag.json"
+            ],
+            "media": []
+          }
+        },
+        {
+          "identity_format": "story-uid-v1",
+          "format": "dgrs",
+          "format_version": 2,
+          "producer": "DarkGreyRPGStudio",
+          "producer_version": "0.3.3.6",
+          "schema_version": 2,
+          "package_id": "ST-JKLM-NPQR-STUV-WXYZ",
+          "package_version": "0.3.3.6",
+          "story_id": "ST-JKLM-NPQR-STUV-WXYZ",
+          "story_schema_version": 2,
+          "required_resources": {
+            "story": "resources/canonical/stories/ST-JKLM-NPQR-STUV-WXYZ.json",
+            "actors": [
+              "actors/stories/ST-JKLM-NPQR-STUV-WXYZ/resources/actor/r-collective.json",
+              "actors/stories/ST-JKLM-NPQR-STUV-WXYZ/resources/actor/r-individual.json"
+            ],
+            "items": [
+              "items/stories/ST-JKLM-NPQR-STUV-WXYZ/resources/item/r-coin.json"
+            ],
+            "item_groups": [
+              "item_groups/stories/ST-JKLM-NPQR-STUV-WXYZ/resources/item_group/r-sword.json"
+            ],
+            "dialogues": [],
+            "quests": [],
+            "canonical_stories": [
+              "resources/canonical/stories/ST-JKLM-NPQR-STUV-WXYZ.json"
+            ],
+            "canonical_memberships": [
+              "resources/canonical/memberships/ST-JKLM-NPQR-STUV-WXYZ.json"
+            ],
+            "sessions": [],
+            "tasks": [],
+            "media": []
+          }
+        }
+      ]
+    },
+    "CanonicalStoryFiles": [
+      "resources/canonical/stories/ST-AAAA-BBBB-CCCC-DDDD.json",
+      "resources/canonical/stories/ST-JKLM-NPQR-STUV-WXYZ.json"
+    ]
+  },
+  {
+    "FileName": "显示名称导出验收.dgrs",
+    "Manifest": {
+      "identity_format": "story-uid-v1",
+      "format": "dgrs",
+      "format_version": 2,
+      "producer": "DarkGreyRPGStudio",
+      "producer_version": "0.3.3.6",
+      "schema_version": 2,
+      "package_id": "ST-7UH7-CKAC-QZT3-9FS8",
+      "package_version": "0.3.3.6",
+      "story_id": "ST-7UH7-CKAC-QZT3-9FS8",
+      "story_schema_version": 2,
+      "required_resources": {
+        "story": "resources/canonical/stories/ST-7UH7-CKAC-QZT3-9FS8.json",
+        "actors": [],
+        "items": [],
+        "item_groups": [],
+        "dialogues": [],
+        "quests": [],
+        "canonical_stories": [
+          "resources/canonical/stories/ST-7UH7-CKAC-QZT3-9FS8.json"
+        ],
+        "canonical_memberships": [
+          "resources/canonical/memberships/ST-7UH7-CKAC-QZT3-9FS8.json"
+        ],
+        "sessions": [],
+        "tasks": [],
+        "media": []
+      }
+    },
+    "CanonicalStoryFiles": [
+      "resources/canonical/stories/ST-7UH7-CKAC-QZT3-9FS8.json"
+    ]
+  }
+]

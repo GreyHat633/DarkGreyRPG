@@ -13,13 +13,16 @@ import java.util.UUID;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
+import darkgrey.rpg.identity.StoryUid;
 import darkgrey.rpg.session.runtime.CanonicalSessionSnapshot;
 import darkgrey.rpg.session.runtime.CanonicalSessionStatus;
 
 /** Strict schema-version-1 NBT codec for detached Session instance snapshots. */
 public final class CanonicalSessionInstanceNbtCodec {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     private static final int COMPOUND = 10;
     private static final int LIST = 9;
     private static final int BYTE = 1;
@@ -56,6 +59,7 @@ public final class CanonicalSessionInstanceNbtCodec {
         }
         NBTTagCompound root = new NBTTagCompound();
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         root.setLong("next_transport_id", nextTransportId);
         NBTTagList instances = new NBTTagList();
         List<CanonicalSessionInstanceSnapshot> ordered = new ArrayList<CanonicalSessionInstanceSnapshot>(snapshots);
@@ -83,7 +87,8 @@ public final class CanonicalSessionInstanceNbtCodec {
     }
 
     public static List<CanonicalSessionInstanceSnapshot> decode(NBTTagCompound root) {
-        requireKeys(root, set("schema_version", "next_transport_id", "instances"), "root");
+        requireKeys(root, set("identity_format", "schema_version", "next_transport_id", "instances"), "root");
+        ResourceAddressNbt.requireFormat(root);
         requireType(root, "schema_version", INT);
         requireType(root, "next_transport_id", LONG);
         requireType(root, "instances", LIST);
@@ -108,7 +113,8 @@ public final class CanonicalSessionInstanceNbtCodec {
     }
 
     public static long nextTransportId(NBTTagCompound root) {
-        requireKeys(root, set("schema_version", "next_transport_id", "instances"), "root");
+        requireKeys(root, set("identity_format", "schema_version", "next_transport_id", "instances"), "root");
+        ResourceAddressNbt.requireFormat(root);
         requireType(root, "schema_version", INT);
         requireType(root, "next_transport_id", LONG);
         requireType(root, "instances", LIST);
@@ -128,9 +134,14 @@ public final class CanonicalSessionInstanceNbtCodec {
             "player_uuid",
             instance.getPlayerUuid()
                 .toString());
-        tag.setString("story_id", instance.getStoryId());
+        tag.setString(
+            "story_id",
+            StoryUid.parse(instance.getStoryId())
+                .getValue());
         tag.setString("aggregate_placement_id", instance.getAggregatePlacementId());
-        tag.setString("session_resource_id", instance.getSessionResourceId());
+        tag.setTag(
+            "session_resource_id",
+            ResourceAddressNbt.write(instance.getSessionResourceId(), ResourceAddress.Kind.SESSION));
         tag.setLong("transport_id", instance.getTransportId());
         CanonicalSessionSnapshot runtime = instance.getRuntimeSnapshot();
         tag.setString("current_node_id", runtime.getCurrentNodeId());
@@ -197,9 +208,10 @@ public final class CanonicalSessionInstanceNbtCodec {
         }
         if (!uuid.toString()
             .equals(player.toLowerCase(Locale.ROOT))) throw malformed("invalid player_uuid");
-        String story = string(tag, "story_id");
+        String story = StoryUid.parse(string(tag, "story_id"))
+            .getValue();
         String placement = string(tag, "aggregate_placement_id");
-        String resource = string(tag, "session_resource_id");
+        String resource = ResourceAddressNbt.read(tag, "session_resource_id", ResourceAddress.Kind.SESSION);
         requireType(tag, "transport_id", LONG);
         long transport = tag.getLong("transport_id");
         if (transport <= 0) throw malformed("transport_id must be positive");

@@ -29,12 +29,19 @@ public final class CanonicalStoryServerService {
 
     private final ProjectSnapshot project;
     private final CanonicalSessionSavedData data;
+    private final java.util.function.Predicate<String> startAdmission;
 
     public CanonicalStoryServerService(ProjectSnapshot project, CanonicalSessionSavedData data) {
+        this(project, data, uid -> true);
+    }
+
+    public CanonicalStoryServerService(ProjectSnapshot project, CanonicalSessionSavedData data,
+        java.util.function.Predicate<String> startAdmission) {
         if (project == null || data == null)
             throw new IllegalArgumentException("Canonical Story service inputs are required.");
         this.project = project;
         this.data = data;
+        this.startAdmission = java.util.Objects.requireNonNull(startAdmission, "startAdmission");
         data.bindAvailable(new CanonicalSessionResourceResolver() {
 
             @Override
@@ -51,8 +58,8 @@ public final class CanonicalStoryServerService {
     }
 
     public CanonicalStoryDispatch startByEntry(UUID playerUuid, String storyId, long activationTime) {
-        CanonicalStoryDispatch blocked = blockedStart(playerUuid, storyId);
-        if (blocked != null) return blocked;
+        if (!startAdmission.test(storyId)) return null;
+        if (!isStartEligible(playerUuid, storyId)) return blockedStart(playerUuid, storyId);
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
         return startDispatch(
@@ -66,8 +73,8 @@ public final class CanonicalStoryServerService {
     }
 
     public CanonicalStoryDispatch startByActor(UUID playerUuid, String storyId, String actorId, long activationTime) {
-        CanonicalStoryDispatch blocked = blockedStart(playerUuid, storyId);
-        if (blocked != null) return blocked;
+        if (!startAdmission.test(storyId)) return null;
+        if (!isStartEligible(playerUuid, storyId)) return blockedStart(playerUuid, storyId);
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
         return startDispatch(
@@ -82,8 +89,8 @@ public final class CanonicalStoryServerService {
 
     public CanonicalStoryDispatch startByRegion(UUID playerUuid, String storyId, int dimension, double x, double y,
         double z, long activationTime) {
-        CanonicalStoryDispatch blocked = blockedStart(playerUuid, storyId);
-        if (blocked != null) return blocked;
+        if (!startAdmission.test(storyId)) return null;
+        if (!isStartEligible(playerUuid, storyId)) return blockedStart(playerUuid, storyId);
         CanonicalGraphResource story = story(storyId);
         CanonicalStoryStartConfiguration start = CanonicalStoryStartConfiguration.parse(story);
         return startDispatch(
@@ -193,6 +200,7 @@ public final class CanonicalStoryServerService {
     }
 
     public CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId) {
+        if (!startAdmission.test(storyId)) return CanonicalStoryStartDisposition.CONTAINER_BLOCKED;
         return data.startDisposition(requirePlayer(playerUuid), requireText(storyId, "Story ID"));
     }
 
@@ -209,7 +217,8 @@ public final class CanonicalStoryServerService {
 
     private CanonicalStoryDispatch blockedStart(UUID playerUuid, String storyId) {
         CanonicalStoryStartDisposition disposition = startDisposition(playerUuid, storyId);
-        return disposition.isEligible() ? null : snapshot(playerUuid, storyId).withStartDisposition(disposition);
+        CanonicalStoryDispatch current = snapshot(playerUuid, storyId);
+        return disposition.isEligible() || current == null ? null : current.withStartDisposition(disposition);
     }
 
     /** Collects one choice per Story without changing runtime, including every identity on the interacted entity. */
@@ -301,7 +310,9 @@ public final class CanonicalStoryServerService {
 
     private CanonicalStoryDispatch startDispatch(UUID playerUuid, CanonicalGraphResource resource, String portId,
         CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs, long activationTime) {
+        if (!startAdmission.test(resource.getId())) return null;
         CanonicalStoryStartDisposition disposition = startDisposition(playerUuid, resource.getId());
+        if (!disposition.isEligible() && data.getStorySnapshot(playerUuid, resource.getId()) == null) return null;
         return dispatch(data.startStory(playerUuid, resource, portId, repeatPolicy, logicInputs, activationTime))
             .withStartDisposition(disposition);
     }

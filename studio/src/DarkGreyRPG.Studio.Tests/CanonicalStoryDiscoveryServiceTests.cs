@@ -11,13 +11,13 @@ public sealed class CanonicalStoryDiscoveryServiceTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story", "Canonical Name"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("story"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Canonical Name"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
 
         var snapshot = new CanonicalStoryDiscoveryService(store).Discover();
         var item = snapshot.Items.Single();
 
-        Assert.AreEqual("story", item.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", item.Id);
         Assert.AreEqual("Canonical Name", item.DisplayName);
         Assert.IsNotNull(item.Story);
         Assert.IsNotNull(item.Membership);
@@ -37,21 +37,21 @@ public sealed class CanonicalStoryDiscoveryServiceTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "story_only", "Story Only"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("membership_only"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ", "Story Only"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
 
         var items = new CanonicalStoryDiscoveryService(store).Discover().Items;
 
-        CollectionAssert.AreEqual(new[] { "membership_only", "story_only" }, items.Select(item => item.Id).ToArray());
-        var membershipOnly = items.Single(item => item.Id == "membership_only");
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ" }, items.Select(item => item.Id).ToArray());
+        var membershipOnly = items.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH");
         Assert.IsFalse(membershipOnly.HasStoryRoot);
         Assert.IsTrue(membershipOnly.HasMembershipRoot);
         Assert.IsFalse(membershipOnly.IsComplete);
         Assert.IsFalse(membershipOnly.IsValid);
-        Assert.AreEqual("membership_only", membershipOnly.DisplayName);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", membershipOnly.DisplayName);
         AssertIssue(membershipOnly, "story.discovery.root.missing", "story");
 
-        var storyOnly = items.Single(item => item.Id == "story_only");
+        var storyOnly = items.Single(item => item.Id == "ST-JKLM-NPQR-STUV-WXYZ");
         Assert.IsTrue(storyOnly.HasStoryRoot);
         Assert.IsFalse(storyOnly.HasMembershipRoot);
         Assert.IsFalse(storyOnly.IsComplete);
@@ -60,43 +60,46 @@ public sealed class CanonicalStoryDiscoveryServiceTests
     }
 
     [TestMethod]
-    public void InvalidRootsKeepFilenameIdentityAndDoNotHideValidEntries()
+    public void MalformedRootsRemainVisibleAndValidMembershipUsesContentIdentity()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "valid", "Valid"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("valid"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-5678-9ABC-DEFG-HJKL", "Valid"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-5678-9ABC-DEFG-HJKL"));
         Directory.CreateDirectory(store.StoriesDirectory);
         Directory.CreateDirectory(store.MembershipsDirectory);
-        File.WriteAllText(Path.Combine(store.StoriesDirectory, "malformed.json"), "not json");
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("malformed"));
-        store.Stories.Create(Envelope(GraphResourceKind.Story, "mismatched", "Mismatched Story"));
+        File.WriteAllText(Path.Combine(store.StoriesDirectory, "ST-2345-6789-ABCD-EFGH.json"), "not json");
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
+        store.Stories.Create(Envelope(GraphResourceKind.Story, "ST-3456-789A-BCDE-FGHJ", "Mismatched Story"));
         File.WriteAllText(
-            Path.Combine(store.MembershipsDirectory, "mismatched.json"),
-            CanonicalStoryMembershipSerializer.Serialize(new CanonicalStoryMembershipManifest("other")));
+            Path.Combine(store.MembershipsDirectory, "ST-3456-789A-BCDE-FGHJ.json"),
+            CanonicalStoryMembershipSerializer.Serialize(new CanonicalStoryMembershipManifest("ST-4567-89AB-CDEF-GHJK")));
 
         var snapshot = new CanonicalStoryDiscoveryService(store).Discover();
 
-        CollectionAssert.AreEqual(new[] { "malformed", "mismatched", "valid" }, snapshot.Items.Select(item => item.Id).ToArray());
-        var malformed = snapshot.Items.Single(item => item.Id == "malformed");
-        Assert.AreEqual("malformed", malformed.DisplayName);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH", "ST-3456-789A-BCDE-FGHJ", "ST-4567-89AB-CDEF-GHJK", "ST-5678-9ABC-DEFG-HJKL" }, snapshot.Items.Select(item => item.Id).ToArray());
+        var malformed = snapshot.Items.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", malformed.DisplayName);
         Assert.IsNull(malformed.Story);
         Assert.IsNotNull(malformed.Membership);
         Assert.IsTrue(malformed.IsComplete);
         Assert.IsFalse(malformed.IsValid);
         AssertIssue(malformed, "story.discovery.root.invalid", "story");
 
-        var mismatched = snapshot.Items.Single(item => item.Id == "mismatched");
+        var mismatched = snapshot.Items.Single(item => item.Id == "ST-3456-789A-BCDE-FGHJ");
         Assert.AreEqual("Mismatched Story", mismatched.DisplayName);
         Assert.IsNotNull(mismatched.Story);
         Assert.IsNull(mismatched.Membership);
-        Assert.IsTrue(mismatched.IsComplete);
+        Assert.IsFalse(mismatched.IsComplete);
         Assert.IsFalse(mismatched.IsValid);
-        AssertIssue(mismatched, "story.discovery.root.invalid", "membership");
+        AssertIssue(mismatched, "story.discovery.root.missing", "membership");
+        var contentOwner = snapshot.Items.Single(item => item.Id == "ST-4567-89AB-CDEF-GHJK");
+        Assert.IsNotNull(contentOwner.Membership);
+        AssertIssue(contentOwner, "story.discovery.root.missing", "story");
 
-        Assert.IsTrue(snapshot.Items.Single(item => item.Id == "valid").IsValid);
+        Assert.IsTrue(snapshot.Items.Single(item => item.Id == "ST-5678-9ABC-DEFG-HJKL").IsValid);
         CollectionAssert.AreEqual(
-            new[] { "malformed", "mismatched" },
+            new[] { "ST-2345-6789-ABCD-EFGH", "ST-3456-789A-BCDE-FGHJ", "ST-4567-89AB-CDEF-GHJK" },
             snapshot.Issues.Select(issue => issue.StoryId).ToArray());
     }
 

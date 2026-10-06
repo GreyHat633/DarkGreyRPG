@@ -11,9 +11,9 @@ public sealed class AuthoringSearch0332Tests
     [TestMethod]
     public async Task OlderAsyncSearchCannotOverwriteNewerResults()
     {
-        using var workspace = new CanonicalStoryWorkspaceViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "故事", new([])));
+        using var workspace = new CanonicalStoryWorkspaceViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "故事", new([])));
         var older = new TaskCompletionSource<IReadOnlyList<AuthoringSearchHit>>();
-        var newer = new AuthoringSearchHit("story", GraphResourceKind.Story, "story", null, null, null, "新结果", "新结果");
+        var newer = new AuthoringSearchHit("ST-2345-6789-ABCD-EFGH", GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", null, null, null, "新结果", "新结果");
         workspace.ProjectSearch = query => query == "旧" ? older.Task : Task.FromResult<IReadOnlyList<AuthoringSearchHit>>([newer]);
         var first = workspace.SearchAsync("旧");
         await workspace.SearchAsync("新");
@@ -22,7 +22,7 @@ public sealed class AuthoringSearch0332Tests
         Assert.AreEqual(newer, workspace.SearchResults.Single());
         var background = await Task.Run(() =>
         {
-            using var detached = new CanonicalStoryWorkspaceViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "other", "后台", new([])));
+            using var detached = new CanonicalStoryWorkspaceViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ", "后台", new([])));
             return detached.SearchLoaded("后台");
         });
         Assert.AreEqual(1, background.Count);
@@ -38,8 +38,8 @@ public sealed class AuthoringSearch0332Tests
     public void UnsavedPageSearchRetainsIdentityAfterReorderWithoutMutatingGraph()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var workspace = new CanonicalStoryWorkspaceViewModel(new(GraphResourceKind.Story, "story", "故事", new([])),
-            sessions: [new(GraphResourceKind.Session, "session", "会话", new([line]))]);
+        using var workspace = new CanonicalStoryWorkspaceViewModel(new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "故事", new([])),
+            sessions: [new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "会话", new([line]))]);
         var editor = workspace.SessionEditors.Single();
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         inspector.LinePages.Single().Text = "没有命中";
@@ -64,16 +64,16 @@ public sealed class AuthoringSearch0332Tests
     {
         using var directory = new TemporaryProjectDirectory();
         var store = new CanonicalProjectGraphStore(directory.Path);
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "session", "会话", new([]));
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "会话", new([]));
         store.Sessions.Create(envelope);
-        var path = store.Sessions.GetPath("session");
+        var path = store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~session");
         var before = System.IO.File.ReadAllBytes(path);
         using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
         editor.Host.AddFrame([], 10, 20, 200, 100);
         new CanonicalGraphResourceSaveCoordinator(store).Replace(editor);
         CollectionAssert.AreEqual(before, System.IO.File.ReadAllBytes(path));
         var layout = new CanonicalGraphLayoutStore(directory.Path);
-        Assert.AreEqual("分组注释", layout.LoadFrames("session:session").Single().Title);
+        Assert.AreEqual("分组注释", layout.LoadFrames("session:ST-2345-6789-ABCD-EFGH~session~session").Single().Title);
         Assert.IsFalse(editor.IsDirty);
     }
 }

@@ -32,40 +32,30 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import darkgrey.rpg.dialogue.ChoiceNode;
-import darkgrey.rpg.dialogue.ChoiceOption;
 import darkgrey.rpg.dialogue.DialogueDefinition;
-import darkgrey.rpg.dialogue.DialogueNode;
-import darkgrey.rpg.dialogue.EndNode;
-import darkgrey.rpg.dialogue.JumpNode;
-import darkgrey.rpg.dialogue.LineNode;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContentException;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContentLoader;
-import darkgrey.rpg.identity.DgrResourceId;
-import darkgrey.rpg.quest.CollectItemObjective;
-import darkgrey.rpg.quest.InteractActorObjective;
-import darkgrey.rpg.quest.KillEntityObjective;
-import darkgrey.rpg.quest.ObjectiveGroup;
-import darkgrey.rpg.quest.ObjectiveGroupMode;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressJson;
+import darkgrey.rpg.identity.StoryUid;
 import darkgrey.rpg.quest.QuestDefinition;
-import darkgrey.rpg.quest.QuestObjective;
-import darkgrey.rpg.quest.ReachLocationObjective;
 import darkgrey.rpg.story.StoryDefinition;
-import darkgrey.rpg.story.StoryLoader;
 
 public final class ProjectRepository {
 
     private static final Logger LOG = LogManager.getLogger(ProjectRepository.class);
     private static final Pattern NODE_ID = Pattern.compile("[a-z0-9][a-z0-9_.-]*");
     private static final Set<String> PROJECT_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "project_origin_code")));
+        new HashSet<String>(
+            Arrays.asList("schema_version", "identity_format", "id", "display_name", "project_origin_code")));
     private static final Set<String> LEGACY_ACTOR_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "notes", "tags", "home_story_id")));
     private static final Set<String> ACTOR_CURRENT_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
             Arrays.asList(
                 "schema_version",
+                "identity_format",
                 "type",
                 "npc_id",
                 "group_id",
@@ -75,9 +65,11 @@ public final class ProjectRepository {
                 "default_portrait_ref",
                 "portrait_variants")));
     private static final Set<String> ITEM_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("schema_version", "type", "item_id", "display_name", "tags")));
+        new HashSet<String>(
+            Arrays.asList("schema_version", "identity_format", "type", "item_id", "display_name", "tags")));
     private static final Set<String> ITEM_GROUP_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("schema_version", "type", "group_id", "display_name", "tags")));
+        new HashSet<String>(
+            Arrays.asList("schema_version", "identity_format", "type", "group_id", "display_name", "tags")));
     private static final Set<String> DIALOGUE_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
             Arrays.asList(
@@ -140,7 +132,7 @@ public final class ProjectRepository {
         JsonObject json = readObject(bytes, file);
         rejectUnknownFields(file, json, PROJECT_FIELDS);
         int schema = requiredInt(file, json, "schema_version");
-        validateSchema(file, schema, 1, 2);
+        validateProjectIdentityFormat(file, json, schema);
         String projectId = requiredProjectId(file, json);
         String projectOriginCode = optionalNonEmptyString(file, json, "project_origin_code");
         return new ProjectDefinition(
@@ -148,6 +140,32 @@ public final class ProjectRepository {
             projectId,
             requiredString(file, json, "display_name"),
             projectOriginCode == null ? projectId : projectOriginCode);
+    }
+
+    private static void validateProjectIdentityFormat(File file, JsonObject json, int schema)
+        throws ProjectLoadException {
+        validateSchema(file, schema, 3);
+        if (!"story-uid-v1".equals(requiredString(file, json, "identity_format"))) {
+            throw new ProjectLoadException("Project requires identity_format story-uid-v1: " + file);
+        }
+    }
+
+    private static void requireIdentityFormat(File file, JsonObject json) throws ProjectLoadException {
+        if (!"story-uid-v1".equals(requiredString(file, json, "identity_format")))
+            throw new ProjectLoadException("Current identity format is required: " + file);
+    }
+
+    private static String requiredAddress(File file, JsonObject json, String field, ResourceAddress.Kind kind)
+        throws ProjectLoadException {
+        try {
+            ResourceAddress address = ResourceAddressJson.parse(
+                json.has(field) ? json.get(field)
+                    .toString() : null);
+            if (address.getKind() != kind) throw new IllegalArgumentException("Resource kind mismatch");
+            return address.toKey();
+        } catch (IOException | IllegalArgumentException exception) {
+            throw new ProjectLoadException("Invalid resource address " + field + " in " + file, exception);
+        }
     }
 
     /** Reuses the strict Actor parser for one detached DGRS entry. */
@@ -247,7 +265,7 @@ public final class ProjectRepository {
         rejectUnknownFields(projectFile, projectJson, PROJECT_FIELDS);
 
         int projectSchema = requiredInt(projectFile, projectJson, "schema_version");
-        validateSchema(projectFile, projectSchema, 1, 2);
+        validateProjectIdentityFormat(projectFile, projectJson, projectSchema);
         String projectId = requiredProjectId(projectFile, projectJson);
         String projectName = requiredString(projectFile, projectJson, "display_name");
         String projectOriginCode = optionalNonEmptyString(projectFile, projectJson, "project_origin_code");
@@ -273,9 +291,14 @@ public final class ProjectRepository {
         Map<String, ItemResourceDefinition> itemGroups = loadItems(
             "item_groups",
             ItemResourceDefinition.TYPE_COLLECTIVE);
-        Map<String, DialogueDefinition> dialogues = loadDialogues(actors);
-        Map<String, QuestDefinition> quests = loadQuests();
-        Map<String, StoryDefinition> stories = StoryLoader.load(projectDirectory, actors, dialogues, quests);
+        for (String retired : new String[] { "stories", "dialogues", "quests" }) {
+            File directory = new File(projectDirectory, retired);
+            if (directory.isDirectory() && !jsonFiles(directory, retired).isEmpty())
+                throw new ProjectLoadException("Legacy resource directory is unsupported: " + directory);
+        }
+        Map<String, DialogueDefinition> dialogues = Collections.emptyMap();
+        Map<String, QuestDefinition> quests = Collections.emptyMap();
+        Map<String, StoryDefinition> stories = Collections.emptyMap();
         CanonicalProjectContent canonicalContent;
         try {
             canonicalContent = new CanonicalProjectContentLoader()
@@ -312,14 +335,16 @@ public final class ProjectRepository {
         boolean individual = ItemResourceDefinition.TYPE_INDIVIDUAL.equals(expectedType);
         rejectUnknownFields(file, json, individual ? ITEM_FIELDS : ITEM_GROUP_FIELDS);
         int version = requiredInt(file, json, "schema_version");
-        validateSchema(file, version, 1);
-        String type = requiredString(file, json, "type").toLowerCase();
+        validateSchema(file, version, 2);
+        requireIdentityFormat(file, json);
+        String type = requiredString(file, json, "type");
         if (!expectedType.equals(type))
             throw new ProjectLoadException("Item resource type must be '" + expectedType + "' in " + file);
-        String id = requiredResourceId(file, json, individual ? "item_id" : "group_id");
-        String expectedName = id + ".json";
-        if (!DgrResourceId.isFullId(id) && !expectedName.equals(file.getName()))
-            throw new ProjectLoadException("Item resource filename must be '" + expectedName + "': " + file);
+        String id = requiredAddress(
+            file,
+            json,
+            individual ? "item_id" : "group_id",
+            individual ? ResourceAddress.Kind.ITEM : ResourceAddress.Kind.ITEM_GROUP);
         return new ItemResourceDefinition(
             version,
             type,
@@ -365,147 +390,7 @@ public final class ProjectRepository {
     }
 
     private static QuestDefinition loadQuest(File file, JsonObject json) throws ProjectLoadException {
-        rejectUnknownFields(file, json, QUEST_FIELDS);
-        int schemaVersion = requiredInt(file, json, "schema_version");
-        validateSchema(file, schemaVersion, 1, 2);
-        String id = requiredResourceId(file, json, "id");
-        if (!DgrResourceId.isFullId(id) && !file.getName()
-            .equals(id + ".json")) {
-            throw new ProjectLoadException("Quest file name must match its id: " + file.getAbsolutePath());
-        }
-        String title = requiredString(file, json, "title");
-        validateStudioResourceFields(file, json, schemaVersion);
-        String description = requiredString(file, json, "description");
-        List<QuestObjective> objectives = loadObjectives(file, json.get("objectives"));
-        Map<String, QuestObjective> objectivesById = new LinkedHashMap<String, QuestObjective>();
-        for (QuestObjective objective : objectives) {
-            if (objectivesById.put(objective.getId(), objective) != null) {
-                throw new ProjectLoadException(
-                    "Duplicate objective id '" + objective.getId() + "' in " + file.getAbsolutePath());
-            }
-        }
-        List<ObjectiveGroup> groups = loadObjectiveGroups(file, json.get("objective_groups"), objectivesById);
-        JsonObject metadata = optionalObject(file, json, "metadata");
-        rejectUnknownFields(file, metadata, METADATA_FIELDS);
-        return new QuestDefinition(
-            schemaVersion,
-            id,
-            title,
-            description,
-            objectives,
-            groups,
-            optionalString(file, metadata, "notes", ""),
-            optionalStringList(file, metadata, "tags"));
-    }
-
-    private static List<QuestObjective> loadObjectives(File file, JsonElement value) throws ProjectLoadException {
-        if (value == null || !value.isJsonArray()
-            || value.getAsJsonArray()
-                .size() == 0) {
-            throw new ProjectLoadException("Quest objectives must be a non-empty array in " + file.getAbsolutePath());
-        }
-        List<QuestObjective> objectives = new ArrayList<QuestObjective>();
-        for (JsonElement element : value.getAsJsonArray()) {
-            if (!element.isJsonObject()) {
-                throw new ProjectLoadException("Quest objectives must be objects in " + file.getAbsolutePath());
-            }
-            JsonObject objective = element.getAsJsonObject();
-            String id = requiredResourceId(file, objective, "id");
-            String type = requiredString(file, objective, "type").toLowerCase();
-            String description = requiredString(file, objective, "description");
-            if ("kill_entity".equals(type)) {
-                rejectUnknownFields(file, objective, KILL_OBJECTIVE_FIELDS);
-                objectives.add(
-                    new KillEntityObjective(
-                        id,
-                        description,
-                        requiredString(file, objective, "entity"),
-                        requiredPositiveInt(file, objective, "required")));
-            } else if ("collect_item".equals(type)) {
-                rejectUnknownFields(file, objective, COLLECT_OBJECTIVE_FIELDS);
-                objectives.add(
-                    new CollectItemObjective(
-                        id,
-                        description,
-                        requiredString(file, objective, "item"),
-                        optionalInt(file, objective, "metadata", -1),
-                        requiredPositiveInt(file, objective, "required")));
-            } else if ("reach_location".equals(type)) {
-                rejectUnknownFields(file, objective, REACH_OBJECTIVE_FIELDS);
-                double radius = requiredDouble(file, objective, "radius");
-                if (radius <= 0.0D) {
-                    throw new ProjectLoadException("ReachLocation radius must be positive in " + file);
-                }
-                objectives.add(
-                    new ReachLocationObjective(
-                        id,
-                        description,
-                        requiredInt(file, objective, "dimension"),
-                        requiredDouble(file, objective, "x"),
-                        requiredDouble(file, objective, "y"),
-                        requiredDouble(file, objective, "z"),
-                        radius));
-            } else if ("interact_actor".equals(type)) {
-                rejectUnknownFields(file, objective, INTERACT_OBJECTIVE_FIELDS);
-                objectives.add(
-                    new InteractActorObjective(
-                        id,
-                        description,
-                        requiredResourceId(file, objective, "actor_id"),
-                        requiredPositiveInt(file, objective, "required")));
-            } else {
-                throw new ProjectLoadException(
-                    "Unsupported Quest objective type '" + type + "' in " + file.getAbsolutePath());
-            }
-        }
-        return objectives;
-    }
-
-    private static List<ObjectiveGroup> loadObjectiveGroups(File file, JsonElement value,
-        Map<String, QuestObjective> objectivesById) throws ProjectLoadException {
-        if (value == null || !value.isJsonArray()
-            || value.getAsJsonArray()
-                .size() == 0) {
-            throw new ProjectLoadException(
-                "Quest objective_groups must be a non-empty array in " + file.getAbsolutePath());
-        }
-        List<ObjectiveGroup> groups = new ArrayList<ObjectiveGroup>();
-        Set<String> groupIds = new HashSet<String>();
-        Set<String> assignedObjectives = new HashSet<String>();
-        for (JsonElement element : value.getAsJsonArray()) {
-            if (!element.isJsonObject()) {
-                throw new ProjectLoadException("Objective groups must be objects in " + file.getAbsolutePath());
-            }
-            JsonObject group = element.getAsJsonObject();
-            rejectUnknownFields(file, group, OBJECTIVE_GROUP_FIELDS);
-            String groupId = requiredResourceId(file, group, "id");
-            if (!groupIds.add(groupId)) {
-                throw new ProjectLoadException("Duplicate objective group id '" + groupId + "' in " + file);
-            }
-            ObjectiveGroupMode mode;
-            try {
-                mode = ObjectiveGroupMode.valueOf(requiredString(file, group, "mode").toUpperCase());
-            } catch (IllegalArgumentException exception) {
-                throw new ProjectLoadException("Objective group mode must be ALL, ANY, or SEQUENCE in " + file);
-            }
-            List<String> objectiveIds = requiredResourceIdList(file, group, "objectives");
-            for (String objectiveId : objectiveIds) {
-                if (!objectivesById.containsKey(objectiveId)) {
-                    throw new ProjectLoadException(
-                        "Objective group '" + groupId + "' references missing objective '" + objectiveId + "'");
-                }
-                if (!assignedObjectives.add(objectiveId)) {
-                    throw new ProjectLoadException(
-                        "Objective '" + objectiveId + "' belongs to more than one group in " + file);
-                }
-            }
-            groups.add(new ObjectiveGroup(groupId, mode, objectiveIds));
-        }
-        if (assignedObjectives.size() != objectivesById.size()) {
-            throw new ProjectLoadException(
-                "Every Quest objective must belong to exactly one objective group in " + file);
-        }
-        return groups;
+        throw new ProjectLoadException("Legacy Quest format is unsupported; use a current canonical Task: " + file);
     }
 
     private Map<String, DialogueDefinition> loadDialogues(Map<String, ActorDefinition> actors)
@@ -549,128 +434,8 @@ public final class ProjectRepository {
 
     private static DialogueDefinition loadDialogue(File file, Map<String, ActorDefinition> actors, JsonObject json)
         throws ProjectLoadException {
-        rejectUnknownFields(file, json, DIALOGUE_FIELDS);
-        int schemaVersion = requiredInt(file, json, "schema_version");
-        validateSchema(file, schemaVersion, 1, 2);
-        String id = requiredResourceId(file, json, "id");
-        if (!DgrResourceId.isFullId(id) && !file.getName()
-            .equals(id + ".json")) {
-            throw new ProjectLoadException("Dialogue file name must match its id: " + file.getAbsolutePath());
-        }
-        String title = requiredString(file, json, "title");
-        validateStudioResourceFields(file, json, schemaVersion);
-        // An End-only Dialogue is a valid Studio draft and has no speakers yet.
-        // Line nodes below still require their speaker to be declared here.
-        List<String> speakers = optionalResourceIdList(file, json, "speakers");
-        for (String speaker : speakers) {
-            if (!actors.containsKey(speaker)) {
-                throw new ProjectLoadException(
-                    "Missing Actor '" + speaker + "' referenced by " + file.getAbsolutePath());
-            }
-        }
-        String entry = requiredNodeId(file, json, "entry");
-        List<DialogueNode> nodes = loadNodes(file, json.get("nodes"), speakers);
-        Map<String, DialogueNode> nodesById = new LinkedHashMap<String, DialogueNode>();
-        for (DialogueNode node : nodes) {
-            if (nodesById.put(node.getId(), node) != null) {
-                throw new ProjectLoadException("Duplicate node id '" + node.getId() + "' in " + file.getAbsolutePath());
-            }
-        }
-        if (!nodesById.containsKey(entry)) {
-            throw new ProjectLoadException(
-                "Dialogue entry node does not exist: " + entry + " in " + file.getAbsolutePath());
-        }
-        validateConnections(file, nodes, nodesById);
-
-        JsonObject metadata = optionalObject(file, json, "metadata");
-        rejectUnknownFields(file, metadata, METADATA_FIELDS);
-        String notes = optionalString(file, metadata, "notes", "");
-        List<String> tags = optionalStringList(file, metadata, "tags");
-        return new DialogueDefinition(schemaVersion, id, title, speakers, entry, nodes, notes, tags);
-    }
-
-    private static List<DialogueNode> loadNodes(File file, JsonElement value, List<String> speakers)
-        throws ProjectLoadException {
-        if (value == null || !value.isJsonArray()
-            || value.getAsJsonArray()
-                .size() == 0) {
-            throw new ProjectLoadException("Dialogue nodes must be a non-empty array in " + file.getAbsolutePath());
-        }
-        List<DialogueNode> nodes = new ArrayList<DialogueNode>();
-        for (JsonElement element : value.getAsJsonArray()) {
-            if (!element.isJsonObject()) {
-                throw new ProjectLoadException("Dialogue nodes must be objects in " + file.getAbsolutePath());
-            }
-            JsonObject node = element.getAsJsonObject();
-            String type = requiredString(file, node, "type").toLowerCase();
-            String nodeId = requiredNodeId(file, node, "id");
-            if ("line".equals(type)) {
-                rejectUnknownFields(file, node, LINE_FIELDS);
-                String speaker = requiredResourceId(file, node, "speaker");
-                if (!speakers.contains(speaker)) {
-                    throw new ProjectLoadException(
-                        "Line node '" + nodeId + "' uses undeclared speaker '" + speaker + "'");
-                }
-                nodes.add(
-                    new LineNode(
-                        nodeId,
-                        speaker,
-                        requiredString(file, node, "text"),
-                        requiredNodeId(file, node, "next")));
-            } else if ("choice".equals(type)) {
-                rejectUnknownFields(file, node, CHOICE_FIELDS);
-                JsonElement choicesValue = node.get("choices");
-                if (choicesValue == null || !choicesValue.isJsonArray()
-                    || choicesValue.getAsJsonArray()
-                        .size() == 0) {
-                    throw new ProjectLoadException("Choice node '" + nodeId + "' must contain choices");
-                }
-                List<ChoiceOption> choices = new ArrayList<ChoiceOption>();
-                for (JsonElement choiceElement : choicesValue.getAsJsonArray()) {
-                    if (!choiceElement.isJsonObject()) {
-                        throw new ProjectLoadException("Choice options must be objects in " + file.getAbsolutePath());
-                    }
-                    JsonObject choice = choiceElement.getAsJsonObject();
-                    rejectUnknownFields(file, choice, CHOICE_OPTION_FIELDS);
-                    choices.add(
-                        new ChoiceOption(requiredString(file, choice, "text"), requiredNodeId(file, choice, "next")));
-                }
-                nodes.add(new ChoiceNode(nodeId, optionalString(file, node, "prompt", ""), choices));
-            } else if ("jump".equals(type)) {
-                rejectUnknownFields(file, node, JUMP_FIELDS);
-                nodes.add(new JumpNode(nodeId, requiredNodeId(file, node, "target")));
-            } else if ("end".equals(type)) {
-                rejectUnknownFields(file, node, END_FIELDS);
-                nodes.add(new EndNode(nodeId, requiredNodeId(file, node, "result")));
-            } else {
-                throw new ProjectLoadException(
-                    "Unsupported Dialogue node type '" + type + "' in " + file.getAbsolutePath());
-            }
-        }
-        return nodes;
-    }
-
-    private static void validateConnections(File file, List<DialogueNode> nodes, Map<String, DialogueNode> nodesById)
-        throws ProjectLoadException {
-        for (DialogueNode node : nodes) {
-            List<String> targets = new ArrayList<String>();
-            if (node instanceof LineNode) {
-                targets.add(((LineNode) node).getNext());
-            } else if (node instanceof ChoiceNode) {
-                for (ChoiceOption option : ((ChoiceNode) node).getChoices()) {
-                    targets.add(option.getNext());
-                }
-            } else if (node instanceof JumpNode) {
-                targets.add(((JumpNode) node).getTarget());
-            }
-            for (String target : targets) {
-                if (!nodesById.containsKey(target)) {
-                    throw new ProjectLoadException(
-                        "Node '" + node
-                            .getId() + "' references missing node '" + target + "' in " + file.getAbsolutePath());
-                }
-            }
-        }
+        throw new ProjectLoadException(
+            "Legacy Dialogue format is unsupported; use a current canonical Session: " + file);
     }
 
     private static ActorDefinition loadActor(File actorFile) throws ProjectLoadException {
@@ -679,23 +444,20 @@ public final class ProjectRepository {
 
     private static ActorDefinition loadActor(File actorFile, JsonObject json) throws ProjectLoadException {
         int schemaVersion = requiredInt(actorFile, json, "schema_version");
-        validateSchema(actorFile, schemaVersion, 1, 2, 4);
-        if (schemaVersion < 3) {
-            rejectUnknownFields(actorFile, json, LEGACY_ACTOR_FIELDS);
-            return loadLegacyActor(actorFile, json, schemaVersion);
-        }
+        validateSchema(actorFile, schemaVersion, 5);
+        requireIdentityFormat(actorFile, json);
 
         rejectUnknownFields(actorFile, json, ACTOR_CURRENT_FIELDS);
-        String type = requiredString(actorFile, json, "type").toLowerCase();
+        String type = requiredString(actorFile, json, "type");
         String id;
         if (ActorDefinition.TYPE_INDIVIDUAL.equals(type)) {
-            id = requiredResourceId(actorFile, json, "npc_id");
+            id = requiredAddress(actorFile, json, "npc_id", ResourceAddress.Kind.ACTOR);
             if (json.has("group_id")) {
                 throw new ProjectLoadException(
                     "Individual Actor cannot contain group_id in " + actorFile.getAbsolutePath());
             }
         } else if (ActorDefinition.TYPE_COLLECTIVE.equals(type)) {
-            id = requiredResourceId(actorFile, json, "group_id");
+            id = requiredAddress(actorFile, json, "group_id", ResourceAddress.Kind.ACTOR);
             if (json.has("npc_id")) {
                 throw new ProjectLoadException(
                     "Collective Actor cannot contain npc_id in " + actorFile.getAbsolutePath());
@@ -704,10 +466,14 @@ public final class ProjectRepository {
             throw new ProjectLoadException(
                 "Actor type must be individual or collective in " + actorFile.getAbsolutePath());
         }
-        validateActorFileName(actorFile, id);
         String displayName = requiredString(actorFile, json, "display_name");
         List<String> tags = optionalStringList(actorFile, json, "tags");
-        String homeStoryId = requiredResourceId(actorFile, json, "home_story_id");
+        String homeStoryId = requiredString(actorFile, json, "home_story_id");
+        if (!StoryUid.isValid(homeStoryId) || !ResourceAddress.fromKey(id)
+            .getStoryUid()
+            .getValue()
+            .equals(homeStoryId))
+            throw new ProjectLoadException("Actor owner does not match home Story UID: " + actorFile);
         try {
             return new ActorDefinition(
                 schemaVersion,
@@ -720,31 +486,6 @@ public final class ProjectRepository {
                 ActorPortraits.parse(json));
         } catch (IllegalArgumentException exception) {
             throw new ProjectLoadException("Invalid Actor portraits in " + actorFile.getAbsolutePath(), exception);
-        }
-    }
-
-    private static ActorDefinition loadLegacyActor(File actorFile, JsonObject json, int schemaVersion)
-        throws ProjectLoadException {
-        String id = requiredResourceId(actorFile, json, "id");
-        validateActorFileName(actorFile, id);
-        String displayName = requiredString(actorFile, json, "display_name");
-        String notes = optionalString(actorFile, json, "notes", "");
-        List<String> tags = optionalStringList(actorFile, json, "tags");
-        String homeStoryId = optionalString(actorFile, json, "home_story_id", null);
-        if (schemaVersion >= 2 && (homeStoryId == null || !DgrResourceId.isCompatibleId(homeStoryId))) {
-            throw new ProjectLoadException(
-                "Actor schema_version 2 requires a valid home_story_id in " + actorFile.getAbsolutePath());
-        }
-        return new ActorDefinition(schemaVersion, id, displayName, notes, tags, homeStoryId);
-    }
-
-    private static void validateActorFileName(File actorFile, String id) throws ProjectLoadException {
-        if (DgrResourceId.isFullId(id)) return;
-        String expectedFileName = id + ".json";
-        if (!actorFile.getName()
-            .equals(expectedFileName)) {
-            throw new ProjectLoadException(
-                "Actor file name must match its id: expected " + expectedFileName + ", got " + actorFile.getName());
         }
     }
 
@@ -918,15 +659,6 @@ public final class ProjectRepository {
         return value;
     }
 
-    private static String requiredResourceId(File file, JsonObject json, String field) throws ProjectLoadException {
-        String value = optionalString(file, json, field, null);
-        if (value == null || value.isEmpty() || !DgrResourceId.isCompatibleId(value)) {
-            throw new ProjectLoadException(
-                "Field '" + field + "' has invalid resource id '" + value + "' in " + file.getAbsolutePath());
-        }
-        return value;
-    }
-
     private static String requiredNodeId(File file, JsonObject json, String field) throws ProjectLoadException {
         String value = requiredString(file, json, field);
         if (!NODE_ID.matcher(value)
@@ -950,6 +682,8 @@ public final class ProjectRepository {
     /** Optional field with the same strict non-empty string contract as requiredString. */
     private static String optionalNonEmptyString(File file, JsonObject json, String field) throws ProjectLoadException {
         if (!json.has(field)) return null;
+        if (json.get(field)
+            .isJsonNull()) throw new ProjectLoadException("Field '" + field + "' cannot be null in " + file);
         requiredString(file, json, field);
         return json.get(field)
             .getAsString();
@@ -972,14 +706,6 @@ public final class ProjectRepository {
      * Studio 2.1 schema 2 adds editor identity and ownership fields while the
      * Runtime continues to execute the stable title/node/objective semantics.
      */
-    private static void validateStudioResourceFields(File file, JsonObject json, int schemaVersion)
-        throws ProjectLoadException {
-        if (schemaVersion < 2) {
-            return;
-        }
-        requiredString(file, json, "display_name");
-        requiredResourceId(file, json, "home_story_id");
-    }
 
     private static List<String> optionalStringList(File file, JsonObject json, String field)
         throws ProjectLoadException {
@@ -1005,37 +731,6 @@ public final class ProjectRepository {
             }
         }
         return result;
-    }
-
-    private static List<String> requiredResourceIdList(File file, JsonObject json, String field)
-        throws ProjectLoadException {
-        List<String> values = optionalResourceIdList(file, json, field);
-        if (values.isEmpty()) {
-            throw new ProjectLoadException("Field '" + field + "' must contain at least one resource ID in " + file);
-        }
-        return values;
-    }
-
-    private static List<String> optionalResourceIdList(File file, JsonObject json, String field)
-        throws ProjectLoadException {
-        JsonElement value = json.get(field);
-        if (value == null || value.isJsonNull()) return Collections.emptyList();
-        if (!value.isJsonArray()) {
-            throw new ProjectLoadException("Field '" + field + "' must be an array in " + file.getAbsolutePath());
-        }
-        List<String> values = new ArrayList<String>();
-        for (JsonElement entry : value.getAsJsonArray()) {
-            if (!entry.isJsonPrimitive() || !entry.getAsJsonPrimitive()
-                .isString()) {
-                throw new ProjectLoadException(
-                    "Field '" + field + "' must contain only strings in " + file.getAbsolutePath());
-            }
-            String id = entry.getAsString();
-            if (!DgrResourceId.isCompatibleId(id)) throw new ProjectLoadException(
-                "Field '" + field + "' contains invalid resource ID '" + id + "' in " + file);
-            values.add(id);
-        }
-        return values;
     }
 
     private static JsonObject optionalObject(File file, JsonObject json, String field) throws ProjectLoadException {

@@ -15,7 +15,8 @@ import darkgrey.rpg.network.message.canonical.CanonicalStoryChooserSelection;
 public final class GuiCanonicalStoryChooser extends GuiScreen {
 
     private int pageSize = 1;
-    private int rowHeight = 52;
+    private static final int ROW_HEIGHT = 38;
+    private int panelWidth, panelHeight, left, top;
     private static final int OPTION_BUTTON_BASE = 1000;
     private static final int PREVIOUS_BUTTON = 2000;
     private static final int NEXT_BUTTON = 2001;
@@ -34,37 +35,32 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
     public void initGui() {
         buttonList.clear();
         List<CanonicalStoryChooserFrame.Option> options = frame.getOptions();
-        int panelWidth = Math.min(700, width - 30);
-        int left = (width - panelWidth) / 2;
-        int panelTop = (height - Math.min(430, height - 30)) / 2;
-        rowHeight = 52;
-        for (CanonicalStoryChooserFrame.Option option : options) rowHeight = Math.max(
-            rowHeight,
-            34 + fontRendererObj.FONT_HEIGHT * fontRendererObj
-                .listFormattedStringToWidth("ID: " + option.getStoryId(), Math.max(40, panelWidth - 155))
-                .size());
-        pageSize = Math.max(1, Math.min(6, (Math.min(430, height - 30) - 100) / rowHeight));
+        panelWidth = Math.min(360, width - 24);
+        pageSize = Math.max(1, Math.min(6, (Math.min(310, height - 24) - 66) / ROW_HEIGHT));
         page = Math.min(page, Math.max(0, (options.size() - 1) / pageSize));
         int first = page * pageSize;
         int visible = Math.min(pageSize, options.size() - first);
+        panelHeight = 66 + visible * ROW_HEIGHT;
+        left = (width - panelWidth) / 2;
+        top = (height - panelHeight) / 2;
         for (int row = 0; row < visible; row++) {
             int index = first + row;
             buttonList.add(
-                new GuiButton(
+                new GuiRpgButton(
                     OPTION_BUTTON_BASE + row,
-                    left + panelWidth - 112,
-                    panelTop + 40 + row * rowHeight,
-                    96,
+                    left + panelWidth - 82,
+                    top + 35 + row * ROW_HEIGHT,
+                    70,
                     20,
                     statusText(
                         options.get(index)
                             .getStatus())));
         }
-        int navigationY = panelTop + 40 + visible * rowHeight + 8;
-        if (page > 0) buttonList.add(new GuiButton(PREVIOUS_BUTTON, left + 20, navigationY, 80, 20, "上一页"));
+        int navigationY = top + 36 + visible * ROW_HEIGHT;
+        if (page > 0) buttonList.add(new GuiRpgButton(PREVIOUS_BUTTON, left + 12, navigationY, 55, 20, "上一页"));
         if (first + visible < options.size())
-            buttonList.add(new GuiButton(NEXT_BUTTON, left + panelWidth - 180, navigationY, 80, 20, "下一页"));
-        buttonList.add(new GuiButton(CANCEL_BUTTON, left + panelWidth - 90, navigationY, 70, 20, "取消"));
+            buttonList.add(new GuiRpgButton(NEXT_BUTTON, left + 73, navigationY, 55, 20, "下一页"));
+        buttonList.add(new GuiRpgButton(CANCEL_BUTTON, left + panelWidth - 82, navigationY, 70, 20, "取消"));
     }
 
     @Override
@@ -93,43 +89,32 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        int panelWidth = Math.min(700, width - 30);
-        int panelHeight = Math.min(430, height - 30);
-        int left = (width - panelWidth) / 2;
-        int top = (height - panelHeight) / 2;
+        DgrUiPalette.apply();
         drawRect(left, top, left + panelWidth, top + panelHeight, DgrUiPalette.WINDOW_PANEL);
-        darkgrey.rpg.client.gui.DgrUiText
-            .centered(fontRendererObj, "有多个故事可供选择", width / 2, top + 12, DgrUiPalette.TEXT);
+        RuntimeDirectoryVisuals.heading(fontRendererObj, "选择要进行的故事", left + 12, top + 10, panelWidth - 24);
         List<CanonicalStoryChooserFrame.Option> options = frame.getOptions();
         int first = page * pageSize;
         int visible = Math.min(pageSize, options.size() - first);
         for (int row = 0; row < visible; row++) {
             CanonicalStoryChooserFrame.Option option = options.get(first + row);
-            int y = top + 40 + row * rowHeight;
+            int y = top + 35 + row * ROW_HEIGHT;
             fontRendererObj.drawString(
-                fontRendererObj.trimStringToWidth(option.getDisplayName(), panelWidth - 155),
-                left + 20,
+                "\u00a7l" + fontRendererObj.trimStringToWidth(option.getDisplayName(), panelWidth - 110),
+                left + 12,
                 y,
                 DgrUiPalette.TEXT);
             fontRendererObj.drawString(
-                option.getStatus()
-                    .toUpperCase(java.util.Locale.ROOT),
-                left + 20,
-                y + 12,
+                fontRendererObj.trimStringToWidth(option.getGroupName(), panelWidth - 110),
+                left + 12,
+                y + 14,
                 DgrUiPalette.SECONDARY);
-            List<String> idLines = fontRendererObj
-                .listFormattedStringToWidth("ID: " + option.getStoryId(), Math.max(40, panelWidth - 155));
-            for (int line = 0; line < idLines.size(); line++) fontRendererObj.drawString(
-                idLines.get(line),
-                left + 20,
-                y + 24 + line * fontRendererObj.FONT_HEIGHT,
-                DgrUiPalette.SECONDARY);
+            drawRect(left + 12, y + 31, left + panelWidth - 12, y + 32, DgrUiPalette.BORDER);
         }
-        darkgrey.rpg.client.gui.DgrUiText.centered(
+        if (options.size() > pageSize) DgrUiText.centered(
             fontRendererObj,
-            "第 " + (page + 1) + " 页",
+            (page + 1) + " / " + ((options.size() - 1) / pageSize + 1),
             width / 2,
-            top + panelHeight - 18,
+            top + panelHeight - 22,
             DgrUiPalette.SECONDARY);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

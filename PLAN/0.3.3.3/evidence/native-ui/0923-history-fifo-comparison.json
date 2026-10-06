@@ -1,0 +1,17 @@
+{
+  "darkgrey_rpg_canonical_tasks": true,
+  "player": true,
+  "transactions": true,
+  "before": {
+    "line_page_index": 249,
+    "line_epoch": 250,
+    "transport_id": 1,
+    "current_node_id": "node_311203e4e0894920bc9b0c2c9189a743"
+  },
+  "after": {
+    "line_page_index": 250,
+    "line_epoch": 251,
+    "transport_id": 1,
+    "current_node_id": "node_311203e4e0894920bc9b0c2c9189a743"
+  }
+}

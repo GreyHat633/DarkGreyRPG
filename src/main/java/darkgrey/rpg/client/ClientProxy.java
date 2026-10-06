@@ -18,6 +18,11 @@ import darkgrey.rpg.proxy.CommonProxy;
 public final class ClientProxy extends CommonProxy {
 
     @Override
+    public void acceptPackageManager(long request, net.minecraft.nbt.NBTTagCompound data) {
+        ClientPackageManager.accept(request, data);
+    }
+
+    @Override
     public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {
         Minecraft minecraft = Minecraft.getMinecraft();
         if (kind == 0) minecraft.displayGuiScreen(new darkgrey.rpg.client.gui.GuiPlayerStateInspection());

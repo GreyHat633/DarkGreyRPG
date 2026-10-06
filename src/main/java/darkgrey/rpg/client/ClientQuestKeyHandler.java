@@ -36,6 +36,7 @@ public final class ClientQuestKeyHandler {
         "key.categories.darkgrey_rpg");
 
     public ClientQuestKeyHandler() {
+        ClientRegistry.registerKeyBinding(packageKey);
         ClientRegistry.registerKeyBinding(historyKey);
         ClientRegistry.registerKeyBinding(settingsKey);
         darkgrey.rpg.client.gui.GuiDialogueSettings.loadPreferences();
@@ -55,12 +56,18 @@ public final class ClientQuestKeyHandler {
         Keyboard.KEY_NONE,
         "key.categories.darkgrey_rpg");
 
+    private static final KeyBinding packageKey = new KeyBinding(
+        "key.darkgrey_rpg.packages",
+        Keyboard.KEY_O,
+        "key.categories.darkgrey_rpg");
+
     public static int historyKeyCode() {
         return historyKey.getKeyCode();
     }
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && packageKey.isPressed()) ClientPackageManager.open();
         if (event.phase == TickEvent.Phase.END) synchronizeVanillaMusicVolume();
         if (event.phase == TickEvent.Phase.END && historyKey.isPressed()) {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();

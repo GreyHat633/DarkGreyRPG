@@ -1,0 +1,11 @@
+{
+  "source": "build\\libs\\darkgrey_rpg-0.3.3.6.jar",
+  "bytes": 1948582,
+  "sha256": "edccc103fef4fdc1af56dc261440ec98988f46c8f50411a0f1b1f6c0b79d0f39",
+  "deployed": [
+    ".tooling\\0336-runtime\\Server\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    ".tooling\\0336-runtime\\Client\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    ".tooling\\0336-runtime\\Client2\\mods\\darkgrey_rpg-0.3.3.6.jar",
+    ".tooling\\0336-runtime\\Client3\\mods\\darkgrey_rpg-0.3.3.6.jar"
+  ]
+}

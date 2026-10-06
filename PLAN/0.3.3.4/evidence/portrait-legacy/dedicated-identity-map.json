@@ -1,0 +1,11 @@
+{
+  "source_player": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+  "isolated_offline_player": "da076fe3-e7c7-31a6-930d-086c78a73889",
+  "changed_fields": [
+    "player",
+    "id UUID part",
+    "group UUID part"
+  ],
+  "completion_count": 2,
+  "objectives": []
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+    "Version": "0.3.3.3",
+    "Bytes": 142429910,
+    "SHA256": "bbe9d7b46ab6a1f35631bb427e5838e6ee1e87c75286c2054f1ebc0ddf93aa22"
+  },
+  {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\darkgrey_rpg-0.3.3.3.jar",
+    "Version": "0.3.3.3",
+    "Bytes": 1695888,
+    "SHA256": "c5131dd02f38c57944916059549a955ba28890885476f49c7693d8aaf3320869"
+  }
+]

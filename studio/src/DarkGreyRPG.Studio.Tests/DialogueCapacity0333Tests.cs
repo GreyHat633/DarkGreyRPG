@@ -17,7 +17,8 @@ public sealed class DialogueCapacity0333Tests
             var expected = Math.Max(vector.GetProperty("normal_result").GetProperty("used").GetInt32(), vector.GetProperty("unicode_result").GetProperty("used").GetInt32());
             var result = DialogueCapacityProfile.Measure(text);
             Assert.AreEqual(expected, result.Used, text);
-            Assert.AreEqual(expected > DialogueCapacityProfile.Safe, result.Over, text);
+            Assert.IsFalse(result.Over, "Length alone must never block dialogue input.");
+            Assert.IsTrue(result.Pages >= 1);
         }
     }
 
@@ -26,7 +27,8 @@ public sealed class DialogueCapacity0333Tests
     {
         Assert.IsTrue(DialogueCapacityProfile.Measure("😀").Unsupported);
         Assert.IsTrue(DialogueCapacityProfile.Measure("a\r\nb").ManualNewline);
-        Assert.IsTrue(DialogueCapacityProfile.Measure(new string('中', 1000)).Over);
+        Assert.IsFalse(DialogueCapacityProfile.Measure(new string('中', 1000)).Over);
+        Assert.IsTrue(DialogueCapacityProfile.Measure(new string('中', 1000)).Pages > 1);
         Assert.IsTrue(DialogueCapacityProfile.Measure(new string('W', 60)).Used > DialogueCapacityProfile.Measure(new string('i', 60)).Used);
     }
 }

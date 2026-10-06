@@ -1,0 +1,53 @@
+{
+  "screen": "darkgrey.rpg.client.gui.GuiCanonicalTaskScreen",
+  "width": 550,
+  "height": 370,
+  "player": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+  "position": [
+    987.6873182249078,
+    5.620000004768372,
+    -1468.241357199839
+  ],
+  "inspect_enabled": "true",
+  "inspect_revision": "7",
+  "inspect_entities": "{96={text:\"[NPCID] GreyHat_:TarvenBoss\",entity:96,}, 109={text:\"[GroupID] GreyHat_:Slimes\",entity:109,}}",
+  "heldSlot": 1,
+  "tooltip": [
+    "复制器 (#4455)",
+    "已保存模板: 1",
+    "当前选择: 1/1",
+    "右键生物保存；右键方块生成；右键空气管理模板。"
+  ],
+  "heldTooltip": [
+    "指名器 (#4454)",
+    "右键生物：指名剧情角色",
+    "右键空气：指名背包物品",
+    "仅 OP 或 DGR 编辑权限可用"
+  ],
+  "audit": {},
+  "fps": 59,
+  "windowGeometry": {
+    "x": 95,
+    "y": 64,
+    "width": 387,
+    "height": 278,
+    "minWidth": 280,
+    "minHeight": 180,
+    "defaultWidth": 620,
+    "defaultHeight": 300,
+    "screenWidth": 550,
+    "screenHeight": 370,
+    "mode": 0,
+    "resizeLeft": false,
+    "resizeTop": false,
+    "anchorMouseX": 0,
+    "anchorMouseY": 0,
+    "anchorX": 0,
+    "anchorY": 0,
+    "anchorWidth": 0,
+    "anchorHeight": 0
+  },
+  "taskRevision": 1,
+  "tasks": "{dimension:0,tasks:[0:{objectives:[0:{current:0,text:\"与酒馆老板对话\",required:1,},],id:\"31c4910d-9b69-4725-8969-9ed53ac8a7dc\u0000GreyHat_:test_story\u0000aggregate_e6d3aa1ddeb941b3939113ef2301a266\",title:\"击杀3只史莱姆\",complete:0b,},],revision:1L,}",
+  "buttons": []
+}

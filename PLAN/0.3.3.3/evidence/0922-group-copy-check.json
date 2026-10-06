@@ -1,0 +1,33 @@
+{
+  "BeforeNodes": 4,
+  "AfterNodes": 6,
+  "UniqueNodeIds": 6,
+  "GroupCount": 4,
+  "UniqueGroupIds": 4,
+  "CopiedNodes": [
+    {
+      "id": "node_fe11071c0aef4f3c8c8f8da0e1b0c63d",
+      "type": "line"
+    },
+    {
+      "id": "node_a537dd86fc004bc6958cc097540fa824",
+      "type": "line"
+    }
+  ],
+  "BeforeConnections": 2,
+  "AfterConnections": 2,
+  "NewGroup": {
+    "id": "7bd15eeef7a14181b77df992c6130b15",
+    "title": "组合",
+    "x": 164.81932773109247,
+    "y": 498.83840336134415,
+    "width": 80,
+    "height": 50,
+    "members": [
+      "node_a537dd86fc004bc6958cc097540fa824",
+      "node_fe11071c0aef4f3c8c8f8da0e1b0c63d"
+    ],
+    "groups": [],
+    "is_valid": true
+  }
+}

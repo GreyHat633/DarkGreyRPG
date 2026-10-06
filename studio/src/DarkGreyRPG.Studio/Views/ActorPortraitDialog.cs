@@ -18,9 +18,9 @@ public sealed class ActorPortraitDialog : Window
         var footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         var cancel = new Button { Content = "取消", IsCancel = true };
         cancel.Click += (_, _) => DialogResult = false;
-        var save = new Button { Content = "保存头像", Margin = new Thickness(8, 0, 0, 0) };
+        var save = new Button { Content = "保存头像", Margin = new Thickness(0, 0, 8, 0) };
         save.Click += (_, _) => { if (document.ValidationErrors.Count == 0) DialogResult = true; };
-        footer.Children.Add(cancel); footer.Children.Add(save);
+        footer.Children.Add(save); footer.Children.Add(cancel);
         DockPanel.SetDock(footer, Dock.Bottom); dock.Children.Add(footer);
         dock.Children.Add(new ScrollViewer
         {

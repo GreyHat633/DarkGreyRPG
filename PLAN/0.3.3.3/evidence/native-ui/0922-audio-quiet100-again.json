@@ -1,0 +1,23 @@
+{
+  "label": "0922-audio-quiet100-again",
+  "time": "2026-09-22T21:54:31",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.0004734883182202778,
+  "peak": 0.0008028745651245117,
+  "tone440": 0.0006252787420023782,
+  "tone880": 4.724019433821554e-08
+}

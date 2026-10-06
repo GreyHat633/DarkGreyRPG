@@ -1,0 +1,31 @@
+{
+  "": {
+    "schema_version": 1,
+    "image": {
+      "receipts": {
+        "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8": 1,
+        "e442775f1b14d8acc9d93140a9abfbc7340515d72df954cf8b5edfe17c6de26f": 1,
+        "7f1e1b1ea939384ca448eaa80c22882d0a44ed8330653737ff7013c55e18139d": 1
+      },
+      "total": 7,
+      "level": 0,
+      "inventory": [
+        {
+          "index": 0,
+          "id": 205,
+          "Count": 1,
+          "Damage": 0
+        },
+        {
+          "index": 1,
+          "id": 319,
+          "Count": 4,
+          "Damage": 0
+        }
+      ],
+      "fraction": 0.4117647111415863
+    },
+    "receipt": "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8",
+    "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333"
+  }
+}

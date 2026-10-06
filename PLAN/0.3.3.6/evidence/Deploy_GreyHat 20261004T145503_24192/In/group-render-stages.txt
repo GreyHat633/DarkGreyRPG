@@ -1,0 +1,8 @@
+2026-10-04T06:55:03.2928700Z begin renderMode=SoftwareOnly
+2026-10-04T06:55:03.2938008Z groups=0 create
+2026-10-04T06:55:13.1502503Z groups=0 view-created
+2026-10-04T06:55:44.3731654Z groups=0 shown
+2026-10-04T06:55:44.9101777Z groups=0 idle
+2026-10-04T06:55:48.6445777Z groups=0 rendered=200
+2026-10-04T06:55:48.7269152Z groups=300 create
+2026-10-04T06:55:54.9376845Z groups=300 view-created

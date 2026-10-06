@@ -1,0 +1,25 @@
+{
+  "label": "0923-redstone-bypass-output",
+  "time": "2026-09-23T00:01:47",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.00047589460786575023,
+  "peak": 0.0008105039596557617,
+  "tone440": 0.0006284584854910943,
+  "tone880": 5.473422793491556e-08,
+  "dominantVoiceHz": 1320.0200534759358,
+  "dominantVoiceAmplitude": 4.498850739783363e-06
+}

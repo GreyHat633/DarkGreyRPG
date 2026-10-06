@@ -25,6 +25,15 @@ public partial class CanonicalGraphEditorView
         try
         {
             var pasted = snapshot.CloneForPaste(host.Scope, out var ids);
+            foreach (var kind in new[] { Core.Graphs.GraphInterfaceKind.Flow, Core.Graphs.GraphInterfaceKind.Logic })
+            {
+                var nextOutputOrder = host.Graph.Nodes.Where(node => Core.Graphs.Definitions.PublicOutputSchema.IsOutput(node)
+                    && Core.Graphs.Definitions.PublicOutputSchema.Kind(node) == kind)
+                    .Select(Core.Graphs.Definitions.PublicOutputSchema.Order).DefaultIfEmpty(-1).Max() + 1;
+                foreach (var node in pasted.Nodes.Where(node => Core.Graphs.Definitions.PublicOutputSchema.IsOutput(node)
+                    && Core.Graphs.Definitions.PublicOutputSchema.Kind(node) == kind).OrderBy(Core.Graphs.Definitions.PublicOutputSchema.Order))
+                    node.Properties["display_order"] = System.Text.Json.JsonSerializer.SerializeToElement(nextOutputOrder++);
+            }
             if (pasted.Nodes.Count == 0) return false;
             var resources = ClipboardWorkspace!.PrepareCopiedResources(pasted, ids);
             var metadata = ClipboardWorkspace.PrepareScreenMetadata(host, ids, false);

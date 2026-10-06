@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.Identity;
 using System.Text;
 using System.Text.Json;
 
@@ -6,7 +7,7 @@ namespace DarkGreyRPG.Studio.Core.Graphs.Definitions;
 /// <summary>Versioned string envelope: old unmarked text is always literal.</summary>
 public static class DynamicContentText
 {
-    public const string Prefix = "\u001eDGR1\u001f";
+    public const string Prefix = "\u001eDGR2\u001f";
     public sealed record Part(string? Text = null, string? Type = null, string? ItemId = null, string? ActorId = null)
     {
         public string Label => Type switch { "player_name" => "玩家名称", "player_level" => "玩家经验等级", "item_count" => "持有数量：" + ItemId, "item_name" => "物品名称：" + ItemId, "actor_name" => "角色名称：" + ActorId, _ => Text ?? "动态内容无效" };
@@ -14,6 +15,7 @@ public static class DynamicContentText
     public static IReadOnlyList<Part> Parse(string? value)
     {
         value ??= "";
+        if (value.StartsWith("\u001eDGR1\u001f", StringComparison.Ordinal)) throw new FormatException("旧动态内容身份格式不受支持。");
         if (!value.StartsWith(Prefix, StringComparison.Ordinal)) return [new(Text: value)];
         if (value.Length > 1048576) throw new FormatException("动态内容结构过长。");
         using var json = JsonDocument.Parse(value[Prefix.Length..]);
@@ -29,7 +31,10 @@ public static class DynamicContentText
             var names = element.EnumerateObject().Select(p => p.Name).Order().ToArray();
             var expected = type is "item_count" or "item_name" ? new[] { "item_id", "type" } : type == "actor_name" ? new[] { "actor_id", "type" } : new[] { "type" };
             if (!names.SequenceEqual(expected)) throw new FormatException("动态内容参数无效。");
-            var id = expected.Length == 2 ? element.GetProperty(expected[0]).GetString() : null;
+            var address = expected.Length == 2 ? element.GetProperty(expected[0]).Deserialize<ResourceAddress>() : null;
+            var id = address?.ToKey();
+            if (address is not null && (type == "actor_name" ? address.Kind != ResourceKind.Actor : address.Kind is not (ResourceKind.Item or ResourceKind.ItemGroup)))
+                throw new FormatException("动态内容引用类型不匹配。");
             if (expected.Length == 2 && string.IsNullOrWhiteSpace(id)) throw new FormatException("动态内容缺少资源引用。");
             parts.Add(new(Type: type, ItemId: type == "actor_name" ? null : id, ActorId: type == "actor_name" ? id : null));
         }
@@ -41,11 +46,18 @@ public static class DynamicContentText
         if (parts.All(p => p.Type is null))
         {
             var text = string.Concat(parts.Select(p => p.Text));
-            if (!text.StartsWith(Prefix, StringComparison.Ordinal)) return text;
+            if (!text.StartsWith(Prefix, StringComparison.Ordinal) && !text.StartsWith("\u001eDGR1\u001f", StringComparison.Ordinal)) return text;
         }
         return Prefix + JsonSerializer.Serialize(parts.Select(p => p.Type is null ? (object)(p.Text ?? "")
-            : p.Type is "item_count" or "item_name" ? new { type = p.Type, item_id = p.ItemId }
-            : p.Type == "actor_name" ? (object)new { type = p.Type, actor_id = p.ActorId } : new { type = p.Type }));
+            : p.Type is "item_count" or "item_name" ? new { type = p.Type, item_id = Address(p.ItemId, actor: false) }
+            : p.Type == "actor_name" ? (object)new { type = p.Type, actor_id = Address(p.ActorId, actor: true) } : new { type = p.Type }));
+    }
+    private static ResourceAddress Address(string? key, bool actor)
+    {
+        var address = ResourceAddress.FromKey(key ?? "");
+        if (actor ? address.Kind != ResourceKind.Actor : address.Kind is not (ResourceKind.Item or ResourceKind.ItemGroup))
+            throw new FormatException("动态内容引用类型不匹配。");
+        return address;
     }
     public static string Display(string? value) => string.Concat(Parse(value).Select(p => p.Type is null ? p.Text : "〔" + p.Label + "〕"));
     public static IEnumerable<string> ItemReferences(string? value) => Parse(value).Where(p => p.Type is "item_count" or "item_name").Select(p => p.ItemId!);

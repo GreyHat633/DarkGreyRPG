@@ -97,7 +97,8 @@ public partial class CanonicalGraphNodeControl : UserControl
             && FindAncestor<ToggleButton>(source) is not null)
             return true;
 
-        return FindAncestor<TextBoxBase>(source) is not null
+        return EntryReorder.IsHandleInteractionSource(source)
+            || FindAncestor<TextBoxBase>(source) is not null
             || FindAncestor<PasswordBox>(source) is not null
             || FindAncestor<ComboBox>(source) is not null
             || FindAncestor<ListBoxItem>(source) is not null

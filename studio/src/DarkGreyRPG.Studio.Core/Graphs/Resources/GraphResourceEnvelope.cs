@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -19,7 +20,8 @@ public enum GraphResourceKind
 /// </summary>
 public sealed class GraphResourceEnvelope
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
+    public const string IdentityFormat = "story-uid-v1";
 
     private GraphDocument? _graph;
 
@@ -108,7 +110,7 @@ public sealed class GraphResourceKindJsonConverter : JsonConverter<GraphResource
 public static class GraphResourceEnvelopeSerializer
 {
     private static readonly HashSet<string> RootMembers =
-        ["schema_version", "resource_kind", "id", "display_name", "tags", "task_metadata", "graph"];
+        ["schema_version", "identity_format", "resource_kind", "id", "display_name", "tags", "task_metadata", "graph"];
 
     public static string Serialize(GraphResourceEnvelope envelope, bool indented = true)
     {
@@ -122,8 +124,11 @@ public static class GraphResourceEnvelopeSerializer
         {
             writer.WriteStartObject();
             writer.WriteNumber("schema_version", GraphResourceEnvelope.CurrentSchemaVersion);
+            writer.WriteString("identity_format", GraphResourceEnvelope.IdentityFormat);
             writer.WriteString("resource_kind", FormatResourceKind(envelope.ResourceKind));
-            writer.WriteString("id", envelope.Id);
+            writer.WritePropertyName("id");
+            if (envelope.ResourceKind == GraphResourceKind.Story) writer.WriteStringValue(StoryUid.Parse(envelope.Id).Value);
+            else JsonSerializer.Serialize(writer, RequireAddress(envelope.ResourceKind, envelope.Id));
             writer.WriteString("display_name", envelope.DisplayName);
             if (envelope.Tags.Count > 0)
             {
@@ -139,12 +144,12 @@ public static class GraphResourceEnvelopeSerializer
             }
             writer.WritePropertyName("graph");
             var graph = envelope.SnapshotGraph()!;
-            if (envelope.ResourceKind == GraphResourceKind.Story) LegacyStoryBoundaryUpgrade.Apply(graph);
             if (envelope.ResourceKind == GraphResourceKind.Session)
             {
                 foreach (var node in graph.Nodes) Definitions.CanonicalSessionLineSchema.Normalize(node);
                 Definitions.ScreenAnimationSequence.NormalizeGraph(graph);
             }
+            GraphResourceAddressCodec.Transform(graph, envelope.ResourceKind, writing: true);
             JsonSerializer.Serialize(writer, graph, GraphSerializer.Options);
             writer.WriteEndObject();
         }
@@ -171,10 +176,14 @@ public static class GraphResourceEnvelopeSerializer
             var version = Required(root, "schema_version").GetInt32();
             if (version != GraphResourceEnvelope.CurrentSchemaVersion)
                 throw Failure("graph.resource.schema_version.unsupported", $"Unsupported canonical graph resource schema_version {version}; expected {GraphResourceEnvelope.CurrentSchemaVersion}.");
+            if (RequiredString(root, "identity_format") != GraphResourceEnvelope.IdentityFormat)
+                throw Failure("graph.resource.identity_format.unsupported", "旧身份格式不受支持；请使用当前版本项目。");
 
             var kindValue = RequiredString(root, "resource_kind");
             var kind = ParseResourceKind(kindValue);
-            var id = RequiredString(root, "id");
+            var id = kind == GraphResourceKind.Story ? StoryUid.Parse(RequiredString(root, "id")).Value
+                : RequireAddress(kind, JsonSerializer.Deserialize<ResourceAddress>(Required(root, "id"))?.ToKey()
+                    ?? throw new JsonException("资源地址不能为空。")).ToKey();
             var displayName = RequiredString(root, "display_name");
             if (string.IsNullOrWhiteSpace(id))
                 throw Failure("graph.resource.id.required", "Canonical graph resource id cannot be blank.");
@@ -189,8 +198,8 @@ public static class GraphResourceEnvelopeSerializer
 
             var graph = JsonSerializer.Deserialize<GraphDocument>(graphElement.GetRawText(), GraphSerializer.Options)
                 ?? throw Failure("graph.resource.graph.required", "Canonical graph resource graph cannot be null.");
+            GraphResourceAddressCodec.Transform(graph, kind, writing: false);
             RejectRetiredStandaloneNodes(kind, graph);
-            if (kind == GraphResourceKind.Story) LegacyStoryBoundaryUpgrade.Apply(graph);
             if (kind == GraphResourceKind.Session)
             {
                 foreach (var node in graph.Nodes) Definitions.CanonicalSessionLineSchema.Normalize(node);
@@ -272,6 +281,13 @@ public static class GraphResourceEnvelopeSerializer
         _ = FormatResourceKind(envelope.ResourceKind);
         if (string.IsNullOrWhiteSpace(envelope.Id))
             throw Failure("graph.resource.id.required", "Canonical graph resource id cannot be blank.");
+        try
+        {
+            if (envelope.ResourceKind == GraphResourceKind.Story) _ = StoryUid.Parse(envelope.Id);
+            else _ = RequireAddress(envelope.ResourceKind, envelope.Id);
+        }
+        catch (ArgumentException exception)
+        { throw new GraphResourceEnvelopeException("graph.resource.identity.invalid", "资源必须使用当前 Story UID 或类型匹配的 Story 资源地址。", exception); }
         if (string.IsNullOrWhiteSpace(envelope.DisplayName))
             throw Failure("graph.resource.display_name.required", "Canonical graph resource display_name cannot be blank.");
         if (envelope.Tags is null || envelope.Tags.Any(tag => tag is null))
@@ -285,12 +301,32 @@ public static class GraphResourceEnvelopeSerializer
 
     private static void RejectRetiredStandaloneNodes(GraphResourceKind kind, GraphDocument graph)
     {
+        var orderIssues = Definitions.PublicOutputSchema.Validate(graph.Nodes);
+        if (orderIssues.Count != 0)
+            throw Failure(orderIssues[0].Code, orderIssues[0].Message);
+        foreach (var node in graph.Nodes.Where(Definitions.PublicOutputSchema.IsOutput))
+        {
+            if (!node.Properties.TryGetValue("port_id", out var identity) || identity.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(identity.GetString()))
+                throw Failure("graph.output.port_id.required", "输出端口缺少稳定 port_id；旧结算结果槽不受支持。");
+            if (node.Type == "settle" && (node.Ports.Count != 1 || node.Ports[0].Id != "logic_in"
+                || !node.Ports[0].IsInput || node.Ports[0].InterfaceKind != GraphInterfaceKind.Logic))
+                throw Failure("graph.task.settle.legacy", "旧结算结果槽结构不受支持。每个结算节点必须只有一个条件输入。");
+        }
         if (kind != GraphResourceKind.Story) return;
         var retired = graph.Nodes?.FirstOrDefault(node => node is not null
             && node.Type is "interact_actor" or "enter_region" or "enter_story");
         if (retired is not null)
             throw Failure("graph.resource.story.standalone_node.removed",
                 $"旧独立触发器节点 '{retired.Type}' 已删除，请先手工转换节点 '{retired.Id}'；开始配置不受影响。");
+    }
+
+    private static ResourceAddress RequireAddress(GraphResourceKind kind, string key)
+    {
+        var address = ResourceAddress.FromKey(key);
+        var expected = kind == GraphResourceKind.Session ? ResourceKind.Session : ResourceKind.Task;
+        if (address.Kind != expected) throw new ArgumentException("资源地址类型与图类型不匹配。");
+        return address;
     }
 
     private static void EnsureRootMembers(JsonElement root)

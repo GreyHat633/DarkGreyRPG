@@ -1,0 +1,34 @@
+[
+  {
+    "File": "core-focused.trx",
+    "Total": 28,
+    "Passed": 28,
+    "Failed": 0,
+    "Skipped": 0,
+    "Outcome": "Completed"
+  },
+  {
+    "File": "core-full.trx",
+    "Total": 503,
+    "Passed": 503,
+    "Failed": 0,
+    "Skipped": 0,
+    "Outcome": "Completed"
+  },
+  {
+    "File": "wpf-focused.trx",
+    "Total": 47,
+    "Passed": 47,
+    "Failed": 0,
+    "Skipped": 0,
+    "Outcome": "Completed"
+  },
+  {
+    "File": "wpf-full.trx",
+    "Total": 686,
+    "Passed": 685,
+    "Failed": 0,
+    "Skipped": 1,
+    "Outcome": "Completed"
+  }
+]

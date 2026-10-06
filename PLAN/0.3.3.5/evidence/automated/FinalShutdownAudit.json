@@ -1,0 +1,41 @@
+{
+  "Timestamp": "2026-10-01T02:45:35.0681604+08:00",
+  "ScopedDiffCheck": "PASS",
+  "StagedFiles": 0,
+  "TestProcessesAlive": 0,
+  "TestListenerPorts": 0,
+  "StudioPid": 36448,
+  "StudioPath": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "DumpFilesInTestDirectory": 0,
+  "RecycleHistoricalVerification": "RecycleBinVerification.json records the previous successful recycle operation; paths are absent now, cause unverified. No recycle bin clearing or permanent deletion performed in this continuation.",
+  "RecycledDumpChecks": [
+    {
+      "Name": "dotnet_10900_20260930T215905_hangdump.dmp",
+      "Bytes": 2161171240,
+      "RecycledPath": "E:\\$RECYCLE.BIN\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$R2XQ2BH.dmp",
+      "PresentNow": false,
+      "CurrentBytes": null
+    },
+    {
+      "Name": "dotnet_10900_20260930T215905_hangdump.dmp",
+      "Bytes": 2161171240,
+      "RecycledPath": "E:\\$RECYCLE.BIN\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$RD48G2H.dmp",
+      "PresentNow": false,
+      "CurrentBytes": null
+    },
+    {
+      "Name": "dotnet_22124_20260930T220447_hangdump.dmp",
+      "Bytes": 2837381976,
+      "RecycledPath": "E:\\$RECYCLE.BIN\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$RLL9E71.dmp",
+      "PresentNow": false,
+      "CurrentBytes": null
+    },
+    {
+      "Name": "dotnet_22124_20260930T220447_hangdump.dmp",
+      "Bytes": 2837381976,
+      "RecycledPath": "E:\\$RECYCLE.BIN\\S-1-5-21-2074270882-3731211618-2546545783-1001\\$RZTIUEN.dmp",
+      "PresentNow": false,
+      "CurrentBytes": null
+    }
+  ]
+}

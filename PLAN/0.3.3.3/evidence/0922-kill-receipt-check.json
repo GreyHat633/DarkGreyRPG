@@ -1,0 +1,34 @@
+{
+  "status": "SETTLED",
+  "progress": [
+    {
+      "value": 3,
+      "key": "objective_0"
+    }
+  ],
+  "reward_states": [
+    {
+      "value": 1,
+      "key": "reward_0"
+    },
+    {
+      "value": 1,
+      "key": "reward_1"
+    },
+    {
+      "value": 1,
+      "key": "reward_2"
+    }
+  ],
+  "receipts": {
+    "reward_0": "e442775f1b14d8acc9d93140a9abfbc7340515d72df954cf8b5edfe17c6de26f",
+    "reward_1": "7f1e1b1ea939384ca448eaa80c22882d0a44ed8330653737ff7013c55e18139d",
+    "reward_2": "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8"
+  },
+  "receipt_count": 3,
+  "xp": {
+    "XpTotal": 7,
+    "XpLevel": 0,
+    "XpP": 0.4117647111415863
+  }
+}

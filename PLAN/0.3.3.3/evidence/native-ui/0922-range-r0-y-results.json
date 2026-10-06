@@ -1,0 +1,166 @@
+[
+  {
+    "side": "minus",
+    "passed": true,
+    "clientPoint": [
+      -119.5,
+      91.1,
+      200.5
+    ],
+    "radius": 0,
+    "label": "0922-range-r0-yminus-inside",
+    "axis": "y",
+    "inside": true,
+    "measurement": {
+      "label": "0922-range-r0-yminus-inside",
+      "time": "2026-09-22T22:15:51",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004758573750728439,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.0006284297048754458,
+      "tone880": 9.985455916126191E-08
+    },
+    "teleportFeet": [
+      -119.5,
+      89.47999999999999,
+      200.5
+    ]
+  },
+  {
+    "side": "minus",
+    "passed": true,
+    "clientPoint": [
+      -119.5,
+      90.9,
+      200.5
+    ],
+    "radius": 0,
+    "label": "0922-range-r0-yminus-outside",
+    "axis": "y",
+    "inside": false,
+    "measurement": {
+      "label": "0922-range-r0-yminus-outside",
+      "time": "2026-09-22T22:16:00",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "teleportFeet": [
+      -119.5,
+      89.28,
+      200.5
+    ]
+  },
+  {
+    "side": "plus",
+    "passed": true,
+    "clientPoint": [
+      -119.5,
+      91.9,
+      200.5
+    ],
+    "radius": 0,
+    "label": "0922-range-r0-yplus-inside",
+    "axis": "y",
+    "inside": true,
+    "measurement": {
+      "label": "0922-range-r0-yplus-inside",
+      "time": "2026-09-22T22:16:09",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0004758529257343601,
+      "peak": 0.0008130073547363281,
+      "tone440": 0.0006284295155819308,
+      "tone880": 9.98201275157982E-08
+    },
+    "teleportFeet": [
+      -119.5,
+      90.28,
+      200.5
+    ]
+  },
+  {
+    "side": "plus",
+    "passed": true,
+    "clientPoint": [
+      -119.5,
+      92.1,
+      200.5
+    ],
+    "radius": 0,
+    "label": "0922-range-r0-yplus-outside",
+    "axis": "y",
+    "inside": false,
+    "measurement": {
+      "label": "0922-range-r0-yplus-outside",
+      "time": "2026-09-22T22:16:18",
+      "device": {
+        "index": 10,
+        "structVersion": 2,
+        "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+        "hostApi": 2,
+        "maxInputChannels": 2,
+        "maxOutputChannels": 0,
+        "defaultLowInputLatency": 0.003,
+        "defaultLowOutputLatency": 0.0,
+        "defaultHighInputLatency": 0.01,
+        "defaultHighOutputLatency": 0.0,
+        "defaultSampleRate": 48000.0,
+        "isLoopbackDevice": true
+      },
+      "frames": 191488,
+      "rms": 0.0,
+      "peak": 0.0,
+      "tone440": 0.0,
+      "tone880": 0.0
+    },
+    "teleportFeet": [
+      -119.5,
+      90.47999999999999,
+      200.5
+    ]
+  }
+]

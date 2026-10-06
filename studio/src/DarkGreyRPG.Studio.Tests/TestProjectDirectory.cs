@@ -13,7 +13,8 @@ internal sealed class TestProjectDirectory : IDisposable
                 Path.Combine(Root, "project.json"),
                 """
                 {
-                  "schema_version": 1,
+                  "schema_version": 3,
+                  "identity_format": "story-uid-v1",
                   "id": "test_project",
                   "display_name": "Test Project"
                 }

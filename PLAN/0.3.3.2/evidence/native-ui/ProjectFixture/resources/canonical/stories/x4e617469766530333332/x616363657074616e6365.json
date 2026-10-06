@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "resource_kind": "story",
+  "id": "Native0332:acceptance",
+  "display_name": "NativeAcceptance",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "开始",
+        "ports": [
+          {
+            "port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+            "display_name": "启动条件 1",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "repeat_policy": "once",
+          "triggers": [
+            {
+              "port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+              "display_name": "启动条件 1",
+              "trigger_type": "enter_region",
+              "trigger_properties": {
+                "dimension": 0,
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "radius": 3
+              },
+              "order": 0
+            }
+          ]
+        }
+      }
+    ],
+    "connections": []
+  }
+}

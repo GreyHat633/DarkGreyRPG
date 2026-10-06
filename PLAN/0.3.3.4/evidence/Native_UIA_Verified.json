@@ -1,0 +1,13 @@
+{
+  "Tool": "Windows native UI Automation / UIAutomationClient",
+  "ProcessId": 21436,
+  "Exe": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "Action": "ValuePattern.SetValue on StorySearchBox",
+  "BeforeRows": 1,
+  "QueryReadback": "__native_uia_probe_0334_no_match__",
+  "FilteredRows": 0,
+  "RestoredRows": 1,
+  "OriginalValueRestored": true,
+  "Result": "PASS",
+  "Time": "2026-09-24T11:42:44.7470798+08:00"
+}

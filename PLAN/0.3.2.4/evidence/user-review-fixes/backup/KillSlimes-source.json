@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "resource_kind": "task",
+  "id": "GreyHat_:KillSlimes",
+  "display_name": "击杀3只史莱姆",
+  "graph": {
+    "nodes": [
+      {
+        "id": "settle",
+        "type": "settle",
+        "display_name": "结算",
+        "ports": [
+          {
+            "port_id": "dynamic_port_8a66683d24ed4c09b54b7eeb426000bb",
+            "display_name": "结算",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": "node_cfc0a454a1ef4168890d4ce6fbb3e803",
+        "type": "objective",
+        "display_name": "目标",
+        "ports": [
+          {
+            "port_id": "logic_status",
+            "display_name": "完成",
+            "order": 0,
+            "kind": "logic",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "description": "消灭史莱姆",
+          "entity": "GreyHat_:Slimes",
+          "objective_type": "kill_entity",
+          "prerequisite_enabled": false,
+          "required": 3
+        }
+      },
+      {
+        "id": "node_4feb6ff8c4944e078f9914cd808c9f17",
+        "type": "objective",
+        "display_name": "目标",
+        "ports": [
+          {
+            "port_id": "logic_status",
+            "display_name": "完成",
+            "order": 0,
+            "kind": "logic",
+            "direction": "output"
+          },
+          {
+            "port_id": "prerequisite",
+            "display_name": "前置条件",
+            "order": 0,
+            "kind": "logic",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "actor_id": "GreyHat_:TarvenBoss",
+          "description": "消灭史莱姆",
+          "objective_type": "interact_actor",
+          "prerequisite_enabled": true
+        }
+      }
+    ],
+    "connections": [
+      {
+        "from_node_id": "node_cfc0a454a1ef4168890d4ce6fbb3e803",
+        "from_port_id": "logic_status",
+        "to_node_id": "node_4feb6ff8c4944e078f9914cd808c9f17",
+        "to_port_id": "prerequisite",
+        "interface_kind": "logic"
+      },
+      {
+        "from_node_id": "node_4feb6ff8c4944e078f9914cd808c9f17",
+        "from_port_id": "logic_status",
+        "to_node_id": "settle",
+        "to_port_id": "dynamic_port_8a66683d24ed4c09b54b7eeb426000bb",
+        "interface_kind": "logic"
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     public void SubmitAndRegionUseTypedFieldsAndRejectInvalidRadius()
     {
         var node = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Task, "task", "Task", new GraphDocument([node])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([node])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(option => option.Value == "submit_item");
         Assert.IsTrue(inspector.IsItemObjective);
@@ -43,7 +43,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
 
         Assert.IsTrue(inspector.IsObjective);
@@ -71,19 +71,19 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     public void InteractActorPickerRetainsUnknownIdAndResolvesKnownChoice()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
-        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective, "interact_actor", "deleted", out _));
-        objective.Properties[CanonicalTaskObjectiveSchema.ActorIdProperty] = JsonSerializer.SerializeToElement("deleted");
+        Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective, "interact_actor", "ST-2345-6789-ABCD-EFGH~actor~deleted", out _));
+        objective.Properties[CanonicalTaskObjectiveSchema.ActorIdProperty] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~deleted");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
-            editor.Host.Nodes.Single(), [new CanonicalStoryActorItem(new ActorResourceInfo("known", "已知角色", "known.json", []))]);
+            editor.Host.Nodes.Single(), [new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~known", "已知角色", "known.json", []))]);
 
         Assert.IsTrue(inspector.IsInteractActorObjective);
         Assert.IsTrue(inspector.IsObjectiveActorUnresolved);
-        Assert.AreEqual("deleted", inspector.SelectedObjectiveActor!.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~deleted", inspector.SelectedObjectiveActor!.Id);
         Assert.IsFalse(inspector.ObjectiveActorOptions.Any(option => option.IsPlaceholder));
-        inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(item => item.Id == "known");
-        Assert.AreEqual("known", editor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
+        inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~actor~known");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~known", editor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
         Assert.IsTrue(inspector.IsObjectiveActorResolved);
     }
 
@@ -92,11 +92,11 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective,
-            CanonicalTaskObjectiveSchema.InteractActor, "known", out _));
+            CanonicalTaskObjectiveSchema.InteractActor, "ST-2345-6789-ABCD-EFGH~actor~known", out _));
         objective.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(1);
 
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
 
         Assert.IsTrue(editor.IsDirty);
         Assert.IsFalse(editor.Host.Graph.Nodes.Single().Properties.ContainsKey(
@@ -109,17 +109,17 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
-            editor.Host.Nodes.Single(), [new CanonicalStoryActorItem(new ActorResourceInfo("known", "已知", "known.json", []))]);
+            editor.Host.Nodes.Single(), [new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~known", "已知", "known.json", []))]);
         inspector.SelectedObjectiveType = inspector.ObjectiveTypeOptions.Single(item => item.Value == "interact_actor");
         Assert.AreEqual("interact_actor", inspector.ObjectiveType);
-        Assert.AreEqual("known", editor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~known", editor.Host.Graph.Nodes.Single().Properties["actor_id"].GetString());
         Assert.AreEqual(1, editor.Host.Session.UndoCount);
 
         var noActorObjective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var noActorEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task-2", "Task", new GraphDocument([noActorObjective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task_2", "Task", new GraphDocument([noActorObjective])));
         using var noActorInspector = new CanonicalNodeInspectorViewModel(noActorEditor.Host,
             noActorEditor.Host.Nodes.Single());
         noActorInspector.SelectedObjectiveType = noActorInspector.ObjectiveTypeOptions.Single(item => item.Value == "interact_actor");
@@ -135,7 +135,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), [new CanonicalStoryActorItem(new ActorResourceInfo(
                 "actor", "角色", "actor.json", []))]);
@@ -168,7 +168,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
 
         Assert.IsFalse(inspector.ObjectivePrerequisiteEnabled);
@@ -192,7 +192,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
             new CanonicalStoryActorItem(new ActorResourceInfo("actor-b", "乙", "b.json", [])),
         };
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), actors);
         var nodeChanges = 0;
@@ -228,7 +228,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
             new CanonicalStoryActorItem(new ActorResourceInfo("actor-b", "乙", "b.json", [])),
         };
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inlineInspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), actors);
         using var selectedInspector = new CanonicalNodeInspectorViewModel(editor.Host,
@@ -259,7 +259,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
             new CanonicalStoryItemItem(new CollectiveItemResource { GroupId = "item-b", DisplayName = "乙" }),
         };
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "task", "Task", new GraphDocument([objective])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(), itemItems: items);
         var nodeChanges = 0;
@@ -288,7 +288,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
     {
         var kill = GraphNodeFactory.Create(GraphScope.Task, "objective", "kill");
         using var killEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "kill-task", "Task", new GraphDocument([kill])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~kill_task", "Task", new GraphDocument([kill])));
         using var killInspector = new CanonicalNodeInspectorViewModel(
             killEditor.Host, killEditor.Host.Nodes.Single());
         Assert.AreEqual(string.Empty, killInspector.ObjectiveActorStatusText);
@@ -300,7 +300,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(
             collect, CanonicalTaskObjectiveSchema.CollectItem, out _));
         using var collectEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "collect-task", "Task", new GraphDocument([collect])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~collect_task", "Task", new GraphDocument([collect])));
         using var collectInspector = new CanonicalNodeInspectorViewModel(
             collectEditor.Host, collectEditor.Host.Nodes.Single());
         Assert.AreEqual(string.Empty, collectInspector.ObjectiveItemStatusText);
@@ -319,7 +319,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         interact.Properties[CanonicalTaskObjectiveSchema.ActorIdProperty] =
             JsonSerializer.SerializeToElement(string.Empty);
         using var interactEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
-            GraphResourceKind.Task, "interact-task", "Task", new GraphDocument([interact])));
+            GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~interact_task", "Task", new GraphDocument([interact])));
         using var interactInspector = new CanonicalNodeInspectorViewModel(
             interactEditor.Host, interactEditor.Host.Nodes.Single());
         Assert.AreEqual(string.Empty, interactInspector.ObjectiveActorStatusText);

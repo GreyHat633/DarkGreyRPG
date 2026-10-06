@@ -555,20 +555,7 @@
       <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
     </StackPanel>
 <graph:ReorderEntriesEditor IsDynamicContent="True" ItemsSource="{Binding ChoiceOptions}" />
-    <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
-      <StackPanel.Style>
-        <Style TargetType="StackPanel">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsTaskSettle}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </StackPanel.Style>
-      <TextBlock FontWeight="SemiBold" Text="结算结果（上方优先）" />
-      <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddTaskResultSlotCommand}" ToolTip="添加结算结果" />
-    </StackPanel>
+    
     <StackPanel Margin="0,8,0,6">
       <StackPanel.Style>
         <Style TargetType="StackPanel">
@@ -582,7 +569,7 @@
       </StackPanel.Style>
       <graph:RewardEntriesEditor />
     </StackPanel>
-<graph:ReorderEntriesEditor ItemsSource="{Binding TaskResultSlots}" />
+<graph:PublicOutputsEditor DataContext="{Binding PublicOutputs}" />
     <StackPanel>
       <StackPanel.Style>
         <Style TargetType="StackPanel">

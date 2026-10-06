@@ -1,11 +1,9 @@
 package darkgrey.rpg.project.packages;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,8 +15,6 @@ import darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection;
 import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph;
 import darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraphLoader;
 import darkgrey.rpg.graph.canonical.CanonicalStoryMembership;
-import darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet;
-import darkgrey.rpg.identity.DgrResourceId;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ItemResourceDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
@@ -32,59 +28,11 @@ public final class StoryPackageSnapshotMerger {
 
     private StoryPackageSnapshotMerger() {}
 
-    /**
-     * Reports namespace claims made by primary Stories and explicitly owned
-     * membership resources. Referenced IDs are deliberately excluded. The
-     * method is pure: it does not mutate packages or reject a merge.
-     */
-    public static List<String> findNamespaceOriginWarnings(Map<String, LoadedStoryPackage> packages) {
-        if (packages == null || packages.isEmpty()) return Collections.emptyList();
-        Map<String, Set<String>> originsByNamespace = new LinkedHashMap<String, Set<String>>();
-        List<LoadedStoryPackage> ordered = new ArrayList<LoadedStoryPackage>(packages.values());
-        Collections.sort(
-            ordered,
-            (left, right) -> left.getPackageId()
-                .compareTo(right.getPackageId()));
-        for (LoadedStoryPackage value : ordered) {
-            ProjectSnapshot snapshot = value.getSnapshot();
-            String origin = snapshot.getProject()
-                .getProjectOriginCode();
-            for (String id : claimedResourceIds(value)) {
-                if (!DgrResourceId.isFullId(id)) continue;
-                String namespace = DgrResourceId.namespace(id);
-                Set<String> origins = originsByNamespace.get(namespace);
-                if (origins == null) {
-                    origins = new LinkedHashSet<String>();
-                    originsByNamespace.put(namespace, origins);
-                }
-                origins.add(origin);
-            }
-        }
-        List<String> warnings = new ArrayList<String>();
-        for (Map.Entry<String, Set<String>> entry : originsByNamespace.entrySet()) {
-            if (entry.getValue()
-                .size() > 1)
-                warnings.add(
-                    "Namespace '" + entry.getKey()
-                        + "' is claimed by different Project Origins: "
-                        + String.join(", ", entry.getValue())
-                        + ".");
-        }
-        return Collections.unmodifiableList(warnings);
-    }
-
-    /** Short alias for callers that already use the warning noun in diagnostics. */
-    public static List<String> namespaceOriginWarnings(Map<String, LoadedStoryPackage> packages) {
-        return findNamespaceOriginWarnings(packages);
-    }
-
     public static ProjectSnapshot merge(Map<String, LoadedStoryPackage> packages) throws ProjectLoadException {
         if (packages == null || packages.isEmpty())
             throw new ProjectLoadException("At least one validated Story Package is required.");
-        for (String warning : findNamespaceOriginWarnings(packages)) {
-            org.apache.logging.log4j.LogManager.getLogger(StoryPackageSnapshotMerger.class)
-                .warn(warning);
-        }
+        List<String> conflicts = StoryPackageConflictDiagnostics.describe(packages);
+        if (!conflicts.isEmpty()) throw new ProjectLoadException(String.join("\n", conflicts));
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
         Map<String, ItemResourceDefinition> items = new LinkedHashMap<String, ItemResourceDefinition>();
         Map<String, ItemResourceDefinition> itemGroups = new LinkedHashMap<String, ItemResourceDefinition>();
@@ -265,12 +213,16 @@ public final class StoryPackageSnapshotMerger {
                     .getAsString()) ? "npc_id" : "group_id";
             if ("Item".equals(type)) field = "item_id";
             if ("Item Group".equals(type)) field = "group_id";
-            String id = json.get(field)
-                .getAsString();
-            if (!darkgrey.rpg.identity.DgrResourceId.isCompatibleId(id))
-                throw new IllegalArgumentException("Invalid resource ID.");
-            return id;
-        } catch (RuntimeException exception) {
+            if ("Story membership".equals(type) || "canonical Story".equals(type) || "Story".equals(type))
+                return darkgrey.rpg.identity.StoryUid.parse(
+                    json.get(field)
+                        .getAsString())
+                    .getValue();
+            return darkgrey.rpg.identity.ResourceAddressJson.parse(
+                json.get(field)
+                    .toString())
+                .toKey();
+        } catch (java.io.IOException | RuntimeException exception) {
             throw new ProjectLoadException(
                 "Cannot resolve declared " + type + " content identity at '" + path + "'.",
                 exception);
@@ -291,18 +243,4 @@ public final class StoryPackageSnapshotMerger {
         return bytes;
     }
 
-    private static Set<String> claimedResourceIds(LoadedStoryPackage value) {
-        Set<String> claimed = new LinkedHashSet<String>();
-        claimed.add(value.getStoryId());
-        CanonicalStoryMembership membership = value.getSnapshot()
-            .getCanonicalStoryMembership(value.getStoryId());
-        if (membership == null) return claimed;
-        CanonicalStoryMembershipSet owned = membership.getOwnedResources();
-        claimed.addAll(owned.getActors());
-        claimed.addAll(owned.getItems());
-        claimed.addAll(owned.getItemGroups());
-        claimed.addAll(owned.getSessions());
-        claimed.addAll(owned.getTasks());
-        return claimed;
-    }
 }

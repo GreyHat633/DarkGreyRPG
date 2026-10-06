@@ -922,7 +922,7 @@ public sealed class SessionScreenEditor : UserControl
                 using var stream = File.OpenRead(Path.Combine(root, "resources", media.Replace('/', Path.DirectorySeparatorChar)));
                 var image = new BitmapImage(); image.BeginInit(); image.CacheOption = BitmapCacheOption.OnLoad;
                 image.DecodePixelWidth = (int)CanvasWidth; image.StreamSource = stream; image.EndInit(); image.Freeze(); return image;
-            });
+            }).ConfigureAwait(false);
             await Dispatcher.InvokeAsync(() =>
             {
                 if (generation != _generation || ProjectDirectory != root) return;

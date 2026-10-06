@@ -1,0 +1,77 @@
+{
+  "source_unchanged_files": 7,
+  "target_existing_session_unchanged": true,
+  "external_project_edges_unchanged": true,
+  "starts": 2,
+  "membership": {
+    "schema_version": 4,
+    "identity_format": "story-uid-v1",
+    "story_id": "ST-YGZK-MYX4-UKGL-68UW",
+    "owned_resources": {
+      "actors": [
+        {
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "kind": "actor",
+          "local_id": "shared"
+        }
+      ],
+      "items": [
+        {
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "kind": "item",
+          "local_id": "shared"
+        }
+      ],
+      "item_groups": [
+        {
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "kind": "item_group",
+          "local_id": "shared"
+        }
+      ],
+      "sessions": [
+        {
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "kind": "session",
+          "local_id": "shared"
+        },
+        {
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "kind": "session",
+          "local_id": "r6d7a9883819611bb96ebd1c467d39be1"
+        }
+      ],
+      "tasks": [
+        {
+          "story_uid": "ST-YGZK-MYX4-UKGL-68UW",
+          "kind": "task",
+          "local_id": "shared"
+        }
+      ]
+    },
+    "referenced_resources": {
+      "actors": [
+        {
+          "story_uid": "ST-8Q7T-6EWT-PEPM-WYKS",
+          "kind": "actor",
+          "local_id": "shared"
+        },
+        {
+          "story_uid": "ST-9427-YJUA-UKY9-34P6",
+          "kind": "actor",
+          "local_id": "shared"
+        }
+      ],
+      "items": [],
+      "item_groups": [],
+      "sessions": [],
+      "tasks": []
+    },
+    "display_order": {
+      "actors": [],
+      "items": [],
+      "sessions": [],
+      "tasks": []
+    }
+  }
+}

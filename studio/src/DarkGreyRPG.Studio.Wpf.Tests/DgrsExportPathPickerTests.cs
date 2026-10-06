@@ -7,12 +7,35 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class DgrsExportPathPickerTests
 {
     [TestMethod]
-    [DataRow("GreyHat_:Firest", "GreyHat_.Firest.dgrs")]
-    [DataRow("MyPack:chapter_01", "MyPack.chapter_01.dgrs")]
-    [DataRow("legacy_story", "legacy_story.dgrs")]
-    public void DisplayFileName_UsesHumanReadableDotForNamespace(string storyId, string expected)
+    [DataRow("测试故事", "测试故事.dgrs")]
+    [DataRow("Opening", "Opening.dgrs")]
+    [DataRow(" 第一章：旅人/酒馆? ", "第一章：旅人_酒馆_.dgrs")]
+    [DataRow("CON", "_CON.dgrs")]
+    [DataRow("nul.旅人", "_nul.旅人.dgrs")]
+    [DataRow("LPT1", "_LPT1.dgrs")]
+    [DataRow("故事. ", "故事.dgrs")]
+    [DataRow("...", "故事.dgrs")]
+    public void DisplayFileName_UsesDisplayNameAndProducesSafeWindowsLeaf(string displayName, string expected)
     {
-        Assert.AreEqual(expected, DgrsExportPathPicker.DisplayFileName(storyId));
+        Assert.AreEqual(expected, DgrsExportPathPicker.DisplayFileName(displayName));
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("  ")]
+    public void DisplayFileName_RejectsEmptyName(string displayName)
+        => Assert.ThrowsExactly<ArgumentException>(() => DgrsExportPathPicker.DisplayFileName(displayName));
+
+    [TestMethod]
+    public void GroupFileName_UsesGroupDisplayNameAndCompleteExtension()
+        => Assert.AreEqual("故事组（1）.dgrs.g", DgrsExportPathPicker.DisplayFileName("故事组（1）", group: true));
+
+    [TestMethod]
+    public void LongName_ReservesExtensionAndDoesNotSplitSurrogatePair()
+    {
+        var result = DgrsExportPathPicker.DisplayFileName(new string('中', 239) + "😀" + new string('文', 50), group: true);
+        Assert.AreEqual(new string('中', 239) + ".dgrs.g", result);
+        Assert.IsTrue(result.Length < 256);
     }
 
     [TestMethod]

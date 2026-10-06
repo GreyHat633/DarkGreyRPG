@@ -1,0 +1,22 @@
+[
+  {
+    "path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
+    "bytes": 204288,
+    "sha256": "8e8bf253b16b1516616d890b8bd604a907cf9d607469e3785d4ab113a5b3b20c"
+  },
+  {
+    "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPGStudio.dll",
+    "bytes": 1690624,
+    "sha256": "8169be9193c428d1073b2ed6f631b7dc190b0323b72a59fe2955dc8a708f4ba9"
+  },
+  {
+    "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPG.Studio.Core.dll",
+    "bytes": 1292800,
+    "sha256": "77e3673a48dde35b5c3b7eb80d278ac8746d0a238690e5b8907e3f4846449acd"
+  },
+  {
+    "path": "build/libs/darkgrey_rpg-0.3.3.6.jar",
+    "bytes": 1949038,
+    "sha256": "be3c49d863ed381784bebcd6ba9e1aa09b7bce1c9edc6b8a44b1d751b4801cd9"
+  }
+]

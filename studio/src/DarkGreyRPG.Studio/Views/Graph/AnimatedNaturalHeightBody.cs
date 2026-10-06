@@ -31,7 +31,9 @@ public sealed class AnimatedNaturalHeightBody : Decorator
         var next = Child.DesiredSize.Height;
         if (double.IsNaN(_target) || Math.Abs(next - _target) > .01)
         {
-            var from = DisplayHeight;
+            // A clock can advance before its new height is arranged. Reverse from
+            // the last displayed frame, so a quick content change cannot jump.
+            var from = IsLoaded ? ActualHeight : DisplayHeight;
             var animate = !double.IsNaN(_target) && IsLoaded && SystemParameters.ClientAreaAnimation;
             _target = next;
             BeginAnimation(DisplayHeightProperty, null);

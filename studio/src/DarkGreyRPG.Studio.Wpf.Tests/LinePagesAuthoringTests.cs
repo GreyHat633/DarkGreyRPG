@@ -14,14 +14,15 @@ public sealed class LinePagesAuthoringTests
     public void CapacityWarningKeepsPagesEditableAndSynchronizesBothInspectors()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var first = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var second = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         first.AddLinePage();
         var text = new string('W', 1000);
         first.LinePages[0].Text = text;
         Assert.AreEqual(text, second.LinePages[0].Text);
-        Assert.IsTrue(second.LinePages[0].Capacity.Over);
+        Assert.IsFalse(second.LinePages[0].Capacity.Over);
+        Assert.IsTrue(second.LinePages[0].Capacity.Pages > 1);
         first.LinePages[0].Text = "short";
         Assert.AreEqual("short", second.LinePages[0].Text);
         Assert.IsFalse(second.LinePages[0].Capacity.Over);
@@ -67,7 +68,7 @@ public sealed class LinePagesAuthoringTests
     public void CardEdgeSelectsWithoutExpandingAndOutsideClickClearsBothEditors()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var first = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var second = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         var view = new LinePagesEditor { DataContext = first, Width = 320 };
@@ -117,7 +118,7 @@ public sealed class LinePagesAuthoringTests
     public void MultiSelectionSharesStableIdsAndBatchDeleteAllowsEmptyWithSingleUndo()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         for (var i = 1; i < 5; i++) inline.AddLinePage();
@@ -154,7 +155,7 @@ public sealed class LinePagesAuthoringTests
     public void Collapse0332IsSharedByStablePageIdWithoutDataOrUndoChanges()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         for (var i = 1; i < 50; i++) inline.AddLinePage();
@@ -175,7 +176,7 @@ public sealed class LinePagesAuthoringTests
         Assert.IsTrue(editor.Host.Undo());
         Assert.IsFalse(inline.LinePages.Last().IsExpanded);
         Assert.AreEqual(first.PageId, inline.LinePages.Last().PageId);
-        using var freshEditor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "fresh", "Fresh", editor.Host.Graph));
+        using var freshEditor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~fresh", "Fresh", editor.Host.Graph));
         using var fresh = new CanonicalNodeInspectorViewModel(freshEditor.Host, freshEditor.Host.Nodes.Single());
         Assert.IsTrue(fresh.LinePages.All(p => p.IsExpanded));
     }
@@ -184,7 +185,7 @@ public sealed class LinePagesAuthoringTests
     public void PagesKeepIdentitySettingsAndBothProjectionsThroughSingleUndoReorder()
     {
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "line");
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var inline = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         var first = inline.LinePages.Single();
@@ -229,7 +230,7 @@ public sealed class LinePagesAuthoringTests
         line.Properties["text_speed"] = JsonSerializer.SerializeToElement(45);
         line.Properties["custom_text_speed"] = JsonSerializer.SerializeToElement(true);
         line.Properties["voice_volume"] = JsonSerializer.SerializeToElement(.4);
-        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "session", "Session", new([line])));
+        using var editor = new CanonicalGraphResourceEditorViewModel(new(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new([line])));
         using var vm = new CanonicalNodeInspectorViewModel(editor.Host, editor.Host.Nodes.Single());
         Assert.AreEqual("旧台词", vm.LinePages.Single().Text);
         Assert.AreEqual(45d, vm.LinePages.Single().Speed);

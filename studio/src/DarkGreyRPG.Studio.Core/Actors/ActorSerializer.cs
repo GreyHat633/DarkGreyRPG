@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.Identity;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -23,35 +24,15 @@ public static class ActorSerializer
         ThrowIfInvalid(resource, idPolicy);
 
         var fields = new Dictionary<string, object?>(StringComparer.Ordinal);
-        var legacyCompatibility = resource.SchemaVersion == ActorResource.CurrentSchemaVersion
-            && string.IsNullOrWhiteSpace(resource.Type)
-            && !string.IsNullOrWhiteSpace(resource.Id)
-            && string.IsNullOrWhiteSpace(resource.NpcId)
-            && string.IsNullOrWhiteSpace(resource.GroupId);
-        if (resource.SchemaVersion is ActorResource.LegacySchemaVersion or ActorResource.StorySchemaVersion || legacyCompatibility)
-        {
-            fields["schema_version"] = legacyCompatibility ? ActorResource.StorySchemaVersion : resource.SchemaVersion;
-            fields["id"] = resource.Id;
-            fields["display_name"] = resource.DisplayName;
-            fields["notes"] = resource.Notes;
-            fields["tags"] = resource.Tags;
-            if (resource.SchemaVersion == ActorResource.StorySchemaVersion || legacyCompatibility)
-            {
-                fields["home_story_id"] = resource.HomeStoryId;
-            }
-        }
-        else
-        {
-            fields["schema_version"] = ActorResource.CurrentSchemaVersion;
-            fields["default_portrait_ref"] = resource.DefaultPortraitRef;
-            fields["portrait_variants"] = resource.PortraitVariants;
-            fields["type"] = resource.Type;
-            fields[resource.Type == IndividualActorResource.ResourceType ? "npc_id" : "group_id"] =
-                resource.Type == IndividualActorResource.ResourceType ? resource.NpcId : resource.GroupId;
-            fields["display_name"] = resource.DisplayName;
-            fields["tags"] = resource.Tags;
-            fields["home_story_id"] = resource.HomeStoryId;
-        }
+        fields["schema_version"] = ActorResource.CurrentSchemaVersion;
+        fields["identity_format"] = "story-uid-v1";
+        fields["default_portrait_ref"] = resource.DefaultPortraitRef;
+        fields["portrait_variants"] = resource.PortraitVariants;
+        fields["type"] = resource.Type;
+        fields[resource.Type == IndividualActorResource.ResourceType ? "npc_id" : "group_id"] = ResourceAddress.FromKey(resource.Id);
+        fields["display_name"] = resource.DisplayName;
+        fields["tags"] = resource.Tags;
+        fields["home_story_id"] = resource.HomeStoryId;
 
         return JsonSerializer.Serialize(fields, Options).Replace("\r\n", "\n", StringComparison.Ordinal) + "\n";
     }
@@ -75,8 +56,6 @@ public static class ActorSerializer
             var schema = RequiredInt(root.RootElement, "schema_version");
             var resource = schema switch
             {
-                ActorResource.LegacySchemaVersion or ActorResource.StorySchemaVersion =>
-                    ReadLegacy(root.RootElement, json),
                 ActorResource.CurrentSchemaVersion => ReadCurrent(root.RootElement, json),
                 _ => throw new ActorValidationException([new(
                     "actor.schema.unsupported",
@@ -85,19 +64,6 @@ public static class ActorSerializer
             };
 
             var issues = ActorValidator.Validate(resource, ActorIdPolicy.ExistingResource).ToList();
-            if (!string.IsNullOrWhiteSpace(sourcePath))
-            {
-                var expectedFileName = resource.Id + ".json";
-                var actualFileName = Path.GetFileName(sourcePath);
-                if (!string.Equals(expectedFileName, actualFileName, StringComparison.Ordinal))
-                {
-                    issues.Add(new(
-                        "actor.filename.mismatch",
-                        $"Actor file name must match its ID: expected '{expectedFileName}', got '{actualFileName}'.",
-                        nameof(ActorResource.Id)));
-                }
-            }
-
             ThrowIfInvalid(issues);
             return resource;
         }
@@ -140,20 +106,6 @@ public static class ActorSerializer
         Deserialize(json, sourcePath) as CollectiveActorResource
         ?? throw new ActorValidationException([new("actor.type.mismatch", "Actor resource is not collective.", nameof(ActorResource.Type))]);
 
-    private static ActorResource ReadLegacy(JsonElement root, string json)
-    {
-        EnsureExactFields(root, ["schema_version", "id", "display_name", "notes", "tags", "home_story_id"]);
-        var schema = RequiredInt(root, "schema_version");
-        if (schema == ActorResource.LegacySchemaVersion && root.TryGetProperty("home_story_id", out _))
-        {
-            throw new ActorValidationException([new("actor.field.forbidden", "Schema 1 Actor resources must not contain home_story_id.", nameof(ActorResource.HomeStoryId))]);
-        }
-        EnsureRequired(root, ["id", "display_name", "notes", "tags"]);
-        if (schema == ActorResource.StorySchemaVersion) EnsureRequired(root, ["home_story_id"]);
-        return JsonSerializer.Deserialize<ActorResource>(json, Options)
-            ?? throw new JsonException("Actor JSON root cannot be null.");
-    }
-
     private static ActorResource ReadCurrent(JsonElement root, string json)
     {
         if (!root.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String)
@@ -168,7 +120,9 @@ public static class ActorSerializer
             CollectiveActorResource.ResourceType => "group_id",
             _ => throw new ActorValidationException([new("actor.type.unsupported", "Actor type must be 'individual' or 'collective'.", nameof(ActorResource.Type))]),
         };
-        var allowed = new[] { "schema_version", "type", expectedIdentity, "display_name", "tags", "home_story_id", "default_portrait_ref", "portrait_variants" };
+        if (!root.TryGetProperty("identity_format", out var marker) || marker.ValueKind != JsonValueKind.String
+            || marker.GetString() != "story-uid-v1") throw new JsonException("Current Actor identity format is required.");
+        var allowed = new[] { "schema_version", "identity_format", "type", expectedIdentity, "display_name", "tags", "home_story_id", "default_portrait_ref", "portrait_variants" };
         EnsureExactFields(root, allowed);
         EnsureRequired(root, ["type", expectedIdentity, "display_name", "tags", "home_story_id"]);
         return typeValue == IndividualActorResource.ResourceType

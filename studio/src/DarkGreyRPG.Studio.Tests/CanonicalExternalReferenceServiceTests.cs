@@ -8,17 +8,17 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class CanonicalExternalReferenceServiceTests
 {
     [TestMethod]
-    public void AddsUnresolvedExternalReferenceToOnlySelectedKind()
+    public void RejectsUnresolvedExternalReferenceWithoutChangingMembership()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "consumer");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
 
-        new CanonicalExternalReferenceService(store)
-            .AddReference("consumer", DgrResourceKind.Actor, "other_author:boss");
+        AssertCode(() => new CanonicalExternalReferenceService(store)
+            .AddReference("ST-2345-6789-ABCD-EFGH", DgrResourceKind.Actor, "ST-JKLM-NPQR-STUV-WXYZ~actor~boss"), "story.external_reference.source.invalid");
 
-        var membership = store.Memberships.Load("consumer");
-        CollectionAssert.AreEqual(new[] { "other_author:boss" }, membership.ReferencedResources.Actors);
+        var membership = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
+        Assert.IsEmpty(membership.ReferencedResources.Actors);
         Assert.IsEmpty(membership.ReferencedResources.Items);
         Assert.IsFalse(File.Exists(Path.Combine(project.Root, "resources", "canonical", "actors", "boss.json")));
     }
@@ -28,45 +28,45 @@ public sealed class CanonicalExternalReferenceServiceTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "consumer");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "consumer",
-            ownedResources: new CanonicalStoryMembershipSet { Items = ["other_author:owned"] },
-            referencedResources: new CanonicalStoryMembershipSet { Actors = ["other_author:boss"] }));
+            "ST-2345-6789-ABCD-EFGH",
+            ownedResources: new CanonicalStoryMembershipSet { Items = ["ST-2345-6789-ABCD-EFGH~item~owned"] },
+            referencedResources: new CanonicalStoryMembershipSet { Actors = ["ST-JKLM-NPQR-STUV-WXYZ~actor~boss"] }));
         var service = new CanonicalExternalReferenceService(store);
 
-        AssertCode(() => service.AddReference("consumer", DgrResourceKind.Story, "other_author:story"),
+        AssertCode(() => service.AddReference("ST-2345-6789-ABCD-EFGH", DgrResourceKind.Story, "ST-JKLM-NPQR-STUV-WXYZ"),
             "story.external_reference.kind.unsupported");
-        AssertCode(() => service.AddReference("consumer", DgrResourceKind.Item, "bare_id"),
+        AssertCode(() => service.AddReference("ST-2345-6789-ABCD-EFGH", DgrResourceKind.Item, "bare_id"),
             "story.external_reference.id.invalid");
-        AssertCode(() => service.AddReference("consumer", DgrResourceKind.Item, "other_author:owned"),
+        AssertCode(() => service.AddReference("ST-2345-6789-ABCD-EFGH", DgrResourceKind.Item, "ST-2345-6789-ABCD-EFGH~item~owned"),
             "story.external_reference.owned");
-        AssertCode(() => service.AddReference("consumer", DgrResourceKind.Actor, "other_author:boss"),
+        AssertCode(() => service.AddReference("ST-2345-6789-ABCD-EFGH", DgrResourceKind.Actor, "ST-JKLM-NPQR-STUV-WXYZ~actor~boss"),
             "story.external_reference.duplicate");
     }
 
     [TestMethod]
-    public void PreservesUnrelatedMembershipFieldsAndDoesNotNormalizeFullId()
+    public void RejectedProviderPreservesUnrelatedMembershipFields()
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var store = new CanonicalProjectGraphStore(project.Root);
-        CreateStory(store, "consumer");
+        CreateStory(store, "ST-2345-6789-ABCD-EFGH");
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
-            "consumer",
-            ownedResources: new CanonicalStoryMembershipSet { Tasks = ["consumer:task"] },
-            referencedResources: new CanonicalStoryMembershipSet { ItemGroups = ["other_author:loot"] })
+            "ST-2345-6789-ABCD-EFGH",
+            ownedResources: new CanonicalStoryMembershipSet { Tasks = ["ST-2345-6789-ABCD-EFGH~task~task"] },
+            referencedResources: new CanonicalStoryMembershipSet { ItemGroups = ["ST-JKLM-NPQR-STUV-WXYZ~item_group~loot"] })
         {
-            DisplayOrder = new CanonicalStoryDisplayOrder { Tasks = ["consumer:task"] },
+            DisplayOrder = new CanonicalStoryDisplayOrder { Tasks = ["ST-2345-6789-ABCD-EFGH~task~task"] },
         });
 
-        new CanonicalExternalReferenceService(store)
-            .AddReference("consumer", DgrResourceKind.Session, "other_author:dialogue_session");
+        AssertCode(() => new CanonicalExternalReferenceService(store)
+            .AddReference("ST-2345-6789-ABCD-EFGH", DgrResourceKind.Session, "ST-JKLM-NPQR-STUV-WXYZ~session~dialogue_session"), "story.external_reference.source.invalid");
 
-        var membership = store.Memberships.Load("consumer");
-        CollectionAssert.AreEqual(new[] { "consumer:task" }, membership.OwnedResources.Tasks);
-        CollectionAssert.AreEqual(new[] { "other_author:loot" }, membership.ReferencedResources.ItemGroups);
-        CollectionAssert.AreEqual(new[] { "other_author:dialogue_session" }, membership.ReferencedResources.Sessions);
-        CollectionAssert.AreEqual(new[] { "consumer:task" }, membership.DisplayOrder.Tasks);
+        var membership = store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~task~task" }, membership.OwnedResources.Tasks);
+        CollectionAssert.AreEqual(new[] { "ST-JKLM-NPQR-STUV-WXYZ~item_group~loot" }, membership.ReferencedResources.ItemGroups);
+        Assert.IsEmpty(membership.ReferencedResources.Sessions);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~task~task" }, membership.DisplayOrder.Tasks);
     }
 
     private static void CreateStory(CanonicalProjectGraphStore store, string id)

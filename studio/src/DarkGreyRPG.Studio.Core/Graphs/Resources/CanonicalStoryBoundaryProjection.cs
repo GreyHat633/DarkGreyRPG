@@ -10,7 +10,7 @@ public static class CanonicalStoryBoundaryProjection
     {
         var result = new List<GraphPort>();
         var graph = story.Graph;
-        if (graph is not null) LegacyStoryBoundaryUpgrade.Apply(graph);
+
         foreach (var node in graph?.Nodes ?? [])
         {
             if (node.Type == "start")
@@ -22,8 +22,14 @@ public static class CanonicalStoryBoundaryProjection
             var name = node.Properties.TryGetValue("display_name", out var value) && value.ValueKind == JsonValueKind.String
                 ? value.GetString() ?? "" : "";
             result.Add(new(id.GetString()!, name, node.Type == "logic_input",
-                node.Type == "terminate" ? GraphInterfaceKind.Flow : GraphInterfaceKind.Logic, result.Count));
+                node.Type == "terminate" ? GraphInterfaceKind.Flow : GraphInterfaceKind.Logic, node.Type == "logic_input" ? result.Count : PublicOutputSchema.Order(node)));
         }
-        return result;
+        var sorted = result.OrderBy(port => port.IsInput ? 0 : 1).ThenBy(port => port.InterfaceKind).ThenBy(port => port.Order).ToArray();
+        foreach (var direction in sorted.GroupBy(port => port.IsInput))
+        {
+            var order = 0;
+            foreach (var port in direction) port.Order = order++;
+        }
+        return sorted;
     }
 }

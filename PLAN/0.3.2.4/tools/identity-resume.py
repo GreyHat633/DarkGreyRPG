@@ -1,0 +1,3 @@
+from live_driver import *
+call('audit0323');time.sleep(.2);a=state()['audit'];assert not a['npc'];assert any(e['entityUuid']==a['A'] for e in a['entities']);assert not any(e['entityUuid']==a['B'] for e in a['entities']);assert a['typeGroups']
+u=state()['nominator'];call('click',x=u['x']+5,y=u['y']+6);call('key',text='GreyHat_:Slimes',key=0);time.sleep(.2);u=state()['nominator'];call('click',x=u['x']+u['split']+10,y=u['y']+42);button(3);u=state()['nominator'];b=u['left'];call('click',x=b['xPosition']+b['width']//2,y=b['yPosition']+10);wait(lambda s:not s['nominator']['pending']);call('audit0323');time.sleep(.2);a=state()['audit'];assert not a['entities'] and not a['typeGroups'];shot('19-group-release');print('HOST_SCOPED_UNBIND_AND_GLOBAL_GROUP_RELEASE=PASS')

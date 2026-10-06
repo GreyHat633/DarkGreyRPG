@@ -7,9 +7,12 @@ namespace DarkGreyRPG.Studio.Core.Packaging;
 /// <summary>Stable metadata for one server-installed Story package.</summary>
 public sealed class StoryPackageManifest
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public const string CurrentFormat = "dgrs";
-    public const int CurrentFormatVersion = 1;
+    public const int CurrentFormatVersion = 2;
+
+    [JsonPropertyName("identity_format")]
+    public string IdentityFormat { get; init; } = "story-uid-v1";
 
     [JsonPropertyName("format")]
     [JsonPropertyOrder(0)]
@@ -63,6 +66,14 @@ public sealed class StoryPackageManifest
         };
         try
         {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object
+                || root.EnumerateObject().Select(p => p.Name).Distinct(StringComparer.Ordinal).Count() != root.EnumerateObject().Count()
+                || !root.TryGetProperty("identity_format", out var identity) || identity.ValueKind != JsonValueKind.String || identity.GetString() != "story-uid-v1"
+                || !root.TryGetProperty("format_version", out _)
+                || !root.TryGetProperty("schema_version", out _))
+                throw new StoryPackageException("Current DGRS identity and version fields are required.");
             var result = JsonSerializer.Deserialize<StoryPackageManifest>(json, options)
                 ?? throw new StoryPackageException("Package manifest is empty.");
             Validate(result);
@@ -85,6 +96,7 @@ public sealed class StoryPackageManifest
     public static void Validate(StoryPackageManifest manifest)
     {
         ArgumentNullException.ThrowIfNull(manifest);
+        if (manifest.IdentityFormat != "story-uid-v1") throw new StoryPackageException("Unsupported package identity format.");
         if (!string.Equals(manifest.Format, CurrentFormat, StringComparison.Ordinal))
             throw new StoryPackageException($"Unsupported package format '{manifest.Format}'.");
         if (manifest.FormatVersion != CurrentFormatVersion)
@@ -97,14 +109,21 @@ public sealed class StoryPackageManifest
         RequireId(manifest.PackageId, "package_id");
         if (string.IsNullOrWhiteSpace(manifest.PackageVersion)) throw new StoryPackageException("package_version is required.");
         RequireId(manifest.StoryId, "story_id");
-        if (manifest.StorySchemaVersion <= 0) throw new StoryPackageException("story_schema_version must be positive.");
+        if (manifest.StorySchemaVersion != 2) throw new StoryPackageException("story_schema_version must be positive.");
         if (manifest.RequiredResources is null) throw new StoryPackageException("required_resources is required.");
         manifest.RequiredResources.Validate();
+        if (manifest.PackageId != manifest.StoryId
+            || manifest.RequiredResources.Dialogues.Count != 0 || manifest.RequiredResources.Quests.Count != 0
+            || manifest.RequiredResources.CanonicalStories.Count != 1
+            || manifest.RequiredResources.CanonicalStories[0] != manifest.RequiredResources.Story
+            || manifest.RequiredResources.CanonicalMemberships.Count != 1
+            || !manifest.RequiredResources.Story.StartsWith("resources/canonical/stories/", StringComparison.Ordinal))
+            throw new StoryPackageException("A current single Story container requires exactly one canonical Story and membership.");
     }
 
     private static void RequireId(string value, string field)
     {
-        if (!DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsCompatibleId(value))
+        if (!DarkGreyRPG.Studio.Core.Identity.StoryUid.IsValid(value))
             throw new StoryPackageException($"{field} must be a stable resource ID.");
     }
 }
@@ -154,6 +173,12 @@ public sealed class StoryPackageRequiredResources
 
 public sealed class StoryPackageException : Exception
 {
+    public IReadOnlyList<StoryPackageGraphIssue> GraphIssues { get; } = [];
+
     public StoryPackageException(string message) : base(message) { }
     public StoryPackageException(string message, Exception innerException) : base(message, innerException) { }
+
+    internal StoryPackageException(IReadOnlyList<StoryPackageGraphIssue> issues)
+        : base($"Canonical resource '{issues[0].ResourcePath}' failed validation: {issues[0].Issue.Code}: {issues[0].Issue.Message}")
+        => GraphIssues = issues.ToArray();
 }

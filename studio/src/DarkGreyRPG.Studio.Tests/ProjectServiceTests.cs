@@ -1,12 +1,49 @@
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Core.Identity;
 
 namespace DarkGreyRPG.Studio.Tests;
 
 [TestClass]
 public sealed class ProjectServiceTests
 {
+    [TestMethod]
+    public void ActorSaveRollsBackBothFilesAndKeepsDirtyDocumentOnMembershipWriteFailure()
+    {
+        using var directory = new TestProjectDirectory();
+        const string owner = "ST-2345-6789-ABCD-EFGH";
+        var store = new CanonicalProjectGraphStore(directory.Root);
+        new CanonicalStoryLifecycleService(store).Create(owner, "Owner");
+        var setup = new ProjectService();
+        setup.OpenProject(directory.Root);
+        setup.SaveActor(setup.CreateActor(owner + "~actor~hero", "Original"));
+        var actorPath = new ActorRepository(directory.Root).GetActorPath(owner + "~actor~hero");
+        var memberPath = store.Memberships.GetPath(owner);
+        var actorBefore = File.ReadAllBytes(actorPath);
+        var memberBefore = File.ReadAllBytes(memberPath);
+        var writer = new FailSecondWrite();
+        var service = new ProjectService(writer);
+        service.OpenProject(directory.Root);
+        var actor = service.OpenActor(owner + "~actor~hero");
+        actor.DisplayName = "Unsaved edit";
+        Assert.ThrowsExactly<IOException>(() => service.SaveActor(actor));
+        Assert.IsTrue(actor.IsDirty);
+        CollectionAssert.AreEqual(actorBefore, File.ReadAllBytes(actorPath));
+        CollectionAssert.AreEqual(memberBefore, File.ReadAllBytes(memberPath));
+    }
+
+    private sealed class FailSecondWrite : Core.IO.IAtomicFileWriter
+    {
+        private int _writes;
+        public void Write(string path, string contents, Action<string>? validateTemporaryFile = null)
+        {
+            if (++_writes == 2) throw new IOException("Injected membership write failure");
+            new Core.IO.AtomicFileWriter().Write(path, contents, validateTemporaryFile);
+        }
+    }
+
     [TestMethod]
     public void CreateProjectBuildsRuntimeCompatibleLayout()
     {
@@ -37,49 +74,47 @@ public sealed class ProjectServiceTests
         var service = new ProjectService();
         var session = service.CreateProject(directory.Root, "school_rpg", "学校 RPG");
 
-        var created = service.CreateStory("intro", "开场");
-
-        Assert.AreEqual("intro", created.Id);
-        Assert.AreEqual("end", created.Entry);
-        Assert.AreEqual("END", created.Nodes.Single().Type);
-        Assert.IsEmpty(StoryValidator.Validate(created));
-        Assert.AreEqual("intro_2", session.Stories.GetAvailableId("intro"));
-        session.Stories.CreateStory("intro_2", "第二章");
-        Assert.AreEqual("intro_3", session.Stories.GetAvailableId("intro"));
-        Assert.ThrowsExactly<StoryRepositoryException>(() => service.CreateStory("intro", "重复"));
+        var lifecycle = new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root));
+        var created = lifecycle.CreateNew("开场");
+        Assert.IsTrue(StoryUid.IsValid(created.Id));
+        var second = lifecycle.CreateNew("第二章");
+        Assert.AreNotEqual(created.Id, second.Id);
+        Assert.AreEqual(created.Id, new CanonicalProjectGraphStore(directory.Root).Stories.Load(created.Id).Id);
+        Assert.ThrowsExactly<CanonicalStoryLifecycleException>(() => lifecycle.Create(created.Id, "重复"));
     }
 
     [TestMethod]
     public void OpenProjectLoadsExistingActorAndSaveAllPersistsChanges()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var repository = new Core.Actors.ActorRepository(directory.Root);
-        repository.SaveActor(repository.CreateActor("teacher", "Teacher"));
+        repository.SaveActor(repository.CreateActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher"));
         var service = new ProjectService();
         service.OpenProject(directory.Root);
-        var document = service.OpenActor("teacher");
+        var document = service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
         document.DisplayName = "老师";
 
         service.SaveAll();
 
         Assert.IsFalse(document.IsDirty);
-        Assert.AreEqual("老师", repository.LoadActor("teacher").DisplayName);
+        Assert.AreEqual("老师", repository.LoadActor("ST-2345-6789-ABCD-EFGH~actor~teacher").DisplayName);
     }
 
     [TestMethod]
     public void SaveActorPersistsOnlySelectedDocumentAcrossServiceRestart()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var repository = new Core.Actors.ActorRepository(directory.Root);
-        repository.SaveActor(repository.CreateActor("teacher", "Teacher"));
-        repository.SaveActor(repository.CreateActor("blacksmith", "Blacksmith"));
+        repository.SaveActor(repository.CreateActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher"));
+        repository.SaveActor(repository.CreateActor("ST-2345-6789-ABCD-EFGH~actor~blacksmith", "Blacksmith"));
 
         var service = new ProjectService();
         service.OpenProject(directory.Root);
-        var teacher = service.OpenActor("teacher");
-        var blacksmith = service.OpenActor("blacksmith");
+        var teacher = service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
+        var blacksmith = service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~blacksmith");
         teacher.DisplayName = "老师";
-        teacher.Notes = "学校中的任务 NPC";
         teacher.SetTags(["school", "quest"]);
         blacksmith.DisplayName = "铁匠（未保存）";
 
@@ -90,11 +125,10 @@ public sealed class ProjectServiceTests
 
         var restartedService = new ProjectService();
         restartedService.OpenProject(directory.Root);
-        var reloadedTeacher = restartedService.OpenActor("teacher");
-        var reloadedBlacksmith = restartedService.OpenActor("blacksmith");
+        var reloadedTeacher = restartedService.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
+        var reloadedBlacksmith = restartedService.OpenActor("ST-2345-6789-ABCD-EFGH~actor~blacksmith");
 
         Assert.AreEqual("老师", reloadedTeacher.DisplayName);
-        Assert.AreEqual("学校中的任务 NPC", reloadedTeacher.Notes);
         CollectionAssert.AreEqual(new[] { "school", "quest" }, reloadedTeacher.Tags.ToArray());
         Assert.AreEqual("Blacksmith", reloadedBlacksmith.DisplayName);
     }
@@ -103,11 +137,12 @@ public sealed class ProjectServiceTests
     public void CloseAndReloadRefuseToDiscardDirtyDocumentsByDefault()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var repository = new Core.Actors.ActorRepository(directory.Root);
-        repository.SaveActor(repository.CreateActor("teacher", "Teacher"));
+        repository.SaveActor(repository.CreateActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher"));
         var service = new ProjectService();
         service.OpenProject(directory.Root);
-        service.OpenActor("teacher").Notes = "Unsaved";
+        service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher").DisplayName = "Unsaved";
 
         Assert.ThrowsExactly<ProjectException>(() => service.CloseProject());
         Assert.ThrowsExactly<ProjectException>(() => service.ReloadProject());
@@ -120,6 +155,7 @@ public sealed class ProjectServiceTests
     public void ValidateProjectReportsMissingFutureDirectoriesAsWarnings()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var service = new ProjectService();
         service.OpenProject(directory.Root);
 
@@ -133,28 +169,27 @@ public sealed class ProjectServiceTests
     public void ActorCrudKeepsOpenDocumentsAndDiskInSync()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var service = new ProjectService();
         service.OpenProject(directory.Root);
 
-        var created = service.CreateActor("teacher", "Teacher");
+        var created = service.CreateActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher");
         Assert.IsTrue(created.IsDirty);
         service.SaveActor(created);
 
-        var duplicate = service.DuplicateActor("teacher");
-        Assert.AreEqual("teacher_copy", duplicate.Id);
+        var duplicate = service.DuplicateActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
+        Assert.AreNotEqual(created.Id, duplicate.Id);
+        Assert.AreEqual(ResourceAddress.FromKey(created.Id).StoryUid, ResourceAddress.FromKey(duplicate.Id).StoryUid);
         Assert.IsFalse(duplicate.IsDirty);
-        Assert.AreSame(duplicate, service.OpenActor("teacher_copy"));
-        Assert.IsTrue(File.Exists(directory.ActorPath("teacher_copy")));
-
-        var renamed = service.RenameActor("teacher_copy", "mentor");
-        Assert.AreEqual("mentor", renamed.Id);
-        Assert.IsFalse(File.Exists(directory.ActorPath("teacher_copy")));
-        Assert.IsTrue(File.Exists(directory.ActorPath("mentor")));
-        Assert.AreSame(renamed, service.OpenActor("mentor"));
-
-        service.DeleteActor("mentor");
-        Assert.IsFalse(File.Exists(directory.ActorPath("mentor")));
-        Assert.ThrowsExactly<ActorNotFoundException>(() => service.OpenActor("mentor"));
+        Assert.AreSame(duplicate, service.OpenActor(duplicate.Id));
+        var duplicatePath = new ActorRepository(directory.Root).GetActorPath(duplicate.Id);
+        Assert.IsTrue(File.Exists(duplicatePath));
+        Assert.ThrowsExactly<ActorRepositoryException>(() => service.RenameActor(duplicate.Id, "ST-2345-6789-ABCD-EFGH~actor~mentor"));
+        Assert.IsTrue(File.Exists(duplicatePath));
+        Assert.AreSame(duplicate, service.OpenActor(duplicate.Id));
+        service.DeleteActor(duplicate.Id);
+        Assert.IsFalse(File.Exists(duplicatePath));
+        Assert.ThrowsExactly<ActorNotFoundException>(() => service.OpenActor(duplicate.Id));
         Assert.AreEqual(1, service.OpenActorDocuments.Count);
     }
 
@@ -162,18 +197,19 @@ public sealed class ProjectServiceTests
     public void ReleaseOpenActorDropsCleanCacheAndRejectsDirtyDocuments()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var service = new ProjectService();
         service.OpenProject(directory.Root);
-        var created = service.CreateActor("teacher", "Teacher");
+        var created = service.CreateActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher");
         service.SaveActor(created);
 
-        service.ReleaseOpenActor("teacher");
+        service.ReleaseOpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
 
         Assert.IsEmpty(service.OpenActorDocuments);
-        Assert.IsTrue(File.Exists(directory.ActorPath("teacher")));
-        var reopened = service.OpenActor("teacher");
-        reopened.Notes = "Unsaved";
-        Assert.ThrowsExactly<ProjectException>(() => service.ReleaseOpenActor("teacher"));
+        Assert.IsTrue(File.Exists(new ActorRepository(directory.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~teacher")));
+        var reopened = service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
+        reopened.DisplayName = "Unsaved";
+        Assert.ThrowsExactly<ProjectException>(() => service.ReleaseOpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));
         Assert.HasCount(1, service.OpenActorDocuments);
     }
 
@@ -181,30 +217,31 @@ public sealed class ProjectServiceTests
     public void RenameAndDeleteRefuseDirtyDocumentsAndCollisions()
     {
         using var directory = new TestProjectDirectory();
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var repository = new ActorRepository(directory.Root);
-        repository.SaveActor(repository.CreateActor("teacher", "Teacher"));
-        repository.SaveActor(repository.CreateActor("guard", "Guard"));
+        repository.SaveActor(repository.CreateActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher"));
+        repository.SaveActor(repository.CreateActor("ST-2345-6789-ABCD-EFGH~actor~guard", "Guard"));
 
         var service = new ProjectService();
         service.OpenProject(directory.Root);
-        var teacher = service.OpenActor("teacher");
-        teacher.Notes = "Unsaved";
+        var teacher = service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
+        teacher.DisplayName = "Unsaved";
 
         var renameException = Assert.ThrowsExactly<ProjectException>(
-            () => service.RenameActor("teacher", "mentor"));
+            () => service.RenameActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "ST-2345-6789-ABCD-EFGH~actor~mentor"));
         StringAssert.Contains(renameException.Message, "unsaved");
         var deleteException = Assert.ThrowsExactly<ProjectException>(
-            () => service.DeleteActor("teacher"));
+            () => service.DeleteActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));
         StringAssert.Contains(deleteException.Message, "unsaved");
-        Assert.IsTrue(File.Exists(directory.ActorPath("teacher")));
-        Assert.AreSame(teacher, service.OpenActor("teacher"));
+        Assert.IsTrue(File.Exists(new ActorRepository(directory.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~teacher")));
+        Assert.AreSame(teacher, service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));
 
         service.SaveActor(teacher);
-        var collisionException = Assert.ThrowsExactly<ActorCollisionException>(
-            () => service.RenameActor("teacher", "guard"));
-        StringAssert.Contains(collisionException.Message, "already exists");
-        Assert.IsTrue(File.Exists(directory.ActorPath("teacher")));
-        Assert.IsTrue(File.Exists(directory.ActorPath("guard")));
-        Assert.AreSame(teacher, service.OpenActor("teacher"));
+        var collisionException = Assert.ThrowsExactly<ActorRepositoryException>(
+            () => service.RenameActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "ST-2345-6789-ABCD-EFGH~actor~guard"));
+        StringAssert.Contains(collisionException.Message, "immutable");
+        Assert.IsTrue(File.Exists(new ActorRepository(directory.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~teacher")));
+        Assert.IsTrue(File.Exists(new ActorRepository(directory.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~guard")));
+        Assert.AreSame(teacher, service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));
     }
 }

@@ -29,7 +29,9 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-import darkgrey.rpg.identity.DgrResourceId;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressJson;
+import darkgrey.rpg.identity.StoryUid;
 
 /** Strict, read-only loader for schema-version-1/2/3 Story membership manifests. */
 public final class CanonicalStoryMembershipLoader {
@@ -41,6 +43,7 @@ public final class CanonicalStoryMembershipLoader {
         "referenced_resources");
     private static final Set<String> CURRENT_ROOT = set(
         "schema_version",
+        "identity_format",
         "story_id",
         "owned_resources",
         "referenced_resources",
@@ -173,16 +176,17 @@ public final class CanonicalStoryMembershipLoader {
                 exception);
         }
         int version = integer(root, "schema_version", "story.membership.root");
-        if (version != CanonicalStoryMembership.LEGACY_SCHEMA_VERSION
-            && version != CanonicalStoryMembership.ITEM_MEMBERSHIP_SCHEMA_VERSION
-            && version != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
-            throw CanonicalStoryMembershipException.failure(
-                "story.membership.schema_version.unsupported",
-                "Unsupported Story membership schema_version " + version + ".");
+        if (version != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION) throw CanonicalStoryMembershipException.failure(
+            "story.membership.schema_version.unsupported",
+            "Unsupported Story membership schema_version " + version + ".");
         exact(
             root,
             version == CanonicalStoryMembership.CURRENT_SCHEMA_VERSION ? CURRENT_ROOT : LEGACY_ROOT,
             "story.membership.root");
+        if (!"story-uid-v1".equals(string(root, "identity_format", "story.membership.root")))
+            throw CanonicalStoryMembershipException.failure(
+                "story.membership.identity_format.unsupported",
+                "Only current Story UID identity format is supported.");
         String storyId = string(root, "story_id", "story.membership.root");
         CanonicalStoryMembershipSet owned = membershipSet(
             required(root, "owned_resources", "story.membership.root"),
@@ -196,11 +200,19 @@ public final class CanonicalStoryMembershipLoader {
             displayOrder(required(root, "display_order", "story.membership.root"));
         CanonicalStoryMembership result = new CanonicalStoryMembership(version, storyId, owned, referenced);
         validate(result);
-        String expectedFile = storyId + ".json";
-        if (!DgrResourceId.isFullId(storyId) && !fileName.equals(expectedFile))
-            throw CanonicalStoryMembershipException.failure(
-                "story.membership.filename.mismatch",
-                "Canonical Story membership filename must equal story_id + '.json': " + fileName);
+        CanonicalStoryMembershipSet own = result.getOwnedResources();
+        List<String> ownedIds = new ArrayList<String>();
+        ownedIds.addAll(own.getActors());
+        ownedIds.addAll(own.getItems());
+        ownedIds.addAll(own.getItemGroups());
+        ownedIds.addAll(own.getSessions());
+        ownedIds.addAll(own.getTasks());
+        for (String key : ownedIds) if (!ResourceAddress.fromKey(key)
+            .getStoryUid()
+            .getValue()
+            .equals(storyId))
+            throw CanonicalStoryMembershipException
+                .failure("story.membership.owner.mismatch", "Owned resource belongs to another Story.");
         return result;
     }
 
@@ -238,7 +250,7 @@ public final class CanonicalStoryMembershipLoader {
         List<String> handles = ids(element, path);
         Set<String> seen = new HashSet<String>();
         for (String handle : handles) {
-            boolean valid = itemHandle ? validItemOrderHandle(handle) : DgrResourceId.isCompatibleId(handle);
+            boolean valid = itemHandle ? validItemOrderHandle(handle) : ResourceAddress.isKey(handle);
             if (!valid) throw CanonicalStoryMembershipException.failure(
                 "story.membership." + kind + ".order.invalid",
                 "Display-order handle '" + handle + "' is invalid.");
@@ -253,7 +265,7 @@ public final class CanonicalStoryMembershipLoader {
         if (separator <= 0 || separator == handle.length() - 1) return false;
         String prefix = handle.substring(0, separator);
         return ("item".equals(prefix) || "item_group".equals(prefix))
-            && DgrResourceId.isCompatibleId(handle.substring(separator + 1));
+            && ResourceAddress.isKey(handle.substring(separator + 1));
     }
 
     private static List<String> ids(JsonElement element, String path) throws CanonicalStoryMembershipException {
@@ -261,6 +273,19 @@ public final class CanonicalStoryMembershipLoader {
             .failure("story.membership.list.invalid", "'" + path + "' must be an array.");
         List<String> result = new ArrayList<String>();
         for (JsonElement value : element.getAsJsonArray()) {
+            if (!path.startsWith("display_order.")) {
+                try {
+                    result.add(
+                        ResourceAddressJson.parse(value.toString())
+                            .toKey());
+                } catch (IOException exception) {
+                    throw new CanonicalStoryMembershipException(
+                        "story.membership.address.invalid",
+                        "Membership requires structured resource addresses.",
+                        exception);
+                }
+                continue;
+            }
             if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive()
                 .isString())
                 throw CanonicalStoryMembershipException
@@ -271,13 +296,12 @@ public final class CanonicalStoryMembershipLoader {
     }
 
     private static void validate(CanonicalStoryMembership membership) throws CanonicalStoryMembershipException {
-        if (membership.getSchemaVersion() != CanonicalStoryMembership.LEGACY_SCHEMA_VERSION
-            && membership.getSchemaVersion() != CanonicalStoryMembership.ITEM_MEMBERSHIP_SCHEMA_VERSION
-            && membership.getSchemaVersion() != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
+        if (membership.getSchemaVersion() != CanonicalStoryMembership.CURRENT_SCHEMA_VERSION)
             throw CanonicalStoryMembershipException.failure(
                 "story.membership.schema_version.unsupported",
                 "Unsupported Story membership schema_version " + membership.getSchemaVersion() + ".");
-        validateId(membership.getStoryId(), "story.membership.story_id.invalid", "Story ID");
+        if (!StoryUid.isValid(membership.getStoryId())) throw CanonicalStoryMembershipException
+            .failure("story.membership.story_id.invalid", "Membership requires a current Story UID.");
         validateList(
             membership.getOwnedResources()
                 .getActors(),
@@ -367,6 +391,12 @@ public final class CanonicalStoryMembershipLoader {
         Set<String> seen = new HashSet<String>();
         for (String id : ids) {
             validateId(id, "story.membership." + kind + ".id.invalid", kind + " ID");
+            if (!ResourceAddress.fromKey(id)
+                .getKind()
+                .getToken()
+                .equals(kind))
+                throw CanonicalStoryMembershipException
+                    .failure("story.membership.kind.mismatch", "Membership resource kind mismatch.");
             if (!seen.add(id)) throw CanonicalStoryMembershipException.failure(
                 "story.membership." + kind + ".id.duplicate",
                 "'" + path + "' contains duplicate ID '" + id + "'.");
@@ -382,7 +412,7 @@ public final class CanonicalStoryMembershipLoader {
     }
 
     private static void validateId(String id, String code, String label) throws CanonicalStoryMembershipException {
-        if (!DgrResourceId.isCompatibleId(id)) throw CanonicalStoryMembershipException
+        if (!ResourceAddress.isKey(id)) throw CanonicalStoryMembershipException
             .failure(code, label + " '" + id + "' must be a valid DGR resource ID.");
     }
 

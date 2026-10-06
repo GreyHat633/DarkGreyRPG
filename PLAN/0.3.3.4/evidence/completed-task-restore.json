@@ -1,0 +1,42 @@
+[
+  {
+    "Path": "server-args.json",
+    "Restored": true,
+    "Sha256": "D79BC0641ED9077C2B52BAD8017F8C752A54B716C0B06A3E53BD1204A8D68C87"
+  },
+  {
+    "Path": "witness-args.json",
+    "Restored": true,
+    "Sha256": "87FEB9EDAF8543F13884B99E862F5420E31F1AEE5AD41768B07095F3793B0B92"
+  },
+  {
+    "Path": "Server/server.properties",
+    "Restored": true,
+    "Sha256": "6C4DDCA7BC99FA3214A90434CD09AC8D72B5D0417E90EE8795C6CE3F11E5A717"
+  },
+  {
+    "Path": "Server/DarkGreyRPG/StoryPackages/Native0334.dgrs",
+    "Restored": true,
+    "Sha256": "6DA7ECEC9EEA7E0887F77463ACD60249F1E07F7FED41FF99BD7ACADD4F6928D3"
+  },
+  {
+    "Path": "Witness/DarkGreyRPG/Config/darkgrey-rpg-windows.properties",
+    "Restored": true,
+    "Sha256": "5EACFE962D5E9EA4911B2BEBA00867319AEEDAF27529FEDAD018670EAC36BB66"
+  },
+  {
+    "Path": "Witness/options.txt",
+    "Restored": true,
+    "Sha256": "514D913FF73DB0DD3A627815C02756E156BFA2965E8B9D4B0B073A1A45D797A2"
+  },
+  {
+    "Path": "Server/mods/darkgrey_rpg-0.3.3.4.jar",
+    "Restored": true,
+    "Sha256": "9DF954343435B1753CEC34165A32CFE0434E3F548C96C9A5D7FAEF8B3DE38AE0"
+  },
+  {
+    "Path": "Witness/mods/darkgrey_rpg-0.3.3.4.jar",
+    "Restored": true,
+    "Sha256": "9DF954343435B1753CEC34165A32CFE0434E3F548C96C9A5D7FAEF8B3DE38AE0"
+  }
+]

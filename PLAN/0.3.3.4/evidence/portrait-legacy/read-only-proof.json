@@ -1,0 +1,22 @@
+[
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\saves\\\u65b0\u7684\u4e16\u754c\\data\\darkgrey_rpg_task_completion_history.dat",
+    "unchanged": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\saves\\\u65b0\u7684\u4e16\u754c\\data\\darkgrey_rpg_canonical_tasks.dat",
+    "unchanged": true
+  },
+  {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\DarkGreyRPG\\StoryPackages\\GreyHat_.test_story.dgrs",
+    "unchanged": true
+  },
+  {
+    "isolated": "history",
+    "byte_identical": true
+  },
+  {
+    "isolated": "tasks",
+    "byte_identical": true
+  }
+]

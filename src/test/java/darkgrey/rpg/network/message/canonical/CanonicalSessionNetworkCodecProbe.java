@@ -25,20 +25,20 @@ public final class CanonicalSessionNetworkCodecProbe {
     private static void roundTrips() {
         CanonicalSessionAction continueAction = new CanonicalSessionAction(
             7L,
-            "故事-1",
+            "ST-2345-6789-ABCD-EFGH",
             "节点-甲",
             CanonicalSessionAction.Kind.CONTINUE,
             null);
         CanonicalSessionAction choiceAction = new CanonicalSessionAction(
             8L,
-            "故事-1",
+            "ST-2345-6789-ABCD-EFGH",
             "选择",
             CanonicalSessionAction.Kind.CHOICE,
             "option-右");
         CanonicalSessionFrame line = new CanonicalSessionFrame(
             7L,
-            "故事-1",
-            "session-资源",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             "节点-甲",
             CanonicalSessionFrame.Kind.LINE,
             "黛拉希娅",
@@ -46,8 +46,8 @@ public final class CanonicalSessionNetworkCodecProbe {
             Collections.<CanonicalSessionChoiceOption>emptyList());
         CanonicalSessionFrame choice = new CanonicalSessionFrame(
             8L,
-            "故事-1",
-            "session-资源",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             "选择",
             CanonicalSessionFrame.Kind.CHOICE,
             "",
@@ -57,8 +57,8 @@ public final class CanonicalSessionNetworkCodecProbe {
                 new CanonicalSessionChoiceOption("option-右", "右边")));
         CanonicalSessionFrame blankPromptChoice = new CanonicalSessionFrame(
             10L,
-            "故事-1",
-            "session-资源",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             "空提示选择",
             CanonicalSessionFrame.Kind.CHOICE,
             "",
@@ -66,19 +66,26 @@ public final class CanonicalSessionNetworkCodecProbe {
             Collections.singletonList(new CanonicalSessionChoiceOption("option-继续", "继续")));
         CanonicalSessionFrame narration = new CanonicalSessionFrame(
             9L,
-            "故事-1",
-            "session-资源",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             "旁白",
             CanonicalSessionFrame.Kind.LINE,
             "",
             "风穿过没有说话人的走廊。",
             Collections.<CanonicalSessionChoiceOption>emptyList());
-        CanonicalSessionClose close = new CanonicalSessionClose(8L, "故事-1");
+        CanonicalSessionClose close = new CanonicalSessionClose(8L, "ST-2345-6789-ABCD-EFGH");
         require(roundTrip(continueAction).getKind() == CanonicalSessionAction.Kind.CONTINUE, "CONTINUE round-trip");
         require(roundTrip(continueAction).getLineEpoch() == -1L, "legacy action remains unversioned");
         require(
-            roundTrip(new CanonicalSessionAction(8L, "story", "line", CanonicalSessionAction.Kind.CONTINUE, null, 27L))
-                .getLineEpoch() == 27L,
+            roundTrip(
+                new CanonicalSessionAction(
+                    8L,
+                    "ST-2345-6789-ABCD-EFGH",
+                    "line",
+                    CanonicalSessionAction.Kind.CONTINUE,
+                    null,
+                    27L)).getLineEpoch()
+                == 27L,
             "page epoch round-trip");
         require("option-右".equals(roundTrip(choiceAction).getOptionId()), "CHOICE option round-trip");
         CanonicalSessionFrame lineDecoded = roundTrip(line);
@@ -109,14 +116,14 @@ public final class CanonicalSessionNetworkCodecProbe {
                     .get(1)
                     .getOptionId()),
             "stable ordered option ID");
-        require("故事-1".equals(roundTrip(close).getStoryId()), "close round-trip");
+        require("ST-2345-6789-ABCD-EFGH".equals(roundTrip(close).getStoryId()), "close round-trip");
         String image = "media/" + String.join("", Collections.nCopies(64, "a")) + ".png";
         String voice = "media/" + String.join("", Collections.nCopies(64, "b")) + ".ogg";
         CanonicalSessionFrame media = roundTrip(
             new CanonicalSessionFrame(
                 20L,
-                "story",
-                "session",
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
                 "line",
                 CanonicalSessionFrame.Kind.LINE,
                 "Actor",
@@ -130,8 +137,8 @@ public final class CanonicalSessionNetworkCodecProbe {
         CanonicalSessionFrame speakerlessVoice = roundTrip(
             new CanonicalSessionFrame(
                 21L,
-                "story",
-                "session",
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
                 "line",
                 CanonicalSessionFrame.Kind.LINE,
                 "",
@@ -150,8 +157,8 @@ public final class CanonicalSessionNetworkCodecProbe {
         source.add(new CanonicalSessionChoiceOption("stable", "Stable"));
         CanonicalSessionFrame frame = new CanonicalSessionFrame(
             1L,
-            "story",
-            "resource",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             "node",
             CanonicalSessionFrame.Kind.CHOICE,
             "",
@@ -186,54 +193,150 @@ public final class CanonicalSessionNetworkCodecProbe {
     }
 
     private static void rejectsMalformedPayloads() {
+        rejectDecode(
+            encodeRawAction(1L, "Old:story", "node", 0, null),
+            new CanonicalSessionAction(),
+            "retired namespace Story identity");
+        rejectDecode(
+            rawFrame(1L, "ST-2345-6789-ABCD-EFGH", "Old:session", "node", 0, "speaker", "text", 0, new String[0]),
+            new CanonicalSessionFrame(),
+            "retired Session identity");
+        rejectDecode(
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~task~task",
+                "node",
+                0,
+                "speaker",
+                "text",
+                0,
+                new String[0]),
+            new CanonicalSessionFrame(),
+            "wrong resource kind");
         // Invalid enum, truncation, trailing bytes, nonpositive identity, blank/oversized UTF-8,
         // invalid action/frame shape, excessive choices, duplicate IDs, and malformed UTF-8.
-        ByteBuf action = encodeRawAction(1L, "story", "node", 2, null);
+        ByteBuf action = encodeRawAction(1L, "ST-2345-6789-ABCD-EFGH", "node", 2, null);
         rejectDecode(action, new CanonicalSessionAction(), "invalid action enum");
         rejectDecode(
             Unpooled.buffer()
                 .writeLong(1L),
             new CanonicalSessionAction(),
             "truncated action");
-        ByteBuf trailing = encode(new CanonicalSessionClose(1L, "story"));
+        ByteBuf trailing = encode(new CanonicalSessionClose(1L, "ST-2345-6789-ABCD-EFGH"));
         trailing.writeByte(1);
         rejectDecode(trailing, new CanonicalSessionClose(), "close trailing bytes");
         rejectDecode(
-            encodeRawAction(0L, "story", "node", 0, null),
+            encodeRawAction(0L, "ST-2345-6789-ABCD-EFGH", "node", 0, null),
             new CanonicalSessionAction(),
             "action nonpositive ID");
         rejectDecode(encodeRawAction(1L, " ", "node", 0, null), new CanonicalSessionAction(), "blank story");
-        rejectDecode(encodeRawAction(1L, "story", "node", 1, ""), new CanonicalSessionAction(), "blank option");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 0, "speaker", "text", 1, new String[0]),
+            encodeRawAction(1L, "ST-2345-6789-ABCD-EFGH", "node", 1, ""),
+            new CanonicalSessionAction(),
+            "blank option");
+        rejectDecode(
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                0,
+                "speaker",
+                "text",
+                1,
+                new String[0]),
             new CanonicalSessionFrame(),
             "LINE with choice count");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 0, "", "text", 0, new String[0]),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                0,
+                "",
+                "text",
+                0,
+                new String[0]),
             new CanonicalSessionFrame(),
             "LINE with blank speaker");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 0, "speaker", "", 0, new String[0]),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                0,
+                "speaker",
+                "",
+                0,
+                new String[0]),
             new CanonicalSessionFrame(),
             "LINE with blank text");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 1, "", " ", 1, new String[] { "option" }),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                1,
+                "",
+                " ",
+                1,
+                new String[] { "option" }),
             new CanonicalSessionFrame(),
             "CHOICE with whitespace prompt");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 1, "", "text", 0, new String[0]),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                1,
+                "",
+                "text",
+                0,
+                new String[0]),
             new CanonicalSessionFrame(),
             "CHOICE with no choices");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 1, "speaker", "text", 1, new String[] { "same" }),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                1,
+                "speaker",
+                "text",
+                1,
+                new String[] { "same" }),
             new CanonicalSessionFrame(),
             "CHOICE with nonblank speaker");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 1, "", "text", 2, new String[] { "same", "same" }),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                1,
+                "",
+                "text",
+                2,
+                new String[] { "same", "same" }),
             new CanonicalSessionFrame(),
             "duplicate option IDs");
         rejectDecode(
-            rawFrame(1L, "story", "resource", "node", 1, "", "text", 33, new String[0]),
+            rawFrame(
+                1L,
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
+                "node",
+                1,
+                "",
+                "text",
+                33,
+                new String[0]),
             new CanonicalSessionFrame(),
             "excessive choices");
         ByteBuf malformedUtf8 = Unpooled.buffer();
@@ -253,14 +356,24 @@ public final class CanonicalSessionNetworkCodecProbe {
 
             @Override
             public void run() {
-                new CanonicalSessionAction(0L, "story", "node", CanonicalSessionAction.Kind.CONTINUE, null);
+                new CanonicalSessionAction(
+                    0L,
+                    "ST-2345-6789-ABCD-EFGH",
+                    "node",
+                    CanonicalSessionAction.Kind.CONTINUE,
+                    null);
             }
         }, "invalid action object");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                new CanonicalSessionAction(1L, "story", "node", CanonicalSessionAction.Kind.CONTINUE, "forged");
+                new CanonicalSessionAction(
+                    1L,
+                    "ST-2345-6789-ABCD-EFGH",
+                    "node",
+                    CanonicalSessionAction.Kind.CONTINUE,
+                    "forged");
             }
         }, "CONTINUE option object");
         reject(new Runnable() {
@@ -269,8 +382,8 @@ public final class CanonicalSessionNetworkCodecProbe {
             public void run() {
                 new CanonicalSessionFrame(
                     1L,
-                    "story",
-                    "resource",
+                    "ST-2345-6789-ABCD-EFGH",
+                    "ST-2345-6789-ABCD-EFGH~session~session",
                     "node",
                     CanonicalSessionFrame.Kind.LINE,
                     "speaker",
@@ -281,8 +394,8 @@ public final class CanonicalSessionNetworkCodecProbe {
         require(
             new CanonicalSessionFrame(
                 1L,
-                "story",
-                "resource",
+                "ST-2345-6789-ABCD-EFGH",
+                "ST-2345-6789-ABCD-EFGH~session~session",
                 "node",
                 CanonicalSessionFrame.Kind.CHOICE,
                 "",
@@ -296,8 +409,8 @@ public final class CanonicalSessionNetworkCodecProbe {
             public void run() {
                 new CanonicalSessionFrame(
                     1L,
-                    "story",
-                    "resource",
+                    "ST-2345-6789-ABCD-EFGH",
+                    "ST-2345-6789-ABCD-EFGH~session~session",
                     "node",
                     CanonicalSessionFrame.Kind.CHOICE,
                     "speaker",
@@ -309,7 +422,7 @@ public final class CanonicalSessionNetworkCodecProbe {
 
             @Override
             public void run() {
-                new CanonicalSessionClose(-1L, "story");
+                new CanonicalSessionClose(-1L, "ST-2345-6789-ABCD-EFGH");
             }
         }, "invalid close object");
         reject(new Runnable() {

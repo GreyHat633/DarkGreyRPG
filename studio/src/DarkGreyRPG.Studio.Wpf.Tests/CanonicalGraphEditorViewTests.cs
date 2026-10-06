@@ -127,8 +127,7 @@ public sealed class CanonicalGraphEditorViewTests
     [STATestMethod]
     public void DynamicPortRefreshRebuildsOnlyAffectedNodeAndPreservesSelectionViewport()
     {
-        var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "target", "Target");
-        settle.Ports.Add(new GraphPort("result", "Result", true, GraphInterfaceKind.Logic, 0));
+        var settle = GraphNodeFactory.Create(GraphScope.Task, "and", "target", "Target");
         var host = new GraphEditorHostViewModel(new GraphDocument([
             GraphNodeFactory.Create(GraphScope.Task, "objective", "source", "Source"), settle]), GraphScope.Task);
         var view = Arrange(host);
@@ -966,7 +965,7 @@ public sealed class CanonicalGraphEditorViewTests
             new[] { "line", "music", "screen", "choice", "and", "or", "not", "logic_input", "logic_output", "condition", "flow_judgment", "end" },
             view.AuthoringDefinitions.Select(definition => definition.Type).ToArray());
         Assert.IsFalse(view.AuthoringDefinitions.Any(definition => definition.Type == "legacy_jump"));
-        CollectionAssert.AreEqual(new[] { "会话", "演出", "逻辑", "结束" },
+        CollectionAssert.AreEqual(new[] { "会话", "演出", "逻辑", "流程" },
             view.AuthoringCategories.Select(category => category.Name).ToArray());
         Assert.IsTrue(view.CanAuthorNodeType("choice"));
         Assert.IsTrue(view.CanAuthorNodeType("flow_judgment"));
@@ -1012,7 +1011,7 @@ public sealed class CanonicalGraphEditorViewTests
         var add = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "添加"));
         Assert.AreEqual("添加", add.Header);
         CollectionAssert.AreEqual(
-            new[] { "会话", "演出", "逻辑", "结束" },
+            new[] { "会话", "演出", "逻辑", "流程" },
             add.Items.OfType<MenuItem>().Select(item => item.Header).ToArray());
 
         var logic = add.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "逻辑"));

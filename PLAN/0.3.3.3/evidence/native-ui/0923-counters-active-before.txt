@@ -1,0 +1,6 @@
+operation=snapshot
+time=1790107288960
+TaskTrackerHud.snapshotRebuild=2
+darkgrey/rpg/client/TaskTrackerClient.accept=1
+darkgrey/rpg/client/TaskTrackerClient.save=1
+darkgrey/rpg/client/TaskTrackerHud.draw=19449

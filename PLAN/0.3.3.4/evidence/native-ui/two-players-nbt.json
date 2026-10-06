@@ -1,0 +1,131 @@
+{
+  "": {
+    "data": {
+      "schema_version": 6,
+      "terminal_routes": [],
+      "presentation_texts": {
+        "2": {
+          "values": {
+            "line": "Hello Witness0334 level 7"
+          },
+          "stamp": "a5006605-027a-3524-8a14-1273915286b7:node_311203e4e0894920bc9b0c2c9189a743:1:0"
+        },
+        "3": {
+          "values": {
+            "line": "Hello Native0334 level 12"
+          },
+          "stamp": "45ca59f8-73a4-374b-a419-a6bfea1a4897:node_311203e4e0894920bc9b0c2c9189a743:1:0"
+        }
+      },
+      "sessions": {
+        "schema_version": 1,
+        "next_transport_id": 4,
+        "instances": [
+          {
+            "activation_logic": 0,
+            "session_resource_id": "Native0332:conversation",
+            "story_id": "Native0332:acceptance",
+            "transport_id": 3,
+            "public_logic_outputs": [],
+            "executed_flow_judgment_node_ids": [],
+            "player_uuid": "45ca59f8-73a4-374b-a419-a6bfea1a4897",
+            "aggregate_placement_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+            "presentation": "{\"revision\":0,\"music_revision\":0,\"media_ref\":null,\"loop\":false,\"fade_in\":0.0,\"fade_out\":0.0,\"volume\":1.0,\"layers\":[]}",
+            "line_page_index": 0,
+            "selected_option_ids": [],
+            "waiting_condition": 0,
+            "external_logic_inputs": [],
+            "internal_logic_values": [],
+            "selected_choice_node_ids": [],
+            "line_epoch": 1,
+            "current_node_id": "node_311203e4e0894920bc9b0c2c9189a743",
+            "status": "ACTIVE",
+            "latest_choice_selections": []
+          },
+          {
+            "activation_logic": 0,
+            "session_resource_id": "Native0332:conversation",
+            "story_id": "Native0332:acceptance",
+            "transport_id": 2,
+            "public_logic_outputs": [],
+            "executed_flow_judgment_node_ids": [],
+            "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+            "aggregate_placement_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+            "presentation": "{\"revision\":0,\"music_revision\":0,\"media_ref\":null,\"loop\":false,\"fade_in\":0.0,\"fade_out\":0.0,\"volume\":1.0,\"layers\":[]}",
+            "line_page_index": 0,
+            "selected_option_ids": [],
+            "waiting_condition": 0,
+            "external_logic_inputs": [],
+            "internal_logic_values": [],
+            "selected_choice_node_ids": [],
+            "line_epoch": 1,
+            "current_node_id": "node_311203e4e0894920bc9b0c2c9189a743",
+            "status": "ACTIVE",
+            "latest_choice_selections": []
+          }
+        ]
+      },
+      "stories": {
+        "schema_version": 1,
+        "instances": [
+          {
+            "story_id": "Native0332:acceptance",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "5d628b35fcb265dd6222aae0622ea88be0d67b5f42684805ab52b725ad8d25ba",
+              "wait_resource_id": "Native0332:conversation",
+              "wait_kind": "SESSION",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "Native0332:acceptance",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+              "current_node_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+              "repeat_policy": "repeatable",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "45ca59f8-73a4-374b-a419-a6bfea1a4897",
+            "terminal_time": 0,
+            "activation_time": 1790223829518
+          },
+          {
+            "story_id": "Native0332:acceptance",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "5d628b35fcb265dd6222aae0622ea88be0d67b5f42684805ab52b725ad8d25ba",
+              "wait_resource_id": "Native0332:conversation",
+              "wait_kind": "SESSION",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "Native0332:acceptance",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+              "current_node_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+              "repeat_policy": "repeatable",
+              "status": "ACTIVE"
+            },
+            "player_uuid": "a5006605-027a-3524-8a14-1273915286b7",
+            "terminal_time": 0,
+            "activation_time": 1790223779113
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  }
+}

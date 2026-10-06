@@ -1,0 +1,6 @@
+{
+  "SessionContinuousDrag": true,
+  "OutsideReentryCancelled": true,
+  "TaskInlineContinuousDrag": true,
+  "SingleUndoExact": true
+}

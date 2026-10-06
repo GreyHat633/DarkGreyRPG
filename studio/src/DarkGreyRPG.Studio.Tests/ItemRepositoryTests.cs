@@ -10,20 +10,20 @@ public sealed class ItemRepositoryTests
     {
         using var project = new TestProjectDirectory();
         var repository = new ItemRepository(project.Root);
-        var item = repository.SaveItem(new IndividualItemResource { ItemId = "royal_key", DisplayName = "Key", Tags = ["quest"] });
+        var item = repository.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~royal_key", DisplayName = "Key", Tags = ["quest"] });
         var group = repository.SaveGroup(new CollectiveItemResource
         {
-            GroupId = "keys",
+            GroupId = "ST-2345-6789-ABCD-EFGH~item_group~keys",
             DisplayName = "Keys",
             Tags = ["quest"],
         });
 
         var itemJson = File.ReadAllText(repository.GetItemPath(item.ItemId));
         var groupJson = File.ReadAllText(repository.GetGroupPath(group.GroupId));
-        Assert.AreEqual(itemJson, ItemSerializer.Serialize(repository.LoadItem("royal_key")));
-        Assert.AreEqual(groupJson, ItemSerializer.Serialize(repository.LoadGroup("keys")));
-        CollectionAssert.AreEqual(new[] { "royal_key" }, repository.ListItems().Select(x => x.Id).ToArray());
-        CollectionAssert.AreEqual(new[] { "keys" }, repository.ListGroups().Select(x => x.Id).ToArray());
+        Assert.AreEqual(itemJson, ItemSerializer.Serialize(repository.LoadItem("ST-2345-6789-ABCD-EFGH~item~royal_key")));
+        Assert.AreEqual(groupJson, ItemSerializer.Serialize(repository.LoadGroup("ST-2345-6789-ABCD-EFGH~item_group~keys")));
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item~royal_key" }, repository.ListItems().Select(x => x.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFGH~item_group~keys" }, repository.ListGroups().Select(x => x.Id).ToArray());
     }
 
     [TestMethod]
@@ -31,15 +31,15 @@ public sealed class ItemRepositoryTests
     {
         using var project = new TestProjectDirectory();
         var repository = new ItemRepository(project.Root);
-        repository.SaveItem(new IndividualItemResource { ItemId = "key", DisplayName = "Original" });
-        var path = repository.GetItemPath("key");
+        repository.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~key", DisplayName = "Original" });
+        var path = repository.GetItemPath("ST-2345-6789-ABCD-EFGH~item~key");
         var original = File.ReadAllText(path);
 
         // Existing resources are intentionally updateable; a second create with a different
         // identity is the collision boundary enforced by the file key itself.
-        repository.SaveItem(new IndividualItemResource { ItemId = "key", DisplayName = "Updated" });
+        repository.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~key", DisplayName = "Updated" });
         Assert.AreNotEqual(original, File.ReadAllText(path));
-        Assert.AreEqual("Updated", repository.LoadItem("key").DisplayName);
+        Assert.AreEqual("Updated", repository.LoadItem("ST-2345-6789-ABCD-EFGH~item~key").DisplayName);
     }
 
     [TestMethod]
@@ -47,8 +47,8 @@ public sealed class ItemRepositoryTests
     {
         using var project = new TestProjectDirectory();
         var repository = new ItemRepository(project.Root);
-        repository.SaveItem(new IndividualItemResource { ItemId = "key", DisplayName = "Original" });
-        var path = repository.GetItemPath("key");
+        repository.SaveItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~key", DisplayName = "Original" });
+        var path = repository.GetItemPath("ST-2345-6789-ABCD-EFGH~item~key");
         var original = File.ReadAllText(path);
 
         Assert.ThrowsExactly<ItemValidationException>(() => repository.SaveItem(new IndividualItemResource { ItemId = "Bad ID", DisplayName = "Invalid" }));

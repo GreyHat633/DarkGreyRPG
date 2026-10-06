@@ -1,0 +1,295 @@
+{
+  "total": 94,
+  "passed": [
+    "canonicalActorArbitrationProbe",
+    "canonicalStoryChooserCodecProbe",
+    "repeat0334Probe",
+    "currentDynamicContentProbe",
+    "inspectionBoundary0334Probe",
+    "inspectionClient0334Probe",
+    "studio21ActorBindingProbe",
+    "canonicalSessionRuntimeProbe",
+    "canonicalStoryRuntimeProbe",
+    "canonicalStoryActionConfigurationProbe",
+    "canonicalTaskJournalIntegrationProbe",
+    "canonicalTaskStage4SurfaceProbe",
+    "canonicalSessionNetworkCodecProbe",
+    "canonicalSessionCommandProbe",
+    "canonicalStorySessionCompletionRouterProbe",
+    "nominatorItemContainerProbe",
+    "entityToolsStage5Probe",
+    "copierTemplateActionCodecProbe",
+    "offlineOriginProbe",
+    "creatorUxProbe",
+    "smoothScroll0324Probe",
+    "playerPreferences0332Probe",
+    "dialogueBacklog0332Probe",
+    "taskTracking0332Probe",
+    "utilityWindow0324Probe",
+    "storyAction0330Probe",
+    "storyMediaCacheIndexProbe",
+    "mediaTransfer0330Probe",
+    "storyBoundary0331Probe",
+    "taskNotificationsPlanProbe",
+    "mediaQueue0334Probe",
+    "mediaTransferWindowProbe",
+    "currentNominatorWireProbe",
+    "b4NetworkDiscriminatorProbe",
+    "storyIdentity0336Probe",
+    "storyFingerprint0336Probe",
+    "gramophone0332Probe",
+    "runtimeDirectoriesProbe",
+    "packageRuntimeMigrationPlanProbe",
+    "publicOutputPriority0336Probe",
+    "runtimeInteractionUi0336Probe"
+  ],
+  "failed": [
+    "construction0335Probe",
+    "b4ExternalPackageReferencesProbe",
+    "canonicalStoryCommandProbe",
+    "inspection0334Probe",
+    "canonicalTaskRuntimeProbe",
+    "canonicalStoryInstanceProbe",
+    "canonicalStoryServerServiceProbe",
+    "canonicalStoryForgeCoordinatorProbe",
+    "canonicalTaskForgeProbe",
+    "canonicalTaskInstanceProbe",
+    "canonicalTaskJournalProjectionProbe",
+    "canonicalTaskEventPersistenceProbe",
+    "canonicalSessionInstanceProbe",
+    "canonicalSessionSavedDataProbe",
+    "canonicalSessionServerServiceProbe",
+    "canonicalSessionClientModelProbe",
+    "canonicalSessionForgeRoutingProbe",
+    "npcIdentitySavedDataProbe",
+    "entityDgrIdentityResolverProbe",
+    "itemIdentitySavedDataProbe",
+    "nominatorStage4Probe",
+    "playerRpgSavedDataProbe",
+    "storyPackageLoaderProbe",
+    "storyPackageGenerationProbe",
+    "creatorNetworkDiscriminatorProbe",
+    "presentation0322Probe",
+    "nominator0323Probe",
+    "dialogue0333Probe",
+    "task0330Probe",
+    "task0331RuntimeProbe",
+    "storyMediaServerProbe",
+    "sessionPresentation0330Probe",
+    "title0330Probe",
+    "b4ExternalArchiveSetProbe",
+    "currentResourceIdentity0336Probe",
+    "storyGroup0336Probe",
+    "phase1ProjectProbe",
+    "studio21VerticalSliceProbe",
+    "studio21RegressionProbe",
+    "canonicalGraphResourceProbe",
+    "canonicalStoryMembershipProbe",
+    "canonicalProjectContentProbe",
+    "canonicalProjectRepositoryProbe",
+    "actorSchema3ProjectRepositoryProbe",
+    "dgrsPackageRuntimeProbe",
+    "dgrsArchiveReaderProbe",
+    "storyPackageDiagnosticsProbe",
+    "objective0324Probe",
+    "taskReward0330Probe",
+    "mediaPackage0330Probe",
+    "dgrsMediaStreaming0331Probe",
+    "dgrsMediaLifecycle0331Probe",
+    "mediaLatency0334Probe"
+  ],
+  "failureReasons": {
+    "construction0335Probe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid Story UID; expected ST-XXXX-XXXX-XXXX-XXXX."
+    ],
+    "b4ExternalPackageReferencesProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalProjectContentException: project.content.story.id.mismatch: Canonical story map key does not match its resource ID: consumer:story",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalProjectContentException.failure(CanonicalProjectContentException.java:23)"
+    ],
+    "canonicalStoryCommandProbe": [
+      "Exception in thread \"main\" java.lang.IllegalStateException: Probe failure: canonical Journal adapter boundary"
+    ],
+    "inspection0334Probe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid dynamic JSON.",
+      "Caused by: java.io.IOException: A resource address object is required."
+    ],
+    "canonicalTaskRuntimeProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: task.resource.schema: Unsupported Task schema version."
+    ],
+    "canonicalStoryInstanceProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid Story UID; expected ST-XXXX-XXXX-XXXX-XXXX."
+    ],
+    "canonicalStoryServerServiceProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: story.resource.invalid: Invalid canonical Story resource."
+    ],
+    "canonicalStoryForgeCoordinatorProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: story.resource.invalid: Invalid canonical Story resource."
+    ],
+    "canonicalTaskForgeProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: task.resource.schema: Unsupported Task schema version."
+    ],
+    "canonicalTaskInstanceProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: task.resource.schema: Unsupported Task schema version."
+    ],
+    "canonicalTaskJournalProjectionProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Item ID must be a valid DGR resource ID."
+    ],
+    "canonicalTaskEventPersistenceProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: task.resource.schema: Unsupported Task schema version."
+    ],
+    "canonicalSessionInstanceProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid Story UID; expected ST-XXXX-XXXX-XXXX-XXXX."
+    ],
+    "canonicalSessionSavedDataProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid Story UID; expected ST-XXXX-XXXX-XXXX-XXXX."
+    ],
+    "canonicalSessionServerServiceProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid canonical Session payload: story_id requires the current Story UID format"
+    ],
+    "canonicalSessionClientModelProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid canonical Session payload: story_id requires the current Story UID format"
+    ],
+    "canonicalSessionForgeRoutingProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid canonical Session payload: story_id requires the current Story UID format"
+    ],
+    "npcIdentitySavedDataProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: NPC ID must be a valid DGR resource ID."
+    ],
+    "entityDgrIdentityResolverProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: NPC ID must be a valid DGR resource ID."
+    ],
+    "itemIdentitySavedDataProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Item ID must be a valid DGR resource ID."
+    ],
+    "nominatorStage4Probe": [
+      "java.lang.IllegalArgumentException: NPC ID must be a valid DGR resource ID.",
+      "Exception in thread \"main\" java.lang.IllegalStateException: Probe failed: canonical-only story binding"
+    ],
+    "playerRpgSavedDataProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid Story UID; expected ST-XXXX-XXXX-XXXX-XXXX."
+    ],
+    "storyPackageLoaderProbe": [
+      "Exception in thread \"main\" java.lang.NullPointerException"
+    ],
+    "storyPackageGenerationProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\probe!\\manifest.json"
+    ],
+    "creatorNetworkDiscriminatorProbe": [
+      "Exception in thread \"main\" java.lang.AssertionError: Unknown or duplicate discriminator: registerMessage("
+    ],
+    "presentation0322Probe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid canonical Session payload: story_id requires the current Story UID format"
+    ],
+    "nominator0323Probe": [
+      "java.lang.IllegalArgumentException: NPC ID must be a valid DGR resource ID.",
+      "Exception in thread \"main\" java.lang.AssertionError: bind A"
+    ],
+    "dialogue0333Probe": [
+      "Exception in thread \"main\" java.lang.AssertionError: shared profile geometry including rounded quote gutters"
+    ],
+    "task0330Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: graph.resource.root.member.required: Required field 'identity_format' is missing.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalGraphResourceException.failure(CanonicalGraphResourceException.java:23)"
+    ],
+    "task0331RuntimeProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: task.resource.schema: Unsupported Task schema version."
+    ],
+    "storyMediaServerProbe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid canonical Session payload: story_id requires the current Story UID format"
+    ],
+    "sessionPresentation0330Probe": [
+      "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid Story UID; expected ST-XXXX-XXXX-XXXX-XXXX."
+    ],
+    "title0330Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: story.resource.invalid: Invalid canonical Story resource."
+    ],
+    "b4ExternalArchiveSetProbe": [
+      "Exception in thread \"main\" java.lang.AssertionError: Paired archives rejected: [consumer.dgrs: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0.3.2.0_B4\\external-packages\\installed-3470894730097516723\\consumer.dgrs, provider.dgrs: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0.3.2.0_B4\\external-packages\\installed-3470894730097516723\\provider.dgrs]"
+    ],
+    "currentResourceIdentity0336Probe": [
+      "darkgrey.rpg.project.ProjectLoadException: Could not load canonical project content: project.content.tasks.load: Could not load canonical project-content directory 'E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-current-fixture\\Project\\resources\\canonical\\tasks'.",
+      "Caused by: darkgrey.rpg.graph.canonical.CanonicalProjectContentException: project.content.tasks.load: Could not load canonical project-content directory 'E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0336-current-fixture\\Project\\resources\\canonical\\tasks'.",
+      "Caused by: darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: graph.output.port_id.required: Stable public output identity required.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalGraphResourceException.failure(CanonicalGraphResourceException.java:23) ~[main/:?]",
+      "Exception in thread \"main\" java.lang.AssertionError: Complete runtime Project reload failed"
+    ],
+    "storyGroup0336Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: Invalid canonical Story entry 'resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json': graph.output.order.required: Explicit public output order required.",
+      "Caused by: darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: graph.output.order.required: Explicit public output order required.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalGraphResourceException.failure(CanonicalGraphResourceException.java:23)"
+    ],
+    "phase1ProjectProbe": [
+      "darkgrey.rpg.project.ProjectLoadException: Unsupported schema_version 2 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\phase1-runtime-probe\\project.json",
+      "Exception in thread \"main\" \tat darkgrey.rpg.project.ProjectRepository.validateSchema(ProjectRepository.java:608) ~[main/:?]",
+      "java.lang.AssertionError: Unsupported schema_version 2 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\phase1-runtime-probe\\project.json"
+    ],
+    "studio21VerticalSliceProbe": [
+      "darkgrey.rpg.project.ProjectLoadException: Unsupported schema_version 2 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\2.1-acceptance\\DarkGrey-2.1-Acceptance\\project.json",
+      "Exception in thread \"main\" java.lang.IllegalStateException: Unsupported schema_version 2 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\2.1-acceptance\\DarkGrey-2.1-Acceptance\\project.json"
+    ],
+    "studio21RegressionProbe": [
+      "darkgrey.rpg.project.ProjectLoadException: Unsupported schema_version 2 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\studio21-regression-probe\\project.json",
+      "Exception in thread \"main\" \tat darkgrey.rpg.project.ProjectRepository.validateSchema(ProjectRepository.java:608) ~[main/:?]",
+      "java.lang.AssertionError: Unsupported schema_version 2 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\studio21-regression-probe\\project.json"
+    ],
+    "canonicalGraphResourceProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: graph.resource.root.member.required: Required field 'identity_format' is missing.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalGraphResourceException.failure(CanonicalGraphResourceException.java:23)"
+    ],
+    "canonicalStoryMembershipProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalStoryMembershipException: story.membership.schema_version.unsupported: Unsupported Story membership schema_version 1.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalStoryMembershipException.failure(CanonicalStoryMembershipException.java:23)"
+    ],
+    "canonicalProjectContentProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalProjectContentException: project.content.stories.load: Could not load canonical project-content directory 'E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\canonical-project-content-probe\\resources\\canonical\\stories'.",
+      "Caused by: darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: graph.resource.root.member.required: Required field 'identity_format' is missing.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalGraphResourceException.failure(CanonicalGraphResourceException.java:23)"
+    ],
+    "canonicalProjectRepositoryProbe": [
+      "darkgrey.rpg.project.ProjectLoadException: Unsupported schema_version 1 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\canonical-project-repository-probe\\project.json",
+      "Exception in thread \"main\" java.lang.AssertionError: Unsupported schema_version 1 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\canonical-project-repository-probe\\project.json"
+    ],
+    "actorSchema3ProjectRepositoryProbe": [
+      "darkgrey.rpg.project.ProjectLoadException: Unsupported schema_version 1 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\actor-schema3-project-repository-probe\\project.json",
+      "Exception in thread \"main\" java.lang.AssertionError: Unsupported schema_version 1 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\actor-schema3-project-repository-probe\\project.json"
+    ],
+    "dgrsPackageRuntimeProbe": [
+      "darkgrey.rpg.project.ProjectLoadException: Unsupported schema_version 1 in E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\dgrs-runtime-probe\\base-9d73fefaa25c\\project.json",
+      "Exception in thread \"main\" java.util.NoSuchElementException"
+    ],
+    "dgrsArchiveReaderProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\valid.dgrs!\\manifest.json"
+    ],
+    "storyPackageDiagnosticsProbe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\manifest.json"
+    ],
+    "objective0324Probe": [
+      "Exception in thread \"main\" java.lang.AssertionError: archive validation: [kill_slimes-description-corrected.dgrs: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\PLAN\\0.3.2.4\\evidence\\kill_slimes-description-corrected.dgrs]"
+    ],
+    "taskReward0330Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.graph.canonical.CanonicalGraphResourceException: graph.resource.root.member.required: Required field 'identity_format' is missing.",
+      "\tat darkgrey.rpg.graph.canonical.CanonicalGraphResourceException.failure(CanonicalGraphResourceException.java:23)"
+    ],
+    "mediaPackage0330Probe": [
+      "Exception in thread \"main\" java.lang.AssertionError: [media_story.dgrs: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0.3.3.0\\p9\\fixtures\\media_story.dgrs, presentation_story.dgrs: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0.3.3.0\\p9\\fixtures\\presentation_story.dgrs]"
+    ],
+    "dgrsMediaStreaming0331Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\probe!\\manifest.json"
+    ],
+    "dgrsMediaLifecycle0331Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\page-probe"
+    ],
+    "mediaLatency0334Probe": [
+      "Exception in thread \"main\" darkgrey.rpg.project.ProjectLoadException: identity_format must be a non-empty string in E:\\Java\\MinecraftMod\\DarkGreyRPG\\latency"
+    ]
+  },
+  "followUp": {
+    "creatorNetworkDiscriminatorProbe": "PASS: network-regression.log",
+    "runtimeInteractionUi0336Probe": "PASS: scope-regression.log (includes 65 member / edge chunks and scoped cross-story / placement regression)"
+  },
+  "latestResultCounts": {
+    "passed": 42,
+    "failed": 52,
+    "isCompleteSuiteRerun": false
+  }
+}

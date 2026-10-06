@@ -34,11 +34,11 @@ public sealed class StandaloneStoryNodeRemovalTests
         {
             var start = new GraphNode("start", "start", "开始");
             StoryStartSchema.InitializeDefault(start, "entry", type,
-                actorId: type == StoryStartSchema.ActorInteraction ? "guard" : null,
+                actorId: type == StoryStartSchema.ActorInteraction ? "ST-2345-6789-ABCD-EFGH~actor~guard" : null,
                 logicPortId: type == StoryStartSchema.Logic ? "condition" : null);
             start.Properties[StoryStartSchema.RepeatPolicyProperty] = JsonSerializer.SerializeToElement(StoryStartSchema.Repeatable);
             var before = GraphSerializer.Serialize(new GraphDocument([start]));
-            var envelope = new GraphResourceEnvelope(GraphResourceKind.Story, "kept", "Kept", new GraphDocument([start]));
+            var envelope = new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Kept", new GraphDocument([start]));
             var reopened = GraphResourceEnvelope.FromJson(envelope.ToJson()).Graph!;
             Assert.AreEqual(before, GraphSerializer.Serialize(reopened), type);
             Assert.IsEmpty(StoryStartSchema.Validate(reopened.Nodes.Single()), type);

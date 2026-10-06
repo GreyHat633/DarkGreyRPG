@@ -41,6 +41,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     private CanonicalSessionInstanceStore store = new CanonicalSessionInstanceStore();
     private CanonicalStoryInstanceStore storyStore = new CanonicalStoryInstanceStore();
+    private darkgrey.rpg.story.canonical.instance.CanonicalStoryCompletionHistory storyHistory = new darkgrey.rpg.story.canonical.instance.CanonicalStoryCompletionHistory();
     private List<CanonicalStoryPendingContinuation> continuations = new java.util.ArrayList<CanonicalStoryPendingContinuation>();
     private NBTTagCompound pendingRaw;
     private NBTTagCompound presentationTexts = new NBTTagCompound();
@@ -84,7 +85,6 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     private boolean bound = true;
-    private boolean pendingLegacy;
     private CanonicalSessionResourceResolver boundSessionResolver;
     private CanonicalStoryResourceResolver boundStoryResolver;
     /** Idempotency keys for terminal Flow routing; keyed by player, Story run and public port. */
@@ -114,10 +114,13 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (storage == null) throw new IllegalArgumentException("MapStorage is required.");
         WorldSavedData loaded = storage.loadData(CanonicalSessionSavedData.class, DATA_NAME);
         if (loaded instanceof CanonicalSessionSavedData) {
+            ((CanonicalSessionSavedData) loaded).storyHistory = darkgrey.rpg.story.canonical.instance.CanonicalStoryCompletionHistory
+                .get(storage);
             darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, loaded);
             return (CanonicalSessionSavedData) loaded;
         }
         CanonicalSessionSavedData created = new CanonicalSessionSavedData();
+        created.storyHistory = darkgrey.rpg.story.canonical.instance.CanonicalStoryCompletionHistory.get(storage);
         storage.setData(DATA_NAME, created);
         darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, created);
         return created;
@@ -181,12 +184,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         List<CanonicalStoryInstanceSnapshot> storySnapshots;
         List<CanonicalStoryPendingContinuation> pendingContinuations;
         long replacementNextTransportId;
-        if (pendingRaw != null && pendingLegacy) {
-            sessionSnapshots = CanonicalSessionInstanceNbtCodec.decode(pendingRaw);
-            replacementNextTransportId = CanonicalSessionInstanceNbtCodec.nextTransportId(pendingRaw);
-            storySnapshots = java.util.Collections.emptyList();
-            pendingContinuations = java.util.Collections.emptyList();
-        } else if (pendingRaw != null) {
+        if (pendingRaw != null) {
             CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(pendingRaw);
             sessionSnapshots = decoded.getSessions();
             replacementNextTransportId = decoded.getNextTransportId();
@@ -207,6 +205,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             pendingContinuations = continuations;
         }
         boolean discarded = false;
+        List<CanonicalStoryInstanceSnapshot> historyCandidates = new java.util.ArrayList<CanonicalStoryInstanceSnapshot>(
+            storySnapshots);
         if (discardUnavailable) {
             List<CanonicalSessionInstanceSnapshot> availableSessions = new java.util.ArrayList<CanonicalSessionInstanceSnapshot>();
             for (CanonicalSessionInstanceSnapshot snapshot : sessionSnapshots) {
@@ -236,11 +236,13 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         restoreStories(replacementStories, storySnapshots, storyResolver);
         replacementContinuations.addAll(pendingContinuations);
         validateStoryContinuations(replacementStories, replacementContinuations);
+        for (CanonicalStoryInstanceSnapshot snapshot : historyCandidates)
+            if (discardUnavailable && !storySnapshots.contains(snapshot)) storyHistory.retire(snapshot);
+            else storyHistory.observe(snapshot);
         store = replacementSessions;
         storyStore = replacementStories;
         continuations = replacementContinuations;
         pendingRaw = null;
-        pendingLegacy = false;
         boundSessionResolver = resolver;
         boundStoryResolver = storyResolver;
         bound = true;
@@ -306,6 +308,9 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         String triggerPortId, CanonicalStoryRepeatPolicy repeatPolicy, Map<String, Boolean> logicInputs,
         long activationTime) {
         requireStoryBound();
+        if (storyStore.getSnapshot(playerUuid, resource.getId()) == null
+            && !startDisposition(playerUuid, resource.getId()).isEligible())
+            throw new IllegalStateException("Retained Story history blocks this Start.");
         NBTTagCompound before = persistedState();
         boolean restart = storyStore.startDisposition(playerUuid, resource.getId())
             == darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition.REPEATABLE_RESTART;
@@ -328,7 +333,14 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition startDisposition(
         UUID playerUuid, String storyId) {
         requireStoryBound();
-        return storyStore.startDisposition(playerUuid, storyId);
+        return storyStore.getSnapshot(playerUuid, storyId) == null
+            ? storyHistory
+                .disposition(playerUuid, storyId, boundStoryResolver.resolve(storyId), java.time.Clock.systemUTC())
+            : storyStore.startDisposition(playerUuid, storyId);
+    }
+
+    public synchronized NBTTagCompound completedStorySummary(UUID playerUuid, String storyId) {
+        return storyHistory.summary(playerUuid, storyId);
     }
 
     /** Claims a terminal output exactly once for one durable Story run. */
@@ -591,6 +603,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         removed = remaining.size() != continuations.size() || removed;
         continuations = remaining;
         markWorldIfChanged(before);
+        storyHistory.resetAdmission(playerUuid, storyId);
         return removed;
     }
 
@@ -792,6 +805,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (pendingRaw != null) return discardPending(storyIds);
         NBTTagCompound before = persistedState();
         int sessionsRemoved = store.discardByStoryIds(storyIds);
+        for (CanonicalStoryInstanceSnapshot snapshot : storyStore.snapshots())
+            if (storyIds.contains(snapshot.getStoryId())) storyHistory.retire(snapshot);
         int storiesRemoved = storyStore.discardByStoryIds(storyIds);
         List<CanonicalStoryPendingContinuation> remaining = filterContinuations(continuations, storyIds);
         int continuationsRemoved = continuations.size() - remaining.size();
@@ -803,18 +818,9 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     private DiscardResult discardPending(Set<String> storyIds) {
-        if (pendingLegacy) {
-            List<CanonicalSessionInstanceSnapshot> sessions = CanonicalSessionInstanceNbtCodec.decode(pendingRaw);
-            List<CanonicalSessionInstanceSnapshot> retained = filterSessions(sessions, storyIds);
-            int removed = sessions.size() - retained.size();
-            if (removed > 0) {
-                pendingRaw = CanonicalSessionInstanceNbtCodec
-                    .encode(retained, CanonicalSessionInstanceNbtCodec.nextTransportId(pendingRaw));
-                markDirty();
-            }
-            return new DiscardResult(0, removed, 0);
-        }
         CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(pendingRaw);
+        for (CanonicalStoryInstanceSnapshot snapshot : decoded.getStories())
+            if (storyIds.contains(snapshot.getStoryId())) storyHistory.retire(snapshot);
         List<CanonicalSessionInstanceSnapshot> sessions = filterSessions(decoded.getSessions(), storyIds);
         List<CanonicalStoryInstanceSnapshot> stories = filterStories(decoded.getStories(), storyIds);
         List<CanonicalStoryPendingContinuation> remaining = filterContinuations(decoded.getContinuations(), storyIds);
@@ -981,18 +987,12 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
         if (root == null) throw new IllegalArgumentException("Session NBT is required.");
-        // Keep the exact detached payload before any strict validation or resolver lookup.
+        // Validate the detached candidate before replacing any live or pending state.
+        CanonicalSessionWorldStateNbtCodec.decode(root);
         pendingRaw = copy(root);
         presentationTexts = (NBTTagCompound) root.getCompoundTag("presentation_texts")
             .copy();
         bound = false;
-        pendingLegacy = !root.hasKey(CanonicalSessionWorldStateNbtCodec.SESSIONS_KEY)
-            && !root.hasKey(CanonicalSessionWorldStateNbtCodec.CONTINUATIONS_KEY);
-        // Validate structure now, but defer resource resolution and runtime restore to bind().
-        if (pendingLegacy) {
-            CanonicalSessionInstanceNbtCodec.decode(root);
-            CanonicalSessionInstanceNbtCodec.nextTransportId(root);
-        } else CanonicalSessionWorldStateNbtCodec.decode(root);
     }
 
     @Override
@@ -1213,6 +1213,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     private void markWorldIfChanged(NBTTagCompound before) {
+        for (CanonicalStoryInstanceSnapshot snapshot : storyStore.snapshots()) storyHistory.observe(snapshot);
         if (!before.equals(persistedState())) markDirty();
     }
 

@@ -67,17 +67,17 @@ public sealed class CanonicalStoryDiscoveryService
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
 
-        var items = ids.Select(DiscoverItem).ToArray();
+        var items = ids.Select(id => DiscoverItem(id,
+            storyIds.Contains(id, StringComparer.Ordinal),
+            membershipIds.Contains(id, StringComparer.Ordinal))).ToArray();
         return new CanonicalStoryDiscoverySnapshot(items);
     }
 
-    private CanonicalStoryDiscoveryItem DiscoverItem(string id)
+    private CanonicalStoryDiscoveryItem DiscoverItem(string id, bool hasStoryRoot, bool hasMembershipRoot)
     {
         // Do not route presence checks through repository.GetPath: an invalid
         // filename is itself a discoverable identity and strict path helpers
         // intentionally reject it before a root can be diagnosed.
-        var hasStoryRoot = HasRoot(_store.Stories, id);
-        var hasMembershipRoot = HasRoot(_store.Memberships, id);
         var issues = new List<CanonicalStoryDiscoveryIssue>(2);
         GraphResourceEnvelope? story = null;
         CanonicalStoryMembershipManifest? membership = null;
@@ -146,10 +146,7 @@ public sealed class CanonicalStoryDiscoveryService
             try
             {
                 var id = readId(path);
-                // Bare B3 resources retain their filename identity, including
-                // the diagnostic for a payload/filename mismatch.
-                ids.Add(DarkGreyRPG.Studio.Core.Identity.DgrResourceId.IsFullId(id)
-                    ? id : Path.GetFileNameWithoutExtension(path));
+                ids.Add(id);
             }
             catch (Exception exception) when (exception is GraphResourceEnvelopeException
                 or CanonicalStoryMembershipException
@@ -162,18 +159,6 @@ public sealed class CanonicalStoryDiscoveryService
             }
         }
         return ids;
-    }
-
-    private static bool HasRoot(GraphResourceRepository repository, string id)
-    {
-        try { return File.Exists(repository.GetPath(id)); }
-        catch (GraphResourceRepositoryException) { return true; }
-    }
-
-    private static bool HasRoot(CanonicalStoryMembershipRepository repository, string id)
-    {
-        try { return File.Exists(repository.GetPath(id)); }
-        catch (CanonicalStoryMembershipRepositoryException) { return true; }
     }
 
     private static CanonicalStoryDiscoveryIssue MissingRoot(string id, string root)

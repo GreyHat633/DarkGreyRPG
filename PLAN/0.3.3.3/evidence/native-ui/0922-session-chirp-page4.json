@@ -1,0 +1,25 @@
+{
+  "label": "0922-session-chirp-page4",
+  "time": "2026-09-22T23:00:01",
+  "device": {
+    "index": 10,
+    "structVersion": 2,
+    "name": "扬声器 (2- Realtek(R) Audio) [Loopback]",
+    "hostApi": 2,
+    "maxInputChannels": 2,
+    "maxOutputChannels": 0,
+    "defaultLowInputLatency": 0.003,
+    "defaultLowOutputLatency": 0.0,
+    "defaultHighInputLatency": 0.01,
+    "defaultHighOutputLatency": 0.0,
+    "defaultSampleRate": 48000.0,
+    "isLoopbackDevice": true
+  },
+  "frames": 191488,
+  "rms": 0.028879999358285155,
+  "peak": 0.0601116418838501,
+  "tone440": 0.03676527891172736,
+  "tone880": 2.6008916281127157e-05,
+  "dominantVoiceHz": 922.4598930481284,
+  "dominantVoiceAmplitude": 0.002993130505921385
+}

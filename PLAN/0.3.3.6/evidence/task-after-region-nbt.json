@@ -1,0 +1,346 @@
+{
+  "darkgrey_rpg_canonical_sessions.dat": {
+    "data": {
+      "schema_version": 7,
+      "identity_format": "story-uid-v1",
+      "terminal_routes": [
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-2345-6789-ABCD-EFGH\u00001791115089677\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-AAAA-BBBB-CCCC-DDDD\u00001791124932764\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-JKLM-NPQR-STUV-WXYZ\u00001791115226110\u0000finished"
+        },
+        {
+          "key": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e\u0000ST-JKLM-NPQR-STUV-WXYZ\u00001791115309893\u0000finished"
+        }
+      ],
+      "sessions": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "next_transport_id": 2,
+        "instances": []
+      },
+      "stories": {
+        "schema_version": 2,
+        "identity_format": "story-uid-v1",
+        "instances": [
+          {
+            "story_id": "ST-2345-6789-ABCD-EFGH",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "14bbec4a30e1de37d85ab72439f8d7eb016ffc6a305a58fffb8c7137edf5f75d",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-2345-6789-ABCD-EFGH",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "story_done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791115158955,
+            "activation_time": 1791115089677
+          },
+          {
+            "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "219ee168a925f3987c08b3587a08ba20a0502fb89486b33811f7ad56bac75b0e",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-AAAA-BBBB-CCCC-DDDD",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "done",
+              "repeat_policy": "once",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791124969787,
+            "activation_time": 1791124932764
+          },
+          {
+            "story_id": "ST-JKLM-NPQR-STUV-WXYZ",
+            "runtime": {
+              "target_story_id": "",
+              "wait_dimension": "",
+              "wait_radius": "",
+              "executed_flow_judgment_node_ids": [],
+              "wait_z": "",
+              "resource_fingerprint": "211806ea8819789501ce7024a065096eef77d233bc434574a45d3c17ec5656ae",
+              "wait_resource_id": "",
+              "wait_kind": "NONE",
+              "external_logic_inputs": [],
+              "wait_y": "",
+              "wait_x": "",
+              "resource_id": "ST-JKLM-NPQR-STUV-WXYZ",
+              "current_input_port_id": "flow_in",
+              "logic": [],
+              "trigger_port_id": "entry",
+              "current_node_id": "story_done",
+              "repeat_policy": "repeatable",
+              "status": "TERMINATED"
+            },
+            "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+            "terminal_time": 1791115309893,
+            "activation_time": 1791115309893
+          }
+        ]
+      },
+      "continuations": [],
+      "terminal_route_targets": [],
+      "pending_terminal_routes": [],
+      "start_observations": []
+    }
+  },
+  "darkgrey_rpg_canonical_tasks.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "instances": [
+        {
+          "result_port_id": "dynamic_port_caae34a4f3d94a96ab6c0fbd8290b5c5",
+          "objective_statuses": [
+            {
+              "value": "COMPLETED",
+              "key": "reach"
+            }
+          ],
+          "activation_logic": 0,
+          "story_instance_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "public_logic_outputs": [],
+          "resource_fingerprint": "f8b643dc3a11ae9fe307006f46cfda0ba1b58b8530d11aacfb73abb8ec27d58a",
+          "runtime_status": "SETTLED",
+          "player_uuid": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "reward_states": [
+            {
+              "value": 1,
+              "key": "reward"
+            }
+          ],
+          "settlement_time": 1791124969787,
+          "activation_time": 1791124932776,
+          "task_resource_id": {
+            "local_id": "journey",
+            "kind": "task",
+            "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+          },
+          "internal_logic_values": [
+            {
+              "value": 1,
+              "key": "reach:logic_status"
+            }
+          ],
+          "progress": [
+            {
+              "value": 1,
+              "key": "reach"
+            }
+          ],
+          "task_node_placement_id": "task_placement",
+          "status": "SETTLED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_item_identities.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "groups": [],
+      "items": [
+        {
+          "item_id": {
+            "local_id": "shared",
+            "kind": "item",
+            "story_uid": "ST-2345-6789-ABCD-EFGH"
+          },
+          "definition": {
+            "damage": 0,
+            "registry_name": "minecraft:stone"
+          }
+        }
+      ],
+      "revision": 1
+    }
+  },
+  "darkgrey_rpg_player_names.dat": {
+    "data": {
+      "names": {
+        "native0336": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e"
+      }
+    }
+  },
+  "darkgrey_rpg_story_completion_history.dat": {
+    "data": {
+      "schema_version": 1,
+      "identity_format": "story-uid-v1",
+      "summaries": [
+        {
+          "terminal": 1791115158955,
+          "activation": 1791115089677,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-2345-6789-ABCD-EFGH",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791124969787,
+          "activation": 1791124932764,
+          "completed_count": 1,
+          "repeat_policy": "ONCE",
+          "story_uid": "ST-AAAA-BBBB-CCCC-DDDD",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        },
+        {
+          "terminal": 1791115309893,
+          "activation": 1791115309893,
+          "completed_count": 2,
+          "repeat_policy": "REPEATABLE",
+          "story_uid": "ST-JKLM-NPQR-STUV-WXYZ",
+          "player": "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e",
+          "status": "TERMINATED"
+        }
+      ]
+    }
+  },
+  "darkgrey_rpg_story_package_generations.dat": {
+    "data": {
+      "schema_version": 2,
+      "identity_format": "story-uid-v1",
+      "generations": [
+        {
+          "story_id": "ST-2345-6789-ABCD-EFGH",
+          "package_id": "ST-2345-6789-ABCD-EFGH",
+          "content_fingerprint": "0fd881c57a257830f6600665bd5a3cd9f9529be0d194ecbe333631d751924129"
+        },
+        {
+          "story_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "package_id": "ST-AAAA-BBBB-CCCC-DDDD",
+          "content_fingerprint": "2a38e2de635023b928d9bc9ea4e1f56ad500bc6c1cac8013e4d79c8bc0743ff3"
+        },
+        {
+          "story_id": "ST-JKLM-NPQR-STUV-WXYZ",
+          "package_id": "ST-JKLM-NPQR-STUV-WXYZ",
+          "content_fingerprint": "b95f520912092430b0f140143ef9ffa366f38b1debb4da3b17a68a707326489b"
+        }
+      ]
+    }
+  },
+  "17cdb7a5-5bc3-3ac0-a83a-2bd437b5734e.dat": {
+    "Spawns": [],
+    "ForgeData": {
+      "SkinOverlayData": [],
+      "PlayerPersisted": {
+        "DGRTaskReceipts": {
+          "729b1403c89482765ce6a27f984a2ab6bb96ef514106b9f56ffe30aa2885cdb7": 1
+        }
+      }
+    },
+    "SleepTimer": 0,
+    "Attributes": [
+      {
+        "Base": 20.0,
+        "Name": "generic.maxHealth"
+      },
+      {
+        "Base": 0.0,
+        "Name": "generic.knockbackResistance"
+      },
+      {
+        "Base": 0.10000000149011612,
+        "Name": "generic.movementSpeed"
+      },
+      {
+        "Base": 1.0,
+        "Name": "generic.attackDamage"
+      }
+    ],
+    "Invulnerable": 0,
+    "PortalCooldown": 0,
+    "AbsorptionAmount": 0.0,
+    "abilities": {
+      "invulnerable": 1,
+      "mayfly": 1,
+      "instabuild": 1,
+      "walkSpeed": 0.10000000149011612,
+      "mayBuild": 1,
+      "flying": 0,
+      "flySpeed": 0.05000000074505806
+    },
+    "FallDistance": 0.0,
+    "DeathTime": 0,
+    "HealF": 20.0,
+    "XpTotal": 7,
+    "playerGameType": 1,
+    "Motion": [
+      0.0,
+      -0.0784000015258789,
+      0.0
+    ],
+    "UUIDLeast": -6324694536220740786,
+    "Health": 20,
+    "foodSaturationLevel": 5.0,
+    "Air": 300,
+    "OnGround": 1,
+    "Dimension": 0,
+    "Rotation": [
+      -192.0,
+      -13.5
+    ],
+    "XpLevel": 0,
+    "Score": 0,
+    "UUIDMost": 1715228953935035072,
+    "Sleeping": 0,
+    "Pos": [
+      20.5,
+      4.0,
+      0.5
+    ],
+    "Fire": -20,
+    "XpP": 0.4117647111415863,
+    "EnderItems": [],
+    "foodLevel": 20,
+    "foodExhaustionLevel": 0.0,
+    "HurtTime": 0,
+    "SelectedItemSlot": 0,
+    "AttackTime": 0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "id": 4453,
+        "Count": 1,
+        "Damage": 0
+      },
+      {
+        "Slot": 1,
+        "id": 1,
+        "Count": 1,
+        "Damage": 0
+      }
+    ],
+    "foodTickTimer": 0
+  }
+}

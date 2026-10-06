@@ -1,8 +1,6 @@
 using System.IO;
 using System.Windows;
-using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Settings;
-using Microsoft.Win32;
 
 namespace DarkGreyRPG.Studio.Services;
 
@@ -17,43 +15,65 @@ public sealed class DgrsExportPathPicker : IDgrsExportPathPicker
         _settingsService = settingsService;
     }
 
-    public string? PickExportPath(string storyId, string suggestedDirectory)
+    public string? PickExportPath(string displayName, string suggestedDirectory)
+        => PickPath(DisplayFileName(displayName), suggestedDirectory, false);
+
+    public string? PickGroupExportPath(string displayName, string suggestedDirectory)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(storyId);
+        return PickPath(DisplayFileName(displayName, group: true), suggestedDirectory, true);
+    }
+
+    private string? PickPath(string fileName, string suggestedDirectory, bool group)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(suggestedDirectory);
 
         var fullSuggestedDirectory = ResolveInitialDirectory(
             _settingsService?.Load().LastExportDirectory,
             suggestedDirectory);
-        var dialog = new SaveFileDialog
-        {
-            Title = "导出故事包",
-            Filter = "DarkGrey RPG 故事包 (*.dgrs)|*.dgrs",
-            DefaultExt = ".dgrs",
-            AddExtension = true,
-            FileName = DisplayFileName(storyId),
-            InitialDirectory = fullSuggestedDirectory,
-            OverwritePrompt = true,
-            CheckPathExists = true,
-            ValidateNames = true,
-        };
-
         var owner = _ownerProvider();
-        var accepted = owner is null ? dialog.ShowDialog() : dialog.ShowDialog(owner);
-        if (accepted != true) return null;
-
-        RememberDirectory(dialog.FileName);
-        return dialog.FileName;
+        while (true)
+        {
+            var directory = FixedNameExportDialog.SelectDirectory(owner, fileName, fullSuggestedDirectory,
+                $"{(group ? "导出完整故事组" : "导出故事包")}：{fileName} — 选择导出位置");
+            if (directory is null) return null;
+            var target = Path.Combine(directory, fileName);
+            if (File.Exists(target))
+            {
+                var message = $"文件已存在：{target}\n是否替换？";
+                var answer = owner is null
+                    ? MessageBox.Show(message, "确认替换", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)
+                    : MessageBox.Show(owner, message, "确认替换", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                if (answer != MessageBoxResult.Yes)
+                {
+                    fullSuggestedDirectory = directory;
+                    continue;
+                }
+            }
+            RememberDirectory(target);
+            return target;
+        }
     }
 
-    public static string DisplayFileName(string storyId)
+    public static string DisplayFileName(string displayName, bool group = false)
     {
-        if (!DgrResourceId.IsCompatibleId(storyId))
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        var invalid = Path.GetInvalidFileNameChars();
+        var stem = string.Concat(displayName.Select(character => invalid.Contains(character) ? '_' : character)).Trim().TrimEnd('.', ' ');
+        if (stem.Length == 0) stem = group ? "故事组" : "故事";
+        // Windows reserves device names even when a filename has an extension.
+        var firstPart = stem.Split('.')[0].TrimEnd(' ');
+        if (firstPart.Equals("CON", StringComparison.OrdinalIgnoreCase)
+            || firstPart.Equals("PRN", StringComparison.OrdinalIgnoreCase)
+            || firstPart.Equals("AUX", StringComparison.OrdinalIgnoreCase)
+            || firstPart.Equals("NUL", StringComparison.OrdinalIgnoreCase)
+            || (firstPart.Length == 4 && (firstPart.StartsWith("COM", StringComparison.OrdinalIgnoreCase)
+                || firstPart.StartsWith("LPT", StringComparison.OrdinalIgnoreCase))
+                && "123456789¹²³".Contains(firstPart[3]))) stem = "_" + stem;
+        if (stem.Length > 240)
         {
-            throw new ArgumentException("Story ID is not a compatible DGR resource ID.", nameof(storyId));
+            stem = stem[..(char.IsHighSurrogate(stem[239]) ? 239 : 240)].TrimEnd('.', ' ');
         }
-
-        return storyId.Replace(':', '.') + ".dgrs";
+        return stem + (group ? ".dgrs.g" : ".dgrs");
     }
 
     internal static string ResolveInitialDirectory(string? rememberedDirectory, string fallbackDirectory)

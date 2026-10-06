@@ -50,7 +50,7 @@ public sealed class CanonicalStoryMembershipManifest
 {
     public const int LegacySchemaVersion = 1;
     public const int ItemMembershipSchemaVersion = 2;
-    public const int CurrentSchemaVersion = 3;
+    public const int CurrentSchemaVersion = 4;
 
     private CanonicalStoryMembershipSet _ownedResources = new();
     private CanonicalStoryMembershipSet _referencedResources = new();
@@ -116,7 +116,7 @@ public static class CanonicalStoryMembershipSerializer
     private static readonly string[] LegacyRootMembers =
         ["schema_version", "story_id", "owned_resources", "referenced_resources"];
     private static readonly string[] CurrentRootMembers =
-        ["schema_version", "story_id", "owned_resources", "referenced_resources", "display_order"];
+        ["schema_version", "identity_format", "story_id", "owned_resources", "referenced_resources", "display_order"];
     private static readonly string[] DisplayOrderMembers = ["actors", "items", "sessions", "tasks"];
 
     public static string Serialize(CanonicalStoryMembershipManifest manifest, bool indented = true)
@@ -132,6 +132,7 @@ public static class CanonicalStoryMembershipSerializer
         {
             writer.WriteStartObject();
             writer.WriteNumber("schema_version", manifest.SchemaVersion);
+            writer.WriteString("identity_format", GraphResourceEnvelope.IdentityFormat);
             writer.WriteString("story_id", manifest.StoryId);
             WriteSet(writer, "owned_resources", manifest.SnapshotOwned(), manifest.SchemaVersion);
             WriteSet(writer, "referenced_resources", manifest.SnapshotReferenced(), manifest.SchemaVersion);
@@ -165,6 +166,8 @@ public static class CanonicalStoryMembershipSerializer
                 root,
                 version == CanonicalStoryMembershipManifest.CurrentSchemaVersion ? CurrentRootMembers : LegacyRootMembers,
                 "story.membership.root");
+            if (RequiredString(root, "identity_format") != GraphResourceEnvelope.IdentityFormat)
+                throw Failure("story.membership.identity_format.unsupported", "旧身份格式不受支持。");
             var manifest = new CanonicalStoryMembershipManifest(
                 RequiredString(root, "story_id"),
                 ReadSet(Required(root, "owned_resources"), "owned_resources", version),
@@ -198,7 +201,8 @@ public static class CanonicalStoryMembershipSerializer
         if (!IsSupportedVersion(manifest.SchemaVersion))
             throw Failure("story.membership.schema_version.unsupported",
                 $"Unsupported Story membership schema_version {manifest.SchemaVersion}.");
-        ValidateId(manifest.StoryId, "story.membership.story_id.invalid", "Story ID");
+        if (!StoryUid.IsValid(manifest.StoryId))
+            throw Failure("story.membership.story_id.invalid", "Membership requires a current Story UID.");
         var owned = manifest.SnapshotOwned();
         var referenced = manifest.SnapshotReferenced();
         ValidateList(owned.Actors, "actor", "owned_resources.actors");
@@ -211,6 +215,9 @@ public static class CanonicalStoryMembershipSerializer
         ValidateList(referenced.ItemGroups, "item_group", "referenced_resources.item_groups");
         ValidateList(referenced.Sessions, "session", "referenced_resources.sessions");
         ValidateList(referenced.Tasks, "task", "referenced_resources.tasks");
+        foreach (var key in owned.Actors.Concat(owned.Items).Concat(owned.ItemGroups).Concat(owned.Sessions).Concat(owned.Tasks))
+            if (ResourceAddress.FromKey(key).StoryUid.Value != manifest.StoryId)
+                throw Failure("story.membership.owner.mismatch", "Owned resource address must belong to this Story.");
         if (manifest.SchemaVersion == CanonicalStoryMembershipManifest.LegacySchemaVersion
             && (owned.Items.Count != 0 || owned.ItemGroups.Count != 0
                 || referenced.Items.Count != 0 || referenced.ItemGroups.Count != 0))
@@ -249,7 +256,7 @@ public static class CanonicalStoryMembershipSerializer
     private static void WriteIds(Utf8JsonWriter writer, string name, IEnumerable<string> ids)
     {
         writer.WriteStartArray(name);
-        foreach (var id in ids) writer.WriteStringValue(id);
+        foreach (var id in ids) JsonSerializer.Serialize(writer, ResourceAddress.FromKey(id));
         writer.WriteEndArray();
     }
 
@@ -278,10 +285,12 @@ public static class CanonicalStoryMembershipSerializer
     private static void WriteDisplayOrder(Utf8JsonWriter writer, CanonicalStoryDisplayOrder order)
     {
         writer.WriteStartObject("display_order");
-        WriteIds(writer, "actors", order.Actors);
-        WriteIds(writer, "items", order.Items);
-        WriteIds(writer, "sessions", order.Sessions);
-        WriteIds(writer, "tasks", order.Tasks);
+        void Handles(string name, IEnumerable<string> values)
+        { writer.WriteStartArray(name); foreach (var value in values) writer.WriteStringValue(value); writer.WriteEndArray(); }
+        Handles("actors", order.Actors);
+        Handles("items", order.Items);
+        Handles("sessions", order.Sessions);
+        Handles("tasks", order.Tasks);
         writer.WriteEndObject();
     }
 
@@ -306,6 +315,11 @@ public static class CanonicalStoryMembershipSerializer
         var result = new List<string>();
         foreach (var value in element.EnumerateArray())
         {
+            if (!path.StartsWith("display_order.", StringComparison.Ordinal))
+            {
+                result.Add((JsonSerializer.Deserialize<ResourceAddress>(value) ?? throw new JsonException("Missing resource address.")).ToKey());
+                continue;
+            }
             if (value.ValueKind != JsonValueKind.String)
                 throw Failure("story.membership.id.type", $"'{path}' entries must be strings.");
             result.Add(value.GetString() ?? string.Empty);
@@ -321,6 +335,8 @@ public static class CanonicalStoryMembershipSerializer
         foreach (var id in ids)
         {
             ValidateId(id, $"story.membership.{kind}.id.invalid", $"{kind} ID");
+            if (ResourceAddress.FromKey(id).KindToken != kind)
+                throw Failure("story.membership.kind.mismatch", $"'{path}' contains another resource kind.");
             if (!seen.Add(id))
                 throw Failure($"story.membership.{kind}.id.duplicate",
                     $"'{path}' contains duplicate ID '{id}'.");
@@ -356,9 +372,7 @@ public static class CanonicalStoryMembershipSerializer
     }
 
     private static bool IsSupportedVersion(int version)
-        => version is CanonicalStoryMembershipManifest.LegacySchemaVersion
-            or CanonicalStoryMembershipManifest.ItemMembershipSchemaVersion
-            or CanonicalStoryMembershipManifest.CurrentSchemaVersion;
+        => version == CanonicalStoryMembershipManifest.CurrentSchemaVersion;
 
     private static void ValidateNoOverlap(
         IEnumerable<string> owned,
@@ -375,11 +389,11 @@ public static class CanonicalStoryMembershipSerializer
     private static void ValidateId(string? id, string code, string label)
     {
         if (!ValidResourceId(id))
-            throw Failure(code, $"{label} '{id}' must be a valid full DGR ID or a compatible legacy ID.");
+            throw Failure(code, $"{label} '{id}' must be a current Story resource address.");
     }
 
     private static bool ValidResourceId(string? id)
-        => DgrResourceId.IsFullId(id) || id is not null && IdPattern.IsMatch(id);
+        => ResourceAddress.IsKey(id);
 
     private static readonly string[] LegacyMembershipMembers = ["actors", "sessions", "tasks"];
     private static readonly string[] CurrentMembershipMembers = ["actors", "items", "item_groups", "sessions", "tasks"];

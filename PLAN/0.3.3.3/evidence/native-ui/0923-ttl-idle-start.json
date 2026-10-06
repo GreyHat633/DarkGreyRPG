@@ -1,0 +1,16 @@
+{
+  "IdleStart": "2026-09-23T06:53:18.8439893+08:00",
+  "ClientPid": 40860,
+  "Files": [
+    {
+      "FullName": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0333\\Client\\DarkGreyRPG\\Cache\\Gramophone\\2ff33d6c-fa67-4bf6-b992-3f11ac372718\\Owner.lock",
+      "Length": 0,
+      "LastWriteTime": "2026-09-23T06:51:44.7988287+08:00"
+    },
+    {
+      "FullName": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0333\\Client\\DarkGreyRPG\\Cache\\Gramophone\\2ff33d6c-fa67-4bf6-b992-3f11ac372718\\track-856626569683851865.dgrmp3",
+      "Length": 5559319,
+      "LastWriteTime": "2026-09-23T06:52:22.2043359+08:00"
+    }
+  ]
+}

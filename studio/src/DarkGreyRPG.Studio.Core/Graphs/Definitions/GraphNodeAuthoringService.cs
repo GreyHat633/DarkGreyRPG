@@ -238,7 +238,7 @@ public sealed class GraphNodeAuthoringService
             }
         }
         else if ((scope == GraphScope.Session && nodeType is "end" or "logic_input" or "logic_output")
-            || (scope == GraphScope.Task && nodeType is "logic_input" or "logic_output")
+            || (scope == GraphScope.Task && nodeType is "logic_input" or "logic_output" or "settle")
             || (scope == GraphScope.StoryFlow && nodeType is "logic_input" or "logic_output" or "terminate"))
         {
             string? publicPortId;
@@ -286,45 +286,17 @@ public sealed class GraphNodeAuthoringService
             {
                 "end" => "结束",
                 "terminate" => "终止",
+                "settle" => "结算",
                 "logic_input" => "逻辑输入",
                 _ => "逻辑输出",
             };
             publicDisplayName = NextTaskPublicDisplayName(existingNodes, publicDisplayName);
             candidate.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement(publicDisplayName);
+            if (nodeType != "logic_input")
+                candidate.Properties["display_order"] = System.Text.Json.JsonSerializer.SerializeToElement(
+                    existingNodes.Where(n => n is not null && (nodeType == "logic_output" ? n.Type == "logic_output" : n.Type is "end" or "terminate" or "settle"))
+                        .Select(n => PublicOutputSchema.Order(n!)).DefaultIfEmpty(-1).Max() + 1);
         }
-        else if (scope == GraphScope.Task && nodeType == "settle")
-        {
-            string? resultPortId;
-            try { resultPortId = _dynamicPortIdSource(); }
-            catch (Exception exception) when (exception is not
-                (OutOfMemoryException or StackOverflowException))
-            {
-                return FailureIssue(new(
-                    "graph.node.create.dynamic_port_id.unavailable",
-                    "No opaque Task settlement result port ID was available.",
-                    "ports[0]",
-                    NodeId: nodeId));
-            }
-
-            var generatedIssue = ValidateDynamicIds(candidate, [resultPortId], nodeId);
-            if (generatedIssue is not null)
-                return FailureIssue(generatedIssue);
-            if (IsReservedPublicBoundaryId(resultPortId))
-                return FailureIssue(new(
-                    "graph.node.create.public_port_id.reserved",
-                    $"Public boundary port ID '{resultPortId}' is reserved.",
-                    "ports[0]",
-                    NodeId: nodeId));
-            if (IsTaskPublicPortIdUsed(existingNodes, resultPortId))
-                return FailureIssue(new(
-                    "graph.node.create.public_port_id.duplicate",
-                    $"Public boundary port ID '{resultPortId}' is already used in this graph.",
-                    "ports[0]",
-                    NodeId: nodeId));
-            candidate.Ports.Add(new(resultPortId!, "结果 1", true,
-                GraphInterfaceKind.Logic, 0));
-        }
-
         // This final check protects the factory/service boundary if a fixed
         // schema or dynamic-role policy changes later.  The graph still sees
         // no mutation if the candidate is rejected.
@@ -469,9 +441,7 @@ public sealed class GraphNodeAuthoringService
     {
         if (string.IsNullOrWhiteSpace(portId)) return false;
         return nodes.Where(node => node is not null).Any(node =>
-            (node.Type == "settle" && (node.Ports ?? []).Any(port => port is not null
-                && string.Equals(port.Id, portId, StringComparison.Ordinal)))
-            || (node.Properties ?? []).TryGetValue("port_id", out var value)
+            (node.Properties ?? []).TryGetValue("port_id", out var value)
                 && value.ValueKind == System.Text.Json.JsonValueKind.String
                 && string.Equals(value.GetString(), portId, StringComparison.Ordinal));
     }
@@ -481,10 +451,7 @@ public sealed class GraphNodeAuthoringService
         var used = nodes.Where(node => node is not null).SelectMany(node =>
         {
             var names = new List<string>();
-            if (node.Type == "settle")
-                names.AddRange((node.Ports ?? []).Where(port => port is not null)
-                    .Select(port => port.DisplayName));
-            if (node.Type is "logic_input" or "logic_output" or "terminate" or "end"
+            if (node.Type is "logic_input" or "logic_output" or "terminate" or "end" or "settle"
                 && (node.Properties ?? []).TryGetValue("display_name", out var value)
                 && value.ValueKind == System.Text.Json.JsonValueKind.String)
                 names.Add(value.GetString() ?? string.Empty);

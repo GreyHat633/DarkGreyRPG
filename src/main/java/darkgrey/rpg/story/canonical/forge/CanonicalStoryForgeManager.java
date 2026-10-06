@@ -176,28 +176,28 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         try {
             UUID playerUuid = requirePlayerUuid(player);
             actorChoices.forget(playerUuid);
+            tasks.forgetSubmitChoices(playerUuid);
             if (!validActor(player, actor)) return false;
             Context context = context(player);
             List<String> ids = EntityDgrIdentityResolver.resolveActorIds(actor);
-            List<CanonicalActorCandidate> candidates = context.service.actorCandidates(playerUuid, ids);
+            List<CanonicalActorCandidate> candidates = actorCandidates(player, context, ids);
             if (candidates.isEmpty()) return false;
-            if (candidates.size() == 1) return route(
-                player,
-                context,
-                context.service.executeActorCandidate(playerUuid, ids, candidates.get(0), now()));
+            if (candidates.size() == 1) return executeActorCandidate(player, actor, context, candidates.get(0));
             CanonicalActorChoiceStore.Choice choice = actorChoices.offer(
                 playerUuid,
                 actor.getUniqueID(),
                 actor.getEntityId(),
                 actor.worldObj.provider.dimensionId,
                 candidates,
+                ids,
                 now());
             List<CanonicalStoryChooserFrame.Option> options = new java.util.ArrayList<CanonicalStoryChooserFrame.Option>();
             for (CanonicalActorCandidate candidate : candidates) options.add(
                 new CanonicalStoryChooserFrame.Option(
                     candidate.getStoryId(),
                     candidate.getDisplayName(),
-                    candidate.getStatus()));
+                    candidate.getStatus(),
+                    storyGroupName(candidate.getStoryId())));
             DialogueNetwork.CHANNEL.sendTo(new CanonicalStoryChooserFrame(choice.getToken(), options), player);
             return true;
         } catch (RuntimeException failure) {
@@ -217,14 +217,14 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
             Entity actor = player.worldObj.getEntityByID(choice.getEntityId());
             if (!validActor(player, actor) || !choice.getEntity()
                 .equals(actor.getUniqueID())) return false;
+            if (!choice.matchesBindings(EntityDgrIdentityResolver.resolveActorIds(actor))) return false;
             Context context = context(player);
-            CanonicalStoryDispatch dispatch = context.service.executeActorCandidate(
-                playerUuid,
-                EntityDgrIdentityResolver.resolveActorIds(actor),
+            return executeActorCandidate(
+                player,
+                actor,
+                context,
                 choice.getCandidates()
-                    .get(optionIndex),
-                now());
-            return dispatch != null && route(player, context, dispatch);
+                    .get(optionIndex));
         } catch (RuntimeException failure) {
             LOG.warn("Stale/invalid canonical Actor choice rejected: {}", failure.getMessage());
             return false;
@@ -233,6 +233,43 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
 
     public void forgetActorChoices(UUID playerUuid) {
         actorChoices.forget(playerUuid);
+    }
+
+    private List<CanonicalActorCandidate> actorCandidates(EntityPlayerMP player, Context context, List<String> ids) {
+        return darkgrey.rpg.story.canonical.server.CanonicalNpcArbitration.collect(
+            requirePlayerUuid(player),
+            context.project,
+            context.service,
+            context.data,
+            tasks.snapshots(player),
+            ids);
+    }
+
+    private boolean executeActorCandidate(EntityPlayerMP player, Entity actor, Context context,
+        CanonicalActorCandidate selected) {
+        List<String> ids = EntityDgrIdentityResolver.resolveActorIds(actor);
+        for (CanonicalActorCandidate current : actorCandidates(player, context, ids)) {
+            if (!selected.matches(requirePlayerUuid(player), context.project, current)) continue;
+            if (selected.isTask()) return tasks
+                .executeActorInteraction(player, actor, selected.getStoryId(), selected.getTaskPlacementId());
+            return route(
+                player,
+                context,
+                context.service.executeActorCandidate(requirePlayerUuid(player), ids, selected, now()));
+        }
+        return false;
+    }
+
+    private static String storyGroupName(String storyId) {
+        darkgrey.rpg.project.packages.StoryPackageLoader loader = darkgrey.rpg.DarkGreyRpg.getStoryPackageLoader();
+        if (loader != null) for (darkgrey.rpg.project.packages.StoryPackageInventoryEntry entry : loader.getInventory())
+            if (entry.getSourceName()
+                .toLowerCase(java.util.Locale.ROOT)
+                .endsWith(".dgrs.g")
+                && entry.getStoryUids()
+                    .contains(storyId))
+                return entry.getDisplayName();
+        return "独立故事";
     }
 
     private static boolean validActor(EntityPlayerMP player, Entity actor) {
@@ -365,6 +402,7 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
     }
 
     private boolean route(EntityPlayerMP player, Context context, CanonicalStoryDispatch first) {
+        if (first == null) return false;
         final EntityPlayerMP routePlayer = player;
         AggregateGateway gateway = new AggregateGateway() {
 
@@ -862,7 +900,11 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         if (project == null) throw new IllegalStateException("Canonical project snapshot is unavailable.");
         CanonicalSessionSavedData data = savedDataProvider.get(player);
         if (data == null) throw new IllegalStateException("Canonical Story world data is unavailable.");
-        return new Context(project, data, new CanonicalStoryServerService(project, data));
+        return new Context(project, data, new CanonicalStoryServerService(project, data, uid -> {
+            darkgrey.rpg.project.packages.StoryPackageLoader loader = darkgrey.rpg.DarkGreyRpg.getStoryPackageLoader();
+            return loader == null || loader.getInventory()
+                .isEmpty() || loader.allowsNewStart(uid);
+        }));
     }
 
     private synchronized CanonicalStoryTriggerIndex triggerIndex() {

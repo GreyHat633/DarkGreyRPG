@@ -1,0 +1,36 @@
+{
+  "Measurements": [
+    {
+      "Theme": "Dark",
+      "DpiScale": 1.2395833333333333,
+      "SingleNameX": 71.0,
+      "FolderNameX": 70.82291666666666,
+      "MemberANameX": 97.0,
+      "MemberBNameX": 97.0,
+      "TopLevelAligned": true,
+      "MembersShareIndent": true,
+      "MembersOneLevelInside": true
+    },
+    {
+      "Theme": "Light",
+      "DpiScale": 1.2395833333333333,
+      "SingleNameX": 71.0,
+      "FolderNameX": 70.82291666666666,
+      "MemberANameX": 97.0,
+      "MemberBNameX": 97.0,
+      "TopLevelAligned": true,
+      "MembersShareIndent": true,
+      "MembersOneLevelInside": true
+    }
+  ],
+  "Fold": {
+    "SelectionRetained": true,
+    "SelectedMemberRetained": true,
+    "SelectedRuntimeIdBefore": "7,11300,3478237",
+    "SelectedRuntimeIdAfter": "7,11300,3478237",
+    "InspectorChangedPixels": 0,
+    "InspectorRegion": "1538,250,342,550",
+    "MemberHidden": true
+  },
+  "Method": "Windows UI Automation, Win32 input, PrintWindow; folder name position derived from native toggle bounds and its template columns"
+}

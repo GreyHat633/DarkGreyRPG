@@ -17,26 +17,26 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class LegacyStoryBoundary0331Tests
 {
     [TestMethod]
-    public void RawLegacyBoundariesSupportUnsavedStartInputsRenameReopenAndFlowPersistence()
+    public void CurrentBoundariesSupportUnsavedStartInputsRenameReopenAndFlowPersistence()
     {
         using var directory = new ProjectGraph0331Directory();
         var store = new CanonicalProjectGraphStore(directory.Root);
-        var sourcePath = WriteRawStory(directory.Root, "source", RawSourceStory);
-        var targetPath = WriteRawStory(directory.Root, "target", RawTargetStory);
+        var sourcePath = WriteRawStory(directory.Root, "ST-2345-6789-ABCD-EFGH", RawSourceStory);
+        var targetPath = WriteRawStory(directory.Root, "ST-JKLM-NPQR-STUV-WXYZ", RawTargetStory);
         var sourceBefore = File.ReadAllText(sourcePath);
         var targetBefore = File.ReadAllText(targetPath);
 
-        var source = store.Stories.Load("source");
+        var source = store.Stories.Load("ST-2345-6789-ABCD-EFGH");
         var sourcePorts = CanonicalStoryBoundaryProjection.Ports(source);
         Assert.HasCount(3, sourcePorts);
         Assert.AreEqual("source_entry", sourcePorts.Single(port => port.IsInput).Id);
         Assert.AreEqual("终止", sourcePorts.Single(port => !port.IsInput && port.DisplayName == "终止").DisplayName);
         Assert.AreEqual("custom_exit", sourcePorts.Single(port => port.DisplayName == "自定义出口").Id);
-        Assert.AreEqual(StableLegacyExitId("exit_missing"),
+        Assert.AreEqual("explicit_exit",
             sourcePorts.Single(port => port.DisplayName == "终止").Id);
         Assert.AreEqual(sourceBefore, File.ReadAllText(sourcePath));
 
-        var target = store.Stories.Load("target");
+        var target = store.Stories.Load("ST-JKLM-NPQR-STUV-WXYZ");
         using var targetEditor = new CanonicalGraphResourceEditorViewModel(target);
         Assert.IsTrue(targetEditor.Host.AddStoryStartTrigger("start", "入口 A", StoryStartSchema.FlowDriven));
         Assert.IsTrue(targetEditor.Host.AddStoryStartTrigger("start", "入口 B", StoryStartSchema.FlowDriven));
@@ -58,32 +58,32 @@ public sealed class LegacyStoryBoundary0331Tests
             new CanonicalGraphResourceSaveCoordinator(store).Replace(targetEditor);
             return true;
         });
-        CollectionAssert.Contains(refreshedPortNodes, "target");
-        var projectTarget = projectGraph.CanonicalHost!.Nodes.Single(node => node.NodeId == "target");
+        CollectionAssert.Contains(refreshedPortNodes, "ST-JKLM-NPQR-STUV-WXYZ");
+        var projectTarget = projectGraph.CanonicalHost!.Nodes.Single(node => node.NodeId == "ST-JKLM-NPQR-STUV-WXYZ");
         CollectionAssert.AreEquivalent(unsavedInputs.Select(port => port.Id).ToArray(),
             projectTarget.Inputs.Where(port => port.InterfaceKind == GraphInterfaceKind.Flow)
                 .Select(port => port.Id).ToArray());
 
-        var persistedEdge = new GraphConnection("source", sourcePorts.Single(port => !port.IsInput && port.DisplayName == "终止").Id,
-            "target", unsavedInputs[0].Id, GraphInterfaceKind.Flow);
+        var persistedEdge = new GraphConnection("ST-2345-6789-ABCD-EFGH", sourcePorts.Single(port => !port.IsInput && port.DisplayName == "终止").Id,
+            "ST-JKLM-NPQR-STUV-WXYZ", unsavedInputs[0].Id, GraphInterfaceKind.Flow);
         Assert.IsTrue(projectGraph.CanonicalHost.Connect(
             GraphEditorEndpoint.Output(persistedEdge.FromNodeId, persistedEdge.FromPortId, persistedEdge.InterfaceKind),
             GraphEditorEndpoint.Input(persistedEdge.ToNodeId, persistedEdge.ToPortId, persistedEdge.InterfaceKind)));
-        Assert.AreEqual("改名入口", CanonicalStoryBoundaryProjection.Ports(store.Stories.Load("target"))
+        Assert.AreEqual("改名入口", CanonicalStoryBoundaryProjection.Ports(store.Stories.Load("ST-JKLM-NPQR-STUV-WXYZ"))
             .Single(port => port.Id == persistedEdge.ToPortId).DisplayName);
         Assert.AreEqual(new CanonicalStoryLogicConnection(
-            "source", persistedEdge.FromPortId, "target", persistedEdge.ToPortId, "Flow"),
+            "ST-2345-6789-ABCD-EFGH", persistedEdge.FromPortId, "ST-JKLM-NPQR-STUV-WXYZ", persistedEdge.ToPortId, "Flow"),
             store.StoryLogicGraph.Load().Connections.Single());
 
         Assert.IsTrue(projectGraph.CanonicalHost.Connect(
-            GraphEditorEndpoint.Output("source", "custom_exit", GraphInterfaceKind.Flow),
-            GraphEditorEndpoint.Input("target", unsavedInputs[1].Id, GraphInterfaceKind.Flow)));
+            GraphEditorEndpoint.Output("ST-2345-6789-ABCD-EFGH", "custom_exit", GraphInterfaceKind.Flow),
+            GraphEditorEndpoint.Input("ST-JKLM-NPQR-STUV-WXYZ", unsavedInputs[1].Id, GraphInterfaceKind.Flow)));
         Assert.HasCount(2, store.StoryLogicGraph.Load().Connections);
 
         Assert.IsTrue(targetEditor.Host.SetStoryStartTriggerType("start", unsavedInputs[1].Id,
-            StoryStartSchema.ActorInteraction, "hero"));
+            StoryStartSchema.ActorInteraction, "ST-JKLM-NPQR-STUV-WXYZ~actor~hero"));
         new CanonicalGraphResourceSaveCoordinator(store).Replace(targetEditor);
-        var reopenedTarget = store.Stories.Load("target");
+        var reopenedTarget = store.Stories.Load("ST-JKLM-NPQR-STUV-WXYZ");
         var reopenedInputs = CanonicalStoryBoundaryProjection.Ports(reopenedTarget)
             .Where(port => port.IsInput && port.InterfaceKind == GraphInterfaceKind.Flow).ToArray();
         Assert.HasCount(1, reopenedInputs);
@@ -97,20 +97,20 @@ public sealed class LegacyStoryBoundary0331Tests
     }
 
     [TestMethod]
-    public void ExportingRawLegacyStoryUpgradesOnlyPackagePayloadAndKeepsSourceBytes()
+    public void ExportingCurrentStoryPreservesExplicitBoundariesAndSourceBytes()
     {
         using var directory = new ProjectGraph0331Directory();
         var store = new CanonicalProjectGraphStore(directory.Root);
-        var sourcePath = WriteRawStory(directory.Root, "source", RawSourceStory);
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("source"));
+        var sourcePath = WriteRawStory(directory.Root, "ST-2345-6789-ABCD-EFGH", RawSourceStory);
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
         var before = File.ReadAllText(sourcePath);
         var packagePath = Path.Combine(directory.Root, "build", "source.dgrs");
 
-        new DgrsStoryPackageExporter(directory.Root).Build("source", packagePath, "0.3.3.1");
+        new DgrsStoryPackageExporter(directory.Root).Build("ST-2345-6789-ABCD-EFGH", packagePath, "0.3.3.6");
 
         Assert.AreEqual(before, File.ReadAllText(sourcePath));
         using var archive = ZipFile.OpenRead(packagePath);
-        var entry = archive.GetEntry("resources/canonical/stories/source.json");
+        var entry = archive.GetEntry("resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json");
         Assert.IsNotNull(entry);
         using var reader = new StreamReader(entry!.Open());
         using var json = JsonDocument.Parse(reader.ReadToEnd());
@@ -133,20 +133,18 @@ public sealed class LegacyStoryBoundary0331Tests
         return path;
     }
 
-    private static string StableLegacyExitId(string nodeId)
-        => "story_exit_" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(nodeId))).ToLowerInvariant();
-
     private const string RawSourceStory = """
         {
-          "schema_version": 1,
+          "schema_version": 2,
+          "identity_format": "story-uid-v1",
           "resource_kind": "story",
-          "id": "source",
+          "id": "ST-2345-6789-ABCD-EFGH",
           "display_name": "旧源故事",
           "graph": {
             "nodes": [
               {"id":"start","type":"start","display_name":"开始","ports":[{"port_id":"source_entry","display_name":"入口","kind":"flow","direction":"output","order":0}],"properties":{"repeat_policy":"once","triggers":[{"port_id":"source_entry","display_name":"入口","trigger_type":"flow_driven","trigger_properties":{},"order":0}]}},
-              {"id":"exit_missing","type":"terminate","display_name":"旧出口","ports":[{"port_id":"flow_in","display_name":"Flow In","kind":"flow","direction":"input","order":0}],"properties":{}},
-              {"id":"exit_explicit","type":"terminate","display_name":"旧出口二","ports":[{"port_id":"flow_in","display_name":"Flow In","kind":"flow","direction":"input","order":0}],"properties":{"port_id":"custom_exit","display_name":"自定义出口"}}
+              {"id":"exit_missing","type":"terminate","display_name":"旧出口","ports":[{"port_id":"flow_in","display_name":"Flow In","kind":"flow","direction":"input","order":0}],"properties":{"port_id":"explicit_exit","display_name":"终止","display_order":0}},
+              {"id":"exit_explicit","type":"terminate","display_name":"旧出口二","ports":[{"port_id":"flow_in","display_name":"Flow In","kind":"flow","direction":"input","order":0}],"properties":{"port_id":"custom_exit","display_name":"自定义出口","display_order":1}}
             ],
             "connections": []
           }
@@ -155,13 +153,14 @@ public sealed class LegacyStoryBoundary0331Tests
 
     private const string RawTargetStory = """
         {
-          "schema_version": 1,
+          "schema_version": 2,
+          "identity_format": "story-uid-v1",
           "resource_kind": "story",
-          "id": "target",
+          "id": "ST-JKLM-NPQR-STUV-WXYZ",
           "display_name": "旧目标故事",
           "graph": {
             "nodes": [
-              {"id":"start","type":"start","display_name":"开始","ports":[],"properties":{"repeat_policy":"once","triggers":[{"port_id":"legacy_actor","display_name":"角色进入","trigger_type":"interact_actor","trigger_properties":{"actor_id":"hero"},"order":0}]}}
+              {"id":"start","type":"start","display_name":"开始","ports":[],"properties":{"repeat_policy":"once","triggers":[{"port_id":"legacy_actor","display_name":"角色进入","trigger_type":"interact_actor","trigger_properties":{"actor_id":{"story_uid":"ST-JKLM-NPQR-STUV-WXYZ","kind":"actor","local_id":"hero"}},"order":0}]}}
             ],
             "connections": []
           }

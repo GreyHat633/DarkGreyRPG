@@ -15,8 +15,8 @@ public sealed class MediaGarbageCollection0330Tests
         var reference = "media/" + Convert.ToHexStringLower(SHA256.HashData(bytes)) + ".png";
         var file = Path.Combine(project.Root, "resources", reference);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!); File.WriteAllBytes(file, bytes);
-        var repository = new ActorRepository(project.Root); var actor = repository.CreateIndividual("hero", "Hero");
-        actor.HomeStoryId = "story"; actor.DefaultPortraitRef = reference; repository.SaveActor(actor);
+        var repository = new ActorRepository(project.Root); var actor = repository.CreateIndividual("ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
+        actor.HomeStoryId = "ST-2345-6789-ABCD-EFGH"; actor.DefaultPortraitRef = reference; repository.SaveActor(actor);
         var orphan = Path.Combine(project.Root, "resources", "media", new string('b', 64) + ".ogg"); File.WriteAllBytes(orphan, [4, 5]);
         var work = Path.Combine(project.Root, "resources", "media_work", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work); File.WriteAllText(Path.Combine(work, "source.wav"), "unfinished");

@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-01T21:32:23.4867819+08:00",
+  "formal_exe": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "product_version": "0.3.3.5",
+  "bytes": 142699734,
+  "sha256": "388106E49C7D2524F01AB513E4B3C39FA5090D595A226A199960D462FE8F11B4",
+  "candidate_matches": true,
+  "native_mouse": [
+    "preview Inspector start and stop",
+    "preview node start and automatic finish",
+    "long Chinese and English option name",
+    "condition enable undo redo",
+    "option handle drag reorder undo redo",
+    "save and restart persisted option order"
+  ],
+  "toggle_running": "Inspector On",
+  "toggle_completed": "all three preview controls Off",
+  "wpf_passed": 166,
+  "wpf_failed": 0,
+  "java_changed": false
+}

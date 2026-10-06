@@ -1,0 +1,4 @@
+operation=snapshot
+time=1790114803114
+darkgrey/rpg/client/TaskTrackerHud.draw=21488
+darkgrey/rpg/gramophone/GramophoneLocalClient.download=1

@@ -1,0 +1,399 @@
+{
+  "BaseCommit": "702a096ddf7523867d545c02cb9d7bd915036d3b",
+  "Branch": "codex/0.3.3.3",
+  "Committed": false,
+  "Files": [
+    {
+      "Path": "build.gradle.kts",
+      "SHA256": "06db3d58c6e221b118dce8785ac5e723e84dcb6a0bf4444d463012b6fe1657c1"
+    },
+    {
+      "Path": "gradle.properties",
+      "SHA256": "a70a9bcc0589e2845507555a299e3888b8852206fba280bfc1a67673bdf10bcd"
+    },
+    {
+      "Path": "schema/dialogue-capacity-profile.json",
+      "SHA256": "164bad14dd386f2fef9bfb5332c914030d81e89048be491794f7b6ab00484e1a"
+    },
+    {
+      "Path": "scripts/generate-dialogue-capacity-profile.py",
+      "SHA256": "5ac0b8c535ac30e48235e58f5244a540f0f02cc7900de642dde10efddfb2c19c"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/CanonicalTaskClientStore.java",
+      "SHA256": "0cf7aae5178021f180eeb9954dcd762949e27e0a0b6d29cf366f9657c979d817"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/ClientProxy.java",
+      "SHA256": "65a91df303b5fc2fb871f19fb3c3170582cbd94fdec0e80fa0f52549b3ab37e4"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/ClientResourceRevision.java",
+      "SHA256": "d9ef002b7bee8d4ac87ed15ae6f8b328b13975e4453a8a2ffa40e7714bd62ce5"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/CreatorInspectClient.java",
+      "SHA256": "7c24be09abd90dbffca557898cff5af6fd2e81dc5da2541c884ece7495b4a3aa"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/CanonicalDialogueRenderer.java",
+      "SHA256": "2d31ccd64792cff0482d358742dbfc2f2c5e57afad600743099a2b6b62cdb16b"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/DgrUiPalette.java",
+      "SHA256": "45eac8b9e8e3f80fc41e9317aab91d7fa6b80535ce2d0ef8b0b71cd83547e4f8"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/DgrUiText.java",
+      "SHA256": "7350bea071f823e69a53aa25cd19ddf66e0d9c42dcc710220cffde8a95f55ff9"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalSessionScreen.java",
+      "SHA256": "8219545587c7d9486d1fa898881ba0ff3fa32e332be2c3c21ff5433dee17229a"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalStoryChooser.java",
+      "SHA256": "aefe9ca9c9f61f9451dbcbc8a71ec683bb93cea91556d3451b6754f0560b9afd"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskScreen.java",
+      "SHA256": "6b6d0068dd6af7cdf1f09243ef3c89309b15eaf05ce5b7f977bbc2b72237133a"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskSubmitChooser.java",
+      "SHA256": "fc1284853d5a9c304ddecfefa711ab7c90f892174fd7120498b46a5d65540062"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiCopierTemplates.java",
+      "SHA256": "019553495c7c140867b5e27d770d8e4718ee6c661e57f90b52c01c16217dd7a5"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiDialogueScreen.java",
+      "SHA256": "21c18942e4ff3ef3569e4610c9c208bb887ae380974f30654f09e6727c293267"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiDialogueSettings.java",
+      "SHA256": "8d3524c25b25ac28f11f51d034a23e882b1e1c6b682952be66af30b0a19f4dc4"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiNominatorEntity.java",
+      "SHA256": "93220829fbaf7ffe4d9fd765533c25d93a6571643b99ec2954327a478b89de67"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiQuestJournal.java",
+      "SHA256": "e008aa05d5b4f4b07d0c55858bc649585c920585094b8e668c8d47b91d4a9ab5"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiRpgButton.java",
+      "SHA256": "5a5c1630765cc181f2f24cd2f79c1938624f51d4f377d19f30493c7a33a04e49"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/GuiWrappedChoiceButton.java",
+      "SHA256": "d3301db383702748c55a904de0a775734b74370c0c6bb275b451561c8aa8a42e"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/TaskObjectiveText.java",
+      "SHA256": "0f61dde550a4a9b8b47bced7a6d769c393309c58e557902a5be21fb9b658aa38"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/gui/UtilityWindowSettings.java",
+      "SHA256": "d6d210fc0f84a96b905f7c31605400687d75aecde264f9c586a1e9ce915b9f2a"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/CanonicalDialogueLayout.java",
+      "SHA256": "71de231903ac9f025df5c58372d334d063433489ec5222cab90abc1fd21213ec"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/CanonicalPresentationBridge.java",
+      "SHA256": "7bb55826ea316ba86e57ca3b50f64a2cd9418877fe08451f2c09fbd4443a37bd"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientController.java",
+      "SHA256": "8a6a82246076f26688f098533c3bb982ae54b9dd80fb57833826fed679148f3d"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientModel.java",
+      "SHA256": "4a196a34ff1a0e19b3a5e100e8ea7f573464e164b1593cfe16e18ce9f3326162"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/DialogueDisplayPages.java",
+      "SHA256": "c49f1e8e5001d99170b303574aec546ee322aba451679b0b107f62153d2c9a33"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/DialogueHistoryClient.java",
+      "SHA256": "a50f7914e4fd57e7ec6905f63441c96c6ac83f6ddd976f50454838fd97b9e09d"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/DialoguePreferences.java",
+      "SHA256": "8d7d9891124245c2408e89d4cc3847f97eb4d41ee745755e73972d6c7cad54c7"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/DialogueTextReveal.java",
+      "SHA256": "3e186a8bba21d6fbf55aeb902912a8d93da14e663239100e12d57ac481e29da5"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/session/PlayerUiPreferences.java",
+      "SHA256": "fac2dbd32345d7193a4e40082790139d6590041acdea1d2cb7ce4fb6f34adb96"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/TaskTrackerHud.java",
+      "SHA256": "ac5ad2def84baf9eeaaeb86420e533914fdadd5e7ca7d2909d785074a03af8ce"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/creator/CanonicalTaskPresentationServer.java",
+      "SHA256": "e9fdfd51e4653486db04d7e1e61e1d603d73141db4e501f7de9fee8c99adee53"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/creator/CanonicalTaskUiProjection.java",
+      "SHA256": "286c96fddb82e580a2d7c82d06186e5552f3420b3a54254d34ed3bc767ad9816"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/creator/TaskRewardPreview.java",
+      "SHA256": "225c6caeeacbee5aea9c85b67c8bd04d1e59a738ffd894143f4e4cce294a76fb"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/BlockGramophone.java",
+      "SHA256": "eddda9933183f81763c7628da7e2a089a3cf7c4306139365899bee22bea66a1c"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GramophoneAudio.java",
+      "SHA256": "bf2afda6c2d5214e53ba7b083851f206d7da8186217b70c8388fcc1915ba92b8"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GramophoneClient.java",
+      "SHA256": "a0e50a7a961a5b572a6af6130440364d2208f2ecf974194e73d71526161ca4cf"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java",
+      "SHA256": "ed272fedc173771e9777ffc84b27ec8c678a969726bc66858e65bab8976cd2de"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GramophoneRenderer.java",
+      "SHA256": "e7a216f44f97b033724e7c64bba7122edcbac574f5d210839717a0957db89dca"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GuiGramophone.java",
+      "SHA256": "7e9725a9b1805e9a50b56bcaadeeedb9de3b36a2f1f869c3f4c856484bf92d13"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/media/CanonicalSessionAudio.java",
+      "SHA256": "0a39152f8d227a224831f3350ade0179f1a0db79b4d0202e3788b0ef066e62bc"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskForgeManager.java",
+      "SHA256": "632e03232c80339552c38afc4285dc58e9322bf84d3faea6688bd1df5260d43a"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/task/journal/CanonicalTaskJournalProjector.java",
+      "SHA256": "219360fa281dc1eb4309ec74b4704648ce1166f9c602815d8c1c1a06ca0a0846"
+    },
+    {
+      "Path": "src/main/resources/assets/darkgrey_rpg/textures/blocks/gramophone.png",
+      "SHA256": "430c4a11827d224f42606ed8672beea2793f385db93046a3fdf27b71873ca409"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/client/gui/PlayerPreferences0332Probe.java",
+      "SHA256": "f63cb234659e2642ee53632ef31b3b7384e3effe66aed3b7e28210699a91ccbe"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/client/NetworkQueueRaceProbe.java",
+      "SHA256": "61cf71dd2a697edef5905705bcb0dff7accb8d148a9151d565ad5a57379239a0"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/client/session/CanonicalSessionClientModelProbe.java",
+      "SHA256": "58750e71ba932a14c931854197529ebbddbf50ef5dc92b4feb835eb85cad751c"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/client/session/Dialogue0333Probe.java",
+      "SHA256": "619682aa3e2fb424faad828569957e3a583a385c63db5bff8dd4a91a6260b17a"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/gramophone/GramophoneCachePolicyProbe.java",
+      "SHA256": "3320e2239db0f07a88837e4bc722f0d4002f4b8bf48e7316d727613b23d229d8"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/gramophone/GramophoneStorageProbe.java",
+      "SHA256": "b06b2225e8ceff96b2f5db4edac261f342d603eeb9049433761258f532c59e91"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/task/journal/CanonicalTaskJournalProjectionProbe.java",
+      "SHA256": "9d8ce9525556777711ab8b41d1be240667a9c0a1497ff5dc3f946e11d05852a4"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/DarkGreyRPG.Studio.Core.csproj",
+      "SHA256": "5f388e51a933cfacc0176cc239d17af93563fff6caab43e5cfa1b384c5eacbe8"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/CanonicalSessionLineSchema.cs",
+      "SHA256": "783042b660ffb73e86ef4bd93d6a5e76a00912b5920ea775c0e67dbfffeda8af"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Definitions/DialogueCapacityProfile.cs",
+      "SHA256": "651e583f1948854c2867bcc062b418b752b8c713dae8052c72ce0a44135deeb5"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Editing/GraphClipboardSnapshot.cs",
+      "SHA256": "fa7625b939570a9041ec6b8544b9c390f266b97edb7c7679f70c281ae9010939"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Editing/GraphEditSession.cs",
+      "SHA256": "82d0b7c292a9ca8f7fecfac43dda09c80947329f739994c667630166ee3301d5"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Resources/CanonicalGraphLayoutStore.cs",
+      "SHA256": "cad9832610e9b400fe2d2d003b9738e7d9ca8a853af396bb5222bf3e293ac3b9"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Resources/GraphCommentFrame.cs",
+      "SHA256": "6d632e6807a261683cf7dd7204d18998d50f10a9ff585e5345f9fc86237077f6"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Graphs/Resources/GraphGroupOperations.cs",
+      "SHA256": "60ea4357e6fdd2b9ba70611cd1b8d09f6d4833fd17324b51653bb38021214a1c"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Packaging/SessionPortraitPackageValidation.cs",
+      "SHA256": "a0be81e42888794d52b1dcde146b5c8f7b94dd08e3da67227b785e3cdb919cef"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Packaging/StoryPackageExporter.cs",
+      "SHA256": "e4e7a68fb3a43e38649e513e013c7ded2c52bb70ae719937f53e5794caf5c1e3"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Core/Packaging/StoryPackageMedia.cs",
+      "SHA256": "75160a045541078cecb1a97488ccbc274d1eceb7545279ef0f6666fce07b2dfc"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Tests/DialogueCapacity0333Tests.cs",
+      "SHA256": "db29d554e7899f28d630f612ebd795f2850e3d9254a8d5f3f62d6d079517a11f"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Tests/GraphGroup0333Tests.cs",
+      "SHA256": "52255599205e9bd8f4d9a35e42d2b72ecb86650bd38f9f91c6201656890a19ba"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Tests/SessionPagesTests.cs",
+      "SHA256": "4b6398000ea1f03234684952137e20a053f207248bfa74712ee3117448e62587"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Tests/StoryPackageTests.cs",
+      "SHA256": "f01c1bd393697f38092ed5fd0c4b3714c7db52e12fb1394ab06f59fd71117d8a"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/CanonicalGraphEditorViewTests.cs",
+      "SHA256": "7addf0ca244df4abe0fb599b7eadc0bc14b7b2879df0bff3ec075aaf4fb24522"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/GroupScale0333Tests.cs",
+      "SHA256": "b57885432cd0b9bf331b20c6cf67f2870fde4d8fdb38f50cfc739c7373d4cd0c"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/GroupTransactions0333Tests.cs",
+      "SHA256": "2d5d1b1740af0171470ac2a9e5aab122d80fe5c79e11b654ac33f5d4c76c5efb"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/LinePagesAuthoringTests.cs",
+      "SHA256": "d6c7d60b38f868e2f23c602988e0cec0d6c83751baccbf36fb45ab31b50164f2"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/ProjectAtlasMenuTests.cs",
+      "SHA256": "060ba3edba50fd4f2f74a302430fe4de7f5064975d10a940bce92087b4641f86"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/DarkGreyRPG.Studio.csproj",
+      "SHA256": "1d1713797b588e63d79e559b358d74926322c599a6b6d17a4710a48269b46b11"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalGraphClipboard.cs",
+      "SHA256": "499e697b979731dc5bf0a028862962f5157aca68283ad9d94179210b56fe9372"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalNodeInspectorViewModel.LinePages.cs",
+      "SHA256": "44195c679e3ddabe871c6f06d7d349e2f0d4d74af62908a926d737c475430d33"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/ViewModels/Graph/CanonicalStoryWorkspaceViewModel.Search.cs",
+      "SHA256": "75ef5a181c1daf5abd17bdfe7e32df343eea11f4674bdd4f08efd8abf2450f05"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/ViewModels/Graph/GraphEditorHostViewModel.cs",
+      "SHA256": "07960a2472711e1fdf54cb9b93c285831e1fb2d4b92776c257e56483e0fc7772"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/ViewModels/Graph/GraphEditorHostViewModel.Frames.cs",
+      "SHA256": "4bb9ac2f86a05135b66807156faa8d12ba968a50623c38fb3585bf74a6af56d1"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalGraphEditorView.Clipboard.cs",
+      "SHA256": "6a5b7205c633c7120986c33e74ad78b06142919a5da0ddde7db1a2e41e64071a"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalGraphEditorView.Frames.cs",
+      "SHA256": "183360c76fd28ba20dd77795a453d1a9a39e2e4bf3f18627e68b2a94ef8532d0"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalGraphEditorView.xaml",
+      "SHA256": "c6ff5255cdafeed0ee51612654ccc8e41a804a977546fddac6b7c19e8382ea5d"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalGraphEditorView.xaml.cs",
+      "SHA256": "bacbf38c91bdd60f128af06f4470916f66010fd61dd41fe097db4a08602a5cb2"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/CanonicalStoryWorkspaceView.Search.cs",
+      "SHA256": "15eca8d44c3a238084ea182adbb5332d8fb3774fc33a493e9b1aab3644be33f4"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/LinePagesEditor.xaml",
+      "SHA256": "f626c26ff8888f5f15d515a092a573a19398b5e9622f76c0c9738a4d5344065e"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/Views/Graph/LinePagesEditor.xaml.cs",
+      "SHA256": "29879601ee4de21e8f4017e269c8d8cf324bfbcaf534df2bc01a4f6d7253907f"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/gramophone/GramophoneDownloadCompletionProbe.java",
+      "SHA256": "4f37c2991897b2b0197b947911ee02eabf97448024c8c6f70ae6db0e0af6215d"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/GroupFrame0333Tests.cs",
+      "SHA256": "5d2bb38ce1ff8b3ab0a4b7683b8a469600c8ebb289c39ab920f7230dde9e5d67"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/Audit1GroupTests.cs",
+      "SHA256": "3a20cea885d68179ccd9774df9f5c5c00bffcce3e6a968335032019fe4072720"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/client/ClientQuestKeyHandler.java",
+      "SHA256": "a49ffd8ca0a2f076bf9ac0328519368922ae9a26c14b176979181734c3909a21"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/media/CanonicalSessionScene.java",
+      "SHA256": "a4617d7bd53e8c44c9d9beee1a20b001b0f2824fccd9d6b9758a5730e07ece41"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/TileGramophone.java",
+      "SHA256": "a102ca6de9f92b4ad7d025941b26fe7da18d2611d461e81f4d4bc46993b81e09"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/gramophone/Gramophone0332Probe.java",
+      "SHA256": "23ae5caf80ad9edee4cf33d7d809e708c5bc1a0b3ea8b02eaf6cabe43f806a99"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/gramophone/GramophoneRangeMetadataProbe.java",
+      "SHA256": "c8104c702c7350a88fac735432f91f99a7c0e6f8e5482922041dc8e860ebb983"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GramophoneServer.java",
+      "SHA256": "afe7b60b9a5dad093fb071df6631fda2d03ef42299ed800741cc22edf68f0c41"
+    },
+    {
+      "Path": "src/main/java/darkgrey/rpg/gramophone/GramophonePacket.java",
+      "SHA256": "f1bb2e348aee9e6b0d9680f9e26886e336727de9229bd7cf7daf75f476b9b1c1"
+    },
+    {
+      "Path": "src/test/java/darkgrey/rpg/gramophone/GramophoneRemovalProbe.java",
+      "SHA256": "9f5453e907ef3857830caf73488482045507416f759e5450d150b9178406a5b0"
+    }
+  ]
+}

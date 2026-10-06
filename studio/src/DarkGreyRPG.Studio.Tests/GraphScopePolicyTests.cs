@@ -25,7 +25,7 @@ public sealed class GraphScopePolicyTests
         var task = GraphNodeDefinitionRegistry.ForScope(GraphScope.Task);
         CollectionAssert.AreEquivalent(new[] { "activate", "objective", "and", "or", "not", "logic_input", "logic_output", "reward", "settle" }, task.Select(item => item.Type).ToArray());
         Assert.IsTrue(task.Single(item => item.Type == "activate").CompatibilityOnly);
-        Assert.IsTrue(task.Single(item => item.Type == "settle").Unique);
+        Assert.IsFalse(task.Single(item => item.Type == "settle").Unique);
     }
 
     [TestMethod]

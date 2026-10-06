@@ -67,7 +67,9 @@ public final class GuiNominatorEntity extends GuiScreen {
         if (!controls.accept(data)) return;
         this.catalog = catalog;
         individual = data.getString("individual");
-        currentGroups = data.getString("groups");
+        groups.clear();
+        net.minecraft.nbt.NBTTagList groupList = data.getTagList("groupIds", 8);
+        for (int i = 0; i < groupList.tagCount(); i++) groups.add(groupList.getStringTagAt(i));
         revision = controls.revision;
         catalogRevision = controls.catalogRevision;
         rebuildBrowser();
@@ -94,7 +96,7 @@ public final class GuiNominatorEntity extends GuiScreen {
         updateWindowGeometry();
         rebuildBrowser();
         // Reserve the title right edge for release, clear of the corner grip.
-        buttonList.add(new GuiRpgButton(3, panelLeft + panelWidth - 92, panelTop + 3, 76, 20, "ID释放"));
+        buttonList.add(new GuiRpgButton(3, panelLeft + panelWidth - 92, panelTop + 3, 76, 20, "释放绑定"));
         bindButton = new GuiRpgButton(1, panelLeft + 8, panelTop + panelHeight - 26, 82, 20, "实体指名");
         buttonList.add(bindButton);
         buttonList.add(new GuiRpgButton(2, panelLeft + panelWidth - 84, panelTop + panelHeight - 26, 76, 20, "实体解绑"));
@@ -128,6 +130,7 @@ public final class GuiNominatorEntity extends GuiScreen {
         darkgrey.rpg.client.NominatorGlobalSearch.Row row = browser.selected();
         if (row != null) {
             q.setString("resource", row.id);
+            q.setString("label", NominatorBrowser.resourceLabel(row, false));
             q.setString("type", row.type);
             q.setString("package", row.source.getPackageId());
         }
@@ -152,7 +155,12 @@ public final class GuiNominatorEntity extends GuiScreen {
         darkgrey.rpg.client.gui.DgrUiText
             .centered(fontRendererObj, "实体指名器", panelLeft + panelWidth / 2, panelTop + 8, DgrUiPalette.TEXT);
         browser.draw(mx, my);
-        String binding = "当前实体：" + (individual == null ? "" : individual) + " " + currentGroups;
+        StringBuilder names = new StringBuilder("当前实体：");
+        if (individual != null && !individual.isEmpty()) names.append(catalog.resourceLabel(individual));
+        for (String id : groups) names.append("  ")
+            .append(catalog.resourceLabel(id));
+        if ((individual == null || individual.isEmpty()) && groups.isEmpty()) names.append("未绑定");
+        String binding = names.toString();
         DgrUiText.left(
             fontRendererObj,
             fontRendererObj.trimStringToWidth(binding, panelWidth - 108),
@@ -174,6 +182,8 @@ public final class GuiNominatorEntity extends GuiScreen {
         UtilityWindowChrome.drawGrip(windowGeometry);
         super.drawScreen(mx, my, partial);
         controls.draw(width, height, mx, my);
+        if (!controls.modal() && browser.tooltip() != null)
+            RuntimeDirectoryVisuals.tooltip(fontRendererObj, browser.tooltip(), mx, my, width, height);
     }
 
     @Override

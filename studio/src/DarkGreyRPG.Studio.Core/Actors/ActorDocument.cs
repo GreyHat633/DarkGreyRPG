@@ -114,25 +114,13 @@ public sealed class ActorDocument : INotifyPropertyChanged
     public IReadOnlyList<ValidationIssue> ValidationErrors =>
         _validationIssues.Where(issue => issue.Severity == ValidationSeverity.Error).ToArray();
 
-    public static ActorDocument CreateNew(string id, string displayName = "新角色") =>
-        new(
-            new ActorResource
-            {
-                SchemaVersion = ActorResource.StorySchemaVersion,
-                Id = id,
-                DisplayName = displayName,
-                Notes = string.Empty,
-                Tags = [],
-                HomeStoryId = "uncategorized",
-            },
-            sourcePath: null,
-            isNew: true);
+    public static ActorDocument CreateNew(string id, string displayName = "新角色") => CreateIndividual(id, displayName);
 
     public static ActorDocument CreateIndividual(string npcId, string displayName = "新角色") =>
-        new(new IndividualActorResource { NpcId = npcId, DisplayName = displayName, HomeStoryId = "uncategorized" }, sourcePath: null, isNew: true);
+        new(new IndividualActorResource { NpcId = npcId, DisplayName = displayName, HomeStoryId = Identity.ResourceAddress.FromKey(npcId).StoryUid.Value }, sourcePath: null, isNew: true);
 
     public static ActorDocument CreateCollective(string groupId, string displayName = "新角色") =>
-        new(new CollectiveActorResource { GroupId = groupId, DisplayName = displayName, HomeStoryId = "uncategorized" }, sourcePath: null, isNew: true);
+        new(new CollectiveActorResource { GroupId = groupId, DisplayName = displayName, HomeStoryId = Identity.ResourceAddress.FromKey(groupId).StoryUid.Value }, sourcePath: null, isNew: true);
 
     public static ActorDocument FromResource(ActorResource resource, string sourcePath)
     {

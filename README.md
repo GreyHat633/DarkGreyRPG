@@ -79,6 +79,13 @@ The self-contained Windows x64 application is published to
 5. Start the server or run `/dgr reload` as an operator. Invalid replacement
    packages are rejected without first discarding the active definitions.
 
+Failed reloads show paginated validation details in chat. Use the clickable page
+links or `/dgr reload errors [page]` to read the latest startup or reload report
+without loading the packages again. Resource conflicts identify both stories,
+package files, affected Task nodes, and differing field values. Shared resources
+with the same ID must have byte-identical definitions; renaming a package file
+does not resolve a resource ID conflict. The complete report stays in the server log.
+
 Ordinary clients do not install or authorize Story Packages. Integrated Server
 single-player uses the same server path and validation rules.
 

@@ -1,0 +1,38 @@
+{
+  "Artifacts": [
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+      "Size": 204288,
+      "ProductVersion": "0.3.3.6",
+      "SHA256": "8E8BF253B16B1516616D890B8BD604A907CF9D607469E3785D4AB113A5B3B20C"
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+      "Size": 1743360,
+      "ProductVersion": "0.3.3.6",
+      "SHA256": "C157B49BE505FF57DE231A563C88B1EEFAC99D74EB146F4759EA9D556EC168B5"
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+      "Size": 1304064,
+      "ProductVersion": "1.0.0+99a3253d7186127bdbe37898824ecbd32219f136",
+      "SHA256": "870616EF7ABBEDFB33D72338E5E4909E7D58A55A4CA670FB36A98A0FBA665899"
+    },
+    {
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.3.3.6.jar",
+      "Size": 1953317,
+      "ProductVersion": null,
+      "SHA256": "B41B414285F9E28D96EBDDD64825DDC4690220B53648D69711AC4BB5EE1A5798"
+    }
+  ],
+  "DataFiles": 2651,
+  "DataBytes": 63815496,
+  "DataChanged": 0,
+  "CandidateDllMatchesDist": true,
+  "RootFiles": [
+    "DarkGreyRPGStudio.exe"
+  ],
+  "ProgramManifestCount": 405,
+  "MissingManifestFiles": 0,
+  "RuntimeJarCRCValid": true
+}

@@ -85,5 +85,5 @@ public sealed class DropdownIdentity0331Tests
     }
 
     private static CanonicalGraphResourceEditorViewModel Editor(GraphResourceKind kind, GraphNode node)
-        => new(new GraphResourceEnvelope(kind, "resource", "Resource", new GraphDocument([node])));
+        => new(new GraphResourceEnvelope(kind, CurrentIdentityFixture.GraphId(kind), "Resource", new GraphDocument([node])));
 }

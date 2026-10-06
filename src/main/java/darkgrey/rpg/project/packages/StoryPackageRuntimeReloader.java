@@ -21,6 +21,15 @@ public final class StoryPackageRuntimeReloader {
         require(repository, loader);
         ProjectRepository.ReloadResult base = repository.reload();
         StoryPackageLoader.ReloadResult packages = loader.reload();
+        if (!loader.getInventory()
+            .isEmpty() && loader.getPackages()
+                .isEmpty())
+            return new Result(
+                false,
+                packages,
+                repository.installUnavailableSnapshot(
+                    "All installed containers are blocked; previous package content is unavailable."),
+                null);
         if (loader.getPackages()
             .isEmpty()) {
             if (!base.isSuccessful()) repository.installUnavailableSnapshot(base.getSummary());
@@ -32,28 +41,39 @@ public final class StoryPackageRuntimeReloader {
     /** Reloads packages and atomically publishes the accepted set or restored base project. */
     public static Result reload(ProjectRepository repository, StoryPackageLoader loader) {
         require(repository, loader);
+        long revision = loader.getInventoryRevision();
         StoryPackageLoader.ReloadResult packages = loader.reload();
+        if (loader.getInventoryRevision() == revision)
+            return new Result(false, packages, repository.getLastReload(), packages.getSummary());
         if (!loader.getPackages()
             .isEmpty()) return publishAcceptedPackages(repository, loader, packages);
+        if (!loader.getInventory()
+            .isEmpty())
+            return new Result(
+                false,
+                packages,
+                repository.installUnavailableSnapshot(
+                    "All installed containers are blocked; previous package content is unavailable."),
+                null);
         ProjectRepository.ReloadResult restoredBase = repository.reload();
-        // A rejected live candidate must keep the last usable project and its
-        // persisted generation bindings. Startup alone may install unavailable.
-        return new Result(
-            packages.isSuccessful() && restoredBase.isSuccessful(),
-            packages,
-            restoredBase,
-            restoredBase.isSuccessful() ? null : restoredBase.getSummary());
+        if (!restoredBase.isSuccessful())
+            restoredBase = repository.installUnavailableSnapshot(restoredBase.getSummary());
+        return new Result(packages.isSuccessful() && restoredBase.isSuccessful(), packages, restoredBase, null);
     }
 
     private static Result publishAcceptedPackages(ProjectRepository repository, StoryPackageLoader loader,
         StoryPackageLoader.ReloadResult packages) {
-        ProjectRepository.ReloadResult previous = repository.getLastReload();
         try {
             ProjectRepository.ReloadResult installed = repository
                 .installSnapshot(StoryPackageSnapshotMerger.merge(loader.getPackages()));
             return new Result(packages.isSuccessful() && installed.isSuccessful(), packages, installed, null);
         } catch (ProjectLoadException exception) {
-            return new Result(false, packages, previous, exception.getMessage());
+            loader.rejectPublication("Accepted container set cannot be published: " + exception.getMessage());
+            return new Result(
+                false,
+                loader.getLastReload(),
+                repository.installUnavailableSnapshot(exception.getMessage()),
+                null);
         }
     }
 

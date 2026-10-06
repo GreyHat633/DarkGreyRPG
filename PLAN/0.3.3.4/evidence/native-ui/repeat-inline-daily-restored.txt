@@ -1,0 +1,343 @@
+WINDOW: Native0332Acceptance — DarkGrey RPG Studio 0.3.3.4 229,44,1463,942
+ControlType.TitleBar id=TitleBar name=Native0332Acceptance — DarkGrey RPG Studio 0.3.3.4 enabled=True rect=238,53,1445,28
+ControlType.MenuBar id=SystemMenuBar name=System Menu Bar enabled=True rect=238,53,27,27
+ControlType.MenuItem id=Item 1 name=System enabled=True rect=238,53,27,27
+ControlType.Button id=Minimize name=Minimize enabled=True rect=1511,45,58,36
+ControlType.Button id=Maximize name=Maximize enabled=True rect=1569,45,57,36
+ControlType.Button id=Close name=Close enabled=True rect=1626,45,58,36
+ControlType.Menu id= name= enabled=True rect=238,81,1445,64
+ControlType.MenuItem id= name=文件(F) enabled=True rect=245,83,93,60
+ControlType.Text id= name=文件(_F) enabled=True rect=264,102,56,22
+ControlType.MenuItem id= name=编辑(E) enabled=True rect=338,83,93,60
+ControlType.Text id= name=编辑(_E) enabled=True rect=357,102,56,22
+ControlType.MenuItem id= name=视图(V) enabled=True rect=431,83,95,60
+ControlType.Text id= name=视图(_V) enabled=True rect=450,102,58,22
+ControlType.MenuItem id= name=项目(P) enabled=True rect=526,83,95,60
+ControlType.Text id= name=项目(_P) enabled=True rect=545,102,57,22
+ControlType.MenuItem id= name=帮助(H) enabled=True rect=621,83,96,60
+ControlType.Text id= name=帮助(_H) enabled=True rect=639,102,60,22
+ControlType.Text id= name=所有未保存的资源已写入磁盘。 enabled=True rect=253,946,1415,22
+ControlType.List id= name= enabled=True rect=238,886,1445,52
+ControlType.ListItem id= name=BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True } enabled=True rect=240,891,62,42
+ControlType.Text id= name=输出 enabled=True rect=254,901,35,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True } enabled=True rect=305,891,62,42
+ControlType.Text id= name=问题 enabled=True rect=319,901,34,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True } enabled=True rect=369,891,80,42
+ControlType.Text id= name=调试器 enabled=True rect=383,901,52,22
+ControlType.ListItem id= name=BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True } enabled=True rect=451,891,112,42
+ControlType.Text id= name=Minecraft enabled=True rect=465,901,85,22
+ControlType.Custom id=CanonicalStoryWorkspace name= enabled=True rect=283,184,1362,662
+ControlType.Text id= name=NativeAcceptance enabled=True rect=300,198,207,26
+ControlType.Text id= name=Native0332:acceptance enabled=True rect=300,227,207,22
+ControlType.Button id=CanonicalCreateResource name=新建资源 enabled=True rect=509,208,33,32
+ControlType.Button id=CanonicalReferenceResource name=引用已有资源 enabled=True rect=544,208,32,32
+ControlType.Button id=CanonicalDeleteResource name=删除资源或解除引用 enabled=True rect=579,208,32,32
+ControlType.Button id= name=搜索 enabled=True rect=562,268,52,32
+ControlType.Text id= name=搜索 enabled=True rect=570,273,35,22
+ControlType.Edit id=AuthoringSearchBox name= enabled=True rect=298,264,264,40
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Pane id= name= enabled=True rect=298,314,316,517
+ControlType.List id= name= enabled=True rect=298,314,316,517
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,314,316,49
+ControlType.Group id= name=角色 enabled=True rect=298,316,316,45
+ControlType.Button id=HeaderToggle name=角色 enabled=True rect=298,316,64,35
+ControlType.Text id= name=角色 enabled=True rect=319,321,39,25
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,363,316,86
+ControlType.Group id= name=物品 enabled=True rect=298,366,316,81
+ControlType.Button id=HeaderToggle name=物品 enabled=True rect=298,366,64,34
+ControlType.Text id= name=物品 enabled=True rect=319,371,39,24
+ControlType.List id= name= enabled=True rect=310,403,304,37
+ControlType.DataItem id= name=CanonicalStoryItemItem { Item = DarkGreyRPG.Studio.Core.Items.IndividualItemResource, MembershipKind = Owned, Provider = , IsReadOnly = False, ProviderPackageText = , SourceText = , Id = Native0332:stone, DisplayName = 0334 Test Stone, IdentityText = [Item_ID] Native0332 : stone, Type = individual, Tags = System.Collections.Generic.List`1[System.String], IsOwned = True, IsReferenced = False } enabled=True rect=310,403,304,37
+ControlType.Button id= name=0334 Test Stone  [Item_ID] Native0332 : stone enabled=True rect=310,404,300,34
+ControlType.Text id= name=0334 Test Stone  [Item_ID] Native0332 : stone enabled=True rect=321,410,278,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,449,316,87
+ControlType.Group id= name=会话 enabled=True rect=298,452,316,81
+ControlType.Button id=HeaderToggle name=会话 enabled=True rect=298,452,64,34
+ControlType.Text id= name=会话 enabled=True rect=319,457,39,24
+ControlType.List id= name= enabled=True rect=310,489,304,37
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,489,304,37
+ControlType.Button id= name=NativeConversation  [Session_ID] Native0332 : conversation enabled=True rect=310,490,298,34
+ControlType.Text id= name=NativeConversation  [Session_ID] Native0332 : conversation enabled=True rect=321,496,276,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryFolderViewModel enabled=True rect=298,536,316,197
+ControlType.Group id= name=任务 enabled=True rect=298,538,316,192
+ControlType.Button id=HeaderToggle name=任务 enabled=True rect=298,538,64,35
+ControlType.Text id= name=任务 enabled=True rect=319,543,39,25
+ControlType.List id= name= enabled=True rect=310,575,304,148
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,575,304,37
+ControlType.Button id= name=短目标  [Task_ID] Native0332 : short_task enabled=True rect=310,576,299,35
+ControlType.Text id= name=短目标  [Task_ID] Native0332 : short_task enabled=True rect=321,582,277,23
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,612,304,37
+ControlType.Button id= name=长目标排版  [Task_ID] Native0332 : long_task enabled=True rect=310,613,302,35
+ControlType.Text id= name=长目标排版  [Task_ID] Native0332 : long_task enabled=True rect=321,619,280,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,649,304,37
+ControlType.Button id= name=并行目标  [Task_ID] Native0332 : multi_task enabled=True rect=310,650,298,35
+ControlType.Text id= name=并行目标  [Task_ID] Native0332 : multi_task enabled=True rect=321,656,276,22
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryGraphItem enabled=True rect=310,686,304,37
+ControlType.Button id= name=实机击杀验证  [Task_ID] Native0332 : live_kill_task enabled=True rect=310,687,303,34
+ControlType.Text id= name=实机击杀验证  [Task_ID] Native0332 : live_kill_task enabled=True rect=321,693,280,22
+ControlType.Thumb id= name= enabled=True rect=630,184,10,662
+ControlType.List id= name= enabled=True rect=652,192,623,30
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = native0332, DisplayName = Native0332Acceptance, Kind = Project, ResourceKind = , IsFirst = True, IsCurrent = False } enabled=True rect=652,192,205,30
+ControlType.Button id= name=Native0332Acceptance enabled=True rect=652,192,205,30
+ControlType.Text id= name=Native0332Acceptance enabled=True rect=659,196,191,22
+ControlType.DataItem id= name=CanonicalStoryBreadcrumb { Id = Native0332:acceptance, DisplayName = NativeAcceptance, Kind = Story, ResourceKind = Story, IsFirst = False, IsCurrent = True } enabled=True rect=857,192,185,30
+ControlType.Text id= name=> enabled=True rect=861,196,13,22
+ControlType.Button id= name=NativeAcceptance enabled=True rect=877,192,165,30
+ControlType.Text id= name=NativeAcceptance enabled=True rect=885,196,150,22
+ControlType.Custom id=CanonicalStoryWorkspaceGraph name=节点图编辑器 enabled=True rect=640,232,648,614
+ControlType.Button id= name=图编辑器缩放到百分之百 enabled=True rect=640,240,68,35
+ControlType.Text id= name=100% enabled=True rect=651,246,46,22
+ControlType.Button id= name=适应全部图节点 enabled=True rect=713,240,57,35
+ControlType.Text id= name=适应 enabled=True rect=724,246,35,22
+ControlType.Button id= name=重置图视图 enabled=True rect=775,240,57,35
+ControlType.Text id= name=重置 enabled=True rect=786,246,35,22
+ControlType.Button id=ScissorsButton name=剪断连线 enabled=True rect=837,240,57,35
+ControlType.Text id= name=剪刀 enabled=True rect=848,246,35,22
+ControlType.Button id=CombineSelection name=组合 enabled=True rect=899,240,57,35
+ControlType.Text id= name=组合 enabled=True rect=910,246,35,22
+ControlType.Text id= name=拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放 enabled=True rect=971,239,317,44
+ControlType.Custom id=CanonicalGraphNode_start name=图节点 开始 start enabled=True rect=723,194,288,1452
+ControlType.Text id=HeaderTitle name=开始 enabled=True rect=735,202,263,22
+ControlType.Button id=CanonicalGraphPort_start_story_trigger_3eed9f05f91243059109c4f19544a84a name=start 输出端口 story_trigger_3eed9f05f91243059109c4f19544a84a (Flow) enabled=True rect=867,239,134,25
+ControlType.Text id= name=启动条件 1 enabled=True rect=903,243,67,17
+ControlType.Button id=CanonicalGraphPort_start_dynamic_port_9813ec8f834a4f88a56289cd4e8fbad4 name=start 输出端口 dynamic_port_9813ec8f834a4f88a56289cd4e8fbad4 (Flow) enabled=True rect=867,264,134,25
+ControlType.Text id= name=启动条件 2 enabled=True rect=903,268,67,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=733,297,268,1339
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=735,300,263,23
+ControlType.Text id= name=参数 enabled=True rect=764,301,35,22
+ControlType.Custom id=Root name= enabled=True rect=738,330,258,1304
+ControlType.Custom id= name= enabled=True rect=738,342,258,414
+ControlType.Text id= name=重复设置 enabled=True rect=749,353,236,22
+ControlType.CheckBox id=InlineStartRepeatableToggle name=可重复 enabled=True rect=749,383,149,39
+ControlType.Text id= name=可重复 enabled=True rect=785,390,52,22
+ControlType.Button id=RepeatParametersToggle name= enabled=True rect=749,430,119,55
+ControlType.Text id= name=重复参数 ▾ enabled=True rect=764,437,89,22
+ControlType.Text id= name=每日 23:59 enabled=True rect=764,459,89,18
+ControlType.Text id= name=重复方式 enabled=True rect=749,493,236,22
+ControlType.ComboBox id=RepeatMode name= enabled=True rect=749,515,236,39
+ControlType.Text id= name=时间规则 enabled=True rect=749,562,236,22
+ControlType.ComboBox id= name= enabled=True rect=749,584,236,39
+ControlType.Text id= name=时间（HH:mm） enabled=True rect=749,631,236,22
+ControlType.Edit id=RepeatTime name= enabled=True rect=749,653,236,40
+ControlType.Text id= name=使用服务器现实时间；到时仅恢复资格，仍需满足启动条件。 enabled=True rect=749,698,236,34
+ControlType.Text id= name=启动条件（共 2 条） enabled=True rect=738,771,226,29
+ControlType.Button id=InlineStartAddTrigger name=添加启动条件 enabled=True rect=964,771,32,29
+ControlType.List id=InlineStartTriggerList name= enabled=True rect=738,804,258,830
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel enabled=True rect=738,804,258,415
+ControlType.Text id= name=启动条件 1 enabled=True rect=749,819,133,22
+ControlType.Button id= name=↑ enabled=False rect=885,817,21,27
+ControlType.Text id= name=↑ enabled=False rect=892,819,8,22
+ControlType.Button id= name=↓ enabled=True rect=909,817,21,27
+ControlType.Text id= name=↓ enabled=True rect=915,819,9,22
+ControlType.Button id= name=删除 enabled=True rect=933,815,52,30
+ControlType.Text id= name=删除 enabled=True rect=941,819,35,22
+ControlType.Text id= name=名称 enabled=True rect=749,855,236,22
+ControlType.Edit id=InlineStartTriggerName name= enabled=True rect=749,880,236,40
+ControlType.Text id= name=类型 enabled=True rect=749,930,236,22
+ControlType.ComboBox id=InlineStartTriggerType name=Story Start trigger type enabled=True rect=749,956,236,39
+ControlType.Text id= name=维度 enabled=True rect=749,1000,236,22
+ControlType.Edit id=InlineStartTriggerDimension name= enabled=True rect=749,1022,236,40
+ControlType.Text id= name=X enabled=True rect=749,1067,76,22
+ControlType.Edit id=InlineStartTriggerX name= enabled=True rect=749,1089,76,40
+ControlType.Text id= name=Y enabled=True rect=830,1067,74,22
+ControlType.Edit id=InlineStartTriggerY name= enabled=True rect=830,1089,74,40
+ControlType.Text id= name=Z enabled=True rect=909,1067,76,22
+ControlType.Edit id=InlineStartTriggerZ name= enabled=True rect=909,1089,76,40
+ControlType.Text id= name=半径 enabled=True rect=749,1134,236,22
+ControlType.Edit id=InlineStartTriggerRadius name= enabled=True rect=749,1156,236,39
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel enabled=True rect=738,1219,258,415
+ControlType.Text id= name=启动条件 2 enabled=True rect=749,1234,133,22
+ControlType.Button id= name=↑ enabled=True rect=885,1231,21,27
+ControlType.Text id= name=↑ enabled=True rect=892,1234,8,22
+ControlType.Button id= name=↓ enabled=False rect=909,1231,21,27
+ControlType.Text id= name=↓ enabled=False rect=915,1234,9,22
+ControlType.Button id= name=删除 enabled=True rect=933,1230,52,30
+ControlType.Text id= name=删除 enabled=True rect=941,1234,35,22
+ControlType.Text id= name=名称 enabled=True rect=749,1270,236,22
+ControlType.Edit id=InlineStartTriggerName name= enabled=True rect=749,1295,236,40
+ControlType.Text id= name=类型 enabled=True rect=749,1345,236,22
+ControlType.ComboBox id=InlineStartTriggerType name=Story Start trigger type enabled=True rect=749,1371,236,39
+ControlType.Text id= name=维度 enabled=True rect=749,1415,236,22
+ControlType.Edit id=InlineStartTriggerDimension name= enabled=True rect=749,1437,236,40
+ControlType.Text id= name=X enabled=True rect=749,1482,76,22
+ControlType.Edit id=InlineStartTriggerX name= enabled=True rect=749,1504,76,40
+ControlType.Text id= name=Y enabled=True rect=830,1482,74,22
+ControlType.Edit id=InlineStartTriggerY name= enabled=True rect=830,1504,74,40
+ControlType.Text id= name=Z enabled=True rect=909,1482,76,22
+ControlType.Edit id=InlineStartTriggerZ name= enabled=True rect=909,1504,76,40
+ControlType.Text id= name=半径 enabled=True rect=749,1549,236,22
+ControlType.Edit id=InlineStartTriggerRadius name= enabled=True rect=749,1571,236,39
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_aggregate_5c6dba9d366e498b836f86b681901f85 name=图节点 会话「NativeConversation」 aggregate_5c6dba9d366e498b836f86b681901f85 enabled=True rect=1090,570,287,114
+ControlType.Text id=HeaderTitle name=会话「NativeConversation」 enabled=True rect=1102,579,263,22
+ControlType.Button id=CanonicalGraphPort_aggregate_5c6dba9d366e498b836f86b681901f85_flow_in name=aggregate_5c6dba9d366e498b836f86b681901f85 输入端口 flow_in (Flow) enabled=True rect=1100,616,134,25
+ControlType.Text id= name=流程输入 enabled=True rect=1131,620,54,17
+ControlType.Button id=CanonicalGraphPort_aggregate_5c6dba9d366e498b836f86b681901f85_native_done name=aggregate_5c6dba9d366e498b836f86b681901f85 输出端口 native_done (Flow) enabled=True rect=1234,616,133,25
+ControlType.Text id= name=验收完成 enabled=True rect=1282,620,54,17
+ControlType.Custom id=CanonicalGraphNode_native_terminate name=图节点 终止「验收结束」 native_terminate enabled=True rect=1475,114,287,201
+ControlType.Text id=HeaderTitle name=终止「验收结束」 enabled=True rect=1487,122,263,22
+ControlType.Button id=CanonicalGraphPort_native_terminate_flow_in name=native_terminate 输入端口 flow_in (Flow) enabled=True rect=1485,159,133,25
+ControlType.Text id= name=流程输入 enabled=True rect=1516,163,54,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=1485,193,267,112
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=1487,195,263,24
+ControlType.Text id= name=参数 enabled=True rect=1516,196,34,22
+ControlType.Custom id=Root name= enabled=True rect=1489,225,258,78
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Text id= name=名称 enabled=True rect=1489,237,258,22
+ControlType.Edit id= name= enabled=True rect=1489,263,258,40
+ControlType.Custom id=CanonicalGraphNode_title_0334 name=图节点 标题「title_0334」 title_0334 enabled=True rect=2119,114,288,620
+ControlType.Text id=HeaderTitle name=标题「title_0334」 enabled=True rect=2132,122,262,22
+ControlType.Button id=CanonicalGraphPort_title_0334_flow_in name=title_0334 输入端口 flow_in (Flow) enabled=True rect=2129,159,134,25
+ControlType.Text id= name=flow_in enabled=True rect=2160,163,46,17
+ControlType.Button id=CanonicalGraphPort_title_0334_flow_out name=title_0334 输出端口 flow_out (Flow) enabled=True rect=2263,159,134,25
+ControlType.Text id= name=flow_out enabled=True rect=2310,163,56,17
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=2129,193,268,532
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=2132,195,262,24
+ControlType.Text id= name=参数 enabled=True rect=2160,196,35,22
+ControlType.Custom id=Root name= enabled=True rect=2134,225,258,497
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Text id= name=主标题 enabled=True rect=2134,237,258,22
+ControlType.Custom id= name= enabled=True rect=2134,259,258,103
+ControlType.Button id= name=＋ 动态内容 enabled=True rect=2285,259,107,30
+ControlType.Text id= name=＋ 动态内容 enabled=True rect=2293,263,91,22
+ControlType.Text id= name=Title 〔玩家名称〕 level 〔玩家经验等级〕 count 〔持有数量：Native0332:stone〕 enabled=True rect=2134,289,258,73
+ControlType.Text id= name=副标题（可选） enabled=True rect=2134,362,258,22
+ControlType.Custom id= name= enabled=True rect=2134,384,258,103
+ControlType.Button id= name=＋ 动态内容 enabled=True rect=2285,384,107,30
+ControlType.Text id= name=＋ 动态内容 enabled=True rect=2293,388,91,22
+ControlType.Text id= name=Subtitle 〔玩家名称〕 level 〔玩家经验等级〕 count 〔持有数量：Native0332:stone〕 enabled=True rect=2134,414,258,73
+ControlType.Text id= name=淡入（秒） enabled=True rect=2134,487,258,22
+ControlType.Edit id= name= enabled=True rect=2134,509,258,40
+ControlType.Text id= name=停留（秒） enabled=True rect=2134,549,258,22
+ControlType.Edit id= name= enabled=True rect=2134,571,258,40
+ControlType.Text id= name=淡出（秒） enabled=True rect=2134,611,258,22
+ControlType.Edit id= name= enabled=True rect=2134,633,258,39
+ControlType.CheckBox id= name=播放完再继续流程 enabled=True rect=2134,682,176,40
+ControlType.Text id= name=播放完再继续流程 enabled=True rect=2170,690,139,22
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=CanonicalGraphNode_message_0334 name=图节点 执行「消息发送」 message_0334 enabled=True rect=1104,102,288,410
+ControlType.Text id=HeaderTitle name=执行「消息发送」 enabled=True rect=1116,111,263,22
+ControlType.Button id=CanonicalGraphPort_message_0334_flow_in name=message_0334 输入端口 flow_in (Flow) enabled=True rect=1114,148,134,24
+ControlType.Text id= name=flow_in enabled=True rect=1145,151,46,18
+ControlType.Button id=CanonicalGraphPort_message_0334_flow_out name=message_0334 输出端口 flow_out (Flow) enabled=True rect=1248,148,134,24
+ControlType.Text id= name=flow_out enabled=True rect=1295,151,56,18
+ControlType.Group id=CanonicalNodeParameterSummary name=参数 enabled=True rect=1114,181,268,321
+ControlType.Button id=HeaderSite name=参数 enabled=True rect=1116,184,263,23
+ControlType.Text id= name=参数 enabled=True rect=1145,184,35,22
+ControlType.Custom id=Root name= enabled=True rect=1119,213,258,286
+ControlType.CheckBox id= name=高级选项 enabled=True rect=1119,223,149,40
+ControlType.Text id= name=高级选项 enabled=True rect=1155,231,69,22
+ControlType.Text id=InlineActionTypeLabel name=执行类型 enabled=True rect=1119,275,258,22
+ControlType.ComboBox id=InlineActionTypeSelector name=Story Action type selector enabled=True rect=1119,301,258,40
+ControlType.Text id=InlineActionMessageLabel name=消息 enabled=True rect=1119,353,258,22
+ControlType.Custom id=InlineActionMessage name= enabled=True rect=1119,379,258,120
+ControlType.Button id= name=＋ 动态内容 enabled=True rect=1270,379,107,29
+ControlType.Text id= name=＋ 动态内容 enabled=True rect=1277,383,92,22
+ControlType.Document id= name= enabled=True rect=1119,408,258,91
+ControlType.Button id= name=玩家名称 enabled=True rect=1210,413,82,27
+ControlType.Text id= name=玩家名称 enabled=True rect=1216,416,69,22
+ControlType.Button id= name=玩家经验等级 enabled=True rect=1131,440,117,27
+ControlType.Text id= name=玩家经验等级 enabled=True rect=1138,443,104,22
+ControlType.Button id= name=持有数量：0334 Test Stone enabled=True rect=1131,467,233,27
+ControlType.Text id= name=持有数量：0334 Test Stone enabled=True rect=1138,470,220,22
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Thumb id= name= enabled=True rect=1288,184,9,662
+ControlType.Text id= name=开始 enabled=True rect=1319,208,306,30
+ControlType.Pane id=CanonicalInspectorScrollViewer name= enabled=True rect=1319,256,306,570
+ControlType.Group id=CanonicalNodeHelp name=介绍说明 enabled=True rect=1319,256,306,28
+ControlType.Button id=HeaderSite name=介绍说明 enabled=True rect=1321,258,301,24
+ControlType.Text id= name=介绍说明 enabled=True rect=1350,259,69,22
+ControlType.Text id= name=节点属性 enabled=True rect=1319,297,306,22
+ControlType.Custom id= name= enabled=True rect=1319,331,306,414
+ControlType.Text id= name=重复设置 enabled=True rect=1330,342,284,22
+ControlType.CheckBox id=StoryStartRepeatableToggle name=可重复 enabled=True rect=1330,372,148,39
+ControlType.Text id= name=可重复 enabled=True rect=1366,379,52,22
+ControlType.Button id=RepeatParametersToggle name= enabled=True rect=1330,419,119,55
+ControlType.Text id= name=重复参数 ▾ enabled=True rect=1345,426,89,22
+ControlType.Text id= name=每日 23:59 enabled=True rect=1345,448,89,18
+ControlType.Text id= name=重复方式 enabled=True rect=1330,482,284,22
+ControlType.ComboBox id=RepeatMode name= enabled=True rect=1330,504,284,39
+ControlType.Text id= name=时间规则 enabled=True rect=1330,551,284,22
+ControlType.ComboBox id= name= enabled=True rect=1330,573,284,40
+ControlType.Text id= name=时间（HH:mm） enabled=True rect=1330,620,284,22
+ControlType.Edit id=RepeatTime name= enabled=True rect=1330,642,284,40
+ControlType.Text id= name=使用服务器现实时间；到时仅恢复资格，仍需满足启动条件。 enabled=True rect=1330,687,284,34
+ControlType.Text id= name=启动条件（共 2 条） enabled=True rect=1319,760,274,29
+ControlType.Button id=StoryStartAddTrigger name=添加启动条件 enabled=True rect=1593,760,32,29
+ControlType.List id=StoryStartTriggerList name= enabled=True rect=1319,793,306,830
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel enabled=True rect=1319,793,306,415
+ControlType.Text id= name=启动条件 1 enabled=True rect=1330,808,181,22
+ControlType.Button id= name=↑ enabled=False rect=1514,806,21,27
+ControlType.Text id= name=↑ enabled=False rect=1521,808,8,22
+ControlType.Button id= name=↓ enabled=True rect=1538,806,21,27
+ControlType.Text id= name=↓ enabled=True rect=1544,808,9,22
+ControlType.Button id= name=删除 enabled=True rect=1562,804,52,30
+ControlType.Text id= name=删除 enabled=True rect=1570,808,35,22
+ControlType.Text id= name=名称 enabled=True rect=1330,844,284,22
+ControlType.Edit id=StoryStartTriggerName name= enabled=True rect=1330,869,284,40
+ControlType.Text id= name=类型 enabled=True rect=1330,919,284,22
+ControlType.ComboBox id=StoryStartTriggerType name=Story Start trigger type enabled=True rect=1330,945,284,39
+ControlType.Text id= name=维度 enabled=True rect=1330,989,284,22
+ControlType.Edit id=StoryStartTriggerDimension name= enabled=True rect=1330,1011,284,40
+ControlType.Text id= name=X enabled=True rect=1330,1056,92,22
+ControlType.Edit id=StoryStartTriggerX name= enabled=True rect=1330,1078,92,40
+ControlType.Text id= name=Y enabled=True rect=1427,1056,89,22
+ControlType.Edit id=StoryStartTriggerY name= enabled=True rect=1427,1078,89,40
+ControlType.Text id= name=Z enabled=True rect=1521,1056,93,22
+ControlType.Edit id=StoryStartTriggerZ name= enabled=True rect=1521,1078,93,40
+ControlType.Text id= name=半径 enabled=True rect=1330,1123,284,22
+ControlType.Edit id=StoryStartTriggerRadius name= enabled=True rect=1330,1145,284,39
+ControlType.DataItem id= name=DarkGreyRPG.Studio.ViewModels.Graph.CanonicalStoryStartTriggerViewModel enabled=True rect=1319,1208,306,415
+ControlType.Text id= name=启动条件 2 enabled=True rect=1330,1223,181,22
+ControlType.Button id= name=↑ enabled=True rect=1514,1220,21,27
+ControlType.Text id= name=↑ enabled=True rect=1521,1223,8,22
+ControlType.Button id= name=↓ enabled=False rect=1538,1220,21,27
+ControlType.Text id= name=↓ enabled=False rect=1544,1223,9,22
+ControlType.Button id= name=删除 enabled=True rect=1562,1219,52,30
+ControlType.Text id= name=删除 enabled=True rect=1570,1223,35,22
+ControlType.Text id= name=名称 enabled=True rect=1330,1259,284,22
+ControlType.Edit id=StoryStartTriggerName name= enabled=True rect=1330,1284,284,40
+ControlType.Text id= name=类型 enabled=True rect=1330,1334,284,22
+ControlType.ComboBox id=StoryStartTriggerType name=Story Start trigger type enabled=True rect=1330,1360,284,39
+ControlType.Text id= name=维度 enabled=True rect=1330,1404,284,22
+ControlType.Edit id=StoryStartTriggerDimension name= enabled=True rect=1330,1426,284,40
+ControlType.Text id= name=X enabled=True rect=1330,1471,92,22
+ControlType.Edit id=StoryStartTriggerX name= enabled=True rect=1330,1493,92,40
+ControlType.Text id= name=Y enabled=True rect=1427,1471,89,22
+ControlType.Edit id=StoryStartTriggerY name= enabled=True rect=1427,1493,89,40
+ControlType.Text id= name=Z enabled=True rect=1521,1471,93,22
+ControlType.Edit id=StoryStartTriggerZ name= enabled=True rect=1521,1493,93,40
+ControlType.Text id= name=半径 enabled=True rect=1330,1538,284,22
+ControlType.Edit id=StoryStartTriggerRadius name= enabled=True rect=1330,1560,284,39
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.Custom id=Root name= enabled=True rect=Empty
+ControlType.List id= name= enabled=True rect=Empty
+ControlType.ScrollBar id=PART_VerticalScrollBar name= enabled=True rect=1610,256,15,570
+ControlType.Button id=PART_ButtonScrollUp name=Scroll Up enabled=True rect=1610,257,15,15
+ControlType.Button id=PageUp name= enabled=True rect=Empty
+ControlType.Thumb id= name= enabled=True rect=1615,273,5,223
+ControlType.Button id=PageDown name= enabled=True rect=1615,496,5,313
+ControlType.Button id=PART_ButtonScrollDown name=Scroll Down enabled=True rect=1610,810,15,15

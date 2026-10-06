@@ -12,7 +12,7 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
     [TestMethod]
     public void TaskDescriptionParticipatesInDirtySaveAndReopenWithoutChangingGraph()
     {
-        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "task", "任务", new GraphDocument());
+        var envelope = new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "任务", new GraphDocument());
         using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
         editor.TaskDescription = "背景\n第二段";
         Assert.IsTrue(editor.IsDirty);
@@ -38,7 +38,7 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
         })
         {
             var source = new GraphDocument();
-            var envelope = new GraphResourceEnvelope(kind, "id", "Name", source);
+            var envelope = new GraphResourceEnvelope(kind, CurrentIdentityFixture.GraphId(kind), "Name", source);
             using var editor = new CanonicalGraphResourceEditorViewModel(envelope);
             source.Nodes.Add(new GraphNode("caller", "unknown", "Caller"));
 
@@ -120,7 +120,7 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
     {
         var graph = new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "line", "line-1")]);
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", graph));
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", graph));
 
         editor.Host.SetNodePosition("line-1", 480, 270);
 
@@ -142,7 +142,7 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
     {
         var graph = new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "line", "line-1")]);
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", graph),
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", graph),
             new Dictionary<string, GraphEditorNodePosition>(StringComparer.Ordinal)
             {
                 ["line-1"] = new(480, 270),
@@ -167,7 +167,7 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
     {
         var graph = new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "line", "line-1")]);
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session", graph));
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", graph));
         var before = GraphResourceEnvelopeSerializer.Serialize(editor.CreatePersistenceSnapshot(), indented: false);
 
         editor.Host.SetNodePosition("line-1", 765.25, 432.75);
@@ -188,7 +188,7 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
         var original = new GraphConnection(
             source.Id, "flow_out", target.Id, "flow_in", GraphInterfaceKind.Flow);
         using var editor = new CanonicalGraphResourceEditorViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Session, "session", "Session",
+            new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
                 new GraphDocument([start, source, replacement, target], [original])));
 
         Assert.IsTrue(editor.Host.CompleteWireDrag(
@@ -206,5 +206,5 @@ public sealed class CanonicalGraphResourceEditorViewModelTests
 
     private static CanonicalGraphResourceEditorViewModel SessionEditor()
         => new(new GraphResourceEnvelope(
-            GraphResourceKind.Session, "session", "Session", new GraphDocument()));
+            GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session", new GraphDocument()));
 }

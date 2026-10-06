@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DarkGreyRPG.Studio.Core\DarkGreyRPG.Studio.Core.csproj" />
+    <None Include="..\..\..\schema\identity-0336-vectors.jsonl" Link="IdentityVectors.jsonl" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\schema\story-fingerprint-0336-vectors.jsonl" Link="FingerprintVectors.jsonl" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

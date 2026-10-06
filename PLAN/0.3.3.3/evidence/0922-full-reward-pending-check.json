@@ -1,0 +1,275 @@
+{
+  "phase": "pending",
+  "task": {
+    "objective_statuses": [
+      {
+        "value": "COMPLETED",
+        "key": "objective_0"
+      }
+    ],
+    "activation_logic": 1,
+    "story_instance_id": "full0333",
+    "public_logic_outputs": [],
+    "resource_fingerprint": "d1b8c87d3a683ba18d9ca24daaf7572ce4b908685c425bf1d7d5f093dd61cbce",
+    "runtime_status": "ACTIVE",
+    "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+    "reward_states": [
+      {
+        "value": 0,
+        "key": "reward_0"
+      }
+    ],
+    "activation_time": 1790078924865,
+    "task_resource_id": "Native0332:full_inventory_task",
+    "internal_logic_values": [
+      {
+        "value": 1,
+        "key": "objective_0:logic_status"
+      }
+    ],
+    "progress": [
+      {
+        "value": 1,
+        "key": "objective_0"
+      }
+    ],
+    "task_node_placement_id": "reward",
+    "status": "ACTIVE"
+  },
+  "expected_receipt": "08c0b0783faf14bef86355b3b929edde4672c2da15d39662200b917667eea71a",
+  "receipt_present": false,
+  "receipts": {
+    "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8": 1,
+    "e442775f1b14d8acc9d93140a9abfbc7340515d72df954cf8b5edfe17c6de26f": 1,
+    "7f1e1b1ea939384ca448eaa80c22882d0a44ed8330653737ff7013c55e18139d": 1
+  },
+  "inventory": [
+    {
+      "Slot": 0,
+      "id": 264,
+      "Count": 64,
+      "tag": {
+        "display": {
+          "Name": "NativeNamedGem0333"
+        }
+      },
+      "Damage": 0
+    },
+    {
+      "Slot": 1,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 2,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 3,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 4,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 5,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 6,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 7,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 8,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 9,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 10,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 11,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 12,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 13,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 14,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 15,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 16,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 17,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 18,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 19,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 20,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 21,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 22,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 23,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 24,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 25,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 26,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 27,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 28,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 29,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 30,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 31,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 32,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 33,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 34,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    },
+    {
+      "Slot": 35,
+      "id": 1,
+      "Count": 64,
+      "Damage": 0
+    }
+  ],
+  "named_gem_count": 64,
+  "xp": {
+    "XpTotal": 1,
+    "XpLevel": 0,
+    "XpP": 0.05882352963089943
+  }
+}

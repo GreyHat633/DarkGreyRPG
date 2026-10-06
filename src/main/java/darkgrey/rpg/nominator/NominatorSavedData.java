@@ -15,11 +15,15 @@ import net.minecraft.world.WorldSavedData;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.storage.MapStorage;
 
+import darkgrey.rpg.identity.NpcIdentityRegistry;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
+
 /** Overworld persistence for selection metadata; real NPC identity is separate. */
 public final class NominatorSavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_nominator";
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
     private final Map<UUID, NominatorEntityBinding> entities = new LinkedHashMap<UUID, NominatorEntityBinding>();
     private final Map<String, List<String>> typeGroups = new LinkedHashMap<String, List<String>>();
     private long revision;
@@ -88,7 +92,7 @@ public final class NominatorSavedData extends WorldSavedData {
     public synchronized boolean addTypeGroup(String entityType, String groupId) {
         String type = requireText(entityType, "Entity type");
         if (!NominatorService.safeType(type)) throw new IllegalArgumentException("Unsafe wrapper entity type.");
-        String group = requireText(groupId, "Group ID");
+        String group = NpcIdentityRegistry.requireId(groupId);
         List<String> values = typeGroups.get(type);
         if (values == null) {
             values = new ArrayList<String>();
@@ -121,22 +125,25 @@ public final class NominatorSavedData extends WorldSavedData {
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
         if (root == null || !root.hasKey("schema_version", 3)
-            || (root.getInteger("schema_version") != 1 && root.getInteger("schema_version") != SCHEMA_VERSION)
+            || root.getInteger("schema_version") != SCHEMA_VERSION
             || !root.hasKey("entities", 9)) throw new IllegalArgumentException("Invalid nominator persistence root.");
+        ResourceAddressNbt.requireFormat(root);
         HashSet<String> rootKeys = new HashSet<String>(root.func_150296_c());
         HashSet<String> expectedRoot = new HashSet<String>();
         expectedRoot.add("schema_version");
+        expectedRoot.add("identity_format");
         expectedRoot.add("revision");
         expectedRoot.add("entities");
         if (root.getInteger("schema_version") >= 2) expectedRoot.add("type_groups");
         if (!rootKeys.equals(expectedRoot)) throw new IllegalArgumentException("Invalid nominator persistence root.");
-        NBTTagList list = root.getTagList("entities", 10);
+        NBTTagList list = ResourceAddressNbt.compounds(root, "entities");
         if (list.tagCount() > NominatorCatalog.MAX_ENTRIES)
             throw new IllegalArgumentException("Too many entity bindings.");
         Map<UUID, NominatorEntityBinding> decoded = new LinkedHashMap<UUID, NominatorEntityBinding>();
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound value = list.getCompoundTagAt(i);
-            if (!keys(value, "entity_uuid", "individual_id", "groups", "story_id"))
+            if (!(value.hasKey("individual_id") ? keys(value, "entity_uuid", "individual_id", "groups", "story_id")
+                : keys(value, "entity_uuid", "groups", "story_id")))
                 throw new IllegalArgumentException("Invalid nominator entity binding.");
             UUID uuid;
             try {
@@ -145,19 +152,21 @@ public final class NominatorSavedData extends WorldSavedData {
                 throw new IllegalArgumentException("Invalid entity UUID.", exception);
             }
             List<String> groups = new ArrayList<String>();
-            NBTTagList groupList = value.getTagList("groups", 8);
+            NBTTagList groupList = ResourceAddressNbt.compounds(value, "groups");
             if (groupList.tagCount() > 32) throw new IllegalArgumentException("Too many entity groups.");
-            for (int group = 0; group < groupList.tagCount(); group++) groups.add(groupList.getStringTagAt(group));
-            String individual = value.getString("individual_id");
+            for (int group = 0; group < groupList.tagCount(); group++)
+                groups.add(ResourceAddressNbt.read(groupList.getCompoundTagAt(group), ResourceAddress.Kind.ACTOR));
+            String individual = value.hasKey("individual_id")
+                ? ResourceAddressNbt.read(value, "individual_id", ResourceAddress.Kind.ACTOR)
+                : null;
             String story = value.getString("story_id");
-            decoded.put(uuid, new NominatorEntityBinding(uuid, individual, groups, story));
+            if (decoded.put(uuid, new NominatorEntityBinding(uuid, individual, groups, story)) != null)
+                throw new IllegalArgumentException("Duplicate entity binding");
         }
-        entities.clear();
-        entities.putAll(decoded);
-        typeGroups.clear();
+        Map<String, List<String>> decodedTypes = new LinkedHashMap<String, List<String>>();
         if (root.getInteger("schema_version") >= 2) {
             if (!root.hasKey("type_groups", 9)) throw new IllegalArgumentException("Invalid nominator type groups.");
-            NBTTagList types = root.getTagList("type_groups", 10);
+            NBTTagList types = ResourceAddressNbt.compounds(root, "type_groups");
             if (types.tagCount() > NominatorCatalog.MAX_ENTRIES)
                 throw new IllegalArgumentException("Too many entity types.");
             for (int i = 0; i < types.tagCount(); i++) {
@@ -165,18 +174,24 @@ public final class NominatorSavedData extends WorldSavedData {
                 if (!exactKeys(value, "entity_type", "groups") || !value.hasKey("entity_type", 8)
                     || !value.hasKey("groups", 9)) throw new IllegalArgumentException("Invalid nominator type group.");
                 String type = requireText(value.getString("entity_type"), "Entity type");
-                if (typeGroups.containsKey(type))
+                if (decodedTypes.containsKey(type))
                     throw new IllegalArgumentException("Duplicate nominator entity type.");
-                NBTTagList values = value.getTagList("groups", 8);
+                NBTTagList values = ResourceAddressNbt.compounds(value, "groups");
                 List<String> groups = new ArrayList<String>();
                 for (int j = 0; j < values.tagCount(); j++) {
-                    String group = requireText(values.getStringTagAt(j), "Group ID");
+                    String group = ResourceAddressNbt.read(values.getCompoundTagAt(j), ResourceAddress.Kind.ACTOR);
                     if (!groups.contains(group)) groups.add(group);
                 }
-                if (!groups.isEmpty()) typeGroups.put(type, groups);
+                if (!groups.isEmpty()) decodedTypes.put(type, groups);
             }
         }
-        revision = root.hasKey("revision", 4) ? root.getLong("revision") : 0L;
+        if (!root.hasKey("revision", 4) || root.getLong("revision") < 0)
+            throw new IllegalArgumentException("Invalid revision");
+        entities.clear();
+        entities.putAll(decoded);
+        typeGroups.clear();
+        typeGroups.putAll(decodedTypes);
+        revision = root.getLong("revision");
     }
 
     @Override
@@ -184,6 +199,7 @@ public final class NominatorSavedData extends WorldSavedData {
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         for (String key : new HashSet<String>(root.func_150296_c())) root.removeTag(key);
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         root.setLong("revision", revision);
         NBTTagList list = new NBTTagList();
         for (NominatorEntityBinding binding : entities.values()) {
@@ -192,9 +208,12 @@ public final class NominatorSavedData extends WorldSavedData {
                 "entity_uuid",
                 binding.getEntityUuid()
                     .toString());
-            value.setString("individual_id", binding.getIndividualId() == null ? "" : binding.getIndividualId());
+            if (binding.getIndividualId() != null) value.setTag(
+                "individual_id",
+                ResourceAddressNbt.write(binding.getIndividualId(), ResourceAddress.Kind.ACTOR));
             NBTTagList groups = new NBTTagList();
-            for (String group : binding.getGroupIds()) groups.appendTag(new net.minecraft.nbt.NBTTagString(group));
+            for (String group : binding.getGroupIds())
+                groups.appendTag(ResourceAddressNbt.write(group, ResourceAddress.Kind.ACTOR));
             value.setTag("groups", groups);
             value.setString("story_id", binding.getStoryId() == null ? "" : binding.getStoryId());
             list.appendTag(value);
@@ -205,7 +224,8 @@ public final class NominatorSavedData extends WorldSavedData {
             NBTTagCompound value = new NBTTagCompound();
             value.setString("entity_type", entry.getKey());
             NBTTagList groups = new NBTTagList();
-            for (String group : entry.getValue()) groups.appendTag(new net.minecraft.nbt.NBTTagString(group));
+            for (String group : entry.getValue())
+                groups.appendTag(ResourceAddressNbt.write(group, ResourceAddress.Kind.ACTOR));
             value.setTag("groups", groups);
             types.appendTag(value);
         }
@@ -218,7 +238,7 @@ public final class NominatorSavedData extends WorldSavedData {
         HashSet<String> required = new HashSet<String>();
         for (String key : expected) required.add(key);
         return actual.equals(required) && value.hasKey("entity_uuid", 8)
-            && value.hasKey("individual_id", 8)
+            && (!value.hasKey("individual_id") || value.hasKey("individual_id", 10))
             && value.hasKey("groups", 9)
             && value.hasKey("story_id", 8);
     }

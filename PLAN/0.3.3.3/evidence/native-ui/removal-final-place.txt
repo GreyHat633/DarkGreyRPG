@@ -1,0 +1,2 @@
+command=setblock -120 91 200 darkgrey_rpg:gramophone 0 replace {radius:3,enabled:1,source:"local:c94ef1650398eed82bb2a8d59d9818cdd510c56a91b53f98c19af9ba849f496b"}
+setblock -120 91 200 darkgrey_rpg:gramophone 0 replace {radius:3,enabled:1,source:"local:c94ef1650398eed82bb2a8d59d9818cdd510c56a91b53f98c19af9ba849f496b"} result=1

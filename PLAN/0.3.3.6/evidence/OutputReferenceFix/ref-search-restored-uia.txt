@@ -1,0 +1,32 @@
+ControlType.Window||553,323,233,39
+ControlType.ToolTip|搜索资源名称、类型或故事名称|553,323,233,39
+ControlType.Text|搜索资源名称、类型或故事名称|565,332,209,19
+ControlType.Text|引用资源|553,204,815,34
+ControlType.Text|展开故事文件夹，选择要引用的资源。|553,246,815,17
+ControlType.Edit|搜索引用资源|553,283,815,40
+ControlType.Pane|故事资源文件夹|553,338,815,457
+ControlType.List||553,338,815,457
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,338,815,69
+ControlType.Custom||564,349,793,37
+ControlType.Button|交互验证 (10)|564,349,793,37
+ControlType.Text|交互验证 (10)|574,356,741,22
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,407,815,69
+ControlType.Custom||564,418,793,37
+ControlType.Button|组内甲 (3)|564,418,793,37
+ControlType.Text|组内甲 (3)|574,425,741,22
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,476,815,69
+ControlType.Custom||564,487,793,37
+ControlType.Button|外部组甲 (6)|564,487,793,37
+ControlType.Text|外部组甲 (6)|574,494,741,22
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,545,815,69
+ControlType.Custom||564,556,793,37
+ControlType.Button|外部组乙 (6)|564,556,793,37
+ControlType.Text|外部组乙 (6)|574,564,741,22
+ControlType.DataItem|DarkGreyRPG.Studio.ViewModels.OfflineResourceFolder|553,614,815,69
+ControlType.Custom||564,625,793,37
+ControlType.Button|外部单故事 (5)|564,625,793,37
+ControlType.Text|外部单故事 (5)|574,633,741,22
+ControlType.Button|选择|1140,815,109,39
+ControlType.Text|选择|1177,823,35,22
+ControlType.Button|取消|1259,815,109,39
+ControlType.Text|取消|1296,823,35,22

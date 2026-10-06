@@ -75,7 +75,7 @@ public sealed class Construction0335Tests
     [TestMethod]
     public void DynamicBudgetUsesTypedCurrentNamesAndNeverChangesAuthorText()
     {
-        string text = DynamicContentText.Encode([new(Type: "actor_name", ActorId: "a"), new(Type: "item_name", ItemId: "i"), new(Type: "item_count", ItemId: "i"), new(Type: "player_name")]);
+        string text = DynamicContentText.Encode([new(Type: "actor_name", ActorId: "ST-2345-6789-ABCD-EFGH~actor~a"), new(Type: "item_name", ItemId: "ST-2345-6789-ABCD-EFGH~item~i"), new(Type: "item_count", ItemId: "ST-2345-6789-ABCD-EFGH~item~i"), new(Type: "player_name")]);
         var result = DynamicTextBudget.Measure(text, _ => new string('界', 650), _ => "同名物品");
         Assert.AreEqual(2029, result.Bytes); Assert.IsTrue(result.Caption.Contains("可能超过"));
         Assert.AreEqual(4, DynamicContentText.Parse(text).Count);

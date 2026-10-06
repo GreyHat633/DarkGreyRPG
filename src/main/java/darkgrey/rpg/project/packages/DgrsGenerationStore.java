@@ -44,6 +44,20 @@ public final class DgrsGenerationStore {
 
     /** Copies a validated source archive once, then gives the package one owner lease. */
     public Generation install(java.io.File source, String fingerprint) throws IOException {
+        return install(source, fingerprint, false);
+    }
+
+    /** Outer archive bytes control only file ownership, never a member Story generation. */
+    public Generation installContainer(java.io.File source, String archiveHash) throws IOException {
+        return install(source, archiveHash, true);
+    }
+
+    public static String containerHash(java.io.File source) throws IOException {
+        if (source == null || !safeRegularFile(source.toPath())) throw new IOException("Unsafe container source");
+        return hashFile(source.toPath());
+    }
+
+    private Generation install(java.io.File source, String fingerprint, boolean container) throws IOException {
         if (source == null || fingerprint == null || !fingerprint.matches("[0-9a-fA-F]{64}"))
             throw new IllegalArgumentException("Invalid generation source or fingerprint");
         ensureDirectory(root);
@@ -61,9 +75,14 @@ public final class DgrsGenerationStore {
             }
             try {
                 DgrsArchiveReader copied = DgrsArchiveReader.open(target.toFile());
-                StoryPackageManifest manifest = StoryPackageManifest
-                    .read(copied.readBytes("manifest.json"), target.toString() + "!/manifest.json");
-                if (!fingerprint.equalsIgnoreCase(StoryPackageContentFingerprint.compute(manifest, copied)))
+                String copiedFingerprint;
+                if (container) copiedFingerprint = hashFile(target);
+                else {
+                    StoryPackageManifest manifest = StoryPackageManifest
+                        .read(copied.readBytes("manifest.json"), target.toString() + "!/manifest.json");
+                    copiedFingerprint = StoryPackageContentFingerprint.compute(manifest, copied);
+                }
+                if (!fingerprint.equalsIgnoreCase(copiedFingerprint))
                     throw new IOException("Generation fingerprint changed during copy");
             } catch (darkgrey.rpg.project.ProjectLoadException exception) {
                 throw new IOException("Immutable generation verification failed", exception);
@@ -181,6 +200,7 @@ public final class DgrsGenerationStore {
             int count;
             while ((count = input.read(buffer)) != -1) {
                 copied += count;
+                if (copied > 512L * 1024L * 1024L) throw new IOException("Container archive byte limit exceeded");
                 output.write(buffer, 0, count);
             }
         }
@@ -290,6 +310,12 @@ public final class DgrsGenerationStore {
 
         public Path getArchive() {
             return archive;
+        }
+
+        public synchronized Generation forkOwner() {
+            if (retired) throw new IllegalStateException("Cannot acquire a retired container owner");
+            owners.incrementAndGet();
+            return new Generation(archive, owners);
         }
 
         public synchronized boolean retain() {

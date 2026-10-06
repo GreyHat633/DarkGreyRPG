@@ -14,6 +14,9 @@ import java.util.UUID;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
+import darkgrey.rpg.identity.StoryUid;
 import darkgrey.rpg.session.instance.CanonicalSessionInstanceNbtCodec;
 import darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot;
 import darkgrey.rpg.story.canonical.CanonicalStoryPendingContinuation;
@@ -23,7 +26,7 @@ import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
 /** Strict wrapper for canonical Session world state and pending Story cursors. */
 public final class CanonicalSessionWorldStateNbtCodec {
 
-    public static final int SCHEMA_VERSION = 6;
+    public static final int SCHEMA_VERSION = 7;
     public static final String SESSIONS_KEY = "sessions";
     public static final String CONTINUATIONS_KEY = "continuations";
     public static final String STORIES_KEY = "stories";
@@ -151,6 +154,7 @@ public final class CanonicalSessionWorldStateNbtCodec {
         });
         NBTTagCompound root = new NBTTagCompound();
         root.setInteger("schema_version", SCHEMA_VERSION);
+        root.setString("identity_format", ResourceAddressNbt.IDENTITY_FORMAT);
         root.setTag(SESSIONS_KEY, CanonicalSessionInstanceNbtCodec.encode(sessions, nextTransportId));
         NBTTagList list = new NBTTagList();
         for (CanonicalStoryPendingContinuation continuation : ordered) list.appendTag(encodeContinuation(continuation));
@@ -215,40 +219,14 @@ public final class CanonicalSessionWorldStateNbtCodec {
     }
 
     public static Decoded decode(NBTTagCompound root) {
+        ResourceAddressNbt.requireFormat(root);
         requireType(root, "schema_version", INT);
         int schemaVersion = root.getInteger("schema_version");
-        if (schemaVersion == 1)
-            requireKeys(root, set("schema_version", SESSIONS_KEY, CONTINUATIONS_KEY), "world state");
-        else if (schemaVersion == 2)
-            requireKeys(root, set("schema_version", SESSIONS_KEY, CONTINUATIONS_KEY, STORIES_KEY), "world state");
-        else if (schemaVersion == 3) requireKeys(
-            root,
-            set("schema_version", SESSIONS_KEY, CONTINUATIONS_KEY, STORIES_KEY, TERMINAL_ROUTES_KEY),
-            "world state");
-        else if (schemaVersion == 4) requireKeys(
+        if (schemaVersion != SCHEMA_VERSION) throw malformed("unsupported schema_version");
+        requireKeys(
             root,
             set(
-                "schema_version",
-                SESSIONS_KEY,
-                CONTINUATIONS_KEY,
-                STORIES_KEY,
-                TERMINAL_ROUTES_KEY,
-                START_OBSERVATIONS_KEY),
-            "world state");
-        else if (schemaVersion == 5) requireKeys(
-            root,
-            set(
-                "schema_version",
-                SESSIONS_KEY,
-                CONTINUATIONS_KEY,
-                STORIES_KEY,
-                TERMINAL_ROUTES_KEY,
-                START_OBSERVATIONS_KEY,
-                PENDING_TERMINAL_ROUTES_KEY),
-            "world state");
-        else if (schemaVersion == SCHEMA_VERSION) requireKeys(
-            root,
-            set(
+                "identity_format",
                 "schema_version",
                 SESSIONS_KEY,
                 CONTINUATIONS_KEY,
@@ -258,7 +236,6 @@ public final class CanonicalSessionWorldStateNbtCodec {
                 PENDING_TERMINAL_ROUTES_KEY,
                 TERMINAL_ROUTE_TARGETS_KEY),
             "world state");
-        else throw malformed("unsupported schema_version");
         requireType(root, SESSIONS_KEY, COMPOUND);
         requireType(root, CONTINUATIONS_KEY, LIST);
         List<CanonicalSessionInstanceSnapshot> sessions = CanonicalSessionInstanceNbtCodec
@@ -278,16 +255,11 @@ public final class CanonicalSessionWorldStateNbtCodec {
                 throw malformed("Session and continuation overlap player/story");
             continuations.add(continuation);
         }
-        List<CanonicalStoryInstanceSnapshot> stories = schemaVersion == 1
-            ? Collections.<CanonicalStoryInstanceSnapshot>emptyList()
-            : decodeStories(root);
-        List<String> terminalRoutes = schemaVersion < 3 ? Collections.<String>emptyList() : decodeTerminalRoutes(root);
-        Map<String, Boolean> startObservations = schemaVersion < 4 ? Collections.<String, Boolean>emptyMap()
-            : decodeStartObservations(root);
-        List<String> pendingRoutes = schemaVersion < 5 ? Collections.<String>emptyList()
-            : decodeTerminalRoutes(root, PENDING_TERMINAL_ROUTES_KEY);
-        Map<String, String> routeTargets = schemaVersion < 6 ? Collections.<String, String>emptyMap()
-            : decodeTerminalRouteTargets(root);
+        List<CanonicalStoryInstanceSnapshot> stories = decodeStories(root);
+        List<String> terminalRoutes = decodeTerminalRoutes(root);
+        Map<String, Boolean> startObservations = decodeStartObservations(root);
+        List<String> pendingRoutes = decodeTerminalRoutes(root, PENDING_TERMINAL_ROUTES_KEY);
+        Map<String, String> routeTargets = decodeTerminalRouteTargets(root);
         return new Decoded(
             sessions,
             CanonicalSessionInstanceNbtCodec.nextTransportId(root.getCompoundTag(SESSIONS_KEY)),
@@ -466,9 +438,14 @@ public final class CanonicalSessionWorldStateNbtCodec {
             "player_uuid",
             value.getPlayerUuid()
                 .toString());
-        tag.setString("story_id", value.getStoryId());
+        tag.setString(
+            "story_id",
+            StoryUid.parse(value.getStoryId())
+                .getValue());
         tag.setString("aggregate_placement_id", value.getAggregatePlacementId());
-        tag.setString("session_resource_id", value.getSessionResourceId());
+        tag.setTag(
+            "session_resource_id",
+            ResourceAddressNbt.write(value.getSessionResourceId(), ResourceAddress.Kind.SESSION));
         tag.setLong("transport_id", value.getTransportId());
         tag.setString("selected_end_port_id", value.getSelectedEndPortId());
         tag.setString("target_node_id", value.getTargetNodeId());
@@ -530,9 +507,10 @@ public final class CanonicalSessionWorldStateNbtCodec {
         }
         return new CanonicalStoryPendingContinuation(
             uuid,
-            string(tag, "story_id"),
+            StoryUid.parse(string(tag, "story_id"))
+                .getValue(),
             string(tag, "aggregate_placement_id"),
-            string(tag, "session_resource_id"),
+            ResourceAddressNbt.read(tag, "session_resource_id", ResourceAddress.Kind.SESSION),
             transport,
             string(tag, "selected_end_port_id"),
             string(tag, "target_node_id"),

@@ -43,7 +43,7 @@ public sealed class StoryOverviewViewModel : ObservableObject
         Id = story.Id;
         DisplayName = string.IsNullOrWhiteSpace(story.DisplayName) ? story.Id : story.DisplayName;
         Description = story.IsValid && story.IsComplete
-            ? "0.3.1.0 新格式故事"
+            ? string.Empty
             : string.Join(Environment.NewLine, story.Diagnostics);
         Tags = [];
         OwnedActorCount = story.OwnedActorCount;
@@ -68,8 +68,13 @@ public sealed class StoryOverviewViewModel : ObservableObject
     public string MembershipSummary { get; }
 }
 
-public sealed class StoryListItemViewModel
+public sealed class StoryListItemViewModel : ObservableObject
 {
+    private StoryGroup? _navigationGroup;
+    public StoryGroup? NavigationGroup { get => _navigationGroup; internal set => SetProperty(ref _navigationGroup, value); }
+    public object NavigationSection => (object?)NavigationGroup ?? this;
+    public string NavigationKey => NavigationGroup?.Key ?? Id;
+    public bool IsGroup => false;
     public StoryListItemViewModel(StoryResource story)
     {
         Story = story ?? throw new ArgumentNullException(nameof(story));
@@ -99,8 +104,8 @@ public sealed class StoryListItemViewModel
     public IReadOnlyList<string> Tags => Overview.Tags;
     public string TagsText => HasCanonicalStory
         ? CanonicalStory!.IsValid && CanonicalStory.IsComplete
-            ? "新格式"
-            : "新格式 · 数据不完整"
+            ? string.Empty
+            : "数据不完整"
         : string.Join(", ", Tags);
     public int ActorCount => Overview.OwnedActorCount + Overview.ReferencedActorCount;
     public int DialogueCount => Overview.DialogueCount;
@@ -270,6 +275,8 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
             .ToHashSet(StringComparer.Ordinal);
 
         var edges = input.Transitions
+            // The canonical host adds referenced nodes and their edges after this local layout pass.
+            .Where(item => storyIds.Contains(item.SourceStoryId) && storyIds.Contains(item.TargetStoryId))
             .GroupBy(item => (item.SourceStoryId, item.TargetStoryId))
             .OrderBy(group => group.Key.SourceStoryId, StringComparer.Ordinal)
             .ThenBy(group => group.Key.TargetStoryId, StringComparer.Ordinal)
@@ -533,6 +540,13 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
     private void SaveLogicConnections(IEnumerable<CanonicalStoryLogicConnection> connections)
     {
         if (_storyLogicRepository is null) return;
+        if (CanonicalHost is not null)
+        {
+            CanonicalHost.ReplaceProjectConnections(connections.Concat(_referencedEdges).Distinct().Select(edge =>
+                new DarkGreyRPG.Studio.Core.Graphs.GraphConnection(edge.SourceStoryId, edge.SourcePortId, edge.TargetStoryId,
+                    edge.TargetPortId, edge.InterfaceKind == "Flow" ? DarkGreyRPG.Studio.Core.Graphs.GraphInterfaceKind.Flow : DarkGreyRPG.Studio.Core.Graphs.GraphInterfaceKind.Logic)));
+            return;
+        }
         try
         {
             var saved = _storyLogicRepository.Save(connections);
@@ -825,8 +839,11 @@ public sealed class ProjectHomeViewModel : ObservableObject
 
     public ProjectHomeViewModel()
     {
+        GroupedStories = new System.Windows.Data.ListCollectionView(FilteredStories);
+        GroupedStories.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(StoryListItemViewModel.NavigationSection)));
         _graph.OpenStoryRequested += GraphOnOpenStoryRequested;
         _graph.OpenStoryOverviewRequested += GraphOnOpenStoryOverviewRequested;
+        _graph.StorySelected += GraphOnStorySelected;
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty, () => IsSearchActive);
     }
     public event EventHandler<string>? OpenStoryFlowRequested;
@@ -834,6 +851,7 @@ public sealed class ProjectHomeViewModel : ObservableObject
 
     public ObservableCollection<StoryListItemViewModel> Stories { get; } = [];
     public ObservableCollection<StoryListItemViewModel> FilteredStories { get; } = [];
+    public System.Windows.Data.ListCollectionView GroupedStories { get; }
     public RelayCommand ClearSearchCommand { get; }
 
     public string SearchText
@@ -894,9 +912,14 @@ public sealed class ProjectHomeViewModel : ObservableObject
             if (ReferenceEquals(_graph, value)) return;
             _graph.OpenStoryRequested -= GraphOnOpenStoryRequested;
             _graph.OpenStoryOverviewRequested -= GraphOnOpenStoryOverviewRequested;
+            _graph.StorySelected -= GraphOnStorySelected;
+            _graph.PropertyChanged -= GraphOnPropertyChanged;
             if (!SetProperty(ref _graph, value)) return;
             _graph.OpenStoryRequested += GraphOnOpenStoryRequested;
             _graph.OpenStoryOverviewRequested += GraphOnOpenStoryOverviewRequested;
+            _graph.StorySelected += GraphOnStorySelected;
+            _graph.PropertyChanged += GraphOnPropertyChanged;
+            RefreshStoryGroups();
         }
     }
 
@@ -962,6 +985,32 @@ public sealed class ProjectHomeViewModel : ObservableObject
 
     private void GraphOnOpenStoryRequested(object? sender, string storyId) => OpenStoryFlowRequested?.Invoke(this, storyId);
     private void GraphOnOpenStoryOverviewRequested(object? sender, string storyId) => OpenStoryRequested?.Invoke(this, storyId);
+    private void GraphOnStorySelected(object? sender, string? storyId) => SelectedStory = Stories.FirstOrDefault(story => story.Id == storyId);
+
+    private void GraphOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is nameof(ProjectGraphViewModel.StoryGroups) or nameof(ProjectGraphViewModel.Presentation)) RefreshStoryGroups();
+    }
+
+    private void RefreshStoryGroups()
+    {
+        foreach (var story in Stories) story.NavigationGroup = Graph.StoryGroups.ByStory.GetValueOrDefault(story.Id);
+        GroupedStories.CustomSort = new NavigationComparer(Graph.Presentation.NavigationOrder);
+        GroupedStories.Refresh();
+    }
+
+    private sealed class NavigationComparer(string[] order) : System.Collections.IComparer
+    {
+        public int Compare(object? x, object? y)
+        {
+            if (x is not StoryListItemViewModel left || y is not StoryListItemViewModel right) return 0;
+            int Rank(string key) { var index = Array.IndexOf(order, key); return index < 0 ? int.MaxValue : index; }
+            var rank = Rank(left.NavigationKey).CompareTo(Rank(right.NavigationKey));
+            if (rank != 0) return rank;
+            var section = StringComparer.Ordinal.Compare(left.NavigationKey, right.NavigationKey);
+            return section != 0 ? section : StringComparer.CurrentCulture.Compare(left.DisplayName, right.DisplayName);
+        }
+    }
 
     private void RefreshFilter(bool restoringSearchSelection = false)
     {

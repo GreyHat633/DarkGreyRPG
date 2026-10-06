@@ -265,6 +265,12 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
     private Func<string, bool>? _readOnlySourcePolicy;
     private Dictionary<string, GraphEditorNodePosition>? _activeLayoutMoveBefore;
     private bool _suppressLayoutChanged;
+    public Func<object?>? CaptureGraphMetadata { get; set; }
+    public Action<object?>? RestoreGraphMetadata { get; set; }
+    /// <summary>Optional atomic persistence gate; false rejects the current edit before history is recorded.</summary>
+    public Func<bool>? CommitGraphChange { get; set; }
+    private object? _beforeGraphMetadata;
+    private object? _afterGraphMetadata;
 
     private abstract record HostHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
     {
@@ -274,6 +280,8 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
     private sealed record GraphHistoryEntry(IReadOnlyList<HostHistoryEntry> DisplacedRedo)
         : HostHistoryEntry(DisplacedRedo)
     {
+        public object? BeforeMetadata { get; init; }
+        public object? AfterMetadata { get; init; }
         public IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? BeforeFrames { get; init; }
         public IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? AfterFrames { get; init; }
     }
@@ -352,6 +360,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
     public ObservableCollection<GraphEditorNodeViewModel> Nodes { get; }
     public ObservableCollection<GraphEditorConnectionViewModel> Connections { get; }
     public long UndoSequence => _undoHistory.TryPeek(out var entry) ? entry.Sequence : 0;
+    public long LastEditSequence { get; private set; }
     public long RedoSequence => _redoHistory.TryPeek(out var entry) ? entry.Sequence : long.MaxValue;
     public bool CanUndo => _undoHistory.Count != 0;
     public bool CanRedo => _redoHistory.Count != 0;
@@ -389,6 +398,13 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         Refresh();
         // Canvas ports are retained visuals; refreshing only view models leaves old sockets on screen.
         PortsChanged?.Invoke(this, new GraphPortsChangedEventArgs([storyId]));
+    }
+
+    public void RefreshAggregatePresentation(GraphResourceEnvelope resource)
+    {
+        var ports = CapturePortSignatures(); var nodes = CaptureNodeSignatures();
+        if (!_session.RefreshAggregatePresentation(resource)) return;
+        Refresh(); PublishGraphChanged(); PublishPortsChanged(ports); PublishNodesChanged(nodes);
     }
 
     /// <summary>
@@ -628,6 +644,13 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
             ? false
             : ExecuteBridge(() => _commandBridge.Connect(first, second));
 
+    public bool ReplaceProjectConnections(IEnumerable<GraphConnection> connections)
+    {
+        if (Scope != GraphScope.Project) throw new InvalidOperationException("Project connections require project scope.");
+        var replacement = connections.ToArray();
+        return ExecuteSession(() => _session.ReplaceAllConnections(replacement));
+    }
+
     public bool Reconnect(GraphConnection original, GraphEditorEndpoint first, GraphEditorEndpoint second)
         => RejectReadOnlySource(original.FromNodeId)
             || RejectReadOnlySource(first, second)
@@ -776,6 +799,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
             Refresh(_session.LastValidationIssues);
             if (disconnected)
             {
+                if (!PersistGraphEdit()) return false;
                 PublishGraphChanged();
                 PublishPortsChanged(beforePorts);
                 PublishNodesChanged(beforeNodes);
@@ -818,6 +842,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         Refresh(_session.LastValidationIssues);
         if (reconnected)
         {
+            if (!PersistGraphEdit()) return false;
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
             PublishNodesChanged(beforeNodes);
@@ -935,6 +960,9 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
 
     public bool ReorderPort(string nodeId, string portId, int order)
         => ExecuteSession(() => _session.ReorderPort(nodeId, portId, order));
+
+    public bool MovePublicOutput(string portId, int index)
+        => ExecuteSession(() => _session.MovePublicOutput(portId, index));
 
     public bool MoveDynamicPort(string nodeId, string portId, int order)
         => ExecuteSession(() => _session.MoveDynamicPort(nodeId, portId, order));
@@ -1064,6 +1092,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var changed = result && _session.UndoCount != oldUndoCount;
         if (changed)
         {
+            if (!PersistGraphEdit()) return false;
             Refresh(_session.LastValidationIssues);
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
@@ -1082,7 +1111,8 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
             return false;
         var oldUndo = CanUndo;
         var oldRedo = CanRedo;
-        var result = ApplyGraphHistory(_session.RollbackLastEdit, () => _session.LastValidationIssues);
+        var result = ApplyGraphHistory(_session.RollbackLastEdit, () => _session.LastValidationIssues,
+            metadata: ((GraphHistoryEntry)entry).BeforeMetadata);
         if (!result) return false;
         _ = _undoHistory.Pop();
         _redoHistory.Clear();
@@ -1098,7 +1128,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var oldRedo = CanRedo;
         var result = entry switch
         {
-            GraphHistoryEntry graph => ApplyGraphHistory(_commandBridge.Undo, () => _commandBridge.LastValidationIssues, graph.BeforeFrames),
+            GraphHistoryEntry graph => ApplyGraphHistory(_commandBridge.Undo, () => _commandBridge.LastValidationIssues, graph.BeforeFrames, graph.BeforeMetadata, _commandBridge.Redo),
             LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.Before, publishChange: true),
             EditorHistoryEntry metadata => ApplyEditorHistory(metadata.Undo),
             _ => false,
@@ -1117,7 +1147,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var oldRedo = CanRedo;
         var result = entry switch
         {
-            GraphHistoryEntry graph => ApplyGraphHistory(_commandBridge.Redo, () => _commandBridge.LastValidationIssues, graph.AfterFrames),
+            GraphHistoryEntry graph => ApplyGraphHistory(_commandBridge.Redo, () => _commandBridge.LastValidationIssues, graph.AfterFrames, graph.AfterMetadata, _commandBridge.Undo),
             LayoutHistoryEntry layout => ApplyLayoutSnapshot(layout.After, publishChange: true),
             EditorHistoryEntry metadata => ApplyEditorHistory(metadata.Redo),
             _ => false,
@@ -1130,8 +1160,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
     }
 
     private bool IsReadOnlySource(string? nodeId)
-        => !string.IsNullOrWhiteSpace(nodeId)
-            && _readOnlySourcePolicy?.Invoke(nodeId) == true;
+        => !string.IsNullOrWhiteSpace(nodeId) && _readOnlySourcePolicy?.Invoke(nodeId) == true;
 
     private bool RejectReadOnlySource(string? nodeId)
     {
@@ -1185,6 +1214,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var issues = _commandBridge.LastValidationIssues;
         if (result)
         {
+            if (!PersistGraphEdit(_session.UndoCount > oldUndoCount)) return false;
             Refresh(issues);
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
@@ -1208,6 +1238,7 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         var issues = _session.LastValidationIssues;
         if (result)
         {
+            if (!PersistGraphEdit(_session.UndoCount > oldUndoCount)) return false;
             Refresh(issues);
             PublishGraphChanged();
             PublishPortsChanged(beforePorts);
@@ -1223,14 +1254,25 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
     private bool ApplyGraphHistory(
         Func<bool> command,
         Func<IReadOnlyList<ValidationIssue>> issues,
-        IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? frames = null)
+        IReadOnlyList<DarkGreyRPG.Studio.Core.Graphs.Resources.GraphCommentFrame>? frames = null,
+        object? metadata = null,
+        Func<bool>? compensate = null)
     {
+        var previousMetadata = CaptureGraphMetadata?.Invoke();
         var beforePorts = CapturePortSignatures();
         var beforeNodes = CaptureNodeSignatures();
         var result = command();
         if (!result)
         {
             PublishState(issues());
+            return false;
+        }
+        RestoreGraphMetadata?.Invoke(metadata);
+        if (CommitGraphChange?.Invoke() == false)
+        {
+            if (compensate is null || !compensate()) throw new InvalidOperationException("Graph history persistence failed and could not be restored.");
+            RestoreGraphMetadata?.Invoke(previousMetadata);
+            Refresh(issues());
             return false;
         }
         Refresh(issues());
@@ -1243,6 +1285,9 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
 
     private void RecordHistory(HostHistoryEntry entry)
     {
+        LastEditSequence = Math.Max(LastEditSequence, entry.Sequence);
+        if (entry is GraphHistoryEntry graph)
+            entry = graph with { BeforeMetadata = _beforeGraphMetadata, AfterMetadata = _afterGraphMetadata };
         _undoHistory.Push(entry);
         _redoHistory.Clear();
     }
@@ -1258,6 +1303,20 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         GraphRevision++;
         OnPropertyChanged(nameof(GraphRevision));
         GraphChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool PersistGraphEdit(bool rollback = true)
+    {
+        _beforeGraphMetadata = CaptureGraphMetadata?.Invoke();
+        if (CommitGraphChange?.Invoke() == false)
+        {
+            if (rollback && !_session.RollbackLastEdit()) throw new InvalidOperationException("Graph persistence failed and the edit could not be restored.");
+            RestoreGraphMetadata?.Invoke(_beforeGraphMetadata);
+            Refresh(_session.LastValidationIssues);
+            return false;
+        }
+        _afterGraphMetadata = CaptureGraphMetadata?.Invoke();
+        return true;
     }
 
     private Dictionary<string, string> CapturePortSignatures()

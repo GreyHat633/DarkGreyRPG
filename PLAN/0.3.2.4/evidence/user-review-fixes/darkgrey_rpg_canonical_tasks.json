@@ -1,0 +1,49 @@
+{
+  "data": {
+    "schema_version": 1,
+    "instances": [
+      {
+        "objective_statuses": [
+          {
+            "value": "ACTIVE",
+            "key": "node_4feb6ff8c4944e078f9914cd808c9f17"
+          },
+          {
+            "value": "COMPLETED",
+            "key": "node_cfc0a454a1ef4168890d4ce6fbb3e803"
+          }
+        ],
+        "activation_logic": 1,
+        "story_instance_id": "GreyHat_:test_story",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "33703e6c2b4d70dbedf6c0068ef51c3b5b28a4dedd35ea57ebf5f3dd8fa11704",
+        "runtime_status": "ACTIVE",
+        "player_uuid": "31c4910d-9b69-4725-8969-9ed53ac8a7dc",
+        "activation_time": 1789082010905,
+        "task_resource_id": "GreyHat_:KillSlimes",
+        "internal_logic_values": [
+          {
+            "value": 0,
+            "key": "node_4feb6ff8c4944e078f9914cd808c9f17:logic_status"
+          },
+          {
+            "value": 1,
+            "key": "node_cfc0a454a1ef4168890d4ce6fbb3e803:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 0,
+            "key": "node_4feb6ff8c4944e078f9914cd808c9f17"
+          },
+          {
+            "value": 3,
+            "key": "node_cfc0a454a1ef4168890d4ce6fbb3e803"
+          }
+        ],
+        "task_node_placement_id": "aggregate_e6d3aa1ddeb941b3939113ef2301a266",
+        "status": "ACTIVE"
+      }
+    ]
+  }
+}

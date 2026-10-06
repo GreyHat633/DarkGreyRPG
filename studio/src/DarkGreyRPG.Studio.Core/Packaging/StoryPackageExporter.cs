@@ -22,19 +22,33 @@ public sealed class StoryPackageExporter
         ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
         if (string.IsNullOrWhiteSpace(packageVersion)) throw new StoryPackageException("packageVersion is required.");
 
-        var stories = new StoryRepository(_projectDirectory);
-        var legacyPath = stories.GetStoryPath(storyId);
-        var legacyStory = File.Exists(legacyPath) ? stories.LoadStory(storyId) : null;
+        _ = StoryUid.Parse(storyId);
         var canonicalStore = new CanonicalProjectGraphStore(_projectDirectory);
-        var canonicalPath = canonicalStore.Stories.GetPath(storyId);
-        var canonicalStory = File.Exists(canonicalPath) ? canonicalStore.Stories.Load(storyId) : null;
-        if (legacyStory is null && canonicalStory is null)
-            throw new StoryPackageException($"Story '{storyId}' was not found in either the legacy or canonical Story repository.");
-
-        EnsurePackageableStory(storyId, legacyStory, canonicalStory);
+        var canonicalStory = canonicalStore.Stories.Load(storyId);
+        EnsurePackageableStory(storyId, canonicalStory);
         EnsurePackageableSessionText(canonicalStore, storyId);
         EnsureDynamicReferences(canonicalStore, storyId);
+        var providers = OfflineProviderCatalog.Load(_projectDirectory);
+        if (providers.Diagnostics.Count != 0) throw new StoryPackageException(string.Join("; ", providers.Diagnostics.Select(issue => issue.Message)));
+        EnsurePackageableBoundaries(canonicalStory);
+        if (File.Exists(canonicalStore.Memberships.GetPath(storyId)))
+        {
+            var membership = canonicalStore.Memberships.Load(storyId);
+            foreach (var id in membership.OwnedResources.Sessions.Concat(membership.ReferencedResources.Sessions)
+                         .Concat(membership.OwnedResources.Tasks).Concat(membership.ReferencedResources.Tasks).Distinct(StringComparer.Ordinal))
+            {
+                var kind = ResourceAddress.FromKey(id).Kind == ResourceKind.Session ? GraphResourceKind.Session : GraphResourceKind.Task;
+                var repository = kind == GraphResourceKind.Session ? canonicalStore.Sessions : canonicalStore.Tasks;
+                if (File.Exists(repository.GetPath(id))) EnsurePackageableBoundaries(repository.Load(id));
+                else if (providers.Resolve(kind == GraphResourceKind.Session ? DgrResourceKind.Session : DgrResourceKind.Task, id) is { } provider)
+                    EnsurePackageableBoundaries(GraphResourceEnvelopeSerializer.Deserialize(System.Text.Encoding.UTF8.GetString(provider.DefinitionBytes)));
+            }
+        }
+        var usedProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var root = Path.GetFullPath(outputDirectory);
+        if (string.Equals(root, _projectDirectory, StringComparison.OrdinalIgnoreCase)
+            || _projectDirectory.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            throw new StoryPackageException("Package output cannot contain the source project.");
         Directory.CreateDirectory(root);
         // The output directory is the package boundary. Remove only files and
         // roots owned by this exporter so stale resources cannot survive a
@@ -56,23 +70,19 @@ public sealed class StoryPackageExporter
 
         var required = new StoryPackageRequiredResources
         {
-            Story = legacyStory is not null
-                ? $"stories/{DgrResourceId.RelativeJsonPath(storyId)}"
-                : $"resources/canonical/stories/{DgrResourceId.RelativeJsonPath(storyId)}",
+            Story = $"resources/canonical/stories/{storyId}.json",
         };
-        if (legacyStory is not null)
-        {
-            CopyFile(legacyPath, Path.Combine(root, "stories", DgrResourceId.RelativeJsonPath(legacyStory.Id)));
-            var membership = legacyStory.OwnedResources.Clone();
-            membership.Actors.AddRange(legacyStory.ReferencedResources.Actors);
-            membership.Dialogues.AddRange(legacyStory.ReferencedResources.Dialogues);
-            membership.Quests.AddRange(legacyStory.ReferencedResources.Quests);
-            AddLegacyResources(root, required, membership);
-        }
-        AddCanonicalResources(root, required, storyId);
+        AddCanonicalResources(root, required, storyId, providers, usedProviders);
         SessionPortraitPackageValidation.Validate(root, required);
         required = AddStoryLogicGraph(root, required, storyId);
-        StoryPackageMedia.CopyReachable(_projectDirectory, root, required);
+        StoryPackageMedia.CopyReachable(_projectDirectory, root, required, mediaRef =>
+        {
+            var candidates = providers.Providers.Where(provider => usedProviders.Contains(provider.PackagePath) && provider.Entries.ContainsKey(mediaRef))
+                .Select(provider => provider.GetEntry(mediaRef)).ToArray();
+            if (candidates.Length == 0) return null;
+            if (candidates.Any(bytes => !bytes.AsSpan().SequenceEqual(candidates[0]))) throw new StoryPackageException("Referenced media content differs: " + mediaRef);
+            return candidates[0];
+        });
         var projectPath = Path.Combine(_projectDirectory, "project.json");
         if (File.Exists(projectPath))
         {
@@ -87,9 +97,10 @@ public sealed class StoryPackageExporter
         {
             var fallbackProject = new Dictionary<string, object?>
             {
-                ["schema_version"] = 2,
+                ["schema_version"] = 3,
+                ["identity_format"] = "story-uid-v1",
                 ["id"] = storyId,
-                ["display_name"] = canonicalStory?.DisplayName ?? legacyStory!.DisplayName,
+                ["display_name"] = canonicalStory.DisplayName,
                 ["project_origin_code"] = storyId,
             };
             File.WriteAllText(
@@ -104,7 +115,7 @@ public sealed class StoryPackageExporter
             PackageId = storyId,
             PackageVersion = packageVersion,
             StoryId = storyId,
-            StorySchemaVersion = canonicalStory?.SchemaVersion ?? legacyStory!.SchemaVersion,
+            StorySchemaVersion = canonicalStory.SchemaVersion,
             RequiredResources = required,
         };
         File.WriteAllText(Path.Combine(root, "manifest.json"), manifest.ToJson());
@@ -159,42 +170,27 @@ public sealed class StoryPackageExporter
         }
     }
 
-    private static void EnsurePackageableStory(
-        string storyId,
-        StoryResource? legacyStory,
-        GraphResourceEnvelope? canonicalStory)
+    private static void EnsurePackageableStory(string storyId, GraphResourceEnvelope story)
     {
-        var source = legacyStory is not null && ContainsCompatibilityEnterStory(legacyStory.Nodes)
-            ? "legacy EnterStory"
-            : null;
-        if (canonicalStory is not null && ContainsCompatibilityEnterStory(canonicalStory.Graph?.Nodes))
-            source = source is null ? "canonical enter_story" : "legacy EnterStory and canonical enter_story";
-
-        if (source is not null)
-        {
-            throw new StoryPackageException(
-                $"Selected Story '{storyId}' contains compatibility-only {source} transition data and cannot be exported as a server-ready single-Story package. Project-level cross-Story migration is required before export.");
-        }
+        var issues = GraphScopePolicy.Validate(story.Graph!, GraphScope.StoryFlow)
+            .Where(issue => issue.Severity == DarkGreyRPG.Studio.Core.Validation.ValidationSeverity.Error).ToArray();
+        if (issues.Length != 0)
+            throw new StoryPackageException($"Story '{storyId}' cannot run: " + string.Join("; ", issues.Select(issue => issue.Message)));
+        if (story.Graph!.Nodes.Any(node => node.Type == "enter_story"))
+            throw new StoryPackageException($"Story '{storyId}' contains retired enter_story transitions.");
     }
 
-    private static bool ContainsCompatibilityEnterStory(IEnumerable<StoryNodeResource>? nodes)
-        => (nodes ?? [])
-            .Where(node => node is not null)
-            .Any(node => node.Type is "EnterStory" or "enter_story");
-
-    private static bool ContainsCompatibilityEnterStory(IEnumerable<GraphNode>? nodes)
-        => (nodes ?? [])
-            .Where(node => node is not null)
-            .Any(node => string.Equals(node.Type, "enter_story", StringComparison.Ordinal));
-
-    private void AddLegacyResources(string root, StoryPackageRequiredResources required, StoryMembership membership)
+    private static void EnsurePackageableBoundaries(GraphResourceEnvelope resource)
     {
-        foreach (var id in membership.Actors.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) { Copy(root, "actors", id + ".json"); AddUnique(required.Actors, $"actors/{id}.json"); }
-        foreach (var id in membership.Dialogues.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) { Copy(root, "dialogues", id + ".json"); AddUnique(required.Dialogues, $"dialogues/{id}.json"); }
-        foreach (var id in membership.Quests.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)) { Copy(root, "quests", id + ".json"); AddUnique(required.Quests, $"quests/{id}.json"); }
+        foreach (var node in resource.Graph!.Nodes.Where(node => node.Type is "logic_input" or "logic_output" or "terminate"
+                     || resource.ResourceKind == GraphResourceKind.Session && node.Type == "end"))
+            foreach (var field in new[] { "port_id", "display_name" })
+                if (!node.Properties.TryGetValue(field, out var value) || value.ValueKind != JsonValueKind.String
+                    || string.IsNullOrWhiteSpace(value.GetString()))
+                    throw new StoryPackageException($"Resource '{resource.Id}' boundary '{node.Id}' requires a nonblank {field}.");
     }
 
-    private void AddCanonicalResources(string root, StoryPackageRequiredResources required, string storyId)
+    private void AddCanonicalResources(string root, StoryPackageRequiredResources required, string storyId, OfflineProviderCatalog providers, ISet<string> usedProviders)
     {
         var store = new CanonicalProjectGraphStore(_projectDirectory);
         var membershipPath = store.Memberships.GetPath(storyId);
@@ -218,9 +214,14 @@ public sealed class StoryPackageExporter
         {
             if (!actors.TryGetValue(id, out var actor))
             {
-                if (!manifest.OwnedResources.Actors.Contains(id, StringComparer.Ordinal) && DgrResourceId.IsFullId(id)) continue;
+                if (!manifest.OwnedResources.Actors.Contains(id, StringComparer.Ordinal))
+                {
+                    CopyReference(DgrResourceKind.Actor, id, "actors", required.Actors);
+                    continue;
+                }
                 throw new StoryPackageException($"Required Actor is missing: {id}");
             }
+            CheckProviderBytes(DgrResourceKind.Actor, id, actor.SourcePath);
             CopyCanonical(root, actor.SourcePath, id, "actors", required.Actors);
         }
         CopyMembers(manifest.OwnedResources.Sessions, manifest.ReferencedResources.Sessions, store.Sessions.GetPath, "resources/canonical/sessions", required.Sessions);
@@ -228,13 +229,39 @@ public sealed class StoryPackageExporter
         CopyMembers(manifest.OwnedResources.Items, manifest.ReferencedResources.Items, items.GetItemPath, "items", required.Items);
         CopyMembers(manifest.OwnedResources.ItemGroups, manifest.ReferencedResources.ItemGroups, items.GetGroupPath, "item_groups", required.ItemGroups);
 
+        void CheckProviderBytes(DgrResourceKind kind, string id, string source)
+        {
+            var provider = providers.Resolve(kind, id);
+            if (provider is null) return;
+            if (!File.ReadAllBytes(source).SequenceEqual(provider.DefinitionBytes))
+                throw new StoryPackageException($"Native {kind} '{id}' conflicts with referenced package '{Path.GetFileName(provider.PackagePath)}': definition bytes differ.");
+            usedProviders.Add(provider.PackagePath);
+        }
+
+        void CopyReference(DgrResourceKind kind, string id, string destination, List<string> paths)
+        {
+            var resource = providers.Resolve(kind, id) ?? throw new StoryPackageException($"Referenced {kind} definition is missing or ambiguous: {id}");
+            var relative = destination + "/" + ResourceAddress.FromKey(id).RelativeDefinitionPath;
+            var target = Path.Combine(root, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.WriteAllBytes(target, resource.DefinitionBytes);
+            usedProviders.Add(resource.PackagePath);
+            AddUnique(paths, relative);
+        }
+
         void CopyMembers(IEnumerable<string> owned, IEnumerable<string> referenced, Func<string, string> sourcePath, string destination, List<string> paths)
         {
             var requiredIds = owned.ToHashSet(StringComparer.Ordinal);
             foreach (var id in requiredIds.Concat(referenced).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
             {
                 var source = sourcePath(id);
-                if (!File.Exists(source) && !requiredIds.Contains(id) && DgrResourceId.IsFullId(id)) continue;
+                if (!File.Exists(source) && !requiredIds.Contains(id))
+                {
+                    var kind = Enum.Parse<DgrResourceKind>(ResourceAddress.FromKey(id).Kind.ToString());
+                    CopyReference(kind, id, destination, paths);
+                    continue;
+                }
+                if (File.Exists(source)) CheckProviderBytes(Enum.Parse<DgrResourceKind>(ResourceAddress.FromKey(id).Kind.ToString()), id, source);
                 CopyCanonical(root, source, id, destination, paths);
             }
         }
@@ -279,7 +306,7 @@ public sealed class StoryPackageExporter
     private void CopyCanonical(string root, string source, string id, string packageDirectory, List<string> paths)
     {
         if (!File.Exists(source)) throw new StoryPackageException($"Required canonical resource is missing: {source}");
-        var relative = packageDirectory + "/" + DgrResourceId.RelativeJsonPath(id);
+        var relative = packageDirectory + "/" + (StoryUid.IsValid(id) ? id + ".json" : ResourceAddress.FromKey(id).RelativeDefinitionPath);
         var target = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         if (packageDirectory is "resources/canonical/stories" or "resources/canonical/sessions")
         {

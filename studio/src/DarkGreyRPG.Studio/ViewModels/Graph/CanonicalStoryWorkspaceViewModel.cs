@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
@@ -54,7 +54,7 @@ public sealed record CanonicalStoryActorItem(
         public void Notify(object sender) => Changed?.Invoke(sender, EventArgs.Empty);
     }
     public OfflineProviderResource? Provider { get; init; }
-    public bool IsReadOnly => Provider is not null;
+    public bool IsReadOnly => Provider is not null || IsReferenced;
     public string ProviderPackageText => Provider?.PackageIdentity.ToString() ?? string.Empty;
     public string SourceText => IsReferenced ? "[引用] " : string.Empty;
     public string Id => Actor.Id;
@@ -75,14 +75,14 @@ public sealed record CanonicalStoryItemItem(
     : ICanonicalStoryTreeItem
 {
     public OfflineProviderResource? Provider { get; init; }
-    public bool IsReadOnly => Provider is not null;
+    public bool IsReadOnly => Provider is not null || IsReferenced;
     public string ProviderPackageText => Provider?.PackageIdentity.ToString() ?? string.Empty;
     public string SourceText => IsReferenced ? "[引用] " : string.Empty;
     public string Id => Item.Id;
     public string DisplayName => Item.DisplayName;
     public string IdentityText => Type == IndividualItemResource.ResourceType
         ? ResourceIdentityPresentation.Format("Item_ID", Id)
-        : ResourceIdentityPresentation.Format("Group_ID", Id);
+        : ResourceIdentityPresentation.Format("ItemGroup_ID", Id);
     public string Type => Item.Type;
     public IReadOnlyList<string> Tags => Item.Tags;
     public bool IsOwned => MembershipKind == CanonicalStoryWorkspaceMembershipKind.Owned;
@@ -105,7 +105,7 @@ public sealed class CanonicalStoryGraphItem : ObservableObject, ICanonicalStoryT
     public CanonicalGraphResourceEditorViewModel Editor { get; }
     public CanonicalStoryWorkspaceMembershipKind MembershipKind { get; }
     public OfflineProviderResource? Provider { get; }
-    public bool IsReadOnly => Provider is not null;
+    public bool IsReadOnly => Provider is not null || IsReferenced;
     public string ProviderPackageText => Provider?.PackageIdentity.ToString() ?? string.Empty;
     public string SourceText => IsReferenced ? "[引用] " : string.Empty;
     public string Id => Editor.Id;
@@ -153,7 +153,8 @@ public sealed record CanonicalStoryBreadcrumb(
 public sealed record CanonicalStoryNodeFocusRequest(
     string NodeId,
     string? Field,
-    long Sequence);
+    long Sequence,
+    string? ResourceId = null);
 
 /// <summary>One expandable logical resource folder; toggling never changes the graph workspace.</summary>
 public sealed class CanonicalStoryFolderViewModel : ObservableObject
@@ -584,7 +585,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
     {
         CanonicalStoryActorItem { Actor.Type: CollectiveActorResource.ResourceType } => "Group_ID",
         CanonicalStoryActorItem => "NPC_ID",
-        CanonicalStoryItemItem { Item: CollectiveItemResource } => "Group_ID",
+        CanonicalStoryItemItem { Item: CollectiveItemResource } => "ItemGroup_ID",
         CanonicalStoryItemItem => "Item_ID",
         CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Session } or CanonicalGraphResourceEditorViewModel { ResourceKind: GraphResourceKind.Session } => "Session_ID",
         CanonicalStoryGraphItem { ResourceKind: GraphResourceKind.Task } or CanonicalGraphResourceEditorViewModel { ResourceKind: GraphResourceKind.Task } => "Task_ID",
@@ -741,6 +742,17 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         return true;
     }
 
+    public bool RequestResourceNodeFocus(string resourceId, string nodeId, string? field = null)
+    {
+        if (resourceId == StoryEditor.Id) return RequestStoryNodeFocus(nodeId, field);
+        var resource = SessionItems.Concat(TaskItems).SingleOrDefault(item => item.Id == resourceId);
+        if (resource is null || resource.Editor.Host.Nodes.Count(node => node.NodeId == nodeId) != 1)
+            return false;
+        if (!OpenGraphResource(resource)) return false;
+        StoryNodeFocusRequest = new(nodeId, field, ++_storyNodeFocusSequence, resourceId);
+        return true;
+    }
+
     /// <summary>Routes the visual graph's node selection to the shared Inspector.</summary>
     public bool SelectGraphNode(GraphEditorNodeViewModel? node)
     {
@@ -756,6 +768,8 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         DisposeNodeInspector();
         InspectorCreationCount++;
         _nodeInspector = new CanonicalNodeInspectorViewModel(ActiveGraphHost, node, ActorItems, ItemItems);
+        ConfigurePublicOutputs(_nodeInspector);
+        SelectedTreeItem = null;
         _nodeInspector.PropertyChanged += OnNodeInspectorPropertyChanged;
         OnPropertyChanged(nameof(NodeInspector));
         OnPropertyChanged(nameof(Inspector));
@@ -770,7 +784,16 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         DisposeNodeInspector();
         OnPropertyChanged(nameof(NodeInspector));
         OnPropertyChanged(nameof(Inspector));
+        SelectedTreeItem = null;
         InspectorSelection = ActiveEditor;
+    }
+
+    public void ConfigurePublicOutputs(CanonicalNodeInspectorViewModel inspector)
+    {
+        if (inspector.NodeType is not ("session" or "task") || inspector.Host.Scope != GraphScope.StoryFlow) return;
+        if (!inspector.Node.Properties.TryGetValue("resource_id", out var id)) return;
+        var item = SessionItems.Concat(TaskItems).SingleOrDefault(item => item.Id == id.GetString());
+        if (item is { IsReadOnly: false, Editor: { } editor }) inspector.ConfigurePublicOutputs(editor.Host);
     }
 
     /// <summary>Single-click selection changes only Inspector state.</summary>
@@ -885,9 +908,9 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
             return ReadOnlyResourceRequested is not null;
         }
         if (ReferenceEquals(ActiveEditor, item.Editor)) return true;
-        SelectedTreeItem = item;
         ActiveEditor = item.Editor;
         ClearGraphSelection();
+        SelectedTreeItem = item;
         InspectorSelection = item.Editor;
         return true;
     }
@@ -1181,7 +1204,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
             ActiveEditor = StoryEditor;
             ClearGraphSelection();
         }
-        if (_nodeInspector is not null) ClearGraphSelection();
+        if (_nodeInspector is not null && !ActiveGraphHost.Nodes.Contains(_nodeInspector.Node)) ClearGraphSelection();
 
         foreach (var editor in SessionEditors.Concat(TaskEditors).Where(editor => !nextEditors.Contains(editor)).ToArray())
         {
@@ -1203,6 +1226,10 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         foreach (var folder in Folders)
             folder.SynchronizeItems(nextFolders[folder.Kind]);
 
+        var actorsChanged = !ActorItems.SequenceEqual(nextFolders[CanonicalStoryFolderKind.Actors].OfType<CanonicalStoryActorItem>());
+        var itemsChanged = !ItemItems.SequenceEqual(nextFolders[CanonicalStoryFolderKind.Items].OfType<CanonicalStoryItemItem>());
+        var sessionsChanged = !SessionItems.SequenceEqual(nextFolders[CanonicalStoryFolderKind.Sessions].OfType<CanonicalStoryGraphItem>());
+        var tasksChanged = !TaskItems.SequenceEqual(nextFolders[CanonicalStoryFolderKind.Tasks].OfType<CanonicalStoryGraphItem>());
         ActorItems = nextFolders[CanonicalStoryFolderKind.Actors].OfType<CanonicalStoryActorItem>().ToArray();
         ItemItems = nextFolders[CanonicalStoryFolderKind.Items].OfType<CanonicalStoryItemItem>().ToArray();
         SessionItems = nextFolders[CanonicalStoryFolderKind.Sessions].OfType<CanonicalStoryGraphItem>().ToArray();
@@ -1212,12 +1239,10 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         MissingItems = nextFolders.Values.SelectMany(items => items).OfType<CanonicalStoryMissingItem>().ToArray();
         ValidationIssues = snapshot.ValidationIssues.ToArray();
 
-        OnPropertyChanged(nameof(ActorItems));
-        OnPropertyChanged(nameof(ItemItems));
-        OnPropertyChanged(nameof(SessionItems));
-        OnPropertyChanged(nameof(TaskItems));
-        OnPropertyChanged(nameof(SessionEditors));
-        OnPropertyChanged(nameof(TaskEditors));
+        if (actorsChanged) OnPropertyChanged(nameof(ActorItems));
+        if (itemsChanged) OnPropertyChanged(nameof(ItemItems));
+        if (sessionsChanged) { OnPropertyChanged(nameof(SessionItems)); OnPropertyChanged(nameof(SessionEditors)); }
+        if (tasksChanged) { OnPropertyChanged(nameof(TaskItems)); OnPropertyChanged(nameof(TaskEditors)); }
         OnPropertyChanged(nameof(MissingItems));
         OnPropertyChanged(nameof(ValidationIssues));
         OnPropertyChanged(nameof(Editors));
@@ -1227,7 +1252,8 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
             .FirstOrDefault(item => selectedResourceId is not null
                 && string.Equals(item.Id, selectedResourceId, StringComparison.Ordinal));
         if (selected is not null) SelectTreeItem(selected);
-        else SelectFolder(selectedFolderKind);
+        else if (_nodeInspector is null && (SelectedTreeItem is not ICanonicalStoryTreeItem treeItem
+                || !nextFolders.Values.SelectMany(items => items).Contains(treeItem))) SelectFolder(selectedFolderKind);
 
         incoming.StoryEditor.PropertyChanged -= incoming.OnEditorPropertyChanged;
         incoming.StoryEditor.Dispose();
@@ -1571,6 +1597,9 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(CanonicalGraphResourceEditorViewModel.GraphRevision)
+            && sender is CanonicalGraphResourceEditorViewModel { ResourceKind: GraphResourceKind.Session or GraphResourceKind.Task } source)
+            StoryEditor.Host.RefreshAggregatePresentation(source.CreatePersistenceSnapshot());
         if (IsUsageExpanded && args.PropertyName is nameof(CanonicalGraphResourceEditorViewModel.GraphRevision) or nameof(CanonicalGraphResourceEditorViewModel.DisplayName)) _ = RefreshUsageAsync();
         if (sender is CanonicalGraphResourceEditorViewModel changed) _searchDocuments.Remove(changed);
         if (args.PropertyName is nameof(CanonicalGraphResourceEditorViewModel.IsDirty)

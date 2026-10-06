@@ -11,6 +11,7 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.content.ModItems;
+import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.nominator.NominatorPermission;
@@ -86,33 +87,33 @@ public final class C2SNominatorInventoryBind implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buffer) {
+        if (buffer.readInt() != 0x44475236)
+            throw new IllegalArgumentException("Unsupported Nominator identity protocol");
         selectedSlot = buffer.readByte();
         if (selectedSlot < -1 || selectedSlot > 35) throw new IllegalArgumentException("Invalid inventory slot.");
-        itemId = readString(buffer);
-        exactGroupId = readString(buffer);
+        itemId = NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ITEM);
+        exactGroupId = NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ITEM_GROUP);
         fuzzyGroups = new ArrayList<String>();
         int count = buffer.readByte() & 255;
         if (count > 32) throw new IllegalArgumentException("Too many groups.");
-        for (int i = 0; i < count; i++) fuzzyGroups.add(readString(buffer));
-        if (buffer.readableBytes() >= 8) expectedRevision = buffer.readLong();
-        else if (buffer.readableBytes() > 0) throw new IllegalArgumentException("Invalid nominator revision.");
-        if (buffer.isReadable()) {
-            packageId = readString(buffer);
-            if (buffer.readableBytes() < 8) throw new IllegalArgumentException("Missing nominator catalog revision.");
-            expectedCatalogRevision = buffer.readLong();
-        }
+        for (int i = 0; i < count; i++)
+            fuzzyGroups.add(NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ITEM_GROUP));
+        expectedRevision = buffer.readLong();
+        packageId = readString(buffer);
+        expectedCatalogRevision = buffer.readLong();
         if (buffer.isReadable()) throw new IllegalArgumentException("Trailing nominator inventory bind data.");
     }
 
     @Override
     public void toBytes(ByteBuf buffer) {
+        buffer.writeInt(0x44475236);
         if (selectedSlot < -1 || selectedSlot > 35) throw new IllegalArgumentException("Invalid inventory slot.");
         buffer.writeByte(selectedSlot);
-        writeString(buffer, itemId);
-        writeString(buffer, exactGroupId);
+        NominatorIdentityCodec.write(buffer, itemId, ResourceAddress.Kind.ITEM);
+        NominatorIdentityCodec.write(buffer, exactGroupId, ResourceAddress.Kind.ITEM_GROUP);
         if (fuzzyGroups.size() > 32) throw new IllegalArgumentException("Too many groups.");
         buffer.writeByte(fuzzyGroups.size());
-        for (String group : fuzzyGroups) writeString(buffer, group);
+        for (String group : fuzzyGroups) NominatorIdentityCodec.write(buffer, group, ResourceAddress.Kind.ITEM_GROUP);
         buffer.writeLong(expectedRevision);
         writeString(buffer, packageId);
         buffer.writeLong(expectedCatalogRevision);
@@ -156,10 +157,7 @@ public final class C2SNominatorInventoryBind implements IMessage {
                             return;
                         }
                         darkgrey.rpg.nominator.NominatorCatalog.PackageChoice choice = darkgrey.rpg.nominator.NominatorCatalog
-                            .from(
-                                repository.getSnapshot(),
-                                DarkGreyRpg.getStoryPackageLoader()
-                                    .getPackages())
+                            .from(repository.getSnapshot(), DarkGreyRpg.getStoryPackageLoader())
                             .getPackageChoice(message.packageId);
                         if (choice == null || itemSelected && !choice.containsItem(message.itemId)
                             || groupSelected && !choice.containsItemGroup(message.exactGroupId)) {

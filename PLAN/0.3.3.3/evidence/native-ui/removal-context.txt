@@ -1,0 +1,5 @@
+action=snapshot
+time=1790178646999
+codeSource=jar:file:/E:/Java/MinecraftMod/DarkGreyRPG/.tooling/0333/Client/mods/darkgrey_rpg-0.3.3.3.jar!/darkgrey/rpg/gramophone/GramophoneClient.class
+dimension=-1
+context=server:127.0.0.1:25594|player:402a58fd-2297-4c98-ae0c-ad091aa83333

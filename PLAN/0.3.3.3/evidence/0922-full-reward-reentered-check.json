@@ -1,0 +1,79 @@
+{
+  "phase": "reentered",
+  "task": {
+    "result_port_id": "goal_0",
+    "objective_statuses": [
+      {
+        "value": "COMPLETED",
+        "key": "objective_0"
+      }
+    ],
+    "activation_logic": 0,
+    "story_instance_id": "full0333",
+    "public_logic_outputs": [],
+    "resource_fingerprint": "d1b8c87d3a683ba18d9ca24daaf7572ce4b908685c425bf1d7d5f093dd61cbce",
+    "runtime_status": "SETTLED",
+    "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+    "reward_states": [
+      {
+        "value": 1,
+        "key": "reward_0"
+      }
+    ],
+    "settlement_time": 1790080139290,
+    "activation_time": 1790078924865,
+    "task_resource_id": "Native0332:full_inventory_task",
+    "internal_logic_values": [
+      {
+        "value": 1,
+        "key": "objective_0:logic_status"
+      }
+    ],
+    "progress": [
+      {
+        "value": 1,
+        "key": "objective_0"
+      }
+    ],
+    "task_node_placement_id": "reward",
+    "status": "SETTLED"
+  },
+  "expected_receipt": "08c0b0783faf14bef86355b3b929edde4672c2da15d39662200b917667eea71a",
+  "receipt_present": true,
+  "receipts": {
+    "7af1ff58f1c285e27a44c10c6ed58c318ae4978fa7bbfd2d9aed996e63937da8": 1,
+    "e442775f1b14d8acc9d93140a9abfbc7340515d72df954cf8b5edfe17c6de26f": 1,
+    "7f1e1b1ea939384ca448eaa80c22882d0a44ed8330653737ff7013c55e18139d": 1,
+    "08c0b0783faf14bef86355b3b929edde4672c2da15d39662200b917667eea71a": 1
+  },
+  "inventory": [
+    {
+      "Slot": 0,
+      "id": 264,
+      "Count": 64,
+      "tag": {
+        "display": {
+          "Name": "NativeNamedGem0333"
+        }
+      },
+      "Damage": 0
+    },
+    {
+      "Slot": 1,
+      "id": 264,
+      "Count": 1,
+      "tag": {
+        "display": {
+          "Name": "NativeNamedGem0333"
+        }
+      },
+      "Damage": 0
+    }
+  ],
+  "named_gem_count": 65,
+  "xp": {
+    "XpTotal": 8,
+    "XpLevel": 0,
+    "XpP": 0.47058823704719543
+  }
+}

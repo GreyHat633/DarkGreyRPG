@@ -15,7 +15,7 @@ public sealed class ActionSelectionDefaultsTests
     [STATestMethod]
     public void CreationAndBothToggleDirectionsSelectFirstOptionInBothSurfaces()
     {
-        using var workspace = new CanonicalStoryWorkspaceViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()));
+        using var workspace = new CanonicalStoryWorkspaceViewModel(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()));
         Assert.IsTrue(workspace.ActiveGraphHost.AddNode(GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action")));
         var view = new CanonicalStoryWorkspaceView(workspace) { Width = 1500, Height = 1000 };
         Layout();

@@ -2,6 +2,10 @@
 /.gradle-user-home/
 /.nuget/
 /.dotnet/
+/.dotnet-cli-home/
+/.dotnet-home/
+/.nuget-packages/
+/.zcode/
 /.tmp/
 /.idea/
 /build/
@@ -12,7 +16,12 @@
 !/.tooling/m5-ui-qa/
 !/.tooling/m5-ui-qa/**
 /dist/
+/artifacts/
+/config/
+/layout.json
+/studio/.tooling/
 /logs/
+/PLAN/**/BASELINE_TRACKED.patch
 /PLAN/0.3.1.4/evidence/pre-fix/dumps/
 **/bin/
 **/obj/
@@ -25,3 +34,5 @@
 *.log
 *.suo
 *.user
+*.tmp
+~$*

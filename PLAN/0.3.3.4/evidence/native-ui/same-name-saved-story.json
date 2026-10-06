@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "resource_kind": "story",
+  "id": "Native0332:acceptance",
+  "display_name": "NativeAcceptance",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "开始",
+        "ports": [
+          {
+            "port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+            "display_name": "启动条件 1",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          },
+          {
+            "port_id": "dynamic_port_9813ec8f834a4f88a56289cd4e8fbad4",
+            "display_name": "启动条件 2",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "repeat_condition": {
+            "type": "scheduled",
+            "period": "daily",
+            "time": "23:59"
+          },
+          "repeat_policy": "repeatable",
+          "triggers": [
+            {
+              "port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+              "display_name": "启动条件 1",
+              "trigger_type": "enter_region",
+              "trigger_properties": {
+                "dimension": 0,
+                "x": -104,
+                "y": 70,
+                "z": 207,
+                "radius": 3
+              },
+              "order": 0
+            },
+            {
+              "port_id": "dynamic_port_9813ec8f834a4f88a56289cd4e8fbad4",
+              "display_name": "启动条件 2",
+              "trigger_type": "enter_region",
+              "trigger_properties": {
+                "dimension": 0,
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "radius": 3
+              },
+              "order": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+        "type": "session",
+        "display_name": "NativeConversation",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "native_done",
+            "display_name": "验收完成",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "resource_id": "Native0332:conversation"
+        }
+      },
+      {
+        "id": "native_terminate",
+        "type": "terminate",
+        "display_name": "验收终止",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "流程输入",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          }
+        ],
+        "properties": {
+          "display_name": "验收结束",
+          "port_id": "native_finished"
+        }
+      },
+      {
+        "id": "title_0334",
+        "type": "title",
+        "display_name": "title_0334",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "flow_in",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "flow_out",
+            "display_name": "flow_out",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "fade_in": 0,
+          "fade_out": 0,
+          "main": "\u001EDGR1\u001F[\"Title \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"}]",
+          "stay": 10,
+          "subtitle": "\u001EDGR1\u001F[\"Subtitle \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"}]",
+          "wait_for_completion": true
+        }
+      },
+      {
+        "id": "message_0334",
+        "type": "action",
+        "display_name": "message_0334",
+        "ports": [
+          {
+            "port_id": "flow_in",
+            "display_name": "flow_in",
+            "order": 0,
+            "kind": "flow",
+            "direction": "input"
+          },
+          {
+            "port_id": "flow_out",
+            "display_name": "flow_out",
+            "order": 1,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "action_type": "send_message",
+          "message": "\u001EDGR1\u001F[{\"type\":\"item_count\",\"item_id\":\"Native0332:stone_same_name\"},\"Message \",{\"type\":\"player_name\"},\" level \",{\"type\":\"player_level\"},\" count \",{\"type\":\"item_count\",\"item_id\":\"Native0332:stone\"}]"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "from_node_id": "start",
+        "from_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+        "to_node_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+        "from_port_id": "native_done",
+        "to_node_id": "title_0334",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "title_0334",
+        "from_port_id": "flow_out",
+        "to_node_id": "message_0334",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      },
+      {
+        "from_node_id": "message_0334",
+        "from_port_id": "flow_out",
+        "to_node_id": "native_terminate",
+        "to_port_id": "flow_in",
+        "interface_kind": "flow"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "nativeFieldEvidence": [
+    "repeat-inspector-minutes.png",
+    "repeat-inspector-weekly-time.png",
+    "repeat-inspector-leap.png",
+    "repeat-inline-yearly.png",
+    "repeat-inline-thursday.png",
+    "repeat-inline-seconds.png",
+    "repeat-inline-unconditional.png",
+    "repeat-inline-daily-restored.png"
+  ],
+  "storyRestoredByteIdentical": true,
+  "storySha256": "18cf434aada177131edf9f685915fb71799567cef11e7d7722c4c3b61a312670",
+  "rapidReversal": "repeat-reversal/timing.json",
+  "reviewedFrames": [
+    2,
+    3,
+    6,
+    10,
+    13,
+    14,
+    17,
+    24
+  ],
+  "visualResult": "Sampled frames preserve text scale and wire path; clipping reverses and finally settles expanded. This is not a GPU frame-time measurement."
+}

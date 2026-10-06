@@ -68,7 +68,8 @@ public sealed class ActorEditorViewModelTests
     [TestMethod]
     public void UndoRestoresValidationAndDirtyState()
     {
-        var viewModel = CreateEditor();
+        var viewModel = new ActorEditorViewModel(ActorDocument.FromResource(new IndividualActorResource
+        { NpcId = "ST-2345-6789-ABCD-EFGH~actor~teacher", HomeStoryId = "ST-2345-6789-ABCD-EFGH", DisplayName = "Teacher" }, Path.Combine(Path.GetTempPath(), "teacher.json")));
 
         viewModel.DisplayName = string.Empty;
 

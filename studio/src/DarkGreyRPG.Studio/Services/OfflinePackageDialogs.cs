@@ -14,8 +14,7 @@ public interface IOfflinePackageDialogs
     string? PickPackageFile(OfflinePackageDialogKind kind) => PickPackageFile();
 
     OfflineResourceChoice? PickResource(
-        IReadOnlyList<OfflineResourceChoice> native,
-        IReadOnlyList<OfflineResourceChoice> external,
+        IReadOnlyList<OfflineResourceChoice> resources,
         string title);
 
     void ShowReadOnlyResource(OfflineResourceChoice choice);
@@ -41,8 +40,7 @@ public sealed class NullOfflinePackageDialogs : IOfflinePackageDialogs
     public string? PickPackageFile() => null;
 
     public OfflineResourceChoice? PickResource(
-        IReadOnlyList<OfflineResourceChoice> native,
-        IReadOnlyList<OfflineResourceChoice> external,
+        IReadOnlyList<OfflineResourceChoice> resources,
         string title) => null;
 
     public void ShowReadOnlyResource(OfflineResourceChoice choice)
@@ -81,7 +79,7 @@ public sealed class OfflinePackageDialogs : IOfflinePackageDialogs
         var picker = new OpenFileDialog
         {
             Title = "选择故事包",
-            Filter = "故事包 (*.dgrs)|*.dgrs|所有文件 (*.*)|*.*",
+            Filter = "故事包与故事组 (*.dgrs;*.dgrs.g)|*.dgrs;*.dgrs.g|所有文件 (*.*)|*.*",
             DefaultExt = ".dgrs",
             CheckFileExists = true,
             Multiselect = false,
@@ -126,18 +124,15 @@ public sealed class OfflinePackageDialogs : IOfflinePackageDialogs
     }
 
     /// <summary>
-    /// Lets the caller choose from native project resources or read-only provider
-    /// resources. The two source lists stay visibly separated in the dialog.
+    /// Shows one story-organized directory, independent of storage origin.
     /// </summary>
     public OfflineResourceChoice? PickResource(
-        IReadOnlyList<OfflineResourceChoice> native,
-        IReadOnlyList<OfflineResourceChoice> external,
+        IReadOnlyList<OfflineResourceChoice> resources,
         string title)
     {
-        ArgumentNullException.ThrowIfNull(native);
-        ArgumentNullException.ThrowIfNull(external);
+        ArgumentNullException.ThrowIfNull(resources);
 
-        var viewModel = new OfflineResourcePickerViewModel(native, external, title);
+        var viewModel = new OfflineResourcePickerViewModel(resources, title);
         var dialog = new OfflinePackageResourcePickerDialog(viewModel)
         {
             Owner = _ownerProvider(),
@@ -194,8 +189,21 @@ public sealed record OfflineResourceChoice(
     string DefinitionJson)
 {
     public IReadOnlyList<OfflineResourceChoice> RelatedGraphs { get; init; } = [];
-    public bool HasGraph => Kind is "Story" or "Session" or "Task";
+    public bool HasGraph => Kind is "Story" or "Session" or "Task" or "StoryGroup";
+    public DarkGreyRPG.Studio.Core.Graphs.Resources.CanonicalStoryLogicGraph? ContainerGraph { get; init; }
     public string SourcePackageName { get; init; } = string.Empty;
     public string SourceStoryId { get; init; } = string.Empty;
+    public string SourceStoryName { get; init; } = string.Empty;
+    public bool IsExternal { get; init; }
+    public string TypeLabel => Kind switch
+    {
+        "Actor" => ActorLabel(), "Item" => "[物品]", "ItemGroup" => "[物品组]", "Session" => "[会话]",
+        "Task" => "[任务]", "Story" => "[故事]", "StoryGroup" => "[故事组]", _ => Kind,
+    };
+    private string ActorLabel()
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(DefinitionJson);
+        return json.RootElement.TryGetProperty("type", out var type) && type.GetString() == "collective" ? "[角色组]" : "[角色]";
+    }
     public string ResourceIdLabel { get; init; } = "资源 ID";
 }

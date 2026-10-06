@@ -6,6 +6,10 @@
              xmlns:vm="clr-namespace:DarkGreyRPG.Studio.ViewModels.Graph" xmlns:views="clr-namespace:DarkGreyRPG.Studio.Views"
              AutomationProperties.AutomationId="CanonicalStoryWorkspace">
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../DirectoryTreeStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
         <Style TargetType="TextBlock">
             <Style.Triggers>
                 <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed" /></Trigger>
@@ -16,46 +20,7 @@
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <EventSetter Event="PreviewKeyDown" Handler="DraftTextBox_OnPreviewKeyDown" />
         </Style>
-        <Style x:Key="InstantFolderExpanderStyle" TargetType="{x:Type Expander}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Expander}">
-                        <StackPanel>
-                            <ToggleButton x:Name="HeaderToggle" HorizontalContentAlignment="Stretch"
-                                          FocusVisualStyle="{x:Null}"
-                                          Content="{TemplateBinding Header}"
-                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
-                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                        <Border Padding="3,4" Background="Transparent">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="14" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                                <Path x:Name="Arrow" Width="6" Height="10" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                      Data="M 0,0 L 6,5 L 0,10 Z" Fill="{TemplateBinding Foreground}"
-                                                      RenderTransformOrigin="0.5,0.5">
-                                                    <Path.RenderTransform><RotateTransform Angle="0" /></Path.RenderTransform>
-                                                </Path>
-                                                <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}"
-                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                                  VerticalAlignment="Center" />
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90" /></Setter.Value></Setter></Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                            </ToggleButton>
-                            <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />
-                        </StackPanel>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsExpanded" Value="True"><Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" /></Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+            </ResourceDictionary>
     </UserControl.Resources>
     <Grid DataContext="{Binding Workspace, ElementName=Root}">
         <Grid.ColumnDefinitions>
@@ -66,7 +31,7 @@
             <ColumnDefinition Width="280" MinWidth="230" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Padding="12"
+        <Border Grid.Column="0" Padding="12" PreviewMouseLeftButtonDown="ResourceSidebar_OnPreviewMouseLeftButtonDown"
                 Background="{DynamicResource LayerFillColorAltBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                 BorderThickness="0,0,1,0">
@@ -81,8 +46,6 @@
                                    Text="{Binding StoryEditor.DisplayName}"
                                    ToolTip="{Binding StoryEditor.DisplayName}"
                                    TextTrimming="CharacterEllipsis" />
-                        <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Text="{Binding StoryEditor.Id}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Width="26" Height="26" Margin="2,0,0,0" Padding="6"
@@ -130,21 +93,25 @@
                     <ItemsControl ItemsSource="{Binding Folders}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:CanonicalStoryFolderViewModel}">
-                                <Expander Margin="0,2" Style="{StaticResource InstantFolderExpanderStyle}"
+                                <Expander Margin="0,7,0,5" Style="{StaticResource DirectoryFolderExpanderStyle}"
+                                          AutomationProperties.Name="{Binding DisplayName}"
                                           IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
                                     <Expander.Header>
-                                        <TextBlock Padding="2,1" Text="{Binding DisplayName}" Tag="{Binding}"
-                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                                   PreviewMouseLeftButtonDown="Folder_OnPreviewMouseLeftButtonDown"
-                                                   PreviewMouseRightButtonDown="Folder_OnPreviewMouseRightButtonDown" />
+                                        <Grid Tag="{Binding}" Background="Transparent"
+                                              PreviewMouseLeftButtonDown="Folder_OnPreviewMouseLeftButtonDown"
+                                              PreviewMouseRightButtonDown="Folder_OnPreviewMouseRightButtonDown">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="22" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <Path Width="15" Height="13" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                  Data="{StaticResource DirectoryFolderIconGeometry}" Stroke="{DynamicResource AccentFillColorDefaultBrush}" StrokeThickness="1.3" />
+                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Style="{StaticResource DirectoryFolderLabelStyle}" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}" />
+                                        </Grid>
                                     </Expander.Header>
-                                    <ItemsControl Margin="10,2,0,6" ItemsSource="{Binding Items}">
+                                    <ItemsControl ItemsSource="{Binding Items}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Button Margin="0,1" Padding="8,4"
-                                                        HorizontalContentAlignment="Stretch"
-                                                        AllowDrop="True"
-                                                        Tag="{Binding}"
+                                                <views:DirectoryTreeRowButton Style="{StaticResource DirectoryResourceRowStyle}" AllowDrop="True" Tag="{Binding}"
+                                                        AutomationProperties.Name="{Binding DisplayName}"
                                                         Click="ResourceItem_OnClick"
                                                         MouseDoubleClick="ResourceItem_OnMouseDoubleClick"
                                                         PreviewMouseLeftButtonDown="ResourceItem_OnPreviewMouseLeftButtonDown"
@@ -154,74 +121,22 @@
                                                         Drop="ResourceItem_OnDrop"
                                                         PreviewMouseRightButtonDown="ResourceItem_OnPreviewMouseRightButtonDown"
                                                         KeyDown="ResourceItem_OnKeyDown">
-                                                    <Button.Style>
-                                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                                            <Setter Property="Background" Value="Transparent" />
-                                                            <Setter Property="BorderBrush" Value="Transparent" />
-                                                            <Setter Property="BorderThickness" Value="1" />
-                                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-                                                            <Setter Property="Template">
-                                                                <Setter.Value>
-                                                                    <ControlTemplate TargetType="Button">
-                                                                        <Border Padding="{TemplateBinding Padding}"
-                                                                                Background="{TemplateBinding Background}"
-                                                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                                                CornerRadius="4">
-                                                                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                                                              RecognizesAccessKey="True" />
-                                                                        </Border>
-                                                                    </ControlTemplate>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                            <Style.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
-                                                                    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
-                                                                </Trigger>
-                                                                <Trigger Property="IsPressed" Value="True">
-                                                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
-                                                                </Trigger>
-                                                                <Trigger Property="IsEnabled" Value="False">
-                                                                    <Setter Property="Opacity" Value="0.56" />
-                                                                </Trigger>
-                                                                <DataTrigger Value="True">
-                                                                    <DataTrigger.Binding>
-                                                                        <MultiBinding Converter="{StaticResource CanonicalStorySelectionEqualityConverter}">
-                                                                            <Binding />
-                                                                            <Binding Path="Workspace.SelectedTreeItem"
-                                                                                     RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
-                                                                        </MultiBinding>
-                                                                    </DataTrigger.Binding>
-                                                                    <Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" />
-                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
-                                                                    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
-                                                                </DataTrigger>
-                                                                <MultiDataTrigger>
-                                                                    <MultiDataTrigger.Conditions>
-                                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
-                                                                        <Condition Value="True">
-                                                                            <Condition.Binding>
-                                                                                <MultiBinding Converter="{StaticResource CanonicalStorySelectionEqualityConverter}">
-                                                                                    <Binding />
-                                                                                    <Binding Path="Workspace.SelectedTreeItem"
-                                                                                             RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
-                                                                                </MultiBinding>
-                                                                            </Condition.Binding>
-                                                                        </Condition>
-                                                                    </MultiDataTrigger.Conditions>
-                                                                    <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
-                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
-                                                                </MultiDataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Button.Style>
-                                                    <TextBlock TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" TextAlignment="Left" VerticalAlignment="Center">
-                                                        <TextBlock.ToolTip><TextBlock><Run Text="{Binding SourceText, Mode=OneWay}"/><Run Text="{Binding DisplayName, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding IdentityText, Mode=OneWay}"/></TextBlock></TextBlock.ToolTip>
-                                                        <Run Text="{Binding SourceText, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="{Binding DisplayName, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  "/><Run Text="{Binding IdentityText, Mode=OneWay}" FontSize="11"/>
-                                                    </TextBlock>
-                                                </Button>
+                                                    <views:DirectoryTreeRowButton.IsSelected>
+                                                        <MultiBinding Converter="{StaticResource CanonicalStorySelectionEqualityConverter}">
+                                                            <Binding />
+                                                            <Binding Path="Workspace.SelectedTreeItem" RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
+                                                        </MultiBinding>
+                                                    </views:DirectoryTreeRowButton.IsSelected>
+                                                    <Grid MinHeight="20">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="22" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                        <Path Width="13" Height="16" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Opacity="0.7"
+                                                              Data="{StaticResource DirectoryDocumentIconGeometry}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" />
+                                                        <TextBlock Grid.Column="1" Style="{StaticResource DirectoryLeafLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" TextAlignment="Left">
+                                                            <TextBlock.ToolTip><TextBlock><Run Text="{Binding SourceText, Mode=OneWay}" /><Run Text="{Binding DisplayName, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding IdentityText, Mode=OneWay}" /></TextBlock></TextBlock.ToolTip>
+                                                            <Run Text="{Binding SourceText, Mode=OneWay}" FontSize="12" /><Run Text="{Binding DisplayName, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding IdentityText, Mode=OneWay}" FontSize="12" />
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </views:DirectoryTreeRowButton>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -660,21 +575,12 @@
                         <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
                     </StackPanel>
 <graph:ReorderEntriesEditor IsDynamicContent="True" ItemsSource="{Binding ChoiceOptions}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers><DataTrigger Binding="{Binding IsTaskSettle}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock FontWeight="SemiBold" Text="结算结果（上方优先）" />
-                        <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddTaskResultSlotCommand}" ToolTip="添加结算结果" />
-                    </StackPanel>
+                    
                     <StackPanel Margin="0,8,0,6">
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsTaskReward}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                         <graph:RewardEntriesEditor />
                     </StackPanel>
-<graph:ReorderEntriesEditor ItemsSource="{Binding TaskResultSlots}" />
+<graph:PublicOutputsEditor DataContext="{Binding PublicOutputs}" />
                     <StackPanel>
   <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsPublicBoundary}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
   <TextBlock Text="名称" Margin="0,10,0,3"/>

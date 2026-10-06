@@ -1,0 +1,8 @@
+{
+  "focused_id": "",
+  "focused_name": "ProblemItem { Severity = Error, Code = graph.story.start.trigger.authoring_invalid, Message = 半径必须是大于 0 的数字。, Field = radius, Source = canonical/story/ST-8Q7T-6EWT-PEPM-WYKS, NodeId = story_start, GraphResourceId = ST-8Q7T-6EWT-PEPM-WYKS, DisplayMessage = Story 开始节点的启动条件配置有误。\r\n[graph.story.start.trigger.authoring_invalid]\r\n技术详情：半径必须是大于 0 的数字。, IsError = True, IsWarning = False }",
+  "value": null,
+  "rect": "24,660,1872,68",
+  "result": "PASS_NODE_SELECTION",
+  "verification": "Real double-click selected Story Start and Inspector displayed its authoring error; invalid radius restored to 8; field keyboard focus not implemented or claimed"
+}

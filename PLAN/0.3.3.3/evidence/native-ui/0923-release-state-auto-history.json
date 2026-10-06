@@ -1,0 +1,520 @@
+{
+  "darkgrey_rpg_canonical_sessions": {
+    "schema_version": 6,
+    "terminal_routes": [
+      {
+        "key": "402a58fd-2297-4c98-ae0c-ad091aa83333��Native0332:acceptance��1790092107093��native_finished"
+      },
+      {
+        "key": "a99b827f-b024-3719-b92d-611120c4cea4��Native0332:acceptance��1790096405658��native_finished"
+      }
+    ],
+    "sessions": {
+      "schema_version": 1,
+      "next_transport_id": 18,
+      "instances": [
+        {
+          "activation_logic": 0,
+          "session_resource_id": "Native0332:conversation",
+          "story_id": "Native0332:acceptance",
+          "transport_id": 17,
+          "public_logic_outputs": [],
+          "executed_flow_judgment_node_ids": [],
+          "player_uuid": "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c",
+          "aggregate_placement_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+          "presentation": "{\"revision\":0,\"music_revision\":0,\"media_ref\":null,\"loop\":false,\"fade_in\":0.0,\"fade_out\":0.0,\"volume\":1.0,\"layers\":[]}",
+          "line_page_index": 2,
+          "selected_option_ids": [],
+          "waiting_condition": 0,
+          "external_logic_inputs": [],
+          "internal_logic_values": [],
+          "selected_choice_node_ids": [],
+          "line_epoch": 3,
+          "current_node_id": "node_311203e4e0894920bc9b0c2c9189a743",
+          "status": "ACTIVE",
+          "latest_choice_selections": []
+        }
+      ]
+    },
+    "stories": {
+      "schema_version": 1,
+      "instances": [
+        {
+          "story_id": "Native0332:acceptance",
+          "runtime": {
+            "target_story_id": "",
+            "wait_dimension": "",
+            "wait_radius": "",
+            "executed_flow_judgment_node_ids": [],
+            "wait_z": "",
+            "resource_fingerprint": "8c397971acb063518617009ea17fd9da3d6670f9eca0994277f66ec50b74ac30",
+            "wait_resource_id": "",
+            "wait_kind": "NONE",
+            "external_logic_inputs": [],
+            "wait_y": "",
+            "wait_x": "",
+            "resource_id": "Native0332:acceptance",
+            "current_input_port_id": "flow_in",
+            "logic": [],
+            "trigger_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+            "current_node_id": "native_terminate",
+            "repeat_policy": "repeatable",
+            "status": "TERMINATED"
+          },
+          "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+          "terminal_time": 1790092592957,
+          "activation_time": 1790092107093
+        },
+        {
+          "story_id": "Native0332:acceptance",
+          "runtime": {
+            "target_story_id": "",
+            "wait_dimension": "",
+            "wait_radius": "",
+            "executed_flow_judgment_node_ids": [],
+            "wait_z": "",
+            "resource_fingerprint": "8c397971acb063518617009ea17fd9da3d6670f9eca0994277f66ec50b74ac30",
+            "wait_resource_id": "Native0332:conversation",
+            "wait_kind": "SESSION",
+            "external_logic_inputs": [],
+            "wait_y": "",
+            "wait_x": "",
+            "resource_id": "Native0332:acceptance",
+            "current_input_port_id": "flow_in",
+            "logic": [],
+            "trigger_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+            "current_node_id": "aggregate_5c6dba9d366e498b836f86b681901f85",
+            "repeat_policy": "repeatable",
+            "status": "ACTIVE"
+          },
+          "player_uuid": "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c",
+          "terminal_time": 0,
+          "activation_time": 1790096741074
+        },
+        {
+          "story_id": "Native0332:acceptance",
+          "runtime": {
+            "target_story_id": "",
+            "wait_dimension": "",
+            "wait_radius": "",
+            "executed_flow_judgment_node_ids": [],
+            "wait_z": "",
+            "resource_fingerprint": "8c397971acb063518617009ea17fd9da3d6670f9eca0994277f66ec50b74ac30",
+            "wait_resource_id": "",
+            "wait_kind": "NONE",
+            "external_logic_inputs": [],
+            "wait_y": "",
+            "wait_x": "",
+            "resource_id": "Native0332:acceptance",
+            "current_input_port_id": "flow_in",
+            "logic": [],
+            "trigger_port_id": "story_trigger_3eed9f05f91243059109c4f19544a84a",
+            "current_node_id": "native_terminate",
+            "repeat_policy": "repeatable",
+            "status": "TERMINATED"
+          },
+          "player_uuid": "a99b827f-b024-3719-b92d-611120c4cea4",
+          "terminal_time": 1790098182834,
+          "activation_time": 1790096405658
+        }
+      ]
+    },
+    "continuations": [],
+    "terminal_route_targets": [],
+    "pending_terminal_routes": [],
+    "start_observations": []
+  },
+  "darkgrey_rpg_canonical_tasks": {
+    "schema_version": 1,
+    "instances": [
+      {
+        "result_port_id": "goal_0",
+        "objective_statuses": [
+          {
+            "value": "COMPLETED",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 0,
+        "story_instance_id": "Native0332:acceptance",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "bf091f5bf29b7d1b2b96a3014dfec2f269bf147af6b00e75fb40b193665c2a5d",
+        "runtime_status": "SETTLED",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "reward_states": [
+          {
+            "value": 1,
+            "key": "reward_0"
+          }
+        ],
+        "settlement_time": 1790092256365,
+        "activation_time": 1790092107099,
+        "task_resource_id": "Native0332:npc_task",
+        "internal_logic_values": [
+          {
+            "value": 1,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 1,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "native_profile_task",
+        "status": "SETTLED"
+      },
+      {
+        "result_port_id": "goal_0",
+        "objective_statuses": [
+          {
+            "value": "COMPLETED",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 0,
+        "story_instance_id": "full0333",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "d1b8c87d3a683ba18d9ca24daaf7572ce4b908685c425bf1d7d5f093dd61cbce",
+        "runtime_status": "SETTLED",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "reward_states": [
+          {
+            "value": 1,
+            "key": "reward_0"
+          }
+        ],
+        "settlement_time": 1790080139290,
+        "activation_time": 1790078924865,
+        "task_resource_id": "Native0332:full_inventory_task",
+        "internal_logic_values": [
+          {
+            "value": 1,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 1,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "reward",
+        "status": "SETTLED"
+      },
+      {
+        "result_port_id": "goal_0",
+        "objective_statuses": [
+          {
+            "value": "COMPLETED",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 0,
+        "story_instance_id": "live0333",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "adbc28127721ba68c4b410ed605d79c9f5d366779791b3a73b63978a6f532274",
+        "runtime_status": "SETTLED",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "reward_states": [
+          {
+            "value": 1,
+            "key": "reward_0"
+          },
+          {
+            "value": 1,
+            "key": "reward_1"
+          },
+          {
+            "value": 1,
+            "key": "reward_2"
+          }
+        ],
+        "settlement_time": 1790072259655,
+        "activation_time": 1790071831584,
+        "task_resource_id": "Native0332:live_kill_task",
+        "internal_logic_values": [
+          {
+            "value": 1,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 3,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "kills",
+        "status": "SETTLED"
+      },
+      {
+        "objective_statuses": [
+          {
+            "value": "ACTIVE",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 1,
+        "story_instance_id": "native0333",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "ea061ce4f0517c5142c42e1759e5957be1b5e7aa9620b96d06fd7a73b4a74b13",
+        "runtime_status": "ACTIVE",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "activation_time": 1790069140759,
+        "task_resource_id": "Native0332:long_task",
+        "internal_logic_values": [
+          {
+            "value": 0,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 0,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "long",
+        "status": "ACTIVE"
+      },
+      {
+        "objective_statuses": [
+          {
+            "value": "ACTIVE",
+            "key": "objective_0"
+          },
+          {
+            "value": "ACTIVE",
+            "key": "objective_1"
+          },
+          {
+            "value": "ACTIVE",
+            "key": "objective_2"
+          }
+        ],
+        "activation_logic": 1,
+        "story_instance_id": "native0333",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "cf88b8cf69ce96d41048fea6e71ae3f2bbb8d45eb729eced5503245beed771e7",
+        "runtime_status": "ACTIVE",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "activation_time": 1790069174301,
+        "task_resource_id": "Native0332:multi_task",
+        "internal_logic_values": [
+          {
+            "value": 0,
+            "key": "objective_0:logic_status"
+          },
+          {
+            "value": 0,
+            "key": "objective_1:logic_status"
+          },
+          {
+            "value": 0,
+            "key": "objective_2:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 0,
+            "key": "objective_0"
+          },
+          {
+            "value": 0,
+            "key": "objective_1"
+          },
+          {
+            "value": 0,
+            "key": "objective_2"
+          }
+        ],
+        "task_node_placement_id": "multi",
+        "status": "ACTIVE"
+      },
+      {
+        "objective_statuses": [
+          {
+            "value": "ACTIVE",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 1,
+        "story_instance_id": "native0333",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "6edaf0245329b3ab2d2d151e1e2940807338b02cb276be0de12893b92fbb420f",
+        "runtime_status": "ACTIVE",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "activation_time": 1790067049838,
+        "task_resource_id": "Native0332:short_task",
+        "internal_logic_values": [
+          {
+            "value": 0,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 0,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "short",
+        "status": "ACTIVE"
+      },
+      {
+        "objective_statuses": [
+          {
+            "value": "ACTIVE",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 1,
+        "story_instance_id": "preview0333",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "d1b8c87d3a683ba18d9ca24daaf7572ce4b908685c425bf1d7d5f093dd61cbce",
+        "runtime_status": "ACTIVE",
+        "player_uuid": "402a58fd-2297-4c98-ae0c-ad091aa83333",
+        "activation_time": 1790080819112,
+        "task_resource_id": "Native0332:full_inventory_task",
+        "internal_logic_values": [
+          {
+            "value": 0,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 0,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "reward",
+        "status": "ACTIVE"
+      },
+      {
+        "result_port_id": "goal_0",
+        "objective_statuses": [
+          {
+            "value": "COMPLETED",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 0,
+        "story_instance_id": "Native0332:acceptance",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "bf091f5bf29b7d1b2b96a3014dfec2f269bf147af6b00e75fb40b193665c2a5d",
+        "runtime_status": "SETTLED",
+        "player_uuid": "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c",
+        "reward_states": [
+          {
+            "value": 1,
+            "key": "reward_0"
+          }
+        ],
+        "settlement_time": 1790097237049,
+        "activation_time": 1790096741075,
+        "task_resource_id": "Native0332:npc_task",
+        "internal_logic_values": [
+          {
+            "value": 1,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 1,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "native_profile_task",
+        "status": "SETTLED"
+      },
+      {
+        "result_port_id": "goal_0",
+        "objective_statuses": [
+          {
+            "value": "COMPLETED",
+            "key": "objective_0"
+          }
+        ],
+        "activation_logic": 0,
+        "story_instance_id": "Native0332:acceptance",
+        "public_logic_outputs": [],
+        "resource_fingerprint": "bf091f5bf29b7d1b2b96a3014dfec2f269bf147af6b00e75fb40b193665c2a5d",
+        "runtime_status": "SETTLED",
+        "player_uuid": "a99b827f-b024-3719-b92d-611120c4cea4",
+        "reward_states": [
+          {
+            "value": 1,
+            "key": "reward_0"
+          }
+        ],
+        "settlement_time": 1790097130198,
+        "activation_time": 1790096405669,
+        "task_resource_id": "Native0332:npc_task",
+        "internal_logic_values": [
+          {
+            "value": 1,
+            "key": "objective_0:logic_status"
+          }
+        ],
+        "progress": [
+          {
+            "value": 1,
+            "key": "objective_0"
+          }
+        ],
+        "task_node_placement_id": "native_profile_task",
+        "status": "SETTLED"
+      }
+    ]
+  },
+  "a99b827f-b024-3719-b92d-611120c4cea4": {
+    "xp": {
+      "XpTotal": 1,
+      "XpLevel": 0,
+      "XpP": 0.05882352963089943
+    },
+    "transactions": {
+      "receipts": {
+        "02ef8fcd1e30b1bb64eee63b80e7987073f6a2e8165ce9f38404f5248dddfe5f": 1
+      },
+      "total": 1,
+      "level": 0,
+      "inventory": [
+        {
+          "index": 0,
+          "id": 276,
+          "Count": 1,
+          "Damage": 0
+        }
+      ],
+      "fraction": 0.05882352963089943
+    }
+  },
+  "7fafbf2c-b742-321f-bb0c-fb63f7dfdb4c": {
+    "xp": {
+      "XpTotal": 1,
+      "XpLevel": 0,
+      "XpP": 0.05882352963089943
+    },
+    "transactions": {
+      "receipts": {
+        "4d8a315bac66e729ecf052bc560e30ab9c0ed8817d64e052d016db15d6d276e6": 1
+      },
+      "total": 1,
+      "level": 0,
+      "inventory": [
+        {
+          "index": 0,
+          "id": 276,
+          "Count": 1,
+          "Damage": 0
+        }
+      ],
+      "fraction": 0.05882352963089943
+    }
+  }
+}

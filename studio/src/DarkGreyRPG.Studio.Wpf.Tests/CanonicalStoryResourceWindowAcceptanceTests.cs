@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DarkGreyRPG.Studio.Core.Graphs;
@@ -251,7 +251,7 @@ public sealed class CanonicalStoryResourceWindowAcceptanceTests
                 "Canonical Graph Target",
                 new GraphDocument([GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "target_start")])));
 
-            var sessionEnd = GraphNodeFactory.Create(GraphScope.Session, "end", "session-end");
+            var sessionEnd = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "end", "session-end").Candidate!;
             sessionEnd.Properties["port_id"] = JsonSerializer.SerializeToElement("continue");
             sessionEnd.Properties["display_name"] = JsonSerializer.SerializeToElement("Continue");
             store.Sessions.Create(new GraphResourceEnvelope(
@@ -260,8 +260,9 @@ public sealed class CanonicalStoryResourceWindowAcceptanceTests
                 "Opening Session",
                 new GraphDocument([sessionEnd])));
 
-            var taskSettle = GraphNodeFactory.Create(GraphScope.Task, "settle", "task-settle");
-            taskSettle.Ports.Add(new GraphPort("completed", "Completed", true, GraphInterfaceKind.Logic, 0));
+            var taskSettle = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Task, "settle", "task-settle").Candidate!;
+            taskSettle.Properties["port_id"] = System.Text.Json.JsonSerializer.SerializeToElement("completed");
+        taskSettle.Properties["display_name"] = System.Text.Json.JsonSerializer.SerializeToElement("Completed");
             store.Tasks.Create(new GraphResourceEnvelope(
                 GraphResourceKind.Task,
                 "opening_task",

@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="4965a3df-b49f-4fb8-8da6-d17feb2ba0d1" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-05 15:55:28" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-05T15:55:28.8687866+08:00" queuing="2026-10-05T15:55:28.8687871+08:00" start="2026-10-05T15:55:26.7349389+08:00" finish="2026-10-05T15:55:29.3834384+08:00" />
+  <TestSettings name="default" id="787d2abe-d2f2-4730-a939-7abe773d81c1">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-05_15_55_28" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0733c19b-d368-4377-a89e-a8eb59c0d2ce" testId="1bd16bd4-30de-8a07-9401-f99792f5bd6c" testName="EmptyOutputSectionHasNoCaptionOrCardsAndRefreshesAfterAddingBoundary" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.0112997" startTime="2026-10-05T15:55:29.2223441+08:00" endTime="2026-10-05T15:55:29.2360930+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0733c19b-d368-4377-a89e-a8eb59c0d2ce" />
+    <UnitTestResult executionId="6cf229ec-0ea7-49b7-8924-5313ab1a1123" testId="14445fca-b647-87d6-af78-2f2c610d9b21" testName="TaskMenuAllowsRepeatedSettlementsAndDeleteToZero" computerName="LAPTOP-F7PUVUPO" duration="00:00:01.1280527" startTime="2026-10-05T15:55:27.5188575+08:00" endTime="2026-10-05T15:55:28.6916253+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6cf229ec-0ea7-49b7-8924-5313ab1a1123" />
+    <UnitTestResult executionId="0bafa94d-eb9c-438f-b2f7-32037a507c72" testId="156dc985-cf98-8c0b-8b5d-50068e19d077" testName="InlineOutputHandleAndGlyphOwnInteractionForBothAggregateKinds" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.5231332" startTime="2026-10-05T15:55:28.6965873+08:00" endTime="2026-10-05T15:55:29.2218818+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0bafa94d-eb9c-438f-b2f7-32037a507c72" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="TaskMenuAllowsRepeatedSettlementsAndDeleteToZero" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="14445fca-b647-87d6-af78-2f2c610d9b21">
+      <Execution id="6cf229ec-0ea7-49b7-8924-5313ab1a1123" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.TaskUIFix0336Tests" name="TaskMenuAllowsRepeatedSettlementsAndDeleteToZero" />
+    </UnitTest>
+    <UnitTest name="EmptyOutputSectionHasNoCaptionOrCardsAndRefreshesAfterAddingBoundary" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1bd16bd4-30de-8a07-9401-f99792f5bd6c">
+      <Execution id="0733c19b-d368-4377-a89e-a8eb59c0d2ce" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.TaskUIFix0336Tests" name="EmptyOutputSectionHasNoCaptionOrCardsAndRefreshesAfterAddingBoundary" />
+    </UnitTest>
+    <UnitTest name="InlineOutputHandleAndGlyphOwnInteractionForBothAggregateKinds" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="156dc985-cf98-8c0b-8b5d-50068e19d077">
+      <Execution id="0bafa94d-eb9c-438f-b2f7-32037a507c72" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.TaskUIFix0336Tests" name="InlineOutputHandleAndGlyphOwnInteractionForBothAggregateKinds" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1bd16bd4-30de-8a07-9401-f99792f5bd6c" executionId="0733c19b-d368-4377-a89e-a8eb59c0d2ce" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="14445fca-b647-87d6-af78-2f2c610d9b21" executionId="6cf229ec-0ea7-49b7-8924-5313ab1a1123" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="156dc985-cf98-8c0b-8b5d-50068e19d077" executionId="0bafa94d-eb9c-438f-b2f7-32037a507c72" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="3" executed="3" passed="3" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

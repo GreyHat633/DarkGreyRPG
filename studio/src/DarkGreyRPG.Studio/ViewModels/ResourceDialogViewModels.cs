@@ -24,8 +24,6 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
         Title = title;
         ActionText = actionText;
         Description = description;
-        NamespacePrefix = DgrResourceId.IsFullId(id)
-            ? DgrResourceId.Namespace(id) + ":" : string.Empty;
         _id = id;
         _displayName = displayName;
         ApplySuggestionCommand = new RelayCommand(ApplySuggestion, () => HasSuggestion);
@@ -38,24 +36,14 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
     public string Description { get; }
     public RelayCommand ApplySuggestionCommand { get; }
 
-    public string NamespacePrefix { get; }
-    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
-    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
-    public string EditableId
-    {
-        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
-            ? Id[NamespacePrefix.Length..] : Id;
-        set => Id = NamespacePrefix + (value ?? string.Empty);
-    }
+    public bool IsStoryIdentity => Type == ProjectResourceType.Story;
+    public string EditableId { get => Id; set { } }
 
     public string Id
     {
         get => _id;
         set
         {
-            if (!SetProperty(ref _id, value ?? string.Empty)) return;
-            OnPropertyChanged(nameof(EditableId));
-            RaiseValidationProperties();
         }
     }
 
@@ -69,31 +57,20 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
         }
     }
 
-    public string NormalizedSuggestion => HasLockedNamespace
-        ? DgrResourceId.IsFullId(Id) || EditableId.Contains(':') ? Id : NamespacePrefix + NormalizeSuggestion(EditableId)
-        : NormalizeSuggestion(Id);
-    public bool HasSuggestion => NormalizedSuggestion.Length > 0 &&
-                                 !string.Equals(Id, NormalizedSuggestion, StringComparison.Ordinal);
+    public string NormalizedSuggestion => Id;
+    public bool HasSuggestion => false;
     public string ValidationText
     {
         get
         {
-            var messages = ActorValidator.ValidateId(Id, ActorIdPolicy.NewResource)
-                .Where(issue => issue.Severity == ValidationSeverity.Error)
-                .Select(issue => issue.Message)
-                .ToList();
-            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
-                messages.Add("这里只填写资源 ID；NameSpace 请在故事右键菜单中修改。");
+            var messages = IsStoryIdentity
+                ? StoryUid.IsValid(Id) ? new List<string>() : new List<string> { "需要有效的 Story UID。" }
+                : ResourceAddress.IsKey(Id) ? new List<string>() : new List<string> { "资源内部地址无效。" };
             if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("显示名称不能为空。");
             return string.Join(Environment.NewLine, messages);
         }
     }
     public bool CanConfirm => ValidationText.Length == 0;
-
-    private static string NormalizeSuggestion(string id)
-        => DgrResourceId.IsFullId(id) || id.Contains(':')
-            ? id
-            : ActorValidator.NormalizeId(id);
 
     public static ResourceIdentityDialogViewModel ForCreate(ProjectResourceType type, string suggestedId) =>
         new(
@@ -104,13 +81,7 @@ public sealed class ResourceIdentityDialogViewModel : ObservableObject
                 ? "在当前项目中新建一条独立故事。"
                 : $"创建独立的新{ChineseLabel(type)}，并归入当前故事。",
             suggestedId,
-            type switch
-            {
-                ProjectResourceType.Dialogue => "新对话",
-                ProjectResourceType.Quest => "新任务",
-                ProjectResourceType.Story => "新故事",
-                _ => throw new ArgumentOutOfRangeException(nameof(type)),
-            });
+            string.Empty);
 
     public static ResourceIdentityDialogViewModel ForImport(
         ProjectResourceType type,
@@ -212,11 +183,11 @@ public sealed class ResourcePickerViewModel : ObservableObject
     public ResourcePickerMode Mode { get; }
     public string StoryDisplayName { get; }
     public string ChineseTypeLabel => ResourceIdentityDialogViewModel.ChineseLabel(Type);
-    public string Title => Mode == ResourcePickerMode.Reference
+    public string Title => Mode == ResourcePickerMode.CopyIntoStory ? "迁移故事内容" : Mode == ResourcePickerMode.Reference
         ? $"引用已有{ChineseTypeLabel}"
         : $"导入已有{ChineseTypeLabel}";
-    public string ActionText => Mode == ResourcePickerMode.Reference ? "引用" : "下一步";
-    public string Explanation => Mode == ResourcePickerMode.Reference
+    public string ActionText => Mode == ResourcePickerMode.CopyIntoStory ? "复制到目标" : Mode == ResourcePickerMode.Reference ? "引用" : "下一步";
+    public string Explanation => Mode == ResourcePickerMode.CopyIntoStory ? $"将“{StoryDisplayName}”的内容追加到选中的故事，保留源故事和目标已有内容。" : Mode == ResourcePickerMode.Reference
         ? $"选择项目中的现有{ChineseTypeLabel}链接到“{StoryDisplayName}”。引用共享同一份资源，任何位置的修改都会同步。"
         : $"选择一个{ChineseTypeLabel}作为“{StoryDisplayName}”中新资源的模板。将创建独立 ID 和文件，后续修改互不影响。";
     public string SearchAutomationName => $"搜索{ChineseTypeLabel}";
@@ -234,7 +205,7 @@ public sealed class ResourcePickerViewModel : ObservableObject
     }
     public bool CanConfirm => SelectedResource is not null;
     public bool HasCandidates => _resources.Count > 0;
-    public string EmptyText => Mode == ResourcePickerMode.Reference
+    public string EmptyText => Mode == ResourcePickerMode.CopyIntoStory ? "请先创建另一个可编辑故事作为目标。" : Mode == ResourcePickerMode.Reference
         ? $"没有可引用的{ChineseTypeLabel}。"
         : $"项目中还没有可作为模板的{ChineseTypeLabel}。";
 

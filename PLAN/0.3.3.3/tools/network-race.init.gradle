@@ -1,0 +1,9 @@
+allprojects {
+    afterEvaluate {
+        tasks.register('networkQueueRace0333Probe', JavaExec) {
+            dependsOn tasks.named('testClasses')
+            classpath = sourceSets.test.runtimeClasspath + sourceSets.main.compileClasspath
+            mainClass = 'darkgrey.rpg.client.NetworkQueueRaceProbe'
+        }
+    }
+}

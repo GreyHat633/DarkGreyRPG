@@ -23,7 +23,7 @@ public sealed class CanonicalResourceInspectorHierarchyTests
     {
         var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "title", "title");
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument([node])));
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument([node])));
         Assert.IsTrue(workspace.SelectGraphNode(workspace.ActiveGraphHost.Nodes.Single()));
         Assert.AreEqual(string.Empty, workspace.InspectorSaveStateText);
         Assert.IsFalse(string.IsNullOrWhiteSpace(workspace.NodeInspector?.HelpText));
@@ -33,8 +33,8 @@ public sealed class CanonicalResourceInspectorHierarchyTests
     public void CanonicalTypedActorHasAnEditPortraitEntry()
     {
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
-            actors: [new ActorResourceInfo("actor", "角色", "actor.json", [], IndividualActorResource.ResourceType)]);
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
+            actors: [new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "角色", "actor.json", [], IndividualActorResource.ResourceType)]);
         workspace.PortraitEditorFactory = actor =>
             new ActorEditorViewModel(ActorDocument.CreateIndividual(actor.Id, actor.DisplayName));
         var view = Arrange(workspace);
@@ -44,7 +44,7 @@ public sealed class CanonicalResourceInspectorHierarchyTests
         string? edited = null;
         workspace.EditActorPortraitRequested = actor => edited = actor.Id;
         workspace.EditActorPortrait();
-        Assert.AreEqual("actor", edited);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor", edited);
         var entry = Descendants<ActorPortraitEditor>(view).Single();
         Assert.AreSame(workspace.InspectorPortraitEditor, entry.Editor);
         Assert.AreEqual(Visibility.Visible, entry.Visibility);
@@ -57,11 +57,11 @@ public sealed class CanonicalResourceInspectorHierarchyTests
     {
         foreach (var type in new[] { "title", "music", "screen" })
         {
-            var story = new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument());
+            var story = new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument());
             var scope = type == "title" ? GraphScope.StoryFlow : GraphScope.Session;
             var node = DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphNodeFactory.Create(scope, type, type);
             var resource = new GraphResourceEnvelope(type == "title" ? GraphResourceKind.Story : GraphResourceKind.Session,
-                type == "title" ? "story" : "session", type, new GraphDocument([node]));
+                type == "title" ? "ST-2345-6789-ABCD-EFGH" : "ST-2345-6789-ABCD-EFGH~session~session", type, new GraphDocument([node]));
             using var workspace = new CanonicalStoryWorkspaceViewModel(type == "title" ? resource : story,
                 sessions: type == "title" ? [] : [resource]);
             if (type != "title") Assert.IsTrue(workspace.OpenGraphResource(workspace.SessionItems.Single()));
@@ -92,25 +92,25 @@ public sealed class CanonicalResourceInspectorHierarchyTests
     public void ActorAndItemInspectorsUseFieldHierarchyAndAuthorTerminologyWithoutOwnershipStatus()
     {
         using var workspace = new CanonicalStoryWorkspaceViewModel(
-            new GraphResourceEnvelope(GraphResourceKind.Story, "story", "Story", new GraphDocument()),
+            new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
             actors:
             [
-                new ActorResourceInfo("actor", "角色甲", "actor.json", ["merchant"]),
-                new ActorResourceInfo("actors", "角色组甲", "actors.json", ["quest"],
+                new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "角色甲", "actor.json", ["merchant"]),
+                new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actors", "角色组甲", "actors.json", ["quest"],
                     CollectiveActorResource.ResourceType),
             ],
             items:
             [
-                new IndividualItemResource { ItemId = "item", DisplayName = "物品甲", Tags = ["tool"] },
-                new CollectiveItemResource { GroupId = "items", DisplayName = "物品组甲", Tags = ["loot"] },
+                new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item", DisplayName = "物品甲", Tags = ["tool"] },
+                new CollectiveItemResource { GroupId = "ST-2345-6789-ABCD-EFGH~item_group~items", DisplayName = "物品组甲", Tags = ["loot"] },
             ]);
         var view = Arrange(workspace);
         var cases = new (ICanonicalStoryTreeItem Item, string Kind, string IdentityLabel, string Id)[]
         {
-            (workspace.ActorItems.Single(item => item.Id == "actor"), "角色", "NPC_ID", "actor"),
-            (workspace.ActorItems.Single(item => item.Id == "actors"), "角色组", "Group_ID", "actors"),
-            (workspace.ItemItems.Single(item => item.Id == "item"), "物品", "Item_ID", "item"),
-            (workspace.ItemItems.Single(item => item.Id == "items"), "物品组", "Group_ID", "items"),
+            (workspace.ActorItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~actor~actor"), "角色", "NPC_ID", "ST-2345-6789-ABCD-EFGH~actor~actor"),
+            (workspace.ActorItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~actor~actors"), "角色组", "Group_ID", "ST-2345-6789-ABCD-EFGH~actor~actors"),
+            (workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item~item"), "物品", "Item_ID", "ST-2345-6789-ABCD-EFGH~item~item"),
+            (workspace.ItemItems.Single(item => item.Id == "ST-2345-6789-ABCD-EFGH~item_group~items"), "物品组", "Group_ID", "ST-2345-6789-ABCD-EFGH~item_group~items"),
         };
 
         foreach (var (item, kind, identityLabel, id) in cases)
@@ -119,7 +119,8 @@ public sealed class CanonicalResourceInspectorHierarchyTests
             view.UpdateLayout();
 
             Assert.AreEqual(kind, workspace.InspectorKindText);
-            Assert.AreEqual($"[{identityLabel}] {id}", Field(view, "ResourceInspectorIdentityLine").Text);
+            Assert.IsFalse(Field(view, "ResourceInspectorIdentityLine").Text.Contains(id, StringComparison.Ordinal));
+            Assert.IsFalse(Field(view, "ResourceInspectorIdentityLine").Text.Contains(identityLabel, StringComparison.Ordinal));
             Assert.AreEqual("标签：", Field(view, "ResourceInspectorTagsLabel").Text);
             Assert.AreEqual(14d, Field(view, "ResourceInspectorTagsLabel").FontSize);
             Assert.AreEqual(14d, Field(view, "ResourceInspectorTagsValue").FontSize);

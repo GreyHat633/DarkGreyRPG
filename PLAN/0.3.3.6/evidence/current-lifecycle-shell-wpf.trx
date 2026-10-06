@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="93adc89d-1a64-4291-9645-40ec6a5b93f3" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-04 22:25:00" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-04T22:25:00.0270873+08:00" queuing="2026-10-04T22:25:00.0270877+08:00" start="2026-10-04T22:24:58.1411314+08:00" finish="2026-10-04T22:25:00.0359613+08:00" />
+  <TestSettings name="default" id="1eed9d76-3ff0-474d-aebd-2a49c51bb3a0">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-04_22_25_00" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="62d790d0-c730-4cb9-adaa-e5e4c2482c5b" testId="17ca8fba-360f-8456-b094-ebbb2bc0318e" testName="RejectedStandaloneTransitionLeavesNormalDeletionAvailable" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.7916425" startTime="2026-10-04T22:24:58.7736046+08:00" endTime="2026-10-04T22:24:59.6101459+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="62d790d0-c730-4cb9-adaa-e5e4c2482c5b" />
+    <UnitTestResult executionId="8bcea6d2-0da3-44cf-b53c-05ac95f5c44a" testId="1a5f62ea-69d7-8425-a2b4-1c747fe31edd" testName="CancellingDirtyStoryDeletionPreservesDraftAndDisk" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.7159489" startTime="2026-10-04T22:24:58.7736262+08:00" endTime="2026-10-04T22:24:59.5380935+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8bcea6d2-0da3-44cf-b53c-05ac95f5c44a" />
+    <UnitTestResult executionId="224e2fa3-b39a-446e-af0d-e1430552f55d" testId="11bcb252-0eb4-830f-85e7-612fb712f5d4" testName="ConfirmedDeletionDiscardsDirtyOwnedActorWithoutRequiringSave" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.7588611" startTime="2026-10-04T22:24:58.7736111+08:00" endTime="2026-10-04T22:24:59.5773940+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="224e2fa3-b39a-446e-af0d-e1430552f55d" />
+    <UnitTestResult executionId="8dc148b0-7b33-459c-a2c4-9a6737ece329" testId="19fd57c3-b6e6-82f4-b283-012507c43321" testName="DeleteCanonicalStoryRemovesOwnedResourcesAndPreservesReferencedOwner" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.9887633" startTime="2026-10-04T22:24:58.7735991+08:00" endTime="2026-10-04T22:24:59.8087581+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8dc148b0-7b33-459c-a2c4-9a6737ece329" />
+    <UnitTestResult executionId="cae2aeb0-dec6-466b-ad52-8a575d4a18e8" testId="14f2ac15-5f29-8b1b-8cfc-a84f42206a38" testName="DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory (False)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.8166050" startTime="2026-10-04T22:24:58.7736197+08:00" endTime="2026-10-04T22:24:59.6351585+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cae2aeb0-dec6-466b-ad52-8a575d4a18e8" />
+    <UnitTestResult executionId="9300fc2d-1477-491e-a40d-95e464d8e206" testId="171dcd2e-8495-89b3-8516-227a98c5748c" testName="DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory (True)" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.7928092" startTime="2026-10-04T22:24:58.7736302+08:00" endTime="2026-10-04T22:24:59.6113081+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9300fc2d-1477-491e-a40d-95e464d8e206" />
+    <UnitTestResult executionId="d9b76cca-1e67-4c19-8204-7459e5409ed7" testId="1173a4cf-a150-8d76-aa05-82fc0f55afb3" testName="SwitchingStoriesRetainsAllGraphsAndNormalSaveSavesTheWholeProject" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.7883577" startTime="2026-10-04T22:24:58.7735664+08:00" endTime="2026-10-04T22:24:59.6068725+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d9b76cca-1e67-4c19-8204-7459e5409ed7" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory (True)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="171dcd2e-8495-89b3-8516-227a98c5748c">
+      <Execution id="9300fc2d-1477-491e-a40d-95e464d8e206" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory" />
+    </UnitTest>
+    <UnitTest name="SwitchingStoriesRetainsAllGraphsAndNormalSaveSavesTheWholeProject" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1173a4cf-a150-8d76-aa05-82fc0f55afb3">
+      <Execution id="d9b76cca-1e67-4c19-8204-7459e5409ed7" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="SwitchingStoriesRetainsAllGraphsAndNormalSaveSavesTheWholeProject" />
+    </UnitTest>
+    <UnitTest name="CancellingDirtyStoryDeletionPreservesDraftAndDisk" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1a5f62ea-69d7-8425-a2b4-1c747fe31edd">
+      <Execution id="8bcea6d2-0da3-44cf-b53c-05ac95f5c44a" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="CancellingDirtyStoryDeletionPreservesDraftAndDisk" />
+    </UnitTest>
+    <UnitTest name="ConfirmedDeletionDiscardsDirtyOwnedActorWithoutRequiringSave" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="11bcb252-0eb4-830f-85e7-612fb712f5d4">
+      <Execution id="224e2fa3-b39a-446e-af0d-e1430552f55d" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="ConfirmedDeletionDiscardsDirtyOwnedActorWithoutRequiringSave" />
+    </UnitTest>
+    <UnitTest name="DeleteCanonicalStoryRemovesOwnedResourcesAndPreservesReferencedOwner" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="19fd57c3-b6e6-82f4-b283-012507c43321">
+      <Execution id="8dc148b0-7b33-459c-a2c4-9a6737ece329" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="DeleteCanonicalStoryRemovesOwnedResourcesAndPreservesReferencedOwner" />
+    </UnitTest>
+    <UnitTest name="DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory (False)" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="14f2ac15-5f29-8b1b-8cfc-a84f42206a38">
+      <Execution id="cae2aeb0-dec6-466b-ad52-8a575d4a18e8" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="DeletingDirtyStoryPreservesOtherDraftsAndSaveCannotResurrectDeletedStory" />
+    </UnitTest>
+    <UnitTest name="RejectedStandaloneTransitionLeavesNormalDeletionAvailable" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="17ca8fba-360f-8456-b094-ebbb2bc0318e">
+      <Execution id="62d790d0-c730-4cb9-adaa-e5e4c2482c5b" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.CanonicalStoryLifecycleShellTests" name="RejectedStandaloneTransitionLeavesNormalDeletionAvailable" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="17ca8fba-360f-8456-b094-ebbb2bc0318e" executionId="62d790d0-c730-4cb9-adaa-e5e4c2482c5b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1a5f62ea-69d7-8425-a2b4-1c747fe31edd" executionId="8bcea6d2-0da3-44cf-b53c-05ac95f5c44a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11bcb252-0eb4-830f-85e7-612fb712f5d4" executionId="224e2fa3-b39a-446e-af0d-e1430552f55d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19fd57c3-b6e6-82f4-b283-012507c43321" executionId="8dc148b0-7b33-459c-a2c4-9a6737ece329" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="14f2ac15-5f29-8b1b-8cfc-a84f42206a38" executionId="cae2aeb0-dec6-466b-ad52-8a575d4a18e8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="171dcd2e-8495-89b3-8516-227a98c5748c" executionId="9300fc2d-1477-491e-a40d-95e464d8e206" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1173a4cf-a150-8d76-aa05-82fc0f55afb3" executionId="d9b76cca-1e67-4c19-8204-7459e5409ed7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="7" executed="7" passed="7" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

@@ -1,0 +1,32 @@
+{
+  "DataFiles": 2651,
+  "DataBytes": 63815496,
+  "DataDifferences": [],
+  "ManifestEntries": 405,
+  "MissingProgramFiles": [],
+  "RootFiles": [
+    "DarkGreyRPGStudio.exe"
+  ],
+  "RuntimeJarCRCValid": true,
+  "RuntimeVersions": [
+    "0.3.3.6"
+  ],
+  "CandidateDllMatchesDist": true,
+  "Exports": {
+    "ExternalGroup.dgrs.g": {
+      "Bytes": 8862,
+      "SHA256": "431D968144E845FFBBFE334F7AE44A03909A017D16CAE9FE0504268028F71A14",
+      "CRCValid": true
+    },
+    "ExternalSingle.dgrs": {
+      "Bytes": 4501,
+      "SHA256": "793BA062E831C6A4CE805151C9C6D0A19B7E463175F94488CF6D00EF7D658D97",
+      "CRCValid": true
+    },
+    "NativeReferencedGroup.dgrs.g": {
+      "Bytes": 54820,
+      "SHA256": "E97D83A275EDA5D6D3B839BDC594BB4B8A57216746E656C28B9F4ABA8A185A2E",
+      "CRCValid": true
+    }
+  }
+}

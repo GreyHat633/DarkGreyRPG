@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="338ee4fa-2b64-4bdf-9402-41f8f49b68df" name="GreyHat@LAPTOP-F7PUVUPO 2026-10-05 14:34:50" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-05T14:34:50.0556509+08:00" queuing="2026-10-05T14:34:50.0556512+08:00" start="2026-10-05T14:34:48.5920568+08:00" finish="2026-10-05T14:34:50.0624767+08:00" />
+  <TestSettings name="default" id="03647885-5a10-4b3a-beb6-cd6cf44a4917">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-10-05_14_34_50" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="05ee99c9-4ecc-49e9-9be1-b6e54c7f1796" testId="10ac6665-c1e8-80d0-9f31-7bcc10e92e8c" testName="ExportingCurrentStoryPreservesExplicitBoundariesAndSourceBytes" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.1671477" startTime="2026-10-05T14:34:49.7674302+08:00" endTime="2026-10-05T14:34:49.9362277+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="05ee99c9-4ecc-49e9-9be1-b6e54c7f1796" />
+    <UnitTestResult executionId="54ddb20a-72c4-48ec-9821-6bee0a0dabd0" testId="13d04bdb-635b-8808-b099-ddbd374ee192" testName="CurrentBoundariesSupportUnsavedStartInputsRenameReopenAndFlowPersistence" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.4646721" startTime="2026-10-05T14:34:49.2515377+08:00" endTime="2026-10-05T14:34:49.7631774+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54ddb20a-72c4-48ec-9821-6bee0a0dabd0" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="CurrentBoundariesSupportUnsavedStartInputsRenameReopenAndFlowPersistence" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="13d04bdb-635b-8808-b099-ddbd374ee192">
+      <Execution id="54ddb20a-72c4-48ec-9821-6bee0a0dabd0" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.LegacyStoryBoundary0331Tests" name="CurrentBoundariesSupportUnsavedStartInputsRenameReopenAndFlowPersistence" />
+    </UnitTest>
+    <UnitTest name="ExportingCurrentStoryPreservesExplicitBoundariesAndSourceBytes" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\release\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="10ac6665-c1e8-80d0-9f31-7bcc10e92e8c">
+      <Execution id="05ee99c9-4ecc-49e9-9be1-b6e54c7f1796" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.LegacyStoryBoundary0331Tests" name="ExportingCurrentStoryPreservesExplicitBoundariesAndSourceBytes" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="10ac6665-c1e8-80d0-9f31-7bcc10e92e8c" executionId="05ee99c9-4ecc-49e9-9be1-b6e54c7f1796" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13d04bdb-635b-8808-b099-ddbd374ee192" executionId="54ddb20a-72c4-48ec-9821-6bee0a0dabd0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Release\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

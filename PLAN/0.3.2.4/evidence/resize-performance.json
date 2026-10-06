@@ -1,0 +1,22 @@
+{
+  "item": {
+    "fps_min": 60,
+    "fps_max": 60,
+    "no_disk_during_resize": true
+  },
+  "entity": {
+    "fps_min": 60,
+    "fps_max": 60,
+    "no_disk_during_resize": true
+  },
+  "task": {
+    "fps_min": 59,
+    "fps_max": 61,
+    "no_disk_during_resize": true
+  },
+  "copier": {
+    "fps_min": 60,
+    "fps_max": 61,
+    "no_disk_during_resize": true
+  }
+}

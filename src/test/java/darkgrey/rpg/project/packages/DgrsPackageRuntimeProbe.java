@@ -625,10 +625,9 @@ public final class DgrsPackageRuntimeProbe {
                         .endsWith(".json")) {
                     JsonObject story = new JsonParser().parse(new String(bytes, StandardCharsets.UTF_8))
                         .getAsJsonObject();
-                    if ("kill_slimes".equals(
-                        darkgrey.rpg.identity.DgrResourceId.localId(
-                            story.get("id")
-                                .getAsString()))) {
+                    if (darkgrey.rpg.identity.StoryUid.isValid(
+                        story.get("id")
+                            .getAsString())) {
                         for (JsonElement element : story.getAsJsonObject("graph")
                             .getAsJsonArray("nodes")) {
                             JsonObject node = element.getAsJsonObject();
@@ -653,7 +652,7 @@ public final class DgrsPackageRuntimeProbe {
                 output.write(bytes);
                 output.closeEntry();
             }
-            require(found, "DGRS replacement fixture has no kill_slimes canonical Story");
+            require(found, "DGRS replacement fixture has no current canonical Story");
         } finally {
             output.close();
             input.close();

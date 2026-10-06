@@ -1,0 +1,510 @@
+[
+  {
+    "cycle": 0,
+    "before": 112.0,
+    "samples": [
+      {
+        "ms": 14,
+        "height": 111.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 63,
+        "height": 77.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 113,
+        "height": 48.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 163,
+        "height": 43.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 196,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 246,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 279,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 313,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 363,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 396,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 429,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 463,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 496,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 529,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 563,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 626,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 663,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 696,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 729,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 763,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 797,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 846,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 880,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 913,
+        "height": 42.0,
+        "wireUnchanged": true
+      }
+    ],
+    "afterName": "展开第 1 句"
+  },
+  {
+    "cycle": 1,
+    "before": 42.0,
+    "samples": [
+      {
+        "ms": 14,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 48,
+        "height": 64.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 98,
+        "height": 91.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 148,
+        "height": 111.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 181,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 214,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 248,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 281,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 315,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 365,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 398,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 431,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 464,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 498,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 531,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 564,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 615,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 648,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 681,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 715,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 748,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 798,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 831,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 864,
+        "height": 112.0,
+        "wireUnchanged": true
+      }
+    ],
+    "afterName": "收起第 1 句"
+  },
+  {
+    "cycle": 2,
+    "before": 112.0,
+    "samples": [
+      {
+        "ms": 15,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 48,
+        "height": 106.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 81,
+        "height": 63.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 131,
+        "height": 44.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 165,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 198,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 248,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 281,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 331,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 364,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 398,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 431,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 464,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 498,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 548,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 581,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 615,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 648,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 681,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 715,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 764,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 798,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 831,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 865,
+        "height": 42.0,
+        "wireUnchanged": true
+      }
+    ],
+    "afterName": "展开第 1 句"
+  },
+  {
+    "cycle": 3,
+    "before": 42.0,
+    "samples": [
+      {
+        "ms": 14,
+        "height": 42.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 65,
+        "height": 54.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 97,
+        "height": 100.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 131,
+        "height": 110.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 164,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 198,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 248,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 297,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 332,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 364,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 397,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 431,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 464,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 497,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 548,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 580,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 614,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 647,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 681,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 714,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 765,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 798,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 831,
+        "height": 112.0,
+        "wireUnchanged": true
+      },
+      {
+        "ms": 864,
+        "height": 112.0,
+        "wireUnchanged": true
+      }
+    ],
+    "afterName": "收起第 1 句"
+  }
+]

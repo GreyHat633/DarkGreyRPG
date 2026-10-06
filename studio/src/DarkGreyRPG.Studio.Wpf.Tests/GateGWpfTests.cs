@@ -1,8 +1,9 @@
-using DarkGreyRPG.Studio.Core.Dialogues;
+﻿using DarkGreyRPG.Studio.Core.Graphs;
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
-using DarkGreyRPG.Studio.Core.Quests;
 using DarkGreyRPG.Studio.Services;
 using DarkGreyRPG.Studio.ViewModels;
+using DarkGreyRPG.Studio.ViewModels.Graph;
 
 namespace DarkGreyRPG.Studio.Wpf.Tests;
 
@@ -10,273 +11,149 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class GateGWpfTests
 {
     [TestMethod]
-    public void DialogueDuplicateCreatesUnsavedIndependentDraftAndPromotesOnSave()
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void CopyIntoNonemptyStoryIsIndependentAndUndoRedoRestoresMembership(GraphResourceKind kind)
     {
-        using var project = CreateProject();
-        var source = project.Service.CreateDialogueInStory("home", "source", "Source");
-        source.Metadata = new DialogueMetadata { Notes = "source notes" };
-        project.Service.SaveDialogue(source);
-        var dialogs = new GateDialogs
-        {
-            PickResult = Descriptor(project, ProjectResourceType.Dialogue, "source", "Source"),
-            ImportResult = new("copy", "Copy"),
-        };
-        var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Dialogues);
-
-        shell.DuplicateStoryResourceCommand.Execute(null);
-
-        Assert.AreEqual(ResourcePickerMode.ImportAsNew, dialogs.LastMode);
-        Assert.IsTrue(shell.SelectedStoryResource!.IsDraft);
-        Assert.AreEqual("source", shell.CurrentDialogue!.Document.SourceTemplateId);
-        Assert.AreEqual("source notes", shell.CurrentDialogue.Notes);
-        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "dialogues", "copy.json")));
-        shell.CurrentDialogue.Notes = "copy notes";
-        shell.SaveCurrentResourceCommand.Execute(null);
-        Assert.IsFalse(shell.SelectedStoryResource!.IsDraft);
-        Assert.AreEqual("source notes", new DialogueRepository(project.Root).LoadDialogue("source").Metadata.Notes);
-        Assert.AreEqual("copy notes", new DialogueRepository(project.Root).LoadDialogue("copy").Metadata.Notes);
+        using var f = new Fixture(kind);
+        var before = File.ReadAllBytes(f.Repository.GetPath(f.SourceId));
+        var targetBefore = File.ReadAllBytes(f.Store.Memberships.GetPath(Fixture.Target));
+        f.Shell.ProjectHome.SelectedStory = f.Shell.ProjectHome.Stories.Single(story => story.Id == Fixture.Owner);
+        f.Dialogs.CopyTarget = new(ProjectResourceType.Story, Fixture.Target, "Target", f.Store.Stories.GetPath(Fixture.Target));
+        f.Shell.CopyStoryContentCommand.Execute(null);
+        var workspace = f.Shell.CanonicalStoryWorkspace!;
+        var items = workspace.SessionItems.Concat(workspace.TaskItems).ToArray();
+        Assert.HasCount(2, items);
+        var copy = items.Single(item => item.Id != f.ExistingId);
+        StringAssert.StartsWith(copy.Id, Fixture.Target + "~");
+        Assert.AreNotEqual(f.SourceId, copy.Id);
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(f.Repository.GetPath(f.SourceId)));
+        Assert.IsTrue(workspace.StoryEditor.Host.Undo());
+        CollectionAssert.AreEqual(targetBefore, File.ReadAllBytes(f.Store.Memberships.GetPath(Fixture.Target)));
+        Assert.IsFalse(File.Exists(f.Repository.GetPath(copy.Id)));
+        Assert.IsTrue(workspace.StoryEditor.Host.Redo());
+        Assert.IsTrue(File.Exists(f.Repository.GetPath(copy.Id)));
+        copy = workspace.SessionItems.Concat(workspace.TaskItems).Single(item => item.Id == copy.Id);
+        f.Dialogs.Rename = "Independent Copy";
+        Assert.IsTrue(workspace.RequestRename(copy));
+        Assert.AreEqual("Independent Copy", f.Repository.Load(copy.Id).DisplayName);
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(f.Repository.GetPath(f.SourceId)));
+        Assert.AreEqual(ResourcePickerMode.CopyIntoStory, f.Dialogs.LastCopyMode);
     }
 
     [TestMethod]
-    public void QuestDuplicateCancelAtPickerOrIdentityDoesNotCreateDraft()
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void CancelCopyLeavesBothStoriesAndResourcesUnchanged(GraphResourceKind kind)
     {
-        foreach (var cancelAtPicker in new[] { true, false })
-        {
-            using var project = CreateProject();
-            var source = project.Service.CreateQuestInStory("home", "source", "Source");
-            source.Description = "source description";
-            project.Service.SaveQuest(source);
-            var dialogs = new GateDialogs
-            {
-                PickResult = cancelAtPicker
-                    ? null
-                    : Descriptor(project, ProjectResourceType.Quest, "source", "Source"),
-                ImportResult = cancelAtPicker ? new("copy", "Copy") : null,
-            };
-            var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Quests);
-            shell.DuplicateStoryResourceCommand.Execute(null);
+        using var f = new Fixture(kind);
+        var before = Directory.GetFiles(f.Root, "*.json", SearchOption.AllDirectories)
+            .ToDictionary(path => path, File.ReadAllBytes);
+        f.Shell.ProjectHome.SelectedStory = f.Shell.ProjectHome.Stories.Single(story => story.Id == Fixture.Owner);
+        f.Shell.CopyStoryContentCommand.Execute(null);
+        foreach (var entry in before) CollectionAssert.AreEqual(entry.Value, File.ReadAllBytes(entry.Key));
+        CollectionAssert.AreEquivalent(before.Keys.ToArray(), Directory.GetFiles(f.Root, "*.json", SearchOption.AllDirectories));
+        Assert.IsNull(f.Shell.CanonicalStoryWorkspace);
+    }
 
-            Assert.AreEqual(ResourcePickerMode.ImportAsNew, dialogs.LastMode);
-            Assert.IsFalse(File.Exists(Path.Combine(project.Root, "quests", "copy.json")));
-            Assert.IsFalse(shell.StoryWorkspace.Quests!.Items.Any(item => item.Id == "copy"));
-            Assert.IsNull(shell.SelectedStoryResource);
-            Assert.IsNull(shell.CurrentQuest);
+    [TestMethod]
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void TypedReferenceFiltersMembershipAndRemovalPreservesSource(GraphResourceKind kind)
+    {
+        using var f = new Fixture(kind);
+        var before = File.ReadAllBytes(f.Repository.GetPath(f.SourceId));
+        f.OpenTarget();
+        f.Dialogs.Reference = new(kind, f.SourceId, "Source");
+        Assert.IsTrue(f.Shell.CanonicalStoryWorkspace!.RequestReference(f.Folder));
+        Assert.IsTrue(f.Dialogs.Candidates.All(candidate => candidate.ResourceKind == kind));
+        Assert.IsFalse(f.Dialogs.Candidates.Any(candidate => candidate.Id == f.ExistingId));
+        var workspace = f.Shell.CanonicalStoryWorkspace;
+        var reference = workspace.SessionItems.Concat(workspace.TaskItems).Single(item => item.Id == f.SourceId);
+        Assert.IsTrue(reference.IsReferenced);
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(f.Repository.GetPath(f.SourceId)));
+        f.Dialogs.Reference = null;
+        Assert.IsTrue(workspace.RequestReference(f.Folder));
+        Assert.IsFalse(f.Dialogs.Candidates.Any(candidate => candidate.Id == f.SourceId));
+        Assert.IsTrue(workspace.RequestDelete(reference));
+        Assert.IsTrue(File.Exists(f.Repository.GetPath(f.SourceId)));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(f.Repository.GetPath(f.SourceId)));
+        Assert.IsFalse(workspace.SessionItems.Concat(workspace.TaskItems).Any(item => item.Id == f.SourceId));
+    }
+
+    [TestMethod]
+    [DataRow(GraphResourceKind.Session)]
+    [DataRow(GraphResourceKind.Task)]
+    public void ReferencedResourceMetadataRemainsReadOnlyUntilImported(GraphResourceKind kind)
+    {
+        using var f = new Fixture(kind);
+        f.OpenTarget();
+        f.Dialogs.Reference = new(kind, f.SourceId, "Source");
+        f.Shell.CanonicalStoryWorkspace!.RequestReference(f.Folder);
+        var reference = f.Shell.CanonicalStoryWorkspace.SessionItems.Concat(f.Shell.CanonicalStoryWorkspace.TaskItems).Single(item => item.Id == f.SourceId);
+        f.Dialogs.Rename = "Shared Edit";
+        Assert.IsTrue(reference.IsReadOnly);
+        Assert.IsFalse(f.Shell.CanonicalStoryWorkspace.RequestRename(reference));
+        Assert.AreEqual("Source", f.Repository.Load(f.SourceId).DisplayName);
+        f.Shell.OpenStory(f.Shell.ProjectHome.Stories.Single(story => story.Id == Fixture.Owner));
+        Assert.AreEqual("Source", f.Shell.CanonicalStoryWorkspace!.SessionItems.Concat(f.Shell.CanonicalStoryWorkspace.TaskItems).Single().DisplayName);
+        Assert.HasCount(2, f.Repository.List());
+    }
+
+    private sealed class Fixture : IDisposable
+    {
+        public const string Owner = "ST-2345-6789-ABCD-EFGH", Target = "ST-JKLM-NPQR-STUV-WXYZ";
+        public string Root { get; } = Path.Combine(AppContext.BaseDirectory, ".current-gate-g", Guid.NewGuid().ToString("N"));
+        public CanonicalProjectGraphStore Store { get; }
+        public GraphResourceRepository Repository { get; }
+        public ShellViewModel Shell { get; }
+        public Dialogs Dialogs { get; } = new();
+        public CanonicalStoryFolderKind Folder { get; }
+        public string SourceId { get; }
+        public string ExistingId { get; }
+        public Fixture(GraphResourceKind kind)
+        {
+            new ProjectService().CreateProject(Root, "reference_gate", "Reference Gate");
+            Store = new(Root);
+            var stories = new CanonicalStoryLifecycleService(Store);
+            stories.Create(Owner, "Owner"); stories.Create(Target, "Target");
+            Repository = kind == GraphResourceKind.Session ? Store.Sessions : Store.Tasks;
+            Folder = kind == GraphResourceKind.Session ? CanonicalStoryFolderKind.Sessions : CanonicalStoryFolderKind.Tasks;
+            var suffix = kind == GraphResourceKind.Session ? "~session~" : "~task~";
+            SourceId = Owner + suffix + "source"; ExistingId = Target + suffix + "existing";
+            var resources = new CanonicalStoryResourceLifecycleService(Store);
+            resources.CreateOwned(Owner, kind, SourceId, "Source");
+            resources.CreateOwned(Target, kind, ExistingId, "Existing");
+            Shell = new(new ProjectService(), new Picker(Root), resourceWorkspaceDialogs: Dialogs, canonicalStoryResourceDialogs: Dialogs);
+            Shell.OpenProjectCommand.Execute(null);
         }
+        public void OpenTarget() => Shell.OpenStory(Shell.ProjectHome.Stories.Single(story => story.Id == Target));
+        public void Dispose() { if (Directory.Exists(Root)) Directory.Delete(Root, true); }
     }
-
-    [TestMethod]
-    public void DialogueDuplicateDiscardOnSwitchLeavesSourceAndTargetUntouched()
+    private sealed class Picker(string root) : IProjectFolderPicker { public string? PickProjectFolder() => root; }
+    private sealed class Dialogs : ICanonicalStoryResourceDialogs, IResourceWorkspaceDialogs
     {
-        using var project = CreateProject();
-        var source = project.Service.CreateDialogueInStory("home", "source", "Source");
-        source.Metadata = new DialogueMetadata { Notes = "source notes" };
-        project.Service.SaveDialogue(source);
-        project.Service.CreateDialogueInStory("target", "other", "Other");
-        var sourcePath = Path.Combine(project.Root, "dialogues", "source.json");
-        var sourceBytes = File.ReadAllBytes(sourcePath);
-        var dialogs = new GateDialogs
-        {
-            PickResult = Descriptor(project, ProjectResourceType.Dialogue, "source", "Source"),
-            ImportResult = new("copy", "Copy"),
-            CloseChoice = UnsavedChangesChoice.Discard,
-        };
-        var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Dialogues);
-        shell.DuplicateStoryResourceCommand.Execute(null);
-        shell.CurrentDialogue!.Notes = "discarded copy";
-
-        shell.SelectedStoryResource = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "other");
-
-        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "dialogues", "copy.json")));
-        Assert.DoesNotContain("copy", project.Session.Stories.LoadStory("target").OwnedResources.Dialogues);
-        CollectionAssert.AreEqual(sourceBytes, File.ReadAllBytes(sourcePath));
-        Assert.AreEqual("source notes", new DialogueRepository(project.Root).LoadDialogue("source").Metadata.Notes);
-    }
-
-    [TestMethod]
-    public void QuestDuplicateCopiesContentWithoutChangingSource()
-    {
-        using var project = CreateProject();
-        var source = project.Service.CreateQuestInStory("home", "source", "Source");
-        source.Description = "source description";
-        project.Service.SaveQuest(source);
-        var dialogs = new GateDialogs
-        {
-            PickResult = Descriptor(project, ProjectResourceType.Quest, "source", "Source"),
-            ImportResult = new("copy", "Copy"),
-        };
-        var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Quests);
-
-        shell.DuplicateStoryResourceCommand.Execute(null);
-
-        Assert.IsTrue(shell.SelectedStoryResource!.IsDraft);
-        Assert.AreEqual("source", shell.CurrentQuest!.Document.SourceTemplateId);
-        Assert.AreEqual("source description", shell.CurrentQuest.Description);
-        Assert.IsFalse(File.Exists(Path.Combine(project.Root, "quests", "copy.json")));
-        shell.CurrentQuest.Description = "copy description";
-        shell.SaveCurrentResourceCommand.Execute(null);
-        Assert.AreEqual("source description", new QuestRepository(project.Root).LoadQuest("source").Description);
-        Assert.AreEqual("copy description", new QuestRepository(project.Root).LoadQuest("copy").Description);
-    }
-
-    [TestMethod]
-    public void ReferenceFiltersExistingMembershipAndPreservesHomeStoryAndFile()
-    {
-        using var project = CreateProject();
-        var source = project.Service.CreateDialogueInStory("home", "source", "Source");
-        project.Service.SaveDialogue(source);
-        var alreadyReferenced = project.Service.CreateDialogueInStory("home", "already", "Already");
-        project.Service.SaveDialogue(alreadyReferenced);
-        project.Service.AddDialogueReference("target", "already");
-        var sourcePath = Path.Combine(project.Root, "dialogues", "source.json");
-        var originalBytes = File.ReadAllBytes(sourcePath);
-        var dialogs = new GateDialogs
-        {
-            PickResult = Descriptor(project, ProjectResourceType.Dialogue, "source", "Source"),
-        };
-        var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Dialogues);
-
-        shell.ReferenceStoryResourceCommand.Execute(null);
-
-        Assert.IsFalse(dialogs.LastCandidates.Any(item => item.Id == "already"));
-        Assert.Contains("source", project.Session.Stories.LoadStory("target").ReferencedResources.Dialogues);
-        Assert.AreEqual("home", new DialogueRepository(project.Root).LoadDialogue("source").HomeStoryId);
-        CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(sourcePath));
-        var card = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "source");
-        Assert.IsTrue(card.IsReferenced);
-        StringAssert.Contains(card.MembershipTooltip, "来源故事");
-    }
-
-    [TestMethod]
-    public void QuestReferenceUsesTypedCandidatesAndPreservesHomeStory()
-    {
-        using var project = CreateProject();
-        var source = project.Service.CreateQuestInStory("home", "source", "Source");
-        project.Service.SaveQuest(source);
-        var existing = project.Service.CreateQuestInStory("home", "existing", "Existing");
-        project.Service.SaveQuest(existing);
-        project.Service.AddQuestReference("target", "existing");
-        var sourcePath = Path.Combine(project.Root, "quests", "source.json");
-        var originalBytes = File.ReadAllBytes(sourcePath);
-        var dialogs = new GateDialogs { PickResult = Descriptor(project, ProjectResourceType.Quest, "source", "Source") };
-        var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Quests);
-
-        shell.ReferenceStoryResourceCommand.Execute(null);
-
-        var candidate = dialogs.LastCandidates.Single(item => item.Id == "source");
-        Assert.AreEqual(ProjectResourceType.Quest, candidate.Type);
-        Assert.AreEqual("Home", candidate.HomeStoryDisplayName);
-        Assert.IsFalse(dialogs.LastCandidates.Any(item => item.Id == "existing"));
-        Assert.Contains("source", project.Session.Stories.LoadStory("target").ReferencedResources.Quests);
-        Assert.AreEqual("home", new QuestRepository(project.Root).LoadQuest("source").HomeStoryId);
-        CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(sourcePath));
-        var card = shell.StoryWorkspace.Quests!.Items.Single(item => item.Id == "source");
-        Assert.IsTrue(card.IsReferenced);
-        StringAssert.Contains(card.MembershipTooltip, "来源故事");
-    }
-
-    [TestMethod]
-    public void ReferencedDialogueEditIsVisibleFromHomeStory()
-    {
-        using var project = CreateProject();
-        var source = project.Service.CreateDialogueInStory("home", "shared", "Shared");
-        project.Service.SaveDialogue(source);
-        var sourcePath = Path.Combine(project.Root, "dialogues", "shared.json");
-        var dialogs = new GateDialogs { PickResult = Descriptor(project, ProjectResourceType.Dialogue, "shared", "Shared") };
-        var shell = OpenStory(project, dialogs, StoryWorkspaceRoutes.Dialogues);
-        shell.ReferenceStoryResourceCommand.Execute(null);
-        shell.CurrentDialogue!.Notes = "edited through target";
-        shell.SaveCurrentResourceCommand.Execute(null);
-        var fileCount = Directory.GetFiles(Path.Combine(project.Root, "dialogues"), "*.json").Length;
-
-        shell.OpenStory(shell.ProjectHome.Stories.Single(item => item.Id == "home"));
-        shell.StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Dialogues);
-        shell.SelectedStoryResource = shell.StoryWorkspace.Dialogues!.Items.Single(item => item.Id == "shared");
-
-        Assert.AreEqual("edited through target", shell.CurrentDialogue!.Notes);
-        Assert.AreEqual("home", new DialogueRepository(project.Root).LoadDialogue("shared").HomeStoryId);
-        Assert.HasCount(fileCount, Directory.GetFiles(Path.Combine(project.Root, "dialogues"), "*.json"));
-        Assert.IsTrue(File.Exists(sourcePath));
-    }
-
-    [TestMethod]
-    public void GateGUiContractContainsTypedCopyAndHomeStoryPickerBindings()
-    {
-        var mainWindow = ReadRepoFile("studio/src/DarkGreyRPG.Studio/MainWindow.xaml");
-        var picker = ReadRepoFile("studio/src/DarkGreyRPG.Studio/Views/ResourcePickerDialog.xaml");
-        StringAssert.Contains(mainWindow, "DuplicateStoryResourceCommand");
-        StringAssert.Contains(mainWindow, "从现有复制 Dialogue");
-        StringAssert.Contains(mainWindow, "从现有复制 Quest");
-        StringAssert.Contains(picker, "{Binding Type");
-        StringAssert.Contains(picker, "HomeStoryDisplayName");
-        StringAssert.Contains(mainWindow, "MembershipTooltip");
-    }
-
-    private static TestProject CreateProject()
-    {
-        var root = Path.Combine(AppContext.BaseDirectory, ".gate-g-test-data", Guid.NewGuid().ToString("N"));
-        var service = new ProjectService();
-        var session = service.CreateProject(root, "gate_g", "Gate G");
-        session.Stories.CreateStory("home", "Home");
-        session.Stories.CreateStory("target", "Target");
-        return new(root, service, session);
-    }
-
-    private static ShellViewModel OpenStory(TestProject project, GateDialogs dialogs, string route)
-    {
-        var shell = new ShellViewModel(project.Service, new FixedFolderPicker(project.Root), resourceWorkspaceDialogs: dialogs);
-        shell.OpenProjectCommand.Execute(null);
-        shell.OpenStory(shell.ProjectHome.Stories.Single(item => item.Id == "target"));
-        shell.StoryWorkspace.SelectRoute(route);
-        return shell;
-    }
-
-    private static ResourceDescriptor Descriptor(TestProject project, ProjectResourceType type, string id, string name) =>
-        new(type, id, name, Path.Combine(project.Root, type == ProjectResourceType.Dialogue ? "dialogues" : "quests", id + ".json"));
-
-    private static string ReadRepoFile(string relativePath)
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var candidate = Path.Combine(directory.FullName, relativePath.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(candidate)) return File.ReadAllText(candidate);
-        }
-        throw new FileNotFoundException(relativePath);
-    }
-
-    private sealed record TestProject(string Root, ProjectService Service, ProjectSession Session) : IDisposable
-    {
-        public void Dispose()
-        {
-            if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true);
-        }
-    }
-
-    private sealed class FixedFolderPicker(string root) : IProjectFolderPicker
-    {
-        public string? PickProjectFolder() => root;
-    }
-
-    private sealed class GateDialogs : IResourceWorkspaceDialogs
-    {
-        public ResourceDescriptor? PickResult { get; set; }
-        public ResourceIdentityRequest? ImportResult { get; set; }
-        public UnsavedChangesChoice CloseChoice { get; set; } = UnsavedChangesChoice.Cancel;
-        public ResourcePickerMode? LastMode { get; private set; }
-        public IReadOnlyList<ResourceDescriptor> LastCandidates { get; private set; } = [];
-        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName) => null;
+        public ResourceDescriptor? CopyTarget { get; set; }
+        public ResourcePickerMode? LastCopyMode { get; private set; }
+        public CanonicalGraphResourceChoice? Reference { get; set; }
+        public IReadOnlyList<GraphResourceInfo> Candidates { get; private set; } = [];
+        public string? Rename { get; set; }
+        public string? RequestDisplayName(string label, string id, string current) => Rename;
+        public CanonicalGraphResourceIdentityRequest? RequestCreate(GraphResourceKind kind, string suggestedId) => null;
+        public CanonicalGraphResourceChoice? PickReference(GraphResourceKind kind, IReadOnlyList<GraphResourceInfo> candidates, string storyDisplayName) { Candidates = candidates; return Reference; }
+        public bool ConfirmRemoveReference(CanonicalGraphResourceChoice resource, string storyDisplayName) => true;
+        public bool ConfirmDeleteOwned(CanonicalGraphResourceChoice resource) => true;
+        public bool ConfirmAggregateInterfaceRemoval(CanonicalGraphResourceChoice resource, IReadOnlyList<GraphConnection> affectedConnections) => true;
+        public void ShowDeleteBlocked(CanonicalGraphResourceChoice resource, IReadOnlyList<string> storyIds) { }
+        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string name) => null;
         public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) => null;
-        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => ImportResult;
-        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName)
-        {
-            LastMode = mode;
-            LastCandidates = candidates;
-            return PickResult;
-        }
+        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
+        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string name) { LastCopyMode = mode; return CopyTarget; }
         public bool ConfirmDelete(ResourceDescriptor resource) => false;
         public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
         public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
         public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
         public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => CloseChoice;
+        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
     }
 }

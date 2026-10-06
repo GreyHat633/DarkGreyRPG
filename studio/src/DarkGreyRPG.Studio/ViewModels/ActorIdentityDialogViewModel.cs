@@ -20,7 +20,6 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
         Title = title;
         ActionText = actionText;
         Description = description;
-        NamespacePrefix = DgrResourceId.IsFullId(id) ? DgrResourceId.Namespace(id) + ":" : string.Empty;
         _id = id;
         _displayName = displayName;
         IsDisplayNameVisible = isDisplayNameVisible;
@@ -37,27 +36,13 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
 
     public RelayCommand ApplySuggestionCommand { get; }
 
-    public string NamespacePrefix { get; }
-    public bool HasLockedNamespace => NamespacePrefix.Length > 0;
-    public string NamespacePrefixDisplay => HasLockedNamespace ? NamespacePrefix[..^1] + " : " : string.Empty;
-    public string EditableId
-    {
-        get => HasLockedNamespace && Id.StartsWith(NamespacePrefix, StringComparison.Ordinal)
-            ? Id[NamespacePrefix.Length..] : Id;
-        set => Id = NamespacePrefix + (value ?? string.Empty);
-    }
+    public string EditableId { get => Id; set { } }
 
     public string Id
     {
         get => _id;
         set
         {
-            if (!SetProperty(ref _id, value ?? string.Empty))
-            {
-                return;
-            }
-
-            RaiseValidationProperties();
         }
     }
 
@@ -75,7 +60,7 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
         }
     }
 
-    public string NormalizedSuggestion => DgrResourceId.IsFullId(Id) || Id.Contains(':') ? Id : ActorValidator.NormalizeId(Id);
+    public string NormalizedSuggestion => Id;
 
     public bool HasSuggestion =>
         NormalizedSuggestion.Length > 0 &&
@@ -85,12 +70,9 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
     {
         get
         {
-            var messages = ActorValidator.ValidateId(Id, ActorIdPolicy.NewResource)
-                .Where(issue => issue.Severity == ValidationSeverity.Error)
-                .Select(issue => issue.Message)
-                .ToList();
-            if (HasLockedNamespace && (!Id.StartsWith(NamespacePrefix, StringComparison.Ordinal) || EditableId.Contains(':')))
-                messages.Add("这里只填写资源 ID；NameSpace 由所属故事决定。");
+            var messages = new List<string>();
+            if (!ResourceAddress.IsKey(Id) || ResourceAddress.FromKey(Id).Kind != ResourceKind.Actor)
+                messages.Add("资源内部地址无效。");
             if (IsDisplayNameVisible && string.IsNullOrWhiteSpace(DisplayName))
             {
                 messages.Add("资源名称不能为空。");
@@ -115,9 +97,6 @@ public sealed class ActorIdentityDialogViewModel : ObservableObject
             suggestedId,
             sourceDisplayName,
             isDisplayNameVisible: true);
-
-    public static ActorIdentityDialogViewModel ForRename(string currentId, string suggestedId) =>
-        new("重命名角色", "重命名", $"为角色“{currentId}”指定新的资源 ID。", suggestedId, currentId, isDisplayNameVisible: false);
 
     private void ApplySuggestion() => Id = NormalizedSuggestion;
 

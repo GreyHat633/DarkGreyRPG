@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.ViewModels.Graph;
 using DarkGreyRPG.Studio.Views;
@@ -20,13 +21,15 @@ public partial class CanonicalGraphEditorView
     private bool _gPressed, _gUsedForDrag;
     private string? _groupDropTarget;
     private Thumb? _activeGroupThumb;
+    private readonly HashSet<string> _hiddenGroupMembers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _groupCollapsedStates = new(StringComparer.Ordinal);
     public IReadOnlyCollection<string> SelectedGroups => _selectedGroups;
 
     private void CreateCommentFrame(Point point) => CombineSelected();
     private void Group_OnClick(object sender, RoutedEventArgs e) { CombineSelected(); e.Handled = true; }
     public bool CombineSelected()
     {
-        if (_host is null || IsReadOnly) return false;
+        if (_host is null || IsReadOnly || _host.Scope == Core.Graphs.Definitions.GraphScope.Project) return false;
         var result = _host.CombineSelection(_selectedNodes.Select(n => n.NodeId), _selectedGroups);
         _selectedGroups.IntersectWith(_host.Frames.Select(f => f.Id));
         DrawCommentFrames();
@@ -45,12 +48,27 @@ public partial class CanonicalGraphEditorView
     {
         if (_host is null) return;
         var frames = _host.FrameSnapshot();
+        var hiddenMembers = frames.Where(frame => frame.Collapsed).SelectMany(frame => frame.Members).ToHashSet(StringComparer.Ordinal);
+        if (hiddenMembers.Count != 0 || _hiddenGroupMembers.Count != 0)
+        {
+            foreach (var pair in _nodeVisuals)
+                pair.Value.Visibility = hiddenMembers.Contains(pair.Key.NodeId) ? Visibility.Hidden : Visibility.Visible;
+            foreach (var pair in _connectionVisuals)
+            {
+                var edge = pair.Key.Connection;
+                var visibility = hiddenMembers.Contains(edge.FromNodeId) || hiddenMembers.Contains(edge.ToNodeId) ? Visibility.Hidden : Visibility.Visible;
+                pair.Value.Line.Visibility = visibility; pair.Value.Hit.Visibility = visibility;
+            }
+            _hiddenGroupMembers.Clear();
+            _hiddenGroupMembers.UnionWith(hiddenMembers);
+        }
+        if (frames.Count == 0 && _frameVisuals.Count == 0) return;
         var alive = frames.Select(f => f.Id).ToHashSet(StringComparer.Ordinal);
         _selectedGroups.IntersectWith(alive);
         foreach (var dead in _frameVisuals.Where(v => v.Tag is not string id || !alive.Contains(id)).ToArray())
         { GraphCanvas.Children.Remove(dead); _frameVisuals.Remove(dead); }
         foreach (var dead in _groupBounds.Keys.Where(id => !alive.Contains(id)).ToArray())
-        { _groupBounds.Remove(dead); _groupLayoutInputs.Remove(dead); }
+        { _groupBounds.Remove(dead); _groupLayoutInputs.Remove(dead); _groupCollapsedStates.Remove(dead); }
         var nodeBounds = _host.Nodes.Where(n => _nodeVisuals.ContainsKey(n) && !string.IsNullOrWhiteSpace(n.NodeId))
             .GroupBy(n => n.NodeId, StringComparer.Ordinal).Where(group => group.Count() == 1)
             .Select(group => group.First()).ToDictionary(n => n.NodeId, n =>
@@ -100,7 +118,19 @@ public partial class CanonicalGraphEditorView
                 body = MakeGroupVisual(frame.Id);
                 GraphCanvas.Children.Add(body); _frameVisuals.Add(body);
             }
-            body.Width = bounds.Width; body.Height = bounds.Height;
+            body.Width = frame.Collapsed ? Math.Min(280, bounds.Width) : bounds.Width;
+            var nextHeight = frame.Collapsed ? 50 : bounds.Height;
+            var changedCollapse = _groupCollapsedStates.TryGetValue(frame.Id, out var wasCollapsed) && wasCollapsed != frame.Collapsed;
+            _groupCollapsedStates[frame.Id] = frame.Collapsed;
+            var displayedHeight = body.ActualHeight;
+            if (changedCollapse) body.BeginAnimation(HeightProperty, null);
+            body.Height = nextHeight;
+            if (changedCollapse && IsLoaded && SystemParameters.ClientAreaAnimation)
+                body.BeginAnimation(HeightProperty, new DoubleAnimation(displayedHeight, nextHeight, TimeSpan.FromMilliseconds(220))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+                    FillBehavior = FillBehavior.Stop
+                }, HandoffBehavior.SnapshotAndReplace);
             Canvas.SetLeft(body, bounds.X); Canvas.SetTop(body, bounds.Y);
             var depth = 0; var cursor = frame.Id;
             while (parents.TryGetValue(cursor, out var parent)) { depth++; cursor = parent; }
@@ -116,14 +146,14 @@ public partial class CanonicalGraphEditorView
             body.Background = brushes.Fill;
             body.BorderBrush = _selectedGroups.Contains(frame.Id) || _gPressed && _groupDropTarget == frame.Id ? Brushes.DodgerBlue : brushes.Border;
             var title = ((Grid)body.Child).Children.OfType<TextBlock>().Single();
-            title.Text = frame.Title;
+            title.Text = frame.Collapsed ? $"{frame.Title} · {frame.Members.Length} 个故事" : frame.Title;
             body.ToolTip = frame.Title;
         }
     }
     private Border MakeGroupVisual(string id)
     {
         var grid = new Grid();
-        var body = new Border { Tag = id, Child = grid, Background = new SolidColorBrush(Color.FromArgb(24, 130, 145, 155)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
+        var body = new Border { Tag = id, Child = grid, ClipToBounds = true, Background = new SolidColorBrush(Color.FromArgb(24, 130, 145, 155)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
         var drag = new Thumb { Background = Brushes.Transparent, Cursor = Cursors.SizeAll, IsEnabled = !IsReadOnly, Template = TransparentThumbTemplate() };
         grid.Children.Add(drag);
         var title = new TextBlock { FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 5, 8, 0), VerticalAlignment = VerticalAlignment.Top, TextTrimming = TextTrimming.CharacterEllipsis, IsHitTestVisible = false };
@@ -166,11 +196,34 @@ public partial class CanonicalGraphEditorView
             if (e.Canceled) _host.CancelLayoutMove(); else _host.CommitLayoutMove();
             positions = null; DrawCommentFrames();
         };
+        if (_host?.Scope == Core.Graphs.Definitions.GraphScope.Project)
+            System.Windows.Automation.AutomationProperties.SetAutomationId(body, "StoryGroupFrame_" + id);
         body.ContextMenu = FluentContextMenuFactory.Create(body);
         body.ContextMenuOpening += (_, _) =>
         {
             if (!_selectedGroups.Contains(id)) SelectGroup(id);
-            body.ContextMenu = CreateSelectionContextMenu(null, body);
+            if (_host?.Scope == Core.Graphs.Definitions.GraphScope.Project)
+            {
+                var menu = FluentContextMenuFactory.Create(body);
+                menu.Items.Add(FluentContextMenuFactory.CreateItem("重命名", () => {
+                    if (_host.Frames.FirstOrDefault(f => f.Id == id) is { } frame) EditFrameTitle(frame);
+                }));
+                var colors = FluentContextMenuFactory.CreateSubmenu("修改颜色");
+                foreach (var color in GraphCommentFrame.Palette) {
+                    var item = FluentContextMenuFactory.CreateItem(color, () => {
+                        if (_host.Frames.FirstOrDefault(f => f.Id == id) is { } frame) _host.UpdateFrame(frame with { Color = color });
+                    });
+                    item.Icon = new Border { Width = 14, Height = 14, Background = new SolidColorBrush(GroupColor(color)) };
+                    colors.Items.Add(item);
+                }
+                menu.Items.Add(colors);
+                var selectedFrame = _host.Frames.Single(frame => frame.Id == id);
+                menu.Items.Add(FluentContextMenuFactory.CreateItem(selectedFrame.Collapsed ? "展开" : "折叠", () =>
+                    _host.UpdateFrame(selectedFrame with { Collapsed = !selectedFrame.Collapsed })));
+                menu.Items.Add(FluentContextMenuFactory.CreateItem("删除故事组", () => DeleteSelectedGroups()));
+                body.ContextMenu = menu;
+            }
+            else body.ContextMenu = CreateSelectionContextMenu(null, body);
         };
         return body;
     }
@@ -209,7 +262,9 @@ public partial class CanonicalGraphEditorView
     private bool DeleteSelectedGroups()
     {
         if (_host is null || IsReadOnly || _selectedGroups.Count == 0) return false;
-        var result = _host.DeleteGroups(_selectedGroups, _selectedNodes.Select(n => n.NodeId), true);
+        var result = _host.Scope == Core.Graphs.Definitions.GraphScope.Project
+            ? DeleteStoryGroupsRequested?.Invoke(_selectedGroups.ToArray()) == true
+            : _host.DeleteGroups(_selectedGroups, _selectedNodes.Select(n => n.NodeId), true);
         if (result) ClearSelection();
         else _host.SetAuthoringIssue("graph.groups.delete", new("graph.groups.delete", "组合包含固定、只读或受保护对象，未删除任何内容。"));
         DrawCommentFrames();
@@ -252,7 +307,12 @@ public partial class CanonicalGraphEditorView
         var save = new Button { Content = "保存", Margin = new Thickness(12), IsDefault = true };
         var panel = new StackPanel(); panel.Children.Add(box); panel.Children.Add(save);
         var dialog = new Window { Title = "组合标题", Content = panel, Owner = Window.GetWindow(this), SizeToContent = SizeToContent.WidthAndHeight, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-        save.Click += (_, _) => { _host?.UpdateFrame(frame with { Title = box.Text }); dialog.DialogResult = true; };
+        save.Click += (_, _) => {
+            if (string.IsNullOrWhiteSpace(box.Text)) return;
+            if (_host?.Scope == Core.Graphs.Definitions.GraphScope.Project) RenameStoryGroupRequested?.Invoke(frame.Id, box.Text.Trim());
+            else _host?.UpdateFrame(frame with { Title = box.Text.Trim() });
+            dialog.DialogResult = true;
+        };
         dialog.ShowDialog();
     }
 }

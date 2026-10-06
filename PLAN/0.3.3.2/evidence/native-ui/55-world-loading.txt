@@ -1,0 +1,5 @@
+﻿WINDOW:  6,912,323,83
+WINDOW:  1567,986,320,53
+WINDOW: CiceroUIWndFrame 0,0,233,36
+ControlType.Pane id= name= enabled=False rect=11,7,190,26
+WINDOW: Minecraft 1.7.10 320,140,1298,846

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "resource_kind": "story",
+  "id": "story",
+  "display_name": "Story",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "display_name": "开始",
+        "ports": [
+          {
+            "port_id": "entry",
+            "display_name": "启动条件 1",
+            "order": 0,
+            "kind": "flow",
+            "direction": "output"
+          }
+        ],
+        "properties": {
+          "repeat_policy": "once",
+          "triggers": [
+            {
+              "port_id": "entry",
+              "display_name": "启动条件 1",
+              "trigger_type": "enter_region",
+              "trigger_properties": {
+                "dimension": 0,
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "radius": 3
+              },
+              "order": 0
+            }
+          ]
+        }
+      }
+    ],
+    "connections": []
+  }
+}

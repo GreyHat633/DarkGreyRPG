@@ -1,0 +1,16 @@
+time=1790178777010
+nano=902400195946400
+theme=AZURE
+textScale=1.5
+voiceVolume=1.0
+musicVolume=1.0
+autoWaitSeconds=8.0
+notifications.cards=0
+notifications.pending=0
+notifications.seen=0
+audio.active=0
+session.pins=0
+master=1.0
+model.autoStarted=0
+model.awaiting=false
+model.displayPage=0

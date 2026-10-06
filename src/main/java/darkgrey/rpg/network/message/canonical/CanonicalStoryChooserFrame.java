@@ -48,7 +48,8 @@ public final class CanonicalStoryChooserFrame implements IMessage {
             String displayName = readField(buffer, "display_name", MAX_DISPLAY_NAME_BYTES);
             String status = readField(buffer, "status", MAX_STATUS_BYTES);
             if (!storyIds.add(storyId)) throw invalid("duplicate story_id: " + storyId);
-            decodedOptions.add(new Option(storyId, displayName, status));
+            decodedOptions
+                .add(new Option(storyId, displayName, status, readField(buffer, "group_name", MAX_DISPLAY_NAME_BYTES)));
         }
         if (buffer.isReadable()) throw invalid("trailing unread bytes");
         validate(decodedToken, decodedOptions);
@@ -65,6 +66,7 @@ public final class CanonicalStoryChooserFrame implements IMessage {
             writeField(buffer, option.getStoryId(), "story_id", MAX_STORY_ID_BYTES);
             writeField(buffer, option.getDisplayName(), "display_name", MAX_DISPLAY_NAME_BYTES);
             writeField(buffer, option.getStatus(), "status", MAX_STATUS_BYTES);
+            writeField(buffer, option.getGroupName(), "group_name", MAX_DISPLAY_NAME_BYTES);
         }
     }
 
@@ -98,14 +100,21 @@ public final class CanonicalStoryChooserFrame implements IMessage {
         private final String storyId;
         private final String displayName;
         private final String status;
+        private final String groupName;
 
         public Option(String storyId, String displayName, String status) {
+            this(storyId, displayName, status, "独立故事");
+        }
+
+        public Option(String storyId, String displayName, String status, String groupName) {
+            requireField(groupName, "group_name", MAX_DISPLAY_NAME_BYTES);
             requireField(storyId, "story_id", MAX_STORY_ID_BYTES);
             requireField(displayName, "display_name", MAX_DISPLAY_NAME_BYTES);
             requireStatus(status);
             this.storyId = storyId;
             this.displayName = displayName;
             this.status = status;
+            this.groupName = groupName;
         }
 
         public String getStoryId() {
@@ -114,6 +123,10 @@ public final class CanonicalStoryChooserFrame implements IMessage {
 
         public String getDisplayName() {
             return displayName;
+        }
+
+        public String getGroupName() {
+            return groupName;
         }
 
         public String getStatus() {
@@ -165,6 +178,8 @@ public final class CanonicalStoryChooserFrame implements IMessage {
     }
 
     private static String requireField(String value, String name, int maxBytes) {
+        if ("story_id".equals(name) && !darkgrey.rpg.identity.StoryUid.isValid(value))
+            throw invalid("story_id requires the current Story UID format");
         if (value == null || value.trim()
             .isEmpty()) throw invalid(name + " must be non-blank");
         if (value.getBytes(StandardCharsets.UTF_8).length > maxBytes)

@@ -37,7 +37,7 @@ public final class ProjectDefinition {
         return displayName;
     }
 
-    /** Stable author/project origin used for cross-package namespace diagnostics. */
+    /** Stable author/project provenance, independent of resource ownership. */
     public String getProjectOriginCode() {
         return projectOriginCode;
     }

@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="04496412-a52b-44b5-b16d-85461e3c05e4" name="GreyHat@LAPTOP-F7PUVUPO 2026-09-24 10:19:48" runUser="LAPTOP-F7PUVUPO\GreyHat" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-24T10:19:48.7160182+08:00" queuing="2026-09-24T10:19:48.7160185+08:00" start="2026-09-24T10:19:47.2992634+08:00" finish="2026-09-24T10:19:48.7554512+08:00" />
+  <TestSettings name="default" id="9c9c91d3-dc0d-4cf8-9500-071d8ca56bf5">
+    <Deployment runDeploymentRoot="GreyHat_LAPTOP-F7PUVUPO_2026-09-24_10_19_48" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="d34b958f-9aa5-49b7-9817-e3ca525aa752" testId="1fa68f9b-2ba6-8d96-b04b-abf298c908fa" testName="InsertAfterMiddlePreservesDraftAndUndoIdentity" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.2330693" startTime="2026-09-24T10:19:48.2939660+08:00" endTime="2026-09-24T10:19:48.5463237+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d34b958f-9aa5-49b7-9817-e3ca525aa752" />
+    <UnitTestResult executionId="f0eac3bf-904e-432f-95d9-b71cb0d21a68" testId="18486ffb-9a0e-8c96-9019-e657551908c9" testName="ShortcutProtectsCountAndNeverProtectsOriginalIdentity" computerName="LAPTOP-F7PUVUPO" duration="00:00:00.2334783" startTime="2026-09-24T10:19:48.2939961+08:00" endTime="2026-09-24T10:19:48.5463237+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f0eac3bf-904e-432f-95d9-b71cb0d21a68" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ShortcutProtectsCountAndNeverProtectsOriginalIdentity" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="18486ffb-9a0e-8c96-9019-e657551908c9">
+      <Execution id="f0eac3bf-904e-432f-95d9-b71cb0d21a68" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ContinuousLine0334Tests" name="ShortcutProtectsCountAndNeverProtectsOriginalIdentity" />
+    </UnitTest>
+    <UnitTest name="InsertAfterMiddlePreservesDraftAndUndoIdentity" storage="e:\java\minecraftmod\darkgreyrpg\studio\src\darkgreyrpg.studio.wpf.tests\bin\debug\net10.0-windows\darkgreyrpg.studio.wpf.tests.dll" id="1fa68f9b-2ba6-8d96-b04b-abf298c908fa">
+      <Execution id="d34b958f-9aa5-49b7-9817-e3ca525aa752" />
+      <TestMethod codeBase="E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="DarkGreyRPG.Studio.Wpf.Tests.ContinuousLine0334Tests" name="InsertAfterMiddlePreservesDraftAndUndoIdentity" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1fa68f9b-2ba6-8d96-b04b-abf298c908fa" executionId="d34b958f-9aa5-49b7-9817-e3ca525aa752" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18486ffb-9a0e-8c96-9019-e657551908c9" executionId="f0eac3bf-904e-432f-95d9-b71cb0d21a68" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>已为 E:\Java\MinecraftMod\DarkGreyRPG\studio\src\DarkGreyRPG.Studio.Wpf.Tests\bin\Debug\net10.0-windows\DarkGreyRPG.Studio.Wpf.Tests.dll 启用测试并行化(Workers: 12，Scope: MethodLevel)&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

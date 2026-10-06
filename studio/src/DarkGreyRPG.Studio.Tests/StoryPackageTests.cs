@@ -17,28 +17,28 @@ public sealed class StoryPackageTests
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "intro", "Intro",
+        store.Stories.Create(new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Intro",
             new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
         var line = GraphNodeFactory.Create(GraphScope.Session, "line", "empty_line");
         var page = CanonicalSessionLineSchema.CreatePage("draft");
         page["text"] = JsonSerializer.SerializeToElement(text);
         line.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { page });
-        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "talk", "Talk",
+        store.Sessions.Create(new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~talk", "Talk",
             new GraphDocument([GraphNodeFactory.Create(GraphScope.Session, "start", "start"), line])));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("intro",
-            new CanonicalStoryMembershipSet { Sessions = ["talk"] }));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH",
+            new CanonicalStoryMembershipSet { Sessions = ["ST-2345-6789-ABCD-EFGH~session~talk"] }));
         var output = Path.Combine(project.Root, "output");
         Directory.CreateDirectory(Path.Combine(output, "resources"));
         var previous = Path.Combine(output, "resources", "previous.json");
         File.WriteAllText(previous, "previous package");
 
         var error = Assert.ThrowsExactly<StoryPackageException>(() =>
-            new StoryPackageExporter(project.Root).Build("intro", output));
+            new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output));
 
         StringAssert.Contains(error.Message, "empty_line");
         StringAssert.Contains(error.Message, "第 1 句");
         Assert.AreEqual("previous package", File.ReadAllText(previous));
-        Assert.IsTrue(File.Exists(store.Sessions.GetPath("talk")));
+        Assert.IsTrue(File.Exists(store.Sessions.GetPath("ST-2345-6789-ABCD-EFGH~session~talk")));
     }
 
     [TestMethod]
@@ -46,14 +46,14 @@ public sealed class StoryPackageTests
     {
         using var project = new TestProjectDirectory();
         var stories = new StoryRepository(project.Root);
-        var story = stories.CreateStory("legacy_flow", "Legacy Flow");
+        var story = stories.CreateStory("ST-2345-6789-ABCD-EFGH", "Legacy Flow");
         story.Nodes.Add(new StoryNodeResource
         {
             Id = "next_story",
             Type = "EnterStory",
             Properties = new Dictionary<string, JsonElement>
             {
-                ["target_story_id"] = JsonSerializer.SerializeToElement("other_story"),
+                ["target_story_id"] = JsonSerializer.SerializeToElement("ST-JKLM-NPQR-STUV-WXYZ"),
             },
         });
         stories.SaveStory(story);
@@ -64,12 +64,9 @@ public sealed class StoryPackageTests
         var existingBytes = new byte[] { 0, 17, 34, 255 };
         File.WriteAllBytes(existingPath, existingBytes);
 
-        var exception = Assert.ThrowsExactly<StoryPackageException>(
-            () => new StoryPackageExporter(project.Root).Build("legacy_flow", output));
+        var exception = Assert.ThrowsExactly<GraphResourceRepositoryException>(
+            () => new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output));
 
-        StringAssert.Contains(exception.Message, "Selected Story 'legacy_flow'");
-        StringAssert.Contains(exception.Message, "legacy EnterStory");
-        Assert.IsTrue(exception.Message.Contains("project-level cross-Story migration is required", StringComparison.OrdinalIgnoreCase));
         CollectionAssert.AreEqual(existingBytes, File.ReadAllBytes(existingPath));
         CollectionAssert.AreEqual(new[] { "sentinel.bin" },
             Directory.EnumerateFiles(output, "*", SearchOption.AllDirectories)
@@ -81,12 +78,11 @@ public sealed class StoryPackageTests
     public void BuildRejectsCanonicalEnterStoryBeforeChangingOutput()
     {
         using var project = new TestProjectDirectory();
-        new StoryRepository(project.Root).CreateStory("canonical_flow", "Canonical Flow");
 
         var store = new CanonicalProjectGraphStore(project.Root);
-        Directory.CreateDirectory(Path.GetDirectoryName(store.Stories.GetPath("canonical_flow"))!);
-        File.WriteAllText(store.Stories.GetPath("canonical_flow"), """
-            {"schema_version":1,"resource_kind":"story","id":"canonical_flow","display_name":"Old",
+        Directory.CreateDirectory(Path.GetDirectoryName(store.Stories.GetPath("ST-2345-6789-ABCD-EFGH"))!);
+        File.WriteAllText(Path.Combine(store.StoriesDirectory, "ST-2345-6789-ABCD-EFGH.json"), """
+            {"schema_version":2,"identity_format":"story-uid-v1","resource_kind":"story","id":"ST-2345-6789-ABCD-EFGH","display_name":"Old",
              "graph":{"nodes":[{"id":"old","type":"enter_story","display_name":"Old","ports":[],"properties":{}}],"connections":[]}}
             """);
 
@@ -97,7 +93,7 @@ public sealed class StoryPackageTests
         File.WriteAllBytes(existingPath, existingBytes);
 
         var exception = Assert.ThrowsExactly<GraphResourceRepositoryException>(
-            () => new StoryPackageExporter(project.Root).Build("canonical_flow", output));
+            () => new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output));
         Assert.IsInstanceOfType<GraphResourceEnvelopeException>(exception.InnerException);
         Assert.AreEqual("graph.resource.story.standalone_node.removed", ((GraphResourceEnvelopeException)exception.InnerException!).Code);
         CollectionAssert.AreEqual(existingBytes, File.ReadAllBytes(existingPath));
@@ -111,15 +107,14 @@ public sealed class StoryPackageTests
     public void BuildWritesManifestAndDeterministicCompleteRoots()
     {
         using var project = new TestProjectDirectory();
-        var stories = new StoryRepository(project.Root);
-        stories.CreateStory("intro", "Intro");
+        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(project.Root)).Create("ST-2345-6789-ABCD-EFGH", "Intro");
         var first = Path.Combine(project.Root, "out-one");
         var second = Path.Combine(project.Root, "out-two");
 
-        var result = new StoryPackageExporter(project.Root).Build("intro", first, "2.0.0");
-        new StoryPackageExporter(project.Root).Build("intro", second, "2.0.0");
+        var result = new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", first, "2.0.0");
+        new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", second, "2.0.0");
 
-        Assert.AreEqual("intro", result.Manifest.StoryId);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", result.Manifest.StoryId);
         Assert.AreEqual("2.0.0", result.Manifest.PackageVersion);
         Assert.IsTrue(File.Exists(Path.Combine(first, "manifest.json")));
         foreach (var directory in new[] { "actors", "dialogues", "quests", "stories" })
@@ -139,41 +134,40 @@ public sealed class StoryPackageTests
             CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(first, relative)), File.ReadAllBytes(Path.Combine(second, relative)));
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(first, "manifest.json")));
-        Assert.AreEqual("intro", manifest.RootElement.GetProperty("story_id").GetString());
-        Assert.AreEqual("stories/intro.json", manifest.RootElement.GetProperty("required_resources").GetProperty("story").GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", manifest.RootElement.GetProperty("story_id").GetString());
+        Assert.AreEqual("resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json", manifest.RootElement.GetProperty("required_resources").GetProperty("story").GetString());
     }
 
     [TestMethod]
     public void BuildCanonicalStoryWithEmptySessionsAndTasksCreatesAllCanonicalRoots()
     {
         using var project = new TestProjectDirectory();
-        new StoryRepository(project.Root).CreateStory("canonical_empty", "Canonical Empty");
         var store = new CanonicalProjectGraphStore(project.Root);
         store.Stories.Create(new GraphResourceEnvelope(
             GraphResourceKind.Story,
-            "canonical_empty",
+            "ST-2345-6789-ABCD-EFGH",
             "Canonical Empty",
-            new GraphDocument([new GraphNode("start", "start", "Start")])));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("canonical_empty"));
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
         new CanonicalGraphLayoutStore(project.Root).Save(
             GraphResourceKind.Story,
-            "canonical_empty",
+            "ST-2345-6789-ABCD-EFGH",
             new Dictionary<string, ProjectGraphNodeLayout>(StringComparer.Ordinal)
             {
                 ["start"] = new() { X = 123, Y = 456 },
             });
 
         var output = Path.Combine(project.Root, "canonical-package");
-        var result = new StoryPackageExporter(project.Root).Build("canonical_empty", output);
+        var result = new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output);
 
         foreach (var directory in new[] { "stories", "memberships", "sessions", "tasks" })
             Assert.IsTrue(Directory.Exists(Path.Combine(output, "resources", "canonical", directory)));
-        Assert.IsTrue(File.Exists(Path.Combine(output, "resources", "canonical", "stories", "canonical_empty.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(output, "resources", "canonical", "memberships", "canonical_empty.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(output, "resources", "canonical", "stories", "ST-2345-6789-ABCD-EFGH.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(output, "resources", "canonical", "memberships", "ST-2345-6789-ABCD-EFGH.json")));
         Assert.IsFalse(File.Exists(Path.Combine(output, "resources", "editor", "studio_layout.json")));
         Assert.IsFalse(Directory.GetFiles(output, "*layout*", SearchOption.AllDirectories).Any());
-        CollectionAssert.AreEqual(new[] { "resources/canonical/stories/canonical_empty.json" }, result.Manifest.RequiredResources.CanonicalStories);
-        CollectionAssert.AreEqual(new[] { "resources/canonical/memberships/canonical_empty.json" }, result.Manifest.RequiredResources.CanonicalMemberships);
+        CollectionAssert.AreEqual(new[] { "resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json" }, result.Manifest.RequiredResources.CanonicalStories);
+        CollectionAssert.AreEqual(new[] { "resources/canonical/memberships/ST-2345-6789-ABCD-EFGH.json" }, result.Manifest.RequiredResources.CanonicalMemberships);
         CollectionAssert.AreEqual(Array.Empty<string>(), result.Manifest.RequiredResources.Sessions);
         CollectionAssert.AreEqual(Array.Empty<string>(), result.Manifest.RequiredResources.Tasks);
 
@@ -184,7 +178,7 @@ public sealed class StoryPackageTests
         Assert.AreEqual(0, manifest.RootElement.GetProperty("required_resources").GetProperty("tasks").GetArrayLength());
 
         File.WriteAllText(Path.Combine(output, "resources", "canonical", "sessions", "stale.json"), "stale");
-        new StoryPackageExporter(project.Root).Build("canonical_empty", output);
+        new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output);
         Assert.IsFalse(File.Exists(Path.Combine(output, "resources", "canonical", "sessions", "stale.json")));
     }
 
@@ -195,63 +189,60 @@ public sealed class StoryPackageTests
         var store = new CanonicalProjectGraphStore(project.Root);
         store.Stories.Create(new GraphResourceEnvelope(
             GraphResourceKind.Story,
-            "canonical_only",
+            "ST-2345-6789-ABCD-EFGH",
             "Canonical Only",
             new GraphDocument([GraphNodeFactory.CreateStoryStart("start", triggerPortId: "entry")])));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("canonical_only"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
 
         var output = Path.Combine(project.Root, "canonical-only-package");
-        var result = new StoryPackageExporter(project.Root).Build("canonical_only", output, "0.3.2.0");
+        var result = new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output, "0.3.2.0");
 
         Assert.AreEqual(
-            "resources/canonical/stories/canonical_only.json",
+            "resources/canonical/stories/ST-2345-6789-ABCD-EFGH.json",
             result.Manifest.RequiredResources.Story);
-        Assert.IsFalse(File.Exists(Path.Combine(output, "stories", "canonical_only.json")));
+        Assert.IsFalse(File.Exists(Path.Combine(output, "stories", "ST-2345-6789-ABCD-EFGH.json")));
         Assert.IsTrue(File.Exists(Path.Combine(
-            output, "resources", "canonical", "stories", "canonical_only.json")));
+            output, "resources", "canonical", "stories", "ST-2345-6789-ABCD-EFGH.json")));
     }
 
     [TestMethod]
     public void BuildDoesNotCreateCanonicalRootsForUnrelatedCanonicalData()
     {
         using var project = new TestProjectDirectory();
-        new StoryRepository(project.Root).CreateStory("legacy_only", "Legacy Only");
+        new StoryRepository(project.Root).CreateStory("ST-2345-6789-ABCD-EFGH", "Legacy Only");
         var store = new CanonicalProjectGraphStore(project.Root);
         store.Stories.Create(new GraphResourceEnvelope(
             GraphResourceKind.Story,
-            "other_story",
+            "ST-JKLM-NPQR-STUV-WXYZ",
             "Other Story",
-            new GraphDocument([new GraphNode("start", "start", "Start")])));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("other_story"));
+            new GraphDocument([GraphNodeFactory.CreateStoryStart("start")])));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-JKLM-NPQR-STUV-WXYZ"));
 
         var output = Path.Combine(project.Root, "legacy-package");
-        new StoryPackageExporter(project.Root).Build("legacy_only", output);
-
-        Assert.IsFalse(Directory.Exists(Path.Combine(output, "resources")));
+        Assert.ThrowsExactly<GraphResourceRepositoryException>(() =>
+            new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output));
+        Assert.IsFalse(Directory.Exists(output));
     }
 
     [TestMethod]
     public void BuildCarriesOnlyRootStoryOwnedPublicLogicEdges()
     {
         using var project = new TestProjectDirectory();
-        var legacy = new StoryRepository(project.Root);
-        legacy.CreateStory("source", "Source");
-        legacy.CreateStory("target", "Target");
         var store = new CanonicalProjectGraphStore(project.Root);
-        store.Stories.Create(CanonicalBoundaryStory("source", "logic_output", "output", "signal"));
-        store.Stories.Create(CanonicalBoundaryStory("target", "logic_input", "input", "gate"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("source"));
-        store.Memberships.Create(new CanonicalStoryMembershipManifest("target"));
-        store.StoryLogicGraph.Save([new("source", "signal", "target", "gate")]);
+        store.Stories.Create(CanonicalBoundaryStory("ST-2345-6789-ABCD-EFGH", "logic_output", "output", "signal"));
+        store.Stories.Create(CanonicalBoundaryStory("ST-JKLM-NPQR-STUV-WXYZ", "logic_input", "input", "gate"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-2345-6789-ABCD-EFGH"));
+        store.Memberships.Create(new CanonicalStoryMembershipManifest("ST-JKLM-NPQR-STUV-WXYZ"));
+        store.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "signal", "ST-JKLM-NPQR-STUV-WXYZ", "gate")]);
 
-        var output = Path.Combine(project.Root, "source-package");
-        var result = new StoryPackageExporter(project.Root).Build("source", output);
+        var output = Path.Combine(project.Root, "ST-2345-6789-ABCD-EFGH-package");
+        var result = new StoryPackageExporter(project.Root).Build("ST-2345-6789-ABCD-EFGH", output);
 
         Assert.AreEqual("resources/story_logic_graph.json", result.Manifest.RequiredResources.StoryLogicGraph);
         var packaged = JsonDocument.Parse(File.ReadAllText(Path.Combine(output, "resources", "story_logic_graph.json")));
         var edge = packaged.RootElement.GetProperty("connections")[0];
-        Assert.AreEqual("source", edge.GetProperty("source_story_id").GetString());
-        Assert.AreEqual("target", edge.GetProperty("target_story_id").GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", edge.GetProperty("source_story_id").GetString());
+        Assert.AreEqual("ST-JKLM-NPQR-STUV-WXYZ", edge.GetProperty("target_story_id").GetString());
         using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(output, "manifest.json")));
         Assert.AreEqual("resources/story_logic_graph.json",
             manifest.RootElement.GetProperty("required_resources").GetProperty("story_logic_graph").GetString());
@@ -269,6 +260,6 @@ public sealed class StoryPackageTests
             nodeId);
         node.Properties["port_id"] = JsonSerializer.SerializeToElement(portId);
         node.Properties["display_name"] = JsonSerializer.SerializeToElement(portId);
-        return new(GraphResourceKind.Story, storyId, storyId, new GraphDocument([node]));
+        return new(GraphResourceKind.Story, storyId, storyId, new GraphDocument([GraphNodeFactory.CreateStoryStart("start"), node]));
     }
 }

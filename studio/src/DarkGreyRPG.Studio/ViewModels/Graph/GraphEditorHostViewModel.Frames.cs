@@ -104,7 +104,9 @@ public sealed partial class GraphEditorHostViewModel
         var ids = GraphGroupOperations.DescendantNodes(before, removeGroups).Concat(selectedNodes).Distinct(StringComparer.Ordinal).ToArray();
         if (ids.Any(id => IsReadOnlySource(id) || Nodes.Any(node => node.NodeId == id
             && DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphNodeDefinitionRegistry.TryGet(Scope, node.Type, out var definition)
-            && (definition.NonDeletable || definition.Required)))) return false;
+            && !DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphScopePolicy.CanDeleteNode(Scope, node.Type, Graph)))) return false;
+        if (Scope == DarkGreyRPG.Studio.Core.Graphs.Definitions.GraphScope.StoryFlow
+            && Graph.Nodes.Where(node => node.Type == "start").All(node => ids.Contains(node.Id))) return false;
         var graph = DarkGreyRPG.Studio.Core.Graphs.GraphDocument.FromJson(Graph.ToJson());
         var session = new DarkGreyRPG.Studio.Core.Graphs.Editing.GraphEditSession(graph, Scope);
         if (ids.Length > 0 && !session.RemoveNodes(ids, confirmed)) return false;

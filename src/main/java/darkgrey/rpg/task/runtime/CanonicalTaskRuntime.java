@@ -46,7 +46,35 @@ public final class CanonicalTaskRuntime {
     private final Map<String, CanonicalGraphNode> objectives = new LinkedHashMap<String, CanonicalGraphNode>();
     private final Map<String, CanonicalGraphPort> ports = new HashMap<String, CanonicalGraphPort>();
     private final Map<String, CanonicalGraphConnection> incoming = new HashMap<String, CanonicalGraphConnection>();
-    private final List<CanonicalGraphPort> settlementSlots = new ArrayList<CanonicalGraphPort>();
+    private final List<SettlementBoundary> settlementBoundaries = new ArrayList<SettlementBoundary>();
+
+    private static final class SettlementBoundary {
+
+        final CanonicalGraphNode node;
+        final String id;
+        final String name;
+        final int order;
+
+        SettlementBoundary(CanonicalGraphNode node, String id, String name, int order) {
+            this.node = node;
+            this.id = id;
+            this.name = name;
+            this.order = order;
+        }
+
+        String getId() {
+            return id;
+        }
+
+        String getDisplayName() {
+            return name;
+        }
+
+        int getOrder() {
+            return order;
+        }
+    }
+
     private final Map<String, Integer> progress = new LinkedHashMap<String, Integer>();
     private final Map<String, CanonicalTaskObjectiveStatus> objectiveStatuses = new LinkedHashMap<String, CanonicalTaskObjectiveStatus>();
     private final Map<String, Boolean> logicValues = new LinkedHashMap<String, Boolean>();
@@ -112,6 +140,7 @@ public final class CanonicalTaskRuntime {
      * lifecycle is Active from {@link #start(CanonicalGraphResource)}.
      */
     public boolean setLogicInput(String portId, boolean value) {
+        if (!isActive()) return false;
         if (blank(portId)) throw failure("task.logic_input.id", "Logic Input port ID is required.");
         if (!externalLogicInputs.containsKey(portId))
             throw failure("task.logic_input.unknown", "Unknown Task Logic Input port '" + portId + "'.");
@@ -291,8 +320,8 @@ public final class CanonicalTaskRuntime {
     }
 
     private void settleIfReady() {
-        for (CanonicalGraphPort slot : settlementSlots) {
-            if (logicInputValue(node("settle"), slot.getId(), new HashMap<String, Boolean>())) {
+        for (SettlementBoundary slot : settlementBoundaries) {
+            if (logicInputValue(slot.node, "logic_in", new HashMap<String, Boolean>())) {
                 resultPortId = slot.getId();
                 Map<String, Boolean> finalPublic = detached(publicLogicOutputs);
                 status = CanonicalTaskStatus.SETTLED;
@@ -353,7 +382,6 @@ public final class CanonicalTaskRuntime {
             throw failure("task.graph.required", "Task graph is required.");
         Map<String, CanonicalGraphNode> result = new LinkedHashMap<String, CanonicalGraphNode>();
         int activateCount = 0;
-        int settleCount = 0;
         Set<String> publicIds = new HashSet<String>();
         Set<String> publicNames = new HashSet<String>();
         for (CanonicalGraphNode node : graph.getNodes()) {
@@ -362,7 +390,6 @@ public final class CanonicalTaskRuntime {
             if (result.put(node.getId(), node) != null)
                 throw failure("task.node.id.duplicate", "Duplicate Task node ID.");
             if (ACTIVATE.equals(node.getType())) activateCount++;
-            if (SETTLE.equals(node.getType())) settleCount++;
             validateNodeShape(node);
             for (CanonicalGraphPort port : node.getPorts()) {
                 if (port == null || blank(port.getId())) throw failure("task.port.invalid", "Task port is incomplete.");
@@ -394,8 +421,7 @@ public final class CanonicalTaskRuntime {
         }
         if (activateCount > 1)
             throw failure("task.node.activate.unique", "Legacy Task has more than one activate node.");
-        if (settleCount != 1) throw failure("task.node.settle.unique", "Task requires exactly one settle node.");
-        for (CanonicalGraphPort slot : settlementSlots) {
+        for (SettlementBoundary slot : settlementBoundaries) {
             if ("flow_in".equals(slot.getId()) || "logic_in".equals(slot.getId()))
                 throw failure("task.public_port.id.reserved", "Reserved public port ID.");
             for (CanonicalGraphNode node : result.values()) if (LOGIC_OUTPUT.equals(node.getType()) && slot.getId()
@@ -436,7 +462,7 @@ public final class CanonicalTaskRuntime {
             requireDirection(node, "logic_in", true);
             requireDirection(node, "logic_out", false);
         } else if (LOGIC_OUTPUT.equals(type)) {
-            requireProperties(node, "port_id", "display_name");
+            requireProperties(node, "port_id", "display_name", "display_order");
             requirePorts(node, 1, 0, "logic_in");
             requireDirection(node, "logic_in", true);
             requiredString(node, "port_id", "task.logic_output");
@@ -454,24 +480,29 @@ public final class CanonicalTaskRuntime {
             requireDirection(node, "logic_in", true);
             CanonicalTaskRewardPackage.read(node);
         } else if (SETTLE.equals(type)) {
-            requireProperties(node);
-            if (node.getPorts()
-                .isEmpty()) throw failure("task.settle.slots.empty", "Settle requires result slots.");
-            for (CanonicalGraphPort port : node.getPorts()) {
-                if (!port.isInput()) throw failure("task.settle.port", "Settle slots must be Logic inputs.");
-                if (port.getOrder() < 0)
-                    throw failure("task.settle.order", "Settlement slot order cannot be negative.");
-                for (CanonicalGraphPort previous : settlementSlots) if (previous.getOrder() == port.getOrder())
-                    throw failure("task.settle.order", "Settlement slot order must be unique.");
-                if (blank(port.getDisplayName()))
-                    throw failure("task.settle.display_name", "Settlement display name required.");
-                settlementSlots.add(port);
-            }
-            Collections.sort(settlementSlots, new Comparator<CanonicalGraphPort>() {
+            requireProperties(node, "port_id", "display_name", "display_order");
+            requirePorts(node, 1, 0, "logic_in");
+            requireDirection(node, "logic_in", true);
+            JsonElement orderValue = node.getProperties()
+                .get("display_order");
+            if (orderValue == null || !orderValue.isJsonPrimitive()
+                || !orderValue.getAsJsonPrimitive()
+                    .isNumber()
+                || orderValue.getAsDouble() != orderValue.getAsInt()
+                || orderValue.getAsInt() < 0)
+                throw failure("task.settle.order", "Settlement requires an explicit nonnegative order.");
+            String id = requiredString(node, "port_id", "task.settle");
+            int order = orderValue.getAsInt();
+            for (SettlementBoundary previous : settlementBoundaries)
+                if (previous.order == order || previous.id.equals(id))
+                    throw failure("task.settle.order", "Settlement order and public ID must be unique.");
+            settlementBoundaries
+                .add(new SettlementBoundary(node, id, requiredString(node, "display_name", "task.settle"), order));
+            Collections.sort(settlementBoundaries, new Comparator<SettlementBoundary>() {
 
                 @Override
-                public int compare(CanonicalGraphPort left, CanonicalGraphPort right) {
-                    return left.getOrder() < right.getOrder() ? -1 : left.getOrder() == right.getOrder() ? 0 : 1;
+                public int compare(SettlementBoundary left, SettlementBoundary right) {
+                    return Integer.compare(left.order, right.order);
                 }
             });
         }
@@ -484,7 +515,7 @@ public final class CanonicalTaskRuntime {
             && !CanonicalTaskEvent.SUBMIT_ITEM.equals(type)
             && !CanonicalTaskEvent.REACH_REGION.equals(type))
             throw failure("task.objective.type", "Unsupported objective type.");
-        requiredString(node, "description", "task.objective");
+        objectiveDescription(node);
         int required = required(node);
         if (required <= 0) throw failure("task.objective.required", "Objective required must be positive.");
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) requireObjectiveTarget(node, "entity");
@@ -721,8 +752,8 @@ public final class CanonicalTaskRuntime {
                 if (objectiveStatuses.get(id) == CanonicalTaskObjectiveStatus.INACTIVE && enabled)
                     throw failure("task.snapshot.active_objective", "Enabled objective is marked inactive.");
             }
-            for (CanonicalGraphPort slot : settlementSlots) if (!rewardStates.containsValue(Boolean.FALSE)
-                && logicInputValue(node(SETTLE), slot.getId(), new HashMap<String, Boolean>()))
+            for (SettlementBoundary slot : settlementBoundaries) if (!rewardStates.containsValue(Boolean.FALSE)
+                && logicInputValue(slot.node, "logic_in", new HashMap<String, Boolean>()))
                 throw failure("task.snapshot.result", "Active snapshot already has a settlement result.");
             if (!publicLogicOutputs.equals(snapshot.getPublicLogicOutputs()))
                 throw failure("task.snapshot.public_logic", "Snapshot public Logic differs.");
@@ -773,14 +804,14 @@ public final class CanonicalTaskRuntime {
     }
 
     private String firstTrueSettlement() {
-        for (CanonicalGraphPort slot : settlementSlots)
-            if (logicInputValue(node(SETTLE), slot.getId(), new HashMap<String, Boolean>())) return slot.getId();
+        for (SettlementBoundary slot : settlementBoundaries)
+            if (logicInputValue(slot.node, "logic_in", new HashMap<String, Boolean>())) return slot.getId();
         return null;
     }
 
     private Set<String> settlementIds() {
         Set<String> ids = new HashSet<String>();
-        for (CanonicalGraphPort slot : settlementSlots) ids.add(slot.getId());
+        for (SettlementBoundary slot : settlementBoundaries) ids.add(slot.getId());
         return ids;
     }
 
@@ -789,8 +820,7 @@ public final class CanonicalTaskRuntime {
         String type = requiredString(node, "objective_type", "task.objective");
         if (!type.equals(event.getType())) return false;
         if (CanonicalTaskEvent.KILL_ENTITY.equals(type)) return value(node, "entity").equals(event.get("entity"));
-        if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type))
-            return value(node, "actor_id").equals(event.get("actor_id"));
+        if (CanonicalTaskEvent.INTERACT_ACTOR.equals(type)) return event.targetsActor(value(node, "actor_id"));
         if (CanonicalTaskEvent.REACH_REGION.equals(type)) {
             try {
                 long dimension = Long.parseLong(event.get("dimension_id"));
@@ -864,6 +894,21 @@ public final class CanonicalTaskRuntime {
         if (value.getAsDouble() != result)
             throw failure("task.objective.required", "Objective required must be an integer.");
         return result;
+    }
+
+    /** Read optional author text with a display-only fallback, without changing the definition. */
+    public static String objectiveDescription(CanonicalGraphNode node) {
+        JsonElement value = node.getProperties()
+            .get("description");
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isString())
+            throw failure(
+                "task.objective.description.invalid",
+                "Objective description must be text; empty text is allowed.");
+        String description = value.getAsString();
+        if (!blank(description)) return description;
+        return blank(node.getDisplayName()) ? "目标" : node.getDisplayName();
     }
 
     private static String requiredString(CanonicalGraphNode node, String key, String prefix) {
@@ -995,6 +1040,7 @@ public final class CanonicalTaskRuntime {
     }
 
     private static String fingerprint(CanonicalGraphResource resource) {
+        resource = darkgrey.rpg.graph.canonical.CanonicalGraphExecutionOrder.normalize(resource);
         StringBuilder text = new StringBuilder();
         text.append(resource.getSchemaVersion())
             .append('|')

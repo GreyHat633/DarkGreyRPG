@@ -13,6 +13,6 @@
     <ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="Data" Value="M 0,6 L 6,0 L 12,6"/></Trigger></ControlTemplate.Triggers>
    </ControlTemplate></ToggleButton.Template>
   </ToggleButton>
-  <graph:AnimatedLinePageBody IsExpanded="{Binding IsExpanded, ElementName=Root}"><ContentPresenter Content="{Binding Body, ElementName=Root}" Margin="0,6,0,0"/></graph:AnimatedLinePageBody>
+  <graph:AnimatedLinePageBody x:Name="ExpansionBody" IsExpanded="{Binding IsExpanded, ElementName=Root}"><ContentPresenter Content="{Binding Body, ElementName=Root}" Margin="0,6,0,0"/></graph:AnimatedLinePageBody>
  </StackPanel>
 </UserControl>

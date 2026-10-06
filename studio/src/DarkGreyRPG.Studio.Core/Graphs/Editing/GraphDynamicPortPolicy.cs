@@ -56,7 +56,6 @@ public static class GraphDynamicPortPolicy
         // toggled atomically with its persisted authoring flag and is not a
         // generic user-created dynamic slot.
         new(GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
-        new(GraphScope.Task, "settle", GraphPortDirection.Input, GraphInterfaceKind.Logic, 1),
     ];
 
     public static IReadOnlyList<GraphDynamicPortRole> Roles => _roles;

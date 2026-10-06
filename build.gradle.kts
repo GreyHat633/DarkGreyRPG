@@ -9,19 +9,6 @@ tasks.register<JavaExec>("construction0335Probe") {
     mainClass.set("darkgrey.rpg.media.Construction0335Probe")
 }
 
-tasks.register<JavaExec>("namespacedResourceLoadingProbe") {
-    dependsOn(tasks.testClasses)
-    classpath = sourceSets.test.get().runtimeClasspath
-    mainClass.set("darkgrey.rpg.identity.NamespacedResourceLoadingProbe")
-    args(layout.projectDirectory.dir(".tooling/0.3.2.0_B4/resource-loader").asFile.absolutePath)
-}
-
-tasks.register<JavaExec>("dgrResourceIdProbe") {
-    dependsOn(tasks.testClasses)
-    classpath = sourceSets.test.get().runtimeClasspath
-    mainClass.set("darkgrey.rpg.identity.DgrResourceIdProbe")
-}
-
 tasks.register<JavaExec>("b4ExternalPackageReferencesProbe") {
     group = "verification"
     dependsOn(tasks.testClasses)
@@ -74,6 +61,38 @@ tasks.named<Jar>("jar") {
     from("libs/jlayer-license") { into("META-INF/licenses/jlayer") }
 }
 
+tasks.register<JavaExec>("storyIdentity0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.identity.StoryIdentityContractProbe")
+    args(layout.projectDirectory.file("schema/identity-0336-vectors.jsonl").asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("storyFingerprint0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.StoryMemberFingerprintProbe")
+    args(layout.projectDirectory.file("schema/story-fingerprint-0336-vectors.jsonl").asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("currentResourceIdentity0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.identity.CurrentResourceIdentityProbe")
+    args(providers.gradleProperty("identityFixture").getOrElse(layout.projectDirectory.dir(".tooling/0336-current-fixture/Project").asFile.absolutePath))
+}
+
+tasks.register<JavaExec>("storyGroup0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.StoryGroupPackageProbe")
+    args(providers.gradleProperty("groupFixtures").get().split(";"))
+}
+
 tasks.register<JavaExec>("repeat0334Probe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
@@ -84,6 +103,12 @@ tasks.register<JavaExec>("inspection0334Probe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.diagnostics.Inspection0334Probe")
+}
+
+tasks.register<JavaExec>("currentDynamicContentProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.identity.CurrentDynamicContentProbe")
 }
 
 tasks.register<JavaExec>("inspectionBoundary0334Probe") {
@@ -196,7 +221,7 @@ tasks.register<JavaExec>("studio21RegressionProbe") {
 
 tasks.register<JavaExec>("studio21ActorBindingProbe") {
     group = "verification"
-    description = "Verifies CustomNPC+ Actor binding uses persistent stored data and survives wrapper recreation."
+    description = "Verifies current external CustomNPC+ identity and rejects legacy stored-data fallback."
     dependsOn("testClasses")
     classpath = files(
         layout.buildDirectory.dir("classes/java/test"),
@@ -773,6 +798,16 @@ tasks.register<JavaExec>("playerPreferences0332Probe") {
     mainClass.set("darkgrey.rpg.client.gui.PlayerPreferences0332Probe")
 }
 
+tasks.register<JavaExec>("storyPackageDiagnosticsProbe") {
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.StoryPackageDiagnosticsProbe")
+    if (providers.gradleProperty("diagnosticPackagesPath").isPresent) {
+        args(providers.gradleProperty("diagnosticPackagesPath").get())
+    }
+}
+
 tasks.register<JavaExec>("dialogue0333Probe") {
     group = "verification"
     dependsOn(tasks.named("testClasses"))
@@ -946,4 +981,47 @@ tasks.register<JavaExec>("mediaTransferWindowProbe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.media.MediaTransferWindowProbe")
+}
+
+ tasks.register<JavaExec>("currentNominatorWireProbe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.identity.CurrentNominatorWireProbe")
+}
+
+tasks.register<JavaExec>("publicOutputPriority0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.task.runtime.PublicOutputPriority0336Probe")
+    if (providers.gradleProperty("referenceProbePackagesPath").isPresent) {
+        args(providers.gradleProperty("referenceProbePackagesPath").get())
+        if (providers.gradleProperty("referenceProbeExpectedStoryCount").isPresent) {
+            args(providers.gradleProperty("referenceProbeExpectedStoryCount").get())
+        }
+    }
+}
+
+
+tasks.register<JavaExec>("runtimeInteractionUi0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.server.RuntimeInteractionUi0336Probe")
+    args(providers.gradleProperty("interactionGroupFixture").getOrElse(layout.projectDirectory.file("run/client/DarkGreyRPG/StoryPackages/故事组（1）.dgrs.g").asFile.absolutePath))
+}
+
+tasks.register<JavaExec>("tavernRepeat0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.server.TavernRepeat0336Probe")
+    args(providers.gradleProperty("tavernFixture").getOrElse(layout.projectDirectory.file("run/client/DarkGreyRPG/StoryPackages/测试故事.dgrs").asFile.absolutePath))
+}
+
+tasks.register<JavaExec>("runtimeFontResourceRows0336Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.RuntimeFontResourceRows0336Probe")
 }

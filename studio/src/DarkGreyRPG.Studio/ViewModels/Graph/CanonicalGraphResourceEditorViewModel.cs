@@ -62,11 +62,22 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
     public GraphResourceKind ResourceKind => Document.ResourceKind;
     public GraphScope Scope => Document.Scope;
     public long GraphRevision => Host.GraphRevision;
-    public bool IsGraphDirty => !string.Equals(_savedJson, SerializeCurrent(), StringComparison.Ordinal);
+    public bool IsGraphDirty
+    {
+        get
+        {
+            // Invalid authoring drafts are unsaved, not a failure to read editor state.
+            // Persistence still goes through the strict serializer.
+            try { return !string.Equals(_savedJson, SerializeCurrent(), StringComparison.Ordinal); }
+            catch (GraphResourceEnvelopeException) { return true; }
+        }
+    }
     private string SerializeFrames() => System.Text.Json.JsonSerializer.Serialize(Host.FrameSnapshot());
     public bool IsLayoutDirty => !LayoutEquals(_savedLayout, CreateLayoutSnapshot()) || _savedFrames != SerializeFrames();
     public bool IsDirty => IsGraphDirty || IsLayoutDirty;
-    public bool CanSave => IsLayoutDirty || (IsGraphDirty && ValidationIssues.Count == 0);
+    public bool CanSave => IsLayoutDirty || (IsGraphDirty && ValidationIssues.All(issue =>
+        Scope == GraphScope.StoryFlow && issue.Code == "graph.scope.required_node.duplicate"
+        && Document.Graph.Nodes.Count(node => node.Type == "start") > 1));
     public string SaveStateText => IsDirty ? "未保存" : "已保存";
     public IReadOnlyList<ValidationIssue> ValidationIssues => Host.LastValidationIssues;
     public string ValidationText => string.Join(Environment.NewLine,
@@ -119,6 +130,12 @@ public sealed class CanonicalGraphResourceEditorViewModel : ObservableObject,
         _savedJson = SerializeCurrent();
         NotifyWorkspaceState();
     }
+
+    internal bool MatchesPersistedGraph(GraphResourceEnvelope envelope)
+        => string.Equals(_savedJson, GraphResourceEnvelopeSerializer.Serialize(envelope, indented: false), StringComparison.Ordinal);
+
+    internal bool MatchesPersistedLayout(IReadOnlyDictionary<string, GraphEditorNodePosition> layout, IReadOnlyList<GraphCommentFrame> frames)
+        => LayoutEquals(_savedLayout, layout) && _savedFrames == System.Text.Json.JsonSerializer.Serialize(frames);
 
     public void MarkLayoutSaved()
     {

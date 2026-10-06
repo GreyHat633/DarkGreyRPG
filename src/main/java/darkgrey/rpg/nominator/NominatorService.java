@@ -127,12 +127,11 @@ public final class NominatorService {
                     } else {
                         NpcHostIdentity occupiedHost = identities.getHost(individual);
                         if (occupiedHost != null && !entityUuid.equals(occupiedHost.getEntityUuid())) {
-                            if (!transfer)
-                                return NominatorResult.rejected("conflict", "NPC ID“" + individual + "”已被占用；必须明确执行转移。");
+                            if (!transfer) return NominatorResult.rejected("conflict", "角色绑定已被占用；必须明确执行转移。");
                             identities.transfer(individual, host);
                             clearTransferredHostSelection(occupiedHost.getEntityUuid(), selections);
                         } else if (currentNpcId != null && !individual.equals(currentNpcId)) {
-                            return NominatorResult.rejected("conflict", "该实体已经承载 NPC ID“" + currentNpcId + "”。");
+                            return NominatorResult.rejected("conflict", "该实体已经绑定另一个角色。");
                         } else {
                             if (currentNpcId == null) identities.bind(individual, host);
                             else identities.observe(host);
@@ -183,7 +182,7 @@ public final class NominatorService {
                 }
             }
         }
-        return changed ? NominatorResult.accepted("ID已释放，资源保留。") : NominatorResult.noop("ID已经空闲。");
+        return changed ? NominatorResult.accepted("绑定已释放，资源保留。") : NominatorResult.noop("资源目前没有绑定。");
     }
 
     private static void clearTransferredHostSelection(UUID hostUuid, NominatorSavedData selections) {
@@ -204,10 +203,10 @@ public final class NominatorService {
             String exactGroup = blank(exactGroupId) ? null : exactGroupId.trim();
             List<String> fuzzy = cleanGroups(fuzzyGroupIds);
             if (exact == null && exactGroup == null && fuzzy.isEmpty())
-                return NominatorResult.rejected("empty_selection", "请选择物品 ID 或至少一个物品组。");
+                return NominatorResult.rejected("empty_selection", "请选择物品资源 或至少一个物品组。");
             ItemStackDefinition definition = ItemStackDefinition.capture(stack);
             if (exact != null && project.getItem(exact) == null)
-                return NominatorResult.rejected("unknown_item_id", "所选物品 ID 不在已加载项目中。");
+                return NominatorResult.rejected("unknown_item_id", "所选物品资源 不在已加载项目中。");
             if (exactGroup != null && project.getItemGroup(exactGroup) == null)
                 return NominatorResult.rejected("unknown_group", "所选精确物品组不在已加载项目中。");
             for (String group : fuzzy) if (project.getItemGroup(group) == null)
@@ -224,11 +223,7 @@ public final class NominatorService {
     }
 
     private static String explanation(String item, String exactGroup, List<String> fuzzy) {
-        List<String> values = new ArrayList<String>();
-        if (item != null) values.add("精确物品 ID“" + item + "”");
-        if (exactGroup != null) values.add("精确物品组“" + exactGroup + "”");
-        for (String group : fuzzy) values.add("模糊物品组“" + group + "”（仅注册名）");
-        return "已绑定：" + join(values) + "。";
+        return "物品指名已保存。";
     }
 
     private static boolean same(NominatorEntityBinding left, NominatorEntityBinding right) {
@@ -266,6 +261,8 @@ public final class NominatorService {
     }
 
     private static String safeMessage(RuntimeException exception) {
-        return exception.getMessage() == null ? "服务器拒绝了该请求。" : exception.getMessage();
+        org.apache.logging.log4j.LogManager.getLogger(NominatorService.class)
+            .warn("Nominator binding rejected", exception);
+        return "绑定操作失败：资源可能已失效或存在绑定冲突。";
     }
 }

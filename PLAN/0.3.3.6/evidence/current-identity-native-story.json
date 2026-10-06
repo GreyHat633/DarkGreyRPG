@@ -1,0 +1,476 @@
+[
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "文件(F)",
+    "Rect": "7,30,93,60"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "文件(_F)",
+    "Rect": "26,49,56,22"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "编辑(E)",
+    "Rect": "100,30,93,60"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "编辑(_E)",
+    "Rect": "119,49,56,22"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "视图(V)",
+    "Rect": "193,30,95,60"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "视图(_V)",
+    "Rect": "212,49,58,22"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "项目(P)",
+    "Rect": "288,30,95,60"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目(_P)",
+    "Rect": "307,49,57,22"
+  },
+  {
+    "Type": "ControlType.MenuItem",
+    "Id": "",
+    "Name": "帮助(H)",
+    "Rect": "383,30,96,60"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "帮助(_H)",
+    "Rect": "401,49,60,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "已恢复上次项目，共 1 个 Actor。",
+    "Rect": "15,999,1890,22"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Output, Title = 输出, Glyph = Output, IsEnabled = True }",
+    "Rect": "2,944,62,42"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "输出",
+    "Rect": "16,954,35,22"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Problems, Title = 问题, Glyph = Problems, IsEnabled = True }",
+    "Rect": "67,944,62,42"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "问题",
+    "Rect": "81,954,34,22"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Debugger, Title = 调试器, Glyph = Debugger, IsEnabled = True }",
+    "Rect": "131,944,80,42"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "调试器",
+    "Rect": "145,954,52,22"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "BottomPanelTab { Page = Minecraft, Title = Minecraft, Glyph = Minecraft, IsEnabled = True }",
+    "Rect": "213,944,112,42"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "Minecraft",
+    "Rect": "227,954,85,22"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "新建故事",
+    "Rect": "267,107,39,40"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目首页",
+    "Rect": "17,114,250,26"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "引用故事包",
+    "Rect": "15,873,291,49"
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "",
+    "Name": "引用故事包区域",
+    "Rect": "Empty"
+  },
+  {
+    "Type": "ControlType.Edit",
+    "Id": "StorySearchBox",
+    "Name": "搜索故事",
+    "Rect": "15,159,291,40"
+  },
+  {
+    "Type": "ControlType.List",
+    "Id": "StoryList",
+    "Name": "故事导航列表",
+    "Rect": "15,209,291,649"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "MS.Internal.Data.CollectionViewGroupInternal",
+    "Rect": "9,210,296,232"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Rect": "22,210,283,116"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "引用者",
+    "Rect": "44,235,239,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "ST-JKLM-NPQR-STUV-WXYZ",
+    "Rect": "44,259,239,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "新格式",
+    "Rect": "44,284,239,17"
+  },
+  {
+    "Type": "ControlType.ListItem",
+    "Id": "",
+    "Name": "DarkGreyRPG.Studio.ViewModels.StoryListItemViewModel",
+    "Rect": "22,326,283,116"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "资源所有者",
+    "Rect": "44,351,239,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "ST-2345-6789-ABCD-EFGH",
+    "Rect": "44,375,239,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "新格式",
+    "Rect": "44,400,239,17"
+  },
+  {
+    "Type": "ControlType.Thumb",
+    "Id": "ResourceBrowserSplitter",
+    "Name": "",
+    "Rect": "322,92,10,845"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "进入选中故事",
+    "Rect": "1738,144,144,42"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "进入故事",
+    "Rect": "1775,153,69,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "项目故事图谱",
+    "Rect": "367,131,1371,41"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "左侧选择故事，中央编辑故事关系，右侧查看当前故事详情。",
+    "Rect": "367,177,1371,22"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "",
+    "Name": "故事图谱自由布局画布",
+    "Rect": "367,221,1133,678"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "2 个故事 · 0 条连接",
+    "Rect": "367,221,1133,22"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "Editor",
+    "Name": "节点图编辑器",
+    "Rect": "367,253,1133,584"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "图编辑器缩放到百分之百",
+    "Rect": "367,253,68,34"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "100%",
+    "Rect": "378,259,46,22"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "适应全部图节点",
+    "Rect": "440,253,57,34"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "适应",
+    "Rect": "451,259,35,22"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "",
+    "Name": "重置图视图",
+    "Rect": "502,253,57,34"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "重置",
+    "Rect": "513,259,35,22"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "ScissorsButton",
+    "Name": "剪断连线",
+    "Rect": "564,253,57,34"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "剪刀",
+    "Rect": "575,259,35,22"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "CombineSelection",
+    "Name": "组合",
+    "Rect": "626,253,57,34"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "组合",
+    "Rect": "637,259,35,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "拖动节点移动 · 空白拖动框选 · Shift 拖动节点插线 · 中键平移 · 滚轮缩放",
+    "Rect": "698,260,802,27"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_ST-2345-6789-ABCD-EFGH",
+    "Name": "图节点 故事「资源所有者」 ST-2345-6789-ABCD-EFGH",
+    "Rect": "467,596,288,114"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "故事「资源所有者」",
+    "Rect": "480,605,263,22"
+  },
+  {
+    "Type": "ControlType.Custom",
+    "Id": "CanonicalGraphNode_ST-JKLM-NPQR-STUV-WXYZ",
+    "Name": "图节点 故事「引用者」 ST-JKLM-NPQR-STUV-WXYZ",
+    "Rect": "467,385,288,114"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "HeaderTitle",
+    "Name": "故事「引用者」",
+    "Rect": "480,394,263,22"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "Help",
+    "Name": "介绍说明",
+    "Rect": "367,847,1133,52"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderSite",
+    "Name": "介绍说明",
+    "Rect": "368,848,1131,50"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "介绍说明",
+    "Rect": "382,862,1088,22"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "故事详情",
+    "Rect": "1531,242,330,19"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "选中故事完整概览",
+    "Rect": "1531,266,330,34"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "ST-2345-6789-ABCD-EFGH",
+    "Rect": "1531,305,330,22"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 角色, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Rect": "1531,350,330,37"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "角色",
+    "Rect": "1531,352,330,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "角色",
+    "Rect": "1531,352,59,32"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "角色",
+    "Rect": "1552,357,35,22"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 物品, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Rect": "1531,387,330,37"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "物品",
+    "Rect": "1531,389,330,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "物品",
+    "Rect": "1531,389,59,32"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "物品",
+    "Rect": "1552,394,35,22"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 会话, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Rect": "1531,424,330,36"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "会话",
+    "Rect": "1531,426,330,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "会话",
+    "Rect": "1531,426,59,32"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "会话",
+    "Rect": "1552,431,35,22"
+  },
+  {
+    "Type": "ControlType.DataItem",
+    "Id": "",
+    "Name": "HomeStoryResourceFolder { DisplayName = 任务, Items = DarkGreyRPG.Studio.ViewModels.HomeStoryResourceRow[], HasResources = True }",
+    "Rect": "1531,460,330,37"
+  },
+  {
+    "Type": "ControlType.Group",
+    "Id": "",
+    "Name": "任务",
+    "Rect": "1531,463,330,32"
+  },
+  {
+    "Type": "ControlType.Button",
+    "Id": "HeaderToggle",
+    "Name": "任务",
+    "Rect": "1531,463,59,32"
+  },
+  {
+    "Type": "ControlType.Text",
+    "Id": "",
+    "Name": "任务",
+    "Rect": "1552,468,35,22"
+  }
+]

@@ -1,0 +1,53 @@
+{
+  "Before": [
+    {
+      "Y": 385.0,
+      "X": 814.0,
+      "ID": "CanonicalGraphNode_ST-9J8D-4LB7-6V76-8PM6"
+    },
+    {
+      "Y": 385.0,
+      "X": 467.0,
+      "ID": "CanonicalGraphNode_ST-NV99-SP2B-YN5W-8PGP"
+    },
+    {
+      "Y": 596.0,
+      "X": 467.0,
+      "ID": "CanonicalGraphNode_ST-Y5ZA-WBW8-PXGJ-6HQD"
+    }
+  ],
+  "After": [
+    {
+      "Y": 455.0,
+      "X": 884.0,
+      "ID": "CanonicalGraphNode_ST-9J8D-4LB7-6V76-8PM6"
+    },
+    {
+      "Y": 455.0,
+      "X": 537.0,
+      "ID": "CanonicalGraphNode_ST-NV99-SP2B-YN5W-8PGP"
+    },
+    {
+      "Y": 596.0,
+      "X": 467.0,
+      "ID": "CanonicalGraphNode_ST-Y5ZA-WBW8-PXGJ-6HQD"
+    }
+  ],
+  "Undo": [
+    {
+      "Y": 385.0,
+      "X": 814.0,
+      "ID": "CanonicalGraphNode_ST-9J8D-4LB7-6V76-8PM6"
+    },
+    {
+      "Y": 385.0,
+      "X": 467.0,
+      "ID": "CanonicalGraphNode_ST-NV99-SP2B-YN5W-8PGP"
+    },
+    {
+      "Y": 596.0,
+      "X": 467.0,
+      "ID": "CanonicalGraphNode_ST-Y5ZA-WBW8-PXGJ-6HQD"
+    }
+  ]
+}

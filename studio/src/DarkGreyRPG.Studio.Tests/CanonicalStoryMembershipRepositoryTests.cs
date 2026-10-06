@@ -11,18 +11,18 @@ public sealed class CanonicalStoryMembershipRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project);
-        repository.Create(Manifest("story", ["actor"]));
+        repository.Create(Manifest("ST-2345-6789-ABCD-EFG2", ["ST-2345-6789-ABCD-EFG2~actor~actor"]));
 
         var info = repository.List().Single();
-        var loaded = repository.Load("story");
-        Assert.AreEqual("story", info.StoryId);
-        Assert.AreEqual(Path.GetFullPath(repository.GetPath("story")), info.SourcePath);
-        CollectionAssert.AreEqual(new[] { "actor" }, loaded.OwnedResources.Actors);
+        var loaded = repository.Load("ST-2345-6789-ABCD-EFG2");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFG2", info.StoryId);
+        Assert.AreEqual(Path.GetFullPath(repository.GetPath("ST-2345-6789-ABCD-EFG2")), info.SourcePath);
+        CollectionAssert.AreEqual(new[] { "ST-2345-6789-ABCD-EFG2~actor~actor" }, loaded.OwnedResources.Actors);
 
-        repository.Replace(Manifest("story", ["actor", "actor_two"]));
+        repository.Replace(Manifest("ST-2345-6789-ABCD-EFG2", ["ST-2345-6789-ABCD-EFG2~actor~actor", "ST-2345-6789-ABCD-EFG2~actor~actor_two"]));
         CollectionAssert.AreEqual(
-            new[] { "actor", "actor_two" },
-            repository.Load("story").OwnedResources.Actors);
+            new[] { "ST-2345-6789-ABCD-EFG2~actor~actor", "ST-2345-6789-ABCD-EFG2~actor~actor_two" },
+            repository.Load("ST-2345-6789-ABCD-EFG2").OwnedResources.Actors);
     }
 
     [TestMethod]
@@ -30,15 +30,17 @@ public sealed class CanonicalStoryMembershipRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project);
-        var manifest = Manifest("story", []);
+        var manifest = Manifest("ST-2345-6789-ABCD-EFG2", []);
         repository.Create(manifest);
 
         AssertCode(() => repository.Create(manifest), "story.membership.repository.collision");
-        AssertCode(() => repository.Replace(Manifest("missing", [])), "story.membership.repository.not_found");
+        AssertCode(() => repository.Replace(Manifest("ST-2345-6789-ABCD-EFG3", [])), "story.membership.repository.not_found");
         AssertCode(() => repository.Load("../escape"), "story.membership.repository.story_id.invalid");
 
-        File.WriteAllText(repository.GetPath("file_id"), Manifest("other_id", []).ToJson());
-        AssertCode(() => repository.Load("file_id"), "story.membership.repository.filename.mismatch");
+        File.WriteAllText(repository.GetPath("ST-2345-6789-ABCD-EFG4"), Manifest("ST-2345-6789-ABCD-EFG5", []).ToJson());
+        AssertCode(() => repository.Load("ST-2345-6789-ABCD-EFG4"), "story.membership.repository.path.occupied");
+        AssertCode(() => repository.Create(Manifest("ST-2345-6789-ABCD-EFG4", [])), "story.membership.repository.path.occupied");
+        Assert.AreEqual("ST-2345-6789-ABCD-EFG5", repository.Load("ST-2345-6789-ABCD-EFG5").StoryId);
     }
 
     [TestMethod]
@@ -46,13 +48,13 @@ public sealed class CanonicalStoryMembershipRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project);
-        var invalid = Manifest("story", ["same", "same"]);
+        var invalid = Manifest("ST-2345-6789-ABCD-EFG2", ["ST-2345-6789-ABCD-EFG2~actor~same", "ST-2345-6789-ABCD-EFG2~actor~same"]);
         AssertCode(() => repository.Create(invalid), "story.membership.repository.data.invalid");
 
         Directory.CreateDirectory(repository.MembershipDirectory);
-        File.WriteAllText(repository.GetPath("legacy"),
+        File.WriteAllText(repository.GetPath("ST-2345-6789-ABCD-EFG6"),
             "{\"schema_version\":2,\"id\":\"legacy\",\"owned_resources\":{}}");
-        AssertCode(() => repository.Load("legacy"), "story.membership.repository.data.invalid");
+        AssertCode(() => repository.Load("ST-2345-6789-ABCD-EFG6"), "story.membership.repository.data.invalid");
     }
 
     [TestMethod]
@@ -60,15 +62,15 @@ public sealed class CanonicalStoryMembershipRepositoryTests
     {
         using var project = new TestProjectDirectory(createProjectFile: false);
         var repository = Repository(project);
-        repository.Create(Manifest("story", ["actor"]));
-        var path = repository.GetPath("story");
+        repository.Create(Manifest("ST-2345-6789-ABCD-EFG2", ["ST-2345-6789-ABCD-EFG2~actor~actor"]));
+        var path = repository.GetPath("ST-2345-6789-ABCD-EFG2");
         var before = File.ReadAllText(path);
         var failing = new CanonicalStoryMembershipRepository(
             repository.MembershipDirectory,
             new ThrowingWriter());
 
         AssertCode(
-            () => failing.Replace(Manifest("story", ["changed"])),
+            () => failing.Replace(Manifest("ST-2345-6789-ABCD-EFG2", ["ST-2345-6789-ABCD-EFG2~actor~changed"])),
             "story.membership.repository.write.failed");
         Assert.AreEqual(before, File.ReadAllText(path));
     }
