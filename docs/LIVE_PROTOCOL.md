@@ -1,3 +1,5 @@
+> 历史资料：本文保留原阶段记录，不作为当前合同。请阅读 [当前架构](CURRENT_ARCHITECTURE.md)、[构建说明](BUILDING.md) 与 [入门](GETTING_STARTED.md)。
+
 # DarkGrey RPG Live Protocol
 
 Version 1 uses UTF-8 JSON Lines over TCP. The runtime binds only to

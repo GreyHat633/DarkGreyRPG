@@ -1,3 +1,5 @@
+> 历史资料：本文保留原阶段记录，不作为当前合同。请阅读 [当前架构](CURRENT_ARCHITECTURE.md)、[构建说明](BUILDING.md) 与 [入门](GETTING_STARTED.md)。
+
 # DGRS v1 Story Package Format
 
 DGRS is the compiled, single-file delivery format for one DarkGrey RPG Story. It is not a Studio source-project format and cannot be used to reconstruct authoring layout or editor state.

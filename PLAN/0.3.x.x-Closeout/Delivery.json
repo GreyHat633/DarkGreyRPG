@@ -1,0 +1,445 @@
+{
+  "stage": "0.3.x.x-closeout",
+  "base_branch": "codex/0.3.3.7",
+  "base_commit": "462b1cd17566a1f42c76bfc94ee9e6042e8ae8d4",
+  "tested_commit": null,
+  "tested_patch_sha256": "139708c905e3074088706b58197e81ea826ecdb544048b5cb897137e8d0eacd4",
+  "tested_new_and_modified_inputs_sha256": "b18c24d809f2bae48deb532ae38936ebd4ee2a345e0f7c4a6864fd42e956e3c7",
+  "source_input_files": [
+    {
+      "Path": ".gitignore",
+      "Bytes": 789,
+      "Sha256": "64e91feeef7a9a09b7d332dea8c37b75682041b4867f941d9550d51f3780e477"
+    },
+    {
+      "Path": "build.gradle.kts",
+      "Bytes": 46632,
+      "Sha256": "334fde9be255c8cf7b5dc88f41f48597288aa2a53400ba60082fc351770eb765"
+    },
+    {
+      "Path": "dependencies.gradle",
+      "Bytes": 557,
+      "Sha256": "d1b868b9e49374e6b7e23d4a8e5d7e3cfb68e9609b5b8ed0924031ef4813dbb9"
+    },
+    {
+      "Path": "docs/0.3.1.0_ARCHITECTURE.md",
+      "Bytes": 4951,
+      "Sha256": "e48729659fcfbe48e3cde4cab56f90e5bd45cfeae6c45c003e80252a88df23a2"
+    },
+    {
+      "Path": "docs/0.3.1.0_MIGRATION.md",
+      "Bytes": 3849,
+      "Sha256": "04cbf364de197a6d04a987168659d85592587127c4fa53038265d659182fdb6a"
+    },
+    {
+      "Path": "docs/2.1_ARCHITECTURE.md",
+      "Bytes": 2919,
+      "Sha256": "b94c1ab26044ef46fe315b022fd64214561e29650cccafad6d08be5910d9eae7"
+    },
+    {
+      "Path": "docs/BUILDING.md",
+      "Bytes": 6479,
+      "Sha256": "61e68addfa696b835e2c7f6996d6c4dbf2fff37c9e778e5eea68e8d556c39a2c"
+    },
+    {
+      "Path": "docs/CURRENT_ARCHITECTURE.md",
+      "Bytes": 4535,
+      "Sha256": "82b598bba31474aa7eb991c5acd822c8d46fe9005805b25e433cbce353d69267"
+    },
+    {
+      "Path": "docs/DGRS_v1.md",
+      "Bytes": 3120,
+      "Sha256": "a5a58dbc03bc175a0f8c88f244e9b2ef527a210f34e1ad6f3906ec807ec6305f"
+    },
+    {
+      "Path": "docs/GETTING_STARTED.md",
+      "Bytes": 4900,
+      "Sha256": "b5e63374fa6a170b7d3e81735dbdb4779a6c3ab104d4c9470deac035efe733e3"
+    },
+    {
+      "Path": "docs/LIVE_PROTOCOL.md",
+      "Bytes": 2112,
+      "Sha256": "b449240abc8c3d79c511ab2b8b66561cf0701ec24d3100d6d3a5588245c034f3"
+    },
+    {
+      "Path": "docs/RUNTIME_WORKFLOW.md",
+      "Bytes": 3696,
+      "Sha256": "dfcdc7518a9c8fb28ddc6a891b26e1b6ba272c868522ee8867de9b3b6d3e50e9"
+    },
+    {
+      "Path": "docs/STUDIO_DEPENDENCIES.md",
+      "Bytes": 554,
+      "Sha256": "202f74a9465b7638640e12b1925f2a430c91fe9f505b69a1320debbd605daf5b"
+    },
+    {
+      "Path": "docs/TESTING.md",
+      "Bytes": 11287,
+      "Sha256": "0771c98ff60dbb1b1cd7aab03fff676aa4bc693590d8d759719d6da8fafe7540"
+    },
+    {
+      "Path": "gradle.properties",
+      "Bytes": 1149,
+      "Sha256": "21a3ea3a7e95f07f18b361fb1888f09c9b25b778b735a63e4c1506de166117a8"
+    },
+    {
+      "Path": "PLAN/DarkGreyRPG_0.3.x.x_Closeout_Construction_PLAN.md",
+      "Bytes": 39594,
+      "Sha256": "762477216fdc4c66b9e53fae2d56d0272f1a5b7dc4cad56b7189a57de0e0a2af"
+    },
+    {
+      "Path": "README.md",
+      "Bytes": 2738,
+      "Sha256": "1d7a0670c7ba173001b58ad708fc499200609a9955b433e9b9a5a4ca337e120d"
+    },
+    {
+      "Path": "scripts/prepare-java-dependencies.ps1",
+      "Bytes": 2712,
+      "Sha256": "98505cc32620f524be993be61da00dfc944595fbd9b13a7685cd7a85f2bb5295"
+    },
+    {
+      "Path": "studio/media-tools.lock.json",
+      "Bytes": 665,
+      "Sha256": "27fba3ed848eca391dea59be65fe3e17321d205bd214fe453ffed4b563f3bf0b"
+    },
+    {
+      "Path": "studio/package-studio.ps1",
+      "Bytes": 12971,
+      "Sha256": "67de88958e42118eed3c1d62dd90bb9b890187adb6116e5ff3df4a552e7eedbd"
+    },
+    {
+      "Path": "studio/prepare-media-tools.ps1",
+      "Bytes": 4517,
+      "Sha256": "9cf82a24a373df8d179171b01f0f06edd79667ebf79e6c3c400c1edce1608811"
+    },
+    {
+      "Path": "studio/qa/closeout-tooling-tests.ps1",
+      "Bytes": 4532,
+      "Sha256": "b71c4502d190744d5509e1dbf4183304acd4b5649c86d0a8d884e595acc819f1"
+    },
+    {
+      "Path": "studio/README_WPF.md",
+      "Bytes": 3949,
+      "Sha256": "c991e79ead9bb6bdf0033ac124a34bdb8d900a8c62c1fbd0452b0cdae76e305c"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/ShellViewModelTests.cs",
+      "Bytes": 55962,
+      "Sha256": "cae24ff70468b0b96c424eee1eec5dbfa8b7c37aace0a6ce2d1cd0ba58fd37db"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/ThemeMenuCloseoutTests.cs",
+      "Bytes": 4387,
+      "Sha256": "0943198ae8f884e23ecbe2420d03bff1275c6732fb35ad763b3bb0708a5a4f3c"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/DarkGreyRPG.Studio.csproj",
+      "Bytes": 1665,
+      "Sha256": "16559c069911a3426f05de569a09e63a6d7f4025fd16c9e72f96512346792fe6"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/StudioBuildInfo.cs",
+      "Bytes": 354,
+      "Sha256": "a3acac52be22788339c9f4efd343ea366a2dae10c6160bb42b620ee4373d2067"
+    },
+    {
+      "Path": "studio/src/DarkGreyRPG.Studio/ViewModels/ShellViewModel.cs",
+      "Bytes": 192820,
+      "Sha256": "51d4b076922831b96d7816d10fcf7c27bff6515ae7afa193752b9d3146124310"
+    },
+    {
+      "Path": "studio/tools/CurrentIdentityFixture/Program.cs",
+      "Bytes": 21238,
+      "Sha256": "c969f8b12c5b0e98aec6439744d3587503624b7e11fc8519cf96f12cca3aff77"
+    },
+    {
+      "Path": "THIRD_PARTY_NOTICES.md",
+      "Bytes": 5284,
+      "Sha256": "e5e57b21c2190e1611c7be1b7f6b1f711bf3e5878e0e92712d3b2a257c01b965"
+    },
+    {
+      "Path": "third_party/licenses/CustomNPC-Plus/LICENSE.txt",
+      "Bytes": 1065,
+      "Sha256": "1969da35a4ec9d24f82280fe693d656d890ad61a8b477144e8184d0969463b08"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/LICENSE",
+      "Bytes": 549,
+      "Sha256": "4396bb86c834f5e70518f15c6ff042d90d20c43062d2995d57c85030777b6187"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/LICENSE.UNLICENSE",
+      "Bytes": 1211,
+      "Sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-common/LICENSE",
+      "Bytes": 1211,
+      "Sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-compat/LICENSE",
+      "Bytes": 1211,
+      "Sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-gtnhmixins/CREDITS",
+      "Bytes": 576,
+      "Sha256": "b4148d79761451f46e13109207620d3ab7cd80bb1f6ed77116b2bca2fa73077b"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-gtnhmixins/LICENSE",
+      "Bytes": 7650,
+      "Sha256": "ea8af5e789cb2d4e9b10bce3874982ade163b749b6bfbdb32e2df21c4d106de1"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-gtnhmixins/README.original.md",
+      "Bytes": 3012,
+      "Sha256": "555592d6cdd3cc393068863ae15ace866a2f37cd94bb09237dabe362d64fc738"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixin/LICENSE",
+      "Bytes": 1211,
+      "Sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixin/LICENSE.txt",
+      "Bytes": 1046,
+      "Sha256": "8f71659370c5268d9a1dc962a46232540e8fca63462586d8efaa95aab492a208"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixinbooterlegacy/CREDITS",
+      "Bytes": 525,
+      "Sha256": "e7ccae549798e3cc8cfe21b081b7e17b5bd592120c7489c87226dfa66ad2657d"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixinbooterlegacy/LICENSE",
+      "Bytes": 26526,
+      "Sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixinextras/LICENSE",
+      "Bytes": 1074,
+      "Sha256": "7a9004d4183dc1596d15d332618274a4f013f1c453f1e90b791d73ecc6bf6199"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixinextras/LICENSE_MixinExtras",
+      "Bytes": 1074,
+      "Sha256": "7a9004d4183dc1596d15d332618274a4f013f1c453f1e90b791d73ecc6bf6199"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixingasm/CREDITS",
+      "Bytes": 279,
+      "Sha256": "497d2d001f0fff346a96d5570e12e296064393f274cdd6f5b74d01a7b97ee831"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-mixingasm/LICENSE",
+      "Bytes": 1211,
+      "Sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-spongemixins/CREDITS",
+      "Bytes": 474,
+      "Sha256": "a17c5722865d77133028117c8afba3330fc9842c73fc146991eaf6997eb38647"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-spongemixins/LICENSE",
+      "Bytes": 118,
+      "Sha256": "318c84e27e7d02fe84bba0721631d5bdbfdfe5c08c18274e33114a1259375728"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-spongemixins/LICENSE.LGPLv3",
+      "Bytes": 7650,
+      "Sha256": "ea8af5e789cb2d4e9b10bce3874982ade163b749b6bfbdb32e2df21c4d106de1"
+    },
+    {
+      "Path": "third_party/licenses/UniMixins/module-spongemixins/LICENSE.SpongeMixins",
+      "Bytes": 1052,
+      "Sha256": "2598da8d2c6cfeee992256dfb725b3532d95442af0b6a73ce963922db2971aea"
+    }
+  ],
+  "candidate_version": "0.3.3.7",
+  "technical_status": "COMPLETE_WITH_RECORDED_LIMITS",
+  "project_license_status": "PROJECT_LICENSE_PENDING_OWNER",
+  "project_license_decision": "Owner explicitly deferred the license choice",
+  "third_party_status": "VERIFIED_WITH_SOURCE_MATERIAL_GAPS",
+  "customnpc_dependency_status": "BASE_OPTIONAL_AND_EXACT_CNPC_INTEGRATION_PASS",
+  "theme_menu_status": "PASS_OLD_FAILURE_NOT_REPRODUCED_NO_PRODUCTION_THEME_CHANGE",
+  "clean_build_status": "PASS_SAME_HOST_ISOLATED_D_DRIVE_SOURCE_INDEPENDENT_CACHES",
+  "runtime_smoke_status": "BASE_DEDICATED_AND_CNPC_DEDICATED_AND_INTEGRATED_PASS",
+  "studio_authoritative_path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "artifacts": [
+    {
+      "kind": "Studio apphost authoritative",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+      "product_version": "0.3.3.7",
+      "bytes": 204288,
+      "sha256": "eb4975e1ee5d37c80c0250102f40087c3d6d68649004d7233ce77ecc7c551566"
+    },
+    {
+      "kind": "Studio apphost candidate",
+      "path": "D:\\DGR Closeout 扫尾\\Studio Verified\\DarkGreyRPGStudio.exe",
+      "product_version": "0.3.3.7",
+      "bytes": 204288,
+      "sha256": "eb4975e1ee5d37c80c0250102f40087c3d6d68649004d7233ce77ecc7c551566"
+    },
+    {
+      "kind": "Studio application authoritative",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+      "product_version": "0.3.3.7",
+      "bytes": 1776640,
+      "sha256": "0c18354177d3822f5bfa61d3106197cffb0b1b0ca5d43c608208214a487bdab8"
+    },
+    {
+      "kind": "Studio application candidate",
+      "path": "D:\\DGR Closeout 扫尾\\Studio Verified\\Program\\DarkGreyRPGStudio.dll",
+      "product_version": "0.3.3.7",
+      "bytes": 1776640,
+      "sha256": "0c18354177d3822f5bfa61d3106197cffb0b1b0ca5d43c608208214a487bdab8"
+    },
+    {
+      "kind": "Studio Core authoritative",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+      "product_version": "1.0.0",
+      "bytes": 1308160,
+      "sha256": "de7835e8a7c9d50841cc35343e8d0fdf79230f5b95f58601d36299eb236558f1"
+    },
+    {
+      "kind": "Studio Core candidate",
+      "path": "D:\\DGR Closeout 扫尾\\Studio Verified\\Program\\DarkGreyRPG.Studio.Core.dll",
+      "product_version": "1.0.0",
+      "bytes": 1308160,
+      "sha256": "de7835e8a7c9d50841cc35343e8d0fdf79230f5b95f58601d36299eb236558f1"
+    },
+    {
+      "kind": "Program whitelist authoritative",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\StudioProgramFiles.json",
+      "product_version": null,
+      "bytes": 19562,
+      "sha256": "c5f4ce07280ceff0811bd31b82f1329a20390515e6f077ac87b2138a6f007fd5"
+    },
+    {
+      "kind": "Program whitelist candidate",
+      "path": "D:\\DGR Closeout 扫尾\\Studio Verified\\Docs\\StudioProgramFiles.json",
+      "product_version": null,
+      "bytes": 19562,
+      "sha256": "c5f4ce07280ceff0811bd31b82f1329a20390515e6f077ac87b2138a6f007fd5"
+    },
+    {
+      "kind": "Selected SDK license authoritative",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\LICENSE.txt",
+      "product_version": null,
+      "bytes": 9519,
+      "sha256": "7f6839a61ce892b79c6549e2dc5a81fdbd240a0b260f8881216b45b7fda8b45d"
+    },
+    {
+      "kind": "Selected SDK license candidate",
+      "path": "D:\\DGR Closeout 扫尾\\Studio Verified\\Docs\\LICENSE.txt",
+      "product_version": null,
+      "bytes": 9519,
+      "sha256": "7f6839a61ce892b79c6549e2dc5a81fdbd240a0b260f8881216b45b7fda8b45d"
+    },
+    {
+      "kind": "Selected SDK notices authoritative",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\ThirdPartyNotices.txt",
+      "product_version": null,
+      "bytes": 78887,
+      "sha256": "deb4427a295e1ed474b0d81c5a0d972c1b550b9a715cda939cdfa9236b1b418f"
+    },
+    {
+      "kind": "Selected SDK notices candidate",
+      "path": "D:\\DGR Closeout 扫尾\\Studio Verified\\Docs\\ThirdPartyNotices.txt",
+      "product_version": null,
+      "bytes": 78887,
+      "sha256": "deb4427a295e1ed474b0d81c5a0d972c1b550b9a715cda939cdfa9236b1b418f"
+    },
+    {
+      "kind": "Runtime Java 8",
+      "path": "D:\\DGR Closeout 扫尾\\Source\\build\\libs\\darkgrey_rpg-0.3.3.7.jar",
+      "product_version": null,
+      "bytes": 1996170,
+      "sha256": "05960a6eb5b5f0b0867b6dc3ad4f400feb1dc1db975e383ccba72a76ce3274fd"
+    },
+    {
+      "kind": "Runtime tested workspace build copy",
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.3.3.7.jar",
+      "product_version": null,
+      "bytes": 1996170,
+      "sha256": "05960a6eb5b5f0b0867b6dc3ad4f400feb1dc1db975e383ccba72a76ce3274fd"
+    }
+  ],
+  "program_whitelist_files": 409,
+  "candidate_authority_all_program_files_equal": true,
+  "tested_candidate_studio_core_dlls_equal": true,
+  "authoritative_data_files": 2661,
+  "authoritative_data_before_sha256": "58bc3e34f9dddfa4533a1dbed45edbd8ef1ad6ed1f7c9e2c623d8ec19364a88d",
+  "authoritative_data_after_sha256": "58bc3e34f9dddfa4533a1dbed45edbd8ef1ad6ed1f7c9e2c623d8ec19364a88d",
+  "authoritative_data_all_paths_sizes_hashes_unchanged": true,
+  "tests": {
+    "core_passed": 503,
+    "core_skipped": 0,
+    "wpf_passed": 692,
+    "wpf_skipped": 1,
+    "wpf_total": 693,
+    "tooling_passed": 8,
+    "current_java_probes_passed": 6,
+    "ordinary_java_test_count": 0
+  },
+  "runtime_jar_all_four_deployed_copies_equal": true,
+  "java_class_major": 52,
+  "smoke_exports": [
+    {
+      "kind": "single_original_real_UI_export",
+      "bytes": 10081,
+      "sha256": "538e43d4d3e8195d9b70df4885443fe55b1e19a5b7b776702e93b2279e96639a",
+      "used_by": [
+        "Base dedicated",
+        "CNPC dedicated"
+      ]
+    },
+    {
+      "kind": "single_after_real_UI_edit_save_export",
+      "bytes": 10075,
+      "sha256": "a0724dd310341641d8d6f33e4b3e596aac4d512cfc6d008e2666a93269af264f",
+      "used_by": [
+        "CNPC integrated"
+      ],
+      "producer_version": "0.3.3.7"
+    },
+    {
+      "kind": "two_member_group_real_UI_export",
+      "bytes": 3226,
+      "sha256": "9c2033ccf1c00e6f282aae2a36300950e1119a322d7f130a260aa8b394a74269",
+      "members": 2,
+      "logic_connections": 1,
+      "member_producer_version": "0.3.3.7"
+    }
+  ],
+  "remaining_items": [
+    "PROJECT_LICENSE_PENDING_OWNER: owner explicitly deferred",
+    "PATCHED_BINARY_SOURCE_PENDING: CNPC fixed-v1 matching revision not verified",
+    "SOURCE_MATERIALS_PENDING: FFmpeg static external-library corresponding source distribution materials",
+    "No manual audible confirmation of two-second tone; image/cache/decoder scope is verified",
+    "Two old author-fixture probes NOT_RUN; optional WPF performance test skipped",
+    "Same-host isolation, not a new OS or VM",
+    "Residual isolated Base client JVM after window close; no forced termination"
+  ],
+  "cleanup": {
+    "mode": "Windows Recycle Bin",
+    "dump_files": 5,
+    "obsolete_publish_stage_directories": 6,
+    "bytes": 5270279561.0,
+    "original_paths_verified_absent": true,
+    "invalid_foreground_captures": 2
+  },
+  "new_finished_product_created": false,
+  "remote_release_modified": false,
+  "existing_release_id": 404982229,
+  "existing_release_assets": 5,
+  "existing_release_metadata_and_digests_equal": true,
+  "existing_local_release_jar_zip_equal": true,
+  "committed": false,
+  "pushed": false,
+  "user_accepted": false,
+  "runtime_workspace_build_copy_equal": true,
+  "powershell_test_host": "7.6.5"
+}

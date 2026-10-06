@@ -14,6 +14,103 @@ if (args.Length > 1 && args[1] == "fingerprint")
 }
 new ProjectService().CreateProject(root, "identity_fixture", "当前身份实机验收");
 var store = new CanonicalProjectGraphStore(root);
+if (args.Length > 1 && args[1] == "closeout")
+{
+    const string single = "ST-AAAA-BBBB-CCCC-DDDD";
+    const string groupA = "ST-EEEE-FFFF-GGGG-HHHH";
+    const string groupB = "ST-JJJJ-KKKK-MMMM-NNNN";
+    var lifecycle = new CanonicalStoryLifecycleService(store);
+    lifecycle.Create(single, "扫尾单故事");
+    lifecycle.Create(groupA, "扫尾组 A");
+    lifecycle.Create(groupB, "扫尾组 B");
+    var actorId = single + "~actor~host";
+    var sessionId = single + "~session~welcome";
+    var taskId = single + "~task~journey";
+    new CanonicalStoryActorLifecycleService(store).CreateOwned(single, CanonicalStoryActorKind.Individual, actorId, "扫尾接待员");
+    var closeoutResources = new CanonicalStoryResourceLifecycleService(store);
+    closeoutResources.CreateOwned(single, GraphResourceKind.Session, sessionId, "扫尾选择会话");
+    closeoutResources.CreateOwned(single, GraphResourceKind.Task, taskId, "走到终点领取 7 XP");
+    string InstallMedia(string file)
+    {
+        var bytes = File.ReadAllBytes(Path.Combine(args[2], file));
+        var reference = "media/" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)) + Path.GetExtension(file);
+        var path = Path.Combine(root, "resources", reference);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllBytes(path, bytes);
+        return reference;
+    }
+    var portrait = InstallMedia("portrait.png");
+    var voice = InstallMedia("voice.ogg");
+    var actorRepository = new DarkGreyRPG.Studio.Core.Actors.ActorRepository(root);
+    var actor = actorRepository.LoadActor(actorId);
+    actor.DefaultPortraitRef = portrait;
+    actor.SetPortraitVariants([new("default", portrait)]);
+    actorRepository.SaveActor(actor);
+    var sessionStart = GraphNodeFactory.Create(GraphScope.Session, "start", "start");
+    var closeoutLine = GraphNodeFactory.Create(GraphScope.Session, "line", "greeting");
+    closeoutLine.Properties["speaker_actor_id"] = JsonSerializer.SerializeToElement(actorId);
+    closeoutLine.Properties["pages"] = JsonSerializer.SerializeToElement(new[] { new { page_id = "page", text = "这是扫尾验收会话。选择接受后，走到 X=20 领取一次 7 XP。", voice_ref = voice } });
+    var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
+    SessionChoiceSchema.InitializeDefault(choice, "accept", "accept_flow", "accept_condition");
+    var option = System.Text.Json.Nodes.JsonNode.Parse(choice.Properties["options"].GetRawText())!;
+    option[0]!["display_text"] = "接受验收任务";
+    choice.Properties["options"] = JsonSerializer.SerializeToElement(option);
+    choice.Ports.Single(port => port.Id == "accept_flow").DisplayName = "接受验收任务";
+    choice.Ports.Single(port => port.Id == "accept_condition").DisplayName = "条件 · 接受验收任务";
+    var sessionEnd = GraphNodeFactory.Create(GraphScope.Session, "end", "end");
+    sessionEnd.Properties["port_id"] = JsonSerializer.SerializeToElement("talk_done");
+    sessionEnd.Properties["display_name"] = JsonSerializer.SerializeToElement("接受");
+    var closeoutSession = store.Sessions.Load(sessionId);
+    closeoutSession.Graph = new GraphDocument([sessionStart, closeoutLine, choice, sessionEnd],
+        [new("start", "flow_out", "greeting", "flow_in", GraphInterfaceKind.Flow),
+         new("greeting", "flow_out", "choice", "flow_in", GraphInterfaceKind.Flow),
+         new("choice", "accept_flow", "end", "flow_in", GraphInterfaceKind.Flow)]);
+    store.Sessions.Replace(closeoutSession);
+    var closeoutObjective = GraphNodeFactory.Create(GraphScope.Task, "objective", "reach");
+    CanonicalTaskObjectiveSchema.TryInitializeType(closeoutObjective, CanonicalTaskObjectiveSchema.ReachRegion, out _);
+    closeoutObjective.Properties["description"] = JsonSerializer.SerializeToElement("到达 X=20，Y=4，Z=0，领取一次 7 XP");
+    closeoutObjective.Properties["center_x"] = JsonSerializer.SerializeToElement(20d);
+    closeoutObjective.Properties["center_y"] = JsonSerializer.SerializeToElement(4d);
+    closeoutObjective.Properties["radius"] = JsonSerializer.SerializeToElement(3d);
+    var settle = GraphNodeFactory.Create(GraphScope.Task, "settle", "settle");
+    settle.Properties["port_id"] = JsonSerializer.SerializeToElement("task_done");
+    settle.Properties["display_name"] = JsonSerializer.SerializeToElement("完成");
+    var reward = GraphNodeFactory.Create(GraphScope.Task, "reward", "reward");
+    reward.Properties["entries"] = JsonSerializer.SerializeToElement(new[] { new { type = "xp", amount = 7 } });
+    var closeoutTask = store.Tasks.Load(taskId);
+    closeoutTask.Graph = new GraphDocument([closeoutObjective, reward, settle],
+        [new("reach", "logic_status", "reward", "logic_in", GraphInterfaceKind.Logic),
+         new("reach", "logic_status", "settle", "logic_in", GraphInterfaceKind.Logic)]);
+    store.Tasks.Replace(closeoutTask);
+    var start = GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start");
+    StoryStartSchema.InitializeDefault(start, "entry", StoryStartSchema.ActorInteraction, actorId);
+    var sessionPlacement = CanonicalAggregateNodeFactory.Create(closeoutSession, "session").Candidate!;
+    var taskPlacement = CanonicalAggregateNodeFactory.Create(closeoutTask, "task").Candidate!;
+    var end = GraphNodeFactory.Create(GraphScope.StoryFlow, "terminate", "end");
+    end.Properties["port_id"] = JsonSerializer.SerializeToElement("finished");
+    end.Properties["display_name"] = JsonSerializer.SerializeToElement("验收完成");
+    var story = store.Stories.Load(single);
+    story.Graph = new GraphDocument([start, sessionPlacement, taskPlacement, end],
+        [new("start", "entry", "session", "flow_in", GraphInterfaceKind.Flow),
+         new("session", "talk_done", "task", "flow_in", GraphInterfaceKind.Flow),
+         new("task", "task_done", "end", "flow_in", GraphInterfaceKind.Flow)]);
+    store.Stories.Replace(story);
+    foreach (var (uid, type, port) in new[] { (groupA, "logic_output", "group_out"), (groupB, "logic_input", "group_in") })
+    {
+        var member = store.Stories.Load(uid);
+        var boundary = GraphNodeFactory.Create(GraphScope.StoryFlow, type, "boundary");
+        boundary.Properties["port_id"] = JsonSerializer.SerializeToElement(port);
+        boundary.Properties["display_name"] = JsonSerializer.SerializeToElement("组逻辑");
+        var memberGraph = member.Graph!;
+        memberGraph.Nodes.Add(boundary);
+        member.Graph = memberGraph;
+        store.Stories.Replace(member);
+    }
+    store.StoryLogicGraph.Save([new(groupA, "group_out", groupB, "group_in")]);
+    Console.WriteLine(root);
+    // The acceptance packages must be exported through the real Studio UI.
+    return;
+}
 if (args.Length > 1 && args[1] == "runtime-task")
 {
     var uid = "ST-AAAA-BBBB-CCCC-DDDD";

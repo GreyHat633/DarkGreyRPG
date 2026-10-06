@@ -20,6 +20,7 @@
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>DarkGrey RPG Studio</Product>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <MediaToolsDirectory Condition="'$(MediaToolsDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\..\.tooling\media-tools\ffmpeg</MediaToolsDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\..\.tooling\media-tools\ffmpeg\ffmpeg.exe;..\..\..\.tooling\media-tools\ffmpeg\ffprobe.exe;..\..\..\.tooling\media-tools\ffmpeg\LICENSE;..\..\..\.tooling\media-tools\ffmpeg\README.txt">
+    <Content Include="$(MediaToolsDirectory)\ffmpeg.exe;$(MediaToolsDirectory)\ffprobe.exe;$(MediaToolsDirectory)\LICENSE;$(MediaToolsDirectory)\README.txt">
       <Link>Tools\FFmpeg\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

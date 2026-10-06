@@ -59,6 +59,7 @@ version = releaseVersion
 tasks.named<Jar>("jar") {
     from(zipTree("libs/jlayer-1.0.1.jar")) { exclude("META-INF/**") }
     from("libs/jlayer-license") { into("META-INF/licenses/jlayer") }
+    from("THIRD_PARTY_NOTICES.md") { into("META-INF/licenses") }
 }
 
 tasks.register<JavaExec>("storyIdentity0336Probe") {

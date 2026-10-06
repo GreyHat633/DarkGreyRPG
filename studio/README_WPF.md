@@ -1,3 +1,5 @@
+> 历史资料：本文保留原阶段记录。当前入口见 [构建说明](../docs/BUILDING.md)、[当前架构](../docs/CURRENT_ARCHITECTURE.md) 与 [入门](../docs/GETTING_STARTED.md)。
+
 # DarkGrey RPG Studio 2.1.3 (WPF)
 
 The current Studio is a Windows WPF application targeting .NET 10. It uses the repository's Studio Core project and has no third-party UI, MVVM, serialization, logging, or packaging dependencies.

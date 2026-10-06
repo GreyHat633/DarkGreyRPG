@@ -729,6 +729,8 @@ public sealed class ShellViewModelTests
 
         Assert.IsTrue(File.Exists(package));
         Assert.AreEqual("Opening", picker.DisplayName);
+        Assert.AreEqual(StudioBuildInfo.Version,
+            DarkGreyRPG.Studio.Core.Packaging.OfflineDgrsPackageReader.ReadContainer(package).Single().Manifest.ProducerVersion);
         Assert.AreEqual(
             Path.Combine(directory.Root, "build", "story_packages"),
             picker.SuggestedDirectory);

@@ -1,10 +1,17 @@
 [CmdletBinding()]
-param([string]$OutputDirectory)
+param([string]$OutputDirectory, [string]$DotnetPath, [string]$MediaToolsDirectory)
 
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$dotnetPath = 'E:\Java\dotnet-sdk-10\dotnet.exe'
+$dotnetPath = if ($DotnetPath) { $DotnetPath }
+    elseif ($env:DGR_DOTNET_PATH) { $env:DGR_DOTNET_PATH }
+    else { (Get-Command dotnet -ErrorAction SilentlyContinue).Source }
+if ([string]::IsNullOrWhiteSpace($dotnetPath)) {
+    throw 'A .NET 10 x64 SDK is required. Use -DotnetPath, DGR_DOTNET_PATH, or dotnet on PATH.'
+}
+if (Test-Path -LiteralPath $dotnetPath -PathType Container) { $dotnetPath = Join-Path $dotnetPath 'dotnet.exe' }
+$dotnetPath = [IO.Path]::GetFullPath($dotnetPath)
 $projectPath = Join-Path $repositoryRoot 'studio\src\DarkGreyRPG.Studio\DarkGreyRPG.Studio.csproj'
 $destinationPath = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $repositoryRoot 'dist\DarkGreyRPGStudio' }
 $toolingRoot = Join-Path $repositoryRoot '.tooling\wpf-build'
@@ -14,11 +21,37 @@ $temporaryPath = Join-Path $toolingRoot 'temp'
 $outputPath = Join-Path $toolingRoot ('portable-publish-' + [guid]::NewGuid().ToString('N'))
 
 if (-not (Test-Path -LiteralPath $dotnetPath -PathType Leaf)) {
-    throw "Required isolated .NET SDK was not found: $dotnetPath"
+    throw "The selected .NET SDK executable was not found: $dotnetPath"
 }
 if (-not (Test-Path -LiteralPath $projectPath -PathType Leaf)) {
     throw "Studio project was not found: $projectPath"
 }
+
+# Resolve apphost, HostModel and notices from the SDK actually selected.
+$sdkVersion = (& $dotnetPath --version 2>&1 | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $sdkVersion -notmatch '^10\.\d+\.\d+$') { throw "A stable .NET 10 SDK is required; selected SDK: $sdkVersion" }
+$sdkLocations = @(& $dotnetPath --list-sdks)
+if ($LASTEXITCODE -ne 0) { throw 'Cannot enumerate SDKs from the selected dotnet executable' }
+$sdkLocation = $sdkLocations | Where-Object { $_ -match ('^' + [regex]::Escape($sdkVersion) + ' \[(.+)\]$') } | Select-Object -First 1
+if (-not $sdkLocation) { throw "Cannot locate the selected SDK $sdkVersion" }
+[void]($sdkLocation -match '\[(.+)\]$')
+$sdkPath = Join-Path $Matches[1] $sdkVersion
+$dotnetRootPath = Split-Path -Parent $Matches[1]
+foreach ($requiredSdkFile in @('Microsoft.NET.HostModel.dll', 'AppHostTemplate\apphost.exe')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $sdkPath $requiredSdkFile) -PathType Leaf)) { throw "Selected SDK is incomplete: $requiredSdkFile" }
+}
+$apphostBytes = [IO.File]::ReadAllBytes((Join-Path $sdkPath 'AppHostTemplate\apphost.exe'))
+if ($apphostBytes.Length -lt 64 -or $apphostBytes[0] -ne 0x4d -or $apphostBytes[1] -ne 0x5a) { throw 'Selected SDK apphost is not a Windows executable' }
+$peOffset = [BitConverter]::ToInt32($apphostBytes, 0x3c)
+if ($peOffset -lt 0 -or $peOffset + 6 -gt $apphostBytes.Length -or [BitConverter]::ToUInt32($apphostBytes, $peOffset) -ne 0x4550 -or [BitConverter]::ToUInt16($apphostBytes, $peOffset + 4) -ne 0x8664) {
+    throw 'The selected .NET SDK must provide a Windows x64 apphost'
+}
+foreach ($noticeName in @('LICENSE.txt', 'ThirdPartyNotices.txt')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $dotnetRootPath $noticeName) -PathType Leaf)) { throw "Selected SDK is missing distribution notices: $noticeName" }
+}
+Write-Host "Selected SDK: $sdkVersion ($sdkPath)"
+$selectedMediaTools = if ($MediaToolsDirectory) { [IO.Path]::GetFullPath($MediaToolsDirectory) } else { Join-Path $repositoryRoot '.tooling\media-tools\ffmpeg' }
+& (Join-Path $PSScriptRoot 'prepare-media-tools.ps1') -DestinationDirectory $selectedMediaTools -Offline
 
 foreach ($directoryPath in @($dotnetCliHome, $nugetPackages, $temporaryPath)) {
     New-Item -ItemType Directory -Force -Path $directoryPath | Out-Null
@@ -46,6 +79,7 @@ $publishArguments = @(
     '-p:DebugSymbols=false'
 )
 
+if ($MediaToolsDirectory) { $publishArguments += '-p:MediaToolsDirectory=' + [IO.Path]::GetFullPath($MediaToolsDirectory) }
 Write-Host "Publishing DarkGrey RPG Studio to $outputPath"
 & $dotnetPath @publishArguments
 if ($LASTEXITCODE -ne 0) {
@@ -76,9 +110,6 @@ foreach ($file in Get-ChildItem -LiteralPath $outputPath -Recurse -File) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $targetPath) | Out-Null
     Copy-Item -LiteralPath $file.FullName -Destination $targetPath
 }
-$sdkVersion = (& $dotnetPath --version).Trim()
-if ($LASTEXITCODE -ne 0) { throw 'Cannot determine SDK version for root apphost' }
-$sdkPath = Join-Path (Split-Path -Parent $dotnetPath) ('sdk\' + $sdkVersion)
 [void][Reflection.Assembly]::LoadFrom((Join-Path $sdkPath 'Microsoft.NET.HostModel.dll'))
 [Microsoft.NET.HostModel.AppHost.HostWriter]::CreateAppHost(
     (Join-Path $sdkPath 'AppHostTemplate\apphost.exe'),
@@ -88,9 +119,12 @@ $sdkPath = Join-Path (Split-Path -Parent $dotnetPath) ('sdk\' + $sdkVersion)
 $docsPath = Join-Path $layoutPath 'Docs'
 New-Item -ItemType Directory -Force -Path $docsPath | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'PORTABLE_STORAGE.md') -Destination (Join-Path $docsPath 'PortableStorage.md')
+foreach ($document in @('THIRD_PARTY_NOTICES.md')) {
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot $document) -Destination (Join-Path $docsPath (Split-Path $document -Leaf))
+}
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'media-tools.lock.json') -Destination (Join-Path $docsPath 'MediaTools.lock.json')
 # Runtime distribution notices are not emitted by dotnet publish. Preserve the
 # SDK's bundled .NET notices alongside the self-contained runtime files.
-$dotnetRootPath = Split-Path -Parent $dotnetPath
 foreach ($noticeName in @('LICENSE.txt', 'ThirdPartyNotices.txt')) {
     $noticePath = Join-Path $dotnetRootPath $noticeName
     if (-not (Test-Path -LiteralPath $noticePath -PathType Leaf)) { throw "Missing bundled .NET notice: $noticeName" }

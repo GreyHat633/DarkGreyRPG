@@ -2968,8 +2968,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 return;
             }
             var resultPath = group is null
-                ? new DgrsStoryPackageExporter(project.ProjectDirectory).Build(story.Id, output, "0.3.3.6").PackagePath
-                : new DgrsGroupPackageExporter(project.ProjectDirectory).Build(story.Id, output, "0.3.3.6").PackagePath;
+                ? new DgrsStoryPackageExporter(project.ProjectDirectory).Build(story.Id, output, StudioBuildInfo.Version).PackagePath
+                : new DgrsGroupPackageExporter(project.ProjectDirectory).Build(story.Id, output, StudioBuildInfo.Version).PackagePath;
             _lastUiCommand = nameof(ExportSelectedStoryPackage);
             OnPropertyChanged(nameof(LastUiCommand));
             ReportSuccess($"{(group is null ? "故事包" : "完整故事组")}已导出并验证：{resultPath}", $"story/{story.Id}");

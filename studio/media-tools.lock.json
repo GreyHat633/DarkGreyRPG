@@ -1,0 +1,12 @@
+{
+  "version": "9.0-full_build-www.gyan.dev",
+  "archive_url": "https://github.com/GyanD/codexffmpeg/releases/download/9.0/ffmpeg-9.0-full_build.zip",
+  "archive_sha256": "f42f0c4b04eae3ac918707ff66e3e0ff0cee527bfa6d322624d4bc1160d5055e",
+  "source": "https://github.com/FFmpeg/FFmpeg/commit/d32b387f2b",
+  "files": {
+    "ffmpeg.exe": "05f4251bce9293c2ab492cb17ca7724a0ffd0d06c881ba2ee83b82a89c2fc740",
+    "ffprobe.exe": "51e0780cd881f83749b029ed716cbb841c2eac6289f418050f2f2961b158896b",
+    "LICENSE": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+    "README.txt": "c9dd4a230f66f8f15f43fbfa56fa9d15edfac2b19a52297e03237f5988cbdac7"
+  }
+}

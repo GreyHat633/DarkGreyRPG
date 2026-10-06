@@ -27,6 +27,7 @@
 # Release/source includes implementation, fixtures and the verification summary.
 /PLAN/0.3.3.7/evidence/
 /PLAN/0.3.3.7/Tests/
+/PLAN/0.3.x.x-Closeout/evidence/
 **/bin/
 **/obj/
 **/.godot/

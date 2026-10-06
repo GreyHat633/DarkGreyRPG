@@ -1,7 +1,8 @@
 dependencies {
     implementation(project.files("libs/jlayer-1.0.1.jar"))
-    // CustomNPC+ is an actual runtime requirement, but is not redistributed in
-    // the DarkGrey_RPG jar. RFG deobfuscates the local 1.7.10 mod for dev use.
+    // CustomNPC+ is optional: vanilla-entity Story/Session/Task works without it.
+    // Its NPC integration requires the exact CNPC build and its dependencies.
+    // It is not bundled in the Runtime jar; RFG deobfuscates it for dev use.
     compileOnly(rfg.deobf(project.files("libs/CustomNPC-Plus-1.11.1-fixed-v1.jar")))
     testCompileOnly(project.files("libs/CustomNPC-Plus-1.11.1-fixed-v1.jar"))
     testRuntimeOnly(project.files("libs/CustomNPC-Plus-1.11.1-fixed-v1.jar"))
