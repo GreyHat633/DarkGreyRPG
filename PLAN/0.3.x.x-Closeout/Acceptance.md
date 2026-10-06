@@ -34,6 +34,7 @@
 | DELIVERY-01 | 权威dist与Data保护 | PASS | 0.3.3.7 self-contained win-x64；Data 2661 个文件路径/大小/SHA 完全不变 |
 | DELIVERY-02 | 程序与源码对应 | PASS | Delivery 指纹、Source.patch/SourceInputs；候选与 dist 全白名单409文件一致、实机功能DLL相同；五处Runtime JAR一致 |
 | DELIVERY-03 | 扫尾交付时的授权与阶段状态 | PASS | 扫尾交付时未新建发布包/提交/推送/修改远端；既有 Release 五附件及本地旧成品哈希一致；未冒充用户验收。后续源码上传另有用户明确授权，见 Implementation 末尾及 Delivery.source_publication |
+| SOURCE-UPLOAD-01 | 用户后续授权的 GitHub 源码上传 | PASS | 50 个输入与已测大小/SHA一致；源码提交 2dedd6994b6327fd4887a9e45d926d28c7e04808 已推送至 codex/0.3.3.7 并读回远端确认。标签仍指向基线，Release 五附件及原成品不变；后续仅补交上传记录 |
 
 ## 测试实际数量
 

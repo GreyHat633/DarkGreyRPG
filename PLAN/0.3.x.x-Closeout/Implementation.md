@@ -76,3 +76,5 @@ CurrentIdentityFixture 的 closeout 模式仅创建最小创作项目；`.dgrs`�
 2026-10-07，用户在确认成品无需重新分发后明确要求“上传github”。该指令授权将本次源码、文档、回归测试及第三方原始材料提交并推送至既有 `codex/0.3.3.7` 分支；不修改标签、Release 或既有成品。
 
 上传前逐一核对 Delivery 中的 50 个源码与材料输入，路径、大小和 SHA-256 均与扫尾验收时一致。上传不引入新的生产代码变更，沿用本轮已执行的构建与测试；提交不包含 dist、artifacts、Data、缓存或局部 evidence。推送结果记录在 Delivery.json 的 source_publication 字段。
+
+源码提交 `2dedd6994b6327fd4887a9e45d926d28c7e04808` 已推送，远端分支指向该提交。`v0.3.3.7` 标签仍指向基线，Release 的五个附件及本地原 JAR／ZIP 指纹保持不变。随后仅补交本节、验收表和 Delivery 的上传结果，不改变已测源码。

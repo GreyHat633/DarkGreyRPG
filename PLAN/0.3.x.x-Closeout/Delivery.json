@@ -437,9 +437,24 @@
   "existing_release_assets": 5,
   "existing_release_metadata_and_digests_equal": true,
   "existing_local_release_jar_zip_equal": true,
-  "committed": false,
-  "pushed": false,
+  "committed": true,
+  "pushed": true,
   "user_accepted": false,
   "runtime_workspace_build_copy_equal": true,
-  "powershell_test_host": "7.6.5"
+  "powershell_test_host": "7.6.5",
+  "source_publication": {
+    "authorization": "Owner explicitly requested GitHub source upload after technical closeout",
+    "status": "SOURCE_COMMIT_PUSHED_AND_REMOTE_VERIFIED",
+    "branch": "codex/0.3.3.7",
+    "source_commit": "2dedd6994b6327fd4887a9e45d926d28c7e04808",
+    "confirmed_remote_source_commit": "2dedd6994b6327fd4887a9e45d926d28c7e04808",
+    "confirmed_on": "2026-10-07",
+    "scope": "Source, documentation, regression tests and third-party original materials only",
+    "verified_source_inputs": 50,
+    "all_source_inputs_match_tested_closeout_hashes": true,
+    "new_production_changes_during_upload": false,
+    "release_tag_target": "462b1cd17566a1f42c76bfc94ee9e6042e8ae8d4",
+    "release_assets_and_local_finished_products_unchanged": true,
+    "followup_record_commit_scope": "Publication evidence only"
+  }
 }
