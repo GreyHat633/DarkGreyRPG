@@ -88,6 +88,14 @@ $sdkPath = Join-Path (Split-Path -Parent $dotnetPath) ('sdk\' + $sdkVersion)
 $docsPath = Join-Path $layoutPath 'Docs'
 New-Item -ItemType Directory -Force -Path $docsPath | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'PORTABLE_STORAGE.md') -Destination (Join-Path $docsPath 'PortableStorage.md')
+# Runtime distribution notices are not emitted by dotnet publish. Preserve the
+# SDK's bundled .NET notices alongside the self-contained runtime files.
+$dotnetRootPath = Split-Path -Parent $dotnetPath
+foreach ($noticeName in @('LICENSE.txt', 'ThirdPartyNotices.txt')) {
+    $noticePath = Join-Path $dotnetRootPath $noticeName
+    if (-not (Test-Path -LiteralPath $noticePath -PathType Leaf)) { throw "Missing bundled .NET notice: $noticeName" }
+    Copy-Item -LiteralPath $noticePath -Destination (Join-Path $docsPath $noticeName)
+}
 
 # Never mirror or clear a deployed copy: it may contain personal Data.
 function Assert-NoLinks([string]$Path) {
@@ -105,8 +113,9 @@ $legacyManifestPath = Join-Path $destinationPath 'StudioProgramFiles.json'
 $previousManifest = if (Test-Path -LiteralPath $manifestPath) { $manifestPath } else { $legacyManifestPath }
 $previousFiles = if (Test-Path -LiteralPath $previousManifest) { @(Get-Content -LiteralPath $previousManifest -Raw | ConvertFrom-Json) } else { @('DarkGreyRPGStudio.pdb', 'DarkGreyRPG.Studio.Core.pdb') }
 $programFiles = @(Get-ChildItem -LiteralPath $layoutPath -Recurse -File | ForEach-Object { [IO.Path]::GetRelativePath($layoutPath, $_.FullName) })
-if (@(Get-Process -Name DarkGreyRPGStudio -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $destinationPath 'DarkGreyRPGStudio.exe') }).Count) { throw 'Close the destination Studio before updating program files' }
+if (@(Get-Process -Name DarkGreyRPGStudio -ErrorAction SilentlyContinue | Where-Object { -not $_.HasExited -and $_.Path -eq (Join-Path $destinationPath 'DarkGreyRPGStudio.exe') }).Count) { throw 'Close the destination Studio before updating program files' }
 $obsoleteDirectories = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+$replacementBackup = [IO.Path]::GetFullPath((Join-Path $toolingRoot ('replaced-program-' + [guid]::NewGuid().ToString('N'))))
 foreach ($relative in $previousFiles) {
     $targetPath = [IO.Path]::GetFullPath((Join-Path $destinationPath $relative))
     if ([IO.Path]::IsPathRooted($relative) -or -not $targetPath.StartsWith($destinationPath.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or $relative -match '^Data([\\/]|$)') { throw "Unsafe previous program manifest path: $relative" }
@@ -120,7 +129,23 @@ foreach ($relative in $programFiles) {
     $targetPath = Join-Path $destinationPath $relative
     Assert-NoLinks $targetPath
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $targetPath) | Out-Null
-    Copy-Item -LiteralPath (Join-Path $layoutPath $relative) -Destination $targetPath -Force
+    try {
+        Copy-Item -LiteralPath (Join-Path $layoutPath $relative) -Destination $targetPath -Force
+    } catch [IO.IOException] {
+        # An exited Windows process can retain its image mapping. Rename the old
+        # program file into tooling, then install a fresh file; personal Data is excluded.
+        $targetPath = [IO.Path]::GetFullPath($targetPath)
+        $backupPath = [IO.Path]::GetFullPath((Join-Path $replacementBackup $relative))
+        if (-not $targetPath.StartsWith($destinationPath.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or
+            -not $backupPath.StartsWith($replacementBackup.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or
+            $relative -match '^Data([\\/]|$)' -or -not (Test-Path -LiteralPath $targetPath -PathType Leaf)) { throw }
+        Assert-NoLinks $backupPath
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $backupPath) | Out-Null
+        Move-Item -LiteralPath $targetPath -Destination $backupPath
+        try { Copy-Item -LiteralPath (Join-Path $layoutPath $relative) -Destination $targetPath }
+        catch { Move-Item -LiteralPath $backupPath -Destination $targetPath; throw }
+        Write-Host "Retained previous program file: $backupPath"
+    }
 }
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $manifestPath) | Out-Null
 ConvertTo-Json -InputObject $programFiles | Set-Content -LiteralPath $manifestPath -Encoding utf8

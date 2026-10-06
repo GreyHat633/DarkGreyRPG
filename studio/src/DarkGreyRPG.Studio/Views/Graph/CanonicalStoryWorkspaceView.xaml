@@ -205,7 +205,7 @@
                             <TextBlock Margin="9,8" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="松开以放置节点" />
                         </StackPanel>
                     </Border>
-                    <Border Canvas.Left="18" Canvas.Top="18" MaxWidth="420" Padding="10,6"
+                    <Border Canvas.Left="18" Canvas.Top="90" MaxWidth="420" Padding="10,6"
                             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{DynamicResource AccentFillColorDefaultBrush}" BorderThickness="1"
                             CornerRadius="4">
@@ -580,6 +580,7 @@
                         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsTaskReward}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                         <graph:RewardEntriesEditor />
                     </StackPanel>
+<graph:LogicInputsEditor />
 <graph:PublicOutputsEditor DataContext="{Binding PublicOutputs}" />
                     <StackPanel>
   <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsPublicBoundary}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>

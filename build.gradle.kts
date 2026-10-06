@@ -1025,3 +1025,27 @@ tasks.register<JavaExec>("runtimeFontResourceRows0336Probe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.client.gui.RuntimeFontResourceRows0336Probe")
 }
+
+tasks.register<JavaExec>("construction0337Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.Construction0337Probe")
+    args(layout.buildDirectory.dir("construction-0337").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("logicInputs0337Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.LogicInputs0337Probe")
+    args(providers.gradleProperty("logicInputsFixture").getOrElse(layout.projectDirectory.dir("PLAN/0.3.3.7/Fixtures/Packages").asFile.absolutePath),
+        layout.buildDirectory.dir("logic-inputs-0337").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("taskLayout0337Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.TaskLayout0322Probe")
+}

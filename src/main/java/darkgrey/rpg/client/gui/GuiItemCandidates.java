@@ -10,7 +10,8 @@ public final class GuiItemCandidates extends GuiScreen {
 
     private final GuiScreen parent;
     private final ItemSlotStrip strip;
-    private int scroll;
+    private final SmoothScroll scroll = new SmoothScroll();
+    private int clipLeft, clipRight, clipTop, clipBottom;
 
     public GuiItemCandidates(GuiScreen parent, NBTTagCompound source) {
         this.parent = parent;
@@ -28,9 +29,13 @@ public final class GuiItemCandidates extends GuiScreen {
         drawRect(left, top, left + w, bottom, DgrUiPalette.BORDER);
         drawRect(left + 1, top + 1, left + w - 1, bottom - 1, DgrUiPalette.WINDOW_PANEL);
         fontRendererObj.drawSplitString(title, left + 10, top + 10, w - 20, DgrUiPalette.TEXT);
-        int clipTop = top + header + 20, clipBottom = bottom - 24;
-        scroll = Math.max(0, Math.min(scroll, Math.max(0, strip.height(w - 20) - (clipBottom - clipTop))));
-        strip.draw(left + 10, clipTop - scroll, w - 20, clipTop, clipBottom, x, y);
+        clipTop = top + header + 20;
+        clipBottom = bottom - 24;
+        clipLeft = left;
+        clipRight = left + w;
+        scroll.bounds(strip.height(w - 20) - (clipBottom - clipTop));
+        scroll.tick();
+        strip.draw(left + 10, clipTop - scroll.pixelOffset(), w - 20, clipTop, clipBottom, x, y);
         fontRendererObj.drawString(
             strip.height(w - 20) > clipBottom - clipTop ? "Esc 返回 · 滚轮查看更多" : "Esc 返回",
             left + 10,
@@ -42,7 +47,9 @@ public final class GuiItemCandidates extends GuiScreen {
     public void handleMouseInput() {
         super.handleMouseInput();
         int delta = Mouse.getEventDWheel();
-        if (delta != 0) scroll = Math.max(0, scroll + (delta < 0 ? 24 : -24));
+        int x = Mouse.getEventX() * width / mc.displayWidth;
+        int y = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (x >= clipLeft && x < clipRight && y >= clipTop && y < clipBottom) scroll.wheel(delta, 24);
     }
 
     protected void keyTyped(char c, int key) {

@@ -9,6 +9,11 @@ public final class PlayerUiPreferences {
         AZURE
     }
 
+    public enum Side {
+        LEFT,
+        RIGHT
+    }
+
     private static Theme theme = Theme.CHARCOAL;
     private static double opacity = 0.8;
     private static double textScale = 1;
@@ -16,6 +21,40 @@ public final class PlayerUiPreferences {
     private static double musicVolume = 1;
     private static double autoWaitSeconds = 3;
     private static boolean automatic;
+    private static boolean trackNewTasks = true;
+    private static Side trackerSide = Side.RIGHT, notificationSide = Side.RIGHT;
+
+    public static boolean trackNewTasks() {
+        return trackNewTasks;
+    }
+
+    public static void setTrackNewTasks(boolean value) {
+        trackNewTasks = value;
+    }
+
+    public static Side trackerSide() {
+        return trackerSide;
+    }
+
+    public static Side notificationSide() {
+        return notificationSide;
+    }
+
+    public static void setTrackerSide(Side value) {
+        trackerSide = value == null ? Side.RIGHT : value;
+    }
+
+    public static void setNotificationSide(Side value) {
+        notificationSide = value == null ? Side.RIGHT : value;
+    }
+
+    public static Side parseSide(String value) {
+        try {
+            return Side.valueOf(value);
+        } catch (RuntimeException invalid) {
+            return Side.RIGHT;
+        }
+    }
 
     public static boolean automatic() {
         return automatic;
@@ -81,6 +120,8 @@ public final class PlayerUiPreferences {
         opacity = 0.8;
         textScale = voiceVolume = musicVolume = 1;
         autoWaitSeconds = 3;
+        trackNewTasks = true;
+        trackerSide = notificationSide = Side.RIGHT;
         DialoguePreferences.setSpeed(30);
     }
 

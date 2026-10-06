@@ -9,7 +9,7 @@ public final class TaskTracking0332Probe {
     public static void main(String[] args) {
         TaskTrackingSelection selection = new TaskTrackingSelection();
         LinkedHashSet<String> active = new LinkedHashSet<String>(Arrays.asList("a:1", "b:1", "c:1", "d:1"));
-        selection.reconcile(active, Collections.<String>emptyList());
+        selection.reconcile(Collections.<String>emptySet(), Collections.<String>emptyList());
         check(
             selection.selected()
                 .isEmpty(),

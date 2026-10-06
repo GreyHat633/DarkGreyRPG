@@ -9,6 +9,7 @@ public final class TaskTrackingSelection {
 
     public static final int LIMIT = 3;
     private final LinkedHashSet<String> selected = new LinkedHashSet<String>();
+    private final Set<String> observed = new LinkedHashSet<String>();
 
     public Set<String> selected() {
         return Collections.unmodifiableSet(new LinkedHashSet<String>(selected));
@@ -25,7 +26,13 @@ public final class TaskTrackingSelection {
     }
 
     public void reconcile(Set<String> active, Iterable<String> received) {
+        reconcile(active, received, true);
+    }
+
+    public void reconcile(Set<String> active, Iterable<String> received, boolean automatic) {
         selected.retainAll(active);
-        for (String id : received) if (active.contains(id)) track(id);
+        // Consume identities even while disabled/full. Initial snapshots also establish the baseline.
+        for (String id : received) if (observed.add(id) && automatic && active.contains(id)) track(id);
+        observed.addAll(active);
     }
 }

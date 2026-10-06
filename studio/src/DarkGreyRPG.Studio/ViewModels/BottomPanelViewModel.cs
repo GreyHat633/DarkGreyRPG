@@ -26,8 +26,7 @@ public sealed class BottomPanelViewModel : ObservableObject
         [
             new("Output", "输出", "Output"),
             new("Problems", "问题", "Problems"),
-            new("Debugger", "调试器", "Debugger"),
-            new("Minecraft", "Minecraft", "Minecraft")
+            new("Debugger", "调试器", "Debugger")
         ]);
         _selectedTab = _tabs[0];
     }
@@ -40,7 +39,7 @@ public sealed class BottomPanelViewModel : ObservableObject
         set
         {
             ArgumentNullException.ThrowIfNull(value);
-            SetProperty(ref _selectedTab, value);
+            SetProperty(ref _selectedTab, _tabs.FirstOrDefault(tab => tab.Page == value.Page) ?? _tabs[0]);
         }
     }
 

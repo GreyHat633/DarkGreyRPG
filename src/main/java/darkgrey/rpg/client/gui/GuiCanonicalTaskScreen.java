@@ -29,8 +29,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private NBTTagCompound snapshot = new NBTTagCompound();
     private long snapshotRevision = Long.MIN_VALUE;
     private String selectedTaskId;
-    private int taskScroll;
-    private int detailScroll;
+    private final SmoothScroll taskScroll = new SmoothScroll();
+    private final SmoothScroll detailScroll = new SmoothScroll();
     private boolean completedView;
     private static Object sessionConnection;
     private static final java.util.Set<String> expandedStories = new java.util.LinkedHashSet<String>();
@@ -108,8 +108,10 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         }
         if (snapshotRevision == Long.MIN_VALUE) {
             selectedTaskId = rememberedTask;
-            taskScroll = rememberedScroll;
-            detailScroll = rememberedDetailScroll;
+            taskScroll.bounds(Integer.MAX_VALUE);
+            detailScroll.bounds(Integer.MAX_VALUE);
+            taskScroll.jump(rememberedScroll);
+            detailScroll.jump(rememberedDetailScroll);
             completedView = rememberedCompleted;
             String currentHistory = darkgrey.rpg.client.TaskPresentationPages
                 .identity(darkgrey.rpg.client.TaskPresentationPages.historyContext());
@@ -194,8 +196,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         if (selectedTaskId != null && findTask(tasks, selectedTaskId) != null) return;
         if (completedView && historyLoading) return;
         selectedTaskId = null;
-        taskScroll = 0;
-        detailScroll = 0;
+        taskScroll.jump(0);
+        detailScroll.jump(0);
     }
 
     private CanonicalTaskLayout layout() {
@@ -235,20 +237,25 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         if (ItemCandidatePopover.wheel(mouseX, mouseY, wheel)) return;
         int amount = wheel < 0 ? 2 : -2;
         if (layout.containsList(mouseX, mouseY)) {
-            taskScroll = Math.max(0, taskScroll + amount);
+            taskScroll.wheel(wheel, 2 * listRowHeight(layout));
             int visible = Math.max(1, (layout.listBottom - layout.listTop) / (listRowHeight(layout)));
             if (amount > 0 && completedView
-                && taskScroll + visible >= TaskStoryRows.flatten(tasks(), expandedStories)
-                    .size() - 2
+                && !historyLoading
+                && !historyFailed
+                && taskScroll.target() / listRowHeight(layout) + visible
+                    >= TaskStoryRows.flatten(tasks(), expandedStories)
+                        .size() - 2
                 && historyPage != null
                 && historyPage.getInteger("next") < historyPage.getInteger("total")) {
                 historyCursor = historyPage.getInteger("next");
                 historyLoading = true;
             }
         } else if (layout.containsDetail(mouseX, mouseY)) {
-            detailScroll = Math.max(0, detailScroll + amount * 12);
+            detailScroll.wheel(wheel, 24);
             if (amount > 0 && completedView
-                && detailScroll + layout.detailBottom - layout.detailTop >= detailHeight - 24
+                && !detailLoading
+                && !detailFailed
+                && detailScroll.target() + layout.detailBottom - layout.detailTop >= detailHeight - 24
                 && detailPage != null
                 && detailPage.getInteger("next") < detailPage.getInteger("total")) {
                 detailCursor = detailPage.getInteger("next");
@@ -298,9 +305,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         CanonicalTaskLayout layout = layout();
         if (!layout.containsList(mouseX, mouseY)) return;
         int rowHeight = listRowHeight(layout);
-        int row = (mouseY - layout.listTop) / rowHeight;
-        if (row >= Math.max(1, (layout.listBottom - layout.listTop) / rowHeight)) return;
-        int index = taskScroll + row;
+        int index = taskScroll.rowAt(mouseY - layout.listTop, rowHeight);
         List<NBTTagCompound> rows = TaskStoryRows.flatten(tasks(), expandedStories);
         if (index < 0 || index >= rows.size()) return;
         NBTTagCompound rowData = rows.get(index);
@@ -314,7 +319,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                     selectedTaskId = null;
                     detailCacheKey = null;
                     cachedDetails.clear();
-                    detailScroll = detailHeight = 0;
+                    detailScroll.jump(0);
+                    detailHeight = 0;
                     ItemCandidatePopover.close();
                     detailRecord = null;
                     detailTaskId = null;
@@ -323,7 +329,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             return;
         }
         String id = taskId(rowData);
-        if (!id.equals(selectedTaskId)) detailScroll = 0;
+        if (!id.equals(selectedTaskId)) detailScroll.jump(0);
         if (!id.equals(selectedTaskId)) ItemCandidatePopover.close();
         selectedTaskId = id;
     }
@@ -333,6 +339,11 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
 
         refreshCache();
         CanonicalTaskLayout layout = layout();
+        taskScroll.bounds(
+            TaskStoryRows.flatten(tasks(), expandedStories)
+                .size() * listRowHeight(layout) - (layout.listBottom - layout.listTop));
+        taskScroll.tick();
+        detailScroll.tick();
         drawDefaultBackground();
         drawPanel(layout);
         darkgrey.rpg.client.gui.DgrUiText.centered(
@@ -387,7 +398,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             completedView = !completedView;
             historyFailed = detailFailed = false;
             detailLoading = false;
-            taskScroll = detailScroll = 0;
+            taskScroll.jump(0);
+            detailScroll.jump(0);
             ItemCandidatePopover.close();
             historyCursor = 0;
             historyRows = new NBTTagList();
@@ -445,7 +457,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         List<NBTTagCompound> tasks = TaskStoryRows.flatten(tasks(), expandedStories);
         int rowHeight = listRowHeight(layout);
         int visible = Math.max(1, (layout.listBottom - layout.listTop) / rowHeight);
-        taskScroll = Math.min(taskScroll, Math.max(0, tasks.size() - visible));
+        taskScroll.bounds(tasks.size() * rowHeight - (layout.listBottom - layout.listTop));
         if (tasks.size() == 0) {
             fontRendererObj.drawString(
                 completedView ? "暂无已完成任务" : "暂无进行中的任务",
@@ -454,45 +466,55 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                 DgrUiPalette.SECONDARY);
             return;
         }
-        for (int row = 0; row < visible && row + taskScroll < tasks.size(); row++) {
-            int index = row + taskScroll;
-            NBTTagCompound task = tasks.get(index);
-            int top = layout.listTop + row * rowHeight;
-            String id = taskId(task);
-            boolean selected = id.equals(selectedTaskId);
-            boolean hovered = layout.containsList(mouseX, mouseY) && mouseY >= top && mouseY < top + rowHeight;
-            if (selected)
-                drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
-            else if (hovered)
-                drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
-            boolean story = task.getBoolean("story_header");
-            if (story && !hovered)
-                drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.SUB_PANEL);
-            double textScale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
-            String title = task.getString("title");
-            if (title.length() == 0) title = "未命名任务";
-            int titleX = layout.listLeft + (story ? 22 : 28);
-            title = fontRendererObj
-                .trimStringToWidth(title, Math.max(1, (int) ((layout.listRight - titleX - 8) / textScale)));
-            int textY = top + (rowHeight - (int) Math.ceil(fontRendererObj.FONT_HEIGHT * textScale)) / 2;
-            if (story) fontRendererObj.drawString(
-                expandedStories.contains(TaskStoryRows.key(task)) ? "▾" : "▸",
-                layout.listLeft + 8,
-                top + (rowHeight - fontRendererObj.FONT_HEIGHT) / 2,
-                DgrUiPalette.TEXT);
-            else if (selected) drawRect(
-                layout.listLeft + 14,
-                top + 4,
-                layout.listLeft + 16,
-                top + rowHeight - 6,
-                DgrUiPalette.SELECTED_BORDER);
-            CanonicalDialogueRenderer.drawText(
-                fontRendererObj,
-                title,
-                titleX,
-                textY,
-                textScale,
-                story ? DgrUiPalette.STORY_TEXT : DgrUiPalette.TEXT);
+        try (GuiScrollClip clip = new GuiScrollClip(
+            layout.listLeft,
+            layout.listTop,
+            layout.listRight,
+            layout.listBottom)) {
+            int first = taskScroll.pixelOffset() / rowHeight;
+            for (int index = first; index < tasks.size() && index <= first + visible + 1; index++) {
+                NBTTagCompound task = tasks.get(index);
+                int top = layout.listTop + index * rowHeight - taskScroll.pixelOffset();
+                String id = taskId(task);
+                boolean selected = id.equals(selectedTaskId);
+                boolean hovered = layout.containsList(mouseX, mouseY) && mouseY >= top && mouseY < top + rowHeight;
+                if (selected)
+                    drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
+                else if (hovered)
+                    drawRect(layout.listLeft + 4, top, layout.listRight - 4, top + rowHeight - 2, DgrUiPalette.HOVER);
+                boolean story = task.getBoolean("story_header");
+                if (story && !hovered) drawRect(
+                    layout.listLeft + 4,
+                    top,
+                    layout.listRight - 4,
+                    top + rowHeight - 2,
+                    DgrUiPalette.SUB_PANEL);
+                double textScale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
+                String title = task.getString("title");
+                if (title.length() == 0) title = "未命名任务";
+                int titleX = layout.listLeft + (story ? 22 : 28);
+                title = fontRendererObj
+                    .trimStringToWidth(title, Math.max(1, (int) ((layout.listRight - titleX - 8) / textScale)));
+                int textY = top + (rowHeight - (int) Math.ceil(fontRendererObj.FONT_HEIGHT * textScale)) / 2;
+                if (story) fontRendererObj.drawString(
+                    expandedStories.contains(TaskStoryRows.key(task)) ? "▾" : "▸",
+                    layout.listLeft + 8,
+                    top + (rowHeight - fontRendererObj.FONT_HEIGHT) / 2,
+                    DgrUiPalette.TEXT);
+                else if (selected) drawRect(
+                    layout.listLeft + 14,
+                    top + 4,
+                    layout.listLeft + 16,
+                    top + rowHeight - 6,
+                    DgrUiPalette.SELECTED_BORDER);
+                CanonicalDialogueRenderer.drawText(
+                    fontRendererObj,
+                    title,
+                    titleX,
+                    textY,
+                    textScale,
+                    story ? DgrUiPalette.STORY_TEXT : DgrUiPalette.TEXT);
+            }
         }
     }
 
@@ -503,7 +525,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             cachedDetails.clear();
             detailCacheKey = null;
             detailHeight = 0;
-            detailScroll = 0;
+            detailScroll.jump(0);
             fontRendererObj
                 .drawString("选择一个任务查看详情", layout.detailLeft + 8, layout.detailTop + 8, DgrUiPalette.SECONDARY);
             return;
@@ -675,45 +697,57 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         int total = 0, lineHeight = fontRendererObj.FONT_HEIGHT + 2;
         for (DetailBlock block : cachedDetails) total += blockHeight(block, contentWidth);
         detailHeight = total;
-        detailScroll = Math.min(detailScroll, Math.max(0, total - (layout.detailBottom - layout.detailTop)));
-        int y = layout.detailTop - detailScroll;
-        for (DetailBlock block : cachedDetails) {
-            block.top = Math.max(y, layout.detailTop);
-            block.bottom = Math.min(y + blockHeight(block, contentWidth), layout.detailBottom);
-            if (block.objectiveId != null
-                && block.objectiveId.equals(darkgrey.rpg.client.TaskTrackerClient.focused(task)))
-                drawRect(
-                    layout.detailLeft + 4,
-                    block.top,
-                    layout.detailRight - 4,
-                    Math.max(block.top, block.bottom),
-                    DgrUiPalette.HOVER);
-            if (block.items != null) {
-                int slotsWidth = slotsWidth(block, contentWidth);
-                block.items
-                    .draw(layout.detailLeft + 8, y, slotsWidth, layout.detailTop, layout.detailBottom, mouseX, mouseY);
-                if (block.items.tooltip != null) itemTooltip = block.items.tooltip;
-                if (block.text != null) {
-                    int textY = slotsWidth < contentWidth ? y + 6 : y + block.items.height(slotsWidth);
-                    int textX = slotsWidth < contentWidth ? layout.detailLeft + 8 + slotsWidth + 8
-                        : layout.detailLeft + 8;
-                    for (Object line : fontRendererObj.listFormattedStringToWidth(
-                        block.text,
-                        slotsWidth < contentWidth ? contentWidth - slotsWidth - 8 : contentWidth)) {
-                        if (textY >= layout.detailTop && textY + fontRendererObj.FONT_HEIGHT <= layout.detailBottom)
-                            fontRendererObj.drawString((String) line, textX, textY, DgrUiPalette.SECONDARY);
-                        textY += lineHeight;
-                    }
-                }
-                y += blockHeight(block, contentWidth);
-            } else {
-                if (y >= layout.detailTop && y + fontRendererObj.FONT_HEIGHT <= layout.detailBottom)
-                    fontRendererObj.drawString(
-                        block.text,
+        detailScroll.bounds(total - (layout.detailBottom - layout.detailTop));
+        int y = layout.detailTop - detailScroll.pixelOffset();
+        try (GuiScrollClip clip = new GuiScrollClip(
+            layout.detailLeft,
+            layout.detailTop,
+            layout.detailRight,
+            layout.detailBottom)) {
+            for (DetailBlock block : cachedDetails) {
+                block.top = Math.max(y, layout.detailTop);
+                block.bottom = Math.min(y + blockHeight(block, contentWidth), layout.detailBottom);
+                if (block.objectiveId != null
+                    && block.objectiveId.equals(darkgrey.rpg.client.TaskTrackerClient.focused(task)))
+                    drawRect(
+                        layout.detailLeft + 4,
+                        block.top,
+                        layout.detailRight - 4,
+                        Math.max(block.top, block.bottom),
+                        DgrUiPalette.HOVER);
+                if (block.items != null) {
+                    int slotsWidth = slotsWidth(block, contentWidth);
+                    block.items.draw(
                         layout.detailLeft + 8,
                         y,
-                        block.text.startsWith("§l") ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.TEXT);
-                y += lineHeight;
+                        slotsWidth,
+                        layout.detailTop,
+                        layout.detailBottom,
+                        mouseX,
+                        mouseY);
+                    if (block.items.tooltip != null) itemTooltip = block.items.tooltip;
+                    if (block.text != null) {
+                        int textY = slotsWidth < contentWidth ? y + 6 : y + block.items.height(slotsWidth);
+                        int textX = slotsWidth < contentWidth ? layout.detailLeft + 8 + slotsWidth + 8
+                            : layout.detailLeft + 8;
+                        for (Object line : fontRendererObj.listFormattedStringToWidth(
+                            block.text,
+                            slotsWidth < contentWidth ? contentWidth - slotsWidth - 8 : contentWidth)) {
+                            if (textY + fontRendererObj.FONT_HEIGHT > layout.detailTop && textY < layout.detailBottom)
+                                fontRendererObj.drawString((String) line, textX, textY, DgrUiPalette.SECONDARY);
+                            textY += lineHeight;
+                        }
+                    }
+                    y += blockHeight(block, contentWidth);
+                } else {
+                    if (y + fontRendererObj.FONT_HEIGHT > layout.detailTop && y < layout.detailBottom)
+                        fontRendererObj.drawString(
+                            block.text,
+                            layout.detailLeft + 8,
+                            y,
+                            block.text.startsWith("§l") ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.TEXT);
+                    y += lineHeight;
+                }
             }
         }
     }
@@ -774,8 +808,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     public void onGuiClosed() {
         ItemCandidatePopover.close();
         rememberedTask = selectedTaskId;
-        rememberedScroll = taskScroll;
-        rememberedDetailScroll = detailScroll;
+        rememberedScroll = taskScroll.pixelOffset();
+        rememberedDetailScroll = detailScroll.pixelOffset();
         rememberedCompleted = completedView;
         rememberedHistoryContext = historyContextKey;
         rememberedHistoryRows = (NBTTagList) historyRows.copy();

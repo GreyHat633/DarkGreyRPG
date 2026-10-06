@@ -20,6 +20,10 @@ public final class TaskLayout0322Probe {
                     "non-overlapping panes");
                 require(layout.containsList(layout.listLeft, layout.listTop), "list hit region");
                 require(!layout.containsDetail(layout.listLeft, layout.listTop), "list cannot click detail");
+                int listSize = layout.stacked ? layout.listBottom - layout.listTop : layout.listRight - layout.listLeft;
+                int detailSize = layout.stacked ? layout.detailBottom - layout.detailTop
+                    : layout.detailRight - layout.detailLeft;
+                require(Math.abs(listSize - (listSize + detailSize) * .4) <= 1, "list receives forty percent");
             }
         }
         require(new CanonicalTaskLayout(320, 240).stacked, "320x240 compact layout");

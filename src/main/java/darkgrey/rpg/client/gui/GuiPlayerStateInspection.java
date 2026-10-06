@@ -26,7 +26,8 @@ public final class GuiPlayerStateInspection extends GuiScreen {
     private GuiTextField name;
     private NBTTagCompound snapshot = new NBTTagCompound();
     private long request, requestedAt;
-    private int page, selected, detailScroll, listScroll;
+    private int page, selected;
+    private final SmoothScroll detailScroll = new SmoothScroll(), listScroll = new SmoothScroll();
     private String message = "输入本服玩家 ID / 玩家名，查询在线或离线记录。";
 
     @Override
@@ -103,8 +104,8 @@ public final class GuiPlayerStateInspection extends GuiScreen {
         loading = false;
         selected = 0;
         technicalExpanded = false;
-        detailScroll = 0;
-        listScroll = 0;
+        detailScroll.jump(0);
+        listScroll.jump(0);
         message = data.getString("error");
         if (message.isEmpty()) message = data.getString("message");
         if (message.isEmpty()) message = data.getString("name") + (data.getBoolean("online") ? " · 在线" : " · 离线")
@@ -128,7 +129,7 @@ public final class GuiPlayerStateInspection extends GuiScreen {
     protected void actionPerformed(GuiButton button) {
         if (button.id == 4) {
             technicalExpanded = !technicalExpanded;
-            detailScroll = 0;
+            detailScroll.jump(0);
             layoutButtons();
         }
         if (button.id == 1) query(0);
@@ -163,10 +164,10 @@ public final class GuiPlayerStateInspection extends GuiScreen {
             && x < geometry.x + nav
             && y >= top
             && y < geometry.y + geometry.height - 35) {
-            int index = listScroll + (y - top) / 24;
+            int index = listScroll.rowAt(y - top, 24);
             if (index < rows().tagCount()) {
                 selected = index;
-                detailScroll = 0;
+                detailScroll.jump(0);
                 technicalExpanded = false;
                 layoutButtons();
             }
@@ -188,10 +189,13 @@ public final class GuiPlayerStateInspection extends GuiScreen {
         int wheel = Mouse.getEventDWheel();
         if (wheel == 0) return;
         int x = Mouse.getEventX() * width / mc.displayWidth;
-        if (x < geometry.x + Math.max(100, geometry.width / 3)) listScroll = Math
-            .max(0, Math.min(Math.max(0, rows().tagCount() - visibleRows()), listScroll + (wheel < 0 ? 1 : -1)));
-        else detailScroll = Math
-            .max(0, Math.min(Math.max(0, detailLines().size() - detailVisible()), detailScroll + (wheel < 0 ? 3 : -3)));
+        int y = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (geometry.active() || x < geometry.x + 8
+            || x >= geometry.x + geometry.width - 8
+            || y < geometry.y + 102
+            || y >= geometry.y + geometry.height - 35) return;
+        if (x < geometry.x + Math.max(100, geometry.width / 3)) listScroll.wheel(wheel, 24);
+        else detailScroll.wheel(wheel, 36);
     }
 
     private NBTTagList rows() {
@@ -247,22 +251,31 @@ public final class GuiPlayerStateInspection extends GuiScreen {
             geometry.x + nav + 1,
             geometry.y + geometry.height - 34,
             DgrUiPalette.SECONDARY);
-        for (int i = listScroll; i < Math.min(rows().tagCount(), listScroll + visibleRows()); i++) {
-            int y = top + (i - listScroll) * 24;
-            drawRect(
-                geometry.x + 9,
-                y,
-                geometry.x + nav - 4,
-                y + 21,
-                i == selected ? DgrUiPalette.SELECTED_FILL : DgrUiPalette.SUB_PANEL);
-            fontRendererObj.drawString(
-                fontRendererObj.trimStringToWidth(
-                    rows().getCompoundTagAt(i)
-                        .getString("title"),
-                    nav - 24),
-                geometry.x + 13,
-                y + 6,
-                DgrUiPalette.TEXT);
+        listScroll.bounds(rows().tagCount() * 24 - (geometry.height - 137));
+        listScroll.tick();
+        int first = listScroll.pixelOffset() / 24;
+        try (GuiScrollClip clip = new GuiScrollClip(
+            geometry.x + 8,
+            top,
+            geometry.x + nav,
+            geometry.y + geometry.height - 35)) {
+            for (int i = first; i < Math.min(rows().tagCount(), first + visibleRows() + 2); i++) {
+                int y = top + i * 24 - listScroll.pixelOffset();
+                drawRect(
+                    geometry.x + 9,
+                    y,
+                    geometry.x + nav - 4,
+                    y + 21,
+                    i == selected ? DgrUiPalette.SELECTED_FILL : DgrUiPalette.SUB_PANEL);
+                fontRendererObj.drawString(
+                    fontRendererObj.trimStringToWidth(
+                        rows().getCompoundTagAt(i)
+                            .getString("title"),
+                        nav - 24),
+                    geometry.x + 13,
+                    y + 6,
+                    DgrUiPalette.TEXT);
+            }
         }
         List<String> lines = detailLines();
         drawRect(
@@ -271,15 +284,24 @@ public final class GuiPlayerStateInspection extends GuiScreen {
             geometry.x + geometry.width - 9,
             geometry.y + geometry.height - 34,
             DgrUiPalette.SUB_PANEL);
-        for (int i = detailScroll; i < Math.min(lines.size(), detailScroll + detailVisible()); i++) {
-            String line = lines.get(i);
-            boolean heading = java.util.Arrays.asList("当前情况", "正在等待什么", "再次启动条件", "发现的问题", "技术详情")
-                .contains(line);
-            fontRendererObj.drawString(
-                (heading ? "\u00a7l" : "") + line,
-                geometry.x + nav + 12,
-                top + (i - detailScroll) * 12,
-                DgrUiPalette.TEXT);
+        detailScroll.bounds(lines.size() * 12 - (geometry.height - 137));
+        detailScroll.tick();
+        int firstLine = detailScroll.pixelOffset() / 12;
+        try (GuiScrollClip clip = new GuiScrollClip(
+            geometry.x + nav + 5,
+            top,
+            geometry.x + geometry.width - 9,
+            geometry.y + geometry.height - 35)) {
+            for (int i = firstLine; i < Math.min(lines.size(), firstLine + detailVisible() + 2); i++) {
+                String line = lines.get(i);
+                boolean heading = java.util.Arrays.asList("当前情况", "正在等待什么", "再次启动条件", "发现的问题", "技术详情")
+                    .contains(line);
+                fontRendererObj.drawString(
+                    (heading ? "\u00a7l" : "") + line,
+                    geometry.x + nav + 12,
+                    top + i * 12 - detailScroll.pixelOffset(),
+                    DgrUiPalette.TEXT);
+            }
         }
         fontRendererObj.drawString(
             "第 " + (page + 1) + " 页",

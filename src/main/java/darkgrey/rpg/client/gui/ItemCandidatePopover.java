@@ -14,12 +14,13 @@ public final class ItemCandidatePopover {
 
     private static NBTTagCompound hovered, owner;
     private static String hoverKey = "", ownerKey = "";
-    private static int anchorX, anchorY, panelX, panelY, panelW, panelH, cursor, offset, visible, columns;
+    private static int anchorX, anchorY, panelX, panelY, panelW, panelH, cursor, visible, columns;
     private static long hoverSince, leaveSince;
     private static boolean paged;
     private static NBTTagCompound page;
     private static ItemSlotStrip grid;
     private static String gridKey = "";
+    private static final SmoothScroll scroll = new SmoothScroll();
     private static final java.util.List<Integer> cursors = new java.util.ArrayList<Integer>();
 
     private ItemCandidatePopover() {}
@@ -50,7 +51,8 @@ public final class ItemCandidatePopover {
         if (hovered != null && !key.equals(ownerKey)) {
             owner = (NBTTagCompound) hovered.copy();
             ownerKey = key;
-            cursor = offset = 0;
+            cursor = 0;
+            scroll.jump(0);
             cursors.clear();
             grid = null;
         }
@@ -65,6 +67,8 @@ public final class ItemCandidatePopover {
         columns = Math.max(1, Math.min(Math.min(5, count), (width - 24) / 24));
         int rows = Math.max(1, Math.min(Math.min(4, (count + columns - 1) / columns), (height - 58) / 24));
         visible = columns * rows;
+        scroll.bounds(Math.max(0, (count + columns - 1) / columns * 24 - rows * 24));
+        scroll.tick();
         panelW = columns * 24 + 16;
         panelH = rows * 24 + 48;
         int fullColumns = Math
@@ -95,10 +99,10 @@ public final class ItemCandidatePopover {
         else {
             NBTTagList values = page.getTagList("items", 10);
             NBTTagList subset = new NBTTagList();
-            for (int i = offset; i < Math.min(values.tagCount(), offset + visible); i++) subset.appendTag(
+            for (int i = 0; i < values.tagCount(); i++) subset.appendTag(
                 values.getCompoundTagAt(i)
                     .copy());
-            String currentKey = ownerKey + ":" + cursor + ":" + offset + ":" + columns;
+            String currentKey = ownerKey + ":" + cursor + ":" + columns;
             if (grid == null || !gridKey.equals(currentKey)) {
                 NBTTagCompound data = new NBTTagCompound();
                 data.setTag("items", subset);
@@ -107,10 +111,10 @@ public final class ItemCandidatePopover {
             }
             grid.draw(
                 panelX + 8,
-                panelY + 8,
+                panelY + 8 - scroll.pixelOffset(),
                 columns * 24 - 4,
                 panelY + 8,
-                panelY + panelH - (paged ? 24 : 0),
+                panelY + 8 + rows * 24,
                 mouseX,
                 mouseY);
         }
@@ -131,8 +135,17 @@ public final class ItemCandidatePopover {
 
     public static boolean wheel(int x, int y, int wheel) {
         // A button event still has to reach GuiScreen.mouseClicked.
-        if (!paged || wheel == 0 || !contains(x, y)) return false;
-        turn(wheel < 0 ? 1 : -1);
+        if (wheel == 0 || !contains(x, y)) return false;
+        int maximum = page == null ? 0
+            : Math.max(
+                0,
+                (page.getTagList("items", 10)
+                    .tagCount() + columns
+                    - 1) / columns * 24 - visible / columns * 24);
+        if (page != null && paged
+            && ((wheel < 0 && scroll.pixelOffset() >= maximum) || (wheel > 0 && scroll.pixelOffset() <= 0)))
+            turn(wheel < 0 ? 1 : -1);
+        else scroll.wheel(wheel, 24);
         return true;
     }
 
@@ -140,19 +153,25 @@ public final class ItemCandidatePopover {
         if (page == null) return;
         int count = page.getTagList("items", 10)
             .tagCount();
+        int maximum = Math.max(0, (count + columns - 1) / columns * 24 - visible / columns * 24);
         if (direction > 0) {
-            if (offset + visible < count) offset += visible;
-            else if (page.getInteger("next") < page.getInteger("total")) {
+            if (scroll.pixelOffset() < maximum) {
+                scroll.jump(Math.min(maximum, scroll.pixelOffset() + visible / columns * 24));
+                return;
+            } else if (page.getInteger("next") < page.getInteger("total")) {
                 cursors.add(cursor);
                 cursor = page.getInteger("next");
-                offset = 0;
-            }
-        } else if (offset > 0) offset = Math.max(0, offset - visible);
-        else {
-            cursor = cursors.isEmpty() ? 0 : cursors.remove(cursors.size() - 1);
-            offset = 0;
+            } else return;
+        } else if (scroll.pixelOffset() > 0) {
+            scroll.jump(Math.max(0, scroll.pixelOffset() - visible / columns * 24));
+            return;
+        } else {
+            if (cursors.isEmpty()) return;
+            cursor = cursors.remove(cursors.size() - 1);
         }
         grid = null;
+        page = null;
+        scroll.jump(0);
     }
 
     public static boolean escape() {
@@ -167,5 +186,6 @@ public final class ItemCandidatePopover {
         grid = null;
         page = null;
         cursors.clear();
+        scroll.jump(0);
     }
 }

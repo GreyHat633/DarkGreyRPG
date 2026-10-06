@@ -87,6 +87,24 @@ public final class ItemSlotStrip {
     }
 
     public void draw(int left, int top, int width, int clipTop, int clipBottom, int mouseX, int mouseY) {
+        try (GuiScrollClip clip = new GuiScrollClip(left, clipTop, left + width, clipBottom)) {
+            drawClipped(
+                left,
+                top,
+                width,
+                clipTop,
+                clipBottom,
+                mouseX,
+                mouseY >= clipTop && mouseY < clipBottom ? mouseY : -1);
+        }
+    }
+
+    /** Whole-row HUD rendering may already be translated/scaled by its owner. */
+    public void drawWhole(int left, int top, int width) {
+        drawClipped(left, top, width, top, top + height(width), -100, -100);
+    }
+
+    private void drawClipped(int left, int top, int width, int clipTop, int clipBottom, int mouseX, int mouseY) {
         Minecraft mc = Minecraft.getMinecraft();
         tooltip = null;
         int x = left, y = top;
@@ -110,11 +128,11 @@ public final class ItemSlotStrip {
                 x = left;
                 y += 24;
             }
-            if (y >= clipTop && y + 20 <= clipBottom) drawCell(i, x, y, mouseX, mouseY);
+            if (y < clipBottom && y + 20 > clipTop) drawCell(i, x, y, mouseX, mouseY);
             x += w + 4;
         }
         y += count() == 0 ? 0 : 24;
-        if (source.hasKey("notice") && y >= clipTop && y + 12 <= clipBottom) {
+        if (source.hasKey("notice") && y < clipBottom && y + 12 > clipTop) {
             mc.fontRenderer.drawString("部分候选未展开 · 悬停查看", left, y, DgrUiPalette.SECONDARY);
             if (mouseX >= left && mouseX < left + width && mouseY >= y && mouseY < y + 12)
                 tooltip = java.util.Collections.singletonList(source.getString("notice"));

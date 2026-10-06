@@ -23,6 +23,10 @@
 /logs/
 /PLAN/**/BASELINE_TRACKED.patch
 /PLAN/0.3.1.4/evidence/pre-fix/dumps/
+# Local 0.3.3.7 UI captures, personal path audits and raw machine test reports.
+# Release/source includes implementation, fixtures and the verification summary.
+/PLAN/0.3.3.7/evidence/
+/PLAN/0.3.3.7/Tests/
 **/bin/
 **/obj/
 **/.godot/

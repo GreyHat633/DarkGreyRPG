@@ -44,7 +44,8 @@ final class CanonicalTaskLayout {
         int contentTop = Math.min(panelBottom - 1, panelTop + 28);
         int contentBottom = Math.max(contentTop, panelBottom - 28);
         if (stacked) {
-            int listHeight = Math.max(36, (contentBottom - contentTop) / 3);
+            int available = Math.max(0, contentBottom - contentTop - 12);
+            int listHeight = Math.max(36, available * 2 / 5);
             listLeft = panelLeft + 8;
             listTop = contentTop + 4;
             listRight = panelRight - 8;
@@ -54,7 +55,8 @@ final class CanonicalTaskLayout {
             detailRight = listRight;
             detailBottom = contentBottom;
         } else {
-            int split = panelLeft + panelWidth / 3;
+            int available = Math.max(0, panelWidth - 24);
+            int split = panelLeft + 12 + available * 2 / 5;
             listLeft = panelLeft + 8;
             listTop = contentTop + 4;
             listRight = split - 4;

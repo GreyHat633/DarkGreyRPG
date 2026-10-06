@@ -569,6 +569,7 @@
       </StackPanel.Style>
       <graph:RewardEntriesEditor />
     </StackPanel>
+<graph:LogicInputsEditor />
 <graph:PublicOutputsEditor DataContext="{Binding PublicOutputs}" />
     <StackPanel>
       <StackPanel.Style>

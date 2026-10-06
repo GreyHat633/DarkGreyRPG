@@ -48,12 +48,18 @@ public static class EntryReorder
     private static void Drag(FrameworkElement handle, ItemsControl list)
     {
         var source = handle.DataContext;
+        if (source is CanonicalNodeInspectorViewModel.LogicInputRowViewModel { IsReadOnly: true }) return;
         var originalItems = list.Items.Cast<object>().ToArray();
         var oldIndex = list.Items.IndexOf(source);
         if (oldIndex < 0) return;
         var marker = new InsertMarker(list);
-        var preview = source is PublicOutputRow outputRow
-            ? new OutputReorderPreview(list, outputRow, oldIndex, handle.TranslatePoint(Mouse.GetPosition(handle), list)) : null;
+        var pointer = handle.TranslatePoint(Mouse.GetPosition(handle), list);
+        var preview = source switch
+        {
+            PublicOutputRow outputRow => new OutputReorderPreview(list, outputRow, oldIndex, pointer),
+            CanonicalNodeInspectorViewModel.LogicInputRowViewModel input => new OutputReorderPreview(list, input.DisplayName, false, oldIndex, pointer),
+            _ => null
+        };
         var layer = AdornerLayer.GetAdornerLayer(list);
         var previousAllowDrop = list.AllowDrop;
         int? destination = null;
@@ -96,7 +102,8 @@ public static class EntryReorder
         int? committed = null;
         QueryContinueDragEventHandler cancel = (_, e) =>
         {
-            if (source is PublicOutputRow && list.IsLoaded && list.IsVisible && GetCursorPos(out var cursor))
+            if (source is PublicOutputRow or CanonicalNodeInspectorViewModel.LogicInputRowViewModel
+                && list.IsLoaded && list.IsVisible && GetCursorPos(out var cursor))
             {
                 var point = list.PointFromScreen(new Point(cursor.X, cursor.Y));
                 if (point.X < 0 || point.X > list.ActualWidth || point.Y < 0 || point.Y > list.ActualHeight) cancelled = true;
@@ -141,6 +148,7 @@ public static class EntryReorder
             case CanonicalLinePageViewModel page: page.Move(index); break;
             case CanonicalChoiceOptionViewModel choice: choice.MoveTo(index); break;
             case PublicOutputRow output: output.MoveTo(index); break;
+            case CanonicalNodeInspectorViewModel.LogicInputRowViewModel input: input.MoveTo(index); break;
         }
     }
 

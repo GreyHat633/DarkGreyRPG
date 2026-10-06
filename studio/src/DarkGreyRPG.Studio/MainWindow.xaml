@@ -378,14 +378,6 @@
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="调试器将在后续阶段显示正在运行的任务和故事状态。" />
                     </Border>
 
-                    <Border Padding="18" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
-                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding BottomPanel.SelectedTab.Page}" Value="Minecraft"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock HorizontalAlignment="Center" FontSize="18" FontWeight="SemiBold" Text="Minecraft 未连接" />
-                            <TextBlock Margin="0,8,0,0" TextAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="当前版本通过项目文件和 /dgrpg reload 与 Runtime 配合。&#x0a;Live Bridge 将在后续阶段加入。" />
-                        </StackPanel>
-                    </Border>
                 </Grid>
             </Grid>
         </Border>

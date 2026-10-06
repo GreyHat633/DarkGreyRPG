@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
@@ -229,6 +229,8 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
     private CanonicalStoryNodeFocusRequest? _storyNodeFocusRequest;
     private long _storyNodeFocusSequence;
     private string _parameterDropMessage = string.Empty;
+    private System.Windows.Threading.DispatcherTimer? _parameterDropTimer;
+    private long _parameterDropDeadline;
     private string _projectId = "project";
     private string _projectDisplayName = "项目";
     private readonly CanonicalGraphLayoutStore? _layoutStore;
@@ -416,11 +418,30 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         get => _parameterDropMessage;
         private set
         {
+            _parameterDropTimer?.Stop();
+            if (!string.IsNullOrEmpty(value) && !_disposed)
+            {
+                if (_parameterDropTimer is null)
+                {
+                    _parameterDropTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                    _parameterDropTimer.Tick += ParameterDropExpired;
+                }
+                _parameterDropDeadline = System.Diagnostics.Stopwatch.GetTimestamp() + 3 * System.Diagnostics.Stopwatch.Frequency;
+                _parameterDropTimer.Interval = TimeSpan.FromSeconds(3);
+                _parameterDropTimer.Start();
+            }
             if (!SetProperty(ref _parameterDropMessage, value)) return;
             OnPropertyChanged(nameof(HasParameterDropMessage));
         }
     }
     public bool HasParameterDropMessage => !string.IsNullOrWhiteSpace(ParameterDropMessage);
+    private void ParameterDropExpired(object? sender, EventArgs args)
+    {
+        long remaining = _parameterDropDeadline - System.Diagnostics.Stopwatch.GetTimestamp();
+        if (remaining <= 0) ClearParameterDropMessage();
+        else if (_parameterDropTimer is not null)
+            _parameterDropTimer.Interval = TimeSpan.FromSeconds(Math.Max(.001, remaining / (double)System.Diagnostics.Stopwatch.Frequency));
+    }
     public IReadOnlyList<CanonicalGraphResourceEditorViewModel> Editors => AllEditors().ToArray();
     public bool IsWritableEditor(CanonicalGraphResourceEditorViewModel editor)
         => ReferenceEquals(editor, StoryEditor) || _detachedEditors.ContainsValue(editor) || SessionItems.Concat(TaskItems).Any(item => ReferenceEquals(item.Editor, editor) && !item.IsReadOnly);
@@ -450,6 +471,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         private set
         {
             if (!SetProperty(ref _activeEditor, value)) return;
+            ClearParameterDropMessage();
             OnPropertyChanged(nameof(ActiveGraphHost));
             OnPropertyChanged(nameof(CanEditActivePresentation));
             OnPropertyChanged(nameof(IsActiveGraphReadOnly));
@@ -790,6 +812,7 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
 
     public void ConfigurePublicOutputs(CanonicalNodeInspectorViewModel inspector)
     {
+        inspector.CanEditLogicInputs = () => !IsActiveGraphReadOnly;
         if (inspector.NodeType is not ("session" or "task") || inspector.Host.Scope != GraphScope.StoryFlow) return;
         if (!inspector.Node.Properties.TryGetValue("resource_id", out var id)) return;
         var item = SessionItems.Concat(TaskItems).SingleOrDefault(item => item.Id == id.GetString());
@@ -979,98 +1002,85 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
     /// Applies a resource identity to one compatible author-facing node parameter.
     /// It never changes tree selection or the current Inspector context.
     /// </summary>
+    public bool CanApplyResourceToNodeParameter(GraphEditorNodeViewModel? node, ICanonicalStoryTreeItem? item)
+        => TryResolveParameterDrop(node, item, out _, out _, out _);
+
     public bool ApplyResourceToNodeParameter(GraphEditorNodeViewModel? node, ICanonicalStoryTreeItem? item)
     {
         ThrowIfDisposed();
-        if (node is null || item is null || !ActiveGraphHost.Nodes.Contains(node) || !Contains(item))
-            return FailParameterDrop("无法将该资源拖放到当前节点。");
-
+        if (!TryResolveParameterDrop(node, item, out var property, out var triggerPort, out var message))
+            return FailParameterDrop(message);
+        var id = item switch { CanonicalStoryActorItem actor => actor.Id, CanonicalStoryItemItem value => value.Id, _ => string.Empty };
         bool changed;
-        switch (item)
+        if (triggerPort is not null)
         {
-            case CanonicalStoryActorItem actor:
-                changed = ApplyActorToNode(node, actor);
-                break;
-            case CanonicalStoryItemItem itemResource:
-                changed = ApplyItemToNode(node, itemResource);
-                break;
-            default:
-                return FailParameterDrop("该资源只能放置为 Story Flow 聚合节点。");
+            var graphNode = ActiveGraphHost.Graph.Nodes.Single(candidate => candidate.Id == node!.NodeId);
+            var trigger = StoryStartSchema.ReadTriggers(graphNode).Single(candidate => candidate.PortId == triggerPort);
+            var properties = trigger.TriggerProperties.ValueKind == JsonValueKind.Object
+                ? trigger.TriggerProperties.EnumerateObject().ToDictionary(value => value.Name, value => value.Value.Clone(), StringComparer.Ordinal)
+                : new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+            if (properties.TryGetValue(property!, out var current) && current.ValueKind == JsonValueKind.String && current.GetString() == id)
+                changed = true;
+            else
+            {
+                properties[property!] = JsonSerializer.SerializeToElement(id);
+                changed = ActiveGraphHost.SetStoryStartTriggerProperties(node!.NodeId, triggerPort, properties);
+            }
         }
-
-        if (!changed) return false;
-        ParameterDropMessage = $"已将“{item.DisplayName}”应用到“{node.DisplayName}”。";
+        else changed = ReadNodeString(node!, property!) == id
+            || ActiveGraphHost.SetNodeProperty(node!.NodeId, property!, JsonSerializer.SerializeToElement(id));
+        if (!changed) return FailParameterDrop(ActiveGraphHost.LastValidationIssues.FirstOrDefault()?.Message ?? "资源参数未修改。");
+        ParameterDropMessage = $"已将“{item!.DisplayName}”应用到“{node!.DisplayName}”。";
         return true;
     }
 
     public void ClearParameterDropMessage() => ParameterDropMessage = string.Empty;
 
-    private bool ApplyActorToNode(GraphEditorNodeViewModel node, CanonicalStoryActorItem actor)
+    public void RestartParameterDropMessageTimeout()
     {
-        if (ActiveGraphHost.Scope == GraphScope.Session && node.Type == "line")
-            return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
-                node.NodeId, "speaker_actor_id", JsonSerializer.SerializeToElement(actor.Id)));
+        if (HasParameterDropMessage) ParameterDropMessage = ParameterDropMessage;
+    }
 
-        if (ActiveGraphHost.Scope == GraphScope.Task && node.Type == CanonicalTaskObjectiveSchema.NodeType)
+    private bool TryResolveParameterDrop(GraphEditorNodeViewModel? node, ICanonicalStoryTreeItem? item,
+        out string? property, out string? triggerPort, out string message)
+    {
+        property = triggerPort = null;
+        message = "请将资源拖到对应的角色或物品选择框。";
+        if (_disposed || node is null || item is null || !ActiveGraphHost.Nodes.Contains(node) || !Contains(item)
+            || !IsWritableEditor(ActiveEditor)) return false;
+        using var inspector = new CanonicalNodeInspectorViewModel(ActiveGraphHost, node, ActorItems, ItemItems, subscribeToHostChanges: false);
+        if (item is CanonicalStoryActorItem actor)
         {
-            var type = ReadNodeString(node, CanonicalTaskObjectiveSchema.TypeProperty);
-            var property = type switch
+            if (inspector.IsLine && inspector.SpeakerOptions.Any(option => option.IsResolved && option.Id == actor.Id))
+                property = "speaker_actor_id";
+            else if (inspector.HasObjectiveActor && inspector.ObjectiveActorOptions.Any(option => option.IsResolved && option.Id == actor.Id))
+                property = inspector.IsKillEntityObjective ? CanonicalTaskObjectiveSchema.EntityProperty : CanonicalTaskObjectiveSchema.ActorIdProperty;
+            else if (inspector.IsStoryStart)
             {
-                CanonicalTaskObjectiveSchema.KillEntity => CanonicalTaskObjectiveSchema.EntityProperty,
-                CanonicalTaskObjectiveSchema.InteractActor => CanonicalTaskObjectiveSchema.ActorIdProperty,
-                _ => null,
-            };
-            if (property is not null)
-                return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
-                    node.NodeId, property, JsonSerializer.SerializeToElement(actor.Id)));
-        }
-
-        if (ActiveGraphHost.Scope == GraphScope.StoryFlow && node.Type == "start")
-        {
-            var graphNode = ActiveGraphHost.Graph.Nodes.Single(candidate =>
-                string.Equals(candidate.Id, node.NodeId, StringComparison.Ordinal));
-            var trigger = StoryStartSchema.ReadTriggers(graphNode)
-                .FirstOrDefault(candidate => candidate.TriggerType == StoryStartSchema.ActorInteraction);
-            if (trigger is not null)
-            {
-                var properties = trigger.TriggerProperties.ValueKind == JsonValueKind.Object
-                    ? trigger.TriggerProperties.EnumerateObject().ToDictionary(
-                        property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal)
-                    : new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-                properties[StoryStartSchema.ActorIdProperty] = JsonSerializer.SerializeToElement(actor.Id);
-                return CommitParameterDrop(() => ActiveGraphHost.SetStoryStartTriggerProperties(
-                    node.NodeId, trigger.PortId, properties));
+                var graphNode = ActiveGraphHost.Graph.Nodes.Single(candidate => candidate.Id == node.NodeId);
+                var triggers = StoryStartSchema.ReadTriggers(graphNode).Where(trigger => trigger.TriggerType == StoryStartSchema.ActorInteraction).ToArray();
+                if (triggers.Length != 1)
+                {
+                    message = triggers.Length == 0 ? "【开始】没有角色交互条件，请先添加。" : "【开始】有多个角色交互条件，请拖到具体的角色选择框。";
+                    return false;
+                }
+                property = StoryStartSchema.ActorIdProperty;
+                triggerPort = triggers[0].PortId;
             }
-            return FailParameterDrop("Start 节点中没有“角色交互”启动条件，请先在 Inspector 中添加或切换启动条件。");
         }
-
-        return FailParameterDrop("角色资源只能拖到 Start 的角色交互、会话台词说话者或任务角色目标。");
-    }
-
-    private bool ApplyItemToNode(GraphEditorNodeViewModel node, CanonicalStoryItemItem item)
-    {
-        if (ActiveGraphHost.Scope == GraphScope.Task && node.Type == CanonicalTaskObjectiveSchema.NodeType
-            && ReadNodeString(node, CanonicalTaskObjectiveSchema.TypeProperty) == CanonicalTaskObjectiveSchema.CollectItem)
-            return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
-                node.NodeId, CanonicalTaskObjectiveSchema.ItemProperty, JsonSerializer.SerializeToElement(item.Id)));
-
-        if (ActiveGraphHost.Scope == GraphScope.StoryFlow && node.Type == CanonicalStoryActionSchema.NodeType
-            && ReadNodeString(node, CanonicalStoryActionSchema.TypeProperty) == CanonicalStoryActionSchema.GiveItem)
+        else if (item is CanonicalStoryItemItem value)
         {
-            if (item.Item is not IndividualItemResource)
-                return FailParameterDrop("“物品给予”只能使用个体物品，不能使用物品组。");
-            return CommitParameterDrop(() => ActiveGraphHost.SetNodeProperty(
-                node.NodeId, CanonicalStoryActionSchema.ItemProperty, JsonSerializer.SerializeToElement(item.Id)));
+            if (inspector.IsGiveItemAction && value.Item is not IndividualItemResource)
+            {
+                message = "“物品给予”只能使用个体物品，不能使用物品组。";
+                return false;
+            }
+            if (inspector.IsItemObjective && inspector.ObjectiveItemOptions.Any(option => option.IsResolved && option.Id == value.Id))
+                property = CanonicalTaskObjectiveSchema.ItemProperty;
+            else if (inspector.IsGiveItemAction && inspector.StoryActionItemOptions.Any(option => option.IsResolved && option.Id == value.Id))
+                property = CanonicalStoryActionSchema.ItemProperty;
         }
-
-        return FailParameterDrop("物品资源只能拖到“收集物品”目标或“物品给予”动作。");
-    }
-
-    private bool CommitParameterDrop(Func<bool> mutation)
-    {
-        if (mutation()) return true;
-        var detail = ActiveGraphHost.LastValidationIssues.FirstOrDefault()?.Message;
-        return FailParameterDrop(string.IsNullOrWhiteSpace(detail) ? "资源参数没有发生变化。" : $"资源参数未修改：{detail}");
+        return property is not null;
     }
 
     private bool FailParameterDrop(string message)
@@ -1271,6 +1281,9 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         ++_usageSequence; UsageResults.Clear(); UsageMedia.Clear(); ProjectUsage = null;
         if (_disposed) return;
         _disposed = true;
+        ClearParameterDropMessage();
+        if (_parameterDropTimer is not null) _parameterDropTimer.Tick -= ParameterDropExpired;
+        _parameterDropTimer = null;
         DisposeNodeInspector();
         foreach (var editor in AllEditors()) editor.PropertyChanged -= OnEditorPropertyChanged;
         StoryEditor.Dispose();

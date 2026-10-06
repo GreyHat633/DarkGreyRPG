@@ -16,7 +16,8 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
         public TranslateTransform Offset { get; } = new();
     }
     private readonly ItemsControl _list;
-    private readonly PublicOutputRow _source;
+    private readonly string _displayName;
+    private readonly bool _isTaskFlow;
     private readonly Row[] _rows;
     private readonly int _oldIndex;
     private readonly double _grabOffset;
@@ -28,9 +29,12 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
     public double GapY => _gapY;
     internal IReadOnlyList<double> OriginalTops => _rows.Select(row => row.Top).ToArray();
 
-    public OutputReorderPreview(ItemsControl list, PublicOutputRow source, int oldIndex, Point pointer) : base(list)
+    public OutputReorderPreview(ItemsControl list, PublicOutputRow source, int oldIndex, Point pointer)
+        : this(list, source.DisplayName, source.IsTaskFlow, oldIndex, pointer) { }
+
+    public OutputReorderPreview(ItemsControl list, string displayName, bool isTaskFlow, int oldIndex, Point pointer) : base(list)
     {
-        _list = list; _source = source; _oldIndex = oldIndex; _destination = oldIndex;
+        _list = list; _displayName = displayName; _isTaskFlow = isTaskFlow; _oldIndex = oldIndex; _destination = oldIndex;
         IsHitTestVisible = false;
         _rows = Enumerable.Range(0, list.Items.Count).Select(index =>
         {
@@ -96,10 +100,10 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
         var card = new Rect(10, _pointer.Y - _grabOffset + 2, Math.Max(20, width - 10), Math.Max(4, GapHeight - 4));
         drawing.DrawRoundedRectangle(Window.GetWindow(_list)?.Background ?? SystemColors.WindowBrush, null, card, 4, 4);
         drawing.DrawRoundedRectangle(background, new Pen(accent, 1.5), card, 4, 4);
-        var priorityWidth = _source.IsTaskFlow ? 72d : 0d;
+        var priorityWidth = _isTaskFlow ? 72d : 0d;
         Label("⠿", 13, new Point(card.X + 7, card.Y + (card.Height - 18) / 2), 16);
-        Label(_source.DisplayName, 13, new Point(card.X + 27, card.Y + (card.Height - 18) / 2), Math.Max(10, card.Width - 35 - priorityWidth));
-        if (_source.IsTaskFlow)
+        Label(_displayName, 13, new Point(card.X + 27, card.Y + (card.Height - 18) / 2), Math.Max(10, card.Width - 35 - priorityWidth));
+        if (_isTaskFlow)
             Label($"优先级 {_destination + 1}", 11, new Point(card.Right - priorityWidth, card.Y + (card.Height - 16) / 2), priorityWidth - 6);
         void Label(string value, double size, Point at, double available)
         {

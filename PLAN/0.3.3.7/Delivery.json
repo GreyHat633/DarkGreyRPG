@@ -1,0 +1,30 @@
+{
+  "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "ProductVersion": "0.3.3.7",
+  "Bytes": 204288,
+  "SHA256": "eb4975e1ee5d37c80c0250102f40087c3d6d68649004d7233ce77ecc7c551566",
+  "AssemblySHA256": "dd2bb6db3d349a2faf14819459b7e3e65ac618546c47bb68da13c48953e04e25",
+  "DataPreserved": true,
+  "DataFilesChecked": 2661,
+  "Runtime": {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.3.3.7.jar",
+    "Version": "0.3.3.7",
+    "Bytes": 1992738,
+    "SHA256": "2700738aaf5325643c982396f1239d3959575c063586d96e0f5fb223cb169b7b",
+    "ValidatedCopies": [
+      {
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0337\\RuntimeH\\mods\\DarkGreyRPG.jar",
+        "SHA256": "2700738aaf5325643c982396f1239d3959575c063586d96e0f5fb223cb169b7b"
+      }
+    ]
+  },
+  "SourceBaseline": "d0d3f0e9f057793d1399568cc113f947fa1d86cc",
+  "Branch": "codex/0.3.3.7",
+  "Revision": "Five interaction corrections",
+  "Verification": "Corrections.md",
+  "HistoricalConstructionDelivery": "Delivery.Construction.json",
+  "FinishedProductReleaseCreated": true,
+  "ReleaseDirectory": "artifacts/DGR0.3.3.7",
+  "ReleaseManifest": "artifacts/DGR0.3.3.7/Docs/ReleaseManifest.json",
+  "ReleaseTag": "v0.3.3.7"
+}

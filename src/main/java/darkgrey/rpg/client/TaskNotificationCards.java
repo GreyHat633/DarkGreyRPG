@@ -125,7 +125,9 @@ public final class TaskNotificationCards {
         double scale = Math.min(1, (resolution.getScaledHeight() - 24.0) / (3 * (HEIGHT + GAP)));
         scale = Math.max(0.25, scale);
         int screenWidth = (int) (resolution.getScaledWidth() / scale);
-        int width = Math.min(190, screenWidth / 2), x = screenWidth - width - 8;
+        boolean leftSide = darkgrey.rpg.client.session.PlayerUiPreferences.notificationSide()
+            == darkgrey.rpg.client.session.PlayerUiPreferences.Side.LEFT;
+        int width = Math.min(190, screenWidth / 2), x = leftSide ? 8 : screenWidth - width - 8;
         for (Card card : cards.values()) {
             card.titleLines = lines(mc.fontRenderer, "\u00a7l" + card.title, (int) ((width - 14) / TITLE_SCALE), 2);
             card.bodyLines = card.body()
@@ -139,9 +141,14 @@ public final class TaskNotificationCards {
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glPushMatrix();
         try {
+            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glColor4f(1, 1, 1, 1);
             GL11.glScaled(scale, scale, 1);
             for (Card card : cards.values()) {
-                int left = x + (int) Math.round((width + 8) * card.offset(now));
+                int left = x + (leftSide ? -1 : 1) * (int) Math.round((width + 8) * card.offset(now));
                 int top = 12 + (int) Math.round(card.y(now));
                 Gui.drawRect(left, top, left + width, top + card.height, DgrUiPalette.WINDOW_PANEL);
                 Gui.drawRect(left, top, left + width, top + 1, DgrUiPalette.SELECTED_BORDER);

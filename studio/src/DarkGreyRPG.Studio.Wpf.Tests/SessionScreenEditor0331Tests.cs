@@ -18,7 +18,8 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class SessionScreenEditor0331Tests
 {
-    [STATestMethod]
+    // This Dispatcher/decoder deadline must not compete with the parallel UI suite.
+    [STATestMethod, DoNotParallelize]
     public void ImageDecodedBeforeLoadedSurvivesReenteringView()
     {
         var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ScreenPreview-" + Guid.NewGuid().ToString("N"));

@@ -65,6 +65,17 @@ public final class ClientQuestKeyHandler {
         return historyKey.getKeyCode();
     }
 
+    public static int packageKeyCode() {
+        return packageKey.getKeyCode();
+    }
+
+    public static void clearPackageKey() {
+        KeyBinding.setKeyBindState(packageKey.getKeyCode(), false);
+        while (packageKey.isPressed()) {
+            // Consume queued presses so closing cannot immediately reopen the manager.
+        }
+    }
+
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END && packageKey.isPressed()) ClientPackageManager.open();

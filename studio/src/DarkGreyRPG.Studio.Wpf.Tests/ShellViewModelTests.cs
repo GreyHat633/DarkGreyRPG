@@ -587,7 +587,7 @@ public sealed class ShellViewModelTests
         shell.PrepareRuntimeReloadCommand.Execute(null);
 
         Assert.AreEqual("saved before runtime reload", repository.LoadActor(ActorId("teacher")).DisplayName);
-        Assert.AreEqual("Minecraft", shell.BottomPanel.SelectedTab.Page);
+        Assert.AreEqual("Output", shell.BottomPanel.SelectedTab.Page);
         Assert.IsTrue(shell.Output.Entries.Last().Message.Contains("/dgrpg reload", StringComparison.Ordinal));
     }
 

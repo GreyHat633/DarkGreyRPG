@@ -16,6 +16,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import darkgrey.rpg.client.ClientPackageManager;
+import darkgrey.rpg.client.ClientQuestKeyHandler;
 import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.project.packages.StoryPackageManagerPacket;
 import darkgrey.rpg.project.packages.StoryPackageManagerService;
@@ -37,7 +38,8 @@ public final class GuiStoryPackageManager extends GuiScreen {
     private String session, selected = "", selectedMember = "", message = "", requestedHandle = "";
     private long revision, request, requestedAt, lastSentAt;
     private StoryPackageManagerPacket pendingPacket;
-    private int listScroll, detailScroll, requestedAction, nextListPage = -1;
+    private int requestedAction, nextListPage = -1;
+    private final SmoothScroll listScroll = new SmoothScroll(), detailScroll = new SmoothScroll();
     private boolean initialized, loading, graph, panning, refreshPending, reloadSelection;
     private double zoom = 1, panX = 12, panY = 12;
     private int dragX, dragY;
@@ -207,7 +209,7 @@ public final class GuiStoryPackageManager extends GuiScreen {
                 graph = false;
             }
         }
-        if (nextListPage < 0) listScroll = Math.min(listScroll, Math.max(0, treeRows().size() - visibleRows()));
+        listScroll.bounds(treeRows().size() * RuntimeDirectoryVisuals.ROW_HEIGHT - (bottom() - top()));
     }
 
     private static void appendTags(NBTTagCompound target, NBTTagCompound source, String key, int type) {
@@ -376,8 +378,15 @@ public final class GuiStoryPackageManager extends GuiScreen {
 
     @Override
     protected void keyTyped(char typed, int key) {
-        if (key == 1 || key == mc.gameSettings.keyBindInventory.getKeyCode()) mc.displayGuiScreen(null);
+        if (key != 0 && (key == 1 || key == ClientQuestKeyHandler.packageKeyCode()
+            || key == mc.gameSettings.keyBindInventory.getKeyCode())) close(key);
         else super.keyTyped(typed, key);
+    }
+
+    private void close(int key) {
+        net.minecraft.client.settings.KeyBinding.setKeyBindState(key, false);
+        ClientQuestKeyHandler.clearPackageKey();
+        mc.displayGuiScreen(null);
     }
 
     @Override
@@ -387,6 +396,9 @@ public final class GuiStoryPackageManager extends GuiScreen {
 
     @Override
     public void onGuiClosed() {
+        geometry.end();
+        panning = false;
+        saveCamera();
         pendingPacket = null;
         if (mc.getNetHandler() == connection && !session.isEmpty()) {
             NBTTagCompound data = new NBTTagCompound();
@@ -400,6 +412,11 @@ public final class GuiStoryPackageManager extends GuiScreen {
 
     @Override
     protected void mouseClicked(int x, int y, int button) {
+        if (button >= 0 && (button - 100 == ClientQuestKeyHandler.packageKeyCode()
+            || button - 100 == mc.gameSettings.keyBindInventory.getKeyCode())) {
+            close(button - 100);
+            return;
+        }
         if (!UtilityWindowChrome.overButton(buttonList, x, y)
             && (geometry.inTitleBar(x, y) || geometry.inResizeGrip(x, y))) {
             geometry.begin(x, y, button);
@@ -415,7 +432,7 @@ public final class GuiStoryPackageManager extends GuiScreen {
         }
         if (button != 0 || y < top() || y >= bottom()) return;
         if (x >= geometry.x + 8 && x < geometry.x + nav()) {
-            int index = listScroll + (y - top()) / RuntimeDirectoryVisuals.ROW_HEIGHT;
+            int index = listScroll.rowAt(y - top(), RuntimeDirectoryVisuals.ROW_HEIGHT);
             List<RuntimeDirectoryTree.Row> rows = treeRows();
             if (index < 0 || index >= rows.size()) return;
             RuntimeDirectoryTree.Row row = rows.get(index);
@@ -426,7 +443,7 @@ public final class GuiStoryPackageManager extends GuiScreen {
             selectedMember = identity.length > 1 ? identity[1] : "";
             if (row.folder) tree.toggle(selected);
             graph = row.folder;
-            detailScroll = 0;
+            detailScroll.jump(0);
             message = "";
             if (!selected.equals(previous)) {
                 double[] camera = cameras.get(selected);
@@ -442,7 +459,7 @@ public final class GuiStoryPackageManager extends GuiScreen {
         } else if (x >= geometry.x + nav() && x < geometry.x + geometry.width - 10) {
             if (!graph) {
                 lines();
-                int line = (y - top()) / 12 + detailScroll;
+                int line = detailScroll.rowAt(y - top(), 12);
                 if (diagnosticLines.contains(line)) {
                     if (!diagnostics.remove(diagnosticKey())) diagnostics.add(diagnosticKey());
                     buttons();
@@ -472,8 +489,8 @@ public final class GuiStoryPackageManager extends GuiScreen {
         int x = Mouse.getEventX() * width / mc.displayWidth;
         int y = height - Mouse.getEventY() * height / mc.displayHeight - 1;
         if (y < top() || y >= bottom() || x < geometry.x || x >= geometry.x + geometry.width) return;
-        if (x < geometry.x + nav()) listScroll = Math
-            .max(0, Math.min(Math.max(0, treeRows().size() - visibleRows()), listScroll + (wheel < 0 ? 2 : -2)));
+        if (geometry.active()) return;
+        if (x < geometry.x + nav()) listScroll.wheel(wheel, 2 * RuntimeDirectoryVisuals.ROW_HEIGHT);
         else if (graph) {
             RuntimeGraphViewport viewport = graphViewport();
             if (!viewport.contains(x, y)) return;
@@ -482,9 +499,7 @@ public final class GuiStoryPackageManager extends GuiScreen {
             panX = viewport.panX;
             panY = viewport.panY;
             saveCamera();
-        } else detailScroll = Math.max(
-            0,
-            Math.min(Math.max(0, lines().size() - (bottom() - top()) / 12), detailScroll + (wheel < 0 ? 3 : -3)));
+        } else detailScroll.wheel(wheel, 36);
     }
 
     @Override
@@ -518,52 +533,58 @@ public final class GuiStoryPackageManager extends GuiScreen {
         drawRect(geometry.x + nav(), top(), geometry.x + nav() + 1, bottom(), DgrUiPalette.BORDER);
         List<RuntimeDirectoryTree.Row> rows = treeRows();
         List<String> tooltip = null;
-        for (int i = listScroll; i < Math.min(rows.size(), listScroll + visibleRows()); i++) {
-            RuntimeDirectoryTree.Row row = rows.get(i);
-            int y = top() + (i - listScroll) * RuntimeDirectoryVisuals.ROW_HEIGHT;
-            String[] identity = row.key.split(java.util.regex.Pattern.quote("|"), -1);
-            NBTTagCompound source = containers.get(identity[0]);
-            boolean selectedRow = selected.equals(identity[0]) && (row.folder ? selectedMember.isEmpty()
-                : row.depth == 0 || identity.length > 1 && selectedMember.equals(identity[1]));
-            boolean hovered = mouseX >= geometry.x + 8 && mouseX < geometry.x + nav()
-                && mouseY >= y
-                && mouseY < y + RuntimeDirectoryVisuals.ROW_HEIGHT;
-            boolean statusText = nav() >= 150;
-            String status = source == null ? "" : stateName(source.getString("state"));
-            int reserved = statusText ? fontRendererObj.getStringWidth(status) + 7 : 11;
-            RuntimeDirectoryVisuals.row(
-                fontRendererObj,
-                row.name,
-                row.folder,
-                row.open,
-                row.depth,
-                geometry.x + 8,
-                y,
-                nav() - 12,
-                selectedRow,
-                hovered,
-                reserved);
-            if (source != null) {
-                int right = geometry.x + nav() - 8, badge = right - reserved;
-                drawRect(badge, y + 9, badge + 4, y + 13, color(source.getString("state")));
-                if (statusText) RuntimeDirectoryVisuals.text(
+        listScroll.bounds(rows.size() * RuntimeDirectoryVisuals.ROW_HEIGHT - (bottom() - top()));
+        listScroll.tick();
+        detailScroll.tick();
+        int first = listScroll.pixelOffset() / RuntimeDirectoryVisuals.ROW_HEIGHT;
+        try (GuiScrollClip clip = new GuiScrollClip(geometry.x + 8, top(), geometry.x + nav(), bottom())) {
+            for (int i = first; i < Math.min(rows.size(), first + visibleRows() + 2); i++) {
+                RuntimeDirectoryTree.Row row = rows.get(i);
+                int y = top() + i * RuntimeDirectoryVisuals.ROW_HEIGHT - listScroll.pixelOffset();
+                String[] identity = row.key.split(java.util.regex.Pattern.quote("|"), -1);
+                NBTTagCompound source = containers.get(identity[0]);
+                boolean selectedRow = selected.equals(identity[0]) && (row.folder ? selectedMember.isEmpty()
+                    : row.depth == 0 || identity.length > 1 && selectedMember.equals(identity[1]));
+                boolean hovered = mouseX >= geometry.x + 8 && mouseX < geometry.x + nav()
+                    && mouseY >= y
+                    && mouseY < y + RuntimeDirectoryVisuals.ROW_HEIGHT;
+                boolean statusText = nav() >= 150;
+                String status = source == null ? "" : stateName(source.getString("state"));
+                int reserved = statusText ? fontRendererObj.getStringWidth(status) + 7 : 11;
+                RuntimeDirectoryVisuals.row(
                     fontRendererObj,
-                    status,
-                    badge + 7,
-                    RuntimeDirectoryVisuals.textY(fontRendererObj, y),
-                    reserved - 7,
-                    DgrUiPalette.SECONDARY);
-                if (hovered) {
-                    tooltip = new ArrayList<String>();
-                    tooltip.add(row.name);
-                    tooltip.add(stateName(source.getString("state")));
-                    if (row.depth > 0) tooltip.add("继承故事组状态");
-                    if (row.folder) tooltip.add(source.getInteger("members") + " 个故事");
+                    row.name,
+                    row.folder,
+                    row.open,
+                    row.depth,
+                    geometry.x + 8,
+                    y,
+                    nav() - 12,
+                    selectedRow,
+                    hovered,
+                    reserved);
+                if (source != null) {
+                    int right = geometry.x + nav() - 8, badge = right - reserved;
+                    drawRect(badge, y + 9, badge + 4, y + 13, color(source.getString("state")));
+                    if (statusText) RuntimeDirectoryVisuals.text(
+                        fontRendererObj,
+                        status,
+                        badge + 7,
+                        RuntimeDirectoryVisuals.textY(fontRendererObj, y),
+                        reserved - 7,
+                        DgrUiPalette.SECONDARY);
+                    if (hovered) {
+                        tooltip = new ArrayList<String>();
+                        tooltip.add(row.name);
+                        tooltip.add(stateName(source.getString("state")));
+                        if (row.depth > 0) tooltip.add("继承故事组状态");
+                        if (row.folder) tooltip.add(source.getInteger("members") + " 个故事");
+                    }
                 }
             }
         }
         if (graph) drawGraph();
-        else drawLines(lines(), detailScroll);
+        else drawLines(lines());
         fontRendererObj.drawString(
             fontRendererObj.trimStringToWidth(message.isEmpty() ? "成员继承故事组状态" : message, geometry.width - 24),
             geometry.x + 12,
@@ -574,16 +595,24 @@ public final class GuiStoryPackageManager extends GuiScreen {
         if (tooltip != null) RuntimeDirectoryVisuals.tooltip(fontRendererObj, tooltip, mouseX, mouseY, width, height);
     }
 
-    private void drawLines(List<String> lines, int offset) {
+    private void drawLines(List<String> lines) {
         int visible = Math.max(1, (bottom() - top()) / 12);
-        for (int i = offset; i < Math.min(lines.size(), offset + visible); i++) {
-            String line = lines.get(i);
-            boolean label = line.startsWith("\u0001");
-            fontRendererObj.drawString(
-                label ? line.substring(1) : line,
-                geometry.x + nav() + 9,
-                top() + (i - offset) * 12,
-                label || line.startsWith("§l") ? DgrUiPalette.STORY_TEXT : DgrUiPalette.TEXT);
+        detailScroll.bounds(lines.size() * 12 - (bottom() - top()));
+        int first = detailScroll.pixelOffset() / 12;
+        try (GuiScrollClip clip = new GuiScrollClip(
+            geometry.x + nav() + 1,
+            top(),
+            geometry.x + geometry.width - 8,
+            bottom())) {
+            for (int i = first; i < Math.min(lines.size(), first + visible + 2); i++) {
+                String line = lines.get(i);
+                boolean label = line.startsWith("\u0001");
+                fontRendererObj.drawString(
+                    label ? line.substring(1) : line,
+                    geometry.x + nav() + 9,
+                    top() + i * 12 - detailScroll.pixelOffset(),
+                    label || line.startsWith("§l") ? DgrUiPalette.STORY_TEXT : DgrUiPalette.TEXT);
+            }
         }
     }
 
@@ -702,7 +731,7 @@ public final class GuiStoryPackageManager extends GuiScreen {
                 selectedMember = uid;
                 graph = false;
                 panning = false;
-                detailScroll = 0;
+                detailScroll.jump(0);
                 buttons();
                 return true;
             }

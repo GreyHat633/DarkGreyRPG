@@ -92,7 +92,7 @@ public final class TaskTrackerClient {
                 if ("received".equals(event.getString("kind"))) received.add(event.getString("task"));
             }
         }
-        selection.reconcile(active, received);
+        selection.reconcile(active, received, darkgrey.rpg.client.session.PlayerUiPreferences.trackNewTasks());
         if (!before.equals(selected())) {
             revision++;
             save();

@@ -1,0 +1,35 @@
+<UserControl x:Class="DarkGreyRPG.Studio.Views.Graph.LogicInputsEditor"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:graph="clr-namespace:DarkGreyRPG.Studio.Views.Graph">
+ <UserControl.Style><Style TargetType="UserControl"><Setter Property="Visibility" Value="Collapsed"/>
+ <Style.Triggers><DataTrigger Binding="{Binding IsLogicCombination}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></UserControl.Style>
+ <StackPanel Margin="0,10,0,4">
+  <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+   <TextBlock Text="逻辑输入" VerticalAlignment="Center"/>
+   <Button Content="+" Margin="8,0,0,0" Width="26" Height="24" Padding="0" Click="Add_OnClick"
+    Command="{Binding AddLogicInputCommand}" AutomationProperties.AutomationId="AddLogicInput" ToolTip="增加逻辑输入"/>
+   <Button Content="−" Margin="4,0,0,0" Width="26" Height="24" Padding="0"
+    Command="{Binding RemoveSelectedLogicInputCommand}" AutomationProperties.AutomationId="RemoveSelectedLogicInput"
+    ToolTip="先选择输入，再删除；至少保留两个输入" ToolTipService.ShowOnDisabled="True"/>
+  </StackPanel>
+  <ItemsControl x:Name="Inputs" Background="Transparent" ItemsSource="{Binding LogicInputs}">
+   <ItemsControl.ItemTemplate><DataTemplate>
+    <Border x:Name="LogicInputCard" CornerRadius="4" Padding="8" Margin="0,0,0,10">
+     <Border.Style><Style TargetType="Border">
+      <Setter Property="BorderThickness" Value="1"/><Setter Property="BorderBrush" Value="#727272"/>
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+      <Style.Triggers><DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/></DataTrigger></Style.Triggers>
+     </Style></Border.Style>
+     <DockPanel>
+      <Button DockPanel.Dock="Left" Content="⠿" Padding="4,1" Margin="0,0,6,0" graph:EntryReorder.IsHandle="True"
+       IsEnabled="{Binding CanEdit}" ToolTip="拖动调整输入顺序" AutomationProperties.AutomationId="LogicInputDragHandle"/>
+      <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=Explicit}" IsReadOnly="{Binding IsReadOnly}"
+       ToolTip="{Binding NameError}" KeyDown="Name_OnKeyDown" LostKeyboardFocus="Name_OnLostFocus"
+       AutomationProperties.AutomationId="LogicInputName" AutomationProperties.Name="逻辑输入名称"/>
+     </DockPanel>
+    </Border>
+   </DataTemplate></ItemsControl.ItemTemplate>
+  </ItemsControl>
+ </StackPanel>
+</UserControl>

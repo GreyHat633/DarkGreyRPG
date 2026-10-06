@@ -72,6 +72,9 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         AddChoiceOptionCommand = new RelayCommand(() => AddChoiceOption(), () => IsChoice);
         AddStoryStartTriggerCommand = new RelayCommand(() => AddStoryStartTrigger(), () => IsStoryStart);
         AddRewardEntryCommand = new RelayCommand(AddRewardEntry, () => IsTaskReward);
+        AddLogicInputCommand = new RelayCommand(() => AddLogicInput(), () => CanEditLogic);
+        RemoveSelectedLogicInputCommand = new RelayCommand(() => RemoveSelectedLogicInput(), () => CanRemoveSelectedLogicInput);
+        LogicSelection.Changed += OnLogicInputSelectionChanged;
         AudioState.Changed += OnLineAudioStateChanged;
         Selection.Changed += OnPageSelectionChanged;
         RefreshFromHost();
@@ -159,7 +162,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     public bool IsReachRegionObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.ReachRegion;
     public bool IsInteractActorObjective => IsObjective && _objectiveType == CanonicalTaskObjectiveSchema.InteractActor;
     public bool HasEditableFields => IsLine || IsChoice || IsEnd || IsLogicOutput || IsTaskSettle || IsObjective
-        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle || IsPublicBoundary || PublicOutputs is not null;
+        || IsStoryStart || IsStoryAction || IsTaskReward || IsMusic || IsScreen || IsTitle || IsPublicBoundary || IsLogicCombination || PublicOutputs is not null;
     public bool HasInlineFields => HasEditableFields;
 
     public CanonicalStoryActionTypeOption? SelectedStoryActionType
@@ -649,6 +652,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     {
         Selection.Changed -= OnPageSelectionChanged;
         if (_disposed) return;
+        LogicSelection.Changed -= OnLogicInputSelectionChanged;
         PublicOutputs?.Dispose();
         _disposed = true;
         foreach (var page in LinePages) page.Dispose();
@@ -881,6 +885,7 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     private void RefreshFromHostCore(GraphEditorNodeViewModel current)
     {
         RefreshCount++;
+        RefreshLogicInputs(current);
         RefreshRewardEntries(current);
 
         _repeatPolicy = current.Properties.TryGetValue(StoryStartSchema.RepeatPolicyProperty, out var repeat)

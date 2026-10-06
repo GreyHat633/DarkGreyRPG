@@ -72,6 +72,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     private Func<string?> _placementNodeIdSource = NextPlacementNodeId;
     private Point _resourceDragStart;
     private ICanonicalStoryTreeItem? _resourceDragItem;
+    private bool _resourceDragReleased;
     private Button? _resourceReorderPreviewButton;
     private bool _resourceReorderInsertAfter;
     private long _appliedStoryNodeFocusSequence;
@@ -91,6 +92,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         WorkspaceGraph.InlineEditorFactory = CreateInlineEditor;
         WorkspaceGraph.SelectionChanged += WorkspaceGraph_OnSelectionChanged;
         WorkspaceGraph.NodeEditRequested += WorkspaceGraph_OnNodeEditRequested;
+        Unloaded += (_, _) => { CancelResourceDragPreview(); ClearResourceReorderPreview(); Workspace?.ClearParameterDropMessage(); };
     }
 
     public CanonicalStoryWorkspaceView(CanonicalStoryWorkspaceViewModel workspace)
@@ -306,18 +308,35 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             return;
 
         _resourceDragItem = null;
+        Workspace?.ClearParameterDropMessage();
         var data = new DataObject(ResourceDragFormat, item);
         var effect = DragDropEffects.None;
+        var source = (DependencyObject)sender;
+        _resourceDragReleased = false;
+        QueryContinueDragEventHandler observeRelease = (_, query) =>
+            _resourceDragReleased = !query.EscapePressed && (query.KeyStates & DragDropKeyStates.LeftMouseButton) == 0;
+        DragDrop.AddQueryContinueDragHandler(source, observeRelease);
         try
         {
-            effect = DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Link | DragDropEffects.Move);
+            effect = DragDrop.DoDragDrop(source, data, DragDropEffects.Link | DragDropEffects.Move);
         }
         finally
         {
+            DragDrop.RemoveQueryContinueDragHandler(source, observeRelease);
             CancelResourceDragPreview();
             ClearResourceReorderPreview();
             DynamicContentEditor.NotifyResourceDragFinished(effect != DragDropEffects.None);
         }
+        // WPF does not raise Drop when DragOver returned None. Keep the rejected
+        // preview's short feedback on release, and clear it when the drag is cancelled.
+        if (effect == DragDropEffects.None && item is CanonicalStoryActorItem or CanonicalStoryItemItem
+            && Workspace is { } workspace)
+        {
+            if (_resourceDragReleased && Window.GetWindow(this)?.IsActive == true && workspace.HasParameterDropMessage)
+                workspace.RestartParameterDropMessageTimeout();
+            else workspace.ClearParameterDropMessage();
+        }
+        _resourceDragReleased = false;
         args.Handled = true;
     }
 
@@ -388,9 +407,12 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             else
             {
                 CancelResourceDragPreview();
-                args.Effects = WorkspaceGraph.NodeAtViewportPoint(point) is not null
+                var node = WorkspaceGraph.NodeAtViewportPoint(point);
+                bool accepted = Workspace?.CanApplyResourceToNodeParameter(node, item) == true;
+                args.Effects = accepted
                     ? DragDropEffects.Link
                     : DragDropEffects.None;
+                if (!accepted) Workspace?.ApplyResourceToNodeParameter(node, item);
             }
         }
         args.Handled = true;
@@ -399,6 +421,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     private void WorkspaceGraph_OnDragLeave(object sender, DragEventArgs args)
     {
         CancelResourceDragPreview();
+        if (!_resourceDragReleased) Workspace?.ClearParameterDropMessage();
         args.Handled = true;
     }
 
@@ -589,6 +612,10 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             _choiceOptionRemovalConfirmation ?? ShowChoiceOptionRemovalConfirmation;
         inspector.StoryStartTriggerRemovalConfirmationRequested =
             _storyStartTriggerRemovalConfirmation ?? ShowStoryStartTriggerRemovalConfirmation;
+        inspector.CanEditLogicInputs = () => Workspace?.IsActiveGraphReadOnly == false;
+        inspector.LogicInputRemovalConfirmationRequested = (name, count) => MessageBox.Show(Window.GetWindow(this),
+            $"删除输入“{name}”将同时移除 {count} 条连接。确定继续吗？", "确认删除逻辑输入",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
     }
 
     private bool ShowChoiceOptionRemovalConfirmation(CanonicalChoiceOptionRemovalConfirmation confirmation)

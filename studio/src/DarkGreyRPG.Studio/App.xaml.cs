@@ -34,6 +34,7 @@ public partial class App : Application
         if (Environment.GetEnvironmentVariable("DGR_STUDIO_SOFTWARE_RENDERING") == "1")
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         base.OnStartup(e);
+        Views.PixelScroll.Register();
 
         var paths = StudioStoragePaths.Default;
         try

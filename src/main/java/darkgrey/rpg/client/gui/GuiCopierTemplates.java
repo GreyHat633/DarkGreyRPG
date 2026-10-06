@@ -21,6 +21,7 @@ public final class GuiCopierTemplates extends GuiScreen {
     private final List<EntityTemplate> templates;
     private final int selectedIndex;
     private int offset;
+    private final SmoothScroll scroll = new SmoothScroll();
     private int pendingDelete = -1;
     private int panelLeft, panelTop, panelWidth, panelHeight;
     private final UtilityWindowGeometry windowGeometry = new UtilityWindowGeometry(260, 160, 420, 340);
@@ -58,15 +59,16 @@ public final class GuiCopierTemplates extends GuiScreen {
         panelTop = windowGeometry.y;
         panelWidth = windowGeometry.width;
         panelHeight = windowGeometry.height;
-        offset = Math.max(0, Math.min(offset, maxOffset()));
-        int rows = Math.min(visibleRows(), Math.max(0, templates.size() - offset));
+        scroll.bounds(templates.size() * ROW_HEIGHT - (panelHeight - 74));
+        offset = scroll.pixelOffset() / ROW_HEIGHT;
+        int rows = Math.min(visibleRows() + 2, Math.max(0, templates.size() - offset));
         int rowButtonWidth = Math.max(80, panelWidth - 88);
         if (buttonList.size() == rows * 2 + 1 && laidOutOffset == offset && laidOutDelete == pendingDelete) {
             for (int row = 0; row < rows; row++) {
                 GuiButton select = (GuiButton) buttonList.get(row * 2);
                 GuiButton delete = (GuiButton) buttonList.get(row * 2 + 1);
                 select.xPosition = panelLeft + 8;
-                select.yPosition = listTop() + row * ROW_HEIGHT;
+                select.yPosition = listTop() + row * ROW_HEIGHT - scroll.pixelOffset() % ROW_HEIGHT;
                 select.width = rowButtonWidth;
                 String prefix = offset + row == selectedIndex ? "✓ " : "  ";
                 select.displayString = fontRendererObj.trimStringToWidth(
@@ -94,7 +96,7 @@ public final class GuiCopierTemplates extends GuiScreen {
                 new GuiRpgButton(
                     100 + row,
                     panelLeft + 8,
-                    listTop() + row * ROW_HEIGHT,
+                    listTop() + row * ROW_HEIGHT - scroll.pixelOffset() % ROW_HEIGHT,
                     rowButtonWidth,
                     20,
                     fontRendererObj.trimStringToWidth(
@@ -104,7 +106,7 @@ public final class GuiCopierTemplates extends GuiScreen {
                 new GuiRpgButton(
                     200 + row,
                     panelLeft + panelWidth - 72,
-                    listTop() + row * ROW_HEIGHT,
+                    listTop() + row * ROW_HEIGHT - scroll.pixelOffset() % ROW_HEIGHT,
                     64,
                     20,
                     pendingDelete == index
@@ -127,11 +129,11 @@ public final class GuiCopierTemplates extends GuiScreen {
             mc.displayGuiScreen(null);
             return;
         }
-        if (button.id >= 100 && button.id < 100 + visibleRows()) {
+        if (button.id >= 100 && button.id < 100 + visibleRows() + 2) {
             send(C2SCopierTemplateAction.Operation.SELECT, offset + button.id - 100);
             return;
         }
-        if (button.id >= 200 && button.id < 200 + visibleRows()) {
+        if (button.id >= 200 && button.id < 200 + visibleRows() + 2) {
             int index = offset + button.id - 200;
             if (pendingDelete != index) {
                 pendingDelete = index;
@@ -157,6 +159,8 @@ public final class GuiCopierTemplates extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        scroll.tick();
+        layoutControls();
         drawDefaultBackground();
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight, DgrUiPalette.WINDOW_PANEL);
         drawRect(panelLeft, panelTop, panelLeft + panelWidth, panelTop + 2, 0xFF8C8C8C);
@@ -185,7 +189,18 @@ public final class GuiCopierTemplates extends GuiScreen {
             panelTop + panelHeight - 38,
             0xFFBDBDBD);
         UtilityWindowChrome.drawGrip(windowGeometry);
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        try (GuiScrollClip clip = new GuiScrollClip(
+            panelLeft + 4,
+            listTop(),
+            panelLeft + panelWidth - 4,
+            panelTop + panelHeight - 42)) {
+            for (Object value : buttonList) {
+                GuiButton button = (GuiButton) value;
+                if (button.id != 0) button.drawButton(mc, mouseX, mouseY);
+            }
+        }
+        for (Object value : buttonList)
+            if (((GuiButton) value).id == 0) ((GuiButton) value).drawButton(mc, mouseX, mouseY);
     }
 
     @Override
@@ -199,7 +214,7 @@ public final class GuiCopierTemplates extends GuiScreen {
         if (mouseX < panelLeft + 4 || mouseX >= panelLeft + panelWidth - 4
             || mouseY < listTop()
             || mouseY >= panelTop + panelHeight - 42) return;
-        offset = Math.max(0, Math.min(maxOffset(), offset + (delta < 0 ? 1 : -1)));
+        scroll.wheel(delta, ROW_HEIGHT);
         pendingDelete = -1;
         layoutControls();
     }
@@ -207,6 +222,17 @@ public final class GuiCopierTemplates extends GuiScreen {
     @Override
     protected void mouseClicked(int x, int y, int button) {
         if (pendingDelete < 0 && windowGeometry.begin(x, y, button)) return;
+        boolean inList = x >= panelLeft + 4 && x < panelLeft + panelWidth - 4
+            && y >= listTop()
+            && y < panelTop + panelHeight - 42;
+        boolean onClose = x >= panelLeft + panelWidth - 88 && x < panelLeft + panelWidth - 8
+            && y >= panelTop + panelHeight - 28
+            && y < panelTop + panelHeight - 8;
+        if (onClose && button == 0) {
+            mc.displayGuiScreen(null);
+            return;
+        }
+        if (!inList) return;
         super.mouseClicked(x, y, button);
     }
 

@@ -18,7 +18,7 @@ public final class GuiQuestJournal extends GuiScreen {
     private static final QuestStatus[] VISIBLE_TABS = { QuestStatus.ACTIVE, QuestStatus.COMPLETED, QuestStatus.FAILED };
     private final List<QuestJournalEntry> entries;
     private QuestStatus tab = QuestStatus.ACTIVE;
-    private int scrollOffset;
+    private final SmoothScroll scroll = new SmoothScroll();
 
     public GuiQuestJournal(List<QuestJournalEntry> entries) {
         this.entries = entries;
@@ -48,13 +48,13 @@ public final class GuiQuestJournal extends GuiScreen {
             mc.displayGuiScreen(null);
         } else if (button.id == 1) {
             tab = QuestStatus.ACTIVE;
-            scrollOffset = 0;
+            scroll.jump(0);
         } else if (button.id == 2) {
             tab = QuestStatus.COMPLETED;
-            scrollOffset = 0;
+            scroll.jump(0);
         } else if (button.id == 3) {
             tab = QuestStatus.FAILED;
-            scrollOffset = 0;
+            scroll.jump(0);
         }
     }
 
@@ -62,9 +62,11 @@ public final class GuiQuestJournal extends GuiScreen {
     public void handleMouseInput() {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
-        if (wheel != 0) {
-            scrollOffset = Math.max(0, scrollOffset + (wheel < 0 ? 22 : -22));
-        }
+        int x = Mouse.getEventX() * width / mc.displayWidth;
+        int y = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        int left = (width - PANEL_WIDTH) / 2, top = (height - panelHeight()) / 2;
+        if (wheel != 0 && x >= left + 8 && x < left + PANEL_WIDTH - 8 && y >= top + 62 && y < top + panelHeight() - 42)
+            scroll.wheel(wheel, 24);
     }
 
     @Override
@@ -82,18 +84,25 @@ public final class GuiQuestJournal extends GuiScreen {
                                                                                                                      // title
 
         List<String> lines = buildLines();
-        int y = top + 66 - scrollOffset;
         int clipTop = top + 62;
         int clipBottom = top + panelHeight - 42;
-        for (String line : lines) {
-            if (y >= clipTop && y <= clipBottom) {
-                fontRendererObj
-                    .drawString(line, left + 18, y, line.startsWith("  ") ? DgrUiPalette.SECONDARY : DgrUiPalette.TEXT); // Secondary
-                // /
-                // Primary
-                // text
+        scroll.bounds(lines.size() * 12 + 4 - (clipBottom - clipTop));
+        scroll.tick();
+        int y = top + 66 - scroll.pixelOffset();
+        try (GuiScrollClip clip = new GuiScrollClip(left + 8, clipTop, left + PANEL_WIDTH - 8, clipBottom)) {
+            for (String line : lines) {
+                if (y < clipBottom && y + fontRendererObj.FONT_HEIGHT > clipTop) {
+                    fontRendererObj.drawString(
+                        line,
+                        left + 18,
+                        y,
+                        line.startsWith("  ") ? DgrUiPalette.SECONDARY : DgrUiPalette.TEXT); // Secondary
+                    // /
+                    // Primary
+                    // text
+                }
+                y += 12;
             }
-            y += 12;
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

@@ -3104,7 +3104,7 @@ public sealed partial class ShellViewModel : ObservableObject
             return;
         }
 
-        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Minecraft");
+        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Output");
         const string message = "Studio 文件已保存并通过验证。请在 Minecraft 中执行：/dgrpg reload";
         StatusMessage = message;
         Output.Append(message, OutputKind.Information, "Runtime");

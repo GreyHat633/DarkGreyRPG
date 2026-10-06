@@ -45,19 +45,25 @@ public final class TaskTrackerHud {
 
         String story, storyTitle;
         String title;
-        final List<List<Row>> objectives = new ArrayList<List<Row>>();
+        final List<Row> rows = new ArrayList<Row>();
     }
 
     private static String fit(Minecraft mc, String value, int width) {
         String text = value.replace("§l", "")
             .replace("§r", "");
         if (mc.fontRenderer.getStringWidth(text) <= width) return text;
-        return mc.fontRenderer.trimStringToWidth(text, Math.max(0, width - mc.fontRenderer.getStringWidth("…"))) + "…";
+        String trimmed = mc.fontRenderer
+            .trimStringToWidth(text, Math.max(0, width - mc.fontRenderer.getStringWidth("…")));
+        if (!trimmed.isEmpty() && Character.isHighSurrogate(trimmed.charAt(trimmed.length() - 1)))
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        if (trimmed.endsWith("§")) trimmed = trimmed.substring(0, trimmed.length() - 1);
+        return trimmed + "…";
     }
 
     private static int rowHeight(Row row, Minecraft mc) {
-        return row.icon == null ? (int) Math.ceil(mc.fontRenderer.FONT_HEIGHT * scale) + 2
-            : (int) Math.ceil(20 * scale) + 2;
+        return row.text.isEmpty() ? 2
+            : row.icon == null ? (int) Math.ceil(mc.fontRenderer.FONT_HEIGHT * scale) + 2
+                : (int) Math.ceil(20 * scale) + 2;
     }
 
     private static void rebuild(Minecraft mc) {
@@ -87,16 +93,7 @@ public final class TaskTrackerHud {
                 String description = chosen.getString("text");
                 List<String> wrapped = mc.fontRenderer
                     .listFormattedStringToWidth(description, Math.max(1, wrapWidth - 6));
-                if (!wrapped.isEmpty()) rows.add(new Row(fit(mc, wrapped.get(0), wrapWidth - 6), 2, null));
-                if (wrapped.size() > 1) {
-                    String rest = description.substring(
-                        Math.min(
-                            description.length(),
-                            wrapped.get(0)
-                                .length()))
-                        .trim();
-                    rows.add(new Row(fit(mc, rest, wrapWidth - 6), 3, null));
-                }
+                for (int k = 0; k < wrapped.size(); k++) rows.add(new Row(wrapped.get(k), k == 0 ? 2 : 3, null));
                 for (String text : TaskObjectiveText.lines(chosen))
                     if (text.startsWith("持有 ") || text.startsWith("进度 ")) {
                         ItemSlotStrip icon = null;
@@ -109,7 +106,8 @@ public final class TaskTrackerHud {
                         rows.add(new Row(fit(mc, text, Math.max(1, wrapWidth - (icon == null ? 6 : 24))), 3, icon));
                         break;
                     }
-                block.objectives.add(rows);
+                block.rows.addAll(rows);
+                if (j + 1 < objectives.tagCount()) block.rows.add(new Row("", 3, null));
             }
             blocks.add(block);
         }
@@ -120,9 +118,10 @@ public final class TaskTrackerHud {
         if (mc.theWorld == null || mc.thePlayer == null) return;
         ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
         int width = resolution.getScaledWidth(), height = resolution.getScaledHeight(), right = width - 8;
+        boolean leftSide = PlayerUiPreferences.trackerSide() == PlayerUiPreferences.Side.LEFT;
         net.minecraft.scoreboard.ScoreObjective scoreboard = mc.theWorld.getScoreboard()
             .func_96539_a(1);
-        if (scoreboard != null) {
+        if (scoreboard != null && !leftSide) {
             int occupied = mc.fontRenderer.getStringWidth(scoreboard.getDisplayName()) + 36;
             for (Object object : mc.theWorld.getScoreboard()
                 .func_96534_i(scoreboard)) {
@@ -154,47 +153,40 @@ public final class TaskTrackerHud {
         }
         if (blocks.isEmpty()) return;
         int lineHeight = (int) Math.ceil(mc.fontRenderer.FONT_HEIGHT * scale) + 2;
-        int limit = height / 3;
         int[] shown = new int[blocks.size()];
-        int count = 0;
+        int count = blocks.size();
+        int fixedHeight = layoutHeight(mc, shown, count, lineHeight);
+        // Reserve every story/task header and every overflow marker first, then share body space equally.
+        int available = Math.min(height - 16, Math.max(height / 3, fixedHeight + count * 44));
+        int bodyBudget = Math.max(lineHeight, (available - fixedHeight + count * lineHeight) / count);
         for (int i = 0; i < blocks.size(); i++) {
-            shown[i] = Math.min(1, blocks.get(i).objectives.size());
-            if (layoutHeight(mc, shown, i + 1, lineHeight) > limit) {
-                shown[i] = 0;
-                break;
-            }
-            count++;
-        }
-        // Reserve a minimum task block for every task that fits before adding more objectives.
-        for (int i = 0; i < count; i++) {
-            while (shown[i] < blocks.get(i).objectives.size()) {
-                shown[i]++;
-                if (layoutHeight(mc, shown, count, lineHeight) > limit) {
-                    shown[i]--;
-                    break;
-                }
-            }
+            List<Row> rows = blocks.get(i).rows;
+            int[] heights = new int[rows.size()];
+            for (int j = 0; j < rows.size(); j++) heights[j] = rowHeight(rows.get(j), mc);
+            shown[i] = TaskTrackerBodyLayout.visibleRows(heights, bodyBudget, lineHeight);
         }
         int used = layoutHeight(mc, shown, count, lineHeight);
-        if (used > limit) return;
         int naturalWidth = 0;
         for (int i = 0; i < count; i++) {
             Block block = blocks.get(i);
             naturalWidth = Math.max(naturalWidth, mc.fontRenderer.getStringWidth(block.storyTitle) + 12);
             naturalWidth = Math.max(naturalWidth, mc.fontRenderer.getStringWidth(block.title) + 12);
-            for (int j = 0; j < shown[i]; j++) for (Row row : block.objectives.get(j)) naturalWidth = Math
-                .max(naturalWidth, mc.fontRenderer.getStringWidth(row.text) + (row.icon == null ? 6 : 24));
-            if (shown[i] < block.objectives.size()) naturalWidth = Math.max(
-                naturalWidth,
-                mc.fontRenderer
-                    .getStringWidth(fit(mc, "另有 " + (block.objectives.size() - shown[i]) + " 个目标", wrapWidth)));
+            for (int j = 0; j < shown[i]; j++) {
+                Row row = block.rows.get(j);
+                naturalWidth = Math
+                    .max(naturalWidth, mc.fontRenderer.getStringWidth(row.text) + (row.icon == null ? 6 : 24));
+            }
+            if (shown[i] < block.rows.size())
+                naturalWidth = Math.max(naturalWidth, mc.fontRenderer.getStringWidth(fit(mc, "! 部分内容已省略", wrapWidth)));
         }
-        String footer = fit(mc, "另有 " + (blocks.size() - count) + " 个任务", wrapWidth);
-        if (count < blocks.size()) naturalWidth = Math.max(naturalWidth, mc.fontRenderer.getStringWidth(footer));
         panelWidth = Math.min(panelWidth, (int) Math.ceil(naturalWidth * scale) + 24);
+        if (leftSide) right = 8 + panelWidth;
         int left = right - panelWidth, top = Math.max(4, (height - used) / 2), y = top;
         org.lwjgl.opengl.GL11.glPushAttrib(org.lwjgl.opengl.GL11.GL_ALL_ATTRIB_BITS);
         try {
+            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
+            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
+            org.lwjgl.opengl.GL11.glColor4f(1, 1, 1, 1);
             int index = 0;
             while (index < count) {
                 int end = index + 1;
@@ -221,34 +213,31 @@ public final class TaskTrackerHud {
                         .drawText(mc.fontRenderer, block.title, left + 20, taskY + 4, scale, DgrUiPalette.TEXT);
                     int rowY = taskY + 4 + lineHeight;
                     for (int j = 0; j < shown[i]; j++) {
-                        for (Row row : block.objectives.get(j)) {
-                            if (row.icon == null) {
-                                if (row.role == 2)
-                                    Gui.drawRect(left + 9, rowY + 4, left + 11, rowY + 6, DgrUiPalette.TEXT);
-                                CanonicalDialogueRenderer
-                                    .drawText(mc.fontRenderer, row.text, left + 14, rowY, scale, DgrUiPalette.TEXT);
-                            } else {
-                                org.lwjgl.opengl.GL11.glPushMatrix();
-                                try {
-                                    org.lwjgl.opengl.GL11.glTranslated(left + 8, rowY, 0);
-                                    org.lwjgl.opengl.GL11.glScaled(scale, scale, 1);
-                                    row.icon.draw(0, 0, wrapWidth, 0, 20, -100, -100);
-                                    mc.fontRenderer.drawString(
-                                        row.text,
-                                        24,
-                                        (20 - mc.fontRenderer.FONT_HEIGHT) / 2,
-                                        DgrUiPalette.TEXT);
-                                } finally {
-                                    org.lwjgl.opengl.GL11.glPopMatrix();
-                                }
+                        Row row = block.rows.get(j);
+                        if (row.icon == null) {
+                            if (row.role == 2) Gui.drawRect(left + 9, rowY + 4, left + 11, rowY + 6, DgrUiPalette.TEXT);
+                            CanonicalDialogueRenderer
+                                .drawText(mc.fontRenderer, row.text, left + 14, rowY, scale, DgrUiPalette.TEXT);
+                        } else {
+                            org.lwjgl.opengl.GL11.glPushMatrix();
+                            try {
+                                org.lwjgl.opengl.GL11.glTranslated(left + 8, rowY, 0);
+                                org.lwjgl.opengl.GL11.glScaled(scale, scale, 1);
+                                row.icon.drawWhole(0, 0, wrapWidth);
+                                mc.fontRenderer.drawString(
+                                    row.text,
+                                    24,
+                                    (20 - mc.fontRenderer.FONT_HEIGHT) / 2,
+                                    DgrUiPalette.TEXT);
+                            } finally {
+                                org.lwjgl.opengl.GL11.glPopMatrix();
                             }
-                            rowY += rowHeight(row, mc);
                         }
-                        rowY += 2;
+                        rowY += rowHeight(row, mc);
                     }
-                    if (shown[i] < block.objectives.size()) CanonicalDialogueRenderer.drawText(
+                    if (shown[i] < block.rows.size()) CanonicalDialogueRenderer.drawText(
                         mc.fontRenderer,
-                        fit(mc, "另有 " + (block.objectives.size() - shown[i]) + " 个目标", wrapWidth),
+                        fit(mc, "! 部分内容已省略", wrapWidth),
                         left + 8,
                         rowY,
                         scale,
@@ -258,10 +247,6 @@ public final class TaskTrackerHud {
                 y += storyHeight + 4;
                 index = end;
             }
-            if (count < blocks.size()) {
-                box(left, y, right, y + lineHeight + 8, 0xEB000000 | (DgrUiPalette.WINDOW_PANEL & 0xFFFFFF));
-                CanonicalDialogueRenderer.drawText(mc.fontRenderer, footer, left + 8, y + 4, scale, DgrUiPalette.TEXT);
-            }
         } finally {
             org.lwjgl.opengl.GL11.glPopAttrib();
         }
@@ -270,10 +255,9 @@ public final class TaskTrackerHud {
     private static int taskHeight(Minecraft mc, Block block, int shown, int lineHeight) {
         int height = 8 + lineHeight;
         for (int i = 0; i < shown; i++) {
-            for (Row row : block.objectives.get(i)) height += rowHeight(row, mc);
-            height += 2;
+            height += rowHeight(block.rows.get(i), mc);
         }
-        if (shown < block.objectives.size()) height += lineHeight;
+        if (shown < block.rows.size()) height += lineHeight;
         return height;
     }
 

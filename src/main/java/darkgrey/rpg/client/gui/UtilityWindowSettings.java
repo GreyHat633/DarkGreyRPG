@@ -120,10 +120,27 @@ public final class UtilityWindowSettings {
         darkgrey.rpg.client.session.PlayerUiPreferences
             .setAutomatic(Boolean.parseBoolean(properties.getProperty("dialogue.automatic", "false")));
         darkgrey.rpg.client.session.DialoguePreferences.setSpeed(dialogueSpeed());
+        darkgrey.rpg.client.session.PlayerUiPreferences
+            .setTrackNewTasks(!"false".equalsIgnoreCase(properties.getProperty("task.trackNew", "true")));
+        darkgrey.rpg.client.session.PlayerUiPreferences.setTrackerSide(
+            darkgrey.rpg.client.session.PlayerUiPreferences.parseSide(properties.getProperty("task.trackerSide")));
+        darkgrey.rpg.client.session.PlayerUiPreferences.setNotificationSide(
+            darkgrey.rpg.client.session.PlayerUiPreferences.parseSide(properties.getProperty("task.notificationSide")));
     }
 
     public void savePlayerPreferences() {
         reloadFromDisk();
+        properties.setProperty(
+            "task.trackNew",
+            Boolean.toString(darkgrey.rpg.client.session.PlayerUiPreferences.trackNewTasks()));
+        properties.setProperty(
+            "task.trackerSide",
+            darkgrey.rpg.client.session.PlayerUiPreferences.trackerSide()
+                .name());
+        properties.setProperty(
+            "task.notificationSide",
+            darkgrey.rpg.client.session.PlayerUiPreferences.notificationSide()
+                .name());
         properties.setProperty(
             "ui.theme",
             darkgrey.rpg.client.session.PlayerUiPreferences.theme()

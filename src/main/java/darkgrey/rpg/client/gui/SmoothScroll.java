@@ -6,6 +6,13 @@ public final class SmoothScroll {
     private double position;
     private double target;
     private double maximum;
+    private long updated = System.nanoTime();
+
+    public void tick() {
+        long now = System.nanoTime();
+        advance((now - updated) / 1000000000.0);
+        updated = now;
+    }
 
     public double position() {
         return position;
@@ -22,7 +29,11 @@ public final class SmoothScroll {
     }
 
     public void wheel(int delta) {
-        if (delta != 0) target = clamp(target + (delta < 0 ? 20 : -20));
+        wheel(delta, 20);
+    }
+
+    public void wheel(int delta, double distance) {
+        if (delta != 0) target = clamp(target + (delta < 0 ? distance : -distance));
     }
 
     public void jump(double pixels) {
@@ -47,7 +58,11 @@ public final class SmoothScroll {
     }
 
     public int rowAt(int viewportY) {
-        return (viewportY + pixelOffset()) / 20;
+        return rowAt(viewportY, 20);
+    }
+
+    public int rowAt(int viewportY, int rowHeight) {
+        return Math.floorDiv(viewportY + pixelOffset(), Math.max(1, rowHeight));
     }
 
     private double clamp(double value) {

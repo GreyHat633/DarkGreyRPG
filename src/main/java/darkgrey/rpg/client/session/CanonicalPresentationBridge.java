@@ -23,20 +23,21 @@ public final class CanonicalPresentationBridge {
         darkgrey.rpg.title.CanonicalTitleClient.tick();
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void hud(net.minecraftforge.client.event.RenderGameOverlayEvent.Post event) {
         if (event.type != net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType.ALL) return;
-        if (Minecraft.getMinecraft().currentScreen == null)
-            CanonicalSessionClientController.drawUnderlay(event.partialTicks);
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.gameSettings.hideGUI) return;
+        if (mc.currentScreen == null) CanonicalSessionClientController.drawUnderlay(event.partialTicks);
         darkgrey.rpg.title.CanonicalTitleClient.draw();
-        darkgrey.rpg.client.TaskNotificationCards.draw();
         darkgrey.rpg.client.TaskTrackerHud.draw();
+        if (mc.currentScreen == null) darkgrey.rpg.client.TaskNotificationCards.draw();
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void afterGui(GuiScreenEvent.DrawScreenEvent.Post event) {
         darkgrey.rpg.title.CanonicalTitleClient.draw();
-        darkgrey.rpg.client.TaskNotificationCards.draw();
+        if (!Minecraft.getMinecraft().gameSettings.hideGUI) darkgrey.rpg.client.TaskNotificationCards.draw();
     }
 
     @SubscribeEvent

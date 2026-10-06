@@ -11,7 +11,7 @@ public sealed class BottomPanelViewModelTests
         var viewModel = new BottomPanelViewModel();
 
         CollectionAssert.AreEqual(
-            new[] { "Output", "Problems", "Debugger", "Minecraft" },
+            new[] { "Output", "Problems", "Debugger" },
             viewModel.Tabs.Select(tab => tab.Page).ToArray());
         Assert.AreEqual("Output", viewModel.SelectedTab.Page);
         Assert.IsFalse(viewModel.IsExpanded);

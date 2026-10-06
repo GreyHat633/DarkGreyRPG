@@ -1,0 +1,32 @@
+{
+  "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "ProductVersion": "0.3.3.7",
+  "Bytes": 204288,
+  "SHA256": "eb4975e1ee5d37c80c0250102f40087c3d6d68649004d7233ce77ecc7c551566",
+  "AssemblySHA256": "46982d3ed755fa5075ef3585c55fe236ebc026d97cff9d0b9ca3a12b4b60b1e9",
+  "DataPreserved": true,
+  "DataFilesChecked": 2661,
+  "Runtime": {
+    "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.3.3.7.jar",
+    "Version": "0.3.3.7",
+    "Bytes": 1992330,
+    "SHA256": "4bbe77a50b9bcbaea1d5641bb79f52571317b249e67299f34c47e543d76754c5",
+    "ValidatedCopies": [
+      {
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0337\\RuntimeH\\mods\\DarkGreyRPG.jar",
+        "SHA256": "4bbe77a50b9bcbaea1d5641bb79f52571317b249e67299f34c47e543d76754c5"
+      },
+      {
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0337\\RuntimeMP\\mods\\DarkGreyRPG.jar",
+        "SHA256": "4bbe77a50b9bcbaea1d5641bb79f52571317b249e67299f34c47e543d76754c5"
+      },
+      {
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0337\\Server\\mods\\DarkGreyRPG.jar",
+        "SHA256": "4bbe77a50b9bcbaea1d5641bb79f52571317b249e67299f34c47e543d76754c5"
+      }
+    ]
+  },
+  "SourceBaseline": "d0d3f0e9f057793d1399568cc113f947fa1d86cc",
+  "Branch": "codex/0.3.3.7",
+  "FinishedProductReleaseCreated": false
+}
