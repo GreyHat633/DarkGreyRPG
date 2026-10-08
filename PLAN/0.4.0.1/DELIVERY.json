@@ -1,12 +1,12 @@
 {
   "version": "0.4.0.1",
-  "recorded_at": "2026-10-08T23:00:06.9556421+08:00",
+  "recorded_at": "2026-10-08T16:38:56.583422+00:00",
   "baseline_commit": "be0b180008fe58f2f1a6d1724a5a06d9884e4be8",
   "branch": "codex/0.4.0.1",
   "head": "be0b180008fe58f2f1a6d1724a5a06d9884e4be8",
   "implementation_source": {
     "type": "Baseline plus physical workspace manifest including newly added/untracked files",
-    "committed": false,
+    "committed": true,
     "manifest": "evidence/compiled-inputs.json",
     "fingerprint": "2CB52957BAC3BADD3F3401D53C32F1D66F774478B863719AF51AE45FACC86C68",
     "production_fingerprint": "43E83EA333BF41D607952DD371F27DFB68EFC2B224C4905AAF1541568FBDF24A",
@@ -14,7 +14,28 @@
     "build_and_verification_fingerprint": "567AF9C503501F071D23B83DBE1646F57684FD453CB15FD58C50106D4BACCCCB",
     "input_files": 1053,
     "hash_basis": "Physical workspace bytes; UTF-8 manifest path<TAB>size<TAB>uppercase SHA-256 joined by LF, no final LF.",
-    "documentation": "Implementation.md / Acceptance.md; kept separate from compiled production fingerprint"
+    "documentation": "Implementation.md / Acceptance.md; kept separate from compiled production fingerprint",
+    "commit": "f3380ed8da180d39f2dafdf9bfc7667526825efc",
+    "git_comparison": {
+      "commit": "f3380ed8da180d39f2dafdf9bfc7667526825efc",
+      "branch": "codex/0.4.0.1",
+      "physical_inputs_checked": 1053,
+      "physical_input_fingerprint": "2CB52957BAC3BADD3F3401D53C32F1D66F774478B863719AF51AE45FACC86C68",
+      "committed_inputs_checked": 1052,
+      "production_source_count": 705,
+      "ignored_non_source_markers": [
+        {
+          "path": "studio/src/DarkGreyRPG.Studio/Settings/_probe.txt",
+          "size": 136,
+          "sha256": "5D965630F3F1812FA48B074486D51E00FBA840656862E81627544AF980833028"
+        }
+      ],
+      "production_source_fingerprint": "43E83EA333BF41D607952DD371F27DFB68EFC2B224C4905AAF1541568FBDF24A",
+      "git_content_matches_built_sources": true,
+      "git_line_ending_normalized_files": 830,
+      "comparison": "All physical input SHA-256 unchanged; committed Git blobs equal after CRLF/LF normalization only. Existing ignored Settings/_probe.txt is a local write probe, not a compiled/copied source or release asset.",
+      "binary_provenance": "Previously validated workspace binaries retained byte-for-byte; Core informational version preserves build baseline, not this later source commit."
+    }
   },
   "issue_status": {
     "R1": "IMPLEMENTED_AND_VERIFIED_REAL_MAPSTORAGE",
@@ -284,15 +305,90 @@
   },
   "implementation_status": "COMPLETE_R1_R2_R3",
   "acceptance_status": "INCOMPLETE_H_DEV_CNPC_AND_NATIVE_REQUEST_STATE_COMBINATIONS",
-  "delivery_status": "RUNTIME_DYNAMIC_CAPACITY_BUILT_STUDIO_PRIOR_DELIVERY_UNCHANGED",
+  "delivery_status": "FINISHED_PRODUCT_LOCAL_AND_GITHUB_RELEASE_PUBLISHED",
   "user_accepted": false,
-  "source_upload": false,
+  "source_upload": true,
   "release": {
-    "authorized": false,
-    "finished_product_created": false,
-    "pushed": false,
-    "tag_created_or_moved": false,
-    "github_release_created_or_modified": false
+    "authorized": true,
+    "finished_product_created": true,
+    "pushed": true,
+    "tag_created_or_moved": true,
+    "tag_created": true,
+    "existing_tag_moved": false,
+    "github_release_created_or_modified": true,
+    "existing_release_modified": false,
+    "authorization": "User explicitly requested GitHub source upload, artifacts packaging and GitHub Release."
   },
-  "rollback": "Restore matched program plus world/DGR data backup. A >512-record .1 table is not guaranteed readable by .0; a >4096-record dynamic table is not guaranteed readable by the earlier fixed-capacity .1 reader. Do not downgrade JAR alone or truncate bindings."
+  "rollback": "Restore matched program plus world/DGR data backup. A >512-record .1 table is not guaranteed readable by .0; a >4096-record dynamic table is not guaranteed readable by the earlier fixed-capacity .1 reader. Do not downgrade JAR alone or truncate bindings.",
+  "head_at_source_upload": "f3380ed8da180d39f2dafdf9bfc7667526825efc",
+  "finished_product_release": {
+    "local_product_directory": "artifacts/DGR0.4.0.1",
+    "source_commit": "f3380ed8da180d39f2dafdf9bfc7667526825efc",
+    "source_branch": "codex/0.4.0.1",
+    "tag": "v0.4.0.1",
+    "release_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.1",
+    "release_id": 407048730,
+    "published_at": "2026-10-08T16:38:50Z",
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "assets": [
+      {
+        "id": 622379690,
+        "name": "DarkGreyRPGStudio-0.4.0.1-win-x64.zip",
+        "size": 236964681,
+        "digest": "sha256:44338891dba3c691e2677108611a75f0fcb1b757f4438616d139a270ae8252fb",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.1/DarkGreyRPGStudio-0.4.0.1-win-x64.zip"
+      },
+      {
+        "id": 622379436,
+        "name": "darkgrey_rpg-0.4.0.1.jar",
+        "size": 1856126,
+        "digest": "sha256:569e97050c4281ef0b89aed9eedfeb18de7c34cc4651e24530339c95d87f1629",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.1/darkgrey_rpg-0.4.0.1.jar"
+      },
+      {
+        "id": 622391350,
+        "name": "README.md",
+        "size": 4223,
+        "digest": "sha256:8d045acfdc87b9ac443d6b3b6b810e5b1fd29b1e6c838caa7aa7e4bc0505cbec",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.1/README.md"
+      },
+      {
+        "id": 622391477,
+        "name": "ReleaseManifest.json",
+        "size": 5891,
+        "digest": "sha256:2a98592be3b30ad93252cc798c237cf7276d74b984711a9a2a0f7a5ddfa51af0",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.1/ReleaseManifest.json"
+      },
+      {
+        "id": 622391618,
+        "name": "SHA256SUMS.txt",
+        "size": 383,
+        "digest": "sha256:d6076fbbde0d24bb158ad4fff37234c6e07dc64a64e2b374f72dcd1c2f57777c",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.1/SHA256SUMS.txt"
+      }
+    ],
+    "five_asset_remote_sizes_and_sha256_verified": true,
+    "studio_zip_data_excluded": true,
+    "program_files_verified": 410,
+    "zip_entries": 411,
+    "actual_extracted_native_smoke": "PASS",
+    "bundled_runtime_module_paths_checked": true,
+    "moved_project_reopen": "PASS",
+    "ffmpeg_and_ffprobe": "PASS_EXIT_0",
+    "authority_data_preserved_during_packaging": {
+      "file_count": 2690,
+      "bytes": 68773074,
+      "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+    },
+    "release_summary": "Release.md",
+    "full_version_user_acceptance": false,
+    "public_receipt": "evidence/github-release.json"
+  }
 }
