@@ -25,6 +25,14 @@ public final class CanonicalTaskPresentationServer {
         EntityPlayerMP player = (EntityPlayerMP) event.player;
         if (player.playerNetServerHandler == null || player.ticksExisted < 5) return;
         State state = stateFor(player);
+        try {
+            darkgrey.rpg.session.persistence.CanonicalSessionSavedData.get(player)
+                .requireReadable();
+            state.quarantined = false;
+        } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+            reportQuarantine(state, failure);
+            return;
+        }
         darkgrey.rpg.title.CanonicalTitleServer.tick(player);
         if (!state.sessionProjected || state.dimension != player.dimension) {
             DarkGreyRpg.getCanonicalStoryManager()
@@ -41,6 +49,8 @@ public final class CanonicalTaskPresentationServer {
         if (player.ticksExisted < state.retryTick) return;
         try {
             pushPrepared(player, force, state);
+        } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+            reportQuarantine(state, failure);
         } catch (RuntimeException failure) {
             state.retryTick = player.ticksExisted + 20;
             if (player.ticksExisted >= state.diagnosticTick) {
@@ -51,6 +61,9 @@ public final class CanonicalTaskPresentationServer {
     }
 
     private static void pushPrepared(EntityPlayerMP player, boolean force, State state) {
+        darkgrey.rpg.session.persistence.CanonicalSessionSavedData.get(player)
+            .requireReadable();
+        state.quarantined = false;
         CanonicalTaskSavedData source = CanonicalTaskSavedData.get(player);
         Object project = DarkGreyRpg.getProjectRepository()
             .getSnapshot();
@@ -108,6 +121,13 @@ public final class CanonicalTaskPresentationServer {
         return false;
     }
 
+    private static void reportQuarantine(State state,
+        darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+        if (!state.quarantined) DarkGreyRpg.LOG
+            .warn("Task presentation is paused because Session/Story data is quarantined: {}", failure.getMessage());
+        state.quarantined = true;
+    }
+
     private static State stateFor(EntityPlayerMP player) {
         State state = STATES.get(player);
         // Entity.equals/hashCode use entityId, which is reused by the respawn replacement.
@@ -138,5 +158,6 @@ public final class CanonicalTaskPresentationServer {
         CanonicalTaskSavedData source;
         NBTTagCompound previous;
         boolean sessionProjected;
+        boolean quarantined;
     }
 }

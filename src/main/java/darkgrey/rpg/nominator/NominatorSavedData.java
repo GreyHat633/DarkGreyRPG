@@ -3,10 +3,9 @@ package darkgrey.rpg.nominator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import java.util.function.LongSupplier;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -15,6 +14,8 @@ import net.minecraft.world.WorldSavedData;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.storage.MapStorage;
 
+import darkgrey.rpg.identity.BindingCapacity;
+import darkgrey.rpg.identity.CompactBindingMap;
 import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.identity.ResourceAddressNbt;
 
@@ -23,21 +24,28 @@ public final class NominatorSavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_nominator";
     public static final int SCHEMA_VERSION = 4;
-    private final Map<UUID, NominatorEntityBinding> entities = new LinkedHashMap<UUID, NominatorEntityBinding>();
+    private CompactBindingMap<UUID, NominatorEntityBinding> entities = new CompactBindingMap<UUID, NominatorEntityBinding>();
+    private final BindingCapacity capacity;
+    private boolean batching;
     private long revision;
     private boolean awaitingRead;
     private RuntimeException readFailure;
 
     public NominatorSavedData() {
-        this(DATA_NAME, false);
+        this(DATA_NAME, false, System::nanoTime);
     }
 
     public NominatorSavedData(String name) {
-        this(name, true);
+        this(name, true, System::nanoTime);
     }
 
-    private NominatorSavedData(String name, boolean awaitingRead) {
+    NominatorSavedData(LongSupplier clock) {
+        this(DATA_NAME, false, clock);
+    }
+
+    private NominatorSavedData(String name, boolean awaitingRead, LongSupplier clock) {
         super(name);
+        capacity = new BindingCapacity(clock);
         this.awaitingRead = awaitingRead;
     }
 
@@ -55,6 +63,7 @@ public final class NominatorSavedData extends WorldSavedData {
         if (loaded instanceof NominatorSavedData) {
             NominatorSavedData data = (NominatorSavedData) loaded;
             data.requireUsable();
+            NominatorCapacityMaintenance.track(storage, data);
             return data;
         }
         if (loaded != null) throw new NominatorDataUnavailableException(
@@ -62,15 +71,22 @@ public final class NominatorSavedData extends WorldSavedData {
             new IllegalStateException("Unexpected SavedData type."));
         NominatorSavedData created = new NominatorSavedData();
         storage.setData(DATA_NAME, created);
+        NominatorCapacityMaintenance.track(storage, created);
         return created;
     }
 
     public synchronized void put(NominatorEntityBinding binding) {
         requireUsable();
         if (binding == null) throw new IllegalArgumentException("Binding is required.");
+        NominatorEntityBinding previous = entities.get(binding.getEntityUuid());
+        if (previous != null && java.util.Objects.equals(previous.getIndividualId(), binding.getIndividualId())
+            && previous.getGroupIds()
+                .equals(binding.getGroupIds())
+            && java.util.Objects.equals(previous.getStoryId(), binding.getStoryId())) return;
         entities.put(binding.getEntityUuid(), binding);
         revision++;
         markDirty();
+        countChanged();
     }
 
     /** Explicitly removes an entity selection; an absent selection is idempotent. */
@@ -80,6 +96,7 @@ public final class NominatorSavedData extends WorldSavedData {
         if (entities.remove(uuid) == null) return false;
         revision++;
         markDirty();
+        countChanged();
         return true;
     }
 
@@ -96,6 +113,39 @@ public final class NominatorSavedData extends WorldSavedData {
     public synchronized List<NominatorEntityBinding> bindings() {
         requireUsable();
         return Collections.unmodifiableList(new ArrayList<NominatorEntityBinding>(entities.values()));
+    }
+
+    synchronized void beginBatch() {
+        requireUsable();
+        if (batching) throw new IllegalStateException("Selection batch is already active.");
+        batching = true;
+    }
+
+    synchronized void endBatch(boolean committed) {
+        batching = false;
+        if (committed) countChanged();
+    }
+
+    private void countChanged() {
+        if (!batching) capacity.changed(entities.size(), entities.canCompact());
+    }
+
+    public synchronized boolean readableForMaintenance() {
+        return !awaitingRead && readFailure == null;
+    }
+
+    public synchronized boolean maintainMemory() {
+        requireUsable();
+        if (batching || !capacity.maintenanceDue(entities.size(), entities.canCompact())) return false;
+        CompactBindingMap<UUID, NominatorEntityBinding> replacement = entities.compacted();
+        entities = replacement;
+        capacity.maintenanceComplete(entities.size());
+        return true;
+    }
+
+    synchronized long currentCapacity() {
+        requireUsable();
+        return capacity.capacity();
     }
 
     /** MapStorage can cache a failed reader; never let that instance become writable empty data. */
@@ -136,9 +186,7 @@ public final class NominatorSavedData extends WorldSavedData {
         expectedRoot.add("entities");
         if (!rootKeys.equals(expectedRoot)) throw new IllegalArgumentException("Invalid nominator persistence root.");
         NBTTagList list = ResourceAddressNbt.compounds(root, "entities");
-        if (list.tagCount() > NominatorCatalog.MAX_ENTRIES)
-            throw new IllegalArgumentException("Too many entity bindings.");
-        Map<UUID, NominatorEntityBinding> decoded = new LinkedHashMap<UUID, NominatorEntityBinding>();
+        CompactBindingMap<UUID, NominatorEntityBinding> decoded = new CompactBindingMap<UUID, NominatorEntityBinding>();
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound value = list.getCompoundTagAt(i);
             if (!(value.hasKey("individual_id") ? keys(value, "entity_uuid", "individual_id", "groups", "story_id")
@@ -164,9 +212,10 @@ public final class NominatorSavedData extends WorldSavedData {
         }
         if (!root.hasKey("revision", 4) || root.getLong("revision") < 0)
             throw new IllegalArgumentException("Invalid revision");
-        entities.clear();
-        entities.putAll(decoded);
+        entities = decoded;
         revision = root.getLong("revision");
+        capacity.loaded(entities.size());
+        batching = false;
     }
 
     @Override

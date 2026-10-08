@@ -1,0 +1,202 @@
+[
+  {
+    "path": ".tooling/0401/Logs/baseline-storage.log",
+    "size": 5232,
+    "sha256": "F8FF293EC2399E3E706BC134538D1EB1500BB0713B0A37C4A966AFC770722398"
+  },
+  {
+    "path": ".tooling/0401/Logs/baseline-probes.log",
+    "size": 37431,
+    "sha256": "72D5D534505EABBAF8B62E68AAECE90533683CFCB63EB722D45F09EDEB1B677D"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-native-sort-undo-redo.json",
+    "size": 800,
+    "sha256": "BE3A979B7A51C97E78D947852F55F2DDEE4179E3AD4B0F1C5D6F01DC5DB4B01F"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-native-cancellations.json",
+    "size": 647,
+    "sha256": "EF4F6129D08B230E6C36204E20AE3D033BB4A9E906D7FFDE1058CCD516045FB3"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-workspace-cancel.json",
+    "size": 219,
+    "sha256": "9FECB38EDEB866E41F1241D039C456E3D4164D97CDB9C51823AB903F0B939BD8"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-whole-group-sort.json",
+    "size": 914,
+    "sha256": "5E1FBECEA0CD1B19255300312504C68C6676B158854EABEE1BE50C7124591558"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-readonly-drag.json",
+    "size": 1296,
+    "sha256": "45874496C376DD8EA386B7FD9CD38E9143DF2A6AB37D176F3B6D8793C9CA6BE3"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-resource-drag.json",
+    "size": 1627,
+    "sha256": "036B606C4DA5F6141F80DDE59834557C27D1A74A6DCD5D7D3DCBE63B6BA19E08"
+  },
+  {
+    "path": ".tooling/0401/Logs/studio-resource-cold-reopen.json",
+    "size": 305,
+    "sha256": "5343029CB394A9A8287B16AAA339DC4F4670F066C032A1D9E19155A3023AB1F3"
+  },
+  {
+    "path": ".tooling/0401/Logs/server-fault-preservation.json",
+    "size": 212,
+    "sha256": "AF916333937841E529F1673B87FCD7F6CE3521A63D18A5D555239DE7CC9A56D1"
+  },
+  {
+    "path": ".tooling/0401/Logs/final-integrated-fault-preservation.json",
+    "size": 258,
+    "sha256": "76A680CFAE640D2AC65BC9DAA5AFEA2BE59577D1EE36E19B864E36DB33532448"
+  },
+  {
+    "path": ".tooling/0401/Logs/final-quarantine-gui-client.log",
+    "size": 43559,
+    "sha256": "9327C4CF8800482EA72086F78C7B846B7352A22F5F0AF7B87F94B18F2586BC13"
+  },
+  {
+    "path": ".tooling/0401/Logs/filter-final-saved-state.json",
+    "size": 5158,
+    "sha256": "F5FD9B3EDC5F6A28206D5C93BE3453DEDFD8E62333BF03DF91769906E4D7D293"
+  },
+  {
+    "path": ".tooling/0401/Logs/formal-cnpc-phase1.log",
+    "size": 113421,
+    "sha256": "602A8A0496D107CA180FE17B8404F1B4C8A680F966213A08CD88DBF55A38DA13"
+  },
+  {
+    "path": ".tooling/0401/Logs/formal-cnpc-phase2.log",
+    "size": 24848,
+    "sha256": "B894023C19097609B10DFA35EBAD1A252AC2155DC567D910D60E385836EC9EB0"
+  },
+  {
+    "path": ".tooling/0401/Logs/formal-cnpc-phase3.log",
+    "size": 25642,
+    "sha256": "48ED6FAC63D84669E8A4E9C4D1E48F0AFA69ECC7E7694EE16722AA1F888D6352"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-two-player-choice-line-state.json",
+    "size": 17487,
+    "sha256": "80BEF325562E19F43054FBCCFFD9F815F8F9F89C304B20106C33B8F9568AFB4C"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-two-player-after-restart-state.json",
+    "size": 10239,
+    "sha256": "B9019DE54F06E573B22F3A85502C2ED4A41BDEAE73BE51F159D438D520846498"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-server-packages.json",
+    "size": 270,
+    "sha256": "21C38DBC324512D8F6BF7C4FBD270F6F76E876373A73B648C696AFF09CCB6352"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/Server/fault-line-context-stdout.log",
+    "size": 30654,
+    "sha256": "66EF88606934CBC7D9CCA598180A61423040BEC2E87F230E28FFDF3DC6C5A88B"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/Server/fault-line-context-fixed-stdout.log",
+    "size": 36813,
+    "sha256": "D7D1AD6532F1F12F924372441D287C5897A096EAC395A1AA72157A7F3C83EF55"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/Server/final-capacity-restart-stdout.log",
+    "size": 13886,
+    "sha256": "B6D5B9E0A38385166F180107D355211437F2C55C7E152E78360E730F75E177D9"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/Server/normal-two-player-stdout.log",
+    "size": 17769,
+    "sha256": "8CAC9F93FBB49757F2C6718D2A7891D703C4CBA064F23F8D92DA5B0F66E4E5DE"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/Server/normal-two-player-restart-stdout.log",
+    "size": 14809,
+    "sha256": "61236BAA9EC86A38BE8F5FE8F130FD0AE5A71D280B7FD05BEFAFE9DF72033C9C"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/Dev/crash-reports/crash-2026-10-08_20.00.06-client.txt",
+    "size": 5957,
+    "sha256": "8824C17AC2B288F0F95FA0143E7071DAD7B090CC5619DB338B534D90E48F344F"
+  },
+  {
+    "path": ".tooling/0401/Fixtures/provenance.json",
+    "size": 613,
+    "sha256": "EC0A46F6AF0F64557F60043631E86E76E735D2D9B59CB5E28C8F7AECC2A0867E"
+  },
+  {
+    "path": ".tooling/0401/Fixtures/RejectedProducer/provenance.json",
+    "size": 605,
+    "sha256": "78121C15826F71E9121E0F609199A9F429763B01CCCA17BCE96EF0CF099A5586"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-seed-stdout.log",
+    "size": 17628,
+    "sha256": "8F94D878BA02829A4A4A9F01588920D2663198B11F3728EE49CC97924816B354"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-shrink-stdout.log",
+    "size": 14084,
+    "sha256": "3834D3C95D6F43CE62A25013A589D5B3984C89487036C681F56279132148D636"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-verify-stdout.log",
+    "size": 13726,
+    "sha256": "646961B4D63F548F5148271E8576D21BC3BA73F5B8576AEC41E6B04CE419A9EF"
+  },
+  {
+    "path": ".tooling/0401/Logs/dynamic-forge-storage.json",
+    "size": 3007,
+    "sha256": "55598D455BF4BB98C64C1CA72574376C319C6296E8047D6F28E79D8165DD708F"
+  },
+  {
+    "path": ".tooling/0401/Minecraft/DynamicServer-wrong-storage/dynamic-shrink-stdout.log",
+    "size": 15456,
+    "sha256": "98E2160C3767465C06EC990BEF11E79C04F9CAE130FFEB987CEDAC30F5239CD1"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-a-reconnected.png",
+    "size": 158568,
+    "sha256": "40C77668C56851C83FF542DD62E58AC87D8ECD6E320D82EDC7FB4E4B0FF27851"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-b-reconnected.png",
+    "size": 170819,
+    "sha256": "A583D847B058804629DE61A27E746F381351A776F90AE2CA36BFD1FA350BBB3D"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-group-player-a-choice-final.png",
+    "size": 150432,
+    "sha256": "42426CDB627C9D9DCF6DDD3783F2D04400D24D83A70A6F10A1A118794B6C24F9"
+  },
+  {
+    "path": ".tooling/0401/Logs/normal-group-player-a-task.png",
+    "size": 127787,
+    "sha256": "FDE4F8B908D0731E1C8740E0625A65D66CC28E6255B71FD73C213799111A1EB2"
+  },
+  {
+    "path": ".tooling/0401/Logs/final-package-gui-quarantine-feedback.png",
+    "size": 168377,
+    "sha256": "B94BB2FA5923F9EE89D49188F4E6C69EAA2A6C1627DD80E26B94220893EDD6E6"
+  },
+  {
+    "path": ".tooling/0401/Logs/readonly-after-drag-view.png",
+    "size": 97665,
+    "sha256": "F3F9F7A749A8B2753195CA0189656CD47FD8DF886CB3E78C553E4ED311C73F13"
+  },
+  {
+    "path": ".tooling/0401/Logs/resource-drag-undo-complete.png",
+    "size": 169501,
+    "sha256": "9D3E2E36CB6F4F42999D930F0871FE0CB6CBD0E9366FFB78BEAA87B1862A903C"
+  },
+  {
+    "path": ".tooling/0401/Logs/resource-cold-reopen-verified.png",
+    "size": 133362,
+    "sha256": "10BAC825360CB5701C070B9B6DA7F72FFCD66575DB19A01008EDB58EC8C907FB"
+  }
+]

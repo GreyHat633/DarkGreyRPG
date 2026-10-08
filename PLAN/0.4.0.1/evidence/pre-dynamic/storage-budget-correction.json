@@ -1,0 +1,16 @@
+{
+  "corrected_at": "2026-10-08T21:50:02.5961840+08:00",
+  "previous_claim": "Minecraft 32 MiB NBT read budget",
+  "corrected_claim": "32 MiB is a project measurement reference, not a fixed MapStorage read limit in the actual Forge 1.7.10 path",
+  "engine_version": "Forge 1.7.10-10.13.4.1614",
+  "engine_jar_sha256": "6419D3D1FD1721ED6DF87ABFDCD06B95A3C301CC378E05974D255B9F9B59503C",
+  "read_path": "MapStorage.loadData -> CompressedStreamTools.readCompressed -> NBTSizeTracker.field_152451_a -> NBTSizeTracker$1.func_152450_a: return",
+  "bytecode_evidence": {
+    "path": ".tooling/0401/Logs/mapstorage-read-budget-bytecode.txt",
+    "sha256": "2924B5C408D174C2AF291191FC57552F3A52DB62458E660DD68ABABEF17CE0EA"
+  },
+  "current_binding_limit": 4096,
+  "limit_is_engineering_policy": true,
+  "production_code_or_binaries_changed": false,
+  "maximum_field_measurements_and_roundtrip_results_unchanged": true
+}

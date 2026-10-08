@@ -25,6 +25,7 @@ public final class StoryPackageGenerationLifecycle {
     public static Result reconcile(MapStorage storage, Map<String, LoadedStoryPackage> packages) {
         if (storage == null || packages == null)
             throw new IllegalArgumentException("Generation lifecycle inputs are required.");
+        CanonicalSessionSavedData sessionData = CanonicalSessionSavedData.get(storage);
         StoryPackageGenerationSavedData registry = StoryPackageGenerationSavedData.get(storage);
         Map<String, PackageGenerationKey> current = generationKeys(packages);
         List<StoryPackageGenerationDelta.Entry> deltas = StoryPackageGenerationDelta
@@ -40,8 +41,7 @@ public final class StoryPackageGenerationLifecycle {
         if (bootstrap)
             for (PackageGenerationKey generation : current.values()) affectedStories.add(generation.getStoryId());
 
-        CanonicalSessionSavedData.DiscardResult sessions = CanonicalSessionSavedData.get(storage)
-            .discardByStoryIds(affectedStories);
+        CanonicalSessionSavedData.DiscardResult sessions = sessionData.discardByStoryIds(affectedStories);
         int tasks = CanonicalTaskSavedData.get(storage)
             .discardByStoryIds(affectedStories);
         registry.replace(current);

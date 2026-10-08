@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.LongSupplier;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -25,13 +26,24 @@ public final class NpcIdentitySavedData extends WorldSavedData {
     }
 
     private NpcIdentityRegistry registry = new NpcIdentityRegistry();
+    private boolean readableForMaintenance;
 
     public NpcIdentitySavedData() {
         this(DATA_NAME);
+        readableForMaintenance = true;
     }
 
     public NpcIdentitySavedData(String name) {
         super(name);
+    }
+
+    public NpcIdentitySavedData(LongSupplier clock) {
+        this();
+        registry = new NpcIdentityRegistry(clock);
+    }
+
+    public synchronized boolean maintainMemory() {
+        return readableForMaintenance && registry.maintainMemory();
     }
 
     public static NpcIdentitySavedData get() {
@@ -45,9 +57,14 @@ public final class NpcIdentitySavedData extends WorldSavedData {
     public static NpcIdentitySavedData get(MapStorage storage) {
         if (storage == null) throw new IllegalArgumentException("MapStorage is required.");
         WorldSavedData loaded = storage.loadData(NpcIdentitySavedData.class, DATA_NAME);
-        if (loaded instanceof NpcIdentitySavedData) return (NpcIdentitySavedData) loaded;
+        if (loaded instanceof NpcIdentitySavedData) {
+            NpcIdentitySavedData data = (NpcIdentitySavedData) loaded;
+            darkgrey.rpg.nominator.NominatorCapacityMaintenance.track(storage, data);
+            return data;
+        }
         NpcIdentitySavedData created = new NpcIdentitySavedData();
         storage.setData(DATA_NAME, created);
+        darkgrey.rpg.nominator.NominatorCapacityMaintenance.track(storage, created);
         return created;
     }
 
@@ -110,6 +127,7 @@ public final class NpcIdentitySavedData extends WorldSavedData {
 
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
+        readableForMaintenance = false;
         if (root == null) throw new IllegalArgumentException("NPC identity NBT is required.");
         ResourceAddressNbt.requireFormat(root);
         requireKeys(root, set("schema_version", "identity_format", "bindings"), "NPC identity root");
@@ -149,6 +167,7 @@ public final class NpcIdentitySavedData extends WorldSavedData {
         NpcIdentityRegistry candidate = new NpcIdentityRegistry();
         candidate.replaceAll(decoded);
         registry = candidate;
+        readableForMaintenance = true;
     }
 
     @Override

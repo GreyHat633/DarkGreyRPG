@@ -149,6 +149,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     private boolean bound = true;
+    private boolean awaitingRead;
+    private RuntimeException readFailure;
     private CanonicalSessionResourceResolver boundSessionResolver;
     private CanonicalStoryResourceResolver boundStoryResolver;
     /** Idempotency keys for terminal Flow routing; keyed by player, Story run and public port. */
@@ -160,11 +162,15 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     /** Constructor required by Forge MapStorage reflective loading. */
     public CanonicalSessionSavedData(String name) {
         super(name);
+        awaitingRead = true;
+        bound = false;
     }
 
     /** Convenience constructor for tests and newly-created data. */
     public CanonicalSessionSavedData() {
         this(DATA_NAME);
+        awaitingRead = false;
+        bound = true;
     }
 
     public static CanonicalSessionSavedData get(EntityPlayer player) {
@@ -178,11 +184,16 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (storage == null) throw new IllegalArgumentException("MapStorage is required.");
         WorldSavedData loaded = storage.loadData(CanonicalSessionSavedData.class, DATA_NAME);
         if (loaded instanceof CanonicalSessionSavedData) {
+            darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, loaded);
+            ((CanonicalSessionSavedData) loaded).requireReadable();
             ((CanonicalSessionSavedData) loaded).storyHistory = darkgrey.rpg.story.canonical.instance.CanonicalStoryCompletionHistory
                 .get(storage);
             darkgrey.rpg.diagnostics.ReadOnlyStateSource.observe(storage, DATA_NAME, loaded);
             return (CanonicalSessionSavedData) loaded;
         }
+        if (loaded != null) throw new CanonicalSessionDataUnavailableException(
+            DATA_NAME,
+            new IllegalStateException("Unexpected SavedData type."));
         CanonicalSessionSavedData created = new CanonicalSessionSavedData();
         created.storyHistory = darkgrey.rpg.story.canonical.instance.CanonicalStoryCompletionHistory.get(storage);
         storage.setData(DATA_NAME, created);
@@ -215,12 +226,14 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     /** Restores pending persisted bytes only after all referenced resources resolve. */
     public synchronized void bind(CanonicalSessionResourceResolver resolver) {
+        requireReadable();
         bindInternal(resolver, boundStoryResolver);
     }
 
     /** Atomically restores Session instances, pending handoffs, and Story cursors from one world checkpoint. */
     public synchronized void bind(CanonicalSessionResourceResolver sessionResolver,
         CanonicalStoryResourceResolver storyResolver) {
+        requireReadable();
         bindInternal(sessionResolver, storyResolver);
     }
 
@@ -231,6 +244,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
      */
     public synchronized void bindAvailable(CanonicalSessionResourceResolver sessionResolver,
         CanonicalStoryResourceResolver storyResolver) {
+        requireReadable();
         bindInternal(sessionResolver, storyResolver, true);
     }
 
@@ -240,6 +254,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     private void bindInternal(CanonicalSessionResourceResolver resolver, CanonicalStoryResourceResolver storyResolver,
         boolean discardUnavailable) {
+        requireReadable();
         if (resolver == null) throw new IllegalArgumentException("Session resource resolver is required.");
         CanonicalSessionInstanceStore replacementSessions = new CanonicalSessionInstanceStore();
         CanonicalStoryInstanceStore replacementStories = new CanonicalStoryInstanceStore();
@@ -248,20 +263,13 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         List<CanonicalStoryInstanceSnapshot> storySnapshots;
         List<CanonicalStoryPendingContinuation> pendingContinuations;
         long replacementNextTransportId;
+        CanonicalSessionWorldStateNbtCodec.Decoded decoded = null;
         if (pendingRaw != null) {
-            CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(pendingRaw);
+            decoded = CanonicalSessionWorldStateNbtCodec.decode(pendingRaw);
             sessionSnapshots = decoded.getSessions();
             replacementNextTransportId = decoded.getNextTransportId();
             storySnapshots = decoded.getStories();
             pendingContinuations = decoded.getContinuations();
-            claimedStoryTerminalRoutes.clear();
-            claimedStoryTerminalRoutes.addAll(decoded.getTerminalRoutes());
-            pendingStoryTerminalRoutes.clear();
-            pendingStoryTerminalRoutes.addAll(decoded.getPendingTerminalRoutes());
-            terminalRouteTargets.clear();
-            terminalRouteTargets.putAll(decoded.getTerminalRouteTargets());
-            observedStoryStartConditions.clear();
-            observedStoryStartConditions.putAll(decoded.getStartObservations());
         } else {
             sessionSnapshots = store.snapshots();
             replacementNextTransportId = nextTransportId();
@@ -300,6 +308,16 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         restoreStories(replacementStories, storySnapshots, storyResolver);
         replacementContinuations.addAll(pendingContinuations);
         validateStoryContinuations(replacementStories, replacementContinuations);
+        if (decoded != null) {
+            claimedStoryTerminalRoutes.clear();
+            claimedStoryTerminalRoutes.addAll(decoded.getTerminalRoutes());
+            pendingStoryTerminalRoutes.clear();
+            pendingStoryTerminalRoutes.addAll(decoded.getPendingTerminalRoutes());
+            terminalRouteTargets.clear();
+            terminalRouteTargets.putAll(decoded.getTerminalRouteTargets());
+            observedStoryStartConditions.clear();
+            observedStoryStartConditions.putAll(decoded.getStartObservations());
+        }
         for (CanonicalStoryInstanceSnapshot snapshot : historyCandidates)
             if (discardUnavailable && !storySnapshots.contains(snapshot)) storyHistory.retire(snapshot);
             else storyHistory.observe(snapshot);
@@ -314,14 +332,17 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized void restore(CanonicalSessionResourceResolver resolver) {
+        requireReadable();
         bind(resolver);
     }
 
     public synchronized boolean isBound() {
+        requireReadable();
         return bound;
     }
 
     public synchronized boolean hasPendingData() {
+        requireReadable();
         return pendingRaw != null;
     }
 
@@ -332,14 +353,17 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized List<CanonicalStoryPendingContinuation> pendingContinuations() {
+        requireReadable();
         return getPendingContinuations();
     }
 
     public synchronized List<CanonicalStoryPendingContinuation> getContinuations() {
+        requireReadable();
         return getPendingContinuations();
     }
 
     public synchronized List<CanonicalStoryPendingContinuation> getPendingStoryContinuations() {
+        requireReadable();
         return getPendingContinuations();
     }
 
@@ -354,11 +378,13 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized CanonicalStoryPendingContinuation pendingContinuation(UUID playerUuid, String storyId) {
+        requireReadable();
         return getPendingContinuation(playerUuid, storyId);
     }
 
     public synchronized CanonicalStoryInstanceSnapshot startStory(UUID playerUuid, CanonicalGraphResource resource,
         String triggerPortId, CanonicalStoryRepeatPolicy repeatPolicy, long activationTime) {
+        requireReadable();
         return startStory(
             playerUuid,
             resource,
@@ -404,6 +430,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized NBTTagCompound completedStorySummary(UUID playerUuid, String storyId) {
+        requireReadable();
         return storyHistory.summary(playerUuid, storyId);
     }
 
@@ -422,6 +449,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized void markStoryTerminalRouteApplied(UUID playerUuid, String storyId, long activationTime,
         String terminalPortId) {
+        requireReadable();
         String key = terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId);
         pendingStoryTerminalRoutes.remove(key);
         if (claimedStoryTerminalRoutes.add(key)) markDirty();
@@ -429,6 +457,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     /** Resolves one syntactically valid pending route after a bounded cycle abort. */
     public synchronized void markStoryTerminalRouteAppliedKey(String key) {
+        requireReadable();
         if (key == null) return;
         String[] parts = key.split("\\u0000", -1);
         if (parts.length != 4) return;
@@ -451,6 +480,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     /** Releases a claim after a destination start failed before its route became durable. */
     public synchronized void releaseStoryTerminalRoute(UUID playerUuid, String storyId, long activationTime,
         String terminalPortId) {
+        requireReadable();
         if (playerUuid == null || storyId == null || terminalPortId == null || activationTime <= 0) return;
         String key = terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId);
         if (pendingStoryTerminalRoutes.remove(key)) markDirty();
@@ -459,6 +489,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     /** Associates a source terminal claim with the exact destination run identity. */
     public synchronized void recordStoryTerminalRouteTarget(UUID playerUuid, String storyId, long activationTime,
         String terminalPortId, String targetStoryId, long targetActivationTime) {
+        requireReadable();
         if (playerUuid == null || storyId == null
             || terminalPortId == null
             || activationTime <= 0
@@ -478,6 +509,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized String storyTerminalRouteTarget(UUID playerUuid, String storyId, long activationTime,
         String terminalPortId) {
+        requireReadable();
         return terminalRouteTargets.get(terminalRouteKey(playerUuid, storyId, activationTime, terminalPortId));
     }
 
@@ -488,6 +520,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     /** Returns source Story IDs whose terminal route still needs recovery after a crash. */
     public synchronized List<String> pendingStoryTerminalRouteStoryIds(UUID playerUuid) {
+        requireReadable();
         if (playerUuid == null) return Collections.emptyList();
         Set<String> result = new java.util.TreeSet<String>();
         String prefix = playerUuid.toString() + "\u0000";
@@ -512,6 +545,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalStoryInstanceSnapshot setStoryLogicInput(UUID playerUuid, String storyId,
         String portId, boolean value, long eventTime) {
+        requireReadable();
         return setStoryLogicInputs(
             playerUuid,
             storyId,
@@ -555,6 +589,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized boolean updateSessionLogic(final UUID playerUuid, final String storyId,
         final Map<String, Boolean> values) {
+        requireReadable();
         return mutate(new Mutation<Boolean>() {
 
             public Boolean run() {
@@ -712,26 +747,31 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized boolean acceptCompleted(CanonicalSessionCompletionResult completion,
         CanonicalStorySessionCompletionRoute route) {
+        requireReadable();
         return acceptAndConsume(completion, route);
     }
 
     public synchronized boolean acceptAndConsumeCompletion(CanonicalSessionCompletionResult completion,
         CanonicalStorySessionCompletionRoute route) {
+        requireReadable();
         return acceptAndConsume(completion, route);
     }
 
     public synchronized boolean acceptCompletion(CanonicalSessionCompletionResult completion,
         CanonicalStorySessionCompletionRoute route) {
+        requireReadable();
         return acceptAndConsume(completion, route);
     }
 
     /** Returns a detached copy for diagnostics without exposing mutable pending state. */
     public synchronized NBTTagCompound getPendingRaw() {
+        requireReadable();
         return pendingRaw == null ? null : copy(pendingRaw);
     }
 
     public synchronized CanonicalSessionInstanceSnapshot start(UUID playerUuid, String storyId,
         String aggregatePlacementId, CanonicalGraphResource resource) {
+        requireReadable();
         ensureNoPendingContinuation(playerUuid, storyId);
         return mutate(new Mutation<CanonicalSessionInstanceSnapshot>() {
 
@@ -745,6 +785,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalSessionInstanceSnapshot start(String playerUuid, String storyId,
         String aggregatePlacementId, CanonicalGraphResource resource) {
+        requireReadable();
         ensureNoPendingContinuation(playerUuid == null ? null : UUID.fromString(playerUuid), storyId);
         return mutate(new Mutation<CanonicalSessionInstanceSnapshot>() {
 
@@ -758,6 +799,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalSessionInstanceSnapshot start(UUID playerUuid, String storyId,
         String aggregatePlacementId, CanonicalGraphResource resource, boolean activationLogic) {
+        requireReadable();
         return start(
             playerUuid,
             storyId,
@@ -770,6 +812,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized CanonicalSessionInstanceSnapshot start(final UUID playerUuid, final String storyId,
         final String aggregatePlacementId, final CanonicalGraphResource resource, final boolean activationLogic,
         final Map<String, Boolean> inputs) {
+        requireReadable();
         ensureNoPendingContinuation(playerUuid, storyId);
         return mutate(new Mutation<CanonicalSessionInstanceSnapshot>() {
 
@@ -783,6 +826,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalSessionStep continueLine(UUID playerUuid, String storyId, long transportId,
         String currentNodeId) {
+        requireReadable();
         return mutate(new Mutation<CanonicalSessionStep>() {
 
             @Override
@@ -793,6 +837,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized CanonicalSessionStep continueLine(UUID playerUuid, String storyId, long transportId) {
+        requireReadable();
         return mutate(new Mutation<CanonicalSessionStep>() {
 
             @Override
@@ -804,6 +849,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalSessionStep selectChoice(UUID playerUuid, String storyId, long transportId,
         String currentNodeId, String optionId) {
+        requireReadable();
         return mutate(new Mutation<CanonicalSessionStep>() {
 
             @Override
@@ -815,10 +861,12 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     public synchronized CanonicalSessionStep choose(UUID playerUuid, String storyId, long transportId,
         String currentNodeId, String optionId) {
+        requireReadable();
         return selectChoice(playerUuid, storyId, transportId, currentNodeId, optionId);
     }
 
     public synchronized boolean consume(UUID playerUuid, String storyId, long transportId) {
+        requireReadable();
         return mutateConsume(new Mutation<Boolean>() {
 
             @Override
@@ -835,10 +883,12 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized CanonicalSessionInstanceSnapshot getInstanceSnapshot(UUID playerUuid, String storyId) {
+        requireReadable();
         return getSnapshot(playerUuid, storyId);
     }
 
     public synchronized CanonicalSessionInstanceSnapshot snapshot(UUID playerUuid, String storyId) {
+        requireReadable();
         return getSnapshot(playerUuid, storyId);
     }
 
@@ -854,6 +904,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     public synchronized List<CanonicalSessionInstanceSnapshot> snapshotAll() {
+        requireReadable();
         return snapshots();
     }
 
@@ -864,6 +915,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     /** Permanently retires every persisted Session/Story/continuation owned by the selected Story IDs. */
     public synchronized DiscardResult discardByStoryIds(Set<String> storyIds) {
+        requireReadable();
         if (storyIds == null) throw new IllegalArgumentException("Story IDs are required.");
         if (storyIds.isEmpty()) return new DiscardResult(0, 0, 0);
         if (pendingRaw != null) return discardPending(storyIds);
@@ -1050,19 +1102,31 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
 
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
-        if (root == null) throw new IllegalArgumentException("Session NBT is required.");
-        // Validate the detached candidate before replacing any live or pending state.
-        CanonicalSessionWorldStateNbtCodec.decode(root);
-        pendingRaw = copy(root);
-        presentationTexts = (NBTTagCompound) root.getCompoundTag("presentation_texts")
-            .copy();
-        lineContexts = (NBTTagCompound) root.getCompoundTag("line_contexts")
-            .copy();
-        bound = false;
+        awaitingRead = true;
+        try {
+            if (root == null) throw new IllegalArgumentException("Session NBT is required.");
+            CanonicalSessionWorldStateNbtCodec.decode(root);
+            NBTTagCompound candidate = copy(root);
+            NBTTagCompound texts = (NBTTagCompound) root.getCompoundTag("presentation_texts")
+                .copy();
+            NBTTagCompound contexts = (NBTTagCompound) root.getCompoundTag("line_contexts")
+                .copy();
+            pendingRaw = candidate;
+            presentationTexts = texts;
+            lineContexts = contexts;
+            bound = false;
+            readFailure = null;
+            awaitingRead = false;
+        } catch (RuntimeException failure) {
+            readFailure = failure;
+            super.setDirty(false);
+            throw failure;
+        }
     }
 
     @Override
     public synchronized void writeToNBT(NBTTagCompound root) {
+        requireReadable();
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         NBTTagCompound output;
         if (bound) output = CanonicalSessionWorldStateNbtCodec.encode(
@@ -1075,7 +1139,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             pendingStoryTerminalRoutes,
             terminalRouteTargets);
         else if (pendingRaw != null) output = copy(pendingRaw);
-        else output = new CanonicalSessionInstanceStore().writeToNbt();
+        else throw new IllegalStateException("Canonical Session data has no validated checkpoint.");
         if (bound && !presentationTexts.hasNoTags()) output.setTag("presentation_texts", presentationTexts.copy());
         if (bound) {
             pruneLineContexts();
@@ -1089,7 +1153,20 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     }
 
     private void requireBound() {
+        requireReadable();
         if (!bound) throw new IllegalStateException("Canonical Session data is not bound to a resource resolver.");
+    }
+
+    /** A MapStorage reflective instance is unusable until the entire current payload validates. */
+    public synchronized void requireReadable() {
+        if (awaitingRead || readFailure != null)
+            throw new CanonicalSessionDataUnavailableException(mapName, readFailure);
+    }
+
+    @Override
+    public synchronized void setDirty(boolean dirty) {
+        if (dirty) requireReadable();
+        super.setDirty(dirty);
     }
 
     private void requireStoryBound() {

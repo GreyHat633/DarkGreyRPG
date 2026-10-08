@@ -1,0 +1,90 @@
+{
+  "meaning": "Final local harness/helper bytes; earlier failed attempts remain evidence, not PASS. No worlds, secrets or third-party binaries are embedded.",
+  "files": [
+    {
+      "path": ".tooling/0401/Client.ps1",
+      "size": 2816,
+      "sha256": "C28C65076D6F046F82BDBE02CAA8F15E938A70ABB655A1EE3A3409F93716349B"
+    },
+    {
+      "path": ".tooling/0401/Dev.ps1",
+      "size": 2950,
+      "sha256": "2204558802DCDC60AC67BB8C143063D1E9CCF203586B1944A1B6FBBCF73233E3"
+    },
+    {
+      "path": ".tooling/0401/GameActions.ps1",
+      "size": 5214,
+      "sha256": "75187BC90835BE2C6012A996834B2ADFE745492D81DC122F893A8F2D148F37CF"
+    },
+    {
+      "path": ".tooling/0401/Input.ps1",
+      "size": 748,
+      "sha256": "5E75CF5DB529794EA3FDE99564ECD803A3D583F66DE5AAF74785C071CAB53581"
+    },
+    {
+      "path": ".tooling/0401/NativeDrag.ps1",
+      "size": 1536,
+      "sha256": "CAB3E8C5B570A5349BB5899DBD395DFFA29809AB0B3DE9381F062C8E7B034EED"
+    },
+    {
+      "path": ".tooling/0401/PrepareNormalServer.ps1",
+      "size": 2033,
+      "sha256": "8AC571D82E5990EDB03A18FC4DE8BCD9DFFF8B7167148EA33D4836F96B936D8C"
+    },
+    {
+      "path": ".tooling/0401/Promote.ps1",
+      "size": 9205,
+      "sha256": "F77432EC3BFA0DD350EEFF4829A690E4758BD57230348DF4D9203DAF3CD6FCB0"
+    },
+    {
+      "path": ".tooling/0401/ReadNpcPositions.ps1",
+      "size": 2177,
+      "sha256": "BD1C4B1B2A602C736C5C731DB3C08C50917E94D39423154859CC2FB319F813E5"
+    },
+    {
+      "path": ".tooling/0401/ReadOnlyAcceptance.ps1",
+      "size": 1991,
+      "sha256": "4D2A291320DB1CB18EC6885F1BA8424038CFFFEFBCC09B149F2D67B0C8ADCACF"
+    },
+    {
+      "path": ".tooling/0401/ResourceAcceptance.ps1",
+      "size": 2591,
+      "sha256": "F2823B9565A7945566CC3C27BAABBF63178F38176444E65D42A5BFE34FC33ED7"
+    },
+    {
+      "path": ".tooling/0401/Server.ps1",
+      "size": 2739,
+      "sha256": "46B73C8974DC34D0A6D0B92061B0D9B66EC7D26A9B832A960C88EC04C6E8E8CF"
+    },
+    {
+      "path": ".tooling/0401/StudioCancellation.ps1",
+      "size": 2041,
+      "sha256": "5035F9EBB753FFE18BC1B6427BD23240BDF892170D2E7F825F89E8B57630B59A"
+    },
+    {
+      "path": ".tooling/0401/ui-actions.ps1",
+      "size": 5182,
+      "sha256": "51E36E111CEE5644064AED52703A365960D682B6CDA44643D7545798516B58B9"
+    },
+    {
+      "path": ".tooling/0401/ui-helpers.ps1",
+      "size": 4808,
+      "sha256": "6ADFF98547B9072B2D139AB964A5C7ED8A2A56F32A48E6DD32D6A33420BE33F3"
+    },
+    {
+      "path": ".tooling/0400-minecraft/tools/Native.ps1",
+      "size": 5288,
+      "sha256": "BC3300A88805FAC6EA553BC1F69E51BEF459EF1A194DF375496483D5113DFD00"
+    },
+    {
+      "path": ".tooling/0400-minecraft/tools/ReadNbt.ps1",
+      "size": 2108,
+      "sha256": "E7DC3CA3463771772F5EDBE9A401AB3D66B24D166D66A02B5C167FBAC11CBE7A"
+    },
+    {
+      "path": ".tooling/0400-minecraft/tools/Rcon.ps1",
+      "size": 1882,
+      "sha256": "F122852D6713E6D106432CADEED1F78468F4034A0603364F821400C74C03F7F2"
+    }
+  ]
+}

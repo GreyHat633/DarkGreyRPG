@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPGStudio.deps.json",
+      "size": 36501,
+      "sha256": "375C67EDBB0A9710AE0CC759A06BC78B8712DCB7FB9D57A1A2966F2715205305"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPGStudio.runtimeconfig.json",
+      "size": 529,
+      "sha256": "E5403125C688E832B1E625563584CE284CD6F0BA7CADC0B8668C8773E732FA4D"
+    },
+    {
+      "path": "libs/+unimixins-all-1.7.10-0.3.1.jar",
+      "size": 5519796,
+      "sha256": "AD0EA4F92DAF7BF7EC5C10E16258425E47929126954AEA5D80DF69CE26CD7318"
+    },
+    {
+      "path": "libs/CustomNPC-Plus-1.11.1-fixed-v1.jar",
+      "size": 17844086,
+      "sha256": "48AB697E63E8CC059592597F88A9FA00FAD23E447B553996E1EF04510BE2F2D3"
+    },
+    {
+      "path": "libs/jlayer-1.0.1.jar",
+      "size": 143624,
+      "sha256": "850508C837454A1B06017C32A36876FAE516DE1E89A829F725FEE1E6DCC52000"
+    },
+    {
+      "path": "scripts/prepare-java-dependencies.ps1",
+      "size": 2712,
+      "sha256": "98505CC32620F524BE993BE61DA00DFC944595FBD9B13A7685CD7A85F2BB5295"
+    },
+    {
+      "path": "studio/media-tools.lock.json",
+      "size": 665,
+      "sha256": "27FBA3ED848ECA391DEA59BE65FE3E17321D205BD214FE453FFED4B563F3BF0B"
+    },
+    {
+      "path": "studio/src/DarkGreyRPG.Studio.Core/obj/project.assets.json",
+      "size": 21565,
+      "sha256": "FE7EDFAF2C0F43DAD8A0E8AB20A3123476B2CED47F1DC7CEDE2ABA98F3C84CED"
+    },
+    {
+      "path": "studio/src/DarkGreyRPG.Studio.Tests/obj/project.assets.json",
+      "size": 141810,
+      "sha256": "C6C852816381BC53A70812091BF369BFCFABCAEE0746585D79FCFBDADA4B155B"
+    },
+    {
+      "path": "studio/src/DarkGreyRPG.Studio.Wpf.Tests/obj/project.assets.json",
+      "size": 142903,
+      "sha256": "5C17E0344BC276C8167A3C6200BFF4CD30A439AFCCD15E5F1CB105840808AFDF"
+    },
+    {
+      "path": "studio/src/DarkGreyRPG.Studio/obj/project.assets.json",
+      "size": 23919,
+      "sha256": "118FB20EE836370A7F95D96C8D9345D98EFFEF41294D1792E6268C43222790C0"
+    }
+  ],
+  "fingerprint": "6D6C807296E3BA8E17D9779C645AB44D7327ABC980D45E32FA84EA37E0980A7D",
+  "meaning": "Locked third-party inputs, actual NuGet restore graphs and delivered self-contained runtime dependency metadata; paths relative to repository."
+}

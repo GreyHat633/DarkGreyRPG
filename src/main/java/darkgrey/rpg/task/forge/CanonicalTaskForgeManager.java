@@ -55,6 +55,8 @@ public final class CanonicalTaskForgeManager {
 
             @Override
             public CanonicalTaskSavedData get(EntityPlayerMP player, CanonicalTaskResourceResolver resolver) {
+                darkgrey.rpg.session.persistence.CanonicalSessionSavedData.get(player)
+                    .requireReadable();
                 // Deliberately do not call the resolver overload: binding is fenced below and happens once.
                 return CanonicalTaskSavedData.get(player);
             }

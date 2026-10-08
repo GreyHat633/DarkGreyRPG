@@ -1,0 +1,10 @@
+{
+  "previous_jar_sha256": "EF427861F9E39B781FCF76DC6D7983528A08AD538B64613C79E89303683EBEF5",
+  "final_jar_sha256": "B2A2DFE7F83570D77BD40DCA96C8A048B8B3069397CD1C302342981B94130896",
+  "changed_entries": [
+    "darkgrey/rpg/client/ClientPackageManager.class"
+  ],
+  "old_entries": 776,
+  "new_entries": 776,
+  "storage_and_inventory_class_bytes_unchanged": true
+}

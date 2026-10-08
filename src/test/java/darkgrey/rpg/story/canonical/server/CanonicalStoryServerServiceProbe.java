@@ -42,11 +42,17 @@ public final class CanonicalStoryServerServiceProbe {
 
     public static void main(String[] args) {
         entrySessionTerminationAndRestart();
+        System.out.println("BEHAVIOR entrySessionTerminationAndRestart=PASS");
         typedTriggerSelection();
+        System.out.println("BEHAVIOR typedTriggerSelection=PASS");
         durableConditionResume();
+        System.out.println("BEHAVIOR durableConditionResume=PASS");
         errorCancelsSessionChildren();
+        System.out.println("BEHAVIOR errorCancelsSessionChildren=PASS");
         packageUninstallClearsRuntimeInstances();
+        System.out.println("BEHAVIOR packageUninstallClearsRuntimeInstances=PASS");
         repeatEntryGates();
+        System.out.println("BEHAVIOR repeatEntryGates=PASS");
         System.out.println("CANONICAL_STORY_START_TRIGGER_SCHEMA=PASS");
         System.out.println("CANONICAL_STORY_SESSION_SERVICE=PASS");
         System.out.println("CANONICAL_STORY_ATOMIC_RESTART=PASS");
@@ -63,16 +69,17 @@ public final class CanonicalStoryServerServiceProbe {
             ProjectSnapshot project = repeatEntryProject(rule);
             CanonicalSessionSavedData data = new CanonicalSessionSavedData();
             CanonicalStoryServerService service = new CanonicalStoryServerService(project, data);
-            CanonicalActorCandidate candidate = service.actorCandidates(PLAYER, Collections.singleton("bartender"))
+            CanonicalActorCandidate candidate = service
+                .actorCandidates(PLAYER, Collections.singleton("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender"))
                 .get(0);
             long now = System.currentTimeMillis();
             CanonicalStoryDispatch first = repeatEntry(service, entry, candidate, now - 200000000L);
             check(
-                first != null && data.getStorySnapshot(PLAYER, "repeat_gate") != null,
+                first != null && data.getStorySnapshot(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD") != null,
                 "Entry did not start: " + entry);
             assertRepeatRequestsPreserve(service, data, candidate, now);
-            service.setLogicInput(PLAYER, "repeat_gate", "finish", true, now);
-            check(!service.isStartEligible(PLAYER, "repeat_gate"), "Future repeat was eligible: " + entry);
+            service.setLogicInput(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", "finish", true, now);
+            check(!service.isStartEligible(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD"), "Future repeat was eligible: " + entry);
             assertRepeatRequestsPreserve(service, data, candidate, now + 1);
 
             // Separate expired instance: no sleep or machine-clock changes are needed.
@@ -81,25 +88,26 @@ public final class CanonicalStoryServerServiceProbe {
             repeatEntry(
                 ready,
                 entry,
-                ready.actorCandidates(PLAYER, Collections.singleton("bartender"))
+                ready.actorCandidates(PLAYER, Collections.singleton("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender"))
                     .get(0),
                 now - 300000000L);
-            ready.setLogicInput(PLAYER, "repeat_gate", "finish", true, now - 200000000L);
+            ready.setLogicInput(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", "finish", true, now - 200000000L);
             net.minecraft.nbt.NBTTagCompound persisted = new net.minecraft.nbt.NBTTagCompound();
             expired.writeToNBT(persisted);
             CanonicalSessionSavedData restored = new CanonicalSessionSavedData();
             restored.readFromNBT(persisted);
             ready = new CanonicalStoryServerService(project, restored);
-            check(ready.isStartEligible(PLAYER, "repeat_gate"), "Expired persisted repeat remained blocked");
-            CanonicalActorCandidate restart = ready.actorCandidates(PLAYER, Collections.singleton("bartender"))
+            check(ready.isStartEligible(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD"), "Expired persisted repeat remained blocked");
+            CanonicalActorCandidate restart = ready
+                .actorCandidates(PLAYER, Collections.singleton("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender"))
                 .get(0);
             check(repeatEntry(ready, entry, restart, now) != null, "Eligible restart rejected: " + entry);
             check(
-                restored.getStorySnapshot(PLAYER, "repeat_gate")
+                restored.getStorySnapshot(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD")
                     .getActivationTime() == now,
                 "Restart retained old activation");
             assertRepeatRequestsPreserve(ready, restored, restart, now + 1);
-            restored.markStoryError(PLAYER, "repeat_gate", now + 2);
+            restored.markStoryError(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", now + 2);
             assertRepeatRequestsPreserve(ready, restored, restart, now + 3);
         }
     }
@@ -109,8 +117,9 @@ public final class CanonicalStoryServerServiceProbe {
         net.minecraft.nbt.NBTTagCompound before = new net.minecraft.nbt.NBTTagCompound();
         data.writeToNBT(before);
         for (int index = 0; index < 8; index++) repeatEntry(service, index, stale, now + index);
-        for (CanonicalActorCandidate current : service.actorCandidates(PLAYER, Collections.singleton("bartender")))
-            check(!"repeat_gate".equals(current.getStoryId()), "Blocked actor candidate remained visible");
+        for (CanonicalActorCandidate current : service
+            .actorCandidates(PLAYER, Collections.singleton("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender")))
+            check(!"ST-AAAA-BBBB-CCCC-DDDD".equals(current.getStoryId()), "Blocked actor candidate remained visible");
         net.minecraft.nbt.NBTTagCompound after = new net.minecraft.nbt.NBTTagCompound();
         data.writeToNBT(after);
         check(before.equals(after), "Rejected/repeated entry changed persisted state");
@@ -120,27 +129,36 @@ public final class CanonicalStoryServerServiceProbe {
         CanonicalActorCandidate candidate, long now) {
         switch (entry) {
             case 0:
-                return service.startByEntry(PLAYER, "repeat_gate", now);
+                return service.startByEntry(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", now);
             case 1:
-                return service.startByActor(PLAYER, "repeat_gate", "bartender", now);
-            case 2:
-                return service.startByRegion(PLAYER, "repeat_gate", 0, 10D, 64D, 10D, now);
-            case 3:
                 return service
-                    .startByLogic(PLAYER, "repeat_gate", Collections.singletonMap("launch", Boolean.TRUE), now);
+                    .startByActor(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", "ST-AAAA-BBBB-CCCC-DDDD~actor~bartender", now);
+            case 2:
+                return service.startByRegion(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", 0, 10D, 64D, 10D, now);
+            case 3:
+                return service.startByLogic(
+                    PLAYER,
+                    "ST-AAAA-BBBB-CCCC-DDDD",
+                    Collections.singletonMap("launch", Boolean.TRUE),
+                    now);
             case 4:
                 return service.startByLogicTrigger(
                     PLAYER,
-                    "repeat_gate",
+                    "ST-AAAA-BBBB-CCCC-DDDD",
                     "logic",
                     Collections.singletonMap("launch", Boolean.TRUE),
                     now);
             case 5:
-                return service.startByFlow(PLAYER, "typed", "end", "repeat_gate", "boundary", now);
+                return service
+                    .startByFlow(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", "end", "ST-AAAA-BBBB-CCCC-DDDD", "boundary", now);
             case 6:
-                return service.startFlowFromTerminal(PLAYER, "typed", "end", now);
+                return service.startFlowFromTerminal(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", "end", now);
             case 7:
-                return service.executeActorCandidate(PLAYER, Collections.singleton("bartender"), candidate, now);
+                return service.executeActorCandidate(
+                    PLAYER,
+                    Collections.singleton("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender"),
+                    candidate,
+                    now);
             default:
                 throw new AssertionError(entry);
         }
@@ -154,7 +172,7 @@ public final class CanonicalStoryServerServiceProbe {
             "triggers",
             json(
                 "[" + "{\"port_id\":\"entry\",\"display_name\":\"Entry\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
-                    + "{\"port_id\":\"actor\",\"display_name\":\"Actor\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"bartender\"},\"order\":1},"
+                    + "{\"port_id\":\"actor\",\"display_name\":\"Actor\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"ST-AAAA-BBBB-CCCC-DDDD~actor~bartender\"},\"order\":1},"
                     + "{\"port_id\":\"region\",\"display_name\":\"Region\",\"trigger_type\":\"enter_region\",\"trigger_properties\":{\"dimension\":0,\"x\":10,\"y\":64,\"z\":10,\"radius\":2},\"order\":2},"
                     + "{\"port_id\":\"logic\",\"display_name\":\"Logic\",\"trigger_type\":\"logic\",\"trigger_properties\":{},\"logic_port_id\":\"launch_in\",\"order\":3},"
                     + "{\"port_id\":\"boundary\",\"display_name\":\"Boundary\",\"trigger_type\":\"flow_driven\",\"trigger_properties\":{},\"order\":4}]"));
@@ -197,16 +215,16 @@ public final class CanonicalStoryServerServiceProbe {
         edges.add(flow("wait", "flow_true", "end", "flow_in"));
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
         stories.put(
-            "repeat_gate",
+            "ST-AAAA-BBBB-CCCC-DDDD",
             resource(
-                "repeat_gate",
+                "ST-AAAA-BBBB-CCCC-DDDD",
                 CanonicalGraphResourceKind.STORY,
                 Arrays.asList(start, launch, finish, wait, end),
                 edges));
         stories.put(
-            "typed",
+            "ST-JKLM-NPQR-STUV-WXYZ",
             resource(
-                "typed",
+                "ST-JKLM-NPQR-STUV-WXYZ",
                 CanonicalGraphResourceKind.STORY,
                 Arrays.asList(
                     startNode(
@@ -228,9 +246,9 @@ public final class CanonicalStoryServerServiceProbe {
                 new darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph(
                     Collections.singletonList(
                         new darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection(
-                            "typed",
+                            "ST-JKLM-NPQR-STUV-WXYZ",
                             "end",
-                            "repeat_gate",
+                            "ST-AAAA-BBBB-CCCC-DDDD",
                             "boundary",
                             CanonicalGraphInterfaceKind.FLOW)))));
     }
@@ -238,32 +256,44 @@ public final class CanonicalStoryServerServiceProbe {
     private static void packageUninstallClearsRuntimeInstances() {
         ProjectSnapshot installed = project();
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
-        new CanonicalStoryServerService(installed, data).startByEntry(PLAYER, "story", 1000L);
-        new CanonicalSessionServerService(installed, data).start(PLAYER, "story", "session_place");
-        check(data.getStorySnapshot(PLAYER, "story") != null, "Installed Story cursor was not created");
-        check(data.getSnapshot(PLAYER, "story") != null, "Installed Session child was not created");
+        new CanonicalStoryServerService(installed, data).startByEntry(PLAYER, "ST-2345-6789-ABCD-EFGH", 1000L);
+        new CanonicalSessionServerService(installed, data).start(PLAYER, "ST-2345-6789-ABCD-EFGH", "session_place");
+        check(
+            data.getStorySnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") != null,
+            "Installed Story cursor was not created");
+        check(data.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") != null, "Installed Session child was not created");
 
         new CanonicalStoryServerService(emptyProject(), data);
-        check(data.getStorySnapshot(PLAYER, "story") == null, "Uninstalled Story cursor remained active");
-        check(data.getSnapshot(PLAYER, "story") == null, "Uninstalled Session child remained active");
+        check(
+            data.getStorySnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") == null,
+            "Uninstalled Story cursor remained active");
+        check(data.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") == null, "Uninstalled Session child remained active");
         check(
             data.getPendingContinuations()
                 .isEmpty(),
             "Uninstalled Story handoff remained active");
 
         CanonicalStoryDispatch restarted = new CanonicalStoryServerService(installed, data)
-            .startByEntry(PLAYER, "story", 1100L);
-        check(restarted.getKind() == CanonicalStoryDispatchKind.SESSION, "Reinstalled Story did not resolve again");
+            .startByEntry(PLAYER, "ST-2345-6789-ABCD-EFGH", 1100L);
+        check(restarted == null, "Reinstall must preserve the retired once-run history");
         check(
-            restarted.getSnapshot()
+            !new CanonicalStoryServerService(installed, data).isStartEligible(PLAYER, "ST-2345-6789-ABCD-EFGH"),
+            "Reinstalled once Story became eligible for the same player");
+        CanonicalStoryDispatch otherPlayer = new CanonicalStoryServerService(installed, data)
+            .startByEntry(new UUID(0, 401), "ST-2345-6789-ABCD-EFGH", 1100L);
+        check(
+            otherPlayer.getKind() == CanonicalStoryDispatchKind.SESSION,
+            "Reinstalled resource must resolve for a new player");
+        check(
+            otherPlayer.getSnapshot()
                 .getActivationTime() == 1100L,
             "Reinstalled Story reused the uninstalled runtime cursor");
     }
 
     private static void durableConditionResume() {
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("dynamic", dynamicConditionStory());
-        stories.put("dynamic_false", dynamicFalseConditionStory());
+        stories.put("ST-2222-3333-4444-5555", dynamicConditionStory());
+        stories.put("ST-6666-7777-8888-9999", dynamicFalseConditionStory());
         ProjectSnapshot project = new ProjectSnapshot(
             new ProjectDefinition(1, "dynamic-logic", "Dynamic Logic"),
             Collections.<String, ActorDefinition>emptyMap(),
@@ -276,7 +306,7 @@ public final class CanonicalStoryServerServiceProbe {
                 Collections.<String, CanonicalStoryMembership>emptyMap()));
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         CanonicalStoryServerService service = new CanonicalStoryServerService(project, data);
-        CanonicalStoryDispatch waiting = service.startByEntry(PLAYER, "dynamic", 600L);
+        CanonicalStoryDispatch waiting = service.startByEntry(PLAYER, "ST-2222-3333-4444-5555", 600L);
         check(
             waiting.getSnapshot()
                 .getRuntimeSnapshot()
@@ -288,17 +318,19 @@ public final class CanonicalStoryServerServiceProbe {
         CanonicalSessionSavedData restored = new CanonicalSessionSavedData();
         restored.readFromNBT(persisted);
         CanonicalStoryServerService restoredService = new CanonicalStoryServerService(project, restored);
-        CanonicalStoryDispatch terminated = restoredService.setLogicInput(PLAYER, "dynamic", "gate", true, 700L);
+        CanonicalStoryDispatch terminated = restoredService
+            .setLogicInput(PLAYER, "ST-2222-3333-4444-5555", "gate", true, 700L);
         check(
             terminated.getKind() == CanonicalStoryDispatchKind.TERMINATED,
             "Dynamic Logic did not resume the waiting Condition through its connected outlet");
-        CanonicalStoryDispatch stable = restoredService.setLogicInput(PLAYER, "dynamic", "gate", true, 701L);
+        CanonicalStoryDispatch stable = restoredService
+            .setLogicInput(PLAYER, "ST-2222-3333-4444-5555", "gate", true, 701L);
         check(
             stable.getKind() == CanonicalStoryDispatchKind.TERMINATED,
             "Repeated Logic value changed a terminal Story");
 
         CanonicalStoryDispatch inverseWaiting = restoredService
-            .startByLogic(PLAYER, "dynamic_false", Collections.singletonMap("gate", Boolean.TRUE), 800L);
+            .startByLogic(PLAYER, "ST-6666-7777-8888-9999", Collections.singletonMap("gate", Boolean.TRUE), 800L);
         check(
             inverseWaiting != null && inverseWaiting.getSnapshot()
                 .getRuntimeSnapshot()
@@ -309,7 +341,7 @@ public final class CanonicalStoryServerServiceProbe {
         CanonicalSessionSavedData inverseRestored = new CanonicalSessionSavedData();
         inverseRestored.readFromNBT(inversePersisted);
         CanonicalStoryDispatch inverseTerminated = new CanonicalStoryServerService(project, inverseRestored)
-            .setLogicInput(PLAYER, "dynamic_false", "gate", false, 900L);
+            .setLogicInput(PLAYER, "ST-6666-7777-8888-9999", "gate", false, 900L);
         check(
             inverseTerminated.getKind() == CanonicalStoryDispatchKind.TERMINATED,
             "Dynamic Logic did not resume the waiting Condition through its connected false outlet");
@@ -319,66 +351,75 @@ public final class CanonicalStoryServerServiceProbe {
         ProjectSnapshot project = project();
         CanonicalSessionSavedData activeData = new CanonicalSessionSavedData();
         CanonicalStoryServerService activeStories = new CanonicalStoryServerService(project, activeData);
-        activeStories.startByEntry(PLAYER, "story", 400L);
-        new CanonicalSessionServerService(project, activeData).start(PLAYER, "story", "session_place");
-        check(activeData.getSnapshot(PLAYER, "story") != null, "Session child was not created");
-        check(activeData.markStoryError(PLAYER, "story", 401L), "Active Story was not marked ERROR");
-        check(activeData.getSnapshot(PLAYER, "story") == null, "ERROR retained active Session child");
+        activeStories.startByEntry(PLAYER, "ST-2345-6789-ABCD-EFGH", 400L);
+        new CanonicalSessionServerService(project, activeData).start(PLAYER, "ST-2345-6789-ABCD-EFGH", "session_place");
+        check(activeData.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") != null, "Session child was not created");
+        check(activeData.markStoryError(PLAYER, "ST-2345-6789-ABCD-EFGH", 401L), "Active Story was not marked ERROR");
+        check(activeData.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") == null, "ERROR retained active Session child");
 
         CanonicalSessionSavedData completedData = new CanonicalSessionSavedData();
         CanonicalStoryServerService completedStories = new CanonicalStoryServerService(project, completedData);
-        completedStories.startByEntry(PLAYER, "story", 500L);
+        completedStories.startByEntry(PLAYER, "ST-2345-6789-ABCD-EFGH", 500L);
         CanonicalSessionServerService sessions = new CanonicalSessionServerService(project, completedData);
-        CanonicalSessionDispatch frame = sessions.start(PLAYER, "story", "session_place");
+        CanonicalSessionDispatch frame = sessions.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "session_place");
         CanonicalSessionDispatch completion = sessions.continueLine(
             PLAYER,
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             frame.getFrame()
                 .getTransportId(),
             "line");
-        CanonicalStorySessionCompletionRoute route = new CanonicalStorySessionCompletionRouter(project, "story")
-            .route(completion.getCompletionResult());
+        CanonicalStorySessionCompletionRoute route = new CanonicalStorySessionCompletionRouter(
+            project,
+            "ST-2345-6789-ABCD-EFGH").route(completion.getCompletionResult());
         completedData.acceptAndConsume(completion.getCompletionResult(), route);
-        check(completedData.getPendingContinuation(PLAYER, "story") != null, "Handoff was not created");
-        check(completedData.markStoryError(PLAYER, "story", 501L), "Waiting Story was not marked ERROR");
-        check(completedData.getPendingContinuation(PLAYER, "story") == null, "ERROR retained Session handoff");
+        check(
+            completedData.getPendingContinuation(PLAYER, "ST-2345-6789-ABCD-EFGH") != null,
+            "Handoff was not created");
+        check(
+            completedData.markStoryError(PLAYER, "ST-2345-6789-ABCD-EFGH", 501L),
+            "Waiting Story was not marked ERROR");
+        check(
+            completedData.getPendingContinuation(PLAYER, "ST-2345-6789-ABCD-EFGH") == null,
+            "ERROR retained Session handoff");
     }
 
     private static void entrySessionTerminationAndRestart() {
         ProjectSnapshot project = project();
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         CanonicalStoryServerService stories = new CanonicalStoryServerService(project, data);
-        CanonicalStoryDispatch started = stories.startByEntry(PLAYER, "story", 100L);
+        CanonicalStoryDispatch started = stories.startByEntry(PLAYER, "ST-2345-6789-ABCD-EFGH", 100L);
         check(started.getKind() == CanonicalStoryDispatchKind.SESSION, "Entry trigger did not reach Session");
         check("session_place".equals(started.getPlacementId()), "Wrong Session placement");
-        check("session".equals(started.getResourceId()), "Wrong Session resource");
+        check("ST-2345-6789-ABCD-EFGH~session~session".equals(started.getResourceId()), "Wrong Session resource");
 
         CanonicalSessionServerService sessions = new CanonicalSessionServerService(project, data);
-        CanonicalSessionDispatch frame = sessions.start(PLAYER, "story", "session_place");
+        CanonicalSessionDispatch frame = sessions.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "session_place");
         CanonicalSessionDispatch completion = sessions.continueLine(
             PLAYER,
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             frame.getFrame()
                 .getTransportId(),
             "line");
-        CanonicalStorySessionCompletionRoute route = new CanonicalStorySessionCompletionRouter(project, "story")
-            .route(completion.getCompletionResult());
+        CanonicalStorySessionCompletionRoute route = new CanonicalStorySessionCompletionRouter(
+            project,
+            "ST-2345-6789-ABCD-EFGH").route(completion.getCompletionResult());
         check(
             data.acceptAndConsume(completion.getCompletionResult(), route),
             "Session completion was not checkpointed");
 
-        CanonicalStoryDispatch terminated = stories.resumeSession(PLAYER, "story", 200L);
+        CanonicalStoryDispatch terminated = stories.resumeSession(PLAYER, "ST-2345-6789-ABCD-EFGH", 200L);
         check(terminated.getKind() == CanonicalStoryDispatchKind.TERMINATED, "Story did not terminate after Session");
-        check(data.getPendingContinuation(PLAYER, "story") == null, "Story handoff was not consumed");
+        check(data.getPendingContinuation(PLAYER, "ST-2345-6789-ABCD-EFGH") == null, "Story handoff was not consumed");
 
         net.minecraft.nbt.NBTTagCompound persisted = new net.minecraft.nbt.NBTTagCompound();
         data.writeToNBT(persisted);
         CanonicalSessionSavedData restart = new CanonicalSessionSavedData();
         restart.readFromNBT(persisted);
-        CanonicalStoryDispatch restored = new CanonicalStoryServerService(project, restart).snapshot(PLAYER, "story");
+        CanonicalStoryDispatch restored = new CanonicalStoryServerService(project, restart)
+            .snapshot(PLAYER, "ST-2345-6789-ABCD-EFGH");
         check(restored.getKind() == CanonicalStoryDispatchKind.TERMINATED, "Terminated Story did not restore");
         CanonicalStoryDispatch onceAgain = new CanonicalStoryServerService(project, restart)
-            .startByEntry(PLAYER, "story", 300L);
+            .startByEntry(PLAYER, "ST-2345-6789-ABCD-EFGH", 300L);
         check(onceAgain.getKind() == CanonicalStoryDispatchKind.TERMINATED, "Once Story restarted");
         check(
             onceAgain.getSnapshot()
@@ -391,7 +432,7 @@ public final class CanonicalStoryServerServiceProbe {
         CanonicalStoryStartConfiguration configuration = CanonicalStoryStartConfiguration.parse(typed);
         check(
             "actor_port".equals(
-                configuration.selectActor("bartender")
+                configuration.selectActor("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender")
                     .getPortId()),
             "Actor trigger mismatch");
         check(
@@ -420,15 +461,15 @@ public final class CanonicalStoryServerServiceProbe {
                 Collections.<String, CanonicalGraphResource>emptyMap(),
                 Collections.<String, CanonicalStoryMembership>emptyMap()));
         CanonicalStoryTriggerIndex index = CanonicalStoryTriggerIndex.build(indexedProject);
-        CanonicalStoryTriggerIndex.Match actorMatch = index.matchActor("bartender")
+        CanonicalStoryTriggerIndex.Match actorMatch = index.matchActor("ST-AAAA-BBBB-CCCC-DDDD~actor~bartender")
             .get(0);
         check(
-            "typed".equals(actorMatch.getStoryId()) && "actor_port".equals(actorMatch.getPortId()),
+            "ST-JKLM-NPQR-STUV-WXYZ".equals(actorMatch.getStoryId()) && "actor_port".equals(actorMatch.getPortId()),
             "Actor trigger index identity mismatch");
         CanonicalStoryTriggerIndex.Match regionMatch = index.matchRegion(0, 11D, 64D, 10D)
             .get(0);
         check(
-            "typed".equals(regionMatch.getStoryId()) && "region_port".equals(regionMatch.getPortId()),
+            "ST-JKLM-NPQR-STUV-WXYZ".equals(regionMatch.getStoryId()) && "region_port".equals(regionMatch.getPortId()),
             "Region trigger index identity mismatch");
         check(
             index.matchRegion(0, 50D, 64D, 50D)
@@ -460,21 +501,30 @@ public final class CanonicalStoryServerServiceProbe {
             "Logout reset did not clear region membership");
     }
 
-    private static ProjectSnapshot project() {
+    public static ProjectSnapshot project() {
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
-        actors.put("actor", new ActorDefinition(1, "actor", "Actor", "", Collections.<String>emptyList(), ""));
+        actors.put(
+            "ST-2345-6789-ABCD-EFGH~actor~actor",
+            new ActorDefinition(
+                5,
+                ActorDefinition.TYPE_INDIVIDUAL,
+                "ST-2345-6789-ABCD-EFGH~actor~actor",
+                "Actor",
+                "",
+                Collections.<String>emptyList(),
+                "ST-2345-6789-ABCD-EFGH"));
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("story", story());
+        stories.put("ST-2345-6789-ABCD-EFGH", story());
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
-        sessions.put("session", session());
+        sessions.put("ST-2345-6789-ABCD-EFGH~session~session", session());
         Map<String, CanonicalStoryMembership> memberships = new LinkedHashMap<String, CanonicalStoryMembership>();
         memberships.put(
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembership(
-                "story",
+                "ST-2345-6789-ABCD-EFGH",
                 new CanonicalStoryMembershipSet(
-                    Collections.singletonList("actor"),
-                    Collections.singletonList("session"),
+                    Collections.singletonList("ST-2345-6789-ABCD-EFGH~actor~actor"),
+                    Collections.singletonList("ST-2345-6789-ABCD-EFGH~session~session"),
                     Collections.<String>emptyList())));
         return new ProjectSnapshot(
             new ProjectDefinition(1, "story-probe", "Story Probe"),
@@ -508,12 +558,12 @@ public final class CanonicalStoryServerServiceProbe {
             ports(flowOut("entry", "进入故事", 0)));
         CanonicalGraphNode aggregate = node(
             "session_place",
-            "session",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             ports(flowIn("flow_in", 0), logicIn("logic_in", 1), flowOut("done", "done", 2)),
-            props("resource_id", "session"));
+            props("resource_id", "ST-2345-6789-ABCD-EFGH~session~session"));
         CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
         return resource(
-            "story",
+            "ST-2345-6789-ABCD-EFGH",
             CanonicalGraphResourceKind.STORY,
             Arrays.asList(start, aggregate, end),
             Arrays.asList(
@@ -524,7 +574,7 @@ public final class CanonicalStoryServerServiceProbe {
     private static CanonicalGraphResource typedTriggerStory() {
         String triggers = "["
             + "{\"port_id\":\"entry_port\",\"display_name\":\"进入故事\",\"trigger_type\":\"enter_story\",\"trigger_properties\":{},\"order\":0},"
-            + "{\"port_id\":\"actor_port\",\"display_name\":\"酒馆老板\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"bartender\"},\"order\":1},"
+            + "{\"port_id\":\"actor_port\",\"display_name\":\"酒馆老板\",\"trigger_type\":\"interact_actor\",\"trigger_properties\":{\"actor_id\":\"ST-AAAA-BBBB-CCCC-DDDD~actor~bartender\"},\"order\":1},"
             + "{\"port_id\":\"region_port\",\"display_name\":\"酒馆入口\",\"trigger_type\":\"enter_region\",\"trigger_properties\":{\"dimension\":0,\"x\":10,\"y\":64,\"z\":10,\"radius\":2},\"order\":2}]";
         CanonicalGraphNode start = startNode(
             "repeatable",
@@ -535,7 +585,7 @@ public final class CanonicalStoryServerServiceProbe {
                 flowOut("region_port", "酒馆入口", 2)));
         CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
         return resource(
-            "typed",
+            "ST-JKLM-NPQR-STUV-WXYZ",
             CanonicalGraphResourceKind.STORY,
             Arrays.asList(start, end),
             Arrays.asList(flow("start", "entry_port", "end", "flow_in")));
@@ -562,7 +612,7 @@ public final class CanonicalStoryServerServiceProbe {
             empty());
         CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
         return resource(
-            "dynamic",
+            "ST-2222-3333-4444-5555",
             CanonicalGraphResourceKind.STORY,
             Arrays.asList(start, input, condition, end),
             Arrays.asList(
@@ -600,7 +650,7 @@ public final class CanonicalStoryServerServiceProbe {
             empty());
         CanonicalGraphNode end = node("end", "terminate", ports(flowIn("flow_in", 0)), empty());
         return resource(
-            "dynamic_false",
+            "ST-6666-7777-8888-9999",
             CanonicalGraphResourceKind.STORY,
             Arrays.asList(start, input, condition, end),
             Arrays.asList(
@@ -627,14 +677,14 @@ public final class CanonicalStoryServerServiceProbe {
             "line",
             "line",
             ports(flowIn("flow_in", 0), flowOut("flow_out", "flow_out", 1)),
-            props("speaker_actor_id", "actor", "text", "Hello"));
+            props("speaker_actor_id", "ST-2345-6789-ABCD-EFGH~actor~actor", "text", "Hello"));
         CanonicalGraphNode end = node(
             "done",
             "end",
             ports(flowIn("flow_in", 0)),
             props("port_id", "done", "display_name", "Done"));
         return resource(
-            "session",
+            "ST-2345-6789-ABCD-EFGH~session~session",
             CanonicalGraphResourceKind.SESSION,
             Arrays.asList(start, line, end),
             Arrays.asList(flow("start", "flow_out", "line", "flow_in"), flow("line", "flow_out", "done", "flow_in")));
@@ -642,17 +692,19 @@ public final class CanonicalStoryServerServiceProbe {
 
     private static CanonicalGraphResource resource(String id, CanonicalGraphResourceKind kind,
         List<CanonicalGraphNode> nodes, List<CanonicalGraphConnection> edges) {
-        return new CanonicalGraphResource(1, kind, id, id, new CanonicalGraph(nodes, edges));
+        return new CanonicalGraphResource(3, kind, id, id, new CanonicalGraph(nodes, edges));
     }
 
     private static CanonicalGraphNode node(String id, String type, List<CanonicalGraphPort> ports,
         Map<String, JsonElement> properties) {
+        if ("ST-2345-6789-ABCD-EFGH~session~session".equals(type)) type = "session";
         // Fixture upgrade: public termination metadata belongs in test data, not runtime fallback.
         if ("terminate".equals(type)) {
             properties = new java.util.LinkedHashMap<String, JsonElement>(properties);
             if (!properties.containsKey("port_id")) properties.put("port_id", new com.google.gson.JsonPrimitive(id));
             if (!properties.containsKey("display_name"))
                 properties.put("display_name", new com.google.gson.JsonPrimitive(id));
+            properties.put("display_order", new com.google.gson.JsonPrimitive(0));
         }
         return new CanonicalGraphNode(id, type, id, ports, properties);
     }

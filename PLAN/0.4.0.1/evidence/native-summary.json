@@ -1,0 +1,330 @@
+{
+  "final_jar_sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629",
+  "pre_dynamic_final_jar_sha256": "B2A2DFE7F83570D77BD40DCA96C8A048B8B3069397CD1C302342981B94130896",
+  "earlier_native_jar_sha256": "EF427861F9E39B781FCF76DC6D7983528A08AD538B64613C79E89303683EBEF5",
+  "earlier_native_scope": "Historical .1 native runs: EF427861 -> pre-dynamic B2A2DFE7 differed only in ClientPackageManager.class. Dynamic capacity changes storage/identity/service classes, so historical native tests are not relabeled as new-JAR runs. Final dynamic JAR reruns full build/probes and isolated 6500-record save/restart/edit, real five-minute shrink, save and second restart; see dynamic-runtime-delta.json.",
+  "isolated_root": ".tooling/0401",
+  "engine": "Minecraft 1.7.10 / Forge 10.13.4.1614 / Java 8u471; third-party CNPC JAR unchanged",
+  "driver": "Separate isolated acceptance JAR, used only for storage save/tick checks; absent from formal Runtime JAR and normal multiplayer server.",
+  "storage_fault": {
+    "sha256": "5EAA367033B858537562248599711BD9F2920652A6B1F22DF527A90C03C93828",
+    "integrated_pre_dynamic_jar_preserved": true,
+    "dedicated_preserved": true,
+    "forced_dirty_test": "Actual MapStorage.saveAllData; writer throws before mutating output/file",
+    "startup_failure_preserved_as_original": true
+  },
+  "historical_capacity": {
+    "records": 513,
+    "pre_dynamic_restart_revision_before": 519,
+    "after_edit": 521,
+    "continued_editable": true,
+    "driver_used": true
+  },
+  "dynamic_capacity": {
+    "runtime": {
+      "path": "build/libs/darkgrey_rpg-0.4.0.1.jar",
+      "size": 1856126,
+      "sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629"
+    },
+    "default_capacity": 4096,
+    "step": 512,
+    "grow_at_percent": 75,
+    "shrink_at_next_lower_percent": 50,
+    "continuous_low_seconds": 300,
+    "server_check_seconds": 5,
+    "final_record_quota": null,
+    "extra_byte_budget": null,
+    "monotonic_clock": true,
+    "capacity_and_wait_persisted": false,
+    "user_configuration_or_notice_added": false,
+    "automated": {
+      "log": {
+        "path": ".tooling/0401/VerifiedDynamicFinal/probes.log",
+        "size": 73515,
+        "sha256": "4FEE4FE5DDD1B7E6882292EDC658D16AE31F6AAFEC1A7D3C2BFE3F497CFA9F2A"
+      },
+      "roundtrip_counts": [
+        0,
+        1,
+        511,
+        512,
+        513,
+        3071,
+        3072,
+        3455,
+        3456,
+        4095,
+        4096,
+        4097,
+        8192
+      ],
+      "clock_checks": "Thresholds, no early shrink, reset on crossing, lowest band, direct multiband decrease, regrowth and long arithmetic",
+      "operation_checks": "Final net transfer count, residual source groups, unbind, no-op, conflicts/failed requests; exact state preserved",
+      "memory_checks": "Metadata plus two NPC indexes 16384 -> 256, independent NPC decline and physical compaction below logical 4096; exact binding/index/order/revision/dirty/NBT/file equality",
+      "failed_reader": "Maintenance skips quarantined selection; forced dirty writer refuses before touching persisted bytes",
+      "maximum_fields_fixture": {
+        "records": 8192,
+        "raw_nbt_bytes": 35299420,
+        "compressed_bytes": 240647,
+        "real_mapstorage_reload": true
+      },
+      "shutdown": "Clears tracked weak references; untouched storage maintenance does not create files"
+    },
+    "native": {
+      "status": "PASS",
+      "recorded_at": "2026-10-08T22:59:54.5340742+08:00",
+      "runtime": {
+        "path": "build/libs/darkgrey_rpg-0.4.0.1.jar",
+        "size": 1856126,
+        "sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629"
+      },
+      "server_runtime": {
+        "path": ".tooling/0401/Minecraft/DynamicServer/mods/darkgrey_rpg-0.4.0.1.jar",
+        "size": 1856126,
+        "sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629"
+      },
+      "fixture": "New isolated flat Forge world Dynamic0401; generated valid current-schema metadata and NPC hosts, not an authored Story export or physical entity spawn.",
+      "engine": "Forge 1.7.10-10.13.4.1614 / Java 8u471 / actual MapStorage and production END-tick maintenance",
+      "driver": {
+        "path": ".tooling/0401/Driver/dgr0401-dynamic-storage-driver.jar",
+        "size": 9238,
+        "sha256": "D4F956886BC329E9E833C69442C00B92B3BCB0BD70E27F2F0A719FC643D12EF8"
+      },
+      "driver_separate_from_runtime": true,
+      "seed_records": 6500,
+      "loaded_after_first_restart": 6500,
+      "capacity_before_shrink": 8704,
+      "retained_records": 100,
+      "capacity_after_shrink": 4096,
+      "waited_nanoseconds": 301785010700,
+      "buckets_before": [
+        16384,
+        16384,
+        16384
+      ],
+      "buckets_after": [
+        256,
+        256,
+        256
+      ],
+      "compaction_checks": "Exact NBT snapshots/order, both owners revision, dirty and both files unchanged; no-op then remove/rebind edit and save; second fresh JVM restores 100 and edits/saves.",
+      "logs": [
+        {
+          "stage": "dynamic-seed",
+          "file": {
+            "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-seed-stdout.log",
+            "size": 17628,
+            "sha256": "8F94D878BA02829A4A4A9F01588920D2663198B11F3728EE49CC97924816B354"
+          },
+          "pass": true,
+          "normal_save_stop": true
+        },
+        {
+          "stage": "dynamic-shrink",
+          "file": {
+            "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-shrink-stdout.log",
+            "size": 14084,
+            "sha256": "3834D3C95D6F43CE62A25013A589D5B3984C89487036C681F56279132148D636"
+          },
+          "pass": true,
+          "normal_save_stop": true
+        },
+        {
+          "stage": "dynamic-verify",
+          "file": {
+            "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-verify-stdout.log",
+            "size": 13726,
+            "sha256": "646961B4D63F548F5148271E8576D21BC3BA73F5B8576AEC41E6B04CE419A9EF"
+          },
+          "pass": true,
+          "normal_save_stop": true
+        }
+      ],
+      "gc_heap_readings_used": false,
+      "earlier_harness_failure": {
+        "file": {
+          "path": ".tooling/0401/Minecraft/DynamicServer-wrong-storage/dynamic-shrink-stdout.log",
+          "size": 15456,
+          "sha256": "98E2160C3767465C06EC990BEF11E79C04F9CAE130FFEB987CEDAC30F5239CD1"
+        },
+        "cause": "Acceptance driver selected Forge perWorldStorage by type; no production change required; final driver selects MCP/SRG mapStorage and asserts same instance as normal get()",
+        "counted_as_pass": false
+      }
+    },
+    "historical_receipts": "pre-dynamic/",
+    "unclosed_acceptance_items_preserved": [
+      "V03",
+      "V04",
+      "V05",
+      "V09"
+    ]
+  },
+  "normal_ui_exports": [
+    {
+      "path": ".tooling/0401/Studio/Data/Exports/0400 补充验收.dgrs",
+      "size": 7927,
+      "sha256": "F8B400CA85CD937FCB41966B4A4C9ECCDB33261D2BEF63DF5495FD20A4497460"
+    },
+    {
+      "path": ".tooling/0401/Studio/Data/Exports/故事组（1）.dgrs.g",
+      "size": 4479,
+      "sha256": "A57EA63A2960B483DE2F0FED75D9E88245DF0812C9E29ED0E8DD206B7E9E66E9"
+    },
+    {
+      "path": ".tooling/0401/Studio/Data/Exports/0400 库存验收.dgrs",
+      "size": 13800,
+      "sha256": "98961124A3557CF347179E5433EE6CD63DDA5C3F717501D31C452238FE312B85"
+    },
+    {
+      "path": ".tooling/0401/Studio/Data/Exports/FullGroup/故事组（1）.dgrs.g",
+      "size": 11841,
+      "sha256": "ACF60FB192723F924CEF462952AD1407F4C7D12A64B0A6683A39319E8ACB73EE"
+    }
+  ],
+  "normal_two_player_group": {
+    "package_sha256": "ACF60FB192723F924CEF462952AD1407F4C7D12A64B0A6683A39319E8ACB73EE",
+    "pre_dynamic_final_jar_used": true,
+    "players": [
+      "9a49dc9a-37a7-3967-91b3-c55b08c3ca87",
+      "46cd6446-b347-3a16-81ac-bd17ab274408"
+    ],
+    "first_a": "CHOICE",
+    "first_b": "LINE",
+    "a_after_choice_and_restart": "TASK 0/2",
+    "b_after_restart": "LINE first sentence",
+    "snapshot_session_instances": [
+      {
+        "player_uuid": "46cd6446-b347-3a16-81ac-bd17ab274408",
+        "transport_id": 2,
+        "current_node_id": "node_487a1af8d5e246fb8062ec2f11c348ab",
+        "status": "ACTIVE"
+      }
+    ],
+    "reload_unchanged": true,
+    "fresh_progression_fixture": "Copy of owned Positive0401 terrain/binding, initial progression files preserved as .InitialSnapshot only in new Normal0401 world"
+  },
+  "filter": {
+    "source": "Normal UI Inventory single export, then explicit controlled damage metadata mutation",
+    "fixture": {
+      "source_package": ".tooling\\0401\\Studio\\Data\\Exports\\0400 库存验收.dgrs",
+      "source_sha256": "98961124A3557CF347179E5433EE6CD63DDA5C3F717501D31C452238FE312B85",
+      "fixture_package": ".tooling\\0401\\Fixtures\\0401-filter-controlled.dgrs",
+      "fixture_sha256": "84AEBA20A97A80A3C66B0F40513559F4B9A8CB8334AA524C44F3E7CF2AF127D5",
+      "origin": "Controlled ZIP mutation of an actual Studio export; metadata was NOT authored through UI",
+      "changes": [
+        "Task display name/descriptions",
+        "collect/submit metadata.damage=3"
+      ],
+      "schemas_changed": false,
+      "producer_preserved": true
+    },
+    "xp_total": 7,
+    "remaining_inventory": [
+      {
+        "Slot": 1,
+        "id": 267,
+        "Count": 2,
+        "Damage": 4
+      }
+    ],
+    "normal_story_task_settled": [
+      {
+        "aggregate_placement_id": null,
+        "runtime_status": "SETTLED",
+        "reward_states": [
+          {
+            "value": 1,
+            "key": "node_ead0ff6213874ac781dfaed418752c9b"
+          }
+        ]
+      }
+    ],
+    "auxiliary_debug_task": "CANCELLED_BY_STORY_TERMINATION; not reported as a second completed task",
+    "repeat_interaction_and_reload_saved": true
+  },
+  "studio": {
+    "candidate_exe_sha256": "BC82D7805D0D0C91930814CBABFA075CFA421D76F509B892523BD09837CA6E6A",
+    "readonly_package_unchanged": true,
+    "resource_placement": {
+      "id": "aggregate_fdb7ce0bd7c546c9acc836fa863e04a4",
+      "type": "task",
+      "display_name": "0400 集体角色击杀",
+      "ports": [
+        {
+          "port_id": "flow_in",
+          "display_name": "流程输入",
+          "order": 0,
+          "kind": "flow",
+          "direction": "input"
+        },
+        {
+          "port_id": "dynamic_port_a760a8f02ec64389aeecac484c610eca",
+          "display_name": "结算",
+          "order": 0,
+          "kind": "flow",
+          "direction": "output"
+        },
+        {
+          "port_id": "dynamic_port_0ea49d843211430293097f95ce035780",
+          "display_name": "结算 2",
+          "order": 1,
+          "kind": "flow",
+          "direction": "output"
+        },
+        {
+          "port_id": "dynamic_port_f234cfdc06194085b3c4760216d5484c",
+          "display_name": "逻辑输出",
+          "order": 2,
+          "kind": "logic",
+          "direction": "output"
+        }
+      ],
+      "properties": {
+        "resource_id": {
+          "story_uid": "ST-5UTG-DFCB-NQAQ-X4QF",
+          "kind": "task",
+          "local_id": "r3f62fc7da9c329adbe4009d81900df0b"
+        }
+      }
+    },
+    "single_undo_and_redo": true,
+    "exact_actor_parameter": {
+      "story_uid": "ST-5UTG-DFCB-NQAQ-X4QF",
+      "kind": "actor",
+      "local_id": "r0512cbc053a3ad6ba902216c0075e830"
+    },
+    "cold_reopen": {
+      "candidate_pid": 27352,
+      "graph_hash_same": true,
+      "node_count": 6,
+      "actor_id": {
+        "story_uid": "ST-5UTG-DFCB-NQAQ-X4QF",
+        "kind": "actor",
+        "local_id": "r6d7c51d48cb5e734a7b7daed7d233c36"
+      },
+      "task_row_order": [
+        "0400 零结算",
+        "0400 集体角色击杀"
+      ]
+    }
+  },
+  "dev_cnpc": {
+    "status": "BLOCKED",
+    "error": "NoSuchFieldError field_78804_l in ModelPlaneRenderer.addPlane / ModelSkirtArmor; fixed SRG CNPC JAR fails in MCP GradleStart",
+    "third_party_patch_applied": false,
+    "entered_world": false
+  },
+  "human_audio": {
+    "status": "NOT_RUN",
+    "human_confirmation_received": false,
+    "logs_not_counted_as_hearing": true
+  },
+  "remaining_native": {
+    "direct_live_bridge_fault_request": "NOT_RUN",
+    "direct_readonly_diagnostic_fault_request": "NOT_RUN",
+    "disabled_new_vs_existing_game_instances": "NOT_RUN (automatic current probes passed)",
+    "zero_settlement_game_chain": "NOT_RUN (automatic current probes passed)"
+  },
+  "failed_harness_attempts": "Retained: initial startup missing boundary (fixed), UIA unsupported expander Invoke, minimized black captures, invalid debug Task UID/long chat truncation, controlled fixture rejected producer, CNPC fixture ReturnStartPos/chunk-render setup issues; first dynamic driver selected Forge perWorldStorage by type instead of production mapStorage and correctly timed out. Fixed driver selects MCP/SRG field and asserts same instance as NominatorSavedData.get(). These attempts are excluded from PASS.",
+  "local_raw_evidence": "native-raw-evidence.json fingerprints refer to local files; raw worlds/personal Data/third-party binaries are not embedded."
+}

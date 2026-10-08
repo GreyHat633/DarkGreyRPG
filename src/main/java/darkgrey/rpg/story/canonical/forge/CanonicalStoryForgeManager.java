@@ -938,7 +938,10 @@ public final class CanonicalStoryForgeManager implements CanonicalSessionForgeMa
         String failure = kind + ":" + exception.getMessage();
         long time = System.nanoTime();
         Long previous = triggerQueryFailureTimes.get(kind);
-        if (failure.equals(triggerQueryFailures.get(kind)) && previous != null && time - previous < 5000000000L) return;
+        if (failure.equals(triggerQueryFailures.get(kind)) && previous != null
+            && (exception instanceof darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException
+                || time - previous < 5000000000L))
+            return;
         triggerQueryFailures.put(kind, failure);
         triggerQueryFailureTimes.put(kind, time);
         LOG.warn("Canonical Story {} trigger query failed: {}", kind, exception.getMessage());

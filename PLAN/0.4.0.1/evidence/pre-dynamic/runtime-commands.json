@@ -1,0 +1,66 @@
+[
+  {
+    "phase": "build",
+    "tasks": [
+      "build"
+    ],
+    "arguments": [
+      "--no-daemon",
+      "--no-configuration-cache",
+      "--max-workers=1",
+      "--console=plain",
+      "--offline"
+    ],
+    "started_at": "2026-10-08T20:49:08.0411465+08:00",
+    "finished_at": "2026-10-08T20:49:41.6138364+08:00",
+    "exit_code": 0,
+    "log": ".tooling\\0401\\VerifiedDeliveredFinal\\build.log"
+  },
+  {
+    "phase": "probes",
+    "tasks": [
+      "nominatorCapacity0401Probe",
+      "sessionStorage0401Probe",
+      "canonicalTaskRuntimeProbe",
+      "canonicalStoryServerServiceProbe",
+      "b4NetworkDiscriminatorProbe",
+      "canonicalOnly0400PackageProbe",
+      "canonicalSessionClientModelProbe",
+      "canonicalSessionForgeRoutingProbe",
+      "canonicalSessionNetworkCodecProbe",
+      "canonicalSessionRuntimeProbe",
+      "canonicalSessionSavedDataProbe",
+      "canonicalSessionServerServiceProbe",
+      "canonicalTaskView0400Probe",
+      "copierTemplateActionCodecProbe",
+      "currentProject0400Probe",
+      "entityDgrIdentityResolverProbe",
+      "entityToolsStage5Probe",
+      "itemIdentitySavedDataProbe",
+      "nominator0400Probe",
+      "nominatorCurrentActions0400Probe",
+      "nominatorFailureBoundary0400Probe",
+      "nominatorItemContainerProbe",
+      "nominatorStage4Probe",
+      "npcIdentitySavedDataProbe",
+      "runtimeFontResourceRows0336Probe",
+      "taskCandidate0400Probe",
+      "canonicalTaskForgeProbe",
+      "publicOutputPriority0336Probe",
+      "construction0337Probe",
+      "taskLayout0337Probe",
+      "--continue"
+    ],
+    "arguments": [
+      "--no-daemon",
+      "--no-configuration-cache",
+      "--max-workers=1",
+      "--console=plain",
+      "--offline"
+    ],
+    "started_at": "2026-10-08T20:49:41.6268034+08:00",
+    "finished_at": "2026-10-08T20:50:37.6973843+08:00",
+    "exit_code": 0,
+    "log": ".tooling\\0401\\VerifiedDeliveredFinal\\probes.log"
+  }
+]

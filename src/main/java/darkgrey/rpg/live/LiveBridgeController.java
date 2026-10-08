@@ -33,7 +33,15 @@ public final class LiveBridgeController {
 
             @Override
             public void run() {
-                handle(message, sink);
+                try {
+                    handle(message, sink);
+                } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+                    sink.send(
+                        response(
+                            string(message, "request_id"),
+                            false,
+                            darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException.PLAYER_MESSAGE));
+                }
             }
         });
     }

@@ -1,0 +1,105 @@
+{
+  "runtime": {
+    "build_exit_code": 0,
+    "probes_exit_code": 0,
+    "probe_count": 30,
+    "probes": [
+      "nominatorCapacity0401Probe",
+      "sessionStorage0401Probe",
+      "canonicalTaskRuntimeProbe",
+      "canonicalStoryServerServiceProbe",
+      "b4NetworkDiscriminatorProbe",
+      "canonicalOnly0400PackageProbe",
+      "canonicalSessionClientModelProbe",
+      "canonicalSessionForgeRoutingProbe",
+      "canonicalSessionNetworkCodecProbe",
+      "canonicalSessionRuntimeProbe",
+      "canonicalSessionSavedDataProbe",
+      "canonicalSessionServerServiceProbe",
+      "canonicalTaskView0400Probe",
+      "copierTemplateActionCodecProbe",
+      "currentProject0400Probe",
+      "entityDgrIdentityResolverProbe",
+      "entityToolsStage5Probe",
+      "itemIdentitySavedDataProbe",
+      "nominator0400Probe",
+      "nominatorCurrentActions0400Probe",
+      "nominatorFailureBoundary0400Probe",
+      "nominatorItemContainerProbe",
+      "nominatorStage4Probe",
+      "npcIdentitySavedDataProbe",
+      "runtimeFontResourceRows0336Probe",
+      "taskCandidate0400Probe",
+      "canonicalTaskForgeProbe",
+      "publicOutputPriority0336Probe",
+      "construction0337Probe",
+      "taskLayout0337Probe"
+    ],
+    "method_passes": [
+      "parallelTreasuresKeepIndependentSuccessors",
+      "canonical0310TaskSemantics",
+      "parallelSequentialAndTypes",
+      "priorityAndUnconnectedFalse",
+      "activationSettlementAndPostSettlement",
+      "overflowAndParallelSameType",
+      "prerequisiteActivationSemantics",
+      "dormantUnselectedObjectiveSemantics",
+      "immutableSnapshotRestore",
+      "malformedFailsClosed",
+      "entrySessionTerminationAndRestart",
+      "typedTriggerSelection",
+      "durableConditionResume",
+      "errorCancelsSessionChildren",
+      "packageUninstallClearsRuntimeInstances",
+      "repeatEntryGates"
+    ],
+    "logs": [
+      {
+        "path": ".tooling/0401/VerifiedDeliveredFinal/build.log",
+        "size": 3081,
+        "sha256": "36052DF0D97917A32D1D4BAE1D143CE14176DF1305294448E4BE8701B2B6C7D4"
+      },
+      {
+        "path": ".tooling/0401/VerifiedDeliveredFinal/probes.log",
+        "size": 71240,
+        "sha256": "2B266B1F88B382AEB71E8626BAE86757E847C19017C120414F6F916CD86CBD33"
+      }
+    ]
+  },
+  "core": {
+    "file": {
+      "path": ".tooling/0401/Tests/core-complete.trx",
+      "size": 682166,
+      "sha256": "CA2E02593C877457CFD757980568B15EB421FCB8CFB326B41BB26B30445EEC4E"
+    },
+    "outcome": "Completed",
+    "total": 510,
+    "passed": 510,
+    "failed": 0,
+    "skipped": [],
+    "results_count": 510,
+    "start": "2026-10-08T19:30:58.3990879+08:00",
+    "finish": "2026-10-08T19:31:04.9829988+08:00"
+  },
+  "wpf": {
+    "file": {
+      "path": ".tooling/0401/Tests/wpf-complete.trx",
+      "size": 924028,
+      "sha256": "6932C80B5E33B9912A976302CD1AB12070816AFF0FB37CC77E3653EA07FBBA4B"
+    },
+    "outcome": "Completed",
+    "total": 668,
+    "passed": 667,
+    "failed": 0,
+    "skipped": [
+      {
+        "name": "FixedThreeHundredNodeWorkload",
+        "reason": "Assert.Inconclusive 失败。Opt-in scale comparison"
+      }
+    ],
+    "results_count": 668,
+    "start": "2026-10-08T19:11:25.1106862+08:00",
+    "finish": "2026-10-08T19:20:59.7652131+08:00"
+  },
+  "historical_attempts": "Baseline failures, interrupted WPF runs and superseded candidates remain local; they are excluded from final PASS counts."
+}

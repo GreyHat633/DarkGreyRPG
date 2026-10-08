@@ -1,0 +1,75 @@
+{
+  "previous_jar_sha256": "B2A2DFE7F83570D77BD40DCA96C8A048B8B3069397CD1C302342981B94130896",
+  "final_jar_sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629",
+  "previous_entries": 776,
+  "final_entries": 780,
+  "changed_entries": [
+    {
+      "entry": "darkgrey/rpg/DarkGreyRpg.class",
+      "before": "E0DF877ECF38AEF376D43B7AA68F06066BD64892067025D601E9EAF67F017EFC",
+      "after": "93D16108AF3D39642A5E7DCEA925CC56E4D14F1A98CD154B5E35129CB9191090"
+    },
+    {
+      "entry": "darkgrey/rpg/identity/BindingCapacity.class",
+      "before": null,
+      "after": "9B56A45B0623D484E63FCEC22C0893654EB374692440C88347A0EF6441C603F5"
+    },
+    {
+      "entry": "darkgrey/rpg/identity/CompactBindingMap.class",
+      "before": null,
+      "after": "5867DB778143947E446077BFC903B548DEAD6CCCD797BC88D8789EE80772213E"
+    },
+    {
+      "entry": "darkgrey/rpg/identity/NpcIdentityRegistry.class",
+      "before": "80522178B7124F2641E275E58A81BEAF8510737BA083ADCA2EAA50CD5489CF6B",
+      "after": "ACB20DBE254045EFB27838E5F6EAE20C26E33D7BBAFCC018B5712CCC678291D4"
+    },
+    {
+      "entry": "darkgrey/rpg/identity/NpcIdentityRegistry$1.class",
+      "before": "53BEA316125C6065ADDAE9366EC307C967E0E2ABBA01940A82A9CEF817BBFFE4",
+      "after": "3E5F22A3B7F373B731B3A36DE4F0AD71B08F34E0463E4CAD01A13C4D9A541DD0"
+    },
+    {
+      "entry": "darkgrey/rpg/identity/NpcIdentityRegistry$Binding.class",
+      "before": "45DFB9F2284AB76B0899C54138395B92BF4CCAA1D77BC870AC39CF0B9627E925",
+      "after": "22771EBE989138B96E05B51A44FB45E7F9A70A1D930CAF83FD4466B11DFFEAEF"
+    },
+    {
+      "entry": "darkgrey/rpg/identity/NpcIdentitySavedData.class",
+      "before": "3D35499D264EA055607EF9F1B34A16EF17548D0D67282B3275BFA8C51BFCA88E",
+      "after": "47C54217011A13BABBE7FAD1634783C46B6BF37A73EF5A6F225BF71C2F197B16"
+    },
+    {
+      "entry": "darkgrey/rpg/nominator/NominatorCapacityException.class",
+      "before": "B164B2868C877172452BA1B3512B38DDD65950D50B231AB3E98CF12B4D7D166B",
+      "after": null
+    },
+    {
+      "entry": "darkgrey/rpg/nominator/NominatorCapacityMaintenance.class",
+      "before": null,
+      "after": "216CAAE7104EB3E0C430DAFC55B8D601F6E8BB0F3B16EDB34A568507C74B884E"
+    },
+    {
+      "entry": "darkgrey/rpg/nominator/NominatorCapacityMaintenance$1.class",
+      "before": null,
+      "after": "38F5759CB8519B35797BAEA8C5EE7DC425875EAD2DDC71BCDB3F66401E8A6E78"
+    },
+    {
+      "entry": "darkgrey/rpg/nominator/NominatorCapacityMaintenance$Tracked.class",
+      "before": null,
+      "after": "56BD4CDE2A04536AF964AEE3E66DF3B2EE4323E15684529803ADE411975AE8BC"
+    },
+    {
+      "entry": "darkgrey/rpg/nominator/NominatorSavedData.class",
+      "before": "B2888C570CA685C1F1357F8DFBA314A0A48C256ABB32BB59A0685BBEA2D967D5",
+      "after": "1E0B88DF966D4575B0F02BA559FC16587DC0D56ECD8CCE5410D9DE7DEDD1A7C6"
+    },
+    {
+      "entry": "darkgrey/rpg/nominator/NominatorService.class",
+      "before": "4F4F08E4B9453C34339512A5CE5AE9EA073A757CB64973C87F862B0727BB5EE2",
+      "after": "C2BEC6EA8C8AF031ADB8DCA024913C6DF2028B7A514EB626F8B606209ACE2D5E"
+    }
+  ],
+  "storage_and_identity_class_bytes_unchanged": false,
+  "scope": "Dynamic storage/identity/service/tick classes changed. Historical native results retain their original binary scope; final-JAR dynamic world and all 30 current probes executed. Studio source and binaries unchanged."
+}

@@ -1,6 +1,6 @@
 # 源码构建
 
-以下针对当前 0.4.0.0。Windows 上使用 **PowerShell 7** 从仓库根运行（本轮 7.6.5）；发布脚本使用现代 .NET API，不能直接照搬到 Windows PowerShell 5.1。路径可以包含空格或中文。首次需联网；先恢复再谈缓存离线构建，不从作者 bin／obj／dist／完整 .tooling 复制输出。
+以下针对当前 0.4.0.1。Windows 上使用 **PowerShell 7** 从仓库根运行（本轮 7.6.5）；发布脚本使用现代 .NET API，不能直接照搬到 Windows PowerShell 5.1。路径可以包含空格或中文。首次需联网；先恢复再谈缓存离线构建，不从作者 bin／obj／dist／完整 .tooling 复制输出。
 
 ## 工具与依赖
 
@@ -33,7 +33,7 @@ $env:GRADLE_USER_HOME = '你选择的纯 ASCII 缓存目录（允许空格）'
 .\gradlew.bat canonicalTaskForgeProbe taskCandidate0400Probe nominator0400Probe nominatorCurrentActions0400Probe canonicalTaskView0400Probe publicOutputPriority0336Probe construction0337Probe taskLayout0337Probe --no-daemon --no-configuration-cache --max-workers=1
 ```
 
-正式 Runtime：`build/libs/darkgrey_rpg-0.4.0.0.jar`。`-dev.jar` 与 `-sources.jar` 不供玩家安装。`build` 包括 convention 的现有检查；**独立 JavaExec Probe 不由 build 全部执行**。记录每项执行和退出码，普通 Test 没发现测试时不能计为 Probe 通过。上列是本轮有限当前合同集，不是全部历史协议验收。
+正式 Runtime：`build/libs/darkgrey_rpg-0.4.0.1.jar`。`-dev.jar` 与 `-sources.jar` 不供玩家安装。`build` 包括 convention 的现有检查；**独立 JavaExec Probe 不由 build 全部执行**。记录每项执行和退出码，普通 Test 没发现测试时不能计为 Probe 通过。上列是本轮有限当前合同集，不是全部历史协议验收。
 
 `runtimeInteractionUi0336Probe`／`tavernRepeat0336Probe` 另要求此前特定作者故事包；没有该包时记录未运行，不拿任意示例代替其断言。本轮真实最小故事链由 Studio 实际导出后在隔离游戏端验证，范围与旧作者夹具探针分开。
 
@@ -69,4 +69,4 @@ $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
 
 完整输出保持根 EXE、Program、Tools、Docs；更新 Data 不遍历、不覆盖。根 apphost 直接加载 Program 中 DLL，不能只拷贝 EXE。运行与文档／许可文件纳入 Docs/StudioProgramFiles.json 白名单；按 AGENTS.md 打包权限，本轮构建不新建 artifacts 成品或修改 GitHub Release。
 
-`studio/qa/closeout-tooling-tests.ps1` 覆盖参数错误、准备重复／离线／损坏来源及旧文件保留。测试与 Probe 必须记录实际范围；本轮 [验收表](../PLAN/0.4.0.0/Acceptance.md) 还区分同机隔离、自包含模块读回及实际 UI／Runtime 验证。
+`studio/qa/closeout-tooling-tests.ps1` 覆盖参数错误、准备重复／离线／损坏来源及旧文件保留。测试与 Probe 必须记录实际范围；本轮 [验收表](../PLAN/0.4.0.1/Acceptance.md) 还区分同机隔离、自包含模块读回及实际 UI／Runtime 验证。

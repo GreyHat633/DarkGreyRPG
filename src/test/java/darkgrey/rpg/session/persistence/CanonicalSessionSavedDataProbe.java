@@ -56,6 +56,8 @@ public final class CanonicalSessionSavedDataProbe {
         retiredReader.readFromNBT(payload);
         reject(() -> retiredReader.readFromNBT(retiredSessionsOnly), "retired sessions-only world wrapper");
         NBTTagCompound retiredOut = new NBTTagCompound();
+        reject(() -> retiredReader.writeToNBT(retiredOut), "failed reread quarantines writer");
+        retiredReader.readFromNBT(payload);
         retiredReader.writeToNBT(retiredOut);
         require(payload.equals(retiredOut), "retired world wrapper rejection preserves current state");
         CanonicalSessionSavedData beforeBind = new CanonicalSessionSavedData("ignored");
@@ -134,6 +136,9 @@ public final class CanonicalSessionSavedDataProbe {
             }
         }, "direct malformed read");
         NBTTagCompound malformedOut = new NBTTagCompound();
+        reject(() -> malformedData.writeToNBT(malformedOut), "reread failure blocks writer");
+        reject(() -> malformedData.bind(resolver(resource)), "reread failure blocks valid resolver too");
+        malformedData.readFromNBT(payload);
         malformedData.writeToNBT(malformedOut);
         require(
             payload.equals(malformedOut) && !malformedData.isBound()
@@ -156,7 +161,7 @@ public final class CanonicalSessionSavedDataProbe {
         }, "missing resource bind after rejected read");
         require(malformedData.hasPendingData(), "failed binding preserves pending state");
         malformedData.bind(resolver(resource));
-        require(malformedData.isBound(), "rejected read does not poison valid pending state");
+        require(malformedData.isBound(), "explicit valid reread permits resource binding");
 
         MapStorage convenienceStorage = new MapStorage(null);
         CanonicalSessionSavedData pending = new CanonicalSessionSavedData();

@@ -1,0 +1,139 @@
+{
+  "runtime": {
+    "path": "build/libs/darkgrey_rpg-0.4.0.1.jar",
+    "size": 1856126,
+    "sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629"
+  },
+  "default_capacity": 4096,
+  "step": 512,
+  "grow_at_percent": 75,
+  "shrink_at_next_lower_percent": 50,
+  "continuous_low_seconds": 300,
+  "server_check_seconds": 5,
+  "final_record_quota": null,
+  "extra_byte_budget": null,
+  "monotonic_clock": true,
+  "capacity_and_wait_persisted": false,
+  "user_configuration_or_notice_added": false,
+  "automated": {
+    "log": {
+      "path": ".tooling/0401/VerifiedDynamicFinal/probes.log",
+      "size": 73515,
+      "sha256": "4FEE4FE5DDD1B7E6882292EDC658D16AE31F6AAFEC1A7D3C2BFE3F497CFA9F2A"
+    },
+    "roundtrip_counts": [
+      0,
+      1,
+      511,
+      512,
+      513,
+      3071,
+      3072,
+      3455,
+      3456,
+      4095,
+      4096,
+      4097,
+      8192
+    ],
+    "clock_checks": "Thresholds, no early shrink, reset on crossing, lowest band, direct multiband decrease, regrowth and long arithmetic",
+    "operation_checks": "Final net transfer count, residual source groups, unbind, no-op, conflicts/failed requests; exact state preserved",
+    "memory_checks": "Metadata plus two NPC indexes 16384 -> 256, independent NPC decline and physical compaction below logical 4096; exact binding/index/order/revision/dirty/NBT/file equality",
+    "failed_reader": "Maintenance skips quarantined selection; forced dirty writer refuses before touching persisted bytes",
+    "maximum_fields_fixture": {
+      "records": 8192,
+      "raw_nbt_bytes": 35299420,
+      "compressed_bytes": 240647,
+      "real_mapstorage_reload": true
+    },
+    "shutdown": "Clears tracked weak references; untouched storage maintenance does not create files"
+  },
+  "native": {
+    "status": "PASS",
+    "recorded_at": "2026-10-08T22:59:54.5340742+08:00",
+    "runtime": {
+      "path": "build/libs/darkgrey_rpg-0.4.0.1.jar",
+      "size": 1856126,
+      "sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629"
+    },
+    "server_runtime": {
+      "path": ".tooling/0401/Minecraft/DynamicServer/mods/darkgrey_rpg-0.4.0.1.jar",
+      "size": 1856126,
+      "sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629"
+    },
+    "fixture": "New isolated flat Forge world Dynamic0401; generated valid current-schema metadata and NPC hosts, not an authored Story export or physical entity spawn.",
+    "engine": "Forge 1.7.10-10.13.4.1614 / Java 8u471 / actual MapStorage and production END-tick maintenance",
+    "driver": {
+      "path": ".tooling/0401/Driver/dgr0401-dynamic-storage-driver.jar",
+      "size": 9238,
+      "sha256": "D4F956886BC329E9E833C69442C00B92B3BCB0BD70E27F2F0A719FC643D12EF8"
+    },
+    "driver_separate_from_runtime": true,
+    "seed_records": 6500,
+    "loaded_after_first_restart": 6500,
+    "capacity_before_shrink": 8704,
+    "retained_records": 100,
+    "capacity_after_shrink": 4096,
+    "waited_nanoseconds": 301785010700,
+    "buckets_before": [
+      16384,
+      16384,
+      16384
+    ],
+    "buckets_after": [
+      256,
+      256,
+      256
+    ],
+    "compaction_checks": "Exact NBT snapshots/order, both owners revision, dirty and both files unchanged; no-op then remove/rebind edit and save; second fresh JVM restores 100 and edits/saves.",
+    "logs": [
+      {
+        "stage": "dynamic-seed",
+        "file": {
+          "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-seed-stdout.log",
+          "size": 17628,
+          "sha256": "8F94D878BA02829A4A4A9F01588920D2663198B11F3728EE49CC97924816B354"
+        },
+        "pass": true,
+        "normal_save_stop": true
+      },
+      {
+        "stage": "dynamic-shrink",
+        "file": {
+          "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-shrink-stdout.log",
+          "size": 14084,
+          "sha256": "3834D3C95D6F43CE62A25013A589D5B3984C89487036C681F56279132148D636"
+        },
+        "pass": true,
+        "normal_save_stop": true
+      },
+      {
+        "stage": "dynamic-verify",
+        "file": {
+          "path": ".tooling/0401/Minecraft/DynamicServer/dynamic-verify-stdout.log",
+          "size": 13726,
+          "sha256": "646961B4D63F548F5148271E8576D21BC3BA73F5B8576AEC41E6B04CE419A9EF"
+        },
+        "pass": true,
+        "normal_save_stop": true
+      }
+    ],
+    "gc_heap_readings_used": false,
+    "earlier_harness_failure": {
+      "file": {
+        "path": ".tooling/0401/Minecraft/DynamicServer-wrong-storage/dynamic-shrink-stdout.log",
+        "size": 15456,
+        "sha256": "98E2160C3767465C06EC990BEF11E79C04F9CAE130FFEB987CEDAC30F5239CD1"
+      },
+      "cause": "Acceptance driver selected Forge perWorldStorage by type; no production change required; final driver selects MCP/SRG mapStorage and asserts same instance as normal get()",
+      "counted_as_pass": false
+    }
+  },
+  "historical_receipts": "pre-dynamic/",
+  "unclosed_acceptance_items_preserved": [
+    "V03",
+    "V04",
+    "V05",
+    "V09"
+  ]
+}

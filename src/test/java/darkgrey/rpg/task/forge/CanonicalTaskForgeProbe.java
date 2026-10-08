@@ -150,6 +150,27 @@ public final class CanonicalTaskForgeProbe {
             unrestricted.getPorts(),
             restrictedProperties);
         require(!CanonicalTaskInventory.matches(different, additional, identities), "Damage restriction narrows FUZZY");
+        require(
+            CanonicalTaskInventory.matches(exact, additional, identities),
+            "Damage restriction allows matching FUZZY member");
+        ItemStack[] filteredInventory = { exact.copy(), exact.copy(), different.copy() };
+        require(
+            CanonicalTaskInventory.count(filteredInventory, additional, identities) == 4,
+            "Filtered cross-slot count excludes other damage");
+        require(
+            !CanonicalTaskInventory.removeExact(filteredInventory, additional, identities, 5),
+            "Filtered shortage is atomic");
+        require(
+            filteredInventory[0].stackSize == 2 && filteredInventory[1].stackSize == 2
+                && filteredInventory[2].stackSize == 3,
+            "Filtered shortage preserves every slot");
+        require(
+            CanonicalTaskInventory.removeExact(filteredInventory, additional, identities, 3),
+            "Filtered removal succeeds across matching slots");
+        require(
+            CanonicalTaskInventory.count(filteredInventory, additional, identities) == 1
+                && filteredInventory[2].stackSize == 3,
+            "Filtered removal preserves excluded stack");
         ItemStack[] inventory = { exact.copy(), different.copy(), null };
         CanonicalGraphNode submit = objective("submit_item", GROUP);
         require(CanonicalTaskInventory.count(inventory, submit, identities) == 5, "Across slots");

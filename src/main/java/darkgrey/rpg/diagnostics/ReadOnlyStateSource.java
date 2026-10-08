@@ -39,7 +39,14 @@ public final class ReadOnlyStateSource {
         }
         File file = world.getSaveHandler()
             .getMapFileFromName(name);
-        return readFile(file);
+        NBTTagCompound resultFromDisk = readFile(file);
+        if (resultFromDisk != null
+            && darkgrey.rpg.session.persistence.CanonicalSessionSavedData.DATA_NAME.equals(name)) {
+            NBTTagCompound payload = (NBTTagCompound) resultFromDisk.copy();
+            payload.removeTag("diagnostic_source");
+            darkgrey.rpg.session.persistence.CanonicalSessionWorldStateNbtCodec.decode(payload);
+        }
+        return resultFromDisk;
     }
 
     static NBTTagCompound readFile(File file) throws java.io.IOException {

@@ -6,6 +6,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import darkgrey.rpg.network.DialogueNetwork;
 import darkgrey.rpg.project.packages.StoryPackageManagerPacket;
 import darkgrey.rpg.project.packages.StoryPackageManagerService;
+import darkgrey.rpg.runtime.ChatMessages;
 
 /** Open only after server authorization; stale connections and superseded openings cannot steal focus. */
 public final class ClientPackageManager {
@@ -35,6 +36,10 @@ public final class ClientPackageManager {
         Minecraft mc = Minecraft.getMinecraft();
         if (request == opening && opening != 0 && connection == mc.getNetHandler()) {
             opening = 0;
+            if (data.hasKey("error", 8) && mc.thePlayer != null) {
+                ChatMessages.error(mc.thePlayer, data.getString("error"));
+                return;
+            }
             if (mc.currentScreen == null && !data.getBoolean("denied") && !data.hasKey("error"))
                 mc.displayGuiScreen(new darkgrey.rpg.client.gui.GuiStoryPackageManager(data));
             return;

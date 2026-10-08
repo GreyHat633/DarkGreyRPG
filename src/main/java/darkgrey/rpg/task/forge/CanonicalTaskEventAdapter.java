@@ -17,6 +17,7 @@ public final class CanonicalTaskEventAdapter {
 
     private static final Logger LOG = LogManager.getLogger(CanonicalTaskEventAdapter.class);
     private final CanonicalTaskForgeManager manager;
+    private final java.util.Map<java.util.UUID, String> unavailableStories = new java.util.HashMap<java.util.UUID, String>();
 
     public CanonicalTaskEventAdapter(CanonicalTaskForgeManager manager) {
         if (manager == null) throw new IllegalArgumentException("Canonical Task manager is required.");
@@ -46,10 +47,17 @@ public final class CanonicalTaskEventAdapter {
             || event.player instanceof net.minecraftforge.common.util.FakePlayer
             || event.player.ticksExisted % 20 != 0) return;
         try {
+            darkgrey.rpg.session.persistence.CanonicalSessionSavedData.get(event.player)
+                .requireReadable();
+            unavailableStories.remove(event.player.getUniqueID());
             CanonicalTaskPlayerTransactions.recover((EntityPlayerMP) event.player);
             manager.synchronizeWorldLogic((EntityPlayerMP) event.player);
             manager.synchronizeObjectives((EntityPlayerMP) event.player);
             manager.synchronizeRewards((EntityPlayerMP) event.player);
+        } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+            String message = failure.getMessage();
+            if (!message.equals(unavailableStories.put(event.player.getUniqueID(), message)))
+                LOG.warn("Canonical Task synchronization paused: {}", message);
         } catch (RuntimeException failure) {
             LOG.warn("Canonical Task world Logic synchronization failed: {}", failure.getMessage());
         }
@@ -57,7 +65,10 @@ public final class CanonicalTaskEventAdapter {
 
     @SubscribeEvent
     public void onPlayerLogout(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event != null && event.player != null) manager.forgetSubmitChoices(event.player.getUniqueID());
+        if (event != null && event.player != null) {
+            unavailableStories.remove(event.player.getUniqueID());
+            manager.forgetSubmitChoices(event.player.getUniqueID());
+        }
     }
 
     private void dispatch(EntityPlayerMP player, CanonicalTaskEvent event) {

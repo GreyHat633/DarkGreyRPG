@@ -1,0 +1,284 @@
+{
+  "version": "0.4.0.1",
+  "recorded_at": "2026-10-08T21:37:56.5556662+08:00",
+  "baseline_commit": "be0b180008fe58f2f1a6d1724a5a06d9884e4be8",
+  "branch": "codex/0.4.0.1",
+  "head": "be0b180008fe58f2f1a6d1724a5a06d9884e4be8",
+  "implementation_source": {
+    "type": "Baseline plus physical workspace manifest including newly added/untracked files",
+    "committed": false,
+    "manifest": "evidence/compiled-inputs.json",
+    "fingerprint": "4EADF637CFD0282F9603346C92EBDEEA48D4A462F6056C4D3B5DB3368419E36E",
+    "production_fingerprint": "93FC2992101EDF4739638127A17AEAF6439642C8D9DF00AB4DFE76D9C67167FD",
+    "test_fingerprint": "A29B0E145A92769CE5D7CF4E4FDB1B3D64CF02E1305902A7D502639DA53BBBD8",
+    "build_and_verification_fingerprint": "755C4248B5C82536D683B005FE624DD82F28BA59AAE5DFF9E52013A1C5165757",
+    "input_files": 1050,
+    "hash_basis": "Physical workspace bytes; UTF-8 manifest path<TAB>size<TAB>uppercase SHA-256 joined by LF, no final LF.",
+    "documentation": "Implementation.md / Acceptance.md; kept separate from compiled production fingerprint"
+  },
+  "issue_status": {
+    "R1": "IMPLEMENTED_AND_VERIFIED_REAL_MAPSTORAGE",
+    "R2": {
+      "baseline_reproduction": "Real isolated bad files became usable empty state and were rewritten after forced dirty",
+      "protection": "PASS real loader/cache/get/write/save and integrated/dedicated representative",
+      "formal_user_world_incident_proven": false
+    },
+    "R3": "CURRENT_ASSERTIONS_EXECUTED_10_TASK_6_STORY",
+    "R4": "PARTIAL_FINITE_ACCEPTANCE_RECORDED"
+  },
+  "storage_contract": {
+    "entity_binding_limit": 4096,
+    "directory_network_limit": 512,
+    "unit": "Distinct world entity UUID records",
+    "maximum_groups_per_record": 32,
+    "maximum_local_id_ascii_length": 63,
+    "worst_case_raw_nbt_bytes": 17649756,
+    "measured_compressed_bytes": 120544,
+    "capacity_rejection": "Before either identity table mutates; net-zero/net-reducing allowed",
+    "session_failure": "Quarantine affected file and dependent execution; no empty success or write-back",
+    "protocol_changed": false,
+    "schemas": {
+      "graph": 3,
+      "session_world": 7,
+      "package": 3,
+      "nominator": 4
+    },
+    "budget_basis": "4096 is a conservative project policy; measured raw size was compared to a 32 MiB engineering reference. This is not a fixed Minecraft MapStorage read limit."
+  },
+  "tests": {
+    "runtime": {
+      "build_exit_code": 0,
+      "probes_exit_code": 0,
+      "probe_count": 30,
+      "probes": [
+        "nominatorCapacity0401Probe",
+        "sessionStorage0401Probe",
+        "canonicalTaskRuntimeProbe",
+        "canonicalStoryServerServiceProbe",
+        "b4NetworkDiscriminatorProbe",
+        "canonicalOnly0400PackageProbe",
+        "canonicalSessionClientModelProbe",
+        "canonicalSessionForgeRoutingProbe",
+        "canonicalSessionNetworkCodecProbe",
+        "canonicalSessionRuntimeProbe",
+        "canonicalSessionSavedDataProbe",
+        "canonicalSessionServerServiceProbe",
+        "canonicalTaskView0400Probe",
+        "copierTemplateActionCodecProbe",
+        "currentProject0400Probe",
+        "entityDgrIdentityResolverProbe",
+        "entityToolsStage5Probe",
+        "itemIdentitySavedDataProbe",
+        "nominator0400Probe",
+        "nominatorCurrentActions0400Probe",
+        "nominatorFailureBoundary0400Probe",
+        "nominatorItemContainerProbe",
+        "nominatorStage4Probe",
+        "npcIdentitySavedDataProbe",
+        "runtimeFontResourceRows0336Probe",
+        "taskCandidate0400Probe",
+        "canonicalTaskForgeProbe",
+        "publicOutputPriority0336Probe",
+        "construction0337Probe",
+        "taskLayout0337Probe"
+      ],
+      "method_passes": [
+        "parallelTreasuresKeepIndependentSuccessors",
+        "canonical0310TaskSemantics",
+        "parallelSequentialAndTypes",
+        "priorityAndUnconnectedFalse",
+        "activationSettlementAndPostSettlement",
+        "overflowAndParallelSameType",
+        "prerequisiteActivationSemantics",
+        "dormantUnselectedObjectiveSemantics",
+        "immutableSnapshotRestore",
+        "malformedFailsClosed",
+        "entrySessionTerminationAndRestart",
+        "typedTriggerSelection",
+        "durableConditionResume",
+        "errorCancelsSessionChildren",
+        "packageUninstallClearsRuntimeInstances",
+        "repeatEntryGates"
+      ],
+      "logs": [
+        {
+          "path": ".tooling/0401/VerifiedDeliveredFinal/build.log",
+          "size": 3081,
+          "sha256": "36052DF0D97917A32D1D4BAE1D143CE14176DF1305294448E4BE8701B2B6C7D4"
+        },
+        {
+          "path": ".tooling/0401/VerifiedDeliveredFinal/probes.log",
+          "size": 71240,
+          "sha256": "2B266B1F88B382AEB71E8626BAE86757E847C19017C120414F6F916CD86CBD33"
+        }
+      ]
+    },
+    "core": {
+      "file": {
+        "path": ".tooling/0401/Tests/core-complete.trx",
+        "size": 682166,
+        "sha256": "CA2E02593C877457CFD757980568B15EB421FCB8CFB326B41BB26B30445EEC4E"
+      },
+      "outcome": "Completed",
+      "total": 510,
+      "passed": 510,
+      "failed": 0,
+      "skipped": [],
+      "results_count": 510,
+      "start": "2026-10-08T19:30:58.3990879+08:00",
+      "finish": "2026-10-08T19:31:04.9829988+08:00"
+    },
+    "wpf": {
+      "file": {
+        "path": ".tooling/0401/Tests/wpf-complete.trx",
+        "size": 924028,
+        "sha256": "6932C80B5E33B9912A976302CD1AB12070816AFF0FB37CC77E3653EA07FBBA4B"
+      },
+      "outcome": "Completed",
+      "total": 668,
+      "passed": 667,
+      "failed": 0,
+      "skipped": [
+        {
+          "name": "FixedThreeHundredNodeWorkload",
+          "reason": "Assert.Inconclusive 失败。Opt-in scale comparison"
+        }
+      ],
+      "results_count": 668,
+      "start": "2026-10-08T19:11:25.1106862+08:00",
+      "finish": "2026-10-08T19:20:59.7652131+08:00"
+    },
+    "historical_attempts": "Baseline failures, interrupted WPF runs and superseded candidates remain local; they are excluded from final PASS counts."
+  },
+  "native_matrix": {
+    "document": "Acceptance.md",
+    "summary": "evidence/native-summary.json",
+    "verification": "evidence/verification-summary.json",
+    "counts": {
+      "BLOCKED": 1,
+      "N/A_NO_AUTHORING_ENTRY": 1,
+      "NOT_RUN": 3,
+      "PASS": 37
+    },
+    "normal_exports_and_controlled_filter_are_separate": true,
+    "older_native_candidate_class_identity": "evidence/final-runtime-delta.json"
+  },
+  "acceptance_exceptions": [
+    {
+      "id": "V01",
+      "status": "N/A_NO_AUTHORING_ENTRY",
+      "evidence_levels": [
+        "A",
+        "W"
+      ],
+      "result": "Task metadata/damage 无正式作者控件／setter；只豁免填字段步骤，不新增 UI"
+    },
+    {
+      "id": "V03",
+      "status": "NOT_RUN",
+      "evidence_levels": [
+        "H"
+      ],
+      "result": "未收到实际人员／设备听音确认；语音、BGM、静音、分页／冷恢复不重播均不能由日志签署"
+    },
+    {
+      "id": "V04",
+      "status": "BLOCKED",
+      "evidence_levels": [
+        "M"
+      ],
+      "result": "开发客户端加载真实锁定 CNPC JAR，初始化 NoSuchFieldError field_78804_l；未进世界，未改第三方包"
+    },
+    {
+      "id": "V05",
+      "status": "NOT_RUN",
+      "evidence_levels": [
+        "A",
+        "M"
+      ],
+      "result": "指名／工具自动、命令、包 GUI、实际 CNPC 拒绝代表已跑；直接 Live Bridge／只读诊断故障请求未注入，不宣称所有边界完成"
+    },
+    {
+      "id": "V09",
+      "status": "NOT_RUN",
+      "evidence_levels": [
+        "A",
+        "M"
+      ],
+      "result": "自动锁存／提交／奖励／Disabled／零结算通过；受控过滤包真实一次 7 XP、reload／保存通过；正常未注入包的完整库存奖励、Disabled 新旧实例和零结算游戏组合尚未跑完"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "build/libs/darkgrey_rpg-0.4.0.1.jar",
+      "size": 1848410,
+      "sha256": "B2A2DFE7F83570D77BD40DCA96C8A048B8B3069397CD1C302342981B94130896",
+      "product_version": null
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
+      "size": 204288,
+      "sha256": "BC82D7805D0D0C91930814CBABFA075CFA421D76F509B892523BD09837CA6E6A",
+      "product_version": "0.4.0.1"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPGStudio.dll",
+      "size": 1458688,
+      "sha256": "81A82BF0851666AA1783DDB5D7BD84B2D0BE913D44786B5DC04FD18CE1B044FC",
+      "product_version": "0.4.0.1"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPG.Studio.Core.dll",
+      "size": 1108480,
+      "sha256": "C6776C09BF7561289D34BF7F802EF4078A456D56266D4CB043F8D8FC535D4F7E",
+      "product_version": "0.4.0.1+be0b180008fe58f2f1a6d1724a5a06d9884e4be8"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Docs/StudioProgramFiles.json",
+      "size": 19562,
+      "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5",
+      "product_version": null
+    }
+  ],
+  "additional_dev_jar": {
+    "path": "build/libs/darkgrey_rpg-0.4.0.1-dev.jar",
+    "size": 1828527,
+    "sha256": "0C38EC6802D03D4A908343B1AE637C0C49B2FD1B5355D4FCB29CF6E9FC59EDC7",
+    "scope": "MCP development artifact; actual locked CNPC startup remains blocked"
+  },
+  "authoritative_studio": {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+    "product_version": "0.4.0.1",
+    "size": 204288,
+    "sha256": "BC82D7805D0D0C91930814CBABFA075CFA421D76F509B892523BD09837CA6E6A",
+    "program_files_checked": 410,
+    "candidate_program_match": true,
+    "post_acceptance_readback": "2026-10-08T21:37:56.7473614+08:00"
+  },
+  "data_preservation": {
+    "user_confirmed_saved_closed": true,
+    "target_exit_evidence": "evidence/0401-authority-exit-before-promotion.json",
+    "deployment_only_replaced_program_files": true,
+    "files": 2690,
+    "bytes": 68773074.0,
+    "path_size_sha256_equal": true,
+    "raw_inventories_local_only": true,
+    "after_acceptance_readback_equal": true,
+    "authoritative_app_not_launched_for_testing": true,
+    "fault_injection_root": ".tooling/0401"
+  },
+  "implementation_status": "COMPLETE_R1_R2_R3",
+  "acceptance_status": "INCOMPLETE_H_DEV_CNPC_AND_NATIVE_REQUEST_STATE_COMBINATIONS",
+  "delivery_status": "AUTHORITATIVE_DEVELOPMENT_DIST_UPDATED",
+  "user_accepted": false,
+  "source_upload": false,
+  "release": {
+    "authorized": false,
+    "finished_product_created": false,
+    "pushed": false,
+    "tag_created_or_moved": false,
+    "github_release_created_or_modified": false
+  },
+  "rollback": "Restore matched program plus world/DGR data backup. A >512-record .1 table is not guaranteed readable by .0; do not downgrade JAR alone or truncate bindings.",
+  "documentation_correction": "evidence/storage-budget-correction.json; production bytes unchanged"
+}

@@ -97,23 +97,34 @@ public final class NominatorService {
                         entityType == null ? "unknown" : entityType,
                         dimension);
                     String currentNpcId = identities.getNpcId(entityUuid);
-                    if (individual == null) {
-                        if (currentNpcId != null) identities.unbindHost(entityUuid);
-                    } else {
-                        NpcHostIdentity occupiedHost = identities.getHost(individual);
-                        if (occupiedHost != null && !entityUuid.equals(occupiedHost.getEntityUuid())) {
-                            if (!transfer) return NominatorResult.rejected("conflict", "角色绑定已被占用；必须明确执行转移。");
-                            identities.transfer(individual, host);
-                            clearTransferredHostSelection(occupiedHost.getEntityUuid(), selections);
-                        } else if (currentNpcId != null && !individual.equals(currentNpcId)) {
-                            return NominatorResult.rejected("conflict", "该实体已经绑定另一个角色。");
+                    NpcHostIdentity occupiedHost = individual == null ? null : identities.getHost(individual);
+                    boolean movesHost = occupiedHost != null && !entityUuid.equals(occupiedHost.getEntityUuid());
+                    if (movesHost && !transfer) return NominatorResult.rejected("conflict", "角色绑定已被占用；必须明确执行转移。");
+                    if (individual != null && currentNpcId != null && !individual.equals(currentNpcId))
+                        return NominatorResult.rejected("conflict", "该实体已经绑定另一个角色。");
+                    selections.beginBatch();
+                    boolean committed = false;
+                    try {
+                        if (individual == null) {
+                            if (currentNpcId != null) identities.unbindHost(entityUuid);
                         } else {
-                            if (currentNpcId == null) identities.bind(individual, host);
-                            else identities.observe(host);
+                            if (occupiedHost != null && !entityUuid.equals(occupiedHost.getEntityUuid())) {
+                                if (!transfer) return NominatorResult.rejected("conflict", "角色绑定已被占用；必须明确执行转移。");
+                                identities.transfer(individual, host);
+                                clearTransferredHostSelection(occupiedHost.getEntityUuid(), selections);
+                            } else if (currentNpcId != null && !individual.equals(currentNpcId)) {
+                                return NominatorResult.rejected("conflict", "该实体已经绑定另一个角色。");
+                            } else {
+                                if (currentNpcId == null) identities.bind(individual, host);
+                                else identities.observe(host);
+                            }
                         }
+                        if (individual == null && groups.isEmpty()) selections.remove(entityUuid);
+                        else if (!selectionSame) selections.put(candidate);
+                        committed = true;
+                    } finally {
+                        selections.endBatch(committed);
                     }
-                    if (individual == null && groups.isEmpty()) selections.remove(entityUuid);
-                    else if (!selectionSame) selections.put(candidate);
                 }
             }
             return NominatorResult.accepted("实体指名已保存。");
@@ -132,28 +143,36 @@ public final class NominatorService {
         boolean changed = false;
         synchronized (identities) {
             synchronized (selections) {
-                if (actor.isIndividual()) {
-                    changed = identities.unbindNpcId(id);
-                    for (NominatorEntityBinding b : selections.bindings()) {
-                        if (id.equals(b.getIndividualId())) {
-                            clearTransferredHostSelection(b.getEntityUuid(), selections);
-                            changed = true;
+                selections.beginBatch();
+                boolean committed = false;
+                try {
+                    if (actor.isIndividual()) {
+                        changed = identities.unbindNpcId(id);
+                        for (NominatorEntityBinding b : selections.bindings()) {
+                            if (id.equals(b.getIndividualId())) {
+                                clearTransferredHostSelection(b.getEntityUuid(), selections);
+                                changed = true;
+                            }
+                        }
+                    } else {
+                        for (NominatorEntityBinding b : selections.bindings()) {
+                            List<String> groups = new ArrayList<String>(b.getGroupIds());
+                            if (groups.remove(id)) {
+                                if (groups.isEmpty() && b.getIndividualId() == null)
+                                    selections.remove(b.getEntityUuid());
+                                else selections.put(
+                                    new NominatorEntityBinding(
+                                        b.getEntityUuid(),
+                                        b.getIndividualId(),
+                                        groups,
+                                        b.getStoryId()));
+                                changed = true;
+                            }
                         }
                     }
-                } else {
-                    for (NominatorEntityBinding b : selections.bindings()) {
-                        List<String> groups = new ArrayList<String>(b.getGroupIds());
-                        if (groups.remove(id)) {
-                            if (groups.isEmpty() && b.getIndividualId() == null) selections.remove(b.getEntityUuid());
-                            else selections.put(
-                                new NominatorEntityBinding(
-                                    b.getEntityUuid(),
-                                    b.getIndividualId(),
-                                    groups,
-                                    b.getStoryId()));
-                            changed = true;
-                        }
-                    }
+                    committed = true;
+                } finally {
+                    selections.endBatch(committed);
                 }
             }
         }

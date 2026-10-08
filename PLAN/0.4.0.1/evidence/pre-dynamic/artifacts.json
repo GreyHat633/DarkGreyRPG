@@ -1,0 +1,32 @@
+[
+  {
+    "path": "build/libs/darkgrey_rpg-0.4.0.1.jar",
+    "size": 1848410,
+    "sha256": "B2A2DFE7F83570D77BD40DCA96C8A048B8B3069397CD1C302342981B94130896",
+    "product_version": null
+  },
+  {
+    "path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
+    "size": 204288,
+    "sha256": "BC82D7805D0D0C91930814CBABFA075CFA421D76F509B892523BD09837CA6E6A",
+    "product_version": "0.4.0.1"
+  },
+  {
+    "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPGStudio.dll",
+    "size": 1458688,
+    "sha256": "81A82BF0851666AA1783DDB5D7BD84B2D0BE913D44786B5DC04FD18CE1B044FC",
+    "product_version": "0.4.0.1"
+  },
+  {
+    "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPG.Studio.Core.dll",
+    "size": 1108480,
+    "sha256": "C6776C09BF7561289D34BF7F802EF4078A456D56266D4CB043F8D8FC535D4F7E",
+    "product_version": "0.4.0.1+be0b180008fe58f2f1a6d1724a5a06d9884e4be8"
+  },
+  {
+    "path": "dist/DarkGreyRPGStudio/Docs/StudioProgramFiles.json",
+    "size": 19562,
+    "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5",
+    "product_version": null
+  }
+]

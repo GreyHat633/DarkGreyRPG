@@ -146,6 +146,9 @@ public final class DarkGreyRpg {
             .register(new MainThreadScheduler());
         FMLCommonHandler.instance()
             .bus()
+            .register(new darkgrey.rpg.nominator.NominatorCapacityMaintenance());
+        FMLCommonHandler.instance()
+            .bus()
             .register(storyEventAdapter);
         FMLCommonHandler.instance()
             .bus()
@@ -177,10 +180,18 @@ public final class DarkGreyRpg {
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         darkgrey.rpg.story.canonical.forge.CanonicalBuffCatalog.rebuild();
-        if (packageStartup != null && packageStartup.isPackageSetCommitted()) StoryPackageGenerationLifecycle.reconcile(
-            event.getServer()
-                .worldServerForDimension(0).mapStorage,
-            storyPackageLoader.getPackages());
+        if (packageStartup != null && packageStartup.isPackageSetCommitted()) {
+            try {
+                StoryPackageGenerationLifecycle.reconcile(
+                    event.getServer()
+                        .worldServerForDimension(0).mapStorage,
+                    storyPackageLoader.getPackages());
+            } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+                LOG.error(
+                    "Session/Story data is quarantined; package generation reconciliation was not applied. Server startup continues.",
+                    failure);
+            }
+        }
         event.registerServerCommand(
             new CommandDarkGreyRpg(
                 projectRepository,
@@ -204,6 +215,7 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
+        darkgrey.rpg.nominator.NominatorCapacityMaintenance.clear();
         if (liveBridge != null) {
             liveBridge.stop();
             liveBridge = null;

@@ -506,6 +506,10 @@ public final class CanonicalSessionServerServiceProbe {
                 loaded.readFromNBT(malformed);
             }
         }, "truncated Line context");
+        reject(() -> loaded.getSnapshot(PLAYER, line.getStoryId()), "failed context reread quarantines live getters");
+        reject(() -> loaded.writeToNBT(new NBTTagCompound()), "failed context reread quarantines writer");
+        loaded.readFromNBT(nbt);
+        new CanonicalSessionServerService(project, loaded, resolver);
         require(
             loaded.lineContext(loaded.getSnapshot(PLAYER, line.getStoryId()))
                 .getText()

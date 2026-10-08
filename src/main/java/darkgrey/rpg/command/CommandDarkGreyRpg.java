@@ -115,6 +115,10 @@ public final class CommandDarkGreyRpg extends CommandBase {
             executeCommand(sender, arguments);
         } catch (darkgrey.rpg.nominator.NominatorDataUnavailableException failure) {
             ChatMessages.error(sender, darkgrey.rpg.nominator.NominatorDataUnavailableException.PLAYER_MESSAGE);
+        } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+            ChatMessages.error(
+                sender,
+                darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException.PLAYER_MESSAGE);
         }
     }
 

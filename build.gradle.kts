@@ -2,6 +2,37 @@ plugins {
     id("com.gtnewhorizons.gtnhconvention")
 }
 
+tasks.register<JavaExec>("storageBaseline0401Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.nominator.StorageBaseline0401Probe")
+}
+
+tasks.register<JavaExec>("nominatorCapacity0401Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.nominator.NominatorCapacity0401Probe")
+}
+
+tasks.register<JavaExec>("sessionStorage0401Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.session.persistence.SessionStorage0401Probe")
+}
+
+tasks.register<Jar>("storageServer0401DriverJar") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    from(layout.buildDirectory.dir("classes/java/test")) {
+        include("darkgrey/rpg/persistence/StorageServer0401Driver*.class")
+    }
+    archiveFileName.set("dgr0401-isolated-storage-driver.jar")
+    destinationDirectory.set(layout.projectDirectory.dir(".tooling/0401/Driver"))
+}
+
 tasks.register<JavaExec>("construction0335Probe") {
     group = "verification"
     dependsOn(tasks.testClasses)

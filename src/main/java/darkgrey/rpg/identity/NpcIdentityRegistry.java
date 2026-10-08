@@ -3,16 +3,39 @@ package darkgrey.rpg.identity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.LongSupplier;
 
 /** Server-authoritative one-to-one mapping between DGR NPC IDs and real hosts. */
 public final class NpcIdentityRegistry {
 
-    private final Map<String, NpcHostIdentity> byNpcId = new LinkedHashMap<String, NpcHostIdentity>();
-    private final Map<UUID, String> byHostUuid = new LinkedHashMap<UUID, String>();
+    private CompactBindingMap<String, NpcHostIdentity> byNpcId = new CompactBindingMap<String, NpcHostIdentity>();
+    private CompactBindingMap<UUID, String> byHostUuid = new CompactBindingMap<UUID, String>();
+    private final BindingCapacity capacity;
+
+    public NpcIdentityRegistry() {
+        this(System::nanoTime);
+    }
+
+    public NpcIdentityRegistry(LongSupplier clock) {
+        capacity = new BindingCapacity(clock);
+    }
+
+    private void countChanged() {
+        capacity.changed(size(), byNpcId.canCompact() || byHostUuid.canCompact());
+    }
+
+    public synchronized boolean maintainMemory() {
+        if (!capacity.maintenanceDue(size(), byNpcId.canCompact() || byHostUuid.canCompact())) return false;
+        CompactBindingMap<String, NpcHostIdentity> forward = byNpcId.compacted();
+        CompactBindingMap<UUID, String> reverse = byHostUuid.compacted();
+        byNpcId = forward;
+        byHostUuid = reverse;
+        capacity.maintenanceComplete(size());
+        return true;
+    }
 
     /**
      * Binds a free NPC ID to a free host. Repeating the exact operation is
@@ -32,6 +55,7 @@ public final class NpcIdentityRegistry {
         }
         byNpcId.put(validId, host);
         byHostUuid.put(host.getEntityUuid(), validId);
+        countChanged();
         return true;
     }
 
@@ -67,6 +91,7 @@ public final class NpcIdentityRegistry {
         NpcHostIdentity removed = byNpcId.remove(validId);
         if (removed == null) return false;
         byHostUuid.remove(removed.getEntityUuid());
+        countChanged();
         return true;
     }
 
@@ -75,6 +100,7 @@ public final class NpcIdentityRegistry {
         String npcId = byHostUuid.remove(hostUuid);
         if (npcId == null) return false;
         byNpcId.remove(npcId);
+        countChanged();
         return true;
     }
 
@@ -114,15 +140,18 @@ public final class NpcIdentityRegistry {
             if (!candidate.bind(binding.getNpcId(), binding.getHost())) throw new NpcIdentityConflictException(
                 "Duplicate persisted NPC binding for '" + binding.getNpcId() + "'.");
         }
-        byNpcId.clear();
-        byHostUuid.clear();
+        CompactBindingMap<String, NpcHostIdentity> forward = new CompactBindingMap<String, NpcHostIdentity>();
+        CompactBindingMap<UUID, String> reverse = new CompactBindingMap<UUID, String>();
         for (Binding binding : candidate.bindings()) {
-            byNpcId.put(binding.getNpcId(), binding.getHost());
-            byHostUuid.put(
+            forward.put(binding.getNpcId(), binding.getHost());
+            reverse.put(
                 binding.getHost()
                     .getEntityUuid(),
                 binding.getNpcId());
         }
+        byNpcId = forward;
+        byHostUuid = reverse;
+        capacity.loaded(size());
     }
 
     public static String requireId(String npcId) {

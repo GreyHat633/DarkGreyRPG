@@ -25,6 +25,10 @@ public final class LiveStateSnapshotBuilder {
 
     /** Production projection reads only Canonical state; it never instantiates legacy player SavedData. */
     private JsonObject canonicalSnapshot() {
+        MinecraftServer currentServer = MinecraftServer.getServer();
+        if (currentServer != null) darkgrey.rpg.session.persistence.CanonicalSessionSavedData
+            .get(currentServer.worldServerForDimension(0).mapStorage)
+            .requireReadable();
         JsonObject root = new JsonObject();
         root.addProperty("type", "state.snapshot");
         root.addProperty(

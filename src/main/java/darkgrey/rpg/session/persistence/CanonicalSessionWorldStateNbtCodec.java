@@ -240,6 +240,22 @@ public final class CanonicalSessionWorldStateNbtCodec {
         requireType(root, CONTINUATIONS_KEY, LIST);
         List<CanonicalSessionInstanceSnapshot> sessions = CanonicalSessionInstanceNbtCodec
             .decode(root.getCompoundTag(SESSIONS_KEY));
+        if (root.hasKey("line_contexts", COMPOUND)) {
+            Map<Long, CanonicalSessionInstanceSnapshot> transports = new LinkedHashMap<Long, CanonicalSessionInstanceSnapshot>();
+            for (CanonicalSessionInstanceSnapshot snapshot : sessions)
+                transports.put(snapshot.getTransportId(), snapshot);
+            NBTTagCompound contexts = root.getCompoundTag("line_contexts");
+            for (String key : contexts.func_150296_c()) {
+                darkgrey.rpg.network.message.canonical.CanonicalSessionFrame frame = CanonicalSessionSavedData
+                    .decodeLineContext(contexts.getByteArray(key));
+                CanonicalSessionInstanceSnapshot snapshot = transports.get(frame.getTransportId());
+                if (snapshot == null || !snapshot.getStoryId()
+                    .equals(frame.getStoryId())
+                    || !snapshot.getSessionResourceId()
+                        .equals(frame.getSessionResourceId()))
+                    throw malformed("Line context Session identity");
+            }
+        }
         Set<String> sessionIdentities = new HashSet<String>();
         for (CanonicalSessionInstanceSnapshot session : sessions)
             sessionIdentities.add(identity(session.getPlayerUuid(), session.getStoryId()));
