@@ -105,7 +105,7 @@
   "remote_release_modified": false,
   "user_accepted": false,
   "scope_status": "APPROVED",
-  "implementation_commit": null,
+  "implementation_commit": "99f3df91de56fd8ffc6122414988fcac06f777ff",
   "legacy_business_compatibility": false,
   "multi_minecraft_version_work": false,
   "retirement_inventory_status": "APPROVED_RETIREMENTS_DETACHED_AND_REMOVED_AUDIT_ONLY_DECISIONS_RECORDED",
@@ -210,5 +210,14 @@
     "status": "IMPLEMENTED_AND_VALIDATED",
     "summary": "SixPreUploadFixes.md",
     "validation_receipt": "evidence/six-fixes-delivery-validation-receipt.json"
+  },
+  "source_upload": {
+    "branch": "codex/0.4.0.0",
+    "repository": "https://github.com/GreyHat633/DarkGreyRPG",
+    "implementation_commit": "99f3df91de56fd8ffc6122414988fcac06f777ff",
+    "verification": "Remote branch SHA must match final local HEAD",
+    "scope_audit": "evidence/six-fixes-github-upload-scope-audit.json",
+    "upload_receipt": "evidence/six-fixes-github-upload-receipt.json",
+    "generated_artifacts_in_upload": false
   }
 }
