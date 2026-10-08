@@ -28,6 +28,8 @@
 /PLAN/0.3.3.7/evidence/
 /PLAN/0.3.3.7/Tests/
 /PLAN/0.3.x.x-Closeout/evidence/
+# Local 0.4.0.0 machine evidence; source uploads carry the verification summaries.
+/PLAN/0.4.0.0/evidence/
 **/bin/
 **/obj/
 **/.godot/

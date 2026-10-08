@@ -8,8 +8,6 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Items;
-using DarkGreyRPG.Studio.Core.Quests;
-using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Core.Packaging;
 
@@ -190,14 +188,11 @@ public static class OfflineDgrsPackageReader
         {
             switch (kind)
             {
-                case DgrResourceKind.Story when sourcePath.StartsWith("resources/canonical/", StringComparison.Ordinal):
+                case DgrResourceKind.Story:
                 case DgrResourceKind.Session:
                 case DgrResourceKind.Task:
                     var envelope = GraphResourceEnvelopeSerializer.Deserialize(json);
                     return (envelope.Id, envelope.DisplayName);
-                case DgrResourceKind.Story:
-                    var story = StorySerializer.Deserialize(json);
-                    return (story.Id, story.DisplayName);
                 case DgrResourceKind.Actor:
                     var actor = ActorSerializer.Deserialize(json);
                     return (actor.Id, actor.DisplayName);
@@ -210,14 +205,9 @@ public static class OfflineDgrsPackageReader
                     return (item is IndividualItemResource individual ? individual.ItemId : ((CollectiveItemResource)item).GroupId, item.DisplayName);
             }
         }
-        catch (Exception exception) when (exception is ActorValidationException or ActorDataException or ItemValidationException or ItemDataException or StoryValidationException or StoryDataException or GraphResourceEnvelopeException)
+        catch (Exception exception) when (exception is ActorValidationException or ActorDataException or ItemValidationException or ItemDataException or GraphResourceEnvelopeException)
         { throw new StoryPackageException($"DGRS {kind} definition '{sourcePath}' is invalid.", exception); }
-        using var document = JsonDocument.Parse(bytes);
-        var root = document.RootElement;
-        var id = root.TryGetProperty("id", out var bareId) ? bareId.GetString() : null;
-        var display = root.TryGetProperty("display_name", out var name) ? name.GetString() : null;
-        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(display)) throw new StoryPackageException($"DGRS {kind} definition '{sourcePath}' has no identity.");
-        return (id!, display!);
+        throw new StoryPackageException($"Unsupported DGRS resource kind {kind} in '{sourcePath}'.");
     }
 
     private static IEnumerable<(string Role, string Path)> RequiredRecords(StoryPackageManifest manifest)
@@ -227,8 +217,6 @@ public static class OfflineDgrsPackageReader
         foreach (var path in manifest.RequiredResources.Actors) yield return ("actor", path);
         foreach (var path in manifest.RequiredResources.Items) yield return ("item", path);
         foreach (var path in manifest.RequiredResources.ItemGroups) yield return ("item_group", path);
-        foreach (var path in manifest.RequiredResources.Dialogues) yield return ("dialogue", path);
-        foreach (var path in manifest.RequiredResources.Quests) yield return ("quest", path);
         foreach (var path in manifest.RequiredResources.CanonicalStories) yield return ("canonical_story", path);
         foreach (var path in manifest.RequiredResources.CanonicalMemberships) yield return ("canonical_membership", path);
         foreach (var path in manifest.RequiredResources.Sessions) yield return ("session", path);

@@ -37,7 +37,7 @@ public sealed partial class ProjectGraphViewModel
         {
             LogicEditorError = "无法读取故事输出端口：" + exception.Message;
         }
-        SelectedOutputs = _outputSource is null ? null : new PublicOutputsViewModel(_outputSource.Host, false, CanonicalHost);
+        SelectedOutputs = _outputSource is null ? null : new PublicOutputsViewModel(_outputSource.Host, true, CanonicalHost);
         if (_outputSource is not null) _outputSource.Host.GraphChanged += OnOutputSourceChanged;
         OnPropertyChanged(nameof(SelectedOutputs));
     }
@@ -176,7 +176,7 @@ public sealed partial class ProjectGraphViewModel
                 edge.InterfaceKind == "Flow" ? GraphInterfaceKind.Flow : GraphInterfaceKind.Logic);
             if (!CanonicalHost.Graph.Connections.Contains(connection)) CanonicalHost.Graph.Connections.Add(connection);
         }
-        CanonicalHost.Refresh();
+        CanonicalHost.RefreshProjectedStoryBoundaries(nextIds.ToArray());
         StoryGroups = DeriveStoryGroups();
         SyncStoryGroupFrames();
         OnPropertyChanged(nameof(StoryGroups));

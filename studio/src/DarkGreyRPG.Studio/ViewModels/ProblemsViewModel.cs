@@ -25,8 +25,11 @@ public sealed class ProblemsViewModel : ObservableObject
 {
     public ProblemsViewModel()
     {
+        ClearCommand = new RelayCommand(ClearAll, () => HasProblems);
         Problems.CollectionChanged += OnProblemsChanged;
     }
+
+    public RelayCommand ClearCommand { get; }
 
     public ObservableCollection<ProblemItem> Problems { get; } = [];
 
@@ -145,5 +148,6 @@ public sealed class ProblemsViewModel : ObservableObject
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(HasProblems));
         OnPropertyChanged(nameof(HasErrors));
+        ClearCommand.RaiseCanExecuteChanged();
     }
 }

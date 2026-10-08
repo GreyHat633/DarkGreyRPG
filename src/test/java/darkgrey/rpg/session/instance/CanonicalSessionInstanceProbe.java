@@ -33,10 +33,11 @@ public final class CanonicalSessionInstanceProbe {
 
     public static void main(String[] args) {
         pageCursorPersistence();
-        CanonicalGraphResource choice = choiceResource("choice-session");
-        CanonicalGraphResource linear = linearResource("linear-session");
+        CanonicalGraphResource choice = choiceResource("ST-2345-6789-ABCD-EFGH~session~choice_session");
+        CanonicalGraphResource linear = linearResource("ST-2345-6789-ABCD-EFGH~session~linear_session");
         CanonicalSessionInstanceStore store = new CanonicalSessionInstanceStore();
-        CanonicalSessionInstance active = store.start(PLAYER_ONE, "choice-story", "choice-placement", choice);
+        CanonicalSessionInstance active = store
+            .start(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", "choice-placement", choice, true);
         require(
             active.getCurrentStep()
                 .getKind() == CanonicalSessionStep.Kind.CHOICE,
@@ -48,35 +49,35 @@ public final class CanonicalSessionInstanceProbe {
 
             @Override
             public void run() {
-                store.selectChoice(PLAYER_TWO, "choice-story", 1L, "choice", "left");
+                store.selectChoice(PLAYER_TWO, "ST-2345-6789-ABCD-EFGH", 1L, "choice", "left");
             }
         }, "forged player");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                store.selectChoice(PLAYER_ONE, "wrong-story", 1L, "choice", "left");
+                store.selectChoice(PLAYER_ONE, "ST-5678-9ABC-DEFG-HJKL", 1L, "choice", "left");
             }
         }, "forged story");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                store.selectChoice(PLAYER_ONE, "choice-story", 99L, "choice", "left");
+                store.selectChoice(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 99L, "choice", "left");
             }
         }, "stale transport");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                store.selectChoice(PLAYER_ONE, "choice-story", 1L, "wrong-node", "left");
+                store.selectChoice(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 1L, "wrong-node", "left");
             }
         }, "stale node");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                store.selectChoice(PLAYER_ONE, "choice-story", 1L, "choice", "missing");
+                store.selectChoice(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 1L, "choice", "missing");
             }
         }, "unknown option");
         require(
@@ -88,14 +89,14 @@ public final class CanonicalSessionInstanceProbe {
 
             @Override
             public void run() {
-                store.selectChoice(null, "choice-story", 1L, "choice", "left");
+                store.selectChoice(null, "ST-2345-6789-ABCD-EFGH", 1L, "choice", "left");
             }
         }, "null player");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                store.continueLine(PLAYER_ONE, "choice-story", 1L, null);
+                store.continueLine(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 1L, null);
             }
         }, "null node");
         require(
@@ -104,7 +105,7 @@ public final class CanonicalSessionInstanceProbe {
                     .toString()),
             "null action mutated state");
 
-        store.selectChoice(PLAYER_ONE, "choice-story", 1L, "choice", "right");
+        store.selectChoice(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 1L, "choice", "right");
         require(active.isCompleted(), "Choice completion");
         require(
             active.getRuntime()
@@ -122,11 +123,13 @@ public final class CanonicalSessionInstanceProbe {
             Boolean.TRUE.equals(
                 active.getRuntime()
                     .getPublicLogicOutputs()
-                    .get("picked_right")),
+                    .get("activation_gate")),
             "public Logic output");
 
-        CanonicalSessionInstance otherStory = store.start(PLAYER_ONE, "other-story", "other-placement", linear);
-        CanonicalSessionInstance otherPlayer = store.start(PLAYER_TWO, "choice-story", "player-placement", choice);
+        CanonicalSessionInstance otherStory = store
+            .start(PLAYER_ONE, "ST-JKLM-NPQR-STUV-WXYZ", "other-placement", linear);
+        CanonicalSessionInstance otherPlayer = store
+            .start(PLAYER_TWO, "ST-2345-6789-ABCD-EFGH", "player-placement", choice);
         require(
             otherStory.getTransportId() > active.getTransportId()
                 && otherPlayer.getTransportId() > otherStory.getTransportId(),
@@ -137,7 +140,7 @@ public final class CanonicalSessionInstanceProbe {
 
             @Override
             public void run() {
-                store.start(PLAYER_ONE, "choice-story", "replacement", choice);
+                store.start(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", "replacement", choice);
             }
         }, "duplicate same Story");
         require(
@@ -171,29 +174,32 @@ public final class CanonicalSessionInstanceProbe {
         CanonicalSessionInstanceStore restored = new CanonicalSessionInstanceStore();
         restored.readFromNbt(encoded, new Resolver(choice, linear));
         require(
-            restored.size() == 3 && restored.get(PLAYER_ONE, "choice-story")
+            restored.size() == 3 && restored.get(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH")
                 .isCompleted(),
             "active/completed restart");
         require(
-            restored.get(PLAYER_TWO, "choice-story")
+            restored.get(PLAYER_TWO, "ST-2345-6789-ABCD-EFGH")
                 .getCurrentStep()
                 .getKind() == CanonicalSessionStep.Kind.CHOICE,
             "active restart cursor");
         require(
-            restored.start(PLAYER_TWO, "new-story", "new-placement", linear)
+            restored.start(PLAYER_TWO, "ST-AAAA-BBBB-CCCC-DDDD", "new-placement", linear)
                 .getTransportId() == 4L,
             "restart monotonicity");
-        require(restored.consume(PLAYER_ONE, "choice-story", 1L), "explicit consume");
-        require(!restored.consume(PLAYER_ONE, "choice-story", 1L), "consume idempotence");
-        require(!restored.consume(PLAYER_ONE, "other-story", 2L), "active consume fails closed");
+        require(restored.consume(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 1L), "explicit consume");
+        require(!restored.consume(PLAYER_ONE, "ST-2345-6789-ABCD-EFGH", 1L), "consume idempotence");
+        require(!restored.consume(PLAYER_ONE, "ST-JKLM-NPQR-STUV-WXYZ", 2L), "active consume fails closed");
         CanonicalSessionInstanceStore consumedStore = new CanonicalSessionInstanceStore();
-        CanonicalSessionInstance consumed = consumedStore.start(PLAYER_ONE, "consume", "consume-placement", linear);
-        consumedStore.continueLine(PLAYER_ONE, "consume", consumed.getTransportId(), "line");
-        require(consumedStore.consume(PLAYER_ONE, "consume", consumed.getTransportId()), "consume completed");
+        CanonicalSessionInstance consumed = consumedStore
+            .start(PLAYER_ONE, "ST-2222-3333-4444-5555", "consume-placement", linear);
+        consumedStore.continueLine(PLAYER_ONE, "ST-2222-3333-4444-5555", consumed.getTransportId(), "line");
+        require(
+            consumedStore.consume(PLAYER_ONE, "ST-2222-3333-4444-5555", consumed.getTransportId()),
+            "consume completed");
         CanonicalSessionInstanceStore consumedRestart = new CanonicalSessionInstanceStore();
         consumedRestart.readFromNbt(consumedStore.writeToNbt(), new Resolver(choice, linear));
         require(
-            consumedRestart.start(PLAYER_ONE, "fresh", "fresh-placement", linear)
+            consumedRestart.start(PLAYER_ONE, "ST-3456-789A-BCDE-FGHJ", "fresh-placement", linear)
                 .getTransportId() == 2L,
             "empty-after-consume counter");
 
@@ -363,9 +369,9 @@ public final class CanonicalSessionInstanceProbe {
             ports(port("flow_out", false, false), port("logic_out", false, true)),
             new HashMap<String, JsonElement>());
         Map<String, JsonElement> lineProperties = new HashMap<String, JsonElement>();
-        lineProperties.put("speaker_actor_id", json("actor"));
+        lineProperties.put("speaker_actor_id", json("ST-2345-6789-ABCD-EFGH~actor~actor"));
         lineProperties.put("text", json("Hello"));
-        if ("page-session".equals(id)) {
+        if ("ST-2345-6789-ABCD-EFGH~session~page_session".equals(id)) {
             lineProperties.remove("text");
             lineProperties.put(
                 "pages",
@@ -388,10 +394,10 @@ public final class CanonicalSessionInstanceProbe {
     }
 
     private static void pageCursorPersistence() {
-        CanonicalGraphResource pages = linearResource("page-session");
+        CanonicalGraphResource pages = linearResource("ST-2345-6789-ABCD-EFGH~session~page_session");
         CanonicalSessionInstanceStore store = new CanonicalSessionInstanceStore();
-        CanonicalSessionInstance instance = store.start(PLAYER_ONE, "page-story", "page-placement", pages);
-        store.continueLine(PLAYER_ONE, "page-story", instance.getTransportId(), "line");
+        CanonicalSessionInstance instance = store.start(PLAYER_ONE, "ST-4567-89AB-CDEF-GHJK", "page-placement", pages);
+        store.continueLine(PLAYER_ONE, "ST-4567-89AB-CDEF-GHJK", instance.getTransportId(), "line");
         NBTTagCompound encoded = store.writeToNbt();
         CanonicalSessionInstanceSnapshot decoded = CanonicalSessionInstanceNbtCodec.decode(encoded)
             .get(0);
@@ -437,20 +443,15 @@ public final class CanonicalSessionInstanceProbe {
         CanonicalGraphNode choice = node(
             "choice",
             "choice",
-            ports(
-                port("flow_in", true, false),
-                port("flow_left", false, false),
-                port("left", false, true),
-                port("flow_right", false, false),
-                port("right", false, true)),
+            ports(port("flow_in", true, false), port("flow_left", false, false), port("flow_right", false, false)),
             properties);
         Map<String, JsonElement> endProperties = new HashMap<String, JsonElement>();
         endProperties.put("port_id", json("success"));
         endProperties.put("display_name", json("Success"));
         CanonicalGraphNode end = node("end", "end", ports(port("flow_in", true, false)), endProperties);
         Map<String, JsonElement> logicProperties = new HashMap<String, JsonElement>();
-        logicProperties.put("port_id", json("picked_right"));
-        logicProperties.put("display_name", json("Picked right"));
+        logicProperties.put("port_id", json("activation_gate"));
+        logicProperties.put("display_name", json("Activation"));
         CanonicalGraphNode logic = node("logic", "logic_output", ports(port("logic_in", true, true)), logicProperties);
         return resource(
             id,
@@ -460,8 +461,8 @@ public final class CanonicalSessionInstanceProbe {
                 edge("choice", "flow_left", "end", "flow_in"),
                 edge("choice", "flow_right", "end", "flow_in"),
                 new CanonicalGraphConnection(
-                    "choice",
-                    "right",
+                    "start",
+                    "logic_out",
                     "logic",
                     "logic_in",
                     CanonicalGraphInterfaceKind.LOGIC)));
@@ -470,7 +471,7 @@ public final class CanonicalSessionInstanceProbe {
     private static CanonicalGraphResource resource(String id, java.util.List<CanonicalGraphNode> nodes,
         java.util.List<CanonicalGraphConnection> edges) {
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.SESSION,
             id,
             id,

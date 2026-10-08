@@ -2,7 +2,7 @@
 
 Minecraft 1.7.10 的 RPG 创作与运行框架。Windows WPF **Studio** 制作故事；Minecraft **Runtime** 执行 Story（故事）、Session（会话）与 Task（任务）。服务端掌管状态、权限、任务和奖励，玩家通过游戏内界面参与。
 
-当前功能版本为 **0.3.3.7**，处于正式内测准备的 0.3.x.x 扫尾阶段。当前源码与既有发布资产可能有差异；本轮验证状态见 [扫尾验收](PLAN/0.3.x.x-Closeout/Acceptance.md)。开发候选不能只凭相同版本号认定为已发布文件。
+当前源码版本为 **0.4.0.0**，本版实施旧业务退役及当前格式收口。施工、测试与开发交付状态见 [0.4.0.0 验收记录](PLAN/0.4.0.0/Acceptance.md)；既有发布资产的版本与内容另行保留，不按源码版本推断已发布。
 
 - [已发布成品](https://github.com/GreyHat633/DarkGreyRPG/releases)：Runtime JAR 与完整 Windows x64 Studio ZIP。
 - [安装与入门](docs/GETTING_STARTED.md)：作者、服主、玩家各自的操作。

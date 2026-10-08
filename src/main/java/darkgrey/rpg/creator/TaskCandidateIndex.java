@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,6 +14,7 @@ import net.minecraft.nbt.NBTTagList;
 
 import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
+import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.item.identity.ItemGroupMember;
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
 import darkgrey.rpg.item.identity.ItemMatchMode;
@@ -51,24 +51,22 @@ public final class TaskCandidateIndex {
             .get("item")
             .getAsString();
         Index value = new Index();
-        value.group = DarkGreyRpg.getProjectRepository()
-            .getSnapshot()
-            .getItemGroup(id) != null;
-        List<ItemGroupMember> members = bindings.getGroup(id);
-        // Legacy stand-alone probes have no project declaration; nonempty membership remains readable.
-        value.group |= !members.isEmpty();
         Set<Descriptor> seen = new HashSet<Descriptor>();
-        if (value.group) for (ItemGroupMember member : members) include(
-            value,
-            seen,
-            new Descriptor(member.getDefinition(), member.getMatchMode() == ItemMatchMode.FUZZY),
-            node,
-            bindings);
-        else {
-            ItemStackDefinition single = bindings.getItem(id);
-            if (single != null) include(value, seen, new Descriptor(single, false), node, bindings);
-            else if (Item.itemRegistry.getObject(id) instanceof Item)
-                include(value, seen, new Descriptor(new ItemStackDefinition(id, 0, null), true), node, bindings);
+        if (!id.isEmpty()) {
+            ResourceAddress.Kind kind = ResourceAddress.fromKey(id)
+                .getKind();
+            if (kind == ResourceAddress.Kind.ITEM_GROUP) {
+                value.group = true;
+                for (ItemGroupMember member : bindings.getGroup(id)) include(
+                    value,
+                    seen,
+                    new Descriptor(member.getDefinition(), member.getMatchMode() == ItemMatchMode.FUZZY),
+                    node,
+                    bindings);
+            } else if (kind == ResourceAddress.Kind.ITEM) {
+                ItemStackDefinition single = bindings.getItem(id);
+                if (single != null) include(value, seen, new Descriptor(single, false), node, bindings);
+            } else throw new IllegalArgumentException("Task candidate target must be a DGR Item or Item Group.");
         }
         while (!CACHE.isEmpty() && (CACHE.size() >= 32 || bytes + value.bytes > MAX_INDEX_BYTES)) {
             Iterator<Index> iterator = CACHE.values()

@@ -264,15 +264,15 @@ public partial class CanonicalGraphEditorView : UserControl
         => Host is { } host ? GraphNodeDefinitionRegistry.ForAuthoringScope(host.Scope) : [];
 
     /// <summary>
-    /// Canonical authoring groups. Group order is the first category appearance
-    /// in the scoped registry, and definition order is never re-sorted.
+    /// End-of-flow authoring always follows the other scoped categories.
     /// </summary>
     public IReadOnlyList<GraphNodeAuthoringCategory> AuthoringCategories
         => AuthoringDefinitions
             .GroupBy(definition => definition.Category, StringComparer.Ordinal)
+            .OrderBy(group => group.Key == "流程" ? 1 : 0)
             .Select(group => new GraphNodeAuthoringCategory(
                 group.Key,
-                group.ToArray()))
+                group.OrderBy(definition => definition.Type is "terminate" or "end" or "settle" ? 1 : 0).ToArray()))
             .ToArray();
 
     /// <summary>Last non-mutating authoring diagnostics; retained for the Problems surface.</summary>

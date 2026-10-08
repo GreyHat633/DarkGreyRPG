@@ -130,7 +130,6 @@ public final class CurrentResourceIdentityProbe {
             throw new AssertionError("Mod registry name changed");
         NominatorSavedData selections = new NominatorSavedData();
         selections.put(new NominatorEntityBinding(uuid, actor, Collections.singletonList(group), owner.getValue()));
-        selections.addTypeGroup("examplemod:entity", group);
         NBTTagCompound selectionNbt = new NBTTagCompound();
         selections.writeToNBT(selectionNbt);
         NominatorSavedData selectionReload = new NominatorSavedData();
@@ -138,18 +137,22 @@ public final class CurrentResourceIdentityProbe {
         if (!actor.equals(
             selectionReload.get(uuid)
                 .getIndividualId())
-            || !selectionReload.getTypeGroups("examplemod:entity")
+            || !selectionReload.get(uuid)
+                .getGroupIds()
                 .contains(group))
             throw new AssertionError("Selection identity lost");
         NBTTagCompound badSelection = (NBTTagCompound) selectionNbt.copy();
-        badSelection.getTagList("type_groups", 10)
-            .getCompoundTagAt(0)
-            .setTag("groups", strings);
+        badSelection.setTag("type_groups", new NBTTagList());
         reject(() -> selectionReload.readFromNBT(badSelection));
+        try {
+            selectionReload.get(uuid);
+            throw new AssertionError("Failed selection reader remained usable");
+        } catch (IllegalStateException expected) {}
+        selectionReload.readFromNBT(selectionNbt);
         if (!actor.equals(
             selectionReload.get(uuid)
                 .getIndividualId()))
-            throw new AssertionError("Rejected selection changed active bindings");
+            throw new AssertionError("Transactional reader changed valid binding");
     }
 
     private static void reject(Runnable action) {

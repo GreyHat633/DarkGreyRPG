@@ -35,7 +35,7 @@ import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.identity.ResourceAddressJson;
 import darkgrey.rpg.identity.StoryUid;
 
-/** Strict, read-only loader for the schema-version-1 canonical graph roots. */
+/** Strict, read-only loader for current canonical graph roots. */
 public final class CanonicalGraphResourceLoader {
 
     private static final Set<String> ROOT = set(
@@ -209,7 +209,10 @@ public final class CanonicalGraphResourceLoader {
         int version = integer(root, "schema_version", "graph.resource.root");
         if (version != CanonicalGraphResource.CURRENT_SCHEMA_VERSION) throw CanonicalGraphResourceException.failure(
             "graph.resource.schema_version.unsupported",
-            "Unsupported canonical graph resource schema_version " + version + "; expected 2.");
+            "Unsupported canonical graph resource schema_version " + version
+                + "; expected "
+                + CanonicalGraphResource.CURRENT_SCHEMA_VERSION
+                + ".");
         if (!"story-uid-v1".equals(string(root, "identity_format", "graph.resource.root")))
             throw CanonicalGraphResourceException.failure(
                 "graph.resource.identity_format.unsupported",

@@ -18,7 +18,12 @@ internal static class GraphResourceAddressCodec
                 if (node.Type == "session") Field("resource_id", ResourceKind.Session);
                 if (node.Type == "task") Field("resource_id", ResourceKind.Task);
                 if (node.Type == "interact_actor") Field("actor_id", ResourceKind.Actor);
-                if (node.Type == "action" && Text(properties, "action_type") == "give_item") Field("item_id", ResourceKind.Item);
+                if (node.Type == "action" && Text(properties, "action_type") == "give_item")
+                {
+                    if (properties.ContainsKey("item") || properties.ContainsKey("metadata"))
+                        throw new JsonException($"Node '{node.Id}': give_item requires a DGR Item address in item_id.");
+                    Field("item_id", ResourceKind.Item);
+                }
                 if (node.Type == "enter_story" && Text(properties, "target_story_id") is { Length: > 0 } uid && !StoryUid.IsValid(uid))
                     throw new JsonException("A current target Story UID is required.");
                 if (node.Type == "start" && properties["triggers"] is JsonArray triggers)
@@ -30,9 +35,9 @@ internal static class GraphResourceAddressCodec
             if (scope == GraphResourceKind.Task && node.Type == "objective")
             {
                 var type = Text(properties, "objective_type");
-                if (type == "kill_entity") Target(properties, "entity", writing, ResourceKind.Actor);
+                if (type == "kill_entity") Field("entity", ResourceKind.Actor);
                 if (type is "interact_actor" or "submit_item") Field("actor_id", ResourceKind.Actor);
-                if (type is "collect_item" or "submit_item") Target(properties, "item", writing, ResourceKind.Item, ResourceKind.ItemGroup);
+                if (type is "collect_item" or "submit_item") Field("item", ResourceKind.Item, ResourceKind.ItemGroup);
             }
             if (scope == GraphResourceKind.Task && node.Type == "reward" && properties["entries"] is JsonArray entries)
                 foreach (var entry in entries.OfType<JsonObject>())
@@ -43,26 +48,6 @@ internal static class GraphResourceAddressCodec
     }
 
     private static string? Text(JsonObject fields, string name) => fields[name]?.GetValue<string>();
-
-    private static void Target(JsonObject fields, string name, bool writing, params ResourceKind[] kinds)
-    {
-        if (writing && fields[name] is JsonValue value && value.TryGetValue<string>(out var text)
-            && text.Length > 0 && !ResourceAddress.IsKey(text))
-        {
-            if (text.Any(char.IsWhiteSpace) || text.Contains('~')) throw new JsonException("Invalid registry target.");
-            fields[name] = new JsonObject { ["registry_name"] = text };
-            return;
-        }
-        if (!writing && fields[name] is JsonObject target && target.ContainsKey("registry_name"))
-        {
-            var registry = target["registry_name"]?.GetValue<string>();
-            if (target.Count != 1 || string.IsNullOrWhiteSpace(registry) || registry.Any(char.IsWhiteSpace) || registry.Contains('~'))
-                throw new JsonException("Invalid registry target.");
-            fields[name] = registry;
-            return;
-        }
-        Address(fields, name, writing, kinds);
-    }
 
     private static void Address(JsonObject fields, string name, bool writing, params ResourceKind[] kinds)
     {

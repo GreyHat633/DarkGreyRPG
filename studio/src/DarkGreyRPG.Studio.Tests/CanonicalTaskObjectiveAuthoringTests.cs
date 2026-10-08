@@ -151,9 +151,9 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         var graph = new GraphDocument([objective]);
         var session = new GraphEditSession(graph, GraphScope.Task);
-        Assert.IsTrue(session.ChangeObjectiveType("objective", "interact_actor", "actor-1"));
+        Assert.IsTrue(session.ChangeObjectiveType("objective", "interact_actor", "ST-2345-6789-ABCD-EFGH~actor~actor_1"));
         Assert.AreEqual(1, session.UndoCount);
-        Assert.AreEqual("actor-1", graph.Nodes.Single().Properties["actor_id"].GetString());
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_1", graph.Nodes.Single().Properties["actor_id"].GetString());
         graph.Nodes.Single().Properties["actor_id"] = JsonSerializer.SerializeToElement("custom");
         var before = graph.ToJson();
         var undoCount = session.UndoCount;
@@ -170,7 +170,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         var graph = new GraphDocument([objective]);
         var session = new GraphEditSession(graph, GraphScope.Task);
 
-        Assert.IsTrue(session.ChangeObjectiveType("objective", CanonicalTaskObjectiveSchema.InteractActor, "actor-1"));
+        Assert.IsTrue(session.ChangeObjectiveType("objective", CanonicalTaskObjectiveSchema.InteractActor, "ST-2345-6789-ABCD-EFGH~actor~actor_1"));
         CollectionAssert.AreEquivalent(new[] { "objective_type", "description", "actor_id", "prerequisite_enabled" },
             objective.Properties.Keys.ToArray());
         Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(objective));
@@ -185,7 +185,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         var safe = GraphNodeFactory.Create(GraphScope.Task, "objective", "safe");
         safe.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(safe,
-            CanonicalTaskObjectiveSchema.InteractActor, "actor-1", out _));
+            CanonicalTaskObjectiveSchema.InteractActor, "ST-2345-6789-ABCD-EFGH~actor~actor_1", out _));
         safe.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] = JsonSerializer.SerializeToElement(1);
         Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(safe));
         var graph = new GraphDocument([safe]);
@@ -207,21 +207,21 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(objective,
-            CanonicalTaskObjectiveSchema.InteractActor, "actor", out _));
+            CanonicalTaskObjectiveSchema.InteractActor, "ST-2345-6789-ABCD-EFGH~actor~actor", out _));
         objective.Properties[CanonicalTaskObjectiveSchema.RequiredProperty] =
             JsonSerializer.SerializeToElement(3);
         var graph = new GraphDocument([objective]);
         var session = new GraphEditSession(graph, GraphScope.Task);
 
-        Assert.IsTrue(session.ChangeObjectiveTarget("objective", "actor-group"));
+        Assert.IsTrue(session.ChangeObjectiveTarget("objective", "ST-2345-6789-ABCD-EFGH~actor~actor_group"));
 
-        Assert.AreEqual("actor-group", objective.Properties[
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_group", objective.Properties[
             CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
         Assert.AreEqual(1, session.UndoCount);
         CollectionAssert.Contains(session.LastValidationIssues.Select(issue => issue.Code).ToArray(),
             "graph.objective.interact.required.legacy_count");
         Assert.IsTrue(session.Undo());
-        Assert.AreEqual("actor", graph.Nodes.Single().Properties[
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor", graph.Nodes.Single().Properties[
             CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
     }
 
@@ -239,17 +239,17 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         CollectionAssert.Contains(GraphNodeShapeValidator.Validate(graph, GraphScope.Task)
             .Select(issue => issue.Code).ToArray(), "graph.objective.target.invalid");
 
-        Assert.IsTrue(session.SetNodeProperty("objective", CanonicalTaskObjectiveSchema.EntityProperty, "tavern_boss"));
+        Assert.IsTrue(session.SetNodeProperty("objective", CanonicalTaskObjectiveSchema.EntityProperty, "ST-2345-6789-ABCD-EFGH~actor~tavern_boss"));
         Assert.IsTrue(GraphNodeShapeValidator.IsValid(graph, GraphScope.Task));
     }
 
     [TestMethod]
-    public void LegacyMinecraftTargetsRemainValidAndDgrIdsRoundTripThroughJson()
+    public void NativeTargetsAreRejectedAndDgrIdsRoundTripThroughJson()
     {
         var kill = GraphNodeFactory.Create(GraphScope.Task, "objective", "kill");
         kill.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         kill.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("minecraft:zombie");
-        Assert.IsTrue(CanonicalTaskObjectiveSchema.IsValid(kill));
+        Assert.IsFalse(CanonicalTaskObjectiveSchema.IsValid(kill));
 
         var authoredKill = GraphNodeFactory.Create(GraphScope.Task, "objective", "authored_kill");
         authoredKill.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
@@ -257,14 +257,14 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
         collect.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
         var collectGraph = new GraphDocument([authoredKill, collect]);
         var session = new GraphEditSession(collectGraph, GraphScope.Task);
-        Assert.IsTrue(session.SetNodeProperty("authored_kill", CanonicalTaskObjectiveSchema.EntityProperty, "tavern_boss"));
+        Assert.IsTrue(session.SetNodeProperty("authored_kill", CanonicalTaskObjectiveSchema.EntityProperty, "ST-2345-6789-ABCD-EFGH~actor~tavern_boss"));
         Assert.IsTrue(session.ChangeObjectiveType("collect", CanonicalTaskObjectiveSchema.CollectItem));
-        Assert.IsTrue(session.SetNodeProperty("collect", CanonicalTaskObjectiveSchema.ItemProperty, "herb_bundle"));
+        Assert.IsTrue(session.SetNodeProperty("collect", CanonicalTaskObjectiveSchema.ItemProperty, "ST-2345-6789-ABCD-EFGH~item_group~herb_bundle"));
         var restored = GraphDocument.FromJson(collectGraph.ToJson());
 
-        Assert.AreEqual("tavern_boss", restored.Nodes.Single(node => node.Id == "authored_kill")
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~tavern_boss", restored.Nodes.Single(node => node.Id == "authored_kill")
             .Properties[CanonicalTaskObjectiveSchema.EntityProperty].GetString());
-        Assert.AreEqual("herb_bundle", restored.Nodes.Single(node => node.Id == "collect")
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item_group~herb_bundle", restored.Nodes.Single(node => node.Id == "collect")
             .Properties[CanonicalTaskObjectiveSchema.ItemProperty].GetString());
         Assert.AreEqual("collect_item", restored.Nodes.Single(node => node.Id == "collect")
             .Properties[CanonicalTaskObjectiveSchema.TypeProperty].GetString());
@@ -276,7 +276,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     public void PrerequisiteToggleOwnsStablePortCleansWiresAndRoundTripsUndo()
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
-        objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("boss");
+        objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~boss");
         var source = GraphNodeFactory.Create(GraphScope.Task, "logic_input", "source");
         source.Properties["port_id"] = JsonSerializer.SerializeToElement("source_gate");
         source.Properties["display_name"] = JsonSerializer.SerializeToElement("Source Gate");
@@ -313,7 +313,7 @@ public sealed class CanonicalTaskObjectiveAuthoringTests
     {
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "legacy");
         objective.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
-        objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("boss");
+        objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~boss");
         objective.Properties.Remove(CanonicalTaskObjectiveSchema.PrerequisiteEnabledProperty);
 
         Assert.IsFalse(CanonicalTaskObjectiveSchema.IsPrerequisiteEnabled(objective));

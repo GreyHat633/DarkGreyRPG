@@ -30,7 +30,6 @@ public sealed class GraphDynamicPortEditTests
             (GraphScope.Session, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1),
             (GraphScope.Session, "choice", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
-            (GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0),
             (GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
             (GraphScope.Task, "objective", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0),
@@ -42,6 +41,7 @@ public sealed class GraphDynamicPortEditTests
             Assert.AreEqual(item.Item5, role.MinimumCount);
         }
         Assert.IsFalse(GraphDynamicPortPolicy.TryGetRole(GraphScope.Task, "AND", GraphPortDirection.Input, GraphInterfaceKind.Logic, out _));
+        Assert.IsFalse(GraphDynamicPortPolicy.TryGetRole(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, out _));
         Assert.IsFalse(GraphDynamicPortPolicy.TryGetRole(GraphScope.Task, "settle", GraphPortDirection.Input, GraphInterfaceKind.Flow, out _));
         Assert.IsTrue(GraphDynamicPortPolicy.Roles
             .Where(role => role.Scope == GraphScope.StoryFlow && role.NodeType is "session" or "task")

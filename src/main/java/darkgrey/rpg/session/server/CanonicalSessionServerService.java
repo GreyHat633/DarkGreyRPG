@@ -109,7 +109,15 @@ public final class CanonicalSessionServerService {
         Binding binding = resolveBinding(snapshot.getStoryId(), snapshot.getAggregatePlacementId());
         requireResourceBinding(snapshot, binding);
         validateActors(binding);
-        return projectSnapshot(snapshot, binding, false);
+        CanonicalSessionDispatch dispatch = projectSnapshot(snapshot, binding, false);
+        CanonicalSessionFrame current = dispatch.getFrame();
+        if (current != null && current.getKind() == CanonicalSessionFrame.Kind.CHOICE) {
+            CanonicalSessionFrame context = savedData.lineContext(snapshot);
+            if (context != null) return dispatch.withLineContext(
+                context.withPresentation(current.getPresentation(), context.getLineEpoch(), false)
+                    .withProjectionRevision(current.getProjectionRevision()));
+        }
+        return dispatch;
     }
 
     public CanonicalSessionDispatch resume(UUID playerUuid, String storyId, String aggregatePlacementId) {
@@ -279,9 +287,11 @@ public final class CanonicalSessionServerService {
         if (status == CanonicalSessionStatus.ACTIVE) {
             if (step.getKind() != CanonicalSessionStep.Kind.LINE && step.getKind() != CanonicalSessionStep.Kind.CHOICE)
                 throw new IllegalStateException("Active Session snapshot has an incoherent step.");
-            return CanonicalSessionDispatch.frame(
-                frame(snapshot, step).withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), playVoice)
-                    .withProjectionRevision(PROJECTIONS.incrementAndGet()));
+            CanonicalSessionFrame projected = frame(snapshot, step)
+                .withPresentation(runtime.getPresentation(), runtime.getLineEpoch(), playVoice)
+                .withProjectionRevision(PROJECTIONS.incrementAndGet());
+            if (step.getKind() == CanonicalSessionStep.Kind.LINE) savedData.rememberLineContext(snapshot, projected);
+            return CanonicalSessionDispatch.frame(projected);
         }
         if (status != CanonicalSessionStatus.COMPLETED || step.getKind() != CanonicalSessionStep.Kind.END
             || blank(step.getEndPortId())
@@ -340,7 +350,7 @@ public final class CanonicalSessionServerService {
             step.getNodeId(),
             CanonicalSessionFrame.Kind.CHOICE,
             "",
-            displayText(snapshot, "prompt", step.getPrompt()),
+            "",
             choices);
     }
 

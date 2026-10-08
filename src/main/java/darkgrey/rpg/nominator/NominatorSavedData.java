@@ -15,7 +15,6 @@ import net.minecraft.world.WorldSavedData;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.storage.MapStorage;
 
-import darkgrey.rpg.identity.NpcIdentityRegistry;
 import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.identity.ResourceAddressNbt;
 
@@ -23,17 +22,23 @@ import darkgrey.rpg.identity.ResourceAddressNbt;
 public final class NominatorSavedData extends WorldSavedData {
 
     public static final String DATA_NAME = "darkgrey_rpg_nominator";
-    private static final int SCHEMA_VERSION = 3;
+    public static final int SCHEMA_VERSION = 4;
     private final Map<UUID, NominatorEntityBinding> entities = new LinkedHashMap<UUID, NominatorEntityBinding>();
-    private final Map<String, List<String>> typeGroups = new LinkedHashMap<String, List<String>>();
     private long revision;
+    private boolean awaitingRead;
+    private RuntimeException readFailure;
 
     public NominatorSavedData() {
-        this(DATA_NAME);
+        this(DATA_NAME, false);
     }
 
     public NominatorSavedData(String name) {
+        this(name, true);
+    }
+
+    private NominatorSavedData(String name, boolean awaitingRead) {
         super(name);
+        this.awaitingRead = awaitingRead;
     }
 
     public static NominatorSavedData get() {
@@ -47,13 +52,20 @@ public final class NominatorSavedData extends WorldSavedData {
     public static NominatorSavedData get(MapStorage storage) {
         if (storage == null) throw new IllegalArgumentException("MapStorage is required.");
         WorldSavedData loaded = storage.loadData(NominatorSavedData.class, DATA_NAME);
-        if (loaded instanceof NominatorSavedData) return (NominatorSavedData) loaded;
+        if (loaded instanceof NominatorSavedData) {
+            NominatorSavedData data = (NominatorSavedData) loaded;
+            data.requireUsable();
+            return data;
+        }
+        if (loaded != null)
+            throw new IllegalStateException("Unexpected Nominator SavedData type; original data is protected.");
         NominatorSavedData created = new NominatorSavedData();
         storage.setData(DATA_NAME, created);
         return created;
     }
 
     public synchronized void put(NominatorEntityBinding binding) {
+        requireUsable();
         if (binding == null) throw new IllegalArgumentException("Binding is required.");
         entities.put(binding.getEntityUuid(), binding);
         revision++;
@@ -62,6 +74,7 @@ public final class NominatorSavedData extends WorldSavedData {
 
     /** Explicitly removes an entity selection; an absent selection is idempotent. */
     public synchronized boolean remove(UUID uuid) {
+        requireUsable();
         if (uuid == null) throw new IllegalArgumentException("Entity UUID is required.");
         if (entities.remove(uuid) == null) return false;
         revision++;
@@ -70,60 +83,51 @@ public final class NominatorSavedData extends WorldSavedData {
     }
 
     public synchronized long getRevision() {
+        requireUsable();
         return revision;
     }
 
     public synchronized NominatorEntityBinding get(UUID uuid) {
+        requireUsable();
         return entities.get(uuid);
     }
 
     public synchronized List<NominatorEntityBinding> bindings() {
+        requireUsable();
         return Collections.unmodifiableList(new ArrayList<NominatorEntityBinding>(entities.values()));
     }
 
-    /** Collective groups applied to every safe entity with this exact registry type. */
-    public synchronized List<String> getTypeGroups(String entityType) {
-        if (entityType == null) return Collections.emptyList();
-        List<String> groups = typeGroups.get(entityType.trim());
-        return groups == null ? Collections.<String>emptyList()
-            : Collections.unmodifiableList(new ArrayList<String>(groups));
+    /** MapStorage can cache a failed reader; never let that instance become writable empty data. */
+    public synchronized void requireUsable() {
+        if (awaitingRead || readFailure != null) throw new IllegalStateException(
+            "Nominator SavedData '" + mapName
+                + "' was not read with current schema "
+                + SCHEMA_VERSION
+                + "; original data is protected.",
+            readFailure);
     }
 
-    public synchronized boolean addTypeGroup(String entityType, String groupId) {
-        String type = requireText(entityType, "Entity type");
-        if (!NominatorService.safeType(type)) throw new IllegalArgumentException("Unsafe wrapper entity type.");
-        String group = NpcIdentityRegistry.requireId(groupId);
-        List<String> values = typeGroups.get(type);
-        if (values == null) {
-            values = new ArrayList<String>();
-            typeGroups.put(type, values);
-        }
-        if (values.contains(group)) return false;
-        values.add(group);
-        revision++;
-        markDirty();
-        return true;
-    }
-
-    public synchronized boolean removeTypeGroup(String entityType, String groupId) {
-        if (entityType == null || groupId == null) return false;
-        List<String> values = typeGroups.get(entityType.trim());
-        if (values == null || !values.remove(groupId.trim())) return false;
-        if (values.isEmpty()) typeGroups.remove(entityType.trim());
-        revision++;
-        markDirty();
-        return true;
-    }
-
-    public synchronized Map<String, List<String>> typeGroups() {
-        Map<String, List<String>> result = new LinkedHashMap<String, List<String>>();
-        for (Map.Entry<String, List<String>> value : typeGroups.entrySet())
-            result.put(value.getKey(), Collections.unmodifiableList(new ArrayList<String>(value.getValue())));
-        return Collections.unmodifiableMap(result);
+    @Override
+    public synchronized void setDirty(boolean dirty) {
+        if (dirty) requireUsable();
+        super.setDirty(dirty);
     }
 
     @Override
     public synchronized void readFromNBT(NBTTagCompound root) {
+        awaitingRead = true;
+        try {
+            readCurrentNBT(root);
+            readFailure = null;
+            awaitingRead = false;
+        } catch (RuntimeException failure) {
+            readFailure = failure;
+            super.setDirty(false);
+            throw failure;
+        }
+    }
+
+    private void readCurrentNBT(NBTTagCompound root) {
         if (root == null || !root.hasKey("schema_version", 3)
             || root.getInteger("schema_version") != SCHEMA_VERSION
             || !root.hasKey("entities", 9)) throw new IllegalArgumentException("Invalid nominator persistence root.");
@@ -134,7 +138,6 @@ public final class NominatorSavedData extends WorldSavedData {
         expectedRoot.add("identity_format");
         expectedRoot.add("revision");
         expectedRoot.add("entities");
-        if (root.getInteger("schema_version") >= 2) expectedRoot.add("type_groups");
         if (!rootKeys.equals(expectedRoot)) throw new IllegalArgumentException("Invalid nominator persistence root.");
         NBTTagList list = ResourceAddressNbt.compounds(root, "entities");
         if (list.tagCount() > NominatorCatalog.MAX_ENTRIES)
@@ -163,39 +166,16 @@ public final class NominatorSavedData extends WorldSavedData {
             if (decoded.put(uuid, new NominatorEntityBinding(uuid, individual, groups, story)) != null)
                 throw new IllegalArgumentException("Duplicate entity binding");
         }
-        Map<String, List<String>> decodedTypes = new LinkedHashMap<String, List<String>>();
-        if (root.getInteger("schema_version") >= 2) {
-            if (!root.hasKey("type_groups", 9)) throw new IllegalArgumentException("Invalid nominator type groups.");
-            NBTTagList types = ResourceAddressNbt.compounds(root, "type_groups");
-            if (types.tagCount() > NominatorCatalog.MAX_ENTRIES)
-                throw new IllegalArgumentException("Too many entity types.");
-            for (int i = 0; i < types.tagCount(); i++) {
-                NBTTagCompound value = types.getCompoundTagAt(i);
-                if (!exactKeys(value, "entity_type", "groups") || !value.hasKey("entity_type", 8)
-                    || !value.hasKey("groups", 9)) throw new IllegalArgumentException("Invalid nominator type group.");
-                String type = requireText(value.getString("entity_type"), "Entity type");
-                if (decodedTypes.containsKey(type))
-                    throw new IllegalArgumentException("Duplicate nominator entity type.");
-                NBTTagList values = ResourceAddressNbt.compounds(value, "groups");
-                List<String> groups = new ArrayList<String>();
-                for (int j = 0; j < values.tagCount(); j++) {
-                    String group = ResourceAddressNbt.read(values.getCompoundTagAt(j), ResourceAddress.Kind.ACTOR);
-                    if (!groups.contains(group)) groups.add(group);
-                }
-                if (!groups.isEmpty()) decodedTypes.put(type, groups);
-            }
-        }
         if (!root.hasKey("revision", 4) || root.getLong("revision") < 0)
             throw new IllegalArgumentException("Invalid revision");
         entities.clear();
         entities.putAll(decoded);
-        typeGroups.clear();
-        typeGroups.putAll(decodedTypes);
         revision = root.getLong("revision");
     }
 
     @Override
     public synchronized void writeToNBT(NBTTagCompound root) {
+        requireUsable();
         if (root == null) throw new IllegalArgumentException("Output NBT is required.");
         for (String key : new HashSet<String>(root.func_150296_c())) root.removeTag(key);
         root.setInteger("schema_version", SCHEMA_VERSION);
@@ -219,17 +199,6 @@ public final class NominatorSavedData extends WorldSavedData {
             list.appendTag(value);
         }
         root.setTag("entities", list);
-        NBTTagList types = new NBTTagList();
-        for (Map.Entry<String, List<String>> entry : typeGroups.entrySet()) {
-            NBTTagCompound value = new NBTTagCompound();
-            value.setString("entity_type", entry.getKey());
-            NBTTagList groups = new NBTTagList();
-            for (String group : entry.getValue())
-                groups.appendTag(ResourceAddressNbt.write(group, ResourceAddress.Kind.ACTOR));
-            value.setTag("groups", groups);
-            types.appendTag(value);
-        }
-        root.setTag("type_groups", types);
     }
 
     private static boolean keys(NBTTagCompound value, String... expected) {
@@ -243,17 +212,4 @@ public final class NominatorSavedData extends WorldSavedData {
             && value.hasKey("story_id", 8);
     }
 
-    private static String requireText(String value, String label) {
-        if (value == null || value.trim()
-            .isEmpty() || value.length() > 256) throw new IllegalArgumentException(label + " is invalid.");
-        return value.trim();
-    }
-
-    private static boolean exactKeys(NBTTagCompound value, String... expected) {
-        if (value == null) return false;
-        HashSet<String> actual = new HashSet<String>(value.func_150296_c());
-        HashSet<String> required = new HashSet<String>();
-        for (String key : expected) required.add(key);
-        return actual.equals(required);
-    }
 }

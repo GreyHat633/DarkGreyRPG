@@ -69,6 +69,39 @@ public sealed class CanonicalStoryWorkspaceViewTests
     }
 
     [STATestMethod]
+    public void EnterOnDirectoryRowActivatesSessionAndTaskBeforeButtonDefaultHandling()
+    {
+        using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
+        var view = new CanonicalStoryWorkspaceView(workspace);
+        var window = new Window
+        {
+            Content = view, Width = 1280, Height = 720,
+            ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+        };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            foreach (var item in new[] { workspace.SessionItems.Single(), workspace.TaskItems.Single() })
+            {
+                Assert.IsTrue(view.ReturnToStory());
+                var row = Descendants<DarkGreyRPG.Studio.Views.DirectoryTreeRowButton>(view)
+                    .Single(button => ReferenceEquals(button.Tag, item));
+                var key = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(row)!, Environment.TickCount, System.Windows.Input.Key.Enter)
+                {
+                    RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent,
+                    Source = row
+                };
+                row.RaiseEvent(key);
+                Assert.IsTrue(key.Handled, "Enter must be handled before Button consumes it.");
+                Assert.AreSame(item.Editor.Host, view.GraphView.Host);
+            }
+        }
+        finally { window.Close(); }
+    }
+
+    [STATestMethod]
     public void ActorSelectionIsInspectorOnlyAndSessionActivationChangesGraphHost()
     {
         using var workspace = Workspace("ST-2345-6789-ABCD-EFGH");
@@ -263,23 +296,19 @@ public sealed class CanonicalStoryWorkspaceViewTests
     public void ChoiceOptionRemovalConfirmationIsInjectedAtViewBoundary()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(choice, "option_1", "flow_1");
         choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
         {
             new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
             new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
         });
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
-        choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
-        choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
-        var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
-        target.Properties["port_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~known");
-        target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
+        var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "line", "logic").Candidate!;
         using var workspace = new CanonicalStoryWorkspaceViewModel(
             new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()),
             sessions: [new GraphResourceEnvelope(GraphResourceKind.Session, "ST-2345-6789-ABCD-EFGH~session~session", "Session",
-                new GraphDocument([choice, target], [new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic)]))]);
+                new GraphDocument([choice, target], [new GraphConnection("choice", "flow_2", "logic", "flow_in", GraphInterfaceKind.Flow)]))]);
         var view = Arrange(workspace);
         var prompts = 0;
         view.ChoiceOptionRemovalConfirmation = confirmation =>
@@ -323,7 +352,6 @@ public sealed class CanonicalStoryWorkspaceViewTests
                 Assert.AreEqual(row.FlowPortId, row.FlowOutput.PortId);
                 Assert.AreEqual(GraphInterfaceKind.Flow, row.FlowOutput.InterfaceKind);
                 Assert.IsFalse(row.FlowOutput.IsInput);
-                Assert.IsNull(row.LegacyLogicOutput);
                 Assert.HasCount(2, row.OutputGroup.Children);
                 Assert.AreSame(row.FlowOutput, row.OutputGroup.Children[0]);
                 Assert.AreSame(row.DisplayLabel, row.OutputGroup.Children[1]);
@@ -751,7 +779,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
             actors:
             [
                 new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor", "测试角色", "actor.json", []),
-                new ActorResourceInfo("group", "测试角色组", "group.json", [],
+                new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~group", "测试角色组", "group.json", [],
                     CollectiveActorResource.ResourceType),
             ],
             tasks: [new GraphResourceEnvelope(GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task",
@@ -771,12 +799,12 @@ public sealed class CanonicalStoryWorkspaceViewTests
             AutomationProperties.GetAutomationId(combo) == "TaskObjectiveActorSelector");
         var inlineSelector = actorSelectors.Single(combo => !ReferenceEquals(combo, selectedInspectorSelector));
 
-        inlineSelector.SelectedValue = "group";
+        inlineSelector.SelectedValue = "ST-2345-6789-ABCD-EFGH~actor~group";
         view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
 
-        Assert.AreEqual("group", ((CanonicalSessionSpeakerOption)selectedInspectorSelector.SelectedItem).Id);
-        Assert.AreEqual("group", ((CanonicalSessionSpeakerOption)inlineSelector.SelectedItem).Id);
-        Assert.AreEqual("group", workspace.ActiveGraphHost.Graph.Nodes.Single().Properties[
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~group", ((CanonicalSessionSpeakerOption)selectedInspectorSelector.SelectedItem).Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~group", ((CanonicalSessionSpeakerOption)inlineSelector.SelectedItem).Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~group", workspace.ActiveGraphHost.Graph.Nodes.Single().Properties[
             CanonicalTaskObjectiveSchema.ActorIdProperty].GetString());
     }
 
@@ -886,7 +914,7 @@ public sealed class CanonicalStoryWorkspaceViewTests
     private static CanonicalStoryWorkspaceViewModel ChoiceWorkspace(int count)
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(choice, "option_1", "flow_1");
         var options = new List<object> { new { option_id = "option_1", display_text = "短选项 1", flow_port_id = "flow_1" } };
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "短选项 1";
         for (var index = 2; index <= count; index++)

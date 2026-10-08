@@ -21,22 +21,6 @@ public sealed record CanonicalStoryHomeEntry(
 /// <summary>Route-independent summary data for the selected Story on Project Home.</summary>
 public sealed class StoryOverviewViewModel : ObservableObject
 {
-    public StoryOverviewViewModel(StoryResource story)
-    {
-        Story = story ?? throw new ArgumentNullException(nameof(story));
-        Id = story.Id;
-        DisplayName = string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName;
-        Description = story.Description;
-        Tags = story.Tags;
-        OwnedActorCount = story.OwnedResources.Actors.Count;
-        ReferencedActorCount = story.ReferencedResources.Actors.Count;
-        DialogueCount = story.OwnedResources.Dialogues.Count + story.ReferencedResources.Dialogues.Count;
-        QuestCount = story.OwnedResources.Quests.Count + story.ReferencedResources.Quests.Count;
-        FlowNodeCount = story.Nodes.Count;
-        MembershipSummary =
-            $"{OwnedActorCount} 个本故事角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个对话 · {QuestCount} 个任务";
-    }
-
     public StoryOverviewViewModel(CanonicalStoryHomeEntry story)
     {
         ArgumentNullException.ThrowIfNull(story);
@@ -48,22 +32,21 @@ public sealed class StoryOverviewViewModel : ObservableObject
         Tags = [];
         OwnedActorCount = story.OwnedActorCount;
         ReferencedActorCount = story.ReferencedActorCount;
-        DialogueCount = story.SessionCount;
-        QuestCount = story.TaskCount;
+        SessionCount = story.SessionCount;
+        TaskCount = story.TaskCount;
         FlowNodeCount = story.FlowNodeCount;
         MembershipSummary =
-            $"{OwnedActorCount} 个本故事角色 · {ReferencedActorCount} 个引用角色 · {DialogueCount} 个会话 · {QuestCount} 个任务";
+            $"{OwnedActorCount} 个本故事角色 · {ReferencedActorCount} 个引用角色 · {SessionCount} 个会话 · {TaskCount} 个任务";
     }
 
-    public StoryResource? Story { get; }
     public string Id { get; }
     public string DisplayName { get; }
     public string Description { get; }
     public IReadOnlyList<string> Tags { get; }
     public int OwnedActorCount { get; }
     public int ReferencedActorCount { get; }
-    public int DialogueCount { get; }
-    public int QuestCount { get; }
+    public int SessionCount { get; }
+    public int TaskCount { get; }
     public int FlowNodeCount { get; }
     public string MembershipSummary { get; }
 }
@@ -75,29 +58,16 @@ public sealed class StoryListItemViewModel : ObservableObject
     public object NavigationSection => (object?)NavigationGroup ?? this;
     public string NavigationKey => NavigationGroup?.Key ?? Id;
     public bool IsGroup => false;
-    public StoryListItemViewModel(StoryResource story)
-    {
-        Story = story ?? throw new ArgumentNullException(nameof(story));
-        Overview = new StoryOverviewViewModel(Story);
-        HasLegacyStory = true;
-    }
-
-    public StoryListItemViewModel(CanonicalStoryHomeEntry story, StoryResource? legacyStory = null)
+    public StoryListItemViewModel(CanonicalStoryHomeEntry story)
     {
         CanonicalStory = story ?? throw new ArgumentNullException(nameof(story));
-        Story = legacyStory;
         Overview = new StoryOverviewViewModel(story);
-        HasLegacyStory = legacyStory is not null;
         HasCanonicalStory = true;
     }
 
-    public StoryResource? Story { get; }
     public CanonicalStoryHomeEntry? CanonicalStory { get; }
     public StoryOverviewViewModel Overview { get; }
-    public bool HasLegacyStory { get; }
     public bool HasCanonicalStory { get; }
-    public bool IsCanonicalOnly => HasCanonicalStory && !HasLegacyStory;
-    public bool CanDeleteLegacyStory => HasLegacyStory && !HasCanonicalStory;
     public string Id => Overview.Id;
     public string DisplayName => Overview.DisplayName;
     public string Description => Overview.Description;
@@ -108,8 +78,8 @@ public sealed class StoryListItemViewModel : ObservableObject
             : "数据不完整"
         : string.Join(", ", Tags);
     public int ActorCount => Overview.OwnedActorCount + Overview.ReferencedActorCount;
-    public int DialogueCount => Overview.DialogueCount;
-    public int QuestCount => Overview.QuestCount;
+    public int SessionCount => Overview.SessionCount;
+    public int TaskCount => Overview.TaskCount;
     public string MembershipSummary => Overview.MembershipSummary;
     public int FlowNodeCount => Overview.FlowNodeCount;
 }
@@ -233,19 +203,10 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
     private ProjectGraphFocusRequest? _problemFocusRequest;
 
     public ProjectGraphViewModel(
-        IReadOnlyList<StoryResource> stories,
-        string? homeStoryId = null,
-        string? projectDirectory = null)
-        : this(CreateLegacyInput(stories), homeStoryId, projectDirectory)
-    {
-    }
-
-    public ProjectGraphViewModel(
-        IReadOnlyList<StoryResource> legacyStories,
         CanonicalProjectStoryGraphSnapshot canonicalSnapshot,
         string? homeStoryId = null,
         string? projectDirectory = null)
-        : this(CreateMergedInput(legacyStories, canonicalSnapshot), homeStoryId, projectDirectory)
+        : this(CreateCanonicalInput(canonicalSnapshot), homeStoryId, projectDirectory)
     {
     }
 
@@ -342,60 +303,10 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
         InitializeCanonicalGraph(projectDirectory);
     }
 
-    private static BuildInput CreateLegacyInput(IReadOnlyList<StoryResource> stories)
-    {
-        ArgumentNullException.ThrowIfNull(stories);
-        return CreateLegacyInput(stories, stories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal));
-    }
-
-    private static BuildInput CreateLegacyInput(
-        IReadOnlyList<StoryResource> stories,
-        IReadOnlySet<string> validTargetIds)
-    {
-        var transitions = new List<BuildTransition>();
-        var diagnostics = new List<ProjectGraphDiagnosticViewModel>();
-        foreach (var story in stories)
-        {
-            foreach (var node in story.Nodes.Where(IsEnterStoryNode))
-            {
-                var target = TryGetTarget(node);
-                if (string.IsNullOrWhiteSpace(target) || !validTargetIds.Contains(target))
-                {
-                    var label = string.IsNullOrWhiteSpace(target) ? "<empty>" : target;
-                    diagnostics.Add(new("project_graph.target.missing", $"{story.Id}.{node.Id} 指向不存在的 Story '{label}'。", story.Id, node.Id));
-                    continue;
-                }
-                var incomingOutputs = story.Connections
-                    .Where(connection => string.Equals(connection.To, node.Id, StringComparison.Ordinal))
-                    .Select(connection => connection.Output)
-                    .Where(output => !string.IsNullOrWhiteSpace(output))
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(output => output, StringComparer.Ordinal)
-                    .ToArray();
-                transitions.Add(new(story.Id, target,
-                    new ProjectGraphTransitionViewModel(node.Id, Array.AsReadOnly(incomingOutputs))));
-            }
-        }
-
-        return new(
-            stories.Select(story => new BuildNode(
-                story.Id,
-                string.IsNullOrWhiteSpace(story.DisplayName) ? story.Title : story.DisplayName)).ToArray(),
-            transitions,
-            diagnostics);
-    }
-
-    private static BuildInput CreateMergedInput(
-        IReadOnlyList<StoryResource> legacyStories,
+    private static BuildInput CreateCanonicalInput(
         CanonicalProjectStoryGraphSnapshot canonicalSnapshot)
     {
-        ArgumentNullException.ThrowIfNull(legacyStories);
         ArgumentNullException.ThrowIfNull(canonicalSnapshot);
-        var canonicalIds = canonicalSnapshot.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
-        var legacyOnlyStories = legacyStories.Where(story => !canonicalIds.Contains(story.Id)).ToArray();
-        var legacy = CreateLegacyInput(
-            legacyOnlyStories,
-            legacyOnlyStories.Select(story => story.Id).ToHashSet(StringComparer.Ordinal));
         var canonicalNodes = canonicalSnapshot.Nodes.Select(node => new BuildNode(
             node.Id,
             node.DisplayName,
@@ -411,8 +322,7 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
                     transition.NodeId,
                     Array.AsReadOnly(transition.IncomingBranchOutputs.ToArray())))));
         var canonicalDiagnostics = canonicalSnapshot.Diagnostics
-            .Where(issue => issue.Code.StartsWith("project_graph.", StringComparison.Ordinal)
-                && issue.Code is not "project_graph.story.isolated" and not "project_graph.story.cycle")
+            .Where(issue => issue.Code is not "project_graph.story.isolated" and not "project_graph.story.cycle")
             .Select(issue => new ProjectGraphDiagnosticViewModel(
                 issue.Code,
                 issue.Message,
@@ -420,9 +330,9 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
                 issue.NodeId));
 
         return new(
-            canonicalNodes.Concat(legacy.Nodes).OrderBy(node => node.Id, StringComparer.Ordinal).ToArray(),
-            canonicalTransitions.Concat(legacy.Transitions).ToArray(),
-            canonicalDiagnostics.Concat(legacy.Diagnostics).ToArray());
+            canonicalNodes.OrderBy(node => node.Id, StringComparer.Ordinal).ToArray(),
+            canonicalTransitions.ToArray(),
+            canonicalDiagnostics.ToArray());
     }
 
     public IReadOnlyList<ProjectGraphNodeViewModel> Nodes { get; }
@@ -775,31 +685,9 @@ public sealed partial class ProjectGraphViewModel : ObservableObject
         }
     }
 
-    private static bool IsEnterStoryNode(StoryNodeResource node) =>
-        node.Type.Equals("EnterStory", StringComparison.OrdinalIgnoreCase) ||
-        node.Type.Equals("ENTER_STORY", StringComparison.OrdinalIgnoreCase) ||
-        node.Type.Equals("enter_story", StringComparison.OrdinalIgnoreCase);
+    internal static bool IsErrorDiagnostic(ProjectGraphDiagnosticViewModel issue) =>
+        issue.Code is not "project_graph.story.cycle" and not "project_graph.story.isolated";
 
-    private static string? TryGetTarget(StoryNodeResource node)
-    {
-        foreach (var key in new[] { "story_id", "target_story_id", "target", "story" })
-        {
-            if (node.Properties.TryGetValue(key, out var value) &&
-                value.ValueKind == JsonValueKind.String &&
-                value.GetString() is { } target)
-            {
-                return target;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool IsErrorDiagnostic(ProjectGraphDiagnosticViewModel issue) =>
-        issue.Code is "project_graph.target.missing"
-            or "project_graph.target.invalid"
-            or "project_graph.enter_story.malformed"
-            or "project_graph.enter_story.ambiguous";
 }
 
 public sealed record ProjectStoryLogicEndpointViewModel(string StoryId, string PortId, string DisplayName)
@@ -835,7 +723,7 @@ public sealed class ProjectHomeViewModel : ObservableObject
     private StoryListItemViewModel? _selectedStory;
     private string? _selectionBeforeSearchId;
     private ProjectHomeRoute _route = ProjectHomeRoute.Home;
-    private ProjectGraphViewModel _graph = new([], homeStoryId: null);
+    private ProjectGraphViewModel _graph = new(new CanonicalProjectStoryGraphSnapshot([], [], []), homeStoryId: null);
 
     public ProjectHomeViewModel()
     {
@@ -923,41 +811,19 @@ public sealed class ProjectHomeViewModel : ObservableObject
         }
     }
 
-    public void ReplaceStories(IReadOnlyList<StoryResource> stories, string? homeStoryId = null, string? projectDirectory = null)
-    {
-        ArgumentNullException.ThrowIfNull(stories);
-        ReplaceStoryItems(
-            stories.Select(story => new StoryListItemViewModel(story)).ToArray(),
-            stories,
-            homeStoryId,
-            projectDirectory);
-    }
-
     public void ReplaceDiscoveredStories(
-        IReadOnlyList<StoryResource> legacyStories,
         IReadOnlyList<CanonicalStoryHomeEntry> canonicalStories,
         string? homeStoryId = null,
         string? projectDirectory = null,
         CanonicalProjectStoryGraphSnapshot? canonicalGraph = null)
     {
-        ArgumentNullException.ThrowIfNull(legacyStories);
         ArgumentNullException.ThrowIfNull(canonicalStories);
-        var legacyById = legacyStories.ToDictionary(story => story.Id, StringComparer.Ordinal);
-        var canonicalById = canonicalStories.ToDictionary(story => story.Id, StringComparer.Ordinal);
-        var items = canonicalStories
-            .Select(story => new StoryListItemViewModel(
-                story,
-                legacyById.GetValueOrDefault(story.Id)))
-            .Concat(legacyStories
-                .Where(story => !canonicalById.ContainsKey(story.Id))
-                .Select(story => new StoryListItemViewModel(story)))
-            .ToArray();
-        ReplaceStoryItems(items, legacyStories, homeStoryId, projectDirectory, canonicalGraph);
+        var items = canonicalStories.Select(story => new StoryListItemViewModel(story)).ToArray();
+        ReplaceStoryItems(items, homeStoryId, projectDirectory, canonicalGraph);
     }
 
     private void ReplaceStoryItems(
         IReadOnlyList<StoryListItemViewModel> items,
-        IReadOnlyList<StoryResource> legacyStories,
         string? homeStoryId,
         string? projectDirectory,
         CanonicalProjectStoryGraphSnapshot? canonicalGraph = null)
@@ -974,9 +840,9 @@ public sealed class ProjectHomeViewModel : ObservableObject
         OnPropertyChanged(nameof(IsEmptyProject));
         RefreshFilter();
         ReconcileSelection(previousSelectedId, previousSelectedIndex);
-        Graph = canonicalGraph is null
-            ? new ProjectGraphViewModel(legacyStories, homeStoryId, projectDirectory)
-            : new ProjectGraphViewModel(legacyStories, canonicalGraph, homeStoryId, projectDirectory);
+        Graph = new ProjectGraphViewModel(canonicalGraph ?? new CanonicalProjectStoryGraphSnapshot(
+            items.Select(item => new CanonicalProjectStoryGraphNode(item.Id, item.DisplayName, true, item.CanonicalStory!.IsComplete,
+                item.CanonicalStory.IsComplete, item.CanonicalStory.IsValid, true, [])), [], []), homeStoryId, projectDirectory);
         ShowHome();
     }
 

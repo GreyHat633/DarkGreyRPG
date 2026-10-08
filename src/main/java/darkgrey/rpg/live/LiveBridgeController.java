@@ -8,36 +8,24 @@ import net.minecraft.world.WorldServer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
 import darkgrey.rpg.network.MainThreadScheduler;
 import darkgrey.rpg.project.ProjectRepository;
-import darkgrey.rpg.story.runtime.StoryRuntimeService;
 
 public final class LiveBridgeController {
 
     private final ProjectRepository repository;
-    private final DialogueSessionManager dialogues;
-    private final StoryRuntimeService stories;
     private final LivePickService picks;
-    private final PlayTestManager playTests;
     private final LiveStateSnapshotBuilder snapshots;
     private darkgrey.rpg.project.packages.StoryPackageLoader packages;
 
     public LiveBridgeController(ProjectRepository repository, LivePickService picks,
         darkgrey.rpg.project.packages.StoryPackageLoader packages) {
-        this(repository, null, null, picks, null);
-        if (packages == null) throw new IllegalArgumentException("Package loader is required.");
-        this.packages = packages;
-    }
-
-    public LiveBridgeController(ProjectRepository repository, DialogueSessionManager dialogues,
-        StoryRuntimeService stories, LivePickService picks, PlayTestManager playTests) {
+        if (repository == null || picks == null || packages == null)
+            throw new IllegalArgumentException("Live Bridge services are required.");
         this.repository = repository;
-        this.dialogues = dialogues;
-        this.stories = stories;
         this.picks = picks;
-        this.playTests = playTests;
-        this.snapshots = new LiveStateSnapshotBuilder(repository, stories, playTests);
+        this.packages = packages;
+        this.snapshots = new LiveStateSnapshotBuilder(repository);
     }
 
     public void onMessage(final JsonObject message, final LiveMessageSink sink) {
@@ -60,28 +48,18 @@ public final class LiveBridgeController {
             return;
         }
         if ("project.reload".equals(type)) {
-            if (packages != null) {
-                darkgrey.rpg.project.packages.StoryPackageRuntimeReloader.Result result = darkgrey.rpg.project.packages.StoryPackageRuntimeReloader
-                    .reload(repository, packages);
-                if (result.isPackageSetCommitted())
-                    darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle.reconcile(
-                        MinecraftServer.getServer()
-                            .worldServerForDimension(0).mapStorage,
-                        packages.getPackages());
-                sink.send(
-                    response(
-                        requestId,
-                        result.isSuccessful(),
-                        result.getProjectReload()
-                            .getSummary()));
-                return;
-            }
-            ProjectRepository.ReloadResult result = repository.reload();
-            if (result.isSuccessful()) {
-                dialogues.clearSessions();
-                stories.resetInstances();
-            }
-            sink.send(response(requestId, result.isSuccessful(), result.getSummary()));
+            darkgrey.rpg.project.packages.StoryPackageRuntimeReloader.Result result = darkgrey.rpg.project.packages.StoryPackageRuntimeReloader
+                .reload(repository, packages);
+            if (result.isPackageSetCommitted()) darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle.reconcile(
+                MinecraftServer.getServer()
+                    .worldServerForDimension(0).mapStorage,
+                packages.getPackages());
+            sink.send(
+                response(
+                    requestId,
+                    result.isSuccessful(),
+                    result.getProjectReload()
+                        .getSummary()));
             return;
         }
         EntityPlayerMP player = findPlayer(string(message, "player"));
@@ -102,34 +80,6 @@ public final class LiveBridgeController {
         if ("locate.actor".equals(type)) {
             int found = locateActor(player, string(message, "actor_id"));
             sink.send(response(requestId, found > 0, "Located " + found + " Actor instance(s)"));
-            return;
-        }
-        if ("test.start".equals(type)) {
-            if (playTests == null) {
-                sink.send(
-                    response(
-                        requestId,
-                        false,
-                        "Legacy node Play Test is retired; use /dgr story start for canonical Story execution."));
-                return;
-            }
-            String storyId = string(message, "story_id");
-            String nodeId = string(message, "node_id");
-            boolean started = playTests.start(player, storyId, nodeId);
-            sink.send(response(requestId, started, started ? "Play test started" : "Could not start play test"));
-            return;
-        }
-        if ("test.stop".equals(type)) {
-            if (playTests == null) {
-                sink.send(
-                    response(
-                        requestId,
-                        false,
-                        "No legacy Play Test exists; use /dgr story reset for canonical state."));
-                return;
-            }
-            boolean stopped = playTests.stop(player);
-            sink.send(response(requestId, stopped, stopped ? "RPG state restored" : "No active play test"));
             return;
         }
         sink.send(response(requestId, false, "Unsupported message type: " + type));

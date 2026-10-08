@@ -45,6 +45,70 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     private List<CanonicalStoryPendingContinuation> continuations = new java.util.ArrayList<CanonicalStoryPendingContinuation>();
     private NBTTagCompound pendingRaw;
     private NBTTagCompound presentationTexts = new NBTTagCompound();
+    private NBTTagCompound lineContexts = new NBTTagCompound();
+
+    /** One resolved previous author-page per live transport, sufficient to restore Choice context. */
+    public synchronized void rememberLineContext(CanonicalSessionInstanceSnapshot snapshot,
+        darkgrey.rpg.network.message.canonical.CanonicalSessionFrame frame) {
+        requireBound();
+        if (frame == null || frame.getKind() != darkgrey.rpg.network.message.canonical.CanonicalSessionFrame.Kind.LINE
+            || frame.getTransportId() != snapshot.getTransportId())
+            throw new IllegalArgumentException("Line context identity is invalid.");
+        darkgrey.rpg.network.message.canonical.CanonicalSessionFrame silent = frame
+            .withPresentation(frame.getPresentation(), frame.getLineEpoch(), false);
+        io.netty.buffer.ByteBuf buffer = io.netty.buffer.Unpooled.buffer();
+        try {
+            silent.toBytes(buffer);
+            byte[] bytes = new byte[buffer.readableBytes()];
+            buffer.readBytes(bytes);
+            lineContexts.setByteArray(Long.toString(snapshot.getTransportId()), bytes);
+        } finally {
+            buffer.release();
+        }
+        pruneLineContexts();
+        markDirty();
+    }
+
+    public synchronized darkgrey.rpg.network.message.canonical.CanonicalSessionFrame lineContext(
+        CanonicalSessionInstanceSnapshot snapshot) {
+        requireBound();
+        String key = Long.toString(snapshot.getTransportId());
+        if (!lineContexts.hasKey(key, 7)) return null;
+        darkgrey.rpg.network.message.canonical.CanonicalSessionFrame frame = decodeLineContext(
+            lineContexts.getByteArray(key));
+        if (frame.getTransportId() != snapshot.getTransportId() || !frame.getStoryId()
+            .equals(snapshot.getStoryId())
+            || !frame.getSessionResourceId()
+                .equals(snapshot.getSessionResourceId()))
+            throw new IllegalStateException("Persisted Line context belongs to another Session.");
+        return frame;
+    }
+
+    static darkgrey.rpg.network.message.canonical.CanonicalSessionFrame decodeLineContext(byte[] bytes) {
+        if (bytes.length == 0 || bytes.length > 1048576)
+            throw new IllegalArgumentException("Invalid Line context size.");
+        io.netty.buffer.ByteBuf buffer = io.netty.buffer.Unpooled.wrappedBuffer(bytes);
+        try {
+            darkgrey.rpg.network.message.canonical.CanonicalSessionFrame frame = new darkgrey.rpg.network.message.canonical.CanonicalSessionFrame();
+            frame.fromBytes(buffer);
+            if (buffer.isReadable()
+                || frame.getKind() != darkgrey.rpg.network.message.canonical.CanonicalSessionFrame.Kind.LINE
+                || frame.shouldPlayVoice()
+                || frame.shouldPlayScreen()) throw new IllegalArgumentException("Invalid persisted Line context.");
+            return frame;
+        } finally {
+            buffer.release();
+        }
+    }
+
+    private void pruneLineContexts() {
+        Set<String> active = new HashSet<String>();
+        for (CanonicalSessionInstanceSnapshot current : store.snapshots()) if (current.getRuntimeSnapshot()
+            .getStatus() == darkgrey.rpg.session.runtime.CanonicalSessionStatus.ACTIVE)
+            active.add(Long.toString(current.getTransportId()));
+        for (String key : new HashSet<String>(lineContexts.func_150296_c()))
+            if (!active.contains(key)) lineContexts.removeTag(key);
+    }
 
     /** Only the current author-page presentation per live transport is retained, never an event history. */
     public synchronized String presentationText(CanonicalSessionInstanceSnapshot snapshot, String slot,
@@ -992,6 +1056,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         pendingRaw = copy(root);
         presentationTexts = (NBTTagCompound) root.getCompoundTag("presentation_texts")
             .copy();
+        lineContexts = (NBTTagCompound) root.getCompoundTag("line_contexts")
+            .copy();
         bound = false;
     }
 
@@ -1011,6 +1077,10 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         else if (pendingRaw != null) output = copy(pendingRaw);
         else output = new CanonicalSessionInstanceStore().writeToNbt();
         if (bound && !presentationTexts.hasNoTags()) output.setTag("presentation_texts", presentationTexts.copy());
+        if (bound) {
+            pruneLineContexts();
+            if (!lineContexts.hasNoTags()) output.setTag("line_contexts", lineContexts.copy());
+        }
         for (String key : new java.util.HashSet<String>(root.func_150296_c())) root.removeTag(key);
         for (String key : output.func_150296_c()) root.setTag(
             key,

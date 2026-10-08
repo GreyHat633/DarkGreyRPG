@@ -32,11 +32,16 @@ public final class NominatorActions {
     public static void handle(EntityPlayerMP player, NBTTagCompound request) {
         ProjectRepository repo = DarkGreyRpg.getProjectRepository();
         NominatorCatalog catalog = NominatorCatalog.from(repo.getSnapshot(), DarkGreyRpg.getStoryPackageLoader());
-        NominatorSavedData selections = NominatorSavedData.get();
-        NpcIdentitySavedData npc = NpcIdentitySavedData.get();
-        ItemIdentitySavedData items = ItemIdentitySavedData.get();
+        NominatorSavedData selections = null;
+        NpcIdentitySavedData npc = null;
+        ItemIdentitySavedData items = null;
         NominatorResult result;
         try {
+            if (request.getBoolean("items")) items = ItemIdentitySavedData.get();
+            else {
+                selections = NominatorSavedData.get();
+                npc = NpcIdentitySavedData.get();
+            }
             result = execute(
                 player,
                 request,
@@ -57,9 +62,12 @@ public final class NominatorActions {
         response.setString("message", result.getExplanation());
         response.setBoolean("accepted", result.isAccepted());
         response.setLong("catalogRevision", repo.getSnapshotRevision());
-        response.setLong("revision", request.getBoolean("items") ? items.getRevision() : selections.getRevision());
-        response.setLong("npcRevision", npc.getRevision());
-        if (!request.getBoolean("items")) {
+        response.setLong(
+            "revision",
+            request.getBoolean("items") ? items == null ? -1 : items.getRevision()
+                : selections == null ? -1 : selections.getRevision());
+        response.setLong("npcRevision", npc == null ? -1 : npc.getRevision());
+        if (!request.getBoolean("items") && selections != null && npc != null) {
             try {
                 UUID uuid = UUID.fromString(request.getString("entityUuid"));
                 String id = npc.getNpcId(uuid);
@@ -86,6 +94,7 @@ public final class NominatorActions {
             return fail("permission_denied", "没有使用指名器的权限或背包中没有指名器。");
         String op = q.getString("op"), id = q.getString("resource"), type = q.getString("type");
         boolean item = q.getBoolean("items");
+        if (!item) selections.requireUsable();
         ContainerNominatorInventory container = null;
         Entity entity = null;
         if (item) {

@@ -16,6 +16,14 @@ public sealed class ShellViewModelTests
 {
     private const string Owner = "ST-2345-6789-ABCD-EFGH";
     private const string Opening = "ST-JKLM-NPQR-STUV-WXYZ";
+    private static ActorEditorViewModel ActorEditor(ShellViewModel shell) => shell.CanonicalStoryWorkspace!.InspectorPortraitEditor!;
+    private static void SelectActor(ShellViewModel shell, string id)
+    {
+        var owner = Core.Identity.ResourceAddress.FromKey(id).StoryUid.Value;
+        if (shell.CanonicalStoryWorkspace?.StoryEditor.Id != owner) OpenStoryActors(shell, owner);
+        Assert.IsTrue(shell.CanonicalStoryWorkspace!.SelectTreeItem(shell.CanonicalStoryWorkspace.ActorItems.Single(actor => actor.Id == id)));
+    }
+
     private static string ActorId(string local) => Owner + "~actor~" + local;
 
     [TestMethod]
@@ -35,7 +43,7 @@ public sealed class ShellViewModelTests
                 new ProjectCreationRequest(destination, "school_rpg", "学校 RPG")),
             new FakeResourceWorkspaceDialogs
             {
-                CreateResult = new ResourceIdentityRequest("school_story", "校园剧情"),
+                CreateResult = new StoryCreationRequest("校园剧情"),
             });
 
         shell.NewProjectCommand.Execute(null);
@@ -47,20 +55,20 @@ public sealed class ShellViewModelTests
         Assert.IsTrue(canonicalWorkspace.RequestCreate(CanonicalStoryFolderKind.Actors));
         Assert.AreSame(canonicalWorkspace, shell.CanonicalStoryWorkspace);
         CollectionAssert.AreEqual(canonicalFolders, shell.CanonicalStoryWorkspace!.Folders.ToArray());
-        var createdActorId = shell.Actors.Single().Id;
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = "学校中的任务 NPC";
-        shell.CurrentActor.TagsText = "school, quest";
-        shell.SaveActorCommand.Execute(null);
+        var createdActorId = canonicalWorkspace.ActorItems.Single().Id;
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        ActorEditor(shell)!.DisplayName = "学校中的任务 NPC";
+        ActorEditor(shell).TagsText = "school, quest";
+        shell.SaveCurrentResourceCommand.Execute(null);
 
         var restartedShell = new ShellViewModel(
             new ProjectService(),
             new FixedProjectFolderPicker("unused"));
         Assert.IsTrue(restartedShell.RestoreLastProject(destination));
-        restartedShell.SelectedActor = restartedShell.Actors.Single(actor => actor.Id == createdActorId);
+        SelectActor(restartedShell, (restartedShell.Actors.Single(actor => actor.Id == createdActorId)).Id);
 
-                Assert.AreEqual("学校中的任务 NPC", restartedShell.CurrentActor?.DisplayName);
-        Assert.AreEqual("school, quest", restartedShell.CurrentActor?.TagsText);
+                Assert.AreEqual("学校中的任务 NPC", ActorEditor(restartedShell)?.DisplayName);
+        Assert.AreEqual("school, quest", ActorEditor(restartedShell)?.TagsText);
     }
 
     [TestMethod]
@@ -77,46 +85,24 @@ public sealed class ShellViewModelTests
         Assert.AreEqual(directory.Root, shell.ProjectDirectory);
         Assert.HasCount(1, shell.Actors);
 
-        shell.SelectedActor = shell.Actors.Single();
-        Assert.IsNotNull(shell.CurrentActor);
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        Assert.IsNotNull(ActorEditor(shell));
 
-        shell.CurrentActor.DisplayName = "老师";
-        shell.CurrentActor.DisplayName = "学校中的任务 NPC";
-        shell.CurrentActor.TagsText = "school, quest";
+        ActorEditor(shell).DisplayName = "老师";
+        ActorEditor(shell).DisplayName = "学校中的任务 NPC";
+        ActorEditor(shell).TagsText = "school, quest";
 
-        Assert.IsTrue(shell.SaveActorCommand.CanExecute(null));
-        shell.SaveActorCommand.Execute(null);
-        Assert.IsFalse(shell.SaveActorCommand.CanExecute(null));
+        Assert.IsTrue(shell.SaveCurrentResourceCommand.CanExecute(null));
+        shell.SaveCurrentResourceCommand.Execute(null);
+        Assert.IsFalse(shell.SaveCurrentResourceCommand.CanExecute(null));
 
         var restartedShell = CreateShell(directory.Root);
         restartedShell.OpenProjectCommand.Execute(null);
-        restartedShell.SelectedActor = restartedShell.Actors.Single();
+        SelectActor(restartedShell, (restartedShell.Actors.Single()).Id);
 
-        Assert.IsNotNull(restartedShell.CurrentActor);
-                Assert.AreEqual("学校中的任务 NPC", restartedShell.CurrentActor.DisplayName);
-        Assert.AreEqual("school, quest", restartedShell.CurrentActor.TagsText);
-    }
-
-    [TestMethod]
-    public void SearchFiltersActorsByIdDisplayNameAndTag()
-    {
-        using var directory = new TestProjectDirectory();
-        var repository = new ActorRepository(directory.Root);
-        var teacher = CreateFixtureActor(directory.Root, "teacher", "老师");
-        teacher.SetTags(["school"]);
-        repository.SaveActor(teacher);
-        CreateFixtureActor(directory.Root, "merchant", "商人");
-        var shell = CreateShell(directory.Root);
-        shell.OpenProjectCommand.Execute(null);
-
-        shell.SearchText = "school";
-        Assert.AreEqual(ActorId("teacher"), shell.FilteredActors.Single().Id);
-        shell.SearchText = "商人";
-        Assert.AreEqual(ActorId("merchant"), shell.FilteredActors.Single().Id);
-        shell.SearchText = "tea";
-        Assert.AreEqual(ActorId("teacher"), shell.FilteredActors.Single().Id);
-        shell.SearchText = string.Empty;
-        Assert.HasCount(2, shell.FilteredActors);
+        Assert.IsNotNull(ActorEditor(restartedShell));
+                Assert.AreEqual("学校中的任务 NPC", ActorEditor(restartedShell).DisplayName);
+        Assert.AreEqual("school, quest", ActorEditor(restartedShell).TagsText);
     }
 
     [TestMethod]
@@ -137,9 +123,10 @@ public sealed class ShellViewModelTests
         var original = shell.CanonicalStoryWorkspace.ActorItems.Single();
         var repository = new ActorRepository(directory.Root);
         var originalBytes = File.ReadAllBytes(repository.GetActorPath(original.Id));
-        shell.SelectedActor = shell.Actors.Single();
-        Assert.IsTrue(shell.DuplicateActorCommand.CanExecute(null));
-        shell.DuplicateActorCommand.Execute(null);
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        var service = new ProjectService(); service.OpenProject(directory.Root);
+        service.DuplicateActor(original.Id);
+        shell.OpenProjectCommand.Execute(null);
         var copy = repository.ListActors().Single(actor => actor.Id != original.Id);
         Assert.AreEqual(Owner, repository.LoadActor(copy.Id).HomeStoryId);
         shell.ShowProjectHomeCommand.Execute(null);
@@ -208,9 +195,9 @@ public sealed class ShellViewModelTests
         var imported = service.ImportActorAsNew(source.Id, Opening + "~actor~imported", Opening);
         var importedShell = CreateShell(directory.Root);
         importedShell.OpenProjectCommand.Execute(null);
-        importedShell.SelectedActor = importedShell.Actors.Single(actor => actor.Id == imported.Id);
-        importedShell.CurrentActor!.DisplayName = "Independent edit";
-        importedShell.SaveActorCommand.Execute(null);
+        SelectActor(importedShell, (importedShell.Actors.Single(actor => actor.Id == imported.Id)).Id);
+        ActorEditor(importedShell)!.DisplayName = "Independent edit";
+        importedShell.SaveCurrentResourceCommand.Execute(null);
         Assert.AreEqual("Independent edit", repository.LoadActor(imported.Id).DisplayName);
         CollectionAssert.AreEqual(new[] { "template" }, repository.LoadActor(imported.Id).Tags.ToArray());
         CollectionAssert.AreEqual(sourceBytes, File.ReadAllBytes(repository.GetActorPath(source.Id)));
@@ -230,10 +217,12 @@ public sealed class ShellViewModelTests
         OpenStoryActors(shell, Opening);
         Assert.IsTrue(shell.CanonicalStoryWorkspace!.RequestReference(CanonicalStoryFolderKind.Actors));
         CollectionAssert.Contains(store.Memberships.Load(Opening).ReferencedResources.Actors, source.Id);
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = "Edited through reference";
-        shell.SaveActorCommand.Execute(null);
-        Assert.AreEqual("Edited through reference", repository.LoadActor(source.Id).DisplayName);
+        var referenced = shell.CanonicalStoryWorkspace.ActorItems.Single();
+        Assert.IsTrue(referenced.IsReadOnly);
+        Assert.IsTrue(shell.CanonicalStoryWorkspace.SelectTreeItem(referenced));
+        Assert.IsTrue(ActorEditor(shell).IsReadOnly);
+        Assert.IsFalse(shell.CanonicalStoryWorkspace.RequestRename(referenced));
+        Assert.AreEqual("Shared Actor", repository.LoadActor(source.Id).DisplayName);
         OpenStoryActors(shell, Owner);
         shell.CanonicalStoryWorkspace!.RequestDelete(shell.CanonicalStoryWorkspace.ActorItems.Single());
         Assert.IsTrue(File.Exists(repository.GetActorPath(source.Id)));
@@ -246,23 +235,6 @@ public sealed class ShellViewModelTests
         OpenStoryActors(shell, Owner);
         shell.CanonicalStoryWorkspace!.RequestDelete(shell.CanonicalStoryWorkspace.ActorItems.Single());
         Assert.IsFalse(File.Exists(repository.GetActorPath(source.Id)));
-    }
-
-    [TestMethod]
-    public void DirtyActorDisablesDestructiveWorkspaceCommands()
-    {
-        using var directory = new TestProjectDirectory();
-        var repository = new ActorRepository(directory.Root);
-        CreateFixtureActor(directory.Root, "teacher", "Teacher");
-        var shell = CreateShell(directory.Root, new FakeActorWorkspaceDialogs());
-        shell.OpenProjectCommand.Execute(null);
-        shell.SelectedActor = shell.Actors.Single();
-
-        shell.CurrentActor!.DisplayName = "Changed";
-
-        Assert.IsFalse(shell.DuplicateActorCommand.CanExecute(null));
-        Assert.IsFalse(shell.RenameActorCommand.CanExecute(null));
-        Assert.IsFalse(shell.DeleteActorCommand.CanExecute(null));
     }
 
     [TestMethod]
@@ -283,12 +255,13 @@ public sealed class ShellViewModelTests
         };
         var shell = CreateShell(directory.Root, dialogs, projectDialogs);
         shell.OpenProjectCommand.Execute(null);
-        shell.SelectedActor = shell.Actors.Single(actor => actor.Id == ActorId("a"));
-        shell.CurrentActor!.DisplayName = "dirty";
+        SelectActor(shell, (shell.Actors.Single(actor => actor.Id == ActorId("a"))).Id);
+        ActorEditor(shell)!.DisplayName = "dirty";
 
-        shell.SelectedActor = shell.Actors.Single(actor => actor.Id == ActorId("b"));
+        SelectActor(shell, (shell.Actors.Single(actor => actor.Id == ActorId("b"))).Id);
 
-        Assert.AreEqual(ActorId("a"), shell.SelectedActor?.Id);
+        Assert.AreEqual(ActorId("b"), shell.CanonicalStoryWorkspace!.SelectedActor?.Id);
+        Assert.IsTrue(new ActorRepository(directory.Root).LoadActor(ActorId("a")).DisplayName != "dirty");
         Assert.IsFalse(shell.TryClose());
         Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
     }
@@ -305,13 +278,13 @@ public sealed class ShellViewModelTests
         };
         var shell = CreateShell(directory.Root, new FakeActorWorkspaceDialogs(), projectDialogs);
         shell.OpenProjectCommand.Execute(null);
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = "saved while closing";
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        ActorEditor(shell)!.DisplayName = "saved while closing";
 
         Assert.IsTrue(shell.TryClose());
         Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
         Assert.AreEqual("saved while closing", repository.LoadActor(ActorId("teacher")).DisplayName);
-        Assert.IsFalse(shell.CurrentActor.Document.IsDirty);
+        Assert.IsFalse(ActorEditor(shell).Document.IsDirty);
     }
 
     [TestMethod]
@@ -354,13 +327,13 @@ public sealed class ShellViewModelTests
         };
         var shell = CreateShell(directory.Root, new FakeActorWorkspaceDialogs(), projectDialogs);
         shell.OpenProjectCommand.Execute(null);
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = "discarded change";
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        ActorEditor(shell)!.DisplayName = "discarded change";
 
         Assert.IsTrue(shell.TryClose());
         Assert.AreEqual(1, projectDialogs.CloseConfirmationCount);
         Assert.AreNotEqual("discarded change", repository.LoadActor(ActorId("teacher")).DisplayName);
-        Assert.IsTrue(shell.CurrentActor.Document.IsDirty);
+        Assert.IsTrue(ActorEditor(shell).Document.IsDirty);
     }
 
     [TestMethod]
@@ -375,15 +348,16 @@ public sealed class ShellViewModelTests
 
         Assert.IsTrue(shell.Toast.IsVisible);
         Assert.IsTrue(shell.Output.Entries.Any(entry => entry.Kind == OutputKind.Success));
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = string.Empty;
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        ActorEditor(shell)!.DisplayName = string.Empty;
 
+        shell.ValidateProjectCommand.Execute(null);
         Assert.IsTrue(shell.Problems.HasErrors);
         Assert.AreEqual("actor/" + ActorId("teacher"), shell.Problems.Problems[0].Source);
 
         shell.OpenProblem(shell.Problems.Problems[0]);
         Assert.AreEqual("Story", shell.Navigation.SelectedItem.Page);
-        Assert.AreEqual(ActorId("teacher"), shell.SelectedActor?.Id);
+        Assert.AreEqual(ActorId("teacher"), shell.CanonicalStoryWorkspace!.SelectedActor?.Id);
     }
 
     [TestMethod]
@@ -409,17 +383,17 @@ public sealed class ShellViewModelTests
         CreateFixtureActor(directory.Root, "teacher", "Teacher");
         var shell = CreateShell(directory.Root, new FakeActorWorkspaceDialogs());
         shell.OpenProjectCommand.Execute(null);
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = "saved by Save All";
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        ActorEditor(shell)!.DisplayName = "saved by Save All";
 
         Assert.IsTrue(shell.SaveAllCommand.CanExecute(null));
         shell.SaveAllCommand.Execute(null);
-        Assert.IsFalse(shell.CurrentActor.Document.IsDirty);
+        Assert.IsFalse(ActorEditor(shell).Document.IsDirty);
         Assert.AreEqual("saved by Save All", repository.LoadActor(ActorId("teacher")).DisplayName);
 
         shell.ValidateProjectCommand.Execute(null);
         Assert.AreEqual("Problems", shell.BottomPanel.SelectedTab.Page);
-        Assert.IsTrue(shell.Problems.HasProblems);
+        Assert.IsFalse(shell.Problems.HasErrors);
 
         shell.ShowProjectSettingsCommand.Execute(null);
         Assert.AreEqual("Settings", shell.Navigation.SelectedItem.Page);
@@ -465,11 +439,11 @@ public sealed class ShellViewModelTests
         Assert.IsTrue(shell.HasProject);
         Assert.AreEqual(destination, shell.ProjectDirectory);
         Assert.IsTrue(File.Exists(Path.Combine(destination, "project.json")));
-        foreach (var name in new[] { "actors", "dialogues", "quests", "stories", "resources" })
+        foreach (var name in new[] { "actors", "resources" })
         {
             Assert.IsTrue(Directory.Exists(Path.Combine(destination, name)), name);
         }
-        Assert.IsEmpty(Directory.EnumerateFiles(Path.Combine(destination, "stories"), "*.json"));
+        foreach (var retired in new[] { "stories", "dialogues", "quests" }) Assert.IsFalse(Directory.Exists(Path.Combine(destination, retired)));
         Assert.IsEmpty(shell.ProjectHome.Stories);
         Assert.IsTrue(shell.StatusMessage.Contains("新建故事", StringComparison.Ordinal));
     }
@@ -481,7 +455,7 @@ public sealed class ShellViewModelTests
         var destination = Path.Combine(directory.Root, "created_story_project");
         var resourceDialogs = new FakeResourceWorkspaceDialogs
         {
-            CreateResult = new ResourceIdentityRequest(Opening, "开场剧情"),
+            CreateResult = new StoryCreationRequest("开场剧情"),
         };
         var shell = new ShellViewModel(
             new ProjectService(),
@@ -499,7 +473,7 @@ public sealed class ShellViewModelTests
         Assert.IsFalse(File.Exists(Path.Combine(destination, "stories", createdUid + ".json")));
         Assert.AreEqual(createdUid, DarkGreyRPG.Studio.Core.Identity.StoryUid.Parse(createdUid).Value);
         Assert.AreEqual("开场剧情", shell.ProjectHome.SelectedStory?.DisplayName);
-        Assert.IsTrue(shell.ProjectHome.SelectedStory?.IsCanonicalOnly);
+        Assert.IsTrue(shell.ProjectHome.SelectedStory?.HasCanonicalStory);
         Assert.AreEqual(1, shell.ProjectHome.SelectedStory?.Overview.FlowNodeCount);
         Assert.IsTrue(shell.StatusMessage.Contains(createdUid, StringComparison.Ordinal));
     }
@@ -581,8 +555,8 @@ public sealed class ShellViewModelTests
         CreateFixtureActor(directory.Root, "teacher", "Teacher");
         var shell = CreateShell(directory.Root);
         shell.OpenProjectCommand.Execute(null);
-        shell.SelectedActor = shell.Actors.Single();
-        shell.CurrentActor!.DisplayName = "saved before runtime reload";
+        SelectActor(shell, (shell.Actors.Single()).Id);
+        ActorEditor(shell)!.DisplayName = "saved before runtime reload";
 
         shell.PrepareRuntimeReloadCommand.Execute(null);
 
@@ -617,7 +591,6 @@ public sealed class ShellViewModelTests
         shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == Opening));
 
         Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
-        Assert.IsFalse(shell.StoryWorkspace.HasStory);
         Assert.IsFalse(shell.EffectiveResourceBrowserVisible);
         Assert.AreEqual("Canonical Opening", shell.CanonicalStoryWorkspace!.StoryEditor.DisplayName);
         Assert.HasCount(1, shell.CanonicalStoryWorkspace.MissingItems);
@@ -671,7 +644,6 @@ public sealed class ShellViewModelTests
         shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == Opening));
 
         Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
-        Assert.IsFalse(shell.StoryWorkspace.HasStory);
         Assert.AreEqual(OutputKind.Error, shell.Output.Entries.Last().Kind);
         Assert.IsTrue(shell.Output.Entries.Last().Message.Contains("membership", StringComparison.OrdinalIgnoreCase));
     }
@@ -1002,17 +974,9 @@ public sealed class ShellViewModelTests
 
     private sealed class FakeResourceWorkspaceDialogs : IResourceWorkspaceDialogs
     {
-        public ResourceIdentityRequest? CreateResult { get; init; }
-        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName) => ResourceCreationMode.Blank;
-        public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) => CreateResult;
-        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
+        public StoryCreationRequest? CreateResult { get; init; }
+        public StoryCreationRequest? RequestCreateStory(string allocatedStoryUid) => CreateResult;
         public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
-        public bool ConfirmDelete(ResourceDescriptor resource) => false;
-        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
-        public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
-        public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
-        public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
     }
 
     private sealed class FakeProjectWorkspaceDialogs(ProjectCreationRequest? result) : IProjectWorkspaceDialogs

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Validation;
 
@@ -321,7 +322,19 @@ public static class CanonicalTaskObjectiveSchema
     {
         if (!properties.TryGetValue(name, out var value)
             || value.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(value.GetString()))
+        {
             issues.Add(Issue("graph.objective.target.invalid", $"Objective '{name}' must be a nonblank string.", $"properties.{name}", nodeId));
+            return;
+        }
+        var target = value.GetString()!;
+        if (!ResourceAddress.IsKey(target))
+        {
+            issues.Add(Issue("graph.objective.target.invalid", $"目标 '{name}' 必须选择 DGR 资源。", $"properties.{name}", nodeId));
+            return;
+        }
+        var kind = ResourceAddress.FromKey(target).Kind;
+        if (name == ItemProperty ? kind is not (ResourceKind.Item or ResourceKind.ItemGroup) : kind != ResourceKind.Actor)
+            issues.Add(Issue("graph.objective.target.invalid", $"目标 '{name}' 的 DGR 资源类型不正确。", $"properties.{name}", nodeId));
     }
 
     private static string? ReadString(IReadOnlyDictionary<string, JsonElement> properties, string name)

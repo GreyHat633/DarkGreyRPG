@@ -17,7 +17,7 @@ public sealed class CanonicalStoryActionSchemaTests
             var node = GraphNodeFactory.Create(GraphScope.StoryFlow, "action", "action");
             var graph = new GraphDocument([node]); var session = new GraphEditSession(graph, GraphScope.StoryFlow);
             Assert.IsTrue(session.ChangeStoryActionType("action", type));
-            if (type == "give_item") Assert.IsTrue(session.SetNodeProperty("action", "item_id", "fixture_item"));
+            if (type == "give_item") Assert.IsTrue(session.SetNodeProperty("action", "item_id", "ST-2345-6789-ABCD-EFGH~item~fixture_item"));
             if (type == "send_message") Assert.IsTrue(session.SetNodeProperty("action", "message", "fixture message"));
             if (type == "execute_command") Assert.IsTrue(session.SetNodeProperty("action", "command", "/say fixture"));
             Assert.IsEmpty(CanonicalStoryActionSchema.Validate(node), type);

@@ -2,7 +2,6 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.IO;
-using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -85,59 +84,37 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
     }
 
     [TestMethod]
-    public void DeletionPlanBlocksLegacyReferenceAndOwnership()
+    [DataRow("stories", "{\"owned_resources\":{\"actors\":[\"hero\"]}}")]
+    [DataRow("stories", "broken")]
+    [DataRow("dialogues", "{\"entry\":\"end\"}")]
+    [DataRow("dialogues", "broken")]
+    [DataRow("quests", "{\"objectives\":[]}")]
+    [DataRow("quests", "broken")]
+    public void UnsupportedAuthorDataBlocksActorOperationsWithoutRewriting(string directory, string contents)
     {
         using var project = NewProject();
         var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
+        const string story = "ST-2345-6789-ABCD-EFGH";
+        const string actor = story + "~actor~hero";
+        CreateCanonicalStory(store, story);
         var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
-        var stories = new StoryRepository(project.Root);
-        stories.SaveStory(LegacyStory("ST-4567-89AB-CDEF-GHJK", referenced: true));
-        stories.SaveStory(LegacyStory("ST-5678-9ABC-DEFG-HJKL", owned: true));
-
-        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
-
-        Assert.IsFalse(plan.CanDelete);
-        Assert.HasCount(2, plan.LegacyBlockers);
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsReferenced && item.StoryId == "ST-4567-89AB-CDEF-GHJK"));
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsOwned && item.StoryId == "ST-5678-9ABC-DEFG-HJKL"));
-    }
-
-    [TestMethod]
-    public void DeletionPlanTreatsSameIdLegacyOwnershipAsMigrationMirror()
-    {
-        using var project = NewProject();
-        var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
-        var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
-        new StoryRepository(project.Root).SaveStory(LegacyStory("ST-2345-6789-ABCD-EFGH", owned: true));
-
-        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
-
-        Assert.IsTrue(plan.CanDelete);
-        Assert.IsEmpty(plan.LegacyBlockers);
-    }
-
-    [TestMethod]
-    public void DeletionPlanKeepsSameIdLegacyReferenceAndDifferentLegacyOwnershipAsBlockers()
-    {
-        using var project = NewProject();
-        var store = NewStore(project.Root);
-        CreateCanonicalStory(store, "ST-2345-6789-ABCD-EFGH");
-        var service = new CanonicalStoryActorLifecycleService(store);
-        service.CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero", "Hero");
-        var stories = new StoryRepository(project.Root);
-        stories.SaveStory(LegacyStory("ST-2345-6789-ABCD-EFGH", referenced: true));
-        stories.SaveStory(LegacyStory("ST-5678-9ABC-DEFG-HJKL", owned: true));
-
-        var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~hero");
-
-        Assert.IsFalse(plan.CanDelete);
-        Assert.HasCount(2, plan.LegacyBlockers);
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsReferenced && item.StoryId == "ST-2345-6789-ABCD-EFGH"));
-        Assert.IsTrue(plan.LegacyBlockers.Any(item => item.IsOwned && item.StoryId == "ST-5678-9ABC-DEFG-HJKL"));
+        service.CreateOwned(story, actor, "Hero");
+        var retired = Path.Combine(project.Root, directory, "retired.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(retired)!);
+        File.WriteAllText(retired, contents);
+        var actorPath = service.Actors.GetActorPath(actor);
+        var membershipPath = store.Memberships.GetPath(story);
+        var actorBytes = File.ReadAllBytes(actorPath);
+        var membershipBytes = File.ReadAllBytes(membershipPath);
+        var retiredBytes = File.ReadAllBytes(retired);
+        Assert.AreEqual("story.actor.project.unsupported", Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(
+            () => service.GetDeletionPlan(story, actor)).Code);
+        Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(() => service.DeleteOwned(story, actor));
+        Assert.ThrowsExactly<CanonicalStoryActorLifecycleException>(() => service.CreateOwned(story, story + "~actor~new", "New"));
+        CollectionAssert.AreEqual(actorBytes, File.ReadAllBytes(actorPath));
+        CollectionAssert.AreEqual(membershipBytes, File.ReadAllBytes(membershipPath));
+        CollectionAssert.AreEqual(retiredBytes, File.ReadAllBytes(retired));
+        Assert.IsFalse(File.Exists(service.Actors.GetActorPath(story + "~actor~new")));
     }
 
     [TestMethod]
@@ -201,19 +178,6 @@ public sealed class CanonicalStoryActorLifecycleServiceTests
             GraphResourceKind.Story, id, id, new GraphDocument([new GraphNode("start", "start", "Start")] )));
         store.Memberships.Create(new CanonicalStoryMembershipManifest(id));
     }
-
-    private static StoryResource LegacyStory(string id, bool owned = false, bool referenced = false)
-        => new()
-        {
-            Id = id,
-            DisplayName = id,
-            FlowRef = id,
-            Title = id,
-            Entry = "end",
-            Nodes = [new StoryNodeResource { Id = "end", Type = "END" }],
-            OwnedResources = new StoryMembership { Actors = owned ? ["ST-2345-6789-ABCD-EFGH~actor~hero"] : [] },
-            ReferencedResources = new StoryMembership { Actors = referenced ? ["ST-2345-6789-ABCD-EFGH~actor~hero"] : [] },
-        };
 
     private sealed class FailOnWrite(int failureNumber) : IAtomicFileWriter
     {

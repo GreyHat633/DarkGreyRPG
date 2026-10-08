@@ -11,6 +11,8 @@ import darkgrey.rpg.nominator.container.ContainerNominatorInventory;
 
 public class CommonProxy {
 
+    public void openCanonicalTaskView(int dimension) {}
+
     public void acceptPlayerInspection(int kind, long request, net.minecraft.nbt.NBTTagCompound data) {}
 
     public void acceptPackageManager(long request, net.minecraft.nbt.NBTTagCompound data) {}
@@ -35,8 +37,8 @@ public class CommonProxy {
         String story, long revision) {}
 
     public void openNominatorEntityGui(int entityId, UUID entityUuid, String displayName, String entityType,
-        String individual, List<String> groups, List<String> typeGroups, String story, long revision,
-        long catalogRevision, NominatorCatalog catalog) {}
+        String individual, List<String> groups, String story, long revision, long catalogRevision,
+        NominatorCatalog catalog) {}
 
     public void openNominatorInventoryGui() {}
 

@@ -23,7 +23,6 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     private static final int CHOICE_BUTTON_BASE = 3000;
     private static final int HISTORY_BUTTON = 1999;
     private static final int AUTO_BUTTON = 1998;
-    private static final int PROMPT_BLOCK = 1997;
 
     private CanonicalSessionFrame frame;
     private int choiceOffset;
@@ -117,23 +116,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             int regionTop = 4, regionBottom = layout.top - 8;
             int regionHeight = Math.max(1, regionBottom - regionTop);
             int choiceLeft = (width - layout.choiceWidth) / 2;
-            GuiWrappedChoiceButton prompt = null;
-            if (!frame.getText()
-                .isEmpty()) {
-                prompt = new GuiWrappedChoiceButton(
-                    PROMPT_BLOCK,
-                    choiceLeft,
-                    0,
-                    layout.choiceWidth,
-                    Math.max(26, regionHeight / 3),
-                    frame.getText(),
-                    fontRendererObj);
-                prompt.presentationOnly();
-                buttonList.add(prompt);
-            }
-            int promptHeight = prompt == null ? 0 : prompt.height + 4;
-            int firstY = promptHeight;
-            int available = Math.max(26, regionHeight - promptHeight - 24);
+            int firstY = 0;
+            int available = Math.max(26, regionHeight - 24);
             visibleChoiceCount = 0;
             int used = 0;
             for (int index = 0; index < choices.size() - choiceOffset; index++) {
@@ -157,7 +141,7 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
             }
             int pageY = firstY + used;
             boolean hasPager = choiceOffset > 0 || choiceOffset + visibleChoiceCount < choices.size();
-            int total = promptHeight + Math.max(0, used - 4) + (hasPager ? 24 : 0);
+            int total = Math.max(0, used - 4) + (hasPager ? 24 : 0);
             int centered = regionTop + Math.max(0, (regionHeight - total) / 2);
             for (Object object : buttonList)
                 if (object instanceof GuiWrappedChoiceButton) ((GuiButton) object).yPosition += centered;
@@ -235,8 +219,8 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
     }
 
     private void setButtonsEnabled(boolean enabled) {
-        for (Object object : buttonList) ((GuiButton) object).enabled = ((GuiButton) object).id != PROMPT_BLOCK
-            && (((GuiButton) object).id == HISTORY_BUTTON || enabled);
+        for (Object object : buttonList)
+            ((GuiButton) object).enabled = ((GuiButton) object).id == HISTORY_BUTTON || enabled;
         for (Object object : buttonList) {
             GuiButton button = (GuiButton) object;
             if (!choiceButtons.containsKey(button.id)) continue;

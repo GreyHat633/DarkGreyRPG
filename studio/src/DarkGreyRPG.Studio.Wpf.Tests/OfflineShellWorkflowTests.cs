@@ -315,14 +315,15 @@ public sealed class OfflineShellWorkflowTests
             if (index == 0) shell.AddExternalReference("ST-2345-6789-ABCD-EFGH");
             else
             {
-                // The Story toolbar uses the same complete directory, even when Tasks is selected.
-                shell.CanonicalStoryWorkspace!.SelectFolder(CanonicalStoryFolderKind.Tasks);
+                var folder = index < 2 ? CanonicalStoryFolderKind.Actors : index < 4 ? CanonicalStoryFolderKind.Items
+                    : index == 4 ? CanonicalStoryFolderKind.Sessions : CanonicalStoryFolderKind.Tasks;
+                shell.CanonicalStoryWorkspace!.SelectFolder(folder);
                 shell.CanonicalStoryWorkspace.ReferenceSelectedResourceCommand.Execute(null);
             }
             Assert.IsFalse(shell.StatusMessage.Contains("失败"), shell.StatusMessage);
             Assert.IsFalse(shell.StatusMessage.Contains(source), "No resource UID in operation messages");
             Assert.IsTrue(dialogs.LastChoices.All(choice => choice.SourceStoryId == source && choice.SourceStoryName == "本地来源" && !choice.IsExternal));
-            Assert.AreEqual(ownerChoices.Length - index, dialogs.LastChoices.Count);
+            Assert.AreEqual(new[] { 6, 1, 2, 1, 1, 1 }[index], dialogs.LastChoices.Count);
             var workspace = shell.CanonicalStoryWorkspace!;
             Assert.IsTrue(workspace.Folders.SelectMany(folder => folder.Items).Any(item => item.Id == ownerChoices[index]));
             shell.UndoCurrentCommand.Execute(null);
@@ -348,9 +349,57 @@ public sealed class OfflineShellWorkflowTests
     {
         public string? PickProjectFolder() => root;
     }
+
+    [TestMethod]
+    [DataRow(CanonicalStoryFolderKind.Actors, "引用角色")]
+    [DataRow(CanonicalStoryFolderKind.Items, "引用物品")]
+    [DataRow(CanonicalStoryFolderKind.Sessions, "引用会话")]
+    [DataRow(CanonicalStoryFolderKind.Tasks, "引用任务")]
+    public void TypedReferenceDirectoryIncludesOnlyRequestedProviderKinds(CanonicalStoryFolderKind folder, string title)
+    {
+        using var fixture = new Fixture();
+        var dialogs = new Dialogs();
+        var shell = new ShellViewModel(new ProjectService(), new Picker(fixture.A), offlinePackageDialogs: dialogs);
+        shell.OpenProjectCommand.Execute(null);
+        shell.ReferencePackageFromFile(fixture.Package);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
+        Assert.IsTrue(shell.CanonicalStoryWorkspace!.RequestReference(folder));
+        Assert.AreEqual(title, dialogs.LastTitle);
+        var allowed = folder switch
+        {
+            CanonicalStoryFolderKind.Actors => new[] { "Actor" },
+            CanonicalStoryFolderKind.Items => new[] { "Item", "ItemGroup" },
+            CanonicalStoryFolderKind.Sessions => new[] { "Session" },
+            _ => new[] { "Task" },
+        };
+        Assert.IsNotEmpty(dialogs.LastChoices);
+        Assert.IsTrue(dialogs.LastChoices.All(choice => allowed.Contains(choice.Kind) && choice.IsExternal));
+        var picker = new OfflineResourcePickerViewModel(dialogs.LastChoices, title);
+        picker.SearchText = "守卫";
+        Assert.IsTrue(picker.Folders.SelectMany(group => group.Matches).All(choice => allowed.Contains(choice.Kind)));
+    }
+
+    [TestMethod]
+    public void TypedReferenceRejectsWrongKindReturnedByPickerWithoutChangingMembership()
+    {
+        using var fixture = new Fixture();
+        var dialogs = new Dialogs();
+        var shell = new ShellViewModel(new ProjectService(), new Picker(fixture.A), offlinePackageDialogs: dialogs);
+        shell.OpenProjectCommand.Execute(null); shell.ReferencePackageFromFile(fixture.Package);
+        shell.AddExternalReference("ST-2345-6789-ABCD-EFGH");
+        dialogs.ForcedChoice = dialogs.LastChoices.Single(choice => choice.Kind == "Task");
+        var path = new CanonicalProjectGraphStore(fixture.A).Memberships.GetPath("ST-2345-6789-ABCD-EFGH");
+        var before = File.ReadAllBytes(path);
+        shell.OpenStory(shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
+        Assert.IsTrue(shell.CanonicalStoryWorkspace!.RequestReference(CanonicalStoryFolderKind.Actors));
+        CollectionAssert.AreEqual(before, File.ReadAllBytes(path));
+        Assert.IsTrue(shell.Problems.HasErrors);
+    }
     private sealed class Dialogs : IOfflinePackageDialogs
     {
         public string? SelectId { get; set; }
+        public OfflineResourceChoice? ForcedChoice { get; set; }
+        public string? LastTitle { get; private set; }
         public bool RemoveConfirmed { get; set; }
         public IReadOnlyList<OfflineResourceChoice> LastExternal { get; private set; } = [];
         public IReadOnlyList<OfflineResourceChoice> LastChoices { get; private set; } = [];
@@ -359,9 +408,10 @@ public sealed class OfflineShellWorkflowTests
         public string? PickPackageFile() => null;
         public OfflineResourceChoice? PickResource(IReadOnlyList<OfflineResourceChoice> resources, string title)
         {
+            LastTitle = title;
             LastChoices = resources;
             LastExternal = resources.Where(choice => choice.IsExternal).ToArray();
-            return resources.SingleOrDefault(choice => choice.Id == SelectId);
+            return ForcedChoice ?? resources.SingleOrDefault(choice => choice.Id == SelectId);
         }
         public void ShowReadOnlyResource(OfflineResourceChoice choice) => Viewed = choice;
         public bool ConfirmRemoval(string package, IReadOnlyList<string> consumers)

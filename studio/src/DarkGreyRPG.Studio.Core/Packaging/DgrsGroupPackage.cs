@@ -14,7 +14,7 @@ public sealed class DgrsGroupManifest
 {
     public const string GraphPath = "resources/group-connections.json";
     [JsonPropertyName("format")] public string Format { get; init; } = "dgrs.g";
-    [JsonPropertyName("format_version")] public int FormatVersion { get; init; } = 2;
+    [JsonPropertyName("format_version")] public int FormatVersion { get; init; } = 3;
     [JsonPropertyName("identity_format")] public string IdentityFormat { get; init; } = "story-uid-v1";
     [JsonPropertyName("display_name")] public string DisplayName { get; init; } = string.Empty;
     [JsonPropertyName("connections")] public string Connections { get; init; } = GraphPath;
@@ -22,7 +22,7 @@ public sealed class DgrsGroupManifest
 
     public void Validate()
     {
-        if (Format != "dgrs.g" || FormatVersion != 2 || IdentityFormat != "story-uid-v1"
+        if (Format != "dgrs.g" || FormatVersion != 3 || IdentityFormat != "story-uid-v1"
             || string.IsNullOrWhiteSpace(DisplayName) || DisplayName.Length > 128 || Connections != GraphPath
             || Members is null || Members.Count is < 2 or > 4096 || Members.Any(member => member is null)
             || Members.Select(member => member.StoryId).Distinct(StringComparer.Ordinal).Count() != Members.Count)
@@ -134,8 +134,9 @@ public static class DgrsGroupPackageValidator
         }
         catch (StoryPackageException) { throw; }
         catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException
-            or JsonException or ArgumentException or InvalidOperationException or CanonicalStoryLogicGraphRepositoryException)
-        { throw new StoryPackageException("Could not validate complete Story Group container.", exception); }
+            or JsonException or ArgumentException or InvalidOperationException or CanonicalStoryLogicGraphRepositoryException
+            or GraphResourceEnvelopeException or CanonicalStoryMembershipException)
+        { throw new StoryPackageException($"Could not validate complete Story Group container: {exception.Message}", exception); }
     }
 }
 

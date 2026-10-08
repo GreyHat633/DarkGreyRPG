@@ -72,26 +72,6 @@ public sealed class GateDStabilityTests
         StringAssert.Contains(File.ReadAllText(path!), "Studio Version: 2.1.3-test");
     }
 
-    [TestMethod]
-    public void CreationChoiceBindingUsesExplicitOneWayMode()
-    {
-        var path = FindRepositoryFile("studio", "src", "DarkGreyRPG.Studio", "Views", "ResourceCreationChoiceDialog.xaml");
-        var xaml = File.ReadAllText(path);
-        StringAssert.Contains(xaml, "ChineseTypeLabel, Mode=OneWay");
-    }
-
-    private static string FindRepositoryFile(params string[] parts)
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var candidate = Path.Combine([directory.FullName, .. parts]);
-            if (File.Exists(candidate)) return candidate;
-        }
-
-        Assert.Fail("Could not locate repository source file.");
-        return string.Empty;
-    }
-
     private sealed class FixedFolderPicker(string folder) : IProjectFolderPicker
     {
         public string? PickProjectFolder() => folder;

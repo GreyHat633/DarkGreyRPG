@@ -7,6 +7,25 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 public sealed class ProblemsViewModelTests
 {
     [TestMethod]
+    public void ClearCommandRemovesBothValidationAndOperationFailuresAndAllowsNewReports()
+    {
+        var model = new ProblemsViewModel();
+        Assert.IsFalse(model.ClearCommand.CanExecute(null));
+        model.Replace([
+            new(ValidationSeverity.Error, "operation.failure", "Old open failure", Source: "ProjectException"),
+            new(ValidationSeverity.Error, "graph.connection.invalid", "Current invalid wire", Source: "canonical/story/a"),
+        ]);
+        Assert.IsTrue(model.ClearCommand.CanExecute(null));
+        model.ClearCommand.Execute(null);
+        Assert.AreEqual(0, model.ErrorCount);
+        Assert.IsFalse(model.HasProblems);
+        Assert.IsFalse(model.ClearCommand.CanExecute(null));
+        model.ReplaceForSource("canonical/story/a", [new(ValidationSeverity.Error, "graph.connection.invalid", "Still invalid")]);
+        Assert.AreEqual(1, model.ErrorCount);
+        Assert.IsTrue(model.ClearCommand.CanExecute(null));
+    }
+
+    [TestMethod]
     public void ReplaceFromValidationIssuesPreservesOrderAndDetails()
     {
         var viewModel = new ProblemsViewModel();

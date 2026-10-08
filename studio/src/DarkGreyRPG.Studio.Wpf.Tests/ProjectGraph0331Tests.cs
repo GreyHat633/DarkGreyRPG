@@ -12,6 +12,45 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [DoNotParallelize]
 public sealed class ProjectGraph0331Tests
 {
+    [STATestMethod]
+    public void UpdatingReferencedPackageRefreshesVisiblePublicPortsWithoutReopening()
+    {
+        using var provider = new ProjectGraph0331Directory();
+        using var consumer = new ProjectGraph0331Directory();
+        const string source = "ST-2345-6789-ABCD-EFGH", target = "ST-AAAA-BBBB-CCCC-DDDD";
+        var providerStore = new CanonicalProjectGraphStore(provider.Root);
+        providerStore.Stories.Create(Story(target, FlowInput("entry", "入口"), LogicInput("old", "旧输入")));
+        providerStore.Memberships.Create(new CanonicalStoryMembershipManifest(target));
+        var package = Path.Combine(provider.Root, "build", "provider.dgrs");
+        new DgrsStoryPackageExporter(provider.Root).Build(target, package, "0.4.0.0");
+        var consumerStore = new CanonicalProjectGraphStore(consumer.Root);
+        consumerStore.Stories.Create(Story(source, LogicOutput("output", "本地输出")));
+        var reference = Path.Combine(consumer.Root, "references", "provider.dgrs");
+        Directory.CreateDirectory(Path.GetDirectoryName(reference)!);
+        File.Copy(package, reference);
+        var graph = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: consumer.Root);
+        var host = graph.CanonicalHost!;
+        var view = new CanonicalGraphEditorView(host);
+        var root = new System.Windows.Controls.Grid { Width = 900, Height = 700 };
+        root.Children.Add(view);
+        root.Measure(new(900, 700)); root.Arrange(new(0, 0, 900, 700)); root.UpdateLayout();
+        Assert.IsTrue(view.PortVisuals.Any(port => port.NodeId == target && port.PortId == "old"));
+
+        providerStore.Stories.Replace(Story(target, FlowInput("entry", "入口"), LogicInput("new", "新输入")));
+        new DgrsStoryPackageExporter(provider.Root).Build(target, package, "0.4.0.0");
+        File.Copy(package, reference, overwrite: true);
+        graph.RefreshReferencedStories();
+        root.UpdateLayout();
+        Assert.IsFalse(view.PortVisuals.Any(port => port.NodeId == target && port.PortId == "old"));
+        var input = view.PortVisuals.Single(port => port.NodeId == target && port.PortId == "new");
+        Assert.IsTrue(view.BeginPendingConnectionPress(view.PortVisuals.Single(port => port.NodeId == source), new(0, 0)));
+        Assert.IsTrue(view.AdvancePendingConnectionPress(new(30, 30)));
+        Assert.IsTrue(view.CompleteConnectionDrag(input));
+        Assert.AreEqual("new", consumerStore.StoryLogicGraph.Load().Connections.Single().TargetPortId);
+        Assert.IsTrue(graph.IsReferencedStory(target));
+        CollectionAssert.AreEqual(File.ReadAllBytes(package), File.ReadAllBytes(reference));
+    }
+
     [TestMethod]
     public void ProjectProjectionAllowsLayoutAndRejectsInternalContentCrud()
     {
@@ -20,7 +59,7 @@ public sealed class ProjectGraph0331Tests
         store.Stories.Create(Story("ST-2345-6789-ABCD-EFGH", Terminate("stop", "停止")));
         store.Stories.Create(Story("ST-JKLM-NPQR-STUV-WXYZ", FlowInput("entry", "入口")));
 
-        var graph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var graph = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         var host = graph.CanonicalHost;
         Assert.IsNotNull(host);
         Assert.AreEqual(GraphScope.Project, host!.Scope);
@@ -52,7 +91,7 @@ public sealed class ProjectGraph0331Tests
 
         var expected = new CanonicalStoryLogicConnection("ST-2345-6789-ABCD-EFGH", "stop", "ST-JKLM-NPQR-STUV-WXYZ", "entry", "Flow");
         store.StoryLogicGraph.Save([expected]);
-        var graph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var graph = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         var host = graph.CanonicalHost!;
         var output = GraphEditorEndpoint.Output(expected.SourceStoryId, expected.SourcePortId, GraphInterfaceKind.Flow);
         var input = GraphEditorEndpoint.Input(expected.TargetStoryId, expected.TargetPortId, GraphInterfaceKind.Flow);
@@ -70,7 +109,7 @@ public sealed class ProjectGraph0331Tests
         Assert.IsTrue(host.Redo());
         Assert.AreEqual(expected, store.StoryLogicGraph.Load().Connections.Single());
 
-        var reopened = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var reopened = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         Assert.AreEqual(new GraphConnection("ST-2345-6789-ABCD-EFGH", "stop", "ST-JKLM-NPQR-STUV-WXYZ", "entry", GraphInterfaceKind.Flow),
             reopened.CanonicalHost!.Graph.Connections.Single());
         Assert.AreEqual(GraphInterfaceKind.Flow, reopened.CanonicalHost.Graph.Connections.Single().InterfaceKind);
@@ -94,7 +133,7 @@ public sealed class ProjectGraph0331Tests
         File.Copy(package, Path.Combine(consumer.Root, "references", "provider.dgrs"));
 
         consumerStore.StoryLogicGraph.Save([new("ST-2345-6789-ABCD-EFGH", "output", "ST-AAAA-BBBB-CCCC-DDDD", "input", "Logic")]);
-        var graph = new ProjectGraphViewModel([], projectDirectory: consumer.Root);
+        var graph = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: consumer.Root);
         var host = graph.CanonicalHost!;
         Assert.IsTrue(graph.IsReferencedStory("ST-AAAA-BBBB-CCCC-DDDD"));
         Assert.IsTrue(host.Nodes.Single(node => node.NodeId == "ST-AAAA-BBBB-CCCC-DDDD").DisplayName.Contains("只读", StringComparison.Ordinal));
@@ -154,7 +193,7 @@ public sealed class ProjectGraph0331Tests
         store.Stories.Create(Story(source, kind == GraphInterfaceKind.Flow ? Terminate("out", "出口") : LogicOutput("out", "出口")));
         foreach (var id in new[] { first, second })
             store.Stories.Create(Story(id, kind == GraphInterfaceKind.Flow ? FlowInput("in", "入口") : LogicInput("in", "入口")));
-        var graph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var graph = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         var host = graph.CanonicalHost!;
         var view = new CanonicalGraphEditorView(host);
         string? summary = null;
@@ -176,7 +215,7 @@ public sealed class ProjectGraph0331Tests
             Assert.IsTrue(host.Undo());
             Assert.AreEqual(first, store.StoryLogicGraph.Load().Connections.Single().TargetStoryId);
             Assert.IsTrue(host.Redo());
-            Assert.AreEqual(second, new ProjectGraphViewModel([], projectDirectory: directory.Root).CanonicalHost!.Graph.Connections.Single().ToNodeId);
+            Assert.AreEqual(second, new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root).CanonicalHost!.Graph.Connections.Single().ToNodeId);
             view.SetScissorsMode(true);
             Assert.IsTrue(view.IsScissorsMode);
             Assert.IsTrue(host.Disconnect(host.Graph.Connections.Single()));

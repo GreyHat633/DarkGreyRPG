@@ -28,8 +28,7 @@ public final class CustomNpcActorBindingProbe {
         id.set(firstEntity, java.util.UUID.randomUUID());
         darkgrey.rpg.identity.NpcIdentitySavedData identities = new darkgrey.rpg.identity.NpcIdentitySavedData();
         require(
-            !darkgrey.rpg.identity.EntityDgrIdentityResolver
-                .resolve(firstEntity, "customnpcs:customnpc", identities, null)
+            !darkgrey.rpg.identity.EntityDgrIdentityResolver.resolve(firstEntity, identities, null)
                 .isResolved(),
             "Legacy CNPC stored identity leaked into current resolution");
         String actor = "ST-2345-6789-ABCD-EFGH~actor~detective";
@@ -38,14 +37,12 @@ public final class CustomNpcActorBindingProbe {
             new darkgrey.rpg.identity.NpcHostIdentity(firstEntity.getUniqueID(), "customnpcs:customnpc", 0));
         require(
             actor.equals(
-                darkgrey.rpg.identity.EntityDgrIdentityResolver
-                    .resolve(firstEntity, "customnpcs:customnpc", identities, null)
+                darkgrey.rpg.identity.EntityDgrIdentityResolver.resolve(firstEntity, identities, null)
                     .getActorId()),
             "Current external identity did not resolve");
         identities.unbindHost(firstEntity.getUniqueID());
         require(
-            !darkgrey.rpg.identity.EntityDgrIdentityResolver
-                .resolve(firstEntity, "customnpcs:customnpc", identities, null)
+            !darkgrey.rpg.identity.EntityDgrIdentityResolver.resolve(firstEntity, identities, null)
                 .isResolved(),
             "Unbind resurrected legacy stored identity");
         require("Acceptance Detective".equals(CustomNpcActorBinding.getNpcName(firstEntity)), "NPC name unavailable");

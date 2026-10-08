@@ -80,11 +80,11 @@ public sealed class GraphNodeShapeValidatorTests
                 : Node(role.Scope, role.NodeType);
             if (role.Scope == GraphScope.Task && role.NodeType == "objective")
                 node.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
-                    JsonSerializer.SerializeToElement("test_actor");
+                    JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~test_actor");
             if (role.Scope == GraphScope.Task && role.NodeType == "objective") node.Properties["description"] = JsonSerializer.SerializeToElement("Test objective");
             if (role.Scope == GraphScope.Session && role.NodeType == "choice")
             {
-                SessionChoiceSchema.InitializeLegacy(node, "option_1", "flow_1");
+                SessionChoiceSchema.InitializeWithoutConditions(node, "option_1", "flow_1");
                 Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, role.Scope));
                 continue;
             }
@@ -118,16 +118,16 @@ public sealed class GraphNodeShapeValidatorTests
     }
 
     [TestMethod]
-    public void SessionChoiceRequiresFlowPortsAndValidatesRetainedLegacyLogicPorts()
+    public void SessionChoiceRequiresFlowPortsAndRejectsRetiredLogicOutputs()
     {
         var node = Node(GraphScope.Session, "choice");
-        SessionChoiceSchema.InitializeLegacy(node, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(node, "option_1", "flow_1");
         Assert.IsEmpty(GraphNodeShapeValidator.Validate(node, GraphScope.Session));
 
         node.Ports.Add(new("option_1", "Desynchronized", false, GraphInterfaceKind.Logic, 0));
         var issues = GraphNodeShapeValidator.Validate(node, GraphScope.Session);
         CollectionAssert.Contains(issues.Select(issue => issue.Code).ToArray(),
-            "graph.session.choice.legacy_logic.presentation");
+            "graph.session.choice.output_logic.retired");
 
         node = Node(GraphScope.Session, "choice");
         node.Properties["options"] = JsonSerializer.SerializeToElement(new[]

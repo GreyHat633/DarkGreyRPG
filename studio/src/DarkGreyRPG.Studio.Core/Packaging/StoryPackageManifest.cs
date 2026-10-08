@@ -7,9 +7,9 @@ namespace DarkGreyRPG.Studio.Core.Packaging;
 /// <summary>Stable metadata for one server-installed Story package.</summary>
 public sealed class StoryPackageManifest
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
     public const string CurrentFormat = "dgrs";
-    public const int CurrentFormatVersion = 2;
+    public const int CurrentFormatVersion = 3;
 
     [JsonPropertyName("identity_format")]
     public string IdentityFormat { get; init; } = "story-uid-v1";
@@ -69,10 +69,11 @@ public sealed class StoryPackageManifest
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
-                || root.EnumerateObject().Select(p => p.Name).Distinct(StringComparer.Ordinal).Count() != root.EnumerateObject().Count()
+                || HasDuplicateFields(root)
                 || !root.TryGetProperty("identity_format", out var identity) || identity.ValueKind != JsonValueKind.String || identity.GetString() != "story-uid-v1"
                 || !root.TryGetProperty("format_version", out _)
-                || !root.TryGetProperty("schema_version", out _))
+                || !new[] { "schema_version", "format", "producer", "producer_version", "package_id", "package_version", "story_id", "story_schema_version", "required_resources" }
+                    .All(field => root.TryGetProperty(field, out _)))
                 throw new StoryPackageException("Current DGRS identity and version fields are required.");
             var result = JsonSerializer.Deserialize<StoryPackageManifest>(json, options)
                 ?? throw new StoryPackageException("Package manifest is empty.");
@@ -84,6 +85,19 @@ public sealed class StoryPackageManifest
         {
             throw new StoryPackageException($"Could not parse package manifest '{source}'.", exception);
         }
+    }
+
+    private static bool HasDuplicateFields(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            var fields = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var field in element.EnumerateObject())
+                if (!fields.Add(field.Name) || HasDuplicateFields(field.Value)) return true;
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+            foreach (var value in element.EnumerateArray()) if (HasDuplicateFields(value)) return true;
+        return false;
     }
 
     public string ToJson()
@@ -109,11 +123,11 @@ public sealed class StoryPackageManifest
         RequireId(manifest.PackageId, "package_id");
         if (string.IsNullOrWhiteSpace(manifest.PackageVersion)) throw new StoryPackageException("package_version is required.");
         RequireId(manifest.StoryId, "story_id");
-        if (manifest.StorySchemaVersion != 2) throw new StoryPackageException("story_schema_version must be positive.");
+        if (manifest.StorySchemaVersion != Graphs.Resources.GraphResourceEnvelope.CurrentSchemaVersion)
+            throw new StoryPackageException("story_schema_version must match the current graph schema.");
         if (manifest.RequiredResources is null) throw new StoryPackageException("required_resources is required.");
         manifest.RequiredResources.Validate();
         if (manifest.PackageId != manifest.StoryId
-            || manifest.RequiredResources.Dialogues.Count != 0 || manifest.RequiredResources.Quests.Count != 0
             || manifest.RequiredResources.CanonicalStories.Count != 1
             || manifest.RequiredResources.CanonicalStories[0] != manifest.RequiredResources.Story
             || manifest.RequiredResources.CanonicalMemberships.Count != 1
@@ -134,8 +148,6 @@ public sealed class StoryPackageRequiredResources
     [JsonPropertyName("actors")] public List<string> Actors { get; init; } = [];
     [JsonPropertyName("items")] public List<string> Items { get; init; } = [];
     [JsonPropertyName("item_groups")] public List<string> ItemGroups { get; init; } = [];
-    [JsonPropertyName("dialogues")] public List<string> Dialogues { get; init; } = [];
-    [JsonPropertyName("quests")] public List<string> Quests { get; init; } = [];
     [JsonPropertyName("canonical_stories")] public List<string> CanonicalStories { get; init; } = [];
     [JsonPropertyName("canonical_memberships")] public List<string> CanonicalMemberships { get; init; } = [];
     [JsonPropertyName("sessions")] public List<string> Sessions { get; init; } = [];
@@ -148,9 +160,9 @@ public sealed class StoryPackageRequiredResources
     internal void Validate()
     {
         ValidatePath(Story, "required_resources.story");
-        foreach (var list in new[] { Actors, Items, ItemGroups, Dialogues, Quests, CanonicalStories, CanonicalMemberships, Sessions, Tasks, Media })
+        foreach (var list in new[] { Actors, Items, ItemGroups, CanonicalStories, CanonicalMemberships, Sessions, Tasks, Media })
         {
-            if (list is null || list.Any(string.IsNullOrWhiteSpace) || list.Count != list.Distinct(StringComparer.Ordinal).Count())
+            if (list is null || list.Any(string.IsNullOrWhiteSpace) || list.Count != list.Distinct(StringComparer.OrdinalIgnoreCase).Count())
                 throw new StoryPackageException("required_resources contains a null or duplicate resource path.");
             foreach (var path in list) ValidatePath(path, "required_resources");
         }

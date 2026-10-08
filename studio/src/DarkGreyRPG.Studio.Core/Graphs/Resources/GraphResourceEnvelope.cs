@@ -20,7 +20,7 @@ public enum GraphResourceKind
 /// </summary>
 public sealed class GraphResourceEnvelope
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
     public const string IdentityFormat = "story-uid-v1";
 
     private GraphDocument? _graph;
@@ -146,7 +146,12 @@ public static class GraphResourceEnvelopeSerializer
             var graph = envelope.SnapshotGraph()!;
             if (envelope.ResourceKind == GraphResourceKind.Session)
             {
-                foreach (var node in graph.Nodes) Definitions.CanonicalSessionLineSchema.Normalize(node);
+                foreach (var node in graph.Nodes)
+                {
+                    Definitions.CanonicalSessionLineSchema.Normalize(node);
+                    // Retired Choice prompts are ignored on read and omitted from authored output.
+                    if (node.Type == "choice") node.Properties.Remove("prompt");
+                }
                 Definitions.ScreenAnimationSequence.NormalizeGraph(graph);
             }
             GraphResourceAddressCodec.Transform(graph, envelope.ResourceKind, writing: true);
@@ -202,7 +207,12 @@ public static class GraphResourceEnvelopeSerializer
             RejectRetiredStandaloneNodes(kind, graph);
             if (kind == GraphResourceKind.Session)
             {
-                foreach (var node in graph.Nodes) Definitions.CanonicalSessionLineSchema.Normalize(node);
+                foreach (var node in graph.Nodes)
+                {
+                    Definitions.CanonicalSessionLineSchema.Normalize(node);
+                    // Retired Choice prompts are ignored on read and omitted from authored output.
+                    if (node.Type == "choice") node.Properties.Remove("prompt");
+                }
                 Definitions.ScreenAnimationSequence.NormalizeGraph(graph);
             }
             var tags = root.TryGetProperty("tags", out var tagsValue)

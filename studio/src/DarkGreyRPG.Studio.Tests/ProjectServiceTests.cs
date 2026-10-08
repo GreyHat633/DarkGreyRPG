@@ -1,6 +1,5 @@
 using DarkGreyRPG.Studio.Core.Projects;
 using DarkGreyRPG.Studio.Core.Actors;
-using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Identity;
 
@@ -54,17 +53,18 @@ public sealed class ProjectServiceTests
         var session = service.CreateProject(directory.Root, "school_rpg", "学校 RPG");
 
         Assert.AreEqual("school_rpg", session.Project.Id);
-        foreach (var name in new[] { "actors", "dialogues", "quests", "stories", "resources" })
+        foreach (var name in new[] { "actors", "resources" })
         {
             Assert.IsTrue(Directory.Exists(Path.Combine(directory.Root, name)), name);
         }
 
         StringAssert.Contains(File.ReadAllText(Path.Combine(directory.Root, "project.json")), "\"display_name\": \"学校 RPG\"");
-        Assert.IsEmpty(Directory.EnumerateFiles(Path.Combine(directory.Root, "stories"), "*.json"));
+        foreach (var retired in new[] { "stories", "dialogues", "quests" })
+            Assert.IsFalse(Directory.Exists(Path.Combine(directory.Root, retired)));
 
         service.CloseProject();
         var reopened = new ProjectService().OpenProject(directory.Root);
-        Assert.IsEmpty(reopened.Stories.ListStories());
+        Assert.IsEmpty(new CanonicalProjectGraphStore(reopened.ProjectDirectory).Stories.List());
     }
 
     [TestMethod]
@@ -155,13 +155,12 @@ public sealed class ProjectServiceTests
     public void ValidateProjectReportsMissingFutureDirectoriesAsWarnings()
     {
         using var directory = new TestProjectDirectory();
-        new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
         var service = new ProjectService();
         service.OpenProject(directory.Root);
 
         var issues = service.ValidateProject();
 
-        Assert.IsTrue(issues.Any(issue => issue.Code == "project.directory.dialogues.missing"));
+        Assert.IsTrue(issues.Any(issue => issue.Code == "project.directory.resources.missing"));
         Assert.IsFalse(issues.Any(issue => issue.Code == "project.directory.actors.missing"));
     }
 
@@ -184,7 +183,6 @@ public sealed class ProjectServiceTests
         Assert.AreSame(duplicate, service.OpenActor(duplicate.Id));
         var duplicatePath = new ActorRepository(directory.Root).GetActorPath(duplicate.Id);
         Assert.IsTrue(File.Exists(duplicatePath));
-        Assert.ThrowsExactly<ActorRepositoryException>(() => service.RenameActor(duplicate.Id, "ST-2345-6789-ABCD-EFGH~actor~mentor"));
         Assert.IsTrue(File.Exists(duplicatePath));
         Assert.AreSame(duplicate, service.OpenActor(duplicate.Id));
         service.DeleteActor(duplicate.Id);
@@ -214,7 +212,7 @@ public sealed class ProjectServiceTests
     }
 
     [TestMethod]
-    public void RenameAndDeleteRefuseDirtyDocumentsAndCollisions()
+    public void DeleteRefusesDirtyDocumentsAndPreservesOtherActors()
     {
         using var directory = new TestProjectDirectory();
         new CanonicalStoryLifecycleService(new CanonicalProjectGraphStore(directory.Root)).Create("ST-2345-6789-ABCD-EFGH", "Owner");
@@ -227,9 +225,6 @@ public sealed class ProjectServiceTests
         var teacher = service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher");
         teacher.DisplayName = "Unsaved";
 
-        var renameException = Assert.ThrowsExactly<ProjectException>(
-            () => service.RenameActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "ST-2345-6789-ABCD-EFGH~actor~mentor"));
-        StringAssert.Contains(renameException.Message, "unsaved");
         var deleteException = Assert.ThrowsExactly<ProjectException>(
             () => service.DeleteActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));
         StringAssert.Contains(deleteException.Message, "unsaved");
@@ -237,9 +232,6 @@ public sealed class ProjectServiceTests
         Assert.AreSame(teacher, service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));
 
         service.SaveActor(teacher);
-        var collisionException = Assert.ThrowsExactly<ActorRepositoryException>(
-            () => service.RenameActor("ST-2345-6789-ABCD-EFGH~actor~teacher", "ST-2345-6789-ABCD-EFGH~actor~guard"));
-        StringAssert.Contains(collisionException.Message, "immutable");
         Assert.IsTrue(File.Exists(new ActorRepository(directory.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~teacher")));
         Assert.IsTrue(File.Exists(new ActorRepository(directory.Root).GetActorPath("ST-2345-6789-ABCD-EFGH~actor~guard")));
         Assert.AreSame(teacher, service.OpenActor("ST-2345-6789-ABCD-EFGH~actor~teacher"));

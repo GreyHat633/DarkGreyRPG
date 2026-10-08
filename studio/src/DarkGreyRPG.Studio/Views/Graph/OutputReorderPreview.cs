@@ -15,7 +15,7 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
     {
         public TranslateTransform Offset { get; } = new();
     }
-    private readonly ItemsControl _list;
+    private readonly FrameworkElement _list;
     private readonly string _displayName;
     private readonly bool _isTaskFlow;
     private readonly Row[] _rows;
@@ -25,6 +25,7 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
     private Point _pointer;
     private double _gapY;
     private bool _show;
+    private double _scrollShift;
     public double GapHeight => _rows[_oldIndex].Height;
     public double GapY => _gapY;
     internal IReadOnlyList<double> OriginalTops => _rows.Select(row => row.Top).ToArray();
@@ -32,13 +33,18 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
     public OutputReorderPreview(ItemsControl list, PublicOutputRow source, int oldIndex, Point pointer)
         : this(list, source.DisplayName, source.IsTaskFlow, oldIndex, pointer) { }
 
-    public OutputReorderPreview(ItemsControl list, string displayName, bool isTaskFlow, int oldIndex, Point pointer) : base(list)
+    public OutputReorderPreview(ItemsControl list, string displayName, bool isTaskFlow, int oldIndex, Point pointer)
+        : this(list, Enumerable.Range(0, list.Items.Count)
+            .Select(index => (FrameworkElement)list.ItemContainerGenerator.ContainerFromIndex(index)).ToArray(),
+            displayName, isTaskFlow, oldIndex, pointer) { }
+
+    public OutputReorderPreview(FrameworkElement list, IReadOnlyList<FrameworkElement> elements,
+        string displayName, bool isTaskFlow, int oldIndex, Point pointer) : base(list)
     {
         _list = list; _displayName = displayName; _isTaskFlow = isTaskFlow; _oldIndex = oldIndex; _destination = oldIndex;
         IsHitTestVisible = false;
-        _rows = Enumerable.Range(0, list.Items.Count).Select(index =>
+        _rows = elements.Select(element =>
         {
-            var element = (FrameworkElement)list.ItemContainerGenerator.ContainerFromIndex(index);
             return new Row(element, element.TranslatePoint(default, list).Y, element.ActualHeight, element.RenderTransform, element.Opacity);
         }).ToArray();
         _grabOffset = Math.Clamp(pointer.Y - _rows[oldIndex].Top, 0, GapHeight);
@@ -52,6 +58,8 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
         Locate(pointer);
     }
 
+    public void SetScrollShift(double shift) => _scrollShift = shift;
+
     public int? Locate(Point pointer)
     {
         _pointer = pointer;
@@ -59,16 +67,16 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
         if (!_show) { InvalidateVisual(); return null; }
         var insertion = _rows.Length;
         for (var index = 0; index < _rows.Length; index++)
-            if (pointer.Y < _rows[index].Top + _rows[index].Height / 2) { insertion = index; break; }
+            if (pointer.Y < _rows[index].Top + _scrollShift + _rows[index].Height / 2) { insertion = index; break; }
         var destination = Math.Clamp(insertion > _oldIndex ? insertion - 1 : insertion, 0, _rows.Length - 1);
         var remaining = _rows.Where((_, index) => index != _oldIndex).ToArray();
-        var y = _rows[0].Top;
+        var y = _rows[0].Top + _scrollShift;
         for (var index = 0; index <= remaining.Length; index++)
         {
             if (index == destination) { _gapY = y; y += GapHeight; }
             if (index == remaining.Length) break;
             var row = remaining[index];
-            var offset = y - row.Top;
+            var offset = y - row.Top - _scrollShift;
             if (destination != _destination || !_show || !SystemParameters.ClientAreaAnimation)
             {
                 var from = row.Offset.Y;

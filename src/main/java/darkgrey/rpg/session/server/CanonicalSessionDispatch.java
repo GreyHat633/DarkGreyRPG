@@ -9,6 +9,7 @@ import io.netty.buffer.Unpooled;
 public final class CanonicalSessionDispatch {
 
     private final CanonicalSessionFrame frame;
+    private CanonicalSessionFrame lineContext;
     private final CanonicalSessionClose close;
     private final CanonicalSessionCompletionResult completionResult;
 
@@ -33,6 +34,28 @@ public final class CanonicalSessionDispatch {
 
     public CanonicalSessionFrame getFrame() {
         return frame == null ? null : copy(frame);
+    }
+
+    /** Reuse an ordinary silent Line envelope before a resumed Choice; the wire format stays unchanged. */
+    public CanonicalSessionDispatch withLineContext(CanonicalSessionFrame context) {
+        if (frame == null || frame.getKind() != CanonicalSessionFrame.Kind.CHOICE
+            || context == null
+            || context.getKind() != CanonicalSessionFrame.Kind.LINE
+            || context.shouldPlayVoice()
+            || context.shouldPlayScreen()
+            || context.getTransportId() != frame.getTransportId()
+            || !context.getStoryId()
+                .equals(frame.getStoryId())
+            || !context.getSessionResourceId()
+                .equals(frame.getSessionResourceId()))
+            throw new IllegalArgumentException("Invalid resumed Choice context.");
+        CanonicalSessionDispatch result = frame(frame);
+        result.lineContext = copy(context);
+        return result;
+    }
+
+    public CanonicalSessionFrame getLineContext() {
+        return lineContext == null ? null : copy(lineContext);
     }
 
     public CanonicalSessionFrame getSessionFrame() {

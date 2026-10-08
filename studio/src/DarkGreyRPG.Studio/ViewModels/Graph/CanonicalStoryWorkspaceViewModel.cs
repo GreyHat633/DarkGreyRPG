@@ -908,12 +908,26 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
         var targetIndex = next.IndexOf(target);
         if (targetIndex < 0) return false;
         next.Insert(targetIndex + (insertAfter ? 1 : 0), item);
+        if (next.SequenceEqual(folder.Items)) return false;
         var handles = next.Select(candidate => OrderHandle(folderKind, candidate)).ToArray();
         if (ResourceOrderChangeRequested is not null
             && !ResourceOrderChangeRequested(folderKind, handles)) return false;
         folder.SynchronizeItems(next);
         SynchronizeTypedFolderOrder(folderKind, folder.Items);
         return true;
+    }
+
+    public IReadOnlyList<string> ResourceOrderHandles(CanonicalStoryFolderKind kind)
+        => Folders.Single(folder => folder.Kind == kind).Items.Select(item => OrderHandle(kind, item)).ToArray();
+
+    public void ApplyResourceOrder(CanonicalStoryFolderKind kind, IReadOnlyList<string> handles)
+    {
+        var folder = Folders.Single(candidate => candidate.Kind == kind);
+        var byHandle = folder.Items.ToDictionary(item => OrderHandle(kind, item), StringComparer.Ordinal);
+        var ordered = handles.Where(byHandle.ContainsKey).Select(handle => byHandle[handle])
+            .Concat(folder.Items).Distinct().ToArray();
+        folder.SynchronizeItems(ordered);
+        SynchronizeTypedFolderOrder(kind, folder.Items);
     }
 
     /// <summary>Double-click/Enter behavior for a selected Session or Task.</summary>
@@ -1647,7 +1661,6 @@ public sealed partial class CanonicalStoryWorkspaceViewModel : ObservableObject,
     {
         if (args.PropertyName is nameof(CanonicalNodeInspectorViewModel.ValidationIssues)
             or nameof(CanonicalNodeInspectorViewModel.LineText)
-            or nameof(CanonicalNodeInspectorViewModel.ChoicePrompt)
             or nameof(CanonicalNodeInspectorViewModel.EndDisplayName)
             or nameof(CanonicalNodeInspectorViewModel.LogicOutputDisplayName))
         {

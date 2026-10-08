@@ -21,7 +21,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     private IReadOnlyList<CanonicalStoryItemItem> _itemItems;
     private string _lineText = string.Empty;
     private string _speakerActorId = string.Empty;
-    private string _choicePrompt = string.Empty;
     private string _endDisplayName = string.Empty;
     private string _logicOutputDisplayName = string.Empty;
     private string _objectiveType = CanonicalTaskObjectiveSchema.KillEntity;
@@ -492,15 +491,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
 
     public string Text { get => LineText; set => LineText = value; }
 
-    public string ChoicePrompt
-    {
-        get => _choicePrompt;
-        set => SetStringProperty(SessionChoiceSchema.PromptProperty, value, ref _choicePrompt, nameof(ChoicePrompt));
-    }
-    public string ChoicePromptError => TextDraftError(nameof(ChoicePrompt));
-
-    public string Prompt { get => ChoicePrompt; set => ChoicePrompt = value; }
-
     public string EndDisplayName
     {
         get => _endDisplayName;
@@ -673,7 +663,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         SetTextDraftError(propertyName, committed ? string.Empty : InvalidTextDraftMessage);
         OnPropertyChanged(propertyName);
         if (propertyName == nameof(LineText)) OnPropertyChanged(nameof(Text));
-        if (propertyName == nameof(ChoicePrompt)) OnPropertyChanged(nameof(Prompt));
     }
 
     private void SetActionString(string property, string? value, ref string field, string propertyName)
@@ -862,7 +851,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
     private bool CanEditProperty(string property)
         => property == "speaker_actor_id" && IsLine
             || property == "text" && IsLine
-            || property == SessionChoiceSchema.PromptProperty && IsChoice
             || property == "display_name" && (IsEnd || IsLogicOutput);
 
     private void RefreshFromHost()
@@ -929,10 +917,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         if (string.IsNullOrEmpty(LineTextError)
             && current.Properties.TryGetValue("text", out var text) && text.ValueKind == JsonValueKind.String)
             _lineText = text.GetString() ?? string.Empty;
-        if (string.IsNullOrEmpty(ChoicePromptError)
-            && current.Properties.TryGetValue(SessionChoiceSchema.PromptProperty, out var prompt)
-            && prompt.ValueKind == JsonValueKind.String)
-            _choicePrompt = prompt.GetString() ?? string.Empty;
         if (current.Properties.TryGetValue("display_name", out var display) && display.ValueKind == JsonValueKind.String)
         {
             if (string.IsNullOrEmpty(EndDisplayNameError))
@@ -1015,9 +999,6 @@ public sealed partial class CanonicalNodeInspectorViewModel : ObservableObject, 
         OnPropertyChanged(nameof(LineTextError));
         OnPropertyChanged(nameof(Text));
         NotifySpeakerPropertiesChanged();
-        OnPropertyChanged(nameof(ChoicePrompt));
-        OnPropertyChanged(nameof(ChoicePromptError));
-        OnPropertyChanged(nameof(Prompt));
         OnPropertyChanged(nameof(EndDisplayName));
         OnPropertyChanged(nameof(EndDisplayNameError));
         OnPropertyChanged(nameof(LogicOutputDisplayName));

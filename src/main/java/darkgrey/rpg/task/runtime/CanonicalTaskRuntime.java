@@ -936,6 +936,16 @@ public final class CanonicalTaskRuntime {
         String target = value.getAsString();
         if (target.length() != 0 && blank(target))
             throw failure("task.objective.property.required", "Property '" + key + "' is required.");
+        if (target.length() == 0) return;
+        if (!darkgrey.rpg.identity.ResourceAddress.isKey(target))
+            throw failure("task.objective.target.invalid", "DGR resource address required at '" + key + "'.");
+        darkgrey.rpg.identity.ResourceAddress.Kind kind = darkgrey.rpg.identity.ResourceAddress.fromKey(target)
+            .getKind();
+        boolean valid = "item".equals(key)
+            ? kind == darkgrey.rpg.identity.ResourceAddress.Kind.ITEM
+                || kind == darkgrey.rpg.identity.ResourceAddress.Kind.ITEM_GROUP
+            : kind == darkgrey.rpg.identity.ResourceAddress.Kind.ACTOR;
+        if (!valid) throw failure("task.objective.target.invalid", "DGR resource kind mismatch at '" + key + "'.");
     }
 
     private static boolean isUnselectedTarget(CanonicalGraphNode node) {

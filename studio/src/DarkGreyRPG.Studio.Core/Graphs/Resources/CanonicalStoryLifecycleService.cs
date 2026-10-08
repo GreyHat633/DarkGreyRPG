@@ -4,7 +4,7 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Items;
-using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Projects;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -135,21 +135,18 @@ public sealed class CanonicalStoryLifecycleService
     private readonly CanonicalProjectGraphStore _store;
     private readonly ActorRepository _actors;
     private readonly ItemRepository _items;
-    private readonly StoryRepository _legacyStories;
     private readonly Action<string> _deleteFile;
     private readonly object _lifecycleGate = new();
 
     public CanonicalStoryLifecycleService(
         CanonicalProjectGraphStore store,
         ActorRepository? actors = null,
-        StoryRepository? legacyStories = null,
         Action<string>? deleteFile = null,
         ItemRepository? items = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _actors = actors ?? new ActorRepository(store.ProjectDirectory);
         _items = items ?? new ItemRepository(store.ProjectDirectory);
-        _legacyStories = legacyStories ?? new StoryRepository(store.ProjectDirectory);
         _deleteFile = deleteFile ?? File.Delete;
     }
 
@@ -175,6 +172,7 @@ public sealed class CanonicalStoryLifecycleService
     {
         EnsureId(storyId);
         EnsureDisplayName(displayName);
+        EnsureSupportedAuthorData();
         lock (_lifecycleGate)
         {
             // An occupied canonical filename remains a collision even when its bytes
@@ -256,7 +254,6 @@ public sealed class CanonicalStoryLifecycleService
             var referenced = membership.ReferencedResources;
             ValidateOwnedFiles(storyId, owned, blockers);
             ValidateOtherCanonicalMemberships(storyId, owned, blockers);
-            ValidateLegacyActorMemberships(storyId, owned.Actors, blockers);
 
             var transitions = new List<CanonicalStoryDeletionIncomingTransition>();
             ValidateCanonicalStoryGraphs(storyId, transitions, blockers);
@@ -363,6 +360,7 @@ public sealed class CanonicalStoryLifecycleService
 
     private (GraphResourceEnvelope Story, CanonicalStoryMembershipManifest Membership) RequirePair(string storyId)
     {
+        EnsureSupportedAuthorData();
         try
         {
             var story = _store.Stories.Load(storyId);
@@ -379,6 +377,13 @@ public sealed class CanonicalStoryLifecycleService
             throw Failure("story.lifecycle.target_membership_invalid",
                 $"Canonical membership for Story '{storyId}' could not be strictly loaded.", exception);
         }
+    }
+
+    private void EnsureSupportedAuthorData()
+    {
+        if (ProjectAuthorDataBoundary.FindRetiredDirectory(_store.ProjectDirectory) is { } directory)
+            throw Failure("story.lifecycle.project.unsupported",
+                $"Retired author directory '{directory}' contains unsupported data; no files were changed.");
     }
 
     private void ValidateOwnedFiles(
@@ -465,43 +470,6 @@ public sealed class CanonicalStoryLifecycleService
         foreach (var id in owned.Intersect(otherOwned.Concat(otherReferenced), StringComparer.Ordinal).Order(StringComparer.Ordinal))
             AddBlocker(blockers, "story.lifecycle.owned_resource.in_use",
                 $"Owned {kind} '{id}' is listed by canonical Story '{otherStoryId}'.", otherStoryId, kind, id);
-    }
-
-    private void ValidateLegacyActorMemberships(
-        string ownerId,
-        IEnumerable<string> ownedActorIds,
-        ICollection<CanonicalStoryDeletionBlocker> blockers)
-    {
-        var actors = ownedActorIds.ToHashSet(StringComparer.Ordinal);
-        if (actors.Count == 0 || !Directory.Exists(_legacyStories.StoriesDirectory)) return;
-        IReadOnlyList<StoryResource> stories;
-        try { stories = _legacyStories.ListStories(); }
-        catch (Exception exception) when (exception is StoryDataException or IOException or UnauthorizedAccessException)
-        {
-            AddBlocker(blockers, "story.lifecycle.legacy_story.invalid",
-                "A legacy Story could not be read; it may hide an Actor membership blocker.", inner: exception);
-            return;
-        }
-
-        foreach (var story in stories.OrderBy(item => item.Id, StringComparer.Ordinal))
-        {
-            foreach (var id in actors.Intersect(story.OwnedResources.Actors.Concat(story.ReferencedResources.Actors), StringComparer.Ordinal).Order(StringComparer.Ordinal))
-            {
-                var isSameOwnerMirror = string.Equals(story.Id, ownerId, StringComparison.Ordinal)
-                    && story.OwnedResources.Actors.Contains(id, StringComparer.Ordinal)
-                    && !story.ReferencedResources.Actors.Contains(id, StringComparer.Ordinal)
-                    && HasHomeStory(id, ownerId);
-                if (!isSameOwnerMirror)
-                    AddBlocker(blockers, "story.lifecycle.owned_actor.in_use",
-                        $"Owned Actor '{id}' is listed by legacy Story '{story.Id}'.", story.Id, "actor", id);
-            }
-        }
-    }
-
-    private bool HasHomeStory(string actorId, string storyId)
-    {
-        try { return string.Equals(_actors.LoadActor(actorId).HomeStoryId, storyId, StringComparison.Ordinal); }
-        catch (Exception exception) when (exception is ActorRepositoryException or ActorDataException) { return false; }
     }
 
     private void ValidateCanonicalStoryGraphs(

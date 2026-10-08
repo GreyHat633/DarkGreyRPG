@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
 
 import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
 import darkgrey.rpg.nominator.NominatorEntityBinding;
@@ -34,20 +33,16 @@ public final class EntityDgrIdentityResolver {
             identities = NpcIdentitySavedData.get();
             selections = NominatorSavedData.get();
         } catch (RuntimeException ignored) {
-            // Offline/client callers have no server-owned identities.
+            // No partial identity result when either server-owned registry cannot be read.
+            return Resolution.none();
         }
         return resolve(entity, identities, selections);
     }
 
     /** Deterministic/testable seam; callers own the supplied SavedData instances. */
     public static Resolution resolve(Entity entity, NpcIdentitySavedData identities, NominatorSavedData selections) {
-        return resolve(entity, entity == null ? null : EntityList.getEntityString(entity), identities, selections);
-    }
-
-    /** Test/compatibility seam when the authoritative registry type is already known. */
-    public static Resolution resolve(Entity entity, String entityType, NpcIdentitySavedData identities,
-        NominatorSavedData selections) {
         if (entity == null) return Resolution.none();
+        if (selections != null) selections.requireUsable();
         UUID uuid = entity.getUniqueID();
         if (uuid == null) return Resolution.none();
         boolean canonicalUniqueHost = isCanonicalUniqueHost(entity);
@@ -75,8 +70,6 @@ public final class EntityDgrIdentityResolver {
                 }
                 for (String group : binding.getGroupIds()) addIfPresent(resolved, group);
             }
-            if (darkgrey.rpg.nominator.NominatorService.safeType(entityType))
-                for (String group : selections.getTypeGroups(entityType)) addIfPresent(resolved, group);
         }
         if (!resolved.isEmpty()) return new Resolution(
             primarySource == Source.NONE ? Source.NOMINATOR_GROUP : primarySource,

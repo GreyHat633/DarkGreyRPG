@@ -258,7 +258,7 @@ public sealed partial class ShellViewModel
         return choices;
     }
 
-    private void PickOfflineResourceReference(string? storyId)
+    private void PickOfflineResourceReference(string? storyId, CanonicalStoryFolderKind? folderKind = null)
     {
         if (storyId is null || _canonicalGraphStore is null || !HasProject) return;
         OfflineResourceChoice? choice = null;
@@ -266,13 +266,32 @@ public sealed partial class ShellViewModel
         {
             var membership = _canonicalGraphStore.Memberships.Load(storyId);
             var present = MembershipKeys(membership.OwnedResources).Concat(MembershipKeys(membership.ReferencedResources)).ToHashSet();
+            bool RequestedKind(DgrResourceKind kind) => folderKind switch
+            {
+                CanonicalStoryFolderKind.Actors => kind == DgrResourceKind.Actor,
+                CanonicalStoryFolderKind.Items => kind is DgrResourceKind.Item or DgrResourceKind.ItemGroup,
+                CanonicalStoryFolderKind.Sessions => kind == DgrResourceKind.Session,
+                CanonicalStoryFolderKind.Tasks => kind == DgrResourceKind.Task,
+                null => kind != DgrResourceKind.Story,
+                _ => false,
+            };
             bool Offered(OfflineResourceChoice candidate) => Enum.TryParse<DgrResourceKind>(candidate.Kind, out var kind)
-                && kind != DgrResourceKind.Story && !present.Contains(new(kind, candidate.Id));
-            choice = _offlinePackageDialogs.PickResource(ResourceReferenceChoices().Where(Offered).ToArray(), "引用资源");
+                && RequestedKind(kind) && !present.Contains(new(kind, candidate.Id));
+            var title = folderKind switch
+            {
+                CanonicalStoryFolderKind.Actors => "引用角色",
+                CanonicalStoryFolderKind.Items => "引用物品",
+                CanonicalStoryFolderKind.Sessions => "引用会话",
+                CanonicalStoryFolderKind.Tasks => "引用任务",
+                _ => "引用资源",
+            };
+            choice = _offlinePackageDialogs.PickResource(ResourceReferenceChoices().Where(Offered).ToArray(), title);
             if (choice is null) return;
-            if (!ResourceReferenceChoices().Any(candidate => candidate.Kind == choice.Kind && candidate.Id == choice.Id
+            membership = _canonicalGraphStore.Memberships.Load(storyId);
+            present = MembershipKeys(membership.OwnedResources).Concat(MembershipKeys(membership.ReferencedResources)).ToHashSet();
+            if (!Offered(choice) || !ResourceReferenceChoices().Where(Offered).Any(candidate => candidate.Kind == choice.Kind && candidate.Id == choice.Id
                     && candidate.SourceStoryId == choice.SourceStoryId && candidate.IsExternal == choice.IsExternal))
-                throw new InvalidOperationException("所选资源的来源已变化，请重新选择。");
+                throw new InvalidOperationException("所选资源的类型、来源或引用状态已变化，请重新选择。");
             var before = CaptureReferenceFiles(storyId);
             try
             {

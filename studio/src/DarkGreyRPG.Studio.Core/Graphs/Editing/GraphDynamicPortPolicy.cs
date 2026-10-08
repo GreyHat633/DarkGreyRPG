@@ -44,12 +44,9 @@ public static class GraphDynamicPortPolicy
         new(GraphScope.StoryFlow, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Session, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Session, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
-        // New Choice options own Flow-only outputs. Logic outputs are retained
-        // only when loading 0.3.1.4 compatibility content and remain protected
-        // from generic dynamic-port editing.
+        // Choice options own Flow outputs and optional condition Logic inputs.
         new(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Flow, 1, false),
         new(GraphScope.Session, "choice", GraphPortDirection.Input, GraphInterfaceKind.Logic, 0, false),
-        new(GraphScope.Session, "choice", GraphPortDirection.Output, GraphInterfaceKind.Logic, 0, false),
         new(GraphScope.Task, "and", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         new(GraphScope.Task, "or", GraphPortDirection.Input, GraphInterfaceKind.Logic, 2),
         // Objective prerequisite is a schema-owned conditional port. It is

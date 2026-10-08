@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs;
 
@@ -173,7 +173,7 @@ public static class GraphNodeDefinitionRegistry
                 properties: [ArrayProperty("layers"), ObjectProperty("transition")]),
             Node("choice", GraphScope.Session, "选择", "会话", kinds: all,
                 ports: [In("flow_in", "Flow In", GraphInterfaceKind.Flow, 0)],
-                properties: [StringProperty("prompt"), ArrayProperty("options")]),
+                properties: [ArrayProperty("options")]),
             Node("and", GraphScope.Session, "与", "逻辑", kinds: logicOnly,
                 ports: [Out("logic_out", "Logic Out", GraphInterfaceKind.Logic, 0)]),
             Node("or", GraphScope.Session, "或", "逻辑", kinds: logicOnly,

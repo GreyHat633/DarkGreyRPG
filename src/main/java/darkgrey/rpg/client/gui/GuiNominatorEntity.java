@@ -42,8 +42,7 @@ public final class GuiNominatorEntity extends GuiScreen {
     }
 
     public GuiNominatorEntity(int entityId, UUID entityUuid, String displayName, String entityType, String individual,
-        List<String> groups, List<String> typeGroups, String story, long revision, long catalogRevision,
-        NominatorCatalog catalog) {
+        List<String> groups, String story, long revision, long catalogRevision, NominatorCatalog catalog) {
         this(entityId, entityUuid, individual, groups, story, revision);
         this.catalogRevision = catalogRevision;
         this.catalog = catalog == null ? emptyCatalog() : catalog;

@@ -515,31 +515,7 @@
         </Style>
       </graph:SessionScreenEditor.Style>
     </graph:SessionScreenEditor>
-    <TextBlock Margin="0,10,0,3" Text="选择提示">
-      <TextBlock.Style>
-        <Style TargetType="TextBlock">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsChoice}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </TextBlock.Style>
-    </TextBlock>
-    <graph:DynamicContentEditor Text="{Binding ChoicePrompt, Mode=TwoWay, UpdateSourceTrigger=Explicit}">
-      <graph:DynamicContentEditor.Style>
-        <Style TargetType="graph:DynamicContentEditor">
-          <Setter Property="Visibility" Value="Collapsed" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsChoice}" Value="True">
-              <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </graph:DynamicContentEditor.Style>
-    </graph:DynamicContentEditor>
-    <TextBlock Style="{StaticResource {x:Type TextBlock}}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="{Binding ChoicePromptError}" TextWrapping="Wrap" />
+
     <StackPanel Orientation="Horizontal" Margin="0,8,0,3">
       <StackPanel.Style>
         <Style TargetType="StackPanel">
@@ -555,7 +531,7 @@
       <Button Margin="8,0,0,0" Padding="6,1" Content="+" Command="{Binding AddChoiceOptionCommand}" ToolTip="添加选项" />
     </StackPanel>
 <graph:ReorderEntriesEditor IsDynamicContent="True" ItemsSource="{Binding ChoiceOptions}" />
-    
+
     <StackPanel Margin="0,8,0,6">
       <StackPanel.Style>
         <Style TargetType="StackPanel">

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceException;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
@@ -27,9 +26,6 @@ import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectRepository;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.quest.QuestDefinition;
-import darkgrey.rpg.story.StoryDefinition;
-import darkgrey.rpg.story.StoryLoader;
 
 /** Builds one validated ProjectSnapshot directly from detached DGRS entries. */
 final class StoryPackageSnapshotReader {
@@ -77,31 +73,6 @@ final class StoryPackageSnapshotReader {
             required.getItemGroups(),
             ItemResourceDefinition.TYPE_COLLECTIVE,
             "Item Group");
-        Map<String, DialogueDefinition> dialogues = new LinkedHashMap<String, DialogueDefinition>();
-        for (String path : required.getDialogues()) {
-            DialogueDefinition value = ProjectRepository
-                .readPackagedDialogue(archive.readBytes(path), source(archive, path), actors);
-            put(dialogues, value.getId(), value, "Dialogue", path);
-        }
-        Map<String, QuestDefinition> quests = new LinkedHashMap<String, QuestDefinition>();
-        for (String path : required.getQuests()) {
-            QuestDefinition value = ProjectRepository.readPackagedQuest(archive.readBytes(path), source(archive, path));
-            put(quests, value.getId(), value, "Quest", path);
-        }
-
-        Map<String, StoryDefinition> stories = new LinkedHashMap<String, StoryDefinition>();
-        if (required.getStory()
-            .startsWith("stories/")) {
-            StoryDefinition story = StoryLoader.loadPackagedStory(
-                archive.readBytes(required.getStory()),
-                source(archive, required.getStory()),
-                actors,
-                dialogues,
-                quests);
-            put(stories, story.getId(), story, "Story", required.getStory());
-            StoryLoader.validatePackagedStories(stories);
-        }
-
         Map<String, CanonicalGraphResource> canonicalStories = readCanonical(
             archive,
             required.getCanonicalStories(),
@@ -141,15 +112,7 @@ final class StoryPackageSnapshotReader {
             .equals(connection.getSourceStoryId()))
             throw new ProjectLoadException(
                 "Story Package may only own public Logic connections sourced by its story_id.");
-        ProjectSnapshot snapshot = new ProjectSnapshot(
-            project,
-            actors,
-            items,
-            itemGroups,
-            dialogues,
-            quests,
-            stories,
-            canonical);
+        ProjectSnapshot snapshot = new ProjectSnapshot(project, actors, items, itemGroups, canonical);
         return new Result(snapshot, logicGraph, declaredBytes);
     }
 
@@ -213,8 +176,6 @@ final class StoryPackageSnapshotReader {
         add(paths, required.getActors());
         add(paths, required.getItems());
         add(paths, required.getItemGroups());
-        add(paths, required.getDialogues());
-        add(paths, required.getQuests());
         add(paths, required.getCanonicalStories());
         add(paths, required.getCanonicalMemberships());
         add(paths, required.getSessions());

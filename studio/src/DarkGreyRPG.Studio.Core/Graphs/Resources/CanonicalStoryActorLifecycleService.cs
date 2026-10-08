@@ -1,7 +1,7 @@
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Identity;
-using DarkGreyRPG.Studio.Core.Stories;
+using DarkGreyRPG.Studio.Core.Projects;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Resources;
 
@@ -20,7 +20,6 @@ public sealed class CanonicalStoryActorLifecycleException : Exception
 public enum CanonicalStoryActorReferenceSource
 {
     Canonical,
-    Legacy,
 }
 
 public enum CanonicalStoryActorMembershipKind
@@ -35,7 +34,7 @@ public enum CanonicalStoryActorKind
     Collective,
 }
 
-/// <summary>One canonical or legacy Story membership that blocks Actor deletion.</summary>
+/// <summary>One current Story membership that blocks Actor deletion.</summary>
 public sealed record CanonicalStoryActorReference(
     string StoryId,
     CanonicalStoryActorReferenceSource Source,
@@ -46,7 +45,6 @@ public sealed record CanonicalStoryActorReference(
     public CanonicalStoryActorMembershipKind Kind => MembershipKind;
     public CanonicalStoryActorMembershipKind Membership => MembershipKind;
     public bool IsCanonical => Source == CanonicalStoryActorReferenceSource.Canonical;
-    public bool IsLegacy => Source == CanonicalStoryActorReferenceSource.Legacy;
     public bool IsOwned => MembershipKind == CanonicalStoryActorMembershipKind.Owned;
     public bool IsReferenced => MembershipKind == CanonicalStoryActorMembershipKind.Referenced;
 }
@@ -60,8 +58,6 @@ public sealed record CanonicalStoryActorDeletionPlan(
     public IReadOnlyList<CanonicalStoryActorReference> Blockers => References;
     public IReadOnlyList<CanonicalStoryActorReference> CanonicalBlockers =>
         References.Where(reference => reference.IsCanonical).ToArray();
-    public IReadOnlyList<CanonicalStoryActorReference> LegacyBlockers =>
-        References.Where(reference => reference.IsLegacy).ToArray();
     public IReadOnlyList<string> ReferencingStoryIds =>
         References.Select(reference => reference.StoryId).Distinct(StringComparer.Ordinal).ToArray();
     public bool CanDelete => References.Count == 0;
@@ -69,41 +65,22 @@ public sealed record CanonicalStoryActorDeletionPlan(
 
 /// <summary>
 /// Canonical Actor lifecycle commands. Actor files remain in the shared project
-/// root actors/ directory; canonical and legacy Story memberships are scanned
-/// separately for deletion safety.
+/// root actors/ directory; current Story memberships govern deletion safety.
 /// </summary>
 public sealed class CanonicalStoryActorLifecycleService
 {
     private readonly CanonicalProjectGraphStore _store;
     private readonly ActorRepository _actors;
-    private readonly StoryRepository _legacyStories;
     private readonly object _lifecycleGate = new();
 
-    public CanonicalStoryActorLifecycleService(CanonicalProjectGraphStore store)
-        : this(store, null, null)
-    {
-    }
-
-    public CanonicalStoryActorLifecycleService(
-        CanonicalProjectGraphStore store,
-        ActorRepository? actorRepository,
-        StoryRepository? storyRepository)
+    public CanonicalStoryActorLifecycleService(CanonicalProjectGraphStore store, ActorRepository? actorRepository = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _actors = actorRepository ?? new ActorRepository(store.ProjectDirectory);
-        _legacyStories = storyRepository ?? new StoryRepository(store.ProjectDirectory);
-    }
-
-    public CanonicalStoryActorLifecycleService(
-        CanonicalProjectGraphStore store,
-        ActorRepository actorRepository)
-        : this(store, actorRepository, null)
-    {
     }
 
     public CanonicalProjectGraphStore Store => _store;
     public ActorRepository Actors => _actors;
-    public StoryRepository LegacyStories => _legacyStories;
 
     /// <summary>Creates and persists an Actor owned by the canonical Story.</summary>
     public ActorDocument CreateOwned(string storyId, string actorId, string displayName)
@@ -245,7 +222,7 @@ public sealed class CanonicalStoryActorLifecycleService
 
     public void RemoveActorReference(string storyId, string actorId) => RemoveReference(storyId, actorId);
 
-    /// <summary>Enumerates canonical and legacy memberships which block deletion.</summary>
+    /// <summary>Enumerates current memberships which block deletion.</summary>
     public IReadOnlyList<CanonicalStoryActorReference> EnumerateBlockers(string ownerStoryId, string actorId)
     {
         lock (_lifecycleGate)
@@ -358,6 +335,7 @@ public sealed class CanonicalStoryActorLifecycleService
 
     private (GraphResourceEnvelope Story, CanonicalStoryMembershipManifest Membership) RequireCanonicalStory(string storyId)
     {
+        EnsureSupportedAuthorData();
         try
         {
             var story = _store.Stories.Load(storyId);
@@ -382,6 +360,7 @@ public sealed class CanonicalStoryActorLifecycleService
 
     private IReadOnlyList<CanonicalStoryActorReference> EnumerateBlockersCore(string ownerStoryId, string actorId)
     {
+        EnsureSupportedAuthorData();
         var result = new List<CanonicalStoryActorReference>();
         IReadOnlyList<CanonicalStoryMembershipInfo> memberships;
         try
@@ -419,29 +398,14 @@ public sealed class CanonicalStoryActorLifecycleService
                     CanonicalStoryActorMembershipKind.Referenced, actorId));
         }
 
-        IReadOnlyList<StoryResource> legacyStories;
-        try
-        {
-            legacyStories = _legacyStories.ListStories();
-        }
-        catch (Exception exception) when (exception is StoryDataException or IOException or UnauthorizedAccessException)
-        {
-            throw Failure("story.actor.legacy_story.load_failed",
-                "Legacy Story JSON could not be enumerated.", exception);
-        }
-
-        foreach (var story in legacyStories)
-        {
-            if (!string.Equals(story.Id, ownerStoryId, StringComparison.Ordinal)
-                && story.OwnedResources.Actors.Contains(actorId, StringComparer.Ordinal))
-                result.Add(new(story.Id, CanonicalStoryActorReferenceSource.Legacy,
-                    CanonicalStoryActorMembershipKind.Owned, actorId));
-            if (story.ReferencedResources.Actors.Contains(actorId, StringComparer.Ordinal))
-                result.Add(new(story.Id, CanonicalStoryActorReferenceSource.Legacy,
-                    CanonicalStoryActorMembershipKind.Referenced, actorId));
-        }
-
         return result;
+    }
+
+    private void EnsureSupportedAuthorData()
+    {
+        if (ProjectAuthorDataBoundary.FindRetiredDirectory(_store.ProjectDirectory) is { } directory)
+            throw Failure("story.actor.project.unsupported",
+                $"Retired author directory '{directory}' contains unsupported data; no files were changed.");
     }
 
     private void EnsureActorExists(string actorId, string operation)

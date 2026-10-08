@@ -7,10 +7,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
+using DarkGreyRPG.Studio.Views.Graph;
 
 namespace DarkGreyRPG.Studio.Views;
 
-/// <summary>Reorders top-level stories/components with a visible source, landing line and drag card.</summary>
+/// <summary>Reorders top-level stories/components with one preview, a row-sized gap and animated neighbors.</summary>
 public static class StoryNavigationDrag
 {
     public sealed record Landing(string Key, bool After, double Y);
@@ -33,77 +34,91 @@ public static class StoryNavigationDrag
 
     public static void Begin(StoryNavigationList list, string sourceKey, Action<string, string, bool> commit)
     {
-        var source = Groups(list).FirstOrDefault(row => Key(row) == sourceKey);
-        if (source?.DataContext is not CollectionViewGroup section) return;
+        var rows = Groups(list).Where(row => row.IsVisible && row.ActualHeight > 0)
+            .OrderBy(row => row.TranslatePoint(default, list).Y).ToArray();
+        var oldIndex = Array.FindIndex(rows, row => Key(row) == sourceKey);
+        if (oldIndex < 0 || rows.Length < 2 || Section(rows[oldIndex]) is not { } section) return;
+        var keys = rows.Select(row => Key(row)!).ToArray();
+        var remaining = keys.Where(key => key != sourceKey).ToArray();
         var title = section.Name switch { StoryGroup group => group.DisplayName,
             ViewModels.StoryListItemViewModel story => story.DisplayName, _ => sourceKey };
-        var subtitle = section.Name is StoryGroup component ? $"故事组 · {component.Members.Count} 个故事" : "故事";
-        var overlay = new DragOverlay(list, title, subtitle);
         var layer = AdornerLayer.GetAdornerLayer(list);
+        if (layer is null) return;
         var scroll = Descendants<ScrollViewer>(list).FirstOrDefault();
-        var opacity = source.Opacity;
+        var originalScroll = scroll?.VerticalOffset ?? 0;
         var format = "Dgr.StoryNavigation." + Guid.NewGuid().ToString("N");
+        using var preview = new OutputReorderPreview(list, rows, title, false, oldIndex, Mouse.GetPosition(list));
         Point last = new(-1, -1);
-        Landing? landing = null, dropped = null;
+        int? destination = null, dropped = null;
+        var cancelled = false;
         void Update(Point point)
         {
             last = point;
-            landing = Locate(list, sourceKey, point);
-            overlay.Position = point;
-            overlay.Landing = landing;
-            overlay.Show = point.X >= 0 && point.X <= list.ActualWidth && point.Y >= 0 && point.Y <= list.ActualHeight;
-            overlay.InvalidateVisual();
+            preview.SetScrollShift(originalScroll - (scroll?.VerticalOffset ?? 0));
+            destination = preview.Locate(point);
         }
         DragEventHandler over = (_, e) =>
         {
             if (!e.Data.GetDataPresent(format)) return;
             Update(e.GetPosition(list));
-            e.Effects = landing is null ? DragDropEffects.None : DragDropEffects.Move;
+            e.Effects = destination.HasValue ? DragDropEffects.Move : DragDropEffects.None;
             e.Handled = true;
         };
         DragEventHandler leave = (_, e) =>
         {
             if (!e.Data.GetDataPresent(format)) return;
-            Update(e.GetPosition(list));
+            var point = e.GetPosition(list);
+            if (point.X >= 0 && point.X <= list.ActualWidth && point.Y >= 0 && point.Y <= list.ActualHeight) return;
+            destination = null;
+            preview.Locate(point);
             e.Handled = true;
+        };
+        QueryContinueDragEventHandler continuation = (_, e) =>
+        {
+            if (e.EscapePressed || !list.IsLoaded || !list.IsVisible || Window.GetWindow(list) is { IsActive: false }
+                || !Groups(list).Select(Key).Where(key => key is not null).SequenceEqual(keys)) cancelled = true;
+            if (cancelled) { e.Action = DragAction.Cancel; e.Handled = true; }
         };
         DragEventHandler drop = (_, e) =>
         {
             if (!e.Data.GetDataPresent(format)) return;
-            Update(e.GetPosition(list)); dropped = landing;
-            e.Effects = dropped is null ? DragDropEffects.None : DragDropEffects.Move;
+            Update(e.GetPosition(list)); dropped = destination;
+            e.Effects = dropped.HasValue ? DragDropEffects.Move : DragDropEffects.None;
             e.Handled = true;
         };
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         timer.Tick += (_, _) =>
         {
-            if (scroll is null || !overlay.Show) return;
+            if (scroll is null || !destination.HasValue) return;
             var offset = last.Y < 32 ? -12 : last.Y > list.ActualHeight - 32 ? 12 : 0;
             if (offset == 0) return;
             scroll.ScrollToVerticalOffset(scroll.VerticalOffset + offset);
-            scroll.UpdateLayout(); Update(last);
+            scroll.UpdateLayout(); Update(Mouse.GetPosition(list));
         };
-        source.SetCurrentValue(UIElement.OpacityProperty, 0.35);
         list.PreviewDragOver += over; list.PreviewDragLeave += leave; list.PreviewDrop += drop;
-        layer?.Add(overlay); Update(Mouse.GetPosition(list)); timer.Start();
-        try
-        {
-            var result = DragDrop.DoDragDrop(list, new DataObject(format, sourceKey), DragDropEffects.Move);
-            // Only commit on an accepted drop; Escape and drops outside leave persistent order unchanged.
-            if (result == DragDropEffects.Move && dropped is { } target) commit(sourceKey, target.Key, target.After);
-        }
+        list.QueryContinueDrag += continuation;
+        layer.Add(preview); Update(Mouse.GetPosition(list)); timer.Start();
+        DragDropEffects result;
+        try { result = DragDrop.DoDragDrop(list, new DataObject(format, sourceKey), DragDropEffects.Move); }
         finally
         {
-            timer.Stop(); source.SetCurrentValue(UIElement.OpacityProperty, opacity);
+            timer.Stop(); preview.Dispose();
             list.PreviewDragOver -= over; list.PreviewDragLeave -= leave; list.PreviewDrop -= drop;
-            layer?.Remove(overlay);
+            list.QueryContinueDrag -= continuation; layer.Remove(preview);
         }
+        if (cancelled || result != DragDropEffects.Move || dropped is not { } index || index == oldIndex) return;
+        var after = index == remaining.Length;
+        commit(sourceKey, after ? remaining[^1] : remaining[index], after);
     }
+
 
     private static IEnumerable<GroupItem> Groups(DependencyObject root)
         => Descendants<GroupItem>(root).Where(row => Key(row) is not null);
 
-    private static string? Key(GroupItem row) => (row.DataContext as CollectionViewGroup)?.Name switch
+    private static CollectionViewGroup? Section(GroupItem row)
+        => row.Content as CollectionViewGroup ?? row.DataContext as CollectionViewGroup;
+
+    private static string? Key(GroupItem row) => Section(row)?.Name switch
     {
         StoryGroup group => group.Key,
         ViewModels.StoryListItemViewModel story => story.NavigationKey,
@@ -120,42 +135,4 @@ public static class StoryNavigationDrag
         }
     }
 
-    private sealed class DragOverlay : Adorner
-    {
-        private readonly string _title, _subtitle;
-        public Point Position { get; set; }
-        public Landing? Landing { get; set; }
-        public bool Show { get; set; }
-        public DragOverlay(UIElement element, string title, string subtitle) : base(element)
-        { _title = title; _subtitle = subtitle; IsHitTestVisible = false; }
-        protected override void OnRender(DrawingContext drawing)
-        {
-            if (!Show) return;
-            var element = (FrameworkElement)AdornedElement;
-            var accent = element.TryFindResource("AccentFillColorDefaultBrush") as Brush ?? SystemColors.HighlightBrush;
-            var background = Window.GetWindow(element)?.Background ?? SystemColors.WindowBrush;
-            var fill = element.TryFindResource("LayerFillColorAltBrush") as Brush ?? Brushes.Transparent;
-            var text = element.TryFindResource("TextFillColorPrimaryBrush") as Brush ?? SystemColors.WindowTextBrush;
-            var width = Math.Max(30, Math.Min(260, element.ActualWidth - 16));
-            if (Landing is { } target)
-            {
-                drawing.DrawLine(new Pen(accent, 3), new Point(8, target.Y), new Point(element.ActualWidth - 8, target.Y));
-                drawing.DrawEllipse(accent, null, new Point(8, target.Y), 4, 4);
-            }
-            var origin = new Point(Math.Clamp(Position.X + 12, 8, Math.Max(8, element.ActualWidth - width - 8)),
-                Math.Clamp(Position.Y + 18, 4, Math.Max(4, element.ActualHeight - 65)));
-            var card = new Rect(origin, new Size(width, 58));
-            drawing.DrawRoundedRectangle(background, null, card, 5, 5);
-            drawing.DrawRoundedRectangle(fill, new Pen(accent, 2), card, 5, 5);
-            DrawText(_title, 13, new Point(origin.X + 10, origin.Y + 8));
-            DrawText(Landing is null ? _subtitle : _subtitle + " · 松开到蓝线处", 11, new Point(origin.X + 10, origin.Y + 32));
-            void DrawText(string value, double size, Point at)
-            {
-                var label = new FormattedText(value, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
-                    new Typeface("Microsoft YaHei UI"), size, text, VisualTreeHelper.GetDpi(this).PixelsPerDip)
-                    { MaxTextWidth = Math.Max(10, width - 20), MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
-                drawing.DrawText(label, at);
-            }
-        }
-    }
 }

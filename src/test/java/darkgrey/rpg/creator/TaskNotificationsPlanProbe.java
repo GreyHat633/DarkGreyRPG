@@ -81,18 +81,16 @@ public final class TaskNotificationsPlanProbe {
                 resolved.getCompoundTagAt(1)
                     .getString("text")),
             "notification resolves dynamic description");
-        darkgrey.rpg.quest.runtime.QuestJournalEntry legacy = darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter
-            .adapt(
-                dynamicTask,
-                text -> darkgrey.rpg.session.runtime.DynamicContentText.resolve(text, (type, item) -> "Alice"));
         require(
-            "Collect for Alice".equals(legacy.getDescription()),
-            "legacy journal resolves description before stripping controls");
-        require(
-            "Collect for Alice".equals(
-                legacy.getObjectiveLines()
-                    .get(0)),
-            "legacy journal resolves objective description");
+            "Collect for Alice"
+                .equals(
+                    darkgrey.rpg.task.journal.CanonicalJournalService
+                        .objectiveLines(
+                            dynamicTask,
+                            text -> darkgrey.rpg.session.runtime.DynamicContentText
+                                .resolve(text, (type, item) -> "Alice"))
+                        .get(0)),
+            "current journal command resolves objective description");
         require(
             dynamic
                 .update(

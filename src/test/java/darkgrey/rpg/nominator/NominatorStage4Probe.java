@@ -13,71 +13,58 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
 import darkgrey.rpg.identity.NpcIdentitySavedData;
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
-import darkgrey.rpg.network.message.nominator.C2SNominatorEntityBind;
-import darkgrey.rpg.network.message.nominator.C2SNominatorInventoryBind;
 import darkgrey.rpg.network.message.nominator.S2CNominatorEntityOpen;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.story.StoryDefinition;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /** Focused Stage 4 probe: search, permission, individual/group validation, and conflict handling. */
 public final class NominatorStage4Probe {
 
+    private static final String STORY = "ST-2345-6789-ABCD-EFGH";
+    private static final String HERO = actor("hero");
+    private static final String TOWN = actor("townfolk");
+
+    private static String actor(String local) {
+        return new darkgrey.rpg.identity.ResourceAddress(
+            darkgrey.rpg.identity.StoryUid.parse(STORY),
+            darkgrey.rpg.identity.ResourceAddress.Kind.ACTOR,
+            local).toKey();
+    }
+
     private NominatorStage4Probe() {}
 
     public static void main(String[] args) {
         LinkedHashMap<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
         actors.put(
-            "hero",
+            HERO,
             new ActorDefinition(
                 2,
                 ActorDefinition.TYPE_INDIVIDUAL,
-                "hero",
+                HERO,
                 "Hero",
                 "",
                 Collections.<String>emptyList(),
-                "kingdom"));
+                STORY));
         actors.put(
-            "townfolk",
+            TOWN,
             new ActorDefinition(
                 2,
                 ActorDefinition.TYPE_COLLECTIVE,
-                "townfolk",
+                TOWN,
                 "Townfolk",
                 "",
                 Collections.<String>emptyList(),
-                "kingdom"));
-        LinkedHashMap<String, StoryDefinition> stories = new LinkedHashMap<String, StoryDefinition>();
-        stories.put(
-            "kingdom",
-            new StoryDefinition(
-                1,
-                "kingdom",
-                "Kingdom",
-                "",
-                Collections.emptyList(),
-                Collections.emptyList(),
-                "",
-                Arrays.asList("main")));
-        ProjectSnapshot snapshot = new ProjectSnapshot(
-            new ProjectDefinition(1, "probe", "Probe"),
-            actors,
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            stories,
-            darkgrey.rpg.graph.canonical.CanonicalProjectContent.empty());
+                STORY));
         LinkedHashMap<String, CanonicalGraphResource> canonicalStories = new LinkedHashMap<String, CanonicalGraphResource>();
         canonicalStories.put(
-            "kingdom",
+            STORY,
             new CanonicalGraphResource(
-                1,
+                CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
                 CanonicalGraphResourceKind.STORY,
-                "kingdom",
+                STORY,
                 "Canonical Kingdom",
                 new CanonicalGraph(Collections.emptyList(), Collections.emptyList())));
         ProjectSnapshot canonicalOnly = new ProjectSnapshot(
@@ -85,15 +72,13 @@ public final class NominatorStage4Probe {
             actors,
             Collections.emptyMap(),
             Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
             new CanonicalProjectContent(
                 canonicalStories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
                 Collections.<String, CanonicalGraphResource>emptyMap(),
                 Collections.emptyMap()));
-        require(canonicalOnly.containsStory("kingdom"), "canonical-only story loaded state");
+        ProjectSnapshot snapshot = canonicalOnly;
+        require(canonicalOnly.containsStory(STORY), "canonical-only story loaded state");
         require(!canonicalOnly.containsStory("missing"), "missing story loaded state");
         require(
             NominatorCatalog.from(canonicalOnly)
@@ -107,33 +92,33 @@ public final class NominatorStage4Probe {
                     UUID.randomUUID(),
                     "probe",
                     0,
-                    "hero",
+                    HERO,
                     Collections.<String>emptyList(),
-                    "kingdom",
+                    STORY,
                     canonicalOnly,
                     new NpcIdentitySavedData("canonical_only_npc"),
-                    new NominatorSavedData("canonical_only_nominator"))
+                    new NominatorSavedData())
                 .isAccepted(),
             "canonical-only story binding");
         NominatorCatalog catalog = NominatorCatalog.from(snapshot);
-        NominatorStorySearch.ActorChoice exactIndividual = NominatorStorySearch.exactActor(catalog, "hero");
+        NominatorStorySearch.ActorChoice exactIndividual = NominatorStorySearch.exactActor(catalog, HERO);
         require(
-            exactIndividual != null && "hero".equals(exactIndividual.getId())
+            exactIndividual != null && HERO.equals(exactIndividual.getId())
                 && ActorDefinition.TYPE_INDIVIDUAL.equals(exactIndividual.getType()),
             "exact individual actor resolution");
-        NominatorStorySearch.ActorChoice exactCollective = NominatorStorySearch.exactActor(catalog, "townfolk");
+        NominatorStorySearch.ActorChoice exactCollective = NominatorStorySearch.exactActor(catalog, TOWN);
         require(
-            exactCollective != null && "townfolk".equals(exactCollective.getId())
+            exactCollective != null && TOWN.equals(exactCollective.getId())
                 && ActorDefinition.TYPE_COLLECTIVE.equals(exactCollective.getType()),
             "exact collective actor resolution");
         require(NominatorStorySearch.exactActor(catalog, "missing") == null, "unknown actor resolution");
         require(NominatorStorySearch.exactActor(catalog, "her") == null, "partial actor resolution");
         require(
-            NominatorStorySearch.actors(snapshot, "kingdom", "hero")
+            NominatorStorySearch.actors(snapshot, STORY, "Hero")
                 .size() == 1,
             "story search");
         NpcIdentitySavedData identities = new NpcIdentitySavedData("probe_npc");
-        NominatorSavedData selections = new NominatorSavedData("probe_nominator");
+        NominatorSavedData selections = new NominatorSavedData();
         UUID entity = UUID.randomUUID();
         require(
             !NominatorService
@@ -142,9 +127,9 @@ public final class NominatorStage4Probe {
                     entity,
                     "probe",
                     0,
-                    "hero",
+                    HERO,
                     Collections.<String>emptyList(),
-                    "kingdom",
+                    STORY,
                     snapshot,
                     identities,
                     selections)
@@ -157,9 +142,9 @@ public final class NominatorStage4Probe {
                     entity,
                     "probe",
                     0,
-                    "hero",
-                    Arrays.asList("townfolk"),
-                    "kingdom",
+                    HERO,
+                    Arrays.asList(TOWN),
+                    STORY,
                     snapshot,
                     identities,
                     selections)
@@ -172,9 +157,9 @@ public final class NominatorStage4Probe {
                     entity,
                     "probe",
                     0,
-                    "other",
+                    actor("other"),
                     Collections.<String>emptyList(),
-                    "kingdom",
+                    STORY,
                     snapshot,
                     identities,
                     selections)
@@ -188,22 +173,22 @@ public final class NominatorStage4Probe {
                     replacement,
                     "probe",
                     0,
-                    "hero",
+                    HERO,
                     Collections.<String>emptyList(),
-                    "kingdom",
+                    STORY,
                     true,
                     snapshot,
                     identities,
                     selections)
                 .isAccepted()
-                && identities.getHost("hero")
+                && identities.getHost(HERO)
                     .getEntityUuid()
                     .equals(replacement)
                 && selections.get(entity)
                     .getIndividualId() == null
                 && selections.get(entity)
                     .getGroupIds()
-                    .equals(Arrays.asList("townfolk")),
+                    .equals(Arrays.asList(TOWN)),
             "explicit transfer clears old individual");
         require(
             NominatorService
@@ -213,8 +198,8 @@ public final class NominatorStage4Probe {
                     "probe",
                     0,
                     null,
-                    Arrays.asList("townfolk"),
-                    "kingdom",
+                    Arrays.asList(TOWN),
+                    STORY,
                     snapshot,
                     identities,
                     selections)
@@ -236,9 +221,9 @@ public final class NominatorStage4Probe {
                     identities,
                     selections)
                 .isAccepted() && selections.get(replacement) == null
-                && identities.getHost("hero") == null,
+                && identities.getHost(HERO) == null,
             "explicit empty unbind");
-        selections.put(new NominatorEntityBinding(entity, null, Arrays.asList("townfolk"), "kingdom"));
+        selections.put(new NominatorEntityBinding(entity, null, Arrays.asList(TOWN), STORY));
         NBTTagCompound saved = new NBTTagCompound();
         selections.writeToNBT(saved);
         NominatorSavedData restarted = new NominatorSavedData("probe_nominator_restart");
@@ -246,35 +231,15 @@ public final class NominatorStage4Probe {
         require(
             restarted.get(entity) != null && restarted.get(entity)
                 .getGroupIds()
-                .equals(Arrays.asList("townfolk")) && restarted.getRevision() == selections.getRevision(),
+                .equals(Arrays.asList(TOWN)) && restarted.getRevision() == selections.getRevision(),
             "selection persistence");
-        C2SNominatorEntityBind entityPacket = new C2SNominatorEntityBind(
-            4,
-            entity,
-            null,
-            Arrays.asList("townfolk"),
-            "kingdom",
-            12L,
-            true,
-            "kingdom-package",
-            34L);
-        ByteBuf entityBuffer = Unpooled.buffer();
-        entityPacket.toBytes(entityBuffer);
-        C2SNominatorEntityBind decodedEntityPacket = new C2SNominatorEntityBind();
-        decodedEntityPacket.fromBytes(entityBuffer);
-        require(
-            decodedEntityPacket.isTransfer() && decodedEntityPacket.getExpectedRevision() == 12L
-                && decodedEntityPacket.getExpectedRevision() != selections.getRevision()
-                && "kingdom-package".equals(decodedEntityPacket.getPackageId())
-                && decodedEntityPacket.getExpectedCatalogRevision() == 34L,
-            "entity codec stale fence");
         S2CNominatorEntityOpen openPacket = new S2CNominatorEntityOpen(
             4,
             entity,
             12L,
-            "hero",
-            Arrays.asList("townfolk"),
-            "kingdom");
+            HERO,
+            Arrays.asList(TOWN),
+            STORY);
         ByteBuf openBuffer = Unpooled.buffer();
         openPacket.toBytes(openBuffer);
         S2CNominatorEntityOpen decodedOpenPacket = new S2CNominatorEntityOpen();
@@ -290,10 +255,9 @@ public final class NominatorStage4Probe {
             34L,
             "Zombie",
             "minecraft:zombie",
-            "hero",
-            Arrays.asList("townfolk"),
-            Arrays.asList("townfolk"),
-            "kingdom",
+            HERO,
+            Arrays.asList(TOWN),
+            STORY,
             catalog);
         ByteBuf catalogBuffer = Unpooled.buffer();
         catalogPacket.toBytes(catalogBuffer);
@@ -305,8 +269,6 @@ public final class NominatorStage4Probe {
                 && decodedCatalog.getCatalog()
                     .getActors()
                     .size() == 2
-                && decodedCatalog.getTypeGroups()
-                    .size() == 1
                 && decodedCatalog.getCatalogRevision() == 34L,
             "server catalog codec");
         ByteBuf trailing = Unpooled.buffer();
@@ -331,63 +293,8 @@ public final class NominatorStage4Probe {
                     new ItemIdentitySavedData("probe_item"))
                 .isAccepted(),
             "empty selected stack");
-        require(
-            NominatorService.bindEntityTypeGroup(true, "minecraft:zombie", "townfolk", true, snapshot, selections)
-                .isAccepted()
-                && selections.getTypeGroups("minecraft:zombie")
-                    .equals(Arrays.asList("townfolk")),
-            "exact type group");
-        require(
-            !NominatorService.bindEntityTypeGroup(true, "customnpcs:customnpc", "townfolk", true, snapshot, selections)
-                .isAccepted(),
-            "wrapper type is fail closed");
-        NBTTagCompound typeCheckpoint = new NBTTagCompound();
-        selections.writeToNBT(typeCheckpoint);
-        NominatorSavedData typeRestart = new NominatorSavedData("probe_type_restart");
-        typeRestart.readFromNBT(typeCheckpoint);
-        require(
-            typeRestart.getTypeGroups("minecraft:zombie")
-                .equals(Arrays.asList("townfolk")),
-            "type group persistence");
-        C2SNominatorInventoryBind request = new C2SNominatorInventoryBind(
-            5,
-            "item",
-            null,
-            Arrays.asList("group_a", "group_b"));
-        ByteBuf buffer = Unpooled.buffer();
-        request.toBytes(buffer);
-        C2SNominatorInventoryBind decoded = new C2SNominatorInventoryBind();
-        decoded.fromBytes(buffer);
-        require(
-            decoded.getSelectedSlot() == 5 && decoded.getFuzzyGroups()
-                .size() == 2,
-            "selected slot packet");
-        C2SNominatorInventoryBind targetRequest = new C2SNominatorInventoryBind(
-            "kingdom-package",
-            "item",
-            null,
-            12L,
-            34L);
-        ByteBuf targetBuffer = Unpooled.buffer();
-        targetRequest.toBytes(targetBuffer);
-        C2SNominatorInventoryBind decodedTarget = new C2SNominatorInventoryBind();
-        decodedTarget.fromBytes(targetBuffer);
-        require(
-            decodedTarget.getSelectedSlot() == -1 && "kingdom-package".equals(decodedTarget.getPackageId())
-                && decodedTarget.getExpectedRevision() == 12L
-                && decodedTarget.getExpectedCatalogRevision() == 34L
-                && decodedTarget.getFuzzyGroups()
-                    .isEmpty(),
-            "target container package fence packet");
-        boolean rejectedSlot = false;
-        try {
-            new C2SNominatorInventoryBind(36, "item", null, Collections.<String>emptyList()).toBytes(Unpooled.buffer());
-        } catch (IllegalArgumentException expected) {
-            rejectedSlot = true;
-        }
-        require(rejectedSlot, "spoofed slot");
         System.out.println(
-            "NOMINATOR_STAGE4_PROBE=PASS search permissions conflict individual multi-group selected-slot empty-spoof type-group catalog");
+            "NOMINATOR_STAGE4_PROBE=PASS search permissions conflict transfer clear individual multi-group persistence current-open-codec catalog");
     }
 
     private static void require(boolean value, String label) {

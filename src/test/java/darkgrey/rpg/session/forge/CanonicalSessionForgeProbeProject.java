@@ -10,7 +10,6 @@ import java.util.Map;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraph;
 import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
 import darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind;
@@ -25,8 +24,6 @@ import darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.quest.QuestDefinition;
-import darkgrey.rpg.story.StoryDefinition;
 
 /** Deterministic one-Line canonical project used by the Forge manager seam probe. */
 public final class CanonicalSessionForgeProbeProject {
@@ -39,27 +36,35 @@ public final class CanonicalSessionForgeProbeProject {
 
     public static ProjectSnapshot create(boolean connectedAggregateEnd) {
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
-        actors.put("actor_a", new ActorDefinition(1, "actor_a", "Actor A", "", Collections.<String>emptyList(), ""));
+        actors.put(
+            "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+            new ActorDefinition(
+                5,
+                ActorDefinition.TYPE_INDIVIDUAL,
+                "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+                "Actor A",
+                "",
+                Collections.<String>emptyList(),
+                "ST-2345-6789-ABCD-EFGH"));
 
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
-        sessions.put("session_a", session());
+        sessions.put("ST-2345-6789-ABCD-EFGH~session~session_a", session());
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("story_a", story(connectedAggregateEnd));
+        stories.put("ST-2345-6789-ABCD-EFGH", story(connectedAggregateEnd));
         Map<String, CanonicalStoryMembership> memberships = new LinkedHashMap<String, CanonicalStoryMembership>();
         memberships.put(
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembership(
-                "story_a",
+                "ST-2345-6789-ABCD-EFGH",
                 new CanonicalStoryMembershipSet(
-                    Arrays.asList("actor_a"),
-                    Arrays.asList("session_a"),
+                    Arrays.asList("ST-2345-6789-ABCD-EFGH~actor~actor_a"),
+                    Arrays.asList("ST-2345-6789-ABCD-EFGH~session~session_a"),
                     Collections.<String>emptyList())));
         return new ProjectSnapshot(
             new ProjectDefinition(1, "probe", "Probe"),
             actors,
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 sessions,
@@ -69,13 +74,13 @@ public final class CanonicalSessionForgeProbeProject {
 
     private static CanonicalGraphResource story(boolean connectedAggregateEnd) {
         Map<String, JsonElement> properties = new HashMap<String, JsonElement>();
-        properties.put("resource_id", json("session_a"));
+        properties.put("resource_id", json("ST-2345-6789-ABCD-EFGH~session~session_a"));
         CanonicalGraphNode placement = node("place_a", "session", ports(in("flow_in"), out("end_a")), properties);
         CanonicalGraphNode target = node("next_a", "terminate", ports(in("flow_in")), props());
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.STORY,
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             "Story A",
             new CanonicalGraph(
                 connectedAggregateEnd ? Arrays.asList(placement, target) : Arrays.asList(placement),
@@ -89,16 +94,16 @@ public final class CanonicalSessionForgeProbeProject {
             "line",
             "line",
             ports(in("flow_in"), out("flow_out")),
-            props("speaker_actor_id", "actor_a", "text", "Hello"));
+            props("speaker_actor_id", "ST-2345-6789-ABCD-EFGH~actor~actor_a", "text", "Hello"));
         CanonicalGraphNode end = node(
             "end_a",
             "end",
             ports(in("flow_in")),
             props("port_id", "end_a", "display_name", "Done"));
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.SESSION,
-            "session_a",
+            "ST-2345-6789-ABCD-EFGH~session~session_a",
             "Session A",
             new CanonicalGraph(
                 Arrays.asList(start, line, end),

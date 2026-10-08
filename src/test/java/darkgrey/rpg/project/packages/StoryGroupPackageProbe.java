@@ -112,11 +112,8 @@ public final class StoryGroupPackageProbe {
             throw new AssertionError("Disabled container started a Story runtime");
         if (loader.allowsNewStart(uid) || loader.getPackage(uid) != retained)
             throw new AssertionError("Disable retired an unchanged member or permits a new Start");
-        java.nio.file.Path single = new File(args[0]).getAbsoluteFile()
-            .getParentFile()
-            .getParentFile()
-            .toPath()
-            .resolve("Packages/consumer.dgrs");
+        java.nio.file.Path single = probe.resolve("duplicate-source.dgrs");
+        createDuplicateMember(new File(args[0]), result, uid, single);
         java.nio.file.Files.copy(single, installed.resolve("duplicate.dgrs"));
         darkgrey.rpg.project.ProjectRepository repository = new darkgrey.rpg.project.ProjectRepository(
             probe.resolve("Project")
@@ -152,6 +149,8 @@ public final class StoryGroupPackageProbe {
                             .isEmpty()))
                 throw new AssertionError("Invalid payload lost known claims or retained old running content");
         }
+        if (!java.nio.file.Files.exists(installed.resolve("duplicate.dgrs")))
+            java.nio.file.Files.copy(single, installed.resolve("duplicate.dgrs"));
         corruptStoredEntry(new File(args[0]), groupPath, "project.json");
         loader.reload();
         if (!loader.getPackages()
@@ -188,6 +187,35 @@ public final class StoryGroupPackageProbe {
             "PASS: Studio flat Group, complete 2-member validation, shared resources, 1 edge; rejected "
                 + (args.length - 1)
                 + " malformed containers.");
+    }
+
+    private static void createDuplicateMember(File source, StoryGroupPackageReader.Result group, String uid,
+        java.nio.file.Path target) throws Exception {
+        DgrsArchiveReader archive = DgrsArchiveReader.open(source);
+        com.google.gson.JsonObject root = new com.google.gson.JsonParser().parse(archive.readUtf8("manifest.json"))
+            .getAsJsonObject();
+        java.util.Map<String, byte[]> entries = new java.util.LinkedHashMap<String, byte[]>(
+            group.getSnapshots()
+                .get(uid)
+                .getDeclaredBytes());
+        entries.put(
+            "manifest.json",
+            root.getAsJsonArray("members")
+                .get(0)
+                .toString()
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        for (String media : group.getManifests()
+            .get(uid)
+            .getRequiredResources()
+            .getMedia()) entries.put(media, archive.readBytes(media));
+        try (java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(
+            java.nio.file.Files.newOutputStream(target))) {
+            for (java.util.Map.Entry<String, byte[]> entry : entries.entrySet()) {
+                zip.putNextEntry(new java.util.zip.ZipEntry(entry.getKey()));
+                zip.write(entry.getValue());
+                zip.closeEntry();
+            }
+        }
     }
 
     private static void corruptStoredEntry(File source, java.nio.file.Path target, String entryName) throws Exception {

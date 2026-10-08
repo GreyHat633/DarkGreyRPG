@@ -9,6 +9,26 @@ namespace DarkGreyRPG.Studio.Tests;
 public sealed class SessionChoiceEditTests
 {
     [TestMethod]
+    public void LegacyPromptLoadsWithoutSideEffectsAndAuthoredSerializationOmitsIt()
+    {
+        var choice = Choice();
+        Assert.IsFalse(choice.Properties.ContainsKey("prompt"));
+        choice.Properties["prompt"] = JsonSerializer.SerializeToElement("Legacy question");
+        var resource = new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
+            DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
+            "ST-2345-6789-ABCD-EFGH~session~legacy_choice", "Legacy", new GraphDocument([choice]));
+        var json = DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelopeSerializer.Serialize(resource);
+        Assert.IsFalse(json.Contains("prompt", StringComparison.Ordinal));
+        Assert.IsTrue(choice.Properties.ContainsKey("prompt"), "Serialization must use a detached graph.");
+        var root = System.Text.Json.Nodes.JsonNode.Parse(json)!;
+        root["graph"]!["nodes"]![0]!["properties"]!["prompt"] = "Legacy question";
+        var oldJson = root.ToJsonString();
+        var loaded = DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelopeSerializer.Deserialize(oldJson);
+        Assert.IsFalse(loaded.Graph!.Nodes.Single().Properties.ContainsKey("prompt"));
+        Assert.AreEqual("Legacy question", root["graph"]!["nodes"]![0]!["properties"]!["prompt"]!.GetValue<string>());
+    }
+
+    [TestMethod]
     public void AddRenameAndReorderKeepFlowOnlyOptionsAndStableIdsSynchronized()
     {
         var ids = new Queue<string>(["option_2", "flow_2", "condition_2"]);
@@ -97,7 +117,7 @@ public sealed class SessionChoiceEditTests
     private static GraphNode Choice()
     {
         var node = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeLegacy(node, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(node, "option_1", "flow_1");
         return node;
     }
 
@@ -130,25 +150,22 @@ public sealed class SessionChoiceEditTests
     }
 
     [TestMethod]
-    public void LegacyLogicPortAndConnectionRemainLosslessWhileNewOptionsStayFlowOnly()
+    public void RetiredLogicOutputAndConnectionRejectEditsWithoutMutationOrHistory()
     {
-        var ids = new Queue<string>(["option_2", "flow_2", "condition_2"]);
         var choice = Choice();
         choice.Ports.Add(new("option_1", "已选择：选项 1", false, GraphInterfaceKind.Logic, 0));
         var logicTarget = GraphNodeFactory.Create(GraphScope.Session, "logic_output", "logic_target");
         var graph = new GraphDocument([choice, logicTarget],
             [new("choice", "option_1", "logic_target", "logic_in", GraphInterfaceKind.Logic)]);
-        var session = new GraphEditSession(graph, GraphScope.Session, dynamicPortIdSource: ids.Dequeue);
-
-        Assert.IsTrue(session.AddSessionChoiceOption("choice", "Second"));
-        Assert.IsTrue(choice.Ports.Any(port => port.Id == "option_1" && port.InterfaceKind == GraphInterfaceKind.Logic));
-        Assert.IsFalse(choice.Ports.Any(port => port.Id == "option_2"));
-        Assert.HasCount(1, graph.Connections);
-        Assert.IsTrue(session.RenameSessionChoiceOption("choice", "option_1", "Renamed legacy"));
-        Assert.AreEqual("已选择：Renamed legacy", choice.Ports.Single(port => port.Id == "option_1").DisplayName);
-        Assert.IsTrue(session.ReorderSessionChoiceOption("choice", "option_1", 1));
-        Assert.AreEqual(1, choice.Ports.Single(port => port.Id == "option_1").Order);
-        Assert.AreEqual("option_1", graph.Connections.Single().FromPortId);
-        Assert.IsTrue(GraphNodeShapeValidator.IsValid(choice, GraphScope.Session));
+        var before = graph.ToJson();
+        var session = new GraphEditSession(graph, GraphScope.Session);
+        Assert.IsFalse(session.AddSessionChoiceOption("choice", "Second"));
+        Assert.IsFalse(session.RenameSessionChoiceOption("choice", "option_1", "Changed"));
+        Assert.IsFalse(session.ReorderSessionChoiceOption("choice", "option_1", 1));
+        Assert.IsFalse(session.RemoveSessionChoiceOption("choice", "option_1", true));
+        Assert.AreEqual(before, graph.ToJson());
+        Assert.AreEqual(0, session.UndoCount);
+        CollectionAssert.Contains(session.LastValidationIssues.Select(issue => issue.Code).ToArray(),
+            "graph.session.choice.output_logic.retired");
     }
 }

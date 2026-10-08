@@ -7,159 +7,6 @@ using DarkGreyRPG.Studio.Services;
 
 namespace DarkGreyRPG.Studio.ViewModels;
 
-public sealed class ResourceIdentityDialogViewModel : ObservableObject
-{
-    private string _id;
-    private string _displayName;
-
-    private ResourceIdentityDialogViewModel(
-        ProjectResourceType type,
-        string title,
-        string actionText,
-        string description,
-        string id,
-        string displayName)
-    {
-        Type = type;
-        Title = title;
-        ActionText = actionText;
-        Description = description;
-        _id = id;
-        _displayName = displayName;
-        ApplySuggestionCommand = new RelayCommand(ApplySuggestion, () => HasSuggestion);
-    }
-
-    public ProjectResourceType Type { get; }
-    public string TypeLabel => Label(Type);
-    public string Title { get; }
-    public string ActionText { get; }
-    public string Description { get; }
-    public RelayCommand ApplySuggestionCommand { get; }
-
-    public bool IsStoryIdentity => Type == ProjectResourceType.Story;
-    public string EditableId { get => Id; set { } }
-
-    public string Id
-    {
-        get => _id;
-        set
-        {
-        }
-    }
-
-    public string DisplayName
-    {
-        get => _displayName;
-        set
-        {
-            if (!SetProperty(ref _displayName, value ?? string.Empty)) return;
-            RaiseValidationProperties();
-        }
-    }
-
-    public string NormalizedSuggestion => Id;
-    public bool HasSuggestion => false;
-    public string ValidationText
-    {
-        get
-        {
-            var messages = IsStoryIdentity
-                ? StoryUid.IsValid(Id) ? new List<string>() : new List<string> { "需要有效的 Story UID。" }
-                : ResourceAddress.IsKey(Id) ? new List<string>() : new List<string> { "资源内部地址无效。" };
-            if (string.IsNullOrWhiteSpace(DisplayName)) messages.Add("显示名称不能为空。");
-            return string.Join(Environment.NewLine, messages);
-        }
-    }
-    public bool CanConfirm => ValidationText.Length == 0;
-
-    public static ResourceIdentityDialogViewModel ForCreate(ProjectResourceType type, string suggestedId) =>
-        new(
-            type,
-            $"新建 {Label(type)}",
-            "创建",
-            type == ProjectResourceType.Story
-                ? "在当前项目中新建一条独立故事。"
-                : $"创建独立的新{ChineseLabel(type)}，并归入当前故事。",
-            suggestedId,
-            string.Empty);
-
-    public static ResourceIdentityDialogViewModel ForImport(
-        ProjectResourceType type,
-        string sourceDisplayName,
-        string suggestedId) =>
-        new(
-            type,
-            $"导入 {Label(type)} 副本",
-            "创建副本",
-            $"将以“{sourceDisplayName}”为模板创建新的独立资源。后续修改不会影响原资源。",
-            suggestedId,
-            sourceDisplayName);
-
-    internal static string Label(ProjectResourceType type) => type switch
-    {
-        ProjectResourceType.Dialogue => "Dialogue",
-        ProjectResourceType.Quest => "Quest",
-        ProjectResourceType.Story => "Story",
-        _ => throw new ArgumentOutOfRangeException(nameof(type)),
-    };
-
-    internal static string ChineseLabel(ProjectResourceType type) => type switch
-    {
-        ProjectResourceType.Dialogue => "对话",
-        ProjectResourceType.Quest => "任务",
-        ProjectResourceType.Story => "故事",
-        _ => throw new ArgumentOutOfRangeException(nameof(type)),
-    };
-
-    private void ApplySuggestion() => Id = NormalizedSuggestion;
-
-    private void RaiseValidationProperties()
-    {
-        OnPropertyChanged(nameof(NormalizedSuggestion));
-        OnPropertyChanged(nameof(HasSuggestion));
-        OnPropertyChanged(nameof(ValidationText));
-        OnPropertyChanged(nameof(CanConfirm));
-        ApplySuggestionCommand.RaiseCanExecuteChanged();
-    }
-}
-
-public sealed class ResourceCreationChoiceViewModel : ObservableObject
-{
-    private ResourceCreationMode _selectedMode = ResourceCreationMode.Blank;
-
-    public ResourceCreationChoiceViewModel(ProjectResourceType type, string storyDisplayName)
-    {
-        Type = type;
-        StoryDisplayName = string.IsNullOrWhiteSpace(storyDisplayName) ? "当前故事" : storyDisplayName;
-    }
-
-    public ProjectResourceType Type { get; }
-    public string TypeLabel => ResourceIdentityDialogViewModel.Label(Type);
-    public string ChineseTypeLabel => ResourceIdentityDialogViewModel.ChineseLabel(Type);
-    public string Title => $"创建{ChineseTypeLabel}";
-    public string StoryDisplayName { get; }
-    public ResourceCreationMode SelectedMode
-    {
-        get => _selectedMode;
-        set
-        {
-            if (!SetProperty(ref _selectedMode, value)) return;
-            OnPropertyChanged(nameof(IsBlank));
-            OnPropertyChanged(nameof(IsImportAsNew));
-        }
-    }
-    public bool IsBlank
-    {
-        get => SelectedMode == ResourceCreationMode.Blank;
-        set { if (value) SelectedMode = ResourceCreationMode.Blank; }
-    }
-    public bool IsImportAsNew
-    {
-        get => SelectedMode == ResourceCreationMode.ImportAsNew;
-        set { if (value) SelectedMode = ResourceCreationMode.ImportAsNew; }
-    }
-}
-
 public sealed class ResourcePickerViewModel : ObservableObject
 {
     private readonly IReadOnlyList<ResourceDescriptor> _resources;
@@ -182,14 +29,10 @@ public sealed class ResourcePickerViewModel : ObservableObject
     public ProjectResourceType Type { get; }
     public ResourcePickerMode Mode { get; }
     public string StoryDisplayName { get; }
-    public string ChineseTypeLabel => ResourceIdentityDialogViewModel.ChineseLabel(Type);
-    public string Title => Mode == ResourcePickerMode.CopyIntoStory ? "迁移故事内容" : Mode == ResourcePickerMode.Reference
-        ? $"引用已有{ChineseTypeLabel}"
-        : $"导入已有{ChineseTypeLabel}";
-    public string ActionText => Mode == ResourcePickerMode.CopyIntoStory ? "复制到目标" : Mode == ResourcePickerMode.Reference ? "引用" : "下一步";
-    public string Explanation => Mode == ResourcePickerMode.CopyIntoStory ? $"将“{StoryDisplayName}”的内容追加到选中的故事，保留源故事和目标已有内容。" : Mode == ResourcePickerMode.Reference
-        ? $"选择项目中的现有{ChineseTypeLabel}链接到“{StoryDisplayName}”。引用共享同一份资源，任何位置的修改都会同步。"
-        : $"选择一个{ChineseTypeLabel}作为“{StoryDisplayName}”中新资源的模板。将创建独立 ID 和文件，后续修改互不影响。";
+    public string ChineseTypeLabel => ProjectResourceLabels.ChineseLabel(Type);
+    public string Title => "迁移故事内容";
+    public string ActionText => "复制到目标";
+    public string Explanation => $"将“{StoryDisplayName}”的内容追加到选中的故事，保留源故事和目标已有内容。";
     public string SearchAutomationName => $"搜索{ChineseTypeLabel}";
     public ObservableCollection<ResourceDescriptor> FilteredResources { get; } = [];
 
@@ -205,9 +48,7 @@ public sealed class ResourcePickerViewModel : ObservableObject
     }
     public bool CanConfirm => SelectedResource is not null;
     public bool HasCandidates => _resources.Count > 0;
-    public string EmptyText => Mode == ResourcePickerMode.CopyIntoStory ? "请先创建另一个可编辑故事作为目标。" : Mode == ResourcePickerMode.Reference
-        ? $"没有可引用的{ChineseTypeLabel}。"
-        : $"项目中还没有可作为模板的{ChineseTypeLabel}。";
+    public string EmptyText => "请先创建另一个可编辑故事作为目标。";
 
     private void RefreshFilter()
     {
@@ -223,18 +64,12 @@ public sealed class ResourcePickerViewModel : ObservableObject
     }
 }
 
-public sealed class ResourceReferencesViewModel
+internal static class ProjectResourceLabels
 {
-    public ResourceReferencesViewModel(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references)
+    public static string ChineseLabel(ProjectResourceType type) => type switch
     {
-        Resource = resource ?? throw new ArgumentNullException(nameof(resource));
-        References = references ?? throw new ArgumentNullException(nameof(references));
-    }
-
-    public ResourceDescriptor Resource { get; }
-    public IReadOnlyList<ResourceDescriptor> References { get; }
-    public string Title => $"“{Resource.DisplayName}”的引用";
-    public string Summary => References.Count == 0
-        ? "当前没有其它故事引用这个资源。"
-        : $"以下 {References.Count} 个故事仍引用这个资源：";
+        ProjectResourceType.Story => "故事", ProjectResourceType.Session => "会话", ProjectResourceType.Task => "任务",
+        ProjectResourceType.Actor => "角色", ProjectResourceType.Item => "个体物品", ProjectResourceType.ItemGroup => "集体物品",
+        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+    };
 }

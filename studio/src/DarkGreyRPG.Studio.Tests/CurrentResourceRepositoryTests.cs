@@ -3,7 +3,6 @@ using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Items;
-using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -96,11 +95,11 @@ public sealed class CurrentResourceRepositoryTests
         Assert.AreEqual(Path.GetFullPath(Path.Combine(project.Root, "items", ResourceAddress.FromKey("ST-2345-6789-ABCD-EFGH~item~key").RelativeDefinitionPath)),
             items.GetItemPath("ST-2345-6789-ABCD-EFGH~item~key"));
 
-        var stories = new StoryRepository(project.Root);
-        stories.CreateStory("ST-2345-6789-ABCD-EFGH", "任务");
-        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", new StoryRepository(project.Root).LoadStory("ST-2345-6789-ABCD-EFGH").Id);
-        Assert.AreEqual(Path.GetFullPath(Path.Combine(project.Root, "stories", "ST-2345-6789-ABCD-EFGH" + ".json")),
-            stories.GetStoryPath("ST-2345-6789-ABCD-EFGH"));
+        var stories = new CanonicalProjectGraphStore(project.Root).Stories;
+        stories.Create(new(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "任务", new GraphDocument()));
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", new CanonicalProjectGraphStore(project.Root).Stories.Load("ST-2345-6789-ABCD-EFGH").Id);
+        Assert.AreEqual(Path.GetFullPath(Path.Combine(project.Root, "resources", "canonical", "stories", "ST-2345-6789-ABCD-EFGH" + ".json")),
+            stories.GetPath("ST-2345-6789-ABCD-EFGH"));
     }
 
     [TestMethod]
@@ -127,7 +126,7 @@ public sealed class CurrentResourceRepositoryTests
     public void EqualLocalIdsUnderDifferentOwnersCoexistOnWindowsAndReopenExactly()
     {
         using var project = new TestProjectDirectory();
-        var actors = new ActorRepository(project.Root); var items = new ItemRepository(project.Root); var stories = new StoryRepository(project.Root);
+        var actors = new ActorRepository(project.Root); var items = new ItemRepository(project.Root); var stories = new CanonicalProjectGraphStore(project.Root).Stories;
         var owners = new[] { "ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ", "ST-AAAA-BBBB-CCCC-DDDD" };
         foreach (var owner in owners)
         {
@@ -136,14 +135,14 @@ public sealed class CurrentResourceRepositoryTests
             var itemId = new ResourceAddress(StoryUid.Parse(owner), ResourceKind.Item, "guard").ToKey();
             actors.SaveActor(actors.CreateIndividual(actorId, owner));
             actors.SaveActor(actors.CreateCollective(groupId, owner));
-            items.SaveItem(items.CreateItem(itemId, owner)); stories.CreateStory(owner, owner);
+            items.SaveItem(items.CreateItem(itemId, owner)); stories.Create(new(GraphResourceKind.Story, owner, owner, new GraphDocument()));
         }
         foreach (var owner in owners)
         {
             Assert.AreEqual(owner, new ActorRepository(project.Root).LoadActor(owner + "~actor~guard").DisplayName);
             Assert.AreEqual(owner, new ActorRepository(project.Root).LoadActor(owner + "~actor~guard_group").DisplayName);
             Assert.AreEqual(owner, new ItemRepository(project.Root).LoadItem(owner + "~item~guard").DisplayName);
-            Assert.AreEqual(owner, new StoryRepository(project.Root).LoadStory(owner).DisplayName);
+            Assert.AreEqual(owner, new CanonicalProjectGraphStore(project.Root).Stories.Load(owner).DisplayName);
         }
     }
 }

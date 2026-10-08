@@ -32,15 +32,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContentException;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContentLoader;
 import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.identity.ResourceAddressJson;
 import darkgrey.rpg.identity.StoryUid;
-import darkgrey.rpg.quest.QuestDefinition;
-import darkgrey.rpg.story.StoryDefinition;
 
 public final class ProjectRepository {
 
@@ -49,8 +46,6 @@ public final class ProjectRepository {
     private static final Set<String> PROJECT_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
             Arrays.asList("schema_version", "identity_format", "id", "display_name", "project_origin_code")));
-    private static final Set<String> LEGACY_ACTOR_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("schema_version", "id", "display_name", "notes", "tags", "home_story_id")));
     private static final Set<String> ACTOR_CURRENT_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
             Arrays.asList(
@@ -70,53 +65,6 @@ public final class ProjectRepository {
     private static final Set<String> ITEM_GROUP_FIELDS = Collections.unmodifiableSet(
         new HashSet<String>(
             Arrays.asList("schema_version", "identity_format", "type", "group_id", "display_name", "tags")));
-    private static final Set<String> DIALOGUE_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(
-            Arrays.asList(
-                "schema_version",
-                "id",
-                "title",
-                "display_name",
-                "home_story_id",
-                "speakers",
-                "entry",
-                "nodes",
-                "metadata")));
-    private static final Set<String> LINE_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "type", "speaker", "text", "next")));
-    private static final Set<String> CHOICE_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "type", "prompt", "choices")));
-    private static final Set<String> CHOICE_OPTION_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("text", "next")));
-    private static final Set<String> JUMP_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "type", "target")));
-    private static final Set<String> END_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "type", "result")));
-    private static final Set<String> METADATA_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("notes", "tags")));
-    private static final Set<String> QUEST_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(
-            Arrays.asList(
-                "schema_version",
-                "id",
-                "title",
-                "display_name",
-                "description",
-                "home_story_id",
-                "objectives",
-                "objective_groups",
-                "metadata")));
-    private static final Set<String> KILL_OBJECTIVE_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "type", "description", "entity", "required")));
-    private static final Set<String> COLLECT_OBJECTIVE_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("id", "type", "description", "item", "metadata", "required")));
-    private static final Set<String> REACH_OBJECTIVE_FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("id", "type", "description", "dimension", "x", "y", "z", "radius")));
-    private static final Set<String> INTERACT_OBJECTIVE_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "type", "description", "actor_id", "required")));
-    private static final Set<String> OBJECTIVE_GROUP_FIELDS = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("id", "mode", "objectives")));
-
     private final File projectDirectory;
     private volatile ProjectSnapshot snapshot = ProjectSnapshot.empty();
     private volatile ReloadResult lastReload = ReloadResult.failure("Project has not been loaded");
@@ -179,19 +127,6 @@ public final class ProjectRepository {
         throws ProjectLoadException {
         File file = packageContext(source);
         return loadItem(file, expectedType, readObject(bytes, file));
-    }
-
-    /** Reuses the strict Dialogue parser for one detached DGRS entry. */
-    public static DialogueDefinition readPackagedDialogue(byte[] bytes, String source,
-        Map<String, ActorDefinition> actors) throws ProjectLoadException {
-        File file = packageContext(source);
-        return loadDialogue(file, actors, readObject(bytes, file));
-    }
-
-    /** Reuses the strict Quest parser for one detached DGRS entry. */
-    public static QuestDefinition readPackagedQuest(byte[] bytes, String source) throws ProjectLoadException {
-        File file = packageContext(source);
-        return loadQuest(file, readObject(bytes, file));
     }
 
     private static File packageContext(String source) throws ProjectLoadException {
@@ -296,9 +231,6 @@ public final class ProjectRepository {
             if (directory.isDirectory() && !jsonFiles(directory, retired).isEmpty())
                 throw new ProjectLoadException("Legacy resource directory is unsupported: " + directory);
         }
-        Map<String, DialogueDefinition> dialogues = Collections.emptyMap();
-        Map<String, QuestDefinition> quests = Collections.emptyMap();
-        Map<String, StoryDefinition> stories = Collections.emptyMap();
         CanonicalProjectContent canonicalContent;
         try {
             canonicalContent = new CanonicalProjectContentLoader()
@@ -308,7 +240,7 @@ public final class ProjectRepository {
                 "Could not load canonical project content: " + exception.getMessage(),
                 exception);
         }
-        return new ProjectSnapshot(project, actors, items, itemGroups, dialogues, quests, stories, canonicalContent);
+        return new ProjectSnapshot(project, actors, items, itemGroups, canonicalContent);
     }
 
     private Map<String, ItemResourceDefinition> loadItems(String directoryName, String expectedType)
@@ -351,91 +283,6 @@ public final class ProjectRepository {
             id,
             requiredString(file, json, "display_name"),
             optionalStringList(file, json, "tags"));
-    }
-
-    private Map<String, QuestDefinition> loadQuests() throws ProjectLoadException {
-        File questsDirectory = new File(projectDirectory, "quests");
-        if (!questsDirectory.isDirectory()) {
-            throw new ProjectLoadException("Missing quests directory: " + questsDirectory.getAbsolutePath());
-        }
-        File[] questFiles = questsDirectory.listFiles();
-        if (questFiles == null) {
-            throw new ProjectLoadException("Cannot list quests directory: " + questsDirectory.getAbsolutePath());
-        }
-        Arrays.sort(questFiles, new Comparator<File>() {
-
-            @Override
-            public int compare(File left, File right) {
-                return left.getName()
-                    .compareToIgnoreCase(right.getName());
-            }
-        });
-        Map<String, QuestDefinition> quests = new LinkedHashMap<String, QuestDefinition>();
-        for (File questFile : questFiles) {
-            if (!questFile.isFile() || !questFile.getName()
-                .toLowerCase()
-                .endsWith(".json")) {
-                continue;
-            }
-            QuestDefinition quest = loadQuest(questFile);
-            if (quests.put(quest.getId(), quest) != null) {
-                throw new ProjectLoadException("Duplicate quest id '" + quest.getId() + "'");
-            }
-        }
-        return quests;
-    }
-
-    private static QuestDefinition loadQuest(File file) throws ProjectLoadException {
-        return loadQuest(file, readObject(file));
-    }
-
-    private static QuestDefinition loadQuest(File file, JsonObject json) throws ProjectLoadException {
-        throw new ProjectLoadException("Legacy Quest format is unsupported; use a current canonical Task: " + file);
-    }
-
-    private Map<String, DialogueDefinition> loadDialogues(Map<String, ActorDefinition> actors)
-        throws ProjectLoadException {
-        File dialoguesDirectory = new File(projectDirectory, "dialogues");
-        if (!dialoguesDirectory.isDirectory()) {
-            throw new ProjectLoadException("Missing dialogues directory: " + dialoguesDirectory.getAbsolutePath());
-        }
-        File[] dialogueFiles = dialoguesDirectory.listFiles();
-        if (dialogueFiles == null) {
-            throw new ProjectLoadException("Cannot list dialogues directory: " + dialoguesDirectory.getAbsolutePath());
-        }
-        Arrays.sort(dialogueFiles, new Comparator<File>() {
-
-            @Override
-            public int compare(File left, File right) {
-                return left.getName()
-                    .compareToIgnoreCase(right.getName());
-            }
-        });
-
-        Map<String, DialogueDefinition> dialogues = new LinkedHashMap<String, DialogueDefinition>();
-        for (File dialogueFile : dialogueFiles) {
-            if (!dialogueFile.isFile() || !dialogueFile.getName()
-                .toLowerCase()
-                .endsWith(".json")) {
-                continue;
-            }
-            DialogueDefinition dialogue = loadDialogue(dialogueFile, actors);
-            if (dialogues.put(dialogue.getId(), dialogue) != null) {
-                throw new ProjectLoadException("Duplicate dialogue id '" + dialogue.getId() + "'");
-            }
-        }
-        return dialogues;
-    }
-
-    private static DialogueDefinition loadDialogue(File file, Map<String, ActorDefinition> actors)
-        throws ProjectLoadException {
-        return loadDialogue(file, actors, readObject(file));
-    }
-
-    private static DialogueDefinition loadDialogue(File file, Map<String, ActorDefinition> actors, JsonObject json)
-        throws ProjectLoadException {
-        throw new ProjectLoadException(
-            "Legacy Dialogue format is unsupported; use a current canonical Session: " + file);
     }
 
     private static ActorDefinition loadActor(File actorFile) throws ProjectLoadException {
@@ -748,96 +595,63 @@ public final class ProjectRepository {
 
         private final boolean successful;
         private final String projectDisplayName;
-        private final int actorCount;
-        private final int dialogueCount;
-        private final int questCount;
-        private final int storyCount;
-        private final int itemCount;
-        private final int itemGroupCount;
-        private final int sessionCount;
-        private final int taskCount;
+        private final int actorCount, storyCount, itemCount, itemGroupCount, sessionCount, taskCount;
         private final String summary;
 
-        private ReloadResult(boolean successful, String projectDisplayName, int actorCount, int dialogueCount,
-            int questCount, int storyCount, int itemCount, int itemGroupCount, int sessionCount, int taskCount,
-            String summary) {
+        private ReloadResult(boolean successful, ProjectSnapshot snapshot, String summary) {
             this.successful = successful;
-            this.projectDisplayName = projectDisplayName;
-            this.actorCount = actorCount;
-            this.dialogueCount = dialogueCount;
-            this.questCount = questCount;
-            this.storyCount = storyCount;
-            this.itemCount = itemCount;
-            this.itemGroupCount = itemGroupCount;
-            this.sessionCount = sessionCount;
-            this.taskCount = taskCount;
+            this.projectDisplayName = snapshot == null ? ""
+                : snapshot.getProject()
+                    .getDisplayName();
+            this.actorCount = snapshot == null ? 0
+                : snapshot.getActors()
+                    .size();
+            this.storyCount = snapshot == null ? 0
+                : snapshot.getCanonicalStories()
+                    .size();
+            this.itemCount = snapshot == null ? 0
+                : snapshot.getItems()
+                    .size();
+            this.itemGroupCount = snapshot == null ? 0
+                : snapshot.getItemGroups()
+                    .size();
+            this.sessionCount = snapshot == null ? 0
+                : snapshot.getCanonicalSessions()
+                    .size();
+            this.taskCount = snapshot == null ? 0
+                : snapshot.getCanonicalTasks()
+                    .size();
             this.summary = summary;
         }
 
         public static ReloadResult success(ProjectSnapshot snapshot) {
             if (snapshot == null) throw new IllegalArgumentException("Project snapshot is required.");
-            Set<String> storyIds = new HashSet<String>(
-                snapshot.getStories()
-                    .keySet());
-            storyIds.addAll(
-                snapshot.getCanonicalStories()
-                    .keySet());
-            return success(
-                snapshot.getProject()
-                    .getDisplayName(),
-                snapshot.getActors()
-                    .size(),
-                snapshot.getDialogues()
-                    .size(),
-                snapshot.getQuests()
-                    .size(),
-                storyIds.size(),
-                snapshot.getItems()
-                    .size(),
-                snapshot.getItemGroups()
-                    .size(),
-                snapshot.getCanonicalSessions()
-                    .size(),
-                snapshot.getCanonicalTasks()
-                    .size());
-        }
-
-        public static ReloadResult success(String projectDisplayName, int actorCount, int dialogueCount, int questCount,
-            int storyCount) {
-            return success(projectDisplayName, actorCount, dialogueCount, questCount, storyCount, 0, 0, 0, 0);
-        }
-
-        public static ReloadResult success(String projectDisplayName, int actorCount, int dialogueCount, int questCount,
-            int storyCount, int itemCount, int itemGroupCount, int sessionCount, int taskCount) {
-            return new ReloadResult(
-                true,
-                projectDisplayName,
-                actorCount,
-                dialogueCount,
-                questCount,
-                storyCount,
-                itemCount,
-                itemGroupCount,
-                sessionCount,
-                taskCount,
-                "已加载项目“" + projectDisplayName
-                    + "”：故事 "
-                    + storyCount
-                    + "，角色 "
-                    + actorCount
-                    + "，物品 "
-                    + itemCount
-                    + "，物品组 "
-                    + itemGroupCount
-                    + "，会话 "
-                    + sessionCount
-                    + "，任务 "
-                    + taskCount
-                    + "。");
+            String summary = "已加载项目“" + snapshot.getProject()
+                .getDisplayName()
+                + "”：故事 "
+                + snapshot.getCanonicalStories()
+                    .size()
+                + "，角色 "
+                + snapshot.getActors()
+                    .size()
+                + "，物品 "
+                + snapshot.getItems()
+                    .size()
+                + "，物品组 "
+                + snapshot.getItemGroups()
+                    .size()
+                + "，会话 "
+                + snapshot.getCanonicalSessions()
+                    .size()
+                + "，任务 "
+                + snapshot.getCanonicalTasks()
+                    .size()
+                + "。";
+            return new ReloadResult(true, snapshot, summary);
         }
 
         public static ReloadResult failure(String summary) {
-            return new ReloadResult(false, "", 0, 0, 0, 0, 0, 0, 0, 0, summary);
+            return new ReloadResult(false, null, summary);
         }
 
         public boolean isSuccessful() {
@@ -850,14 +664,6 @@ public final class ProjectRepository {
 
         public int getActorCount() {
             return actorCount;
-        }
-
-        public int getDialogueCount() {
-            return dialogueCount;
-        }
-
-        public int getQuestCount() {
-            return questCount;
         }
 
         public int getStoryCount() {

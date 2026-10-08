@@ -106,9 +106,7 @@ public final class B4ExternalArchiveSetProbe {
             "Case-sensitive Studio archive count changed");
 
         darkgrey.rpg.project.ProjectSnapshot merged = StoryPackageSnapshotMerger.merge(loader.getPackages());
-        require(
-            merged.getCanonicalStory("Team:CaseStory") != null || merged.getStory("Team:CaseStory") != null,
-            "Case-sensitive Story ID was not retained");
+        require(merged.getCanonicalStory("Team:CaseStory") != null, "Case-sensitive Story ID was not retained");
         require(
             merged.getActors()
                 .containsKey("Team:Guard")

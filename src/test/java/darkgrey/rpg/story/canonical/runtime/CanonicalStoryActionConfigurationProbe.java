@@ -21,13 +21,20 @@ public final class CanonicalStoryActionConfigurationProbe {
     }
 
     private static void parsesEnabledActions() {
-        CanonicalStoryActionConfiguration item = CanonicalStoryActionConfiguration
-            .parse(properties("action_type", "\"give_item\"", "item_id", "\"reward_coin\"", "amount", "10"));
+        CanonicalStoryActionConfiguration item = CanonicalStoryActionConfiguration.parse(
+            properties(
+                "action_type",
+                "\"give_item\"",
+                "item_id",
+                "\"ST-2345-6789-ABCD-EFGH~item~reward_coin\"",
+                "amount",
+                "10"));
         check(CanonicalStoryActionConfiguration.GIVE_ITEM.equals(item.getType()), "give_item type changed");
-        check("reward_coin".equals(item.getItemId()), "give_item DGR Item ID changed");
-        check(!item.isLegacyRegistryItem() && item.getAmount() == 10, "give_item DGR payload changed");
+        check("ST-2345-6789-ABCD-EFGH~item~reward_coin".equals(item.getItemId()), "give_item DGR Item ID changed");
+        check(item.getAmount() == 10, "give_item DGR payload changed");
 
-        CanonicalStoryActionConfiguration legacyItem = CanonicalStoryActionConfiguration.parse(
+        expect(
+            "story.action.schema",
             properties(
                 "action_type",
                 "\"give_item\"",
@@ -37,7 +44,6 @@ public final class CanonicalStoryActionConfigurationProbe {
                 "0",
                 "amount",
                 "1"));
-        check(legacyItem.isLegacyRegistryItem(), "0.3.0 item compatibility was not retained");
 
         CanonicalStoryActionConfiguration xp = CanonicalStoryActionConfiguration
             .parse(properties("action_type", "\"give_xp\"", "amount", "25"));
@@ -63,7 +69,7 @@ public final class CanonicalStoryActionConfigurationProbe {
         expect("story.action.property", properties("action_type", "\"give_item\"", "item_id", "\" \"", "amount", "1"));
         expect("story.action.property", properties("action_type", "\"give_xp\"", "amount", "1.5"));
         expect(
-            "story.action.metadata",
+            "story.action.schema",
             properties("action_type", "\"give_item\"", "item", "\"stone\"", "metadata", "-1", "amount", "1"));
         check(
             CanonicalStoryActionConfiguration.parse(properties("action_type", "\"give_xp\"", "amount", "0"))

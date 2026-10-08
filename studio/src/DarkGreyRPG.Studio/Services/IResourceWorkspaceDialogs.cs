@@ -2,47 +2,14 @@ using DarkGreyRPG.Studio.Core.Projects;
 
 namespace DarkGreyRPG.Studio.Services;
 
-public sealed record ResourceIdentityRequest(string Id, string DisplayName);
+public sealed record StoryCreationRequest(string DisplayName);
 
-public enum ResourceCreationMode
-{
-    Blank,
-    ImportAsNew,
-}
+public enum ResourcePickerMode { CopyIntoStory }
 
-public enum ResourcePickerMode
-{
-    CopyIntoStory,
-    Reference,
-    ImportAsNew,
-}
-
+/// <summary>Shared current resource picker used to select a local copy destination.</summary>
 public interface IResourceWorkspaceDialogs
 {
-    ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName);
-
-    ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId);
-
-    ResourceIdentityRequest? RequestImportIdentity(
-        ProjectResourceType type,
-        ResourceDescriptor source,
-        string suggestedId);
-
-    ResourceDescriptor? PickResource(
-        ProjectResourceType type,
-        IReadOnlyList<ResourceDescriptor> candidates,
-        ResourcePickerMode mode,
-        string storyDisplayName);
-
-    bool ConfirmDelete(ResourceDescriptor resource);
-
-    bool ConfirmDiscardDraft(ResourceDescriptor resource);
-
-    bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName);
-
-    void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references);
-
-    bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource);
-
-    UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource);
+    StoryCreationRequest? RequestCreateStory(string allocatedStoryUid);
+    ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates,
+        ResourcePickerMode mode, string storyDisplayName);
 }

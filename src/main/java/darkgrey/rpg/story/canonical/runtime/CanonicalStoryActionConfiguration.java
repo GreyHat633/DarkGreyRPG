@@ -22,56 +22,38 @@ public final class CanonicalStoryActionConfiguration {
 
     private final String type;
     private final String itemId;
-    private final int metadata;
     private final int amount;
     private final String message;
-    private final boolean legacyRegistryItem;
     private Map<String, JsonElement> extended = Collections.emptyMap();
 
-    private CanonicalStoryActionConfiguration(String type, String itemId, int metadata, int amount, String message,
-        boolean legacyRegistryItem) {
+    private CanonicalStoryActionConfiguration(String type, String itemId, int amount, String message) {
         this.type = type;
         this.itemId = itemId;
-        this.metadata = metadata;
         this.amount = amount;
         this.message = message;
-        this.legacyRegistryItem = legacyRegistryItem;
     }
 
     public static CanonicalStoryActionConfiguration parse(Map<String, JsonElement> properties) {
         if (properties == null) throw failure("story.action.properties", "Action properties are required.");
         String type = string(properties, "action_type");
         if (GIVE_ITEM.equals(type)) {
+            requireExactKeys(properties, set("action_type", "item_id", "amount"));
             int amount = integer(properties, "amount");
-            if (properties.keySet()
-                .equals(set("action_type", "item_id", "amount")))
-                return new CanonicalStoryActionConfiguration(
-                    type,
-                    string(properties, "item_id"),
-                    0,
-                    amount,
-                    null,
-                    false);
-            // Compatibility-only 0.3.0.0 payload. New Studio authoring never emits this shape.
-            requireExactKeys(properties, set("action_type", "item", "metadata", "amount"));
-            int metadata = integer(properties, "metadata");
-            if (metadata < 0) throw failure("story.action.metadata", "Action metadata must be nonnegative.");
-            return new CanonicalStoryActionConfiguration(
-                type,
-                string(properties, "item"),
-                metadata,
-                amount,
-                null,
-                true);
+            String itemId = string(properties, "item_id");
+            if (!darkgrey.rpg.identity.ResourceAddress.isKey(itemId)
+                || darkgrey.rpg.identity.ResourceAddress.fromKey(itemId)
+                    .getKind() != darkgrey.rpg.identity.ResourceAddress.Kind.ITEM)
+                throw failure("story.action.item.invalid", "DGR individual Item address required.");
+            return new CanonicalStoryActionConfiguration(type, itemId, amount, null);
         }
         if (GIVE_XP.equals(type)) {
             requireExactKeys(properties, set("action_type", "amount"));
             int amount = integer(properties, "amount");
-            return new CanonicalStoryActionConfiguration(type, null, 0, amount, null, false);
+            return new CanonicalStoryActionConfiguration(type, null, amount, null);
         }
         if (SEND_MESSAGE.equals(type)) {
             requireExactKeys(properties, set("action_type", "message"));
-            return new CanonicalStoryActionConfiguration(type, null, 0, 0, string(properties, "message"), false);
+            return new CanonicalStoryActionConfiguration(type, null, 0, string(properties, "message"));
         }
         if (GIVE_HEALTH.equals(type)) {
             requireExactKeys(properties, set("action_type", "amount"));
@@ -118,7 +100,7 @@ public final class CanonicalStoryActionConfiguration {
                 || command.indexOf('\0') >= 0)
                 throw failure("story.action.command", "Command must be one line of at most 2048 characters.");
         } else throw failure("story.action.type", "Unsupported canonical Story action type: " + type);
-        CanonicalStoryActionConfiguration result = new CanonicalStoryActionConfiguration(type, null, 0, 0, null, false);
+        CanonicalStoryActionConfiguration result = new CanonicalStoryActionConfiguration(type, null, 0, null);
         result.extended = Collections.unmodifiableMap(new java.util.LinkedHashMap<String, JsonElement>(properties));
         return result;
     }
@@ -185,20 +167,12 @@ public final class CanonicalStoryActionConfiguration {
         return itemId;
     }
 
-    public int getMetadata() {
-        return metadata;
-    }
-
     public int getAmount() {
         return amount;
     }
 
     public String getMessage() {
         return message;
-    }
-
-    public boolean isLegacyRegistryItem() {
-        return legacyRegistryItem;
     }
 
     private static String string(Map<String, JsonElement> properties, String key) {

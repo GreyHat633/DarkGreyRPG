@@ -25,7 +25,7 @@ public sealed class CurrentGraphIdentity0336Tests
         CurrentProjectValidator.Validate(CurrentProjectInventory.Read(project.Root));
         var path = Path.Combine(project.Root, "export", "current.dgrs");
         var exported = new DarkGreyRPG.Studio.Core.Packaging.DgrsStoryPackageExporter(project.Root).Build(Owner.Value, path, "0.3.3.6");
-        Assert.AreEqual(2, exported.Manifest.FormatVersion);
+        Assert.AreEqual(3, exported.Manifest.FormatVersion);
         var reopened = DarkGreyRPG.Studio.Core.Packaging.OfflineDgrsPackageReader.Read(path);
         Assert.IsTrue(reopened.Resources.Any(resource => resource.Id == actor));
         Assert.AreEqual(Owner.Value, reopened.Manifest.StoryId);

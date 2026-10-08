@@ -145,15 +145,7 @@ public sealed class GateGWpfTests
         public bool ConfirmDeleteOwned(CanonicalGraphResourceChoice resource) => true;
         public bool ConfirmAggregateInterfaceRemoval(CanonicalGraphResourceChoice resource, IReadOnlyList<GraphConnection> affectedConnections) => true;
         public void ShowDeleteBlocked(CanonicalGraphResourceChoice resource, IReadOnlyList<string> storyIds) { }
-        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string name) => null;
-        public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) => null;
-        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
+        public StoryCreationRequest? RequestCreateStory(string allocatedStoryUid) => null;
         public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string name) { LastCopyMode = mode; return CopyTarget; }
-        public bool ConfirmDelete(ResourceDescriptor resource) => false;
-        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
-        public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
-        public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
-        public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
     }
 }

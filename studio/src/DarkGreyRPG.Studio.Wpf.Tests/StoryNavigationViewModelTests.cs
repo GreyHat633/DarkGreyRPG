@@ -17,6 +17,51 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class StoryNavigationViewModelTests
 {
+    [STATestMethod]
+    public void NavigationLandingUsesRealGroupedContainersWithInheritedDataContext()
+    {
+        using var f = new CurrentNavigationFixture();
+        const string member = "ST-JKLM-NPQR-STUV-WXYZ", single = "ST-AAAA-BBBB-CCCC-DDDD";
+        var lifecycle = new CanonicalStoryLifecycleService(f.Store);
+        lifecycle.Create(member, "Member"); lifecycle.Create(single, "Single");
+        AddBoundary(f.Store, CurrentNavigationFixture.Owner, "logic_output");
+        AddBoundary(f.Store, member, "logic_input");
+        f.Store.StoryLogicGraph.Save([new(CurrentNavigationFixture.Owner, "boundary", member, "boundary")]);
+        f.Shell.OpenProjectCommand.Execute(null);
+        var list = new DarkGreyRPG.Studio.Views.StoryNavigationList
+        { ItemsSource = f.Shell.ProjectHome.GroupedStories, DataContext = f.Shell, Width = 260, Height = 320 };
+        list.Template = (System.Windows.Controls.ControlTemplate)System.Windows.Markup.XamlReader.Parse("""
+            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" TargetType="ListBox">
+              <ScrollViewer><ItemsPresenter/></ScrollViewer>
+            </ControlTemplate>
+            """);
+        list.GroupStyle.Add(new System.Windows.Controls.GroupStyle());
+        var window = new System.Windows.Window { Content = list, ShowActivated = false, ShowInTaskbar = false, Left = -10000 };
+        try
+        {
+            window.Show(); list.UpdateLayout();
+            var containers = Containers(list).ToArray();
+            var target = containers.FirstOrDefault(row => (row.Content as System.Windows.Data.CollectionViewGroup)?.Name is StoryListItemViewModel story && story.Id == single);
+            Assert.IsNotNull(target, $"Containers: {string.Join(';', containers.Select(row => $"{row.Content?.GetType().Name}:{row.DataContext?.GetType().Name}"))}; stories={list.Items.Count}");
+            target.DataContext = f.Shell;
+            Assert.AreSame(f.Shell, target.DataContext);
+            var point = target.TranslatePoint(new System.Windows.Point(8, target.ActualHeight / 4), list);
+            var landing = DarkGreyRPG.Studio.Views.StoryNavigationDrag.Locate(list, f.Shell.ProjectHome.Graph.StoryGroups.Groups.Single().Key, point);
+            Assert.IsNotNull(landing);
+            Assert.AreEqual(f.Shell.ProjectHome.Stories.Single(story => story.Id == single).NavigationKey, landing.Key);
+        }
+        finally { window.Close(); }
+        static IEnumerable<System.Windows.Controls.GroupItem> Containers(System.Windows.DependencyObject root)
+        {
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is System.Windows.Controls.GroupItem row) yield return row;
+                foreach (var descendant in Containers(child)) yield return descendant;
+            }
+        }
+    }
+
     [TestMethod]
     public void MixedStoryGroupDeletionUnlinksWholeReferenceAndPreservesOriginalPackage()
     {
@@ -153,18 +198,46 @@ public sealed class StoryNavigationViewModelTests
     }
 
     [TestMethod]
+    public void ProjectInspectorRenamesRealStoryOutputsWithGlobalHistoryAndStableIdentity()
+    {
+        using var fixture = new CurrentNavigationFixture();
+        fixture.Shell.OpenProjectCommand.Execute(null); fixture.Open();
+        var workspace = fixture.Shell.CanonicalStoryWorkspace!;
+        var terminal = new GraphNodeAuthoringService().Create(workspace.StoryEditor.Document.Graph,
+            GraphScope.StoryFlow, "terminate", "terminal").Candidate!;
+        Assert.IsTrue(workspace.StoryEditor.Host.AddNode(terminal));
+        var portId = terminal.Properties["port_id"].GetString();
+        var beforeName = terminal.Properties["display_name"].GetString();
+        fixture.Shell.ShowProjectHomeCommand.Execute(null);
+        var outputs = fixture.Shell.ProjectHome.Graph.SelectedOutputs!;
+        Assert.IsTrue(outputs.CanRename);
+        outputs.Flow.Single(row => row.PortId == portId).DisplayName = "接受委托";
+        Assert.AreEqual("接受委托", workspace.StoryEditor.Document.Graph.Nodes.Single(node => node.Id == "terminal").Properties["display_name"].GetString());
+        Assert.AreEqual(portId, outputs.Flow.Single().PortId);
+        Assert.AreEqual("接受委托", fixture.Shell.ProjectHome.Graph.CanonicalHost!.Nodes.Single().Outputs.Single(port => port.Id == portId).DisplayName);
+        fixture.Shell.UndoCurrentCommand.Execute(null);
+        Assert.AreEqual(beforeName, outputs.Flow.Single().DisplayName);
+        fixture.Shell.RedoCurrentCommand.Execute(null);
+        Assert.AreEqual("接受委托", outputs.Flow.Single().DisplayName);
+        outputs.Flow.Single().DisplayName = " ";
+        Assert.AreEqual("接受委托", outputs.Flow.Single().DisplayName);
+        fixture.Shell.SaveAllCommand.Execute(null);
+        Assert.AreEqual("接受委托", fixture.Store.Stories.Load(CurrentNavigationFixture.Owner).Graph!.Nodes.Single(node => node.Id == "terminal").Properties["display_name"].GetString());
+    }
+
+    [TestMethod]
     public void ProjectHomeSelectsFirstStoryAndClassifiesEmptyAndSearchStates()
     {
         var home = new ProjectHomeViewModel();
-        home.ReplaceStories([]);
+        home.ReplaceDiscoveredStories([]);
 
         Assert.IsTrue(home.IsEmptyProject);
         Assert.IsFalse(home.IsSearchNoResults);
         Assert.IsNull(home.SelectedStory);
 
-        home.ReplaceStories([
-            new StoryResource { Id = "alpha", DisplayName = "Alpha" },
-            new StoryResource { Id = "beta", DisplayName = "Beta" },
+        home.ReplaceDiscoveredStories([
+            Home("alpha", "Alpha"),
+            Home("beta", "Beta"),
         ]);
         Assert.AreEqual("alpha", home.SelectedStory?.Id);
         Assert.IsFalse(home.IsEmptyProject);
@@ -182,23 +255,23 @@ public sealed class StoryNavigationViewModelTests
     public void ProjectHomeRefreshPreservesSelectionAndFallsBackToAdjacentStory()
     {
         var home = new ProjectHomeViewModel();
-        home.ReplaceStories([
-            new StoryResource { Id = "alpha", DisplayName = "Alpha" },
-            new StoryResource { Id = "beta", DisplayName = "Beta" },
-            new StoryResource { Id = "gamma", DisplayName = "Gamma" },
+        home.ReplaceDiscoveredStories([
+            Home("alpha", "Alpha"),
+            Home("beta", "Beta"),
+            Home("gamma", "Gamma"),
         ]);
         home.SelectedStory = home.Stories.Single(item => item.Id == "beta");
 
-        home.ReplaceStories([
-            new StoryResource { Id = "gamma", DisplayName = "Gamma" },
-            new StoryResource { Id = "beta", DisplayName = "Beta Updated" },
-            new StoryResource { Id = "alpha", DisplayName = "Alpha" },
+        home.ReplaceDiscoveredStories([
+            Home("gamma", "Gamma"),
+            Home("beta", "Beta Updated"),
+            Home("alpha", "Alpha"),
         ]);
         Assert.AreEqual("beta", home.SelectedStory?.Id);
 
-        home.ReplaceStories([
-            new StoryResource { Id = "alpha", DisplayName = "Alpha" },
-            new StoryResource { Id = "gamma", DisplayName = "Gamma" },
+        home.ReplaceDiscoveredStories([
+            Home("alpha", "Alpha"),
+            Home("gamma", "Gamma"),
         ]);
         Assert.AreEqual("gamma", home.SelectedStory?.Id);
     }
@@ -207,10 +280,10 @@ public sealed class StoryNavigationViewModelTests
     public void ProjectHomeSearchSelectsVisibleStoryAndRestoresPreSearchSelection()
     {
         var home = new ProjectHomeViewModel();
-        home.ReplaceStories([
-            new StoryResource { Id = "alpha", DisplayName = "Alpha" },
-            new StoryResource { Id = "beta", DisplayName = "Beta" },
-            new StoryResource { Id = "gamma", DisplayName = "Gamma" },
+        home.ReplaceDiscoveredStories([
+            Home("alpha", "Alpha"),
+            Home("beta", "Beta"),
+            Home("gamma", "Gamma"),
         ]);
         home.SelectedStory = home.Stories.Single(item => item.Id == "beta");
 
@@ -223,13 +296,8 @@ public sealed class StoryNavigationViewModelTests
     }
 
     [TestMethod]
-    public void ProjectHomeMergesCanonicalDiscoveryByIdAndKeepsCanonicalOnlyStoriesVisible()
+    public void ProjectHomeShowsCurrentDiscoveryAndPreciseIncompleteState()
     {
-        var legacy = new[]
-        {
-            new StoryResource { Id = "legacy", DisplayName = "Legacy" },
-            new StoryResource { Id = "shared", DisplayName = "Old Shared" },
-        };
         var canonical = new[]
         {
             new CanonicalStoryHomeEntry(
@@ -244,244 +312,62 @@ public sealed class StoryNavigationViewModelTests
         };
         var home = new ProjectHomeViewModel();
 
-        home.ReplaceDiscoveredStories(legacy, canonical);
+        home.ReplaceDiscoveredStories(canonical);
 
         CollectionAssert.AreEquivalent(
-            new[] { "legacy", "shared", "canonical_only", "broken" },
+            new[] { "shared", "canonical_only", "broken" },
             home.Stories.Select(item => item.Id).ToArray());
         var shared = home.Stories.Single(item => item.Id == "shared");
         Assert.AreEqual("Canonical Shared", shared.DisplayName);
-        Assert.IsTrue(shared.HasLegacyStory);
         Assert.IsTrue(shared.HasCanonicalStory);
-        Assert.IsFalse(shared.CanDeleteLegacyStory);
         var canonicalOnly = home.Stories.Single(item => item.Id == "canonical_only");
-        Assert.IsTrue(canonicalOnly.IsCanonicalOnly);
-        Assert.IsFalse(canonicalOnly.CanDeleteLegacyStory);
         Assert.AreEqual("1 个本故事角色 · 2 个引用角色 · 3 个会话 · 4 个任务",
             canonicalOnly.MembershipSummary);
         Assert.AreEqual(5, canonicalOnly.FlowNodeCount);
         var broken = home.Stories.Single(item => item.Id == "broken");
         Assert.AreEqual("数据不完整", broken.TagsText);
         StringAssert.Contains(broken.Description, "缺少 membership");
-        Assert.HasCount(2, home.Graph.Nodes);
+        Assert.HasCount(3, home.Graph.Nodes);
     }
 
     [TestMethod]
-    public void ProjectHomeSearchesStoriesByIdDisplayNameAndTagsAndBuildsGraph()
+    public void ProjectHomeSearchesCurrentStoryNamesAndIdsAndOpensGraph()
     {
-        var stories = new[]
-        {
-            new StoryResource
-            {
-                Id = "castle_mystery",
-                DisplayName = "Castle Mystery",
-                Tags = ["main", "mystery"],
-                Nodes = [new StoryNodeResource
-                {
-                    Id = "to_kingdom",
-                    Type = "EnterStory",
-                    Properties = new Dictionary<string, JsonElement>
-                    {
-                        ["target_story_id"] = JsonSerializer.SerializeToElement("kingdom"),
-                    },
-                }],
-            },
-            new StoryResource { Id = "kingdom", DisplayName = "Kingdom Route", Tags = ["branch"] },
-        };
         var home = new ProjectHomeViewModel();
-        home.ReplaceStories(stories);
-
+        home.ReplaceDiscoveredStories([Home("castle_mystery", "Castle Mystery"), Home("kingdom", "Kingdom Route")]);
         home.SearchText = "mystery";
         CollectionAssert.AreEqual(new[] { "castle_mystery" }, home.FilteredStories.Select(item => item.Id).ToArray());
-        home.SearchText = "kingdom";
+        home.SearchText = "Route";
         CollectionAssert.AreEqual(new[] { "kingdom" }, home.FilteredStories.Select(item => item.Id).ToArray());
-        home.SearchText = "branch";
-        CollectionAssert.AreEqual(new[] { "kingdom" }, home.FilteredStories.Select(item => item.Id).ToArray());
-
         home.ShowGraph();
         Assert.IsTrue(home.IsGraphVisible);
         Assert.HasCount(2, home.Graph.Nodes);
-        Assert.AreEqual("2 个故事 · 1 条转场 / 1 组关系 · 0 个诊断", home.Graph.Summary);
-        Assert.AreEqual("kingdom", home.Graph.Edges.Single().TargetStoryId);
     }
 
     [TestMethod]
-    public void SelectedStoryExposesFullOverviewAndStoryWorkspaceDefaultsActorsWithFourRoutes()
+    public void MainWindowUsesCurrentWorkspaceTreeAndInspector()
     {
-        var story = new StoryResource
-        {
-            Id = "castle_mystery",
-            DisplayName = "Castle Mystery",
-            OwnedResources = new StoryMembership { Actors = ["hero"], Dialogues = ["opening"], Quests = ["investigate"] },
-            ReferencedResources = new StoryMembership { Actors = ["merchant", "missing"], Dialogues = ["shared"], Quests = ["shared_quest"] },
-            Nodes = [new StoryNodeResource { Id = "start", Type = "START" }],
-        };
-        var actors = new[]
-        {
-            new ActorResourceInfo("hero", "Hero", "hero.json", ["main"]),
-            new ActorResourceInfo("merchant", "Merchant", "merchant.json", ["shop"]),
-        };
-        var home = new ProjectHomeViewModel();
-        home.ReplaceStories([story]);
-        home.SelectedStory = home.Stories.Single();
-
-        Assert.AreEqual("Castle Mystery", home.SelectedStory.Overview.DisplayName);
-        Assert.AreEqual("castle_mystery", home.SelectedStory.Overview.Id);
-        Assert.AreEqual(story.Description, home.SelectedStory.Overview.Description);
-        Assert.AreEqual("1 个本故事角色 · 2 个引用角色 · 2 个对话 · 2 个任务", home.SelectedStory.Overview.MembershipSummary);
-        Assert.AreEqual(1, home.SelectedStory.Overview.FlowNodeCount);
-        Assert.AreEqual(home.SelectedStory.Overview.MembershipSummary, home.SelectedStory.MembershipSummary);
-        Assert.AreEqual(home.SelectedStory.Overview.FlowNodeCount, home.SelectedStory.FlowNodeCount);
-
-        var workspace = new StoryWorkspaceViewModel();
-
-        workspace.OpenStory(story, actors);
-
-        Assert.AreEqual(StoryWorkspaceRoutes.Actors, workspace.CurrentRoute);
-        CollectionAssert.AreEqual(
-            new[] { StoryWorkspaceRoutes.Actors, StoryWorkspaceRoutes.Dialogues, StoryWorkspaceRoutes.Quests, StoryWorkspaceRoutes.Flow },
-            workspace.Routes.Select(route => route.Page).ToArray());
-        Assert.AreSame(workspace.Actors, workspace.CurrentPage);
-        Assert.HasCount(3, workspace.Actors!.Memberships);
-        Assert.AreEqual(1, workspace.Actors.OwnedCount);
-        Assert.AreEqual(2, workspace.Actors.ReferencedCount);
-        Assert.IsTrue(workspace.Actors.Memberships.Single(item => item.Id == "merchant").IsResolved);
-        Assert.IsTrue(workspace.Actors.HasMissingActors);
-
-        var changed = new List<string>();
-        workspace.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
-        workspace.SelectRoute(StoryWorkspaceRoutes.Dialogues);
-        Assert.AreSame(workspace.Dialogues, workspace.CurrentPage);
-        CollectionAssert.Contains(changed, nameof(StoryWorkspaceViewModel.SelectedRoute));
-        workspace.SelectRoute(StoryWorkspaceRoutes.Actors);
-        Assert.AreSame(workspace.Actors, workspace.CurrentPage);
-        workspace.SelectRoute(StoryWorkspaceRoutes.Quests);
-        Assert.AreSame(workspace.Quests, workspace.CurrentPage);
-        workspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-        Assert.AreSame(workspace.Flow, workspace.CurrentPage);
+        var xaml = File.ReadAllText(FindRepositoryFile("studio/src/DarkGreyRPG.Studio/MainWindow.xaml"));
+        Assert.IsFalse(xaml.Contains("{Binding StoryWorkspace.", StringComparison.Ordinal));
+        Assert.IsFalse(xaml.Contains("DialogueEditorView", StringComparison.Ordinal));
+        Assert.IsFalse(xaml.Contains("QuestEditorView", StringComparison.Ordinal));
+        StringAssert.Contains(xaml, "CanonicalStoryWorkspace");
+        StringAssert.Contains(xaml, "CanonicalStoryWorkspaceView");
     }
 
     [TestMethod]
-    public void StoryActorLibraryMergesSortsMissingAndPreservesVisibleSelectionWhenFiltering()
-    {
-        var story = new StoryResource
-        {
-            Id = "library",
-            OwnedResources = new StoryMembership { Actors = ["zulu", "alpha"] },
-            ReferencedResources = new StoryMembership { Actors = ["beta", "missing", "alpha"] },
-        };
-        var library = new StoryActorsViewModel(story,
-        [
-            new ActorResourceInfo("zulu", "Zulu", "zulu.json", []),
-            new ActorResourceInfo("alpha", "Alpha", "alpha.json", []),
-            new ActorResourceInfo("beta", "Beta", "beta.json", []),
-        ]);
-
-        Assert.AreEqual("alpha", library.Memberships[0].Id);
-        Assert.IsTrue(library.Memberships.Select(item => item.Id).SequenceEqual(["alpha", "zulu", "beta", "missing"]));
-        Assert.IsTrue(library.Memberships.Single(item => item.Id == "missing").IsMissing);
-        library.SelectedMembership = library.Memberships.Single(item => item.Id == "zulu");
-        library.SearchText = "zulu";
-        Assert.AreEqual("zulu", library.SelectedMembership?.Id);
-        Assert.HasCount(1, library.FilteredMemberships);
-        library.SearchText = "beta";
-        Assert.IsNull(library.SelectedMembership);
-    }
-
-    [TestMethod]
-    public void StoryResourceLibrariesShareMembershipOrderingAndSourceTooltipMetadata()
-    {
-        var story = new StoryResource
-        {
-            Id = "library",
-            OwnedResources = new StoryMembership { Dialogues = ["owned_b", "owned_a"], Quests = ["quest"] },
-            ReferencedResources = new StoryMembership { Dialogues = ["shared", "collision", "missing_dialogue"], Quests = ["shared_quest", "collision", "missing_quest"] },
-        };
-        var descriptors = new ResourceDescriptor[]
-        {
-            new(ProjectResourceType.Dialogue, "owned_b", "Bravo", "b.json"),
-            new(ProjectResourceType.Dialogue, "owned_a", "Alpha", "a.json"),
-            new(ProjectResourceType.Dialogue, "shared", "Shared", "s.json"),
-            new(ProjectResourceType.Dialogue, "collision", "Collision Dialogue", "cd.json"),
-            new(ProjectResourceType.Quest, "quest", "Quest", "q.json"),
-            new(ProjectResourceType.Quest, "shared_quest", "Shared Quest", "sq.json"),
-            new(ProjectResourceType.Quest, "collision", "Collision Quest", "cq.json"),
-        };
-        var dialogueHomeStories = new Dictionary<string, string> { ["shared"] = "Home Story", ["collision"] = "Dialogue Home" };
-        var questHomeStories = new Dictionary<string, string> { ["shared_quest"] = "Quest Home", ["collision"] = "Quest Home" };
-        var dialogues = new StoryDialoguesViewModel(story, descriptors, dialogueHomeStories);
-        var quests = new StoryQuestsViewModel(story, descriptors, questHomeStories);
-
-        Assert.AreEqual("owned_a", dialogues.Items[0].Id);
-        Assert.IsTrue(dialogues.Items.Select(item => item.Id).SequenceEqual(["owned_a", "owned_b", "collision", "shared", "missing_dialogue"]));
-        Assert.IsTrue(quests.Items.Select(item => item.Id).SequenceEqual(["quest", "collision", "shared_quest", "missing_quest"]));
-        Assert.AreEqual("Home Story", dialogues.Items.Single(item => item.Id == "shared").HomeStoryDisplayName);
-        StringAssert.Contains(dialogues.Items.Single(item => item.Id == "shared").MembershipTooltip, "Home Story");
-        Assert.AreEqual("Dialogue Home", dialogues.Items.Single(item => item.Id == "collision").HomeStoryDisplayName);
-        Assert.AreEqual("Quest Home", quests.Items.Single(item => item.Id == "collision").HomeStoryDisplayName);
-        Assert.IsTrue(quests.Items.Single(item => item.Id == "missing_quest").IsMissing);
-    }
-
-    [TestMethod]
-    public void StoryActorLibraryKeepsThirtyFiveItemsInOneFilteredCollection()
-    {
-        var ids = Enumerable.Range(0, 35).Select(index => $"actor_{index:00}").ToArray();
-        var story = new StoryResource
-        {
-            Id = "large_library",
-            OwnedResources = new StoryMembership { Actors = ids[..18].ToList() },
-            ReferencedResources = new StoryMembership { Actors = ids[18..].ToList() },
-        };
-        var actors = ids.Select(id => new ActorResourceInfo(id, id, id + ".json", [])).ToArray();
-        var library = new StoryActorsViewModel(story, actors);
-
-        Assert.HasCount(35, library.Memberships);
-        Assert.HasCount(35, library.FilteredMemberships);
-        Assert.IsTrue(library.Memberships.Take(18).All(item => item.IsOwned));
-        Assert.IsTrue(library.Memberships.Skip(18).All(item => item.IsReferenced));
-    }
-
-    [TestMethod]
-    public void MainWindowResourceLibrariesDeclareRecyclingVirtualizationAndSharedVectorIndicators()
-    {
-        var path = FindRepositoryFile("studio/src/DarkGreyRPG.Studio/MainWindow.xaml");
-        var xaml = File.ReadAllText(path);
-
-        Assert.AreEqual(3, xaml.Split("VirtualizingPanel.VirtualizationMode=\"Recycling\"", StringSplitOptions.None).Length - 1);
-        Assert.AreEqual(3, xaml.Split("ScrollViewer.CanContentScroll=\"True\"", StringSplitOptions.None).Length - 1);
-        Assert.IsFalse(xaml.Contains("FilteredOwnedMemberships", StringComparison.Ordinal));
-        Assert.IsFalse(xaml.Contains("FilteredReferencedMemberships", StringComparison.Ordinal));
-        Assert.IsTrue(xaml.Contains("ReferenceIconGeometry", StringComparison.Ordinal));
-        Assert.IsTrue(xaml.Contains("MissingIconGeometry", StringComparison.Ordinal));
-        Assert.AreEqual(1, xaml.Split("Story 角色页面命令栏", StringSplitOptions.None).Length - 1);
-        Assert.AreEqual(1, xaml.Split("Story 对话页面命令栏", StringSplitOptions.None).Length - 1);
-        Assert.AreEqual(1, xaml.Split("Story 任务页面命令栏", StringSplitOptions.None).Length - 1);
-        StringAssert.Contains(xaml, "StoryWorkspace.Actors.FilteredMemberships.Count, StringFormat={}{0} 个角色");
-        StringAssert.Contains(xaml, "StoryWorkspace.Dialogues.FilteredItems.Count, StringFormat={}{0} 个对话");
-        StringAssert.Contains(xaml, "StoryWorkspace.Quests.FilteredItems.Count, StringFormat={}{0} 个任务");
-        Assert.AreEqual(1, File.ReadAllText(FindRepositoryFile("studio/src/DarkGreyRPG.Studio/Views/StoryFlowEditorView.xaml"))
-            .Split("Story 流程页面命令栏", StringSplitOptions.None).Length - 1);
-        Assert.AreEqual(3, xaml.Split("StoryResourceLibraryWidth, ElementName=RootWindow", StringSplitOptions.None).Length - 1);
-        Assert.AreEqual(4, xaml.Split("GridSplitter Grid.Column=\"1\"", StringSplitOptions.None).Length - 1);
-        StringAssert.Contains(xaml, "MinWidth=\"220\" MaxWidth=\"380\"");
-    }
-
-    [TestMethod]
-    public void ShellOpensProjectHomeThenStoryWithoutSelectingGlobalActor()
+    public void ShellOpensProjectHomeThenCurrentStoryInspector()
     {
         using var f = new CurrentNavigationFixture();
-        Assert.IsNull(f.Shell.SelectedActor);
         Assert.IsTrue(f.Shell.ProjectHome.IsHomeVisible);
         f.Open();
         var workspace = f.Shell.CanonicalStoryWorkspace!;
         Assert.AreEqual(CurrentNavigationFixture.Owner, workspace.StoryEditor.Id);
-        Assert.IsNull(f.Shell.SelectedActor);
         workspace.StoryEditor.Host.AddNode(new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.StoryFlow, "terminate", "draft").Candidate!);
         Assert.IsTrue(workspace.SelectFolder(CanonicalStoryFolderKind.Actors));
         Assert.IsTrue(workspace.StoryEditor.IsDirty);
         Assert.IsTrue(workspace.SelectTreeItem(workspace.ActorItems.Single()));
         Assert.AreEqual(CurrentNavigationFixture.Owner + "~actor~hero", workspace.SelectedActor?.Id);
-        Assert.IsNull(f.Shell.CurrentActor); // Canonical selection uses its own Inspector, not the retired global editor.
     }
 
     [TestMethod]
@@ -547,9 +433,9 @@ public sealed class StoryNavigationViewModelTests
         using var f = new CurrentNavigationFixture();
         var currentPath = f.Store.Stories.GetPath(CurrentNavigationFixture.Owner);
         var before = File.ReadAllBytes(currentPath);
-        var recovery = new StoryFlowRecoveryStore(f.Root);
-        recovery.Save(new StoryResource { Id = "legacy_story", DisplayName = "Legacy draft", Nodes = [new() { Id = "draft", Type = "play_dialogue" }] });
-        var legacyPath = Path.Combine(recovery.RecoveryDirectory, "legacy_story.json");
+        var legacyPath = Path.Combine(f.Root, "resources", "editor", "recovery", "legacy_story.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyPath)!);
+        File.WriteAllText(legacyPath, """{"schema_version":1,"resource":{"id":"legacy_story","nodes":[{"id":"draft","type":"play_dialogue"}]}}""");
         var recoveryBefore = File.ReadAllBytes(legacyPath);
         f.Shell.OpenProjectCommand.Execute(null); f.Open();
         Assert.IsFalse(f.Shell.CanonicalStoryWorkspace!.StoryEditor.Host.Nodes.Any(node => node.NodeId == "draft"));
@@ -561,15 +447,15 @@ public sealed class StoryNavigationViewModelTests
     public void SavingCurrentGraphPreservesUnrelatedLegacyRecovery()
     {
         using var f = new CurrentNavigationFixture();
-        var recovery = new StoryFlowRecoveryStore(f.Root);
-        recovery.Save(new StoryResource { Id = "legacy_story", Nodes = [new() { Id = "draft", Type = "play_dialogue" }] });
-        var path = Path.Combine(recovery.RecoveryDirectory, "legacy_story.json");
+        var path = Path.Combine(f.Root, "resources", "editor", "recovery", "legacy_story.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, """{"schema_version":1,"resource":{"id":"legacy_story","nodes":[{"id":"draft","type":"play_dialogue"}]}}""");
         var before = File.ReadAllBytes(path);
         f.Open();
         f.Shell.CanonicalStoryWorkspace!.StoryEditor.Host.SetNodePosition("start", 765, 432);
         f.Shell.SaveCurrentResourceCommand.Execute(null);
         CollectionAssert.AreEqual(before, File.ReadAllBytes(path));
-        Assert.IsNotNull(recovery.Load("legacy_story"));
+        Assert.IsTrue(File.Exists(path));
     }
 
     [TestMethod]
@@ -646,6 +532,8 @@ public sealed class StoryNavigationViewModelTests
         public bool ConfirmDeleteStory(string storyId, string displayName, IReadOnlyList<string> resourcesToDelete) => false;
     }
 
+    private static CanonicalStoryHomeEntry Home(string id, string name) => new(id, name, 0, 0, 0, 0, 0, true, true, []);
+
     private static string CreateProjectDirectory() =>
         Path.Combine(AppContext.BaseDirectory, ".test-data", "darkgrey-story-vm-" + Guid.NewGuid().ToString("N"));
 
@@ -669,23 +557,5 @@ public sealed class StoryNavigationViewModelTests
     private sealed class FixedProjectFolderPicker(string directory) : IProjectFolderPicker
     {
         public string? PickProjectFolder() => directory;
-    }
-
-    private sealed class FakeFlowWorkspaceDialogs : IFlowWorkspaceDialogs
-    {
-        public UnsavedChangesChoice Choice { get; set; }
-        public StoryFlowRecoveryChoice RecoveryChoice { get; set; } = StoryFlowRecoveryChoice.Ignore;
-        public StoryFlowRecoveryChoice? LastRecoveryChoice { get; private set; }
-        public int UnsavedPromptCount { get; private set; }
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(StoryFlowEditorViewModel flow)
-        {
-            UnsavedPromptCount++;
-            return Choice;
-        }
-        public StoryFlowRecoveryChoice ChooseRecovery(StoryFlowRecoverySnapshot snapshot)
-        {
-            LastRecoveryChoice = RecoveryChoice;
-            return RecoveryChoice;
-        }
     }
 }

@@ -13,7 +13,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraph;
 import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
 import darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind;
@@ -30,11 +29,9 @@ import darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
 import darkgrey.rpg.session.server.CanonicalSessionDispatch;
 import darkgrey.rpg.session.server.CanonicalSessionServerService;
-import darkgrey.rpg.story.StoryDefinition;
 import darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRoute;
 import darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRouter;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryActionConfiguration;
@@ -611,9 +608,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             Collections.singletonMap(
                 "actor",
                 new ActorDefinition(1, "actor", "Actor", "", Collections.<String>emptyList(), "")),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 sessions,
@@ -633,9 +629,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "flow-boundary", "Flow Boundary"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
@@ -658,9 +653,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "flow-cycle", "Flow Cycle"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
@@ -747,9 +741,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "cross-story-logic", "Cross Story Logic"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
@@ -994,9 +987,8 @@ public final class CanonicalStoryForgeCoordinatorProbe {
             Collections.singletonMap(
                 "bartender",
                 new ActorDefinition(1, "bartender", "酒馆老板", "", Collections.<String>emptyList(), "")),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(stories, sessions, tasks, memberships));
     }
 

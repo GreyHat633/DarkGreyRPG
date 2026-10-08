@@ -137,7 +137,7 @@ public sealed class CanonicalStoryResourceShellTests
         Assert.IsEmpty(shell.HomeResourceFolders);
         shell.ProjectHome.SelectedStory = story;
         Assert.AreEqual("ST-2345-6789-ABCD-EFGH~session~session", shell.HomeResourceFolders[2].Items.Single().Id);
-        shell.ProjectHome.ReplaceStories([]);
+        shell.ProjectHome.ReplaceDiscoveredStories([]);
         Assert.IsNull(shell.ProjectHome.SelectedStory);
         Assert.IsEmpty(shell.HomeResourceFolders);
     }
@@ -253,6 +253,14 @@ public sealed class CanonicalStoryResourceShellTests
         CollectionAssert.AreEqual(
             new[] { "ST-2345-6789-ABCD-EFGH~session~session_c", "ST-2345-6789-ABCD-EFGH~session~session_a", "ST-2345-6789-ABCD-EFGH~session~session_b" },
             project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH").DisplayOrder.Sessions);
+
+        firstShell.UndoCurrentCommand.Execute(null);
+        CollectionAssert.AreEqual(new[] { "Session A", "Session B", "Session C" },
+            firstShell.CanonicalStoryWorkspace.SessionItems.Select(item => item.DisplayName).ToArray());
+        Assert.IsFalse(firstShell.CanonicalStoryWorkspace.StoryEditor.Host.CanUndo);
+        firstShell.RedoCurrentCommand.Execute(null);
+        CollectionAssert.AreEqual(new[] { "Session C", "Session A", "Session B" },
+            firstShell.CanonicalStoryWorkspace.SessionItems.Select(item => item.DisplayName).ToArray());
 
         var reloadedShell = project.OpenShell(new FakeCanonicalDialogs());
         CollectionAssert.AreEqual(

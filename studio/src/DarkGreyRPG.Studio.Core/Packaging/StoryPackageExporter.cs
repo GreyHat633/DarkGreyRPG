@@ -65,7 +65,7 @@ public sealed class StoryPackageExporter
         }
         // ProjectRepository's server contract requires these roots even when
         // this Story has no resources of that kind.
-        foreach (var directory in new[] { "actors", "dialogues", "quests", "stories" })
+        foreach (var directory in new[] { "actors", "resources" })
             Directory.CreateDirectory(Path.Combine(root, directory));
 
         var required = new StoryPackageRequiredResources
@@ -293,8 +293,6 @@ public sealed class StoryPackageExporter
             Actors = required.Actors,
             Items = required.Items,
             ItemGroups = required.ItemGroups,
-            Dialogues = required.Dialogues,
-            Quests = required.Quests,
             CanonicalStories = required.CanonicalStories,
             CanonicalMemberships = required.CanonicalMemberships,
             Sessions = required.Sessions,

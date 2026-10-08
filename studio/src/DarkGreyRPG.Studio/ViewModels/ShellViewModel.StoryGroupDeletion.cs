@@ -32,7 +32,7 @@ public sealed partial class ShellViewModel
             var local = members.Where(id => !ProjectHome.Graph.IsReferencedStory(id)).ToArray();
             foreach (var id in local)
                 referencedIds.UnionWith(MembershipKeys(_canonicalGraphStore.Memberships.Load(id).OwnedResources).Select(key => key.Id));
-            var changes = new CanonicalStoryLifecycleService(_canonicalGraphStore, project.Actors, project.Stories)
+            var changes = new CanonicalStoryLifecycleService(_canonicalGraphStore, project.Actors)
                 .PlanGroupDeletion(local).ToList();
             var dependencies = new List<string>();
             foreach (var provider in providers.Where(provider => !containers.Contains(provider.PackagePath)))

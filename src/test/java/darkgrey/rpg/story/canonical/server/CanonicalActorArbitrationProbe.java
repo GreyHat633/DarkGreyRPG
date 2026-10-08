@@ -12,7 +12,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraph;
 import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
 import darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind;
@@ -27,9 +26,7 @@ import darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
-import darkgrey.rpg.story.StoryDefinition;
 
 /** Executes actual candidate collection/revalidation and durable cursor transitions. */
 public final class CanonicalActorArbitrationProbe {
@@ -152,9 +149,8 @@ public final class CanonicalActorArbitrationProbe {
                     "",
                     Collections.<String>emptyList(),
                     A)),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),

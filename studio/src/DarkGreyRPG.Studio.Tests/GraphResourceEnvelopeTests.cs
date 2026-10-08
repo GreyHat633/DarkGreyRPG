@@ -39,7 +39,7 @@ public sealed class GraphResourceEnvelopeTests
     public void SerializationHasOnlyFrozenRootMembersInOrderAndOneLf()
     {
         var json = new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Story", new GraphDocument()).ToJson();
-        StringAssert.StartsWith(json, "{\n  \"schema_version\": 2,");
+        StringAssert.StartsWith(json, "{\n  \"schema_version\": 3,");
         Assert.IsTrue(json.EndsWith("}\n", StringComparison.Ordinal));
         Assert.AreNotEqual('\n', json[^2]);
         using var root = JsonDocument.Parse(json);
@@ -49,17 +49,17 @@ public sealed class GraphResourceEnvelopeTests
     [TestMethod]
     public void StrictDeserializerRejectsMalformedAndLegacyRoots()
     {
-        var valid = "{\"schema_version\":2,\"identity_format\":\"story-uid-v1\",\"resource_kind\":\"story\",\"id\":\"ST-2345-6789-ABCD-EFGH\",\"display_name\":\"Name\",\"graph\":{\"nodes\":[],\"connections\":[]}}";
+        var valid = "{\"schema_version\":3,\"identity_format\":\"story-uid-v1\",\"resource_kind\":\"story\",\"id\":\"ST-2345-6789-ABCD-EFGH\",\"display_name\":\"Name\",\"graph\":{\"nodes\":[],\"connections\":[]}}";
         foreach (var (json, code) in new[]
         {
             (valid.Replace("\"graph\":{", "\"extra\":true,\"graph\":{", StringComparison.Ordinal), "graph.resource.root.member.unsupported"),
-            (valid.Replace("\"schema_version\":2", "\"schema_version\":1", StringComparison.Ordinal), "graph.resource.schema_version.unsupported"),
+            (valid.Replace("\"schema_version\":3", "\"schema_version\":1", StringComparison.Ordinal), "graph.resource.schema_version.unsupported"),
             (valid.Replace(",\"graph\":{\"nodes\":[],\"connections\":[]}", string.Empty, StringComparison.Ordinal), "graph.resource.root.member.required"),
             (valid.Replace("\"graph\":{\"nodes\":[],\"connections\":[]}", "\"graph\":null", StringComparison.Ordinal), "graph.resource.graph.required"),
             (valid.Replace("\"resource_kind\":\"story\"", "\"resource_kind\":\"dialogue\"", StringComparison.Ordinal), "graph.resource.kind.unsupported"),
             (valid.Replace("\"id\":\"ST-2345-6789-ABCD-EFGH\"", "\"id\":\" \"", StringComparison.Ordinal), "graph.resource.invalid"),
             (valid.Replace("\"display_name\":\"Name\"", "\"display_name\":null", StringComparison.Ordinal), "graph.resource.root.member.null"),
-            ("{\"schema_version\":2,\"id\":\"legacy\",\"title\":\"Old\",\"nodes\":[]}", "graph.resource.root.member.unsupported"),
+            ("{\"schema_version\":3,\"id\":\"legacy\",\"title\":\"Old\",\"nodes\":[]}", "graph.resource.root.member.unsupported"),
         })
             Assert.AreEqual(code,
                 Assert.ThrowsExactly<GraphResourceEnvelopeException>(

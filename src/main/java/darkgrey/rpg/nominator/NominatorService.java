@@ -21,32 +21,6 @@ public final class NominatorService {
 
     private NominatorService() {}
 
-    /** Applies a collective group to one exact, safe Forge registry type. */
-    public static NominatorResult bindEntityTypeGroup(boolean authorized, String entityType, String groupId,
-        boolean add, ProjectSnapshot project, NominatorSavedData selections) {
-        if (!authorized) return NominatorResult.rejected("permission_denied", "没有使用指名器的权限。");
-        if (project == null || selections == null) return NominatorResult.rejected("invalid_request", "项目或持久化数据不可用。");
-        if (!safeType(entityType)) return NominatorResult.rejected("unsafe_entity_type", "此包装实体类型需要明确的兼容支持。");
-        String group = blank(groupId) ? null : groupId.trim();
-        if (group == null) return NominatorResult.rejected("invalid_group", "必须选择一个集体角色组。");
-        darkgrey.rpg.project.ActorDefinition actor = project.getActor(group);
-        if (actor == null || !actor.isCollective()) return NominatorResult.rejected("invalid_group", "所选角色不是集体角色组。");
-        boolean changed = add ? selections.addTypeGroup(entityType, group)
-            : selections.removeTypeGroup(entityType, group);
-        return NominatorResult.accepted(changed ? "已保存实体类型角色组。" : "实体类型角色组没有变化。");
-    }
-
-    /** Shared safety policy: never fan out across CNPC/DGR wrapper classes implicitly. */
-    public static boolean safeType(String entityType) {
-        if (blank(entityType)) return false;
-        String value = entityType.trim()
-            .toLowerCase();
-        return value.indexOf("customnpc") < 0 && value.indexOf("customnpcs") < 0
-            && value.indexOf("darkgrey") < 0
-            && value.indexOf("dark_grey") < 0
-            && value.indexOf("dgr") < 0;
-    }
-
     public static String entityType(net.minecraft.entity.Entity entity) {
         String type = entity == null ? null : EntityList.getEntityString(entity);
         return blank(type) ? "unknown" : type.trim();
@@ -98,6 +72,7 @@ public final class NominatorService {
         if (entityUuid == null || project == null || identities == null || selections == null)
             return NominatorResult.rejected("invalid_request", "实体、项目或持久化数据不可用。");
         try {
+            selections.requireUsable();
             String individual = blank(individualId) ? null : individualId.trim();
             List<String> groups = cleanGroups(groupIds);
             if (!blank(storyId) && !project.containsStory(storyId.trim()))
@@ -150,6 +125,8 @@ public final class NominatorService {
     public static NominatorResult releaseEntityResource(boolean authorized, String id, ProjectSnapshot project,
         NpcIdentitySavedData identities, NominatorSavedData selections) {
         if (!authorized) return NominatorResult.rejected("permission_denied", "没有使用指名器的权限。");
+        if (identities == null || selections == null) return NominatorResult.rejected("invalid_request", "持久化数据不可用。");
+        selections.requireUsable();
         ActorDefinition actor = project == null ? null : project.getActor(id);
         if (actor == null) return NominatorResult.rejected("invalid_resource", "角色资源不可用。");
         boolean changed = false;
@@ -177,8 +154,6 @@ public final class NominatorService {
                             changed = true;
                         }
                     }
-                    for (String type : selections.typeGroups()
-                        .keySet()) changed |= selections.removeTypeGroup(type, id);
                 }
             }
         }

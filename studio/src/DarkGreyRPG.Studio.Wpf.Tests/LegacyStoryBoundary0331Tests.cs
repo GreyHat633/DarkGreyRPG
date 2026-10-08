@@ -50,7 +50,7 @@ public sealed class LegacyStoryBoundary0331Tests
         Assert.AreEqual(targetBefore, File.ReadAllText(targetPath));
         Assert.IsTrue(targetEditor.Host.RenameStoryStartTrigger("start", unsavedInputs[0].Id, "改名入口"));
 
-        var projectGraph = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var projectGraph = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         var refreshedPortNodes = new List<string>();
         projectGraph.CanonicalHost!.PortsChanged += (_, args) => refreshedPortNodes.AddRange(args.NodeIds);
         projectGraph.RefreshStoryBoundary(targetEditor.CreatePersistenceSnapshot(), () =>
@@ -91,7 +91,7 @@ public sealed class LegacyStoryBoundary0331Tests
         Assert.AreEqual("改名入口", reopenedInputs[0].DisplayName);
         Assert.AreEqual(persistedEdge.ToPortId, store.StoryLogicGraph.Load().Connections.Single().TargetPortId);
 
-        var reopenedProject = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var reopenedProject = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         Assert.AreEqual(persistedEdge, reopenedProject.CanonicalHost!.Graph.Connections.Single());
         Assert.AreEqual(sourceBefore, File.ReadAllText(sourcePath));
     }
@@ -135,7 +135,7 @@ public sealed class LegacyStoryBoundary0331Tests
 
     private const string RawSourceStory = """
         {
-          "schema_version": 2,
+          "schema_version": 3,
           "identity_format": "story-uid-v1",
           "resource_kind": "story",
           "id": "ST-2345-6789-ABCD-EFGH",
@@ -153,7 +153,7 @@ public sealed class LegacyStoryBoundary0331Tests
 
     private const string RawTargetStory = """
         {
-          "schema_version": 2,
+          "schema_version": 3,
           "identity_format": "story-uid-v1",
           "resource_kind": "story",
           "id": "ST-JKLM-NPQR-STUV-WXYZ",

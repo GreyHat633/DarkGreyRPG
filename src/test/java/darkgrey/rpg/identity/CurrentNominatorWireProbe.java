@@ -2,9 +2,9 @@ package darkgrey.rpg.identity;
 
 import java.util.Collections;
 
-import darkgrey.rpg.network.message.nominator.C2SNominatorEntityBind;
 import darkgrey.rpg.network.message.nominator.NominatorCatalogCodec;
 import darkgrey.rpg.network.message.nominator.NominatorIdentityCodec;
+import darkgrey.rpg.network.message.nominator.S2CNominatorEntityOpen;
 import darkgrey.rpg.nominator.NominatorCatalog;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -52,7 +52,36 @@ public final class CurrentNominatorWireProbe {
         reject(() -> NominatorCatalogCodec.read(wire));
         wire.clear();
         wire.writeInt(0);
-        reject(() -> new C2SNominatorEntityBind().fromBytes(wire));
+        reject(() -> new S2CNominatorEntityOpen().fromBytes(wire));
+        wire.clear();
+        java.util.UUID entity = java.util.UUID.randomUUID();
+        S2CNominatorEntityOpen open = new S2CNominatorEntityOpen(
+            7,
+            entity,
+            9,
+            11,
+            "Host",
+            "mod:entity",
+            actor,
+            Collections.singletonList(actor),
+            uid,
+            catalog);
+        open.toBytes(wire);
+        S2CNominatorEntityOpen reopened = new S2CNominatorEntityOpen();
+        reopened.fromBytes(wire);
+        if (!entity.equals(reopened.getEntityUuid()) || reopened.getRevision() != 9
+            || reopened.getCatalogRevision() != 11
+            || !actor.equals(reopened.getIndividualId())
+            || !Collections.singletonList(actor)
+                .equals(reopened.getGroups())
+            || wire.isReadable()) throw new AssertionError("Current entity Open round trip");
+        wire.readerIndex(0);
+        wire.setInt(0, 0x44475236);
+        reject(() -> new S2CNominatorEntityOpen().fromBytes(wire));
+        wire.readerIndex(0);
+        wire.setInt(0, S2CNominatorEntityOpen.PROTOCOL_MARKER);
+        wire.writeByte(1);
+        reject(() -> new S2CNominatorEntityOpen().fromBytes(wire));
         wire.release();
         System.out.println(
             "CurrentNominatorWireProbe PASS: typed owner addresses, catalog round trip, legacy and kind rejection");

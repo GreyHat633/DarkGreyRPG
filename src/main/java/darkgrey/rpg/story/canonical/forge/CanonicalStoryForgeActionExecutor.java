@@ -1,7 +1,6 @@
 package darkgrey.rpg.story.canonical.forge;
 
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
@@ -55,7 +54,6 @@ public final class CanonicalStoryForgeActionExecutor implements CanonicalStoryFo
 
     private static boolean giveItem(EntityPlayerMP player, CanonicalStoryActionConfiguration configuration) {
         if (configuration.getAmount() == 0) return true;
-        if (configuration.isLegacyRegistryItem()) return giveLegacyItem(player, configuration);
         ItemStackDefinition definition = ItemIdentitySavedData.get()
             .getItem(configuration.getItemId());
         if (definition == null) return false;
@@ -71,12 +69,4 @@ public final class CanonicalStoryForgeActionExecutor implements CanonicalStoryFo
         return true;
     }
 
-    private static boolean giveLegacyItem(EntityPlayerMP player, CanonicalStoryActionConfiguration configuration) {
-        Object registered = Item.itemRegistry.getObject(configuration.getItemId());
-        if (!(registered instanceof Item)) return false;
-        return applyItem(
-            player,
-            new ItemStack((Item) registered, 1, configuration.getMetadata()),
-            configuration.getAmount());
-    }
 }

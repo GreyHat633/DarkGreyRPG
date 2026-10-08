@@ -22,9 +22,9 @@ import darkgrey.rpg.project.ProjectLoadException;
 /** Strict server-side manifest for a Story Package. */
 public final class StoryPackageManifest {
 
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int CURRENT_SCHEMA_VERSION = 3;
     public static final String CURRENT_FORMAT = "dgrs";
-    public static final int CURRENT_FORMAT_VERSION = 2;
+    public static final int CURRENT_FORMAT_VERSION = 3;
     public static final String CURRENT_PRODUCER = "DarkGreyRPGStudio";
     private static final Set<String> ROOT_FIELDS = set(
         "identity_format",
@@ -43,8 +43,6 @@ public final class StoryPackageManifest {
         "actors",
         "items",
         "item_groups",
-        "dialogues",
-        "quests",
         "canonical_stories",
         "canonical_memberships",
         "sessions",
@@ -121,24 +119,18 @@ public final class StoryPackageManifest {
         Integer formatVersion = Integer.valueOf(requiredInt(file, json, "format_version"));
         String producer = requiredString(file, json, "producer");
         String producerVersion = requiredString(file, json, "producer_version");
-        boolean hasDgrsIdentity = format != null || formatVersion != null
-            || producer != null
-            || producerVersion != null;
-        if (hasDgrsIdentity && (format == null || formatVersion == null || producer == null || producerVersion == null))
-            throw failure(file, "DGRS identity fields must be present together");
-        if (hasDgrsIdentity) {
-            if (!CURRENT_FORMAT.equals(format)) throw failure(file, "Unsupported package format '" + format + "'");
-            if (formatVersion.intValue() != CURRENT_FORMAT_VERSION)
-                throw failure(file, "Unsupported DGRS format_version " + formatVersion);
-            if (!CURRENT_PRODUCER.equals(producer)) throw failure(file, "Unsupported DGRS producer '" + producer + "'");
-        }
+        if (!CURRENT_FORMAT.equals(format)) throw failure(file, "Unsupported package format '" + format + "'");
+        if (formatVersion.intValue() != CURRENT_FORMAT_VERSION)
+            throw failure(file, "Unsupported DGRS format_version " + formatVersion);
+        if (!CURRENT_PRODUCER.equals(producer)) throw failure(file, "Unsupported DGRS producer '" + producer + "'");
         int schema = requiredInt(file, json, "schema_version");
         if (schema != CURRENT_SCHEMA_VERSION) throw failure(file, "Unsupported package schema_version " + schema);
         String packageId = requiredId(file, json, "package_id");
         String packageVersion = requiredString(file, json, "package_version");
         String storyId = requiredId(file, json, "story_id");
         int storySchema = requiredInt(file, json, "story_schema_version");
-        if (storySchema != 2) throw failure(file, "story_schema_version must be positive");
+        if (storySchema != darkgrey.rpg.graph.canonical.CanonicalGraphResource.CURRENT_SCHEMA_VERSION)
+            throw failure(file, "story_schema_version must match the current graph schema");
         JsonObject resources = requiredObject(file, json, "required_resources");
         rejectUnknown(file, resources, RESOURCE_FIELDS);
         RequiredResources required = new RequiredResources(
@@ -146,20 +138,14 @@ public final class StoryPackageManifest {
             paths(file, resources, "actors"),
             paths(file, resources, "items"),
             paths(file, resources, "item_groups"),
-            paths(file, resources, "dialogues"),
-            paths(file, resources, "quests"),
             paths(file, resources, "canonical_stories"),
             paths(file, resources, "canonical_memberships"),
             paths(file, resources, "sessions"),
             paths(file, resources, "tasks"),
             optionalPath(file, resources, "story_logic_graph"),
             paths(file, resources, "media"));
-        if (!packageId.equals(storyId) || !required.getDialogues()
-            .isEmpty()
-            || !required.getQuests()
-                .isEmpty()
-            || required.getCanonicalStories()
-                .size() != 1
+        if (!packageId.equals(storyId) || required.getCanonicalStories()
+            .size() != 1
             || !required.getCanonicalStories()
                 .get(0)
                 .equals(required.getStory())
@@ -185,7 +171,7 @@ public final class StoryPackageManifest {
         return schemaVersion;
     }
 
-    public boolean isDgrsV1() {
+    public boolean isCurrentDgrs() {
         return CURRENT_FORMAT.equals(format) && formatVersion != null
             && formatVersion.intValue() == CURRENT_FORMAT_VERSION
             && CURRENT_PRODUCER.equals(producer)
@@ -237,14 +223,13 @@ public final class StoryPackageManifest {
     public static final class RequiredResources {
 
         private final String story;
-        private final List<String> actors, items, itemGroups, dialogues, quests, canonicalStories, canonicalMemberships,
-            sessions, tasks, media;
+        private final List<String> actors, items, itemGroups, canonicalStories, canonicalMemberships, sessions, tasks,
+            media;
         private final String storyLogicGraph;
 
         private RequiredResources(String story, List<String> actors, List<String> items, List<String> itemGroups,
-            List<String> dialogues, List<String> quests, List<String> canonicalStories,
-            List<String> canonicalMemberships, List<String> sessions, List<String> tasks, String storyLogicGraph,
-            List<String> media) {
+            List<String> canonicalStories, List<String> canonicalMemberships, List<String> sessions, List<String> tasks,
+            String storyLogicGraph, List<String> media) {
             this.media = freeze(media);
             for (String path : media) if (!darkgrey.rpg.graph.canonical.CanonicalMediaReference.isValid(path))
                 throw new IllegalArgumentException("Invalid media reference: " + path);
@@ -252,8 +237,6 @@ public final class StoryPackageManifest {
             this.actors = freeze(actors);
             this.items = freeze(items);
             this.itemGroups = freeze(itemGroups);
-            this.dialogues = freeze(dialogues);
-            this.quests = freeze(quests);
             this.canonicalStories = freeze(canonicalStories);
             this.canonicalMemberships = freeze(canonicalMemberships);
             this.sessions = freeze(sessions);
@@ -279,14 +262,6 @@ public final class StoryPackageManifest {
 
         public List<String> getItemGroups() {
             return itemGroups;
-        }
-
-        public List<String> getDialogues() {
-            return dialogues;
-        }
-
-        public List<String> getQuests() {
-            return quests;
         }
 
         public List<String> getCanonicalStories() {

@@ -45,18 +45,10 @@ public sealed class StoryPackageTests
     public void BuildRejectsLegacyEnterStoryBeforeChangingOutput()
     {
         using var project = new TestProjectDirectory();
-        var stories = new StoryRepository(project.Root);
-        var story = stories.CreateStory("ST-2345-6789-ABCD-EFGH", "Legacy Flow");
-        story.Nodes.Add(new StoryNodeResource
-        {
-            Id = "next_story",
-            Type = "EnterStory",
-            Properties = new Dictionary<string, JsonElement>
-            {
-                ["target_story_id"] = JsonSerializer.SerializeToElement("ST-JKLM-NPQR-STUV-WXYZ"),
-            },
-        });
-        stories.SaveStory(story);
+        var legacyPath = Path.Combine(project.Root, "stories", "ST-2345-6789-ABCD-EFGH.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyPath)!);
+        const string legacyJson = """{"schema_version":2,"id":"ST-2345-6789-ABCD-EFGH","nodes":[{"id":"next_story","type":"EnterStory","properties":{"target_story_id":"ST-JKLM-NPQR-STUV-WXYZ"}}]}""";
+        File.WriteAllText(legacyPath, legacyJson);
 
         var output = Path.Combine(project.Root, "existing-output");
         Directory.CreateDirectory(output);
@@ -82,7 +74,7 @@ public sealed class StoryPackageTests
         var store = new CanonicalProjectGraphStore(project.Root);
         Directory.CreateDirectory(Path.GetDirectoryName(store.Stories.GetPath("ST-2345-6789-ABCD-EFGH"))!);
         File.WriteAllText(Path.Combine(store.StoriesDirectory, "ST-2345-6789-ABCD-EFGH.json"), """
-            {"schema_version":2,"identity_format":"story-uid-v1","resource_kind":"story","id":"ST-2345-6789-ABCD-EFGH","display_name":"Old",
+            {"schema_version":3,"identity_format":"story-uid-v1","resource_kind":"story","id":"ST-2345-6789-ABCD-EFGH","display_name":"Old",
              "graph":{"nodes":[{"id":"old","type":"enter_story","display_name":"Old","ports":[],"properties":{}}],"connections":[]}}
             """);
 
@@ -117,7 +109,7 @@ public sealed class StoryPackageTests
         Assert.AreEqual("ST-2345-6789-ABCD-EFGH", result.Manifest.StoryId);
         Assert.AreEqual("2.0.0", result.Manifest.PackageVersion);
         Assert.IsTrue(File.Exists(Path.Combine(first, "manifest.json")));
-        foreach (var directory in new[] { "actors", "dialogues", "quests", "stories" })
+        foreach (var directory in new[] { "actors", "resources" })
             Assert.IsTrue(Directory.Exists(Path.Combine(first, directory)));
         var filesOne = Directory.EnumerateFiles(first, "*", SearchOption.AllDirectories)
             .Select(path => Path.GetRelativePath(first, path))
@@ -209,7 +201,9 @@ public sealed class StoryPackageTests
     public void BuildDoesNotCreateCanonicalRootsForUnrelatedCanonicalData()
     {
         using var project = new TestProjectDirectory();
-        new StoryRepository(project.Root).CreateStory("ST-2345-6789-ABCD-EFGH", "Legacy Only");
+        var legacyPath = Path.Combine(project.Root, "stories", "ST-2345-6789-ABCD-EFGH.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyPath)!);
+        File.WriteAllText(legacyPath, """{"schema_version":2,"id":"ST-2345-6789-ABCD-EFGH"}""");
         var store = new CanonicalProjectGraphStore(project.Root);
         store.Stories.Create(new GraphResourceEnvelope(
             GraphResourceKind.Story,

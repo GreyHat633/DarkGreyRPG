@@ -6,9 +6,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
 import darkgrey.rpg.project.ProjectRepository;
-import darkgrey.rpg.quest.runtime.QuestRuntimeService;
 import darkgrey.rpg.runtime.EditorSessionManager;
 import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
@@ -32,11 +30,10 @@ public final class CanonicalTaskStage4SurfaceProbe {
         CommandDarkGreyRpg command = new CommandDarkGreyRpg(
             new ProjectRepository(new File(".")),
             new EditorSessionManager(),
-            new DialogueSessionManager(new ProjectRepository(new File("."))),
-            new QuestRuntimeService(new ProjectRepository(new File("."))),
-            null,
             new CanonicalSessionForgeManager(new ProjectRepository(new File("."))),
-            new CanonicalTaskForgeManager(new ProjectRepository(new File("."))));
+            new CanonicalTaskForgeManager(new ProjectRepository(new File("."))),
+            null,
+            null);
         require(command != null, "task constructor");
         require("dgr".equals(command.getCommandName()), "primary command root");
         require(
@@ -49,13 +46,20 @@ public final class CanonicalTaskStage4SurfaceProbe {
             "root command usage");
 
         String guiSource = new String(
-            Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/client/gui/GuiQuestJournal.java")),
+            Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskScreen.java")),
             Charset.forName("UTF-8"));
         require(
-            guiSource.contains("\"进行中\"") && guiSource.contains("\"已完成\"") && guiSource.contains("\"失败\""),
-            "three Chinese Journal tabs");
-        require(guiSource.contains("QuestStatus.FAILED"), "failed rendering state");
-        require(guiSource.contains("Math.min(PANEL_HEIGHT, height - 20)"), "Journal fits the scale-2 854x480 client");
+            guiSource.contains("已完成") && guiSource.contains("TaskPresentationPages"),
+            "current completed history and paging");
+        require(
+            guiSource.contains("CanonicalTaskClientStore") && guiSource.contains("UtilityWindowChrome"),
+            "current read-only cache and window sizing");
+        require(
+            !command.getCommandUsage(null)
+                .contains("dialogue")
+                && !command.getCommandUsage(null)
+                    .contains("quest"),
+            "retired command help removed");
         String nominatorSource = new String(
             Files.readAllBytes(Paths.get("src/main/java/darkgrey/rpg/client/gui/GuiNominatorEntity.java")),
             Charset.forName("UTF-8"));

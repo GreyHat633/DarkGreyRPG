@@ -53,6 +53,14 @@ public sealed class ResourceCopyRemapper
     public GraphResourceEnvelope Rewrite(GraphResourceEnvelope source)
     {
         var graph = source.Graph ?? throw new InvalidOperationException("Resource graph is missing.");
+        // Validate declared references before any copy/substitution, including direct in-memory callers.
+        GraphResourceAddressCodec.Transform(source.SnapshotGraph()!, source.ResourceKind, writing: true);
+        if (source.ResourceKind == GraphResourceKind.Session)
+            foreach (var node in graph.Nodes.Where(node => node.Type == "choice"))
+            {
+                var issues = Graphs.Definitions.SessionChoiceSchema.Validate(node);
+                if (issues.Count != 0) throw new InvalidOperationException(issues[0].Code + ": " + issues[0].Message);
+            }
         foreach (var node in graph.Nodes)
         {
             foreach (var key in node.Properties.Keys.ToArray())
@@ -66,8 +74,6 @@ public sealed class ResourceCopyRemapper
                     {
                         if (port.Id == option.GetProperty("flow_port_id").GetString()) port.DisplayName = text;
                         else if (port.IsInput && option.TryGetProperty("condition_port_id", out var condition) && port.Id == condition.GetString()) port.DisplayName = "条件 · " + text;
-                        else if (port.IsOutput && port.InterfaceKind == GraphInterfaceKind.Logic
-                            && port.Id == option.GetProperty("option_id").GetString()) port.DisplayName = "已选择：" + text;
                     }
                 }
             CanonicalTaskRewardReferences.Rewrite(node, source.ResourceKind, Resolve);

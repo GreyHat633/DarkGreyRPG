@@ -10,7 +10,6 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ItemResourceDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.story.StoryDefinition;
 
 /** Read-only story browser used by both GUI implementations and probes. */
 public final class NominatorStorySearch {
@@ -21,18 +20,8 @@ public final class NominatorStorySearch {
         if (snapshot == null) throw new IllegalArgumentException("Project snapshot is required.");
         String needle = normalize(query);
         List<StoryChoice> result = new ArrayList<StoryChoice>();
-        for (StoryDefinition story : snapshot.getStories()
-            .values()) {
-            if (needle.isEmpty() || contains(story.getId(), needle)
-                || contains(story.getTitle(), needle)
-                || contains(story.getNotes(), needle)
-                || tagsContain(story.getTags(), needle)) {
-                result.add(new StoryChoice(story.getId(), story.getTitle(), story.getNotes(), story.getTags()));
-            }
-        }
         for (CanonicalGraphResource story : snapshot.getCanonicalStories()
             .values()) {
-            if (snapshot.getStory(story.getId()) != null) continue;
             if (needle.isEmpty() || contains(story.getId(), needle) || contains(story.getDisplayName(), needle))
                 result.add(new StoryChoice(story.getId(), story.getDisplayName()));
         }

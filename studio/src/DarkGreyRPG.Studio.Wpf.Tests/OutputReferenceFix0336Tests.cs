@@ -148,6 +148,34 @@ public sealed class OutputReferenceFix0336Tests
     }
 
     [STATestMethod]
+    public void SharedListPreviewMovesExpandedGroupsAsWholeRowsAndRestoresOnCancel()
+    {
+        var list = new StackPanel { Width = 210 };
+        var rows = new FrameworkElement[] { new Border { Height = 130 }, new Border { Height = 44 }, new Border { Height = 70 } };
+        foreach (var row in rows) list.Children.Add(row);
+        using var window = new TestWindow(list);
+        using (var preview = new OutputReorderPreview(list, rows, "展开的故事组", false, 0, new Point(12, 18)))
+        {
+            Assert.AreEqual(130d, preview.GapHeight);
+            Assert.AreEqual(2, preview.Locate(new Point(12, 240)));
+            Assert.AreEqual(114d, preview.GapY);
+            CollectionAssert.AreEqual(new[] { 0d, 130d, 174d }, preview.OriginalTops.ToArray());
+            for (var i = 0; i < 5; i++) Assert.AreEqual(2, preview.Locate(new Point(12, 240)));
+            preview.SetScrollShift(-30);
+            Assert.AreEqual(1, preview.Locate(new Point(12, 130)));
+            Assert.AreEqual(14d, preview.GapY);
+            Assert.AreEqual(0d, rows[0].Opacity);
+            Assert.IsNull(preview.Locate(new Point(-1, 50)));
+        }
+        CollectionAssert.AreEqual(rows, list.Children.Cast<FrameworkElement>().ToArray());
+        foreach (var row in rows)
+        {
+            Assert.AreEqual(1d, row.Opacity);
+            Assert.AreEqual(Transform.Identity, row.RenderTransform);
+        }
+    }
+
+    [STATestMethod]
     public void CreatingTasksDoesNotRebuildUnrelatedOutputEditorsOrLoseDrafts()
     {
         using var directory = new DirectoryFixture();

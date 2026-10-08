@@ -41,11 +41,12 @@ public final class CanonicalSessionServerServiceProbe {
 
     public static void main(String[] args) {
         dynamicPresentationSurvivesRestart();
+        choiceContextSurvivesRestart();
         multiPageActions();
-        ProjectSnapshot project = project(true, true, "session_a");
+        ProjectSnapshot project = project(true, true, "ST-2345-6789-ABCD-EFGH~session~session_a");
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         CanonicalSessionServerService service = new CanonicalSessionServerService(project, data);
-        CanonicalSessionDispatch line = service.start(PLAYER, "story_a", "place_a");
+        CanonicalSessionDispatch line = service.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a", true);
         require(
             line.isFrame() && line.getFrame()
                 .getKind() == CanonicalSessionFrame.Kind.LINE,
@@ -60,7 +61,7 @@ public final class CanonicalSessionServerServiceProbe {
             new CanonicalSessionAction(
                 line.getFrame()
                     .getTransportId(),
-                "story_a",
+                "ST-2345-6789-ABCD-EFGH",
                 line.getFrame()
                     .getCurrentNodeId(),
                 CanonicalSessionAction.Kind.CONTINUE,
@@ -70,10 +71,10 @@ public final class CanonicalSessionServerServiceProbe {
                 .getKind() == CanonicalSessionFrame.Kind.CHOICE,
             "choice frame");
         require(
-            "Pick one".equals(
+            "".equals(
                 choice.getFrame()
                     .getText()),
-            "choice prompt projection");
+            "retired choice prompt is not projected");
         require(
             "option_b".equals(
                 choice.getFrame()
@@ -86,7 +87,7 @@ public final class CanonicalSessionServerServiceProbe {
             new CanonicalSessionAction(
                 choice.getFrame()
                     .getTransportId(),
-                "story_a",
+                "ST-2345-6789-ABCD-EFGH",
                 choice.getFrame()
                     .getCurrentNodeId(),
                 CanonicalSessionAction.Kind.CHOICE,
@@ -101,9 +102,9 @@ public final class CanonicalSessionServerServiceProbe {
             Boolean.TRUE.equals(
                 close.getCompletionResult()
                     .getPublicLogicOutputs()
-                    .get("picked_b")),
+                    .get("activation_gate")),
             "public logic");
-        require(data.getSnapshot(PLAYER, "story_a") != null, "completion remains persisted");
+        require(data.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") != null, "completion remains persisted");
         CanonicalSessionFrame detachedFrame = line.getFrame();
         CanonicalSessionFrame replacementFrame = new CanonicalSessionFrame(
             detachedFrame.getTransportId(),
@@ -139,20 +140,20 @@ public final class CanonicalSessionServerServiceProbe {
         restartedData.readFromNBT(persisted);
         CanonicalSessionServerService restarted = new CanonicalSessionServerService(project, restartedData);
         require(
-            restarted.resume(PLAYER, "story_a")
+            restarted.resume(PLAYER, "ST-2345-6789-ABCD-EFGH")
                 .isCompleted(),
             "completed restart resume");
 
         CanonicalSessionSavedData activeData = new CanonicalSessionSavedData();
         CanonicalSessionServerService active = new CanonicalSessionServerService(project, activeData);
-        CanonicalSessionDispatch activeLine = active.start(PLAYER, "story_a", "place_a");
+        CanonicalSessionDispatch activeLine = active.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a");
         NBTTagCompound activeNbt = new NBTTagCompound();
         activeData.writeToNBT(activeNbt);
         CanonicalSessionSavedData activeRestartData = new CanonicalSessionSavedData();
         activeRestartData.readFromNBT(activeNbt);
         CanonicalSessionServerService activeRestart = new CanonicalSessionServerService(project, activeRestartData);
         require(
-            activeRestart.resume(PLAYER, "story_a")
+            activeRestart.resume(PLAYER, "ST-2345-6789-ABCD-EFGH")
                 .getFrame()
                 .getKind() == CanonicalSessionFrame.Kind.LINE,
             "active restart resume");
@@ -166,7 +167,7 @@ public final class CanonicalSessionServerServiceProbe {
                     new CanonicalSessionAction(
                         activeLine.getFrame()
                             .getTransportId() + 1L,
-                        "story_a",
+                        "ST-2345-6789-ABCD-EFGH",
                         activeLine.getFrame()
                             .getCurrentNodeId(),
                         CanonicalSessionAction.Kind.CONTINUE,
@@ -182,7 +183,7 @@ public final class CanonicalSessionServerServiceProbe {
                     new CanonicalSessionAction(
                         activeLine.getFrame()
                             .getTransportId(),
-                        "wrong_story",
+                        "ST-JKLM-NPQR-STUV-WXYZ",
                         activeLine.getFrame()
                             .getCurrentNodeId(),
                         CanonicalSessionAction.Kind.CONTINUE,
@@ -198,7 +199,7 @@ public final class CanonicalSessionServerServiceProbe {
                     new CanonicalSessionAction(
                         activeLine.getFrame()
                             .getTransportId(),
-                        "story_a",
+                        "ST-2345-6789-ABCD-EFGH",
                         "wrong_node",
                         CanonicalSessionAction.Kind.CONTINUE,
                         null));
@@ -213,7 +214,7 @@ public final class CanonicalSessionServerServiceProbe {
                     new CanonicalSessionAction(
                         activeLine.getFrame()
                             .getTransportId(),
-                        "story_a",
+                        "ST-2345-6789-ABCD-EFGH",
                         activeLine.getFrame()
                             .getCurrentNodeId(),
                         CanonicalSessionAction.Kind.CHOICE,
@@ -226,7 +227,7 @@ public final class CanonicalSessionServerServiceProbe {
             new CanonicalSessionAction(
                 activeLine.getFrame()
                     .getTransportId(),
-                "story_a",
+                "ST-2345-6789-ABCD-EFGH",
                 activeLine.getFrame()
                     .getCurrentNodeId(),
                 CanonicalSessionAction.Kind.CONTINUE,
@@ -240,7 +241,7 @@ public final class CanonicalSessionServerServiceProbe {
                     new CanonicalSessionAction(
                         activeChoice.getFrame()
                             .getTransportId(),
-                        "story_a",
+                        "ST-2345-6789-ABCD-EFGH",
                         activeChoice.getFrame()
                             .getCurrentNodeId(),
                         CanonicalSessionAction.Kind.CHOICE,
@@ -253,26 +254,52 @@ public final class CanonicalSessionServerServiceProbe {
             public void run() {
                 service.dispatch(
                     PLAYER,
-                    new CanonicalSessionAction(1L, "story_a", "end_b", CanonicalSessionAction.Kind.CONTINUE, null));
+                    new CanonicalSessionAction(
+                        1L,
+                        "ST-2345-6789-ABCD-EFGH",
+                        "end_b",
+                        CanonicalSessionAction.Kind.CONTINUE,
+                        null));
             }
         }, "completed action rejected");
-        require(data.getSnapshot(PLAYER, "story_a") != null, "rejected action preserves completion");
+        require(data.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") != null, "rejected action preserves completion");
 
-        rejectStart(project(false, true, "session_a"), "missing actor");
-        rejectStart(project(true, true, "session_a", "session_a", "actor_b"), "non-member actor");
-        rejectStart(project(true, false, "session_a"), "missing Session membership");
-        rejectStart(project(true, true, "session_a", "missing_session"), "wrong resource binding");
-        rejectStart(project(true, true, "session_a", "session_a", "actor_a", "end"), "non-Session aggregate");
+        rejectStart(project(false, true, "ST-2345-6789-ABCD-EFGH~session~session_a"), "missing actor");
+        rejectStart(
+            project(
+                true,
+                true,
+                "ST-2345-6789-ABCD-EFGH~session~session_a",
+                "ST-2345-6789-ABCD-EFGH~session~session_a",
+                "ST-2345-6789-ABCD-EFGH~actor~actor_b"),
+            "non-member actor");
+        rejectStart(project(true, false, "ST-2345-6789-ABCD-EFGH~session~session_a"), "missing Session membership");
+        rejectStart(
+            project(
+                true,
+                true,
+                "ST-2345-6789-ABCD-EFGH~session~session_a",
+                "ST-2345-6789-ABCD-EFGH~session~missing_session"),
+            "wrong resource binding");
+        rejectStart(
+            project(
+                true,
+                true,
+                "ST-2345-6789-ABCD-EFGH~session~session_a",
+                "ST-2345-6789-ABCD-EFGH~session~session_a",
+                "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+                "end"),
+            "non-Session aggregate");
         CanonicalSessionSavedData failedData = new CanonicalSessionSavedData();
         CanonicalSessionServerService failedService = new CanonicalSessionServerService(cycleProject(), failedData);
-        CanonicalSessionDispatch failedLine = failedService.start(PLAYER, "story_a", "place_a");
+        CanonicalSessionDispatch failedLine = failedService.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a");
         reject(new Runnable() {
 
             @Override
             public void run() {
                 failedService.continueLine(
                     PLAYER,
-                    "story_a",
+                    "ST-2345-6789-ABCD-EFGH",
                     failedLine.getFrame()
                         .getTransportId(),
                     failedLine.getFrame()
@@ -280,7 +307,7 @@ public final class CanonicalSessionServerServiceProbe {
             }
         }, "automatic Flow cycle failure");
         require(
-            failedData.getSnapshot(PLAYER, "story_a")
+            failedData.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH")
                 .getRuntimeSnapshot()
                 .getStatus()
                 .name()
@@ -295,17 +322,17 @@ public final class CanonicalSessionServerServiceProbe {
             @Override
             public void run() {
                 new CanonicalSessionServerService(project, new CanonicalSessionSavedData())
-                    .start(PLAYER, "story_a", "place_a");
+                    .start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a");
             }
         }, label);
     }
 
     private static ProjectSnapshot project(boolean actor, boolean member, String resourceId) {
-        return project(actor, member, resourceId, resourceId, "actor_a");
+        return project(actor, member, resourceId, resourceId, "ST-2345-6789-ABCD-EFGH~actor~actor_a");
     }
 
     private static void dynamicPresentationSurvivesRestart() {
-        ProjectSnapshot project = project(true, true, "dynamic_session");
+        ProjectSnapshot project = project(true, true, "ST-2345-6789-ABCD-EFGH~session~dynamic_session");
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         final int[] value = { 12 };
         final int[] calls = { 0 };
@@ -319,14 +346,14 @@ public final class CanonicalSessionServerServiceProbe {
         CanonicalSessionServerService service = new CanonicalSessionServerService(project, data, resolver);
         require(
             "12".equals(
-                service.start(PLAYER, "story_a", "place_a")
+                service.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a")
                     .getFrame()
                     .getText()),
             "initial dynamic value");
         value[0] = 45;
         require(
             "12".equals(
-                service.resume(PLAYER, "story_a")
+                service.resume(PLAYER, "ST-2345-6789-ABCD-EFGH")
                     .getFrame()
                     .getText())
                 && calls[0] == 1,
@@ -334,7 +361,7 @@ public final class CanonicalSessionServerServiceProbe {
         UUID other = UUID.fromString("00000000-0000-0000-0000-000000000002");
         require(
             "99".equals(
-                service.start(other, "story_a", "place_a")
+                service.start(other, "ST-2345-6789-ABCD-EFGH", "place_a")
                     .getFrame()
                     .getText()),
             "players have separate snapshots");
@@ -345,7 +372,7 @@ public final class CanonicalSessionServerServiceProbe {
         CanonicalSessionServerService restarted = new CanonicalSessionServerService(project, restored, resolver);
         require(
             "12".equals(
-                restarted.resume(PLAYER, "story_a")
+                restarted.resume(PLAYER, "ST-2345-6789-ABCD-EFGH")
                     .getFrame()
                     .getText())
                 && calls[0] == 2,
@@ -356,13 +383,13 @@ public final class CanonicalSessionServerServiceProbe {
     private static void multiPageActions() {
         CanonicalSessionSavedData data = new CanonicalSessionSavedData();
         final CanonicalSessionServerService service = new CanonicalSessionServerService(
-            project(true, true, "pages_session"),
+            project(true, true, "ST-2345-6789-ABCD-EFGH~session~pages_session"),
             data);
-        CanonicalSessionFrame first = service.start(PLAYER, "story_a", "place_a")
+        CanonicalSessionFrame first = service.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a")
             .getFrame();
         final CanonicalSessionAction legacy = new CanonicalSessionAction(
             first.getTransportId(),
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             first.getCurrentNodeId(),
             CanonicalSessionAction.Kind.CONTINUE,
             null);
@@ -374,7 +401,7 @@ public final class CanonicalSessionServerServiceProbe {
         }, "unversioned page action");
         final CanonicalSessionAction advance = new CanonicalSessionAction(
             first.getTransportId(),
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             first.getCurrentNodeId(),
             CanonicalSessionAction.Kind.CONTINUE,
             null,
@@ -394,7 +421,7 @@ public final class CanonicalSessionServerServiceProbe {
         }, "duplicate page action");
         require(
             "Second".equals(
-                service.resume(PLAYER, "story_a")
+                service.resume(PLAYER, "ST-2345-6789-ABCD-EFGH")
                     .getFrame()
                     .getText()),
             "rejected duplicate does not skip page");
@@ -403,17 +430,92 @@ public final class CanonicalSessionServerServiceProbe {
                 PLAYER,
                 new CanonicalSessionAction(
                     second.getTransportId(),
-                    "story_a",
+                    "ST-2345-6789-ABCD-EFGH",
                     second.getCurrentNodeId(),
                     CanonicalSessionAction.Kind.CONTINUE,
                     null,
                     second.getLineEpoch()))
             .getFrame();
         require(choice.getKind() == CanonicalSessionFrame.Kind.CHOICE, "last page follows flow output");
+        CanonicalSessionDispatch resumed = service.resume(PLAYER, "ST-2345-6789-ABCD-EFGH");
+        require(
+            "Second".equals(
+                resumed.getLineContext()
+                    .getText()),
+            "Choice retains last author-page context");
+    }
+
+    private static void choiceContextSurvivesRestart() {
+        ProjectSnapshot project = project(true, true, "ST-2345-6789-ABCD-EFGH~session~dynamic_session");
+        CanonicalSessionSavedData data = new CanonicalSessionSavedData();
+        final int[] calls = { 0 };
+        CanonicalSessionServerService.TextResolver resolver = new CanonicalSessionServerService.TextResolver() {
+
+            public String resolve(UUID player, String template) {
+                return "已显示的值 " + ++calls[0];
+            }
+        };
+        CanonicalSessionServerService service = new CanonicalSessionServerService(project, data, resolver);
+        CanonicalSessionFrame line = service.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a")
+            .getFrame();
+        CanonicalSessionFrame choice = service
+            .continueLine(PLAYER, line.getStoryId(), line.getTransportId(), line.getCurrentNodeId())
+            .getFrame();
+        NBTTagCompound nbt = new NBTTagCompound();
+        data.writeToNBT(nbt);
+        CanonicalSessionSavedData loaded = new CanonicalSessionSavedData();
+        loaded.readFromNBT(nbt);
+        CanonicalSessionDispatch resumed = new CanonicalSessionServerService(project, loaded, resolver)
+            .resume(PLAYER, line.getStoryId());
+        CanonicalSessionFrame context = resumed.getLineContext();
+        require(
+            context != null && context.getText()
+                .equals(line.getText())
+                && context.getSpeaker()
+                    .equals(line.getSpeaker())
+                && java.util.Objects.equals(context.getPortraitRef(), line.getPortraitRef())
+                && calls[0] == 1,
+            "resolved Choice context survives restart without resolving again");
+        require(
+            !context.shouldPlayVoice() && !context.shouldPlayScreen()
+                && context.getLineEpoch() == line.getLineEpoch()
+                && resumed.getFrame()
+                    .getText()
+                    .isEmpty(),
+            "restoration is silent and preserves line history identity and empty Choice text");
+        darkgrey.rpg.client.session.CanonicalSessionClientModel client = new darkgrey.rpg.client.session.CanonicalSessionClientModel();
+        require(
+            client.acceptFrame(context) && client.acceptFrame(resumed.getFrame())
+                && client.getVisibleText()
+                    .equals(line.getText())
+                && client.getVisibleSpeaker()
+                    .equals(line.getSpeaker())
+                && client.choiceAction(
+                    choice.getChoices()
+                        .get(0)
+                        .getOptionId())
+                    .getCurrentNodeId()
+                    .equals(choice.getCurrentNodeId()),
+            "fresh client receives context and retains authoritative Choice cursor");
+        NBTTagCompound malformed = (NBTTagCompound) nbt.copy();
+        malformed.getCompoundTag("line_contexts")
+            .setByteArray(Long.toString(line.getTransportId()), new byte[] { 1 });
+        reject(new Runnable() {
+
+            public void run() {
+                loaded.readFromNBT(malformed);
+            }
+        }, "truncated Line context");
+        require(
+            loaded.lineContext(loaded.getSnapshot(PLAYER, line.getStoryId()))
+                .getText()
+                .equals(line.getText()),
+            "malformed context cannot replace live saved state");
+        System.out.println("CHOICE_CONTEXT_SAVE_RECONNECT_SILENT_RESOLVED_TEXT=PASS");
     }
 
     private static ProjectSnapshot project(boolean actor, boolean member, String resourceId, String storyResourceId) {
-        return project(actor, member, resourceId, storyResourceId, "actor_a");
+        return project(actor, member, resourceId, storyResourceId, "ST-2345-6789-ABCD-EFGH~actor~actor_a");
     }
 
     private static ProjectSnapshot project(boolean actor, boolean member, String resourceId, String storyResourceId,
@@ -425,23 +527,40 @@ public final class CanonicalSessionServerServiceProbe {
         String lineActorId, String placementType) {
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
         if (actor) {
-            actors
-                .put("actor_a", new ActorDefinition(1, "actor_a", "Actor A", "", Collections.<String>emptyList(), ""));
-            actors
-                .put("actor_b", new ActorDefinition(1, "actor_b", "Actor B", "", Collections.<String>emptyList(), ""));
+            actors.put(
+                "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+                new ActorDefinition(
+                    5,
+                    ActorDefinition.TYPE_INDIVIDUAL,
+                    "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+                    "Actor A",
+                    "",
+                    Collections.<String>emptyList(),
+                    "ST-2345-6789-ABCD-EFGH"));
+            actors.put(
+                "ST-2345-6789-ABCD-EFGH~actor~actor_b",
+                new ActorDefinition(
+                    5,
+                    ActorDefinition.TYPE_INDIVIDUAL,
+                    "ST-2345-6789-ABCD-EFGH~actor~actor_b",
+                    "Actor B",
+                    "",
+                    Collections.<String>emptyList(),
+                    "ST-2345-6789-ABCD-EFGH"));
         }
         CanonicalGraphResource session = session(resourceId, lineActorId);
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
         sessions.put(resourceId, session);
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("story_a", story(storyResourceId, placementType));
+        stories.put("ST-2345-6789-ABCD-EFGH", story(storyResourceId, placementType));
         List<String> members = member ? Arrays.asList(resourceId) : Collections.<String>emptyList();
-        List<String> actorMembers = member && actor ? Arrays.asList("actor_a") : Collections.<String>emptyList();
+        List<String> actorMembers = member && actor ? Arrays.asList("ST-2345-6789-ABCD-EFGH~actor~actor_a")
+            : Collections.<String>emptyList();
         Map<String, CanonicalStoryMembership> memberships = new LinkedHashMap<String, CanonicalStoryMembership>();
         memberships.put(
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembership(
-                "story_a",
+                "ST-2345-6789-ABCD-EFGH",
                 new CanonicalStoryMembershipSet(actorMembers, members, Collections.<String>emptyList())));
         CanonicalProjectContent content = new CanonicalProjectContent(
             stories,
@@ -451,34 +570,41 @@ public final class CanonicalSessionServerServiceProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "probe", "Probe"),
             actors,
-            Collections.<String, darkgrey.rpg.dialogue.DialogueDefinition>emptyMap(),
-            Collections.<String, darkgrey.rpg.quest.QuestDefinition>emptyMap(),
-            Collections.<String, darkgrey.rpg.story.StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             content);
     }
 
     private static ProjectSnapshot cycleProject() {
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
-        actors.put("actor_a", new ActorDefinition(1, "actor_a", "Actor A", "", Collections.<String>emptyList(), ""));
+        actors.put(
+            "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+            new ActorDefinition(
+                5,
+                ActorDefinition.TYPE_INDIVIDUAL,
+                "ST-2345-6789-ABCD-EFGH~actor~actor_a",
+                "Actor A",
+                "",
+                Collections.<String>emptyList(),
+                "ST-2345-6789-ABCD-EFGH"));
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
-        sessions.put("cycle_session", cycleSession());
+        sessions.put("ST-2345-6789-ABCD-EFGH~session~cycle_session", cycleSession());
         Map<String, CanonicalGraphResource> stories = new LinkedHashMap<String, CanonicalGraphResource>();
-        stories.put("story_a", story("cycle_session"));
+        stories.put("ST-2345-6789-ABCD-EFGH", story("ST-2345-6789-ABCD-EFGH~session~cycle_session"));
         Map<String, CanonicalStoryMembership> memberships = new LinkedHashMap<String, CanonicalStoryMembership>();
         memberships.put(
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             new CanonicalStoryMembership(
-                "story_a",
+                "ST-2345-6789-ABCD-EFGH",
                 new CanonicalStoryMembershipSet(
-                    Arrays.asList("actor_a"),
-                    Arrays.asList("cycle_session"),
+                    Arrays.asList("ST-2345-6789-ABCD-EFGH~actor~actor_a"),
+                    Arrays.asList("ST-2345-6789-ABCD-EFGH~session~cycle_session"),
                     Collections.<String>emptyList())));
         return new ProjectSnapshot(
             new ProjectDefinition(1, "probe", "Probe"),
             actors,
-            Collections.<String, darkgrey.rpg.dialogue.DialogueDefinition>emptyMap(),
-            Collections.<String, darkgrey.rpg.quest.QuestDefinition>emptyMap(),
-            Collections.<String, darkgrey.rpg.story.StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 sessions,
@@ -499,15 +625,15 @@ public final class CanonicalSessionServerServiceProbe {
             ports(in("flow_in", false), out("flow_out", false)),
             props);
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.STORY,
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             "Story A",
             new CanonicalGraph(Arrays.asList(node), Collections.<CanonicalGraphConnection>emptyList()));
     }
 
     private static CanonicalGraphResource session(String id) {
-        return session(id, "actor_a");
+        return session(id, "ST-2345-6789-ABCD-EFGH~actor~actor_a");
     }
 
     private static CanonicalGraphResource session(String id, String actorId) {
@@ -517,11 +643,11 @@ public final class CanonicalSessionServerServiceProbe {
             ports(out("flow_out", false), out("logic_out", true)),
             props());
         Map<String, JsonElement> lineProps = props("speaker_actor_id", actorId, "text", "Hello");
-        if ("dynamic_session".equals(id)) lineProps.put(
+        if ("ST-2345-6789-ABCD-EFGH~session~dynamic_session".equals(id)) lineProps.put(
             "text",
             new com.google.gson.JsonPrimitive(
                 darkgrey.rpg.session.runtime.DynamicContentText.PREFIX + "[{\"type\":\"player_level\"}]"));
-        if ("pages_session".equals(id)) {
+        if ("ST-2345-6789-ABCD-EFGH~session~pages_session".equals(id)) {
             lineProps.remove("text");
             lineProps.put(
                 "pages",
@@ -537,12 +663,7 @@ public final class CanonicalSessionServerServiceProbe {
         CanonicalGraphNode choice = node(
             "choice",
             "choice",
-            ports(
-                in("flow_in", false),
-                out("flow_a", false),
-                out("option_a", true),
-                out("flow_b", false),
-                out("option_b", true)),
+            ports(in("flow_in", false), out("flow_a", false), out("flow_b", false)),
             choiceProps);
         CanonicalGraphNode endA = node(
             "end_a",
@@ -558,15 +679,15 @@ public final class CanonicalSessionServerServiceProbe {
             "output",
             "logic_output",
             ports(in("logic_in", true)),
-            props("port_id", "picked_b", "display_name", "Picked B"));
+            props("port_id", "activation_gate", "display_name", "Activation"));
         List<CanonicalGraphConnection> edges = Arrays.asList(
             edge("start", "flow_out", "line", "flow_in", false),
             edge("line", "flow_out", "choice", "flow_in", false),
             edge("choice", "flow_a", "end_a", "flow_in", false),
             edge("choice", "flow_b", "end_b", "flow_in", false),
-            edge("choice", "option_b", "output", "logic_in", true));
+            edge("start", "logic_out", "output", "logic_in", true));
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.SESSION,
             id,
             id,
@@ -583,7 +704,7 @@ public final class CanonicalSessionServerServiceProbe {
             "line",
             "line",
             ports(in("flow_in", false), out("flow_out", false)),
-            props("speaker_actor_id", "actor_a", "text", "Cycle"));
+            props("speaker_actor_id", "ST-2345-6789-ABCD-EFGH~actor~actor_a", "text", "Cycle"));
         CanonicalGraphNode jump = node(
             "jump",
             "legacy_jump",
@@ -594,10 +715,10 @@ public final class CanonicalSessionServerServiceProbe {
             edge("line", "flow_out", "jump", "flow_in", false),
             edge("jump", "flow_out", "jump", "flow_in", false));
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.SESSION,
-            "cycle_session",
-            "cycle_session",
+            "ST-2345-6789-ABCD-EFGH~session~cycle_session",
+            "ST-2345-6789-ABCD-EFGH~session~cycle_session",
             new CanonicalGraph(Arrays.asList(start, line, jump), edges));
     }
 

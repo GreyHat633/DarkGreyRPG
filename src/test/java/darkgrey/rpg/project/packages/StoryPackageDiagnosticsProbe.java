@@ -27,8 +27,8 @@ import darkgrey.rpg.project.ProjectSnapshot;
 public final class StoryPackageDiagnosticsProbe {
 
     public static void main(String[] args) throws Exception {
-        LoadedStoryPackage first = fixture("alpha", "story_a", "剧情甲", "甲归属", 3);
-        LoadedStoryPackage second = fixture("beta", "story_b", "剧情乙", "乙归属", 5);
+        LoadedStoryPackage first = fixture("alpha", "ST-2345-6789-ABCD-EFGH", "剧情甲", "甲归属", 3);
+        LoadedStoryPackage second = fixture("beta", "ST-JKLM-NPQR-STUV-WXYZ", "剧情乙", "乙归属", 5);
         Map<String, LoadedStoryPackage> pair = pair(first, second);
         String report = String.join("\n", StoryPackageConflictDiagnostics.describe(pair));
         require(report.contains("共 3 项"), "all shared conflicts collected, not just first Actor");
@@ -37,11 +37,10 @@ public final class StoryPackageDiagnosticsProbe {
             "剧情乙",
             "alpha.dgrs",
             "beta.dgrs",
-            "shared:slimes",
-            "shared:boss",
-            "shared:task",
-            "所属故事",
-            "home_story_id",
+            "ST-2345-6789-ABCD-EFGH~actor~slimes",
+            "ST-2345-6789-ABCD-EFGH~actor~boss",
+            "ST-2345-6789-ABCD-EFGH~task~task",
+            "display_name",
             "甲归属",
             "乙归属",
             "收集宝藏",
@@ -61,12 +60,12 @@ public final class StoryPackageDiagnosticsProbe {
                     .contains("共 3 项"),
                 "merge carries detailed report");
         }
-        LoadedStoryPackage identical = fixture("gamma", "story_c", "剧情丙", "甲归属", 3);
+        LoadedStoryPackage identical = fixture("gamma", "ST-AAAA-BBBB-CCCC-DDDD", "剧情丙", "甲归属", 3);
         require(
             StoryPackageConflictDiagnostics.describe(pair(first, identical))
                 .isEmpty(),
             "byte-identical sharing remains accepted");
-        LoadedStoryPackage duplicateStory = fixture("duplicate", "story_a", "剧情甲", "甲归属", 3);
+        LoadedStoryPackage duplicateStory = fixture("duplicate", "ST-2345-6789-ABCD-EFGH", "剧情甲", "甲归属", 3);
         require(
             String.join("\n", StoryPackageConflictDiagnostics.describe(pair(first, duplicateStory)))
                 .contains("重复定义"),
@@ -83,58 +82,77 @@ public final class StoryPackageDiagnosticsProbe {
         int count) throws Exception {
         Map<String, byte[]> bytes = new LinkedHashMap<String, byte[]>();
         bytes.put("project.json", utf8("{\"schema_version\":1,\"id\":\"probe\",\"display_name\":\"Probe\"}"));
-        bytes.put("stories/story.json", utf8("{\"id\":\"" + storyId + "\",\"title\":\"" + storyName + "\"}"));
-        bytes.put("actors/slimes.json", utf8(actor("shared:slimes", "史莱姆群", home)));
-        bytes.put("actors/boss.json", utf8(actor("shared:boss", "酒馆老板", home)));
-        String taskJson = "{\"id\":\"shared:task\",\"display_name\":\"收集宝藏\",\"graph\":{\"nodes\":["
-            + "{\"id\":\"objective\",\"display_name\":\"目标节点\",\"properties\":{\"actor_id\":\"shared:slimes\","
-            + "\"nested\":{\"actor_id\":\"shared:boss\"},\"required_count\":"
+        bytes.put(
+            "stories/story.json",
+            utf8(
+                CurrentPackageProbeFixtures.story(storyId, storyName)
+                    .toString()));
+        bytes.put("actors/slimes.json", utf8(actor("ST-2345-6789-ABCD-EFGH~actor~slimes", "史莱姆群", home)));
+        bytes.put("actors/boss.json", utf8(actor("ST-2345-6789-ABCD-EFGH~actor~boss", "酒馆老板", home)));
+        String taskJson = "{\"id\":\"ST-2345-6789-ABCD-EFGH~task~task\",\"display_name\":\"收集宝藏\",\"graph\":{\"nodes\":["
+            + "{\"id\":\"objective\",\"display_name\":\"目标节点\",\"properties\":{\"actor_id\":\"ST-2345-6789-ABCD-EFGH~actor~slimes\","
+            + "\"nested\":{\"actor_id\":\"ST-2345-6789-ABCD-EFGH~actor~boss\"},\"required_count\":"
             + count
             + "}}]}}";
-        bytes.put("resources/canonical/tasks/task.json", utf8(taskJson));
-        String manifestText = "{\"schema_version\":1,\"package_id\":\"" + packageId
-            + "\",\"package_version\":\"1\",\"story_id\":\""
-            + storyId
-            + "\",\"story_schema_version\":1,\"required_resources\":{\"story\":\"stories/story.json\","
-            + "\"actors\":[\"actors/slimes.json\",\"actors/boss.json\"],"
-            + "\"tasks\":[\"resources/canonical/tasks/task.json\"]}}";
-        StoryPackageManifest manifest = StoryPackageManifest.read(utf8(manifestText), "manifest.json");
+        com.google.gson.JsonObject taskWire = new JsonParser().parse(taskJson)
+            .getAsJsonObject();
+        taskWire.add("id", CurrentPackageProbeFixtures.address("ST-2345-6789-ABCD-EFGH~task~task"));
+        taskWire.getAsJsonObject("graph")
+            .add("connections", new com.google.gson.JsonArray());
+        taskWire.getAsJsonObject("graph")
+            .getAsJsonArray("nodes")
+            .get(0)
+            .getAsJsonObject()
+            .add("ports", new com.google.gson.JsonArray());
+        taskWire.getAsJsonObject("graph")
+            .getAsJsonArray("nodes")
+            .get(0)
+            .getAsJsonObject()
+            .addProperty("type", "objective");
+        bytes.put("resources/canonical/tasks/task.json", utf8(taskWire.toString()));
+        com.google.gson.JsonObject manifestJson = CurrentPackageProbeFixtures.manifest(storyId);
+        com.google.gson.JsonObject resources = manifestJson.getAsJsonObject("required_resources");
+        String storyPath = CurrentPackageProbeFixtures.storyPath(storyId);
+        bytes.put(storyPath, bytes.remove("stories/story.json"));
+        bytes.put(
+            CurrentPackageProbeFixtures.membershipPath(storyId),
+            utf8(
+                CurrentPackageProbeFixtures.membership(storyId)
+                    .toString()));
+        resources.add("actors", CurrentPackageProbeFixtures.list("actors/slimes.json", "actors/boss.json"));
+        resources.add("tasks", CurrentPackageProbeFixtures.list("resources/canonical/tasks/task.json"));
+        StoryPackageManifest manifest = StoryPackageManifest.read(utf8(manifestJson.toString()), "manifest.json");
         Map<String, JsonElement> properties = new LinkedHashMap<String, JsonElement>();
-        properties.put("actor_id", new JsonParser().parse("\"shared:slimes\""));
-        properties.put("nested", new JsonParser().parse("{\"actor_id\":\"shared:boss\"}"));
+        properties.put("actor_id", new JsonParser().parse("\"ST-2345-6789-ABCD-EFGH~actor~slimes\""));
+        properties.put("nested", new JsonParser().parse("{\"actor_id\":\"ST-2345-6789-ABCD-EFGH~actor~boss\"}"));
         CanonicalGraphResource task = new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.TASK,
-            "shared:task",
+            "ST-2345-6789-ABCD-EFGH~task~task",
             "收集宝藏",
             new CanonicalGraph(
                 Collections.singletonList(
                     new CanonicalGraphNode("objective", "objective", "目标节点", Collections.emptyList(), properties)),
                 Collections.emptyList()));
         CanonicalProjectContent content = new CanonicalProjectContent(
-            Collections.emptyMap(),
+            Collections.singletonMap(
+                storyId,
+                new CanonicalGraphResource(
+                    CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
+                    CanonicalGraphResourceKind.STORY,
+                    storyId,
+                    storyName,
+                    new CanonicalGraph(Collections.emptyList(), Collections.emptyList()))),
             Collections.emptyMap(),
             Collections.singletonMap(task.getId(), task),
             Collections.emptyMap(),
             darkgrey.rpg.graph.canonical.CanonicalStoryLogicGraph.empty());
         // Story names come from the payload/snapshot rather than inferred filenames.
-        darkgrey.rpg.story.StoryDefinition story = new darkgrey.rpg.story.StoryDefinition(
-            1,
-            storyId,
-            storyName,
-            "end",
-            Collections.emptyList(),
-            Collections.emptyList(),
-            "",
-            Collections.emptyList());
         ProjectSnapshot snapshot = new ProjectSnapshot(
             new ProjectDefinition(1, packageId, packageId),
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.singletonMap(storyId, story),
             content);
         return new LoadedStoryPackage(
             manifest,
@@ -146,17 +164,23 @@ public final class StoryPackageDiagnosticsProbe {
     }
 
     private static void testFormattingOnly() throws Exception {
-        LoadedStoryPackage a = fixture("first", "story_first", "第一故事", "same", 3);
-        LoadedStoryPackage b = fixture("second", "story_second", "第二故事", "same", 3);
+        LoadedStoryPackage a = fixture("first", "ST-2222-3333-4444-5555", "第一故事", "same", 3);
+        LoadedStoryPackage b = fixture("second", "ST-3456-789A-BCDE-FGHJ", "第二故事", "same", 3);
         // Rebuild the candidate with the same fields but a different serialized representation.
         Map<String, byte[]> changed = new LinkedHashMap<String, byte[]>();
         for (String path : Arrays.asList(
             "project.json",
-            "stories/story.json",
+            b.getManifest()
+                .getRequiredResources()
+                .getStory(),
+            b.getManifest()
+                .getRequiredResources()
+                .getCanonicalMemberships()
+                .get(0),
             "actors/slimes.json",
             "actors/boss.json",
             "resources/canonical/tasks/task.json")) changed.put(path, b.getDeclaredResourceBytes(path));
-        changed.put("actors/slimes.json", utf8("  " + actor("shared:slimes", "史莱姆群", "same")));
+        changed.put("actors/slimes.json", utf8("  " + actor("ST-2345-6789-ABCD-EFGH~actor~slimes", "史莱姆群", "same")));
         b = new LoadedStoryPackage(
             b.getManifest(),
             null,
@@ -171,7 +195,7 @@ public final class StoryPackageDiagnosticsProbe {
         changed.put(
             "actors/slimes.json",
             utf8(
-                actor("shared:slimes", "史莱姆群", "same")
+                actor("ST-2345-6789-ABCD-EFGH~actor~slimes", "史莱姆群", "same")
                     .replace("\"tags\":[]", "\"tags\":[],\"default_portrait_ref\":null")));
         b = new LoadedStoryPackage(
             b.getManifest(),
@@ -287,9 +311,6 @@ public final class StoryPackageDiagnosticsProbe {
         darkgrey.rpg.command.CommandDarkGreyRpg command = new darkgrey.rpg.command.CommandDarkGreyRpg(
             repository,
             null,
-            null,
-            null,
-            null,
             new darkgrey.rpg.session.forge.CanonicalSessionForgeManager(repository),
             null,
             null,
@@ -336,18 +357,14 @@ public final class StoryPackageDiagnosticsProbe {
     }
 
     private static String actor(String id, String name, String home) {
-        return "{\"schema_version\":4,\"type\":\"individual\",\"npc_id\":\"" + id
-            + "\",\"display_name\":\""
-            + name
-            + "\",\"home_story_id\":\""
-            + home
-            + "\",\"tags\":[]}";
+        return CurrentPackageProbeFixtures.actor(id, name, home)
+            .toString();
     }
 
     private static Map<String, LoadedStoryPackage> pair(LoadedStoryPackage a, LoadedStoryPackage b) {
         Map<String, LoadedStoryPackage> values = new LinkedHashMap<String, LoadedStoryPackage>();
-        values.put(a.getPackageId(), a);
-        values.put(b.getPackageId(), b);
+        values.put("first", a);
+        values.put("second", b);
         return values;
     }
 

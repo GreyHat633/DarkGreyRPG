@@ -979,6 +979,20 @@ public sealed class CanonicalGraphEditorViewTests
     }
 
     [STATestMethod]
+    public void EndingCategoriesStayLastInEveryAuthoringScope()
+    {
+        foreach (var scope in new[] { GraphScope.StoryFlow, GraphScope.Session, GraphScope.Task })
+        {
+            var view = Arrange(new GraphEditorHostViewModel(Graph(scope), scope));
+            Assert.AreEqual("流程", view.AuthoringCategories.Last().Name);
+            var expected = scope == GraphScope.StoryFlow ? "terminate" : scope == GraphScope.Session ? "end" : "settle";
+            Assert.AreEqual(expected, view.AuthoringCategories.Last().Definitions.Last().Type);
+            var add = view.CreateCanvasContextMenu().Items.OfType<MenuItem>().First();
+            Assert.AreEqual("流程", add.Items.OfType<MenuItem>().Last().Header);
+        }
+    }
+
+    [STATestMethod]
     public void StoryAggregateTypesAreAbsentBecauseResourcesOwnPlacement()
     {
         var host = new GraphEditorHostViewModel(Graph(GraphScope.StoryFlow), GraphScope.StoryFlow);

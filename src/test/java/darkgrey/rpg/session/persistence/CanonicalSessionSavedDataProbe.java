@@ -42,15 +42,22 @@ public final class CanonicalSessionSavedDataProbe {
         MapStorage storage = new MapStorage(null);
         CanonicalSessionSavedData data = CanonicalSessionSavedData.get(storage);
         require(data == CanonicalSessionSavedData.get(storage), "MapStorage create/reuse");
-        CanonicalGraphResource resource = linearResource("persisted-session");
-        CanonicalSessionInstanceSnapshot instance = data.start(PLAYER, "story", "placement", resource);
+        CanonicalGraphResource resource = linearResource("ST-2345-6789-ABCD-EFGH~session~persisted_session");
+        CanonicalSessionInstanceSnapshot instance = data.start(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", "placement", resource);
         require(data.isDirty(), "start dirties");
         data.setDirty(false);
 
         NBTTagCompound persistedWrapper = new NBTTagCompound();
         data.writeToNBT(persistedWrapper);
-        NBTTagCompound payload = (NBTTagCompound) persistedWrapper.getCompoundTag("sessions")
+        NBTTagCompound payload = (NBTTagCompound) persistedWrapper.copy();
+        NBTTagCompound retiredSessionsOnly = (NBTTagCompound) persistedWrapper.getCompoundTag("sessions")
             .copy();
+        CanonicalSessionSavedData retiredReader = new CanonicalSessionSavedData("retired");
+        retiredReader.readFromNBT(payload);
+        reject(() -> retiredReader.readFromNBT(retiredSessionsOnly), "retired sessions-only world wrapper");
+        NBTTagCompound retiredOut = new NBTTagCompound();
+        retiredReader.writeToNBT(retiredOut);
+        require(payload.equals(retiredOut), "retired world wrapper rejection preserves current state");
         CanonicalSessionSavedData beforeBind = new CanonicalSessionSavedData("ignored");
         beforeBind.readFromNBT(payload);
         NBTTagCompound exact = new NBTTagCompound();
@@ -75,34 +82,34 @@ public final class CanonicalSessionSavedDataProbe {
         beforeBind.bind(resolver(resource));
         require(beforeBind.isBound() && !beforeBind.hasPendingData(), "successful bind");
         require(
-            beforeBind.getSnapshot(PLAYER, "story")
+            beforeBind.getSnapshot(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ")
                 .getTransportId() == instance.getTransportId(),
             "active restart");
         require(
-            beforeBind.getCurrentStep(PLAYER, "story")
+            beforeBind.getCurrentStep(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ")
                 .getNodeId()
                 .equals("line"),
             "detached current step");
         NBTTagCompound migrated = new NBTTagCompound();
         beforeBind.writeToNBT(migrated);
-        require(migrated.hasKey("sessions", 10) && migrated.hasKey("continuations", 9), "legacy migrates to wrapper");
+        require(migrated.hasKey("sessions", 10) && migrated.hasKey("continuations", 9), "current wrapper preserved");
         beforeBind.setDirty(false);
         reject(new Runnable() {
 
             @Override
             public void run() {
-                beforeBind.continueLine(PLAYER, "story", 999L, "line");
+                beforeBind.continueLine(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", 999L, "line");
             }
         }, "stale action");
         require(!beforeBind.isDirty(), "rejected action is clean");
 
-        beforeBind.continueLine(PLAYER, "story", instance.getTransportId(), "line");
+        beforeBind.continueLine(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", instance.getTransportId(), "line");
         require(beforeBind.isDirty(), "successful action dirties");
         beforeBind.setDirty(false);
-        require(beforeBind.consume(PLAYER, "story", instance.getTransportId()), "completed consume");
+        require(beforeBind.consume(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", instance.getTransportId()), "completed consume");
         require(beforeBind.isDirty(), "successful consume dirties");
         beforeBind.setDirty(false);
-        require(!beforeBind.consume(PLAYER, "story", instance.getTransportId()), "false consume");
+        require(!beforeBind.consume(PLAYER, "ST-JKLM-NPQR-STUV-WXYZ", instance.getTransportId()), "false consume");
         require(!beforeBind.isDirty(), "false consume is clean");
 
         NBTTagCompound empty = new NBTTagCompound();
@@ -111,13 +118,14 @@ public final class CanonicalSessionSavedDataProbe {
         emptyRestart.readFromNBT(empty);
         emptyRestart.bind(resolver(resource));
         require(
-            emptyRestart.start(PLAYER, "fresh", "fresh-placement", resource)
+            emptyRestart.start(PLAYER, "ST-2222-3333-4444-5555", "fresh-placement", resource)
                 .getTransportId() == 2L,
             "empty-store counter restart");
 
         NBTTagCompound malformed = new NBTTagCompound();
         malformed.setString("tampered", "preserve-me");
         CanonicalSessionSavedData malformedData = new CanonicalSessionSavedData();
+        malformedData.readFromNBT(payload);
         reject(new Runnable() {
 
             @Override
@@ -128,8 +136,10 @@ public final class CanonicalSessionSavedDataProbe {
         NBTTagCompound malformedOut = new NBTTagCompound();
         malformedData.writeToNBT(malformedOut);
         require(
-            malformed.equals(malformedOut) && !malformedData.isBound() && malformedData.hasPendingData(),
-            "malformed raw preservation");
+            payload.equals(malformedOut) && !malformedData.isBound()
+                && malformedData.hasPendingData()
+                && "preserve-me".equals(malformed.getString("tampered")),
+            "malformed read preserves existing pending state and input");
         reject(new Runnable() {
 
             @Override
@@ -141,10 +151,12 @@ public final class CanonicalSessionSavedDataProbe {
 
             @Override
             public void run() {
-                malformedData.bind(resolver(resource));
+                malformedData.bind(id -> null);
             }
-        }, "malformed bind");
-        require(malformedData.hasPendingData(), "malformed retry state");
+        }, "missing resource bind after rejected read");
+        require(malformedData.hasPendingData(), "failed binding preserves pending state");
+        malformedData.bind(resolver(resource));
+        require(malformedData.isBound(), "rejected read does not poison valid pending state");
 
         MapStorage convenienceStorage = new MapStorage(null);
         CanonicalSessionSavedData pending = new CanonicalSessionSavedData();
@@ -156,19 +168,20 @@ public final class CanonicalSessionSavedDataProbe {
             "convenience get and reuse");
 
         CanonicalSessionSavedData failureData = new CanonicalSessionSavedData();
-        CanonicalGraphResource cycle = cycleResource("cycle-session");
-        CanonicalSessionInstanceSnapshot failure = failureData.start(PLAYER, "cycle-story", "cycle-placement", cycle);
+        CanonicalGraphResource cycle = cycleResource("ST-2345-6789-ABCD-EFGH~session~cycle_session");
+        CanonicalSessionInstanceSnapshot failure = failureData
+            .start(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", "cycle-placement", cycle);
         failureData.setDirty(false);
         reject(new Runnable() {
 
             @Override
             public void run() {
-                failureData.continueLine(PLAYER, "cycle-story", failure.getTransportId(), "line");
+                failureData.continueLine(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD", failure.getTransportId(), "line");
             }
         }, "automatic cycle failure");
         require(failureData.isDirty(), "failed mutation dirties");
         require(
-            failureData.getSnapshot(PLAYER, "cycle-story")
+            failureData.getSnapshot(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD")
                 .getRuntimeSnapshot()
                 .getStatus()
                 .name()
@@ -180,7 +193,7 @@ public final class CanonicalSessionSavedDataProbe {
         failedRestart.readFromNBT(failedPayload);
         failedRestart.bind(resolver(cycle));
         require(
-            failedRestart.getSnapshot(PLAYER, "cycle-story")
+            failedRestart.getSnapshot(PLAYER, "ST-AAAA-BBBB-CCCC-DDDD")
                 .getRuntimeSnapshot()
                 .getStatus()
                 .name()
@@ -206,10 +219,10 @@ public final class CanonicalSessionSavedDataProbe {
         CanonicalSessionServerService transferService = new CanonicalSessionServerService(
             CanonicalSessionForgeProbeProject.create(),
             transferData);
-        CanonicalSessionDispatch transferStart = transferService.start(PLAYER, "story_a", "place_a");
+        CanonicalSessionDispatch transferStart = transferService.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a");
         CanonicalSessionDispatch transferCompletion = transferService.continueLine(
             PLAYER,
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             transferStart.getFrame()
                 .getTransportId(),
             transferStart.getFrame()
@@ -217,10 +230,12 @@ public final class CanonicalSessionSavedDataProbe {
         CanonicalSessionCompletionResult completion = transferCompletion.getCompletionResult();
         CanonicalStorySessionCompletionRoute route = new CanonicalStorySessionCompletionRouter(
             CanonicalSessionForgeProbeProject.create(),
-            "story_a").route(completion);
+            "ST-2345-6789-ABCD-EFGH").route(completion);
         require(transferData.acceptAndConsume(completion, route), "atomic completion transfer");
-        require(transferData.getSnapshot(PLAYER, "story_a") == null, "completion consumed");
-        require(transferData.getPendingContinuation(PLAYER, "story_a") != null, "continuation persisted");
+        require(transferData.getSnapshot(PLAYER, "ST-2345-6789-ABCD-EFGH") == null, "completion consumed");
+        require(
+            transferData.getPendingContinuation(PLAYER, "ST-2345-6789-ABCD-EFGH") != null,
+            "continuation persisted");
         transferData.setDirty(false);
         reject(new Runnable() {
 
@@ -228,10 +243,10 @@ public final class CanonicalSessionSavedDataProbe {
             public void run() {
                 transferData.start(
                     PLAYER,
-                    "story_a",
+                    "ST-2345-6789-ABCD-EFGH",
                     "place_a",
                     CanonicalSessionForgeProbeProject.create()
-                        .getCanonicalSession("session_a"));
+                        .getCanonicalSession("ST-2345-6789-ABCD-EFGH~session~session_a"));
             }
         }, "start blocked by pending continuation");
         require(!transferData.isDirty(), "blocked start is clean");
@@ -242,7 +257,7 @@ public final class CanonicalSessionSavedDataProbe {
         worldRestart.bind(
             resolver(
                 CanonicalSessionForgeProbeProject.create()
-                    .getCanonicalSession("session_a")));
+                    .getCanonicalSession("ST-2345-6789-ABCD-EFGH~session~session_a")));
         NBTTagCompound worldRoundTrip = new NBTTagCompound();
         worldRestart.writeToNBT(worldRoundTrip);
         require(world.equals(worldRoundTrip), "continuation wrapper round trip");
@@ -276,10 +291,10 @@ public final class CanonicalSessionSavedDataProbe {
         CanonicalSessionSavedData overlapActive = new CanonicalSessionSavedData();
         overlapActive.start(
             PLAYER,
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             "place_a",
             CanonicalSessionForgeProbeProject.create()
-                .getCanonicalSession("session_a"));
+                .getCanonicalSession("ST-2345-6789-ABCD-EFGH~session~session_a"));
         NBTTagCompound overlap = new NBTTagCompound();
         overlapActive.writeToNBT(overlap);
         overlap.setTag(
@@ -292,21 +307,21 @@ public final class CanonicalSessionSavedDataProbe {
         require(!transferData.isDirty(), "exact replay is clean");
         assertCompletionRejections(completion, route);
         CanonicalSessionSavedData retirement = new CanonicalSessionSavedData();
-        retirement.start(PLAYER, "retired_story", "retired-placement", resource);
-        retirement.start(PLAYER, "retained_story", "retained-placement", resource);
+        retirement.start(PLAYER, "ST-3456-789A-BCDE-FGHJ", "retired-placement", resource);
+        retirement.start(PLAYER, "ST-4567-89AB-CDEF-GHJK", "retained-placement", resource);
         CanonicalSessionSavedData.DiscardResult retired = retirement
-            .discardByStoryIds(Collections.singleton("retired_story"));
+            .discardByStoryIds(Collections.singleton("ST-3456-789A-BCDE-FGHJ"));
         require(
-            retired.getSessionInstances() == 1 && retirement.getSnapshot(PLAYER, "retired_story") == null,
+            retired.getSessionInstances() == 1 && retirement.getSnapshot(PLAYER, "ST-3456-789A-BCDE-FGHJ") == null,
             "Generation retirement did not remove the selected Session");
         require(
-            retirement.getSnapshot(PLAYER, "retained_story") != null,
+            retirement.getSnapshot(PLAYER, "ST-4567-89AB-CDEF-GHJK") != null,
             "Generation retirement touched another Session");
         CanonicalSessionSavedData.DiscardResult continuationRetired = transferData
-            .discardByStoryIds(Collections.singleton("story_a"));
+            .discardByStoryIds(Collections.singleton("ST-2345-6789-ABCD-EFGH"));
         require(
             continuationRetired.getContinuations() == 1
-                && transferData.getPendingContinuation(PLAYER, "story_a") == null,
+                && transferData.getPendingContinuation(PLAYER, "ST-2345-6789-ABCD-EFGH") == null,
             "Generation retirement did not remove the selected continuation");
         System.out.println("CANONICAL_SESSION_SAVED_DATA_PROBE=PASS");
         System.out.println("CANONICAL_SESSION_GENERATION_RETIREMENT=PASS");
@@ -331,7 +346,7 @@ public final class CanonicalSessionSavedDataProbe {
             ports(port("flow_out", false, false), port("logic_out", false, true)),
             new HashMap<String, JsonElement>());
         HashMap<String, JsonElement> lineProperties = new HashMap<String, JsonElement>();
-        lineProperties.put("speaker_actor_id", json("actor"));
+        lineProperties.put("speaker_actor_id", json("ST-2345-6789-ABCD-EFGH~actor~actor"));
         lineProperties.put("text", json("Hello"));
         CanonicalGraphNode line = node(
             "line",
@@ -343,7 +358,7 @@ public final class CanonicalSessionSavedDataProbe {
         endProperties.put("display_name", json("Success"));
         CanonicalGraphNode end = node("end", "end", ports(port("flow_in", true, false)), endProperties);
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.SESSION,
             id,
             id,
@@ -371,7 +386,7 @@ public final class CanonicalSessionSavedDataProbe {
             ports(port("flow_out", false, false), port("logic_out", false, true)),
             new HashMap<String, JsonElement>());
         HashMap<String, JsonElement> lineProperties = new HashMap<String, JsonElement>();
-        lineProperties.put("speaker_actor_id", json("actor"));
+        lineProperties.put("speaker_actor_id", json("ST-2345-6789-ABCD-EFGH~actor~actor"));
         lineProperties.put("text", json("Cycle"));
         CanonicalGraphNode line = node(
             "line",
@@ -384,7 +399,7 @@ public final class CanonicalSessionSavedDataProbe {
             ports(port("flow_in", true, false), port("flow_out", false, false)),
             new HashMap<String, JsonElement>());
         return new CanonicalGraphResource(
-            1,
+            3,
             CanonicalGraphResourceKind.SESSION,
             id,
             id,
@@ -461,7 +476,7 @@ public final class CanonicalSessionSavedDataProbe {
         CanonicalSessionServerService service = new CanonicalSessionServerService(
             CanonicalSessionForgeProbeProject.create(),
             active);
-        service.start(PLAYER, "story_a", "place_a");
+        service.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a");
         assertRejectPreserves(active, completion, route, "active Session");
 
         CanonicalSessionCompletionResult transportMismatch = new CanonicalSessionCompletionResult(
@@ -506,7 +521,7 @@ public final class CanonicalSessionSavedDataProbe {
             completion.getPlayerUuid(),
             completion.getStoryId(),
             completion.getAggregatePlacementId(),
-            "other_resource",
+            "ST-2345-6789-ABCD-EFGH~session~other_resource",
             completion.getTransportId(),
             completion.getEndPortId(),
             completion.getPublicLogicOutputs());
@@ -606,10 +621,10 @@ public final class CanonicalSessionSavedDataProbe {
         CanonicalSessionServerService service = new CanonicalSessionServerService(
             CanonicalSessionForgeProbeProject.create(),
             data);
-        CanonicalSessionDispatch start = service.start(PLAYER, "story_a", "place_a");
+        CanonicalSessionDispatch start = service.start(PLAYER, "ST-2345-6789-ABCD-EFGH", "place_a");
         service.continueLine(
             PLAYER,
-            "story_a",
+            "ST-2345-6789-ABCD-EFGH",
             start.getFrame()
                 .getTransportId(),
             start.getFrame()
@@ -624,7 +639,7 @@ public final class CanonicalSessionSavedDataProbe {
             logic);
         CanonicalStorySessionCompletionRoute candidateRoute = new CanonicalStorySessionCompletionRouter(
             CanonicalSessionForgeProbeProject.create(),
-            "story_a").route(completion);
+            "ST-2345-6789-ABCD-EFGH").route(completion);
         try {
             data.acceptAndConsume(candidate, candidateRoute);
         } catch (RuntimeException ignored) {

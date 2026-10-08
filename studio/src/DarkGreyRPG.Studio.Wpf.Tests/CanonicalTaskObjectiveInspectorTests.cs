@@ -188,8 +188,8 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         var actors = new[]
         {
-            new CanonicalStoryActorItem(new ActorResourceInfo("actor-a", "甲", "a.json", [])),
-            new CanonicalStoryActorItem(new ActorResourceInfo("actor-b", "乙", "b.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor_a", "甲", "a.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor_b", "乙", "b.json", [])),
         };
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
             GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
@@ -201,7 +201,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
 
         for (var index = 0; index < 100; index++)
         {
-            var id = index % 2 == 0 ? "actor-a" : "actor-b";
+            var id = index % 2 == 0 ? "ST-2345-6789-ABCD-EFGH~actor~actor_a" : "ST-2345-6789-ABCD-EFGH~actor~actor_b";
             inspector.SelectedObjectiveActor = inspector.ObjectiveActorOptions.Single(option => option.Id == id);
             // Reprojection recreates option instances; feeding the projected
             // selection back must remain a no-op rather than a new mutation.
@@ -212,9 +212,9 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.AreEqual(100L, editor.Host.GraphRevision);
         Assert.AreEqual(100, editor.Host.Session.UndoCount);
         Assert.AreEqual(100, nodeChanges);
-        Assert.AreEqual("actor-b", editor.Host.Graph.Nodes.Single().Properties[
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_b", editor.Host.Graph.Nodes.Single().Properties[
             CanonicalTaskObjectiveSchema.EntityProperty].GetString());
-        Assert.AreEqual("actor-b", inspector.SelectedObjectiveActor!.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_b", inspector.SelectedObjectiveActor!.Id);
         Assert.AreSame(stableOptions, inspector.ObjectiveActorOptions);
     }
 
@@ -224,8 +224,8 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
         var actors = new[]
         {
-            new CanonicalStoryActorItem(new ActorResourceInfo("actor-a", "甲", "a.json", [])),
-            new CanonicalStoryActorItem(new ActorResourceInfo("actor-b", "乙", "b.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor_a", "甲", "a.json", [])),
+            new CanonicalStoryActorItem(new ActorResourceInfo("ST-2345-6789-ABCD-EFGH~actor~actor_b", "乙", "b.json", [])),
         };
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
             GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
@@ -237,12 +237,12 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         var selectedOptions = selectedInspector.ObjectiveActorOptions;
 
         selectedInspector.SelectedObjectiveActor = selectedInspector.ObjectiveActorOptions
-            .Single(option => option.Id == "actor-b");
+            .Single(option => option.Id == "ST-2345-6789-ABCD-EFGH~actor~actor_b");
 
-        Assert.AreEqual("actor-b", editor.Host.Graph.Nodes.Single().Properties[
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_b", editor.Host.Graph.Nodes.Single().Properties[
             CanonicalTaskObjectiveSchema.EntityProperty].GetString());
-        Assert.AreEqual("actor-b", inlineInspector.SelectedObjectiveActor!.Id);
-        Assert.AreEqual("actor-b", selectedInspector.SelectedObjectiveActor!.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_b", inlineInspector.SelectedObjectiveActor!.Id);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~actor~actor_b", selectedInspector.SelectedObjectiveActor!.Id);
         Assert.AreSame(inlineOptions, inlineInspector.ObjectiveActorOptions);
         Assert.AreSame(selectedOptions, selectedInspector.ObjectiveActorOptions);
     }
@@ -255,8 +255,8 @@ public sealed class CanonicalTaskObjectiveInspectorTests
             CanonicalTaskObjectiveSchema.CollectItem, out _));
         var items = new[]
         {
-            new CanonicalStoryItemItem(new IndividualItemResource { ItemId = "item-a", DisplayName = "甲" }),
-            new CanonicalStoryItemItem(new CollectiveItemResource { GroupId = "item-b", DisplayName = "乙" }),
+            new CanonicalStoryItemItem(new IndividualItemResource { ItemId = "ST-2345-6789-ABCD-EFGH~item~item_a", DisplayName = "甲" }),
+            new CanonicalStoryItemItem(new CollectiveItemResource { GroupId = "ST-2345-6789-ABCD-EFGH~item_group~item_b", DisplayName = "乙" }),
         };
         using var editor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
             GraphResourceKind.Task, "ST-2345-6789-ABCD-EFGH~task~task", "Task", new GraphDocument([objective])));
@@ -268,7 +268,7 @@ public sealed class CanonicalTaskObjectiveInspectorTests
 
         for (var index = 0; index < 100; index++)
         {
-            var id = index % 2 == 0 ? "item-a" : "item-b";
+            var id = index % 2 == 0 ? "ST-2345-6789-ABCD-EFGH~item~item_a" : "ST-2345-6789-ABCD-EFGH~item_group~item_b";
             inspector.SelectedObjectiveItem = inspector.ObjectiveItemOptions.Single(option => option.Id == id);
             editor.Host.Refresh();
             inspector.SelectedObjectiveItem = inspector.ObjectiveItemOptions.Single(option => option.Id == id);
@@ -277,14 +277,14 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.AreEqual(100L, editor.Host.GraphRevision);
         Assert.AreEqual(100, editor.Host.Session.UndoCount);
         Assert.AreEqual(100, nodeChanges);
-        Assert.AreEqual("item-b", editor.Host.Graph.Nodes.Single().Properties[
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item_group~item_b", editor.Host.Graph.Nodes.Single().Properties[
             CanonicalTaskObjectiveSchema.ItemProperty].GetString());
-        Assert.AreEqual("item-b", inspector.ObjectiveTarget);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH~item_group~item_b", inspector.ObjectiveTarget);
         Assert.AreSame(stableOptions, inspector.ObjectiveItemOptions);
     }
 
     [TestMethod]
-    public void ObjectiveTargetStatusUsesOnlyUnresolvedLegacyIdentifiers()
+    public void ObjectiveTargetStatusShowsUnresolvedCurrentAddresses()
     {
         var kill = GraphNodeFactory.Create(GraphScope.Task, "objective", "kill");
         using var killEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
@@ -309,13 +309,13 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsEmpty(collectInspector.ObjectiveItemOptions);
 
         collectEditor.Host.SetNodeProperty("collect", CanonicalTaskObjectiveSchema.ItemProperty,
-            JsonSerializer.SerializeToElement("deleted-item"));
-        Assert.AreEqual("物品未解析：deleted-item", collectInspector.ObjectiveItemStatusText);
+            JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~item~deleted_item"));
+        Assert.AreEqual("物品未解析：ST-2345-6789-ABCD-EFGH~item~deleted_item", collectInspector.ObjectiveItemStatusText);
         Assert.IsTrue(collectInspector.HasObjectiveItemStatus);
 
         var interact = GraphNodeFactory.Create(GraphScope.Task, "objective", "interact");
         Assert.IsTrue(CanonicalTaskObjectiveSchema.TryInitializeType(
-            interact, CanonicalTaskObjectiveSchema.InteractActor, "legacy-actor", out _));
+            interact, CanonicalTaskObjectiveSchema.InteractActor, "ST-2345-6789-ABCD-EFGH~actor~missing_actor", out _));
         interact.Properties[CanonicalTaskObjectiveSchema.ActorIdProperty] =
             JsonSerializer.SerializeToElement(string.Empty);
         using var interactEditor = new CanonicalGraphResourceEditorViewModel(new GraphResourceEnvelope(
@@ -326,8 +326,8 @@ public sealed class CanonicalTaskObjectiveInspectorTests
         Assert.IsFalse(interactInspector.HasObjectiveActorStatus);
 
         interactEditor.Host.SetNodeProperty("interact", CanonicalTaskObjectiveSchema.ActorIdProperty,
-            JsonSerializer.SerializeToElement("deleted-actor"));
-        Assert.AreEqual("角色未解析：deleted-actor", interactInspector.ObjectiveActorStatusText);
+            JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~deleted_actor"));
+        Assert.AreEqual("角色未解析：ST-2345-6789-ABCD-EFGH~actor~deleted_actor", interactInspector.ObjectiveActorStatusText);
         Assert.IsTrue(interactInspector.HasObjectiveActorStatus);
     }
 }

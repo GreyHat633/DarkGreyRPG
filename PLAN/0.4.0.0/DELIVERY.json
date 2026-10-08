@@ -1,0 +1,214 @@
+{
+  "version": "0.4.0.0",
+  "baseline_commit": "51582ae8fe8a71214f2306ecd08492129171cff5",
+  "implementation_branch": "codex/0.4.0.0",
+  "implementation_status": "IMPLEMENTED",
+  "technical_status": "AUTOMATED_PASS_NATIVE_MAJOR_SAMPLES_PASS_TWO_OPEN_ACCEPTANCE_GAPS",
+  "delivery_status": "DEVELOPMENT_DIST_DELIVERED",
+  "contracts": {
+    "graph_schema": 3,
+    "nominator_saved_data_schema": 4,
+    "nominator_entity_open_marker": "0x44475240",
+    "retired_nominator_discriminators": [
+      8,
+      9
+    ],
+    "canonical_task_view_open": {
+      "discriminator": 34,
+      "side": "CLIENT",
+      "marker": "0x44475240",
+      "retired_discriminators": [
+        3,
+        4
+      ]
+    },
+    "single_manifest_schema": 3,
+    "single_format_version": 3,
+    "group_format_version": 3
+  },
+  "tests": {
+    "baseline_core": "PASS_492_SKIPPED_11",
+    "baseline_wpf": "PASS_692_SKIPPED_1",
+    "baseline_java": "PASS",
+    "studio_native_ui": "PASS_AUTHOR_APPEND_UNDO_REDO_DRAFT_PAGE_KEYS_COMBINE_SEARCH_USAGE_REFERENCE_IMPORT_PORT_REFRESH",
+    "minecraft": "PASS_BASE_SP_BASE_DEDICATED_CNPC_DEDICATED_CNPC_INTEGRATED_MINIMUM_NATIVE_IDENTITY_INVENTORY_CHOICE_SETTLEMENT_DISABLED_ISOLATION_PRESENTATION",
+    "data_preservation": "PASS_AUTHORITY_2690_FILES_68772849_BYTES_UNCHANGED_AND_410_PROGRAM_FILES_MATCH_CANDIDATE",
+    "p1_core": "PASS_508_SKIPPED_11",
+    "p1_wpf": "PASS_692_SKIPPED_1",
+    "p1_wpf_package_followup": "PASS_58",
+    "p1_package_rejection": "PASS_6_CSHARP_AND_JAVA",
+    "p2_java": "PASS_BUILD_AND_9_PROBES",
+    "nominator_isolated_data_preservation": "PASS_7_VECTORS",
+    "p3_java": "PASS_BUILD_AND_13_PROBES",
+    "p4_choice_core": "PASS_21",
+    "p4_choice_wpf": "PASS_51",
+    "p4_lifecycle_core": "PASS_30",
+    "current_core": "PASS_499_SKIPPED_11_FAILED_0",
+    "current_wpf": "PASS_665_SKIPPED_1_FAILED_0",
+    "p5_package_core": "PASS_38",
+    "p5_same_package_rejection": "PASS_21_CSHARP_AND_JAVA",
+    "p6_resource_enter_regression": "RED_1_THEN_GREEN_32",
+    "p6_reference_port_refresh_regression": "RED_1_THEN_GREEN_47_AND_NATIVE_PASS",
+    "p6_source_jar_audit": "PASS_65_RETIRED_PATHS_CLASS_AND_JAVA_ENTRIES_ZERO_THREE_JARS",
+    "audio": "NATIVE_BACKEND_2_COMMANDS_QUEUED_LISTENING_UNVERIFIED",
+    "wpf_previous_io_replacement_failure": "PASS_IN_TARGETED_19_AND_COMPLETE_655_RECHECK_ORIGINAL_FAILURE_RETAINED",
+    "wpf_receipt": "evidence/p6-wpf-clean-full-recheck-receipt.json",
+    "six_fixes_runtime": "PASS_BUILD_AND_8_SESSION_PROBES",
+    "six_fixes_receipt": "evidence/six-fixes-delivery-validation-receipt.json"
+  },
+  "studio": {
+    "authoritative_path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
+    "promoted": true,
+    "candidate_binaries": "evidence/six-fixes-authority-binaries.json",
+    "blocking_process_id": null,
+    "blocking_reason": null,
+    "data_before": "evidence/six-fixes-authority-data-before-promotion-final.json",
+    "data_after": "evidence/six-fixes-authority-data-after-promotion.json",
+    "promotion_receipt": "evidence/six-fixes-authority-promotion-receipt.json",
+    "binaries": [
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+        "productVersion": "0.4.0.0",
+        "size": 204288,
+        "sha256": "F68E1D6FAB7A4717089B394C9842BEDCFD7EAEC93382E76D86E0E5725E9001B3"
+      },
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+        "productVersion": "0.4.0.0",
+        "size": 1453568,
+        "sha256": "D78EDA6AE9FB9FDF9686665C27A9ECAE318C8096A32EAA2FE07DD0193C9CDF4A"
+      },
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+        "productVersion": "1.0.0+51582ae8fe8a71214f2306ecd08492129171cff5",
+        "size": 1108480,
+        "sha256": "D275FA27BF0C707B6A630ADF72E026102AD157EA7E72FC8558F80462167BE0EB"
+      },
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\StudioProgramFiles.json",
+        "productVersion": null,
+        "size": 19562,
+        "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
+      }
+    ],
+    "final_verification_receipt": "evidence/six-fixes-final-authority-verification.json"
+  },
+  "remaining_phases": [
+    "P6_NATIVE_ADDITIONAL_ITEM_FILTER",
+    "P6_MANUAL_AUDIO_LISTEN"
+  ],
+  "acceptance_gaps": {
+    "native_additional_item_filter": "NOT_RUN_CURRENT_NATIVE_TASK_METADATA_EMPTY; AUTOMATED_FORGE_FILTER_CHECKS_PASS",
+    "manual_audio_listening": "NOT_RUN_NATIVE_BACKEND_TWO_PLAY_COMMANDS_QUEUED"
+  },
+  "finished_product_created": false,
+  "remote_release_modified": false,
+  "user_accepted": false,
+  "scope_status": "APPROVED",
+  "implementation_commit": null,
+  "legacy_business_compatibility": false,
+  "multi_minecraft_version_work": false,
+  "retirement_inventory_status": "APPROVED_RETIREMENTS_DETACHED_AND_REMOVED_AUDIT_ONLY_DECISIONS_RECORDED",
+  "production_source_manifest_sha256": "a1f4cd003dac37e4202f3fadeea45814907e09fcb06df107e93e7d904efd3312",
+  "production_source_manifest": "evidence/six-fixes-delivery-source-provenance.json",
+  "runtime_jar": {
+    "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.4.0.0.jar",
+    "size": 1838497,
+    "sha256": "601B337231C534FEF43FCE159A1CE7F646B92B3B5C8C68558AEDD141904541FD",
+    "version": "0.4.0.0",
+    "minecraft_version": "1.7.10",
+    "zip_integrity": "PASS"
+  },
+  "test_packages": [
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Packages\\扫尾单故事.dgrs",
+      "size": 11814,
+      "sha256": "1CBFDF0FDDC1E33BB78AF47D9D0A25A1016C44E6353AC05C30B0354B9B76507F",
+      "role": "original_single_runtime_matrix",
+      "format_version": 3,
+      "producer_version": "0.4.0.0",
+      "zip_integrity": "PASS",
+      "schema_version": 3,
+      "story_uid": "ST-AAAA-BBBB-CCCC-DDDD"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\OriginalAcceptancePackages\\故事组（1）.dgrs.g",
+      "size": 3457,
+      "sha256": "6E59D5FCBBEA4325132E7ED504FF121755F2621515FEDBE48994573D27828775",
+      "role": "original_group_runtime_matrix",
+      "format_version": 3,
+      "producer_version": null,
+      "zip_integrity": "PASS",
+      "members": [
+        "ST-EEEE-FFFF-GGGG-HHHH",
+        "ST-JJJJ-KKKK-MMMM-NNNN"
+      ]
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Packages\\0400 补充验收.dgrs",
+      "size": 7934,
+      "sha256": "2C7834FE85DB945811A2E1128C5199E34277D817974616D5CC375572BB35BFEE",
+      "role": "collective_choice_disabled_two_players",
+      "format_version": 3,
+      "producer_version": "0.4.0.0",
+      "zip_integrity": "PASS",
+      "schema_version": 3,
+      "story_uid": "ST-5UTG-DFCB-NQAQ-X4QF"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Packages\\0400 库存验收.dgrs",
+      "size": 12550,
+      "sha256": "8506E59D9C4D5035C29C03929118B174A6EDD6160E18F17C2894FF8D9055F8A2",
+      "role": "inventory_transaction_reward",
+      "format_version": 3,
+      "producer_version": "0.4.0.0",
+      "zip_integrity": "PASS",
+      "schema_version": 3,
+      "story_uid": "ST-4EUB-29DN-V8J6-VTY3"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\PresentationPackages\\0400 库存验收.dgrs",
+      "size": 13788,
+      "sha256": "55E42A113B870005EEDC8DD639051330B32FC626D6320B525072111AE6F9B7D0",
+      "role": "later_presentation_revision",
+      "format_version": 3,
+      "producer_version": "0.4.0.0",
+      "zip_integrity": "PASS",
+      "schema_version": 3,
+      "story_uid": "ST-4EUB-29DN-V8J6-VTY3"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Packages\\故事组（1）.dgrs.g",
+      "size": 4479,
+      "sha256": "83A755AFE295CA287656DE9BAB9E5E97DB09E502DD911A2BEC12B6C60BF1E75D",
+      "role": "reference_update_import_source",
+      "format_version": 3,
+      "producer_version": null,
+      "zip_integrity": "PASS",
+      "members": [
+        "ST-EEEE-FFFF-GGGG-HHHH",
+        "ST-JJJJ-KKKK-MMMM-NNNN"
+      ]
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\ExternalAcceptancePackages\\故事组（1）.dgrs.g",
+      "size": 6093,
+      "sha256": "DA3E467496A5EAB33C1F4735C9A5E687DE3167B20F4E0B8CA598EB4BD0F1DC50",
+      "role": "external_public_boundary_closure",
+      "format_version": 3,
+      "producer_version": null,
+      "zip_integrity": "PASS",
+      "members": [
+        "ST-EEEE-FFFF-GGGG-HHHH",
+        "ST-JJJJ-KKKK-MMMM-NNNN",
+        "ST-LS9A-QKLR-D3WR-BMW2"
+      ]
+    }
+  ],
+  "audit_only_findings": "evidence/p6-audit-only-decisions.json",
+  "six_pre_upload_fixes": {
+    "status": "IMPLEMENTED_AND_VALIDATED",
+    "summary": "SixPreUploadFixes.md",
+    "validation_receipt": "evidence/six-fixes-delivery-validation-receipt.json"
+  }
+}

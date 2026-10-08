@@ -10,7 +10,6 @@ import java.util.UUID;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraph;
 import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
 import darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind;
@@ -25,11 +24,9 @@ import darkgrey.rpg.graph.canonical.CanonicalStoryMembershipSet;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.quest.QuestDefinition;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
 import darkgrey.rpg.session.server.CanonicalSessionDispatch;
 import darkgrey.rpg.session.server.CanonicalSessionServerService;
-import darkgrey.rpg.story.StoryDefinition;
 import darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRoute;
 import darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRouter;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRegionEntryTracker;
@@ -221,9 +218,8 @@ public final class CanonicalStoryServerServiceProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "repeat-entry", "Repeat Entry"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
@@ -271,9 +267,8 @@ public final class CanonicalStoryServerServiceProbe {
         ProjectSnapshot project = new ProjectSnapshot(
             new ProjectDefinition(1, "dynamic-logic", "Dynamic Logic"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
@@ -417,9 +412,8 @@ public final class CanonicalStoryServerServiceProbe {
         ProjectSnapshot indexedProject = new ProjectSnapshot(
             new ProjectDefinition(1, "trigger-index", "Trigger Index"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 indexedStories,
                 Collections.<String, CanonicalGraphResource>emptyMap(),
@@ -485,9 +479,8 @@ public final class CanonicalStoryServerServiceProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "story-probe", "Story Probe"),
             actors,
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 stories,
                 sessions,
@@ -499,9 +492,8 @@ public final class CanonicalStoryServerServiceProbe {
         return new ProjectSnapshot(
             new ProjectDefinition(1, "empty-story-probe", "Empty Story Probe"),
             Collections.<String, ActorDefinition>emptyMap(),
-            Collections.<String, DialogueDefinition>emptyMap(),
-            Collections.<String, QuestDefinition>emptyMap(),
-            Collections.<String, StoryDefinition>emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             new CanonicalProjectContent(
                 Collections.<String, CanonicalGraphResource>emptyMap(),
                 Collections.<String, CanonicalGraphResource>emptyMap(),

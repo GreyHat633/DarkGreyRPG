@@ -276,6 +276,7 @@ public final class CanonicalSessionForgeManager {
         if (sender == null) throw new IllegalArgumentException("Canonical Session sender is required.");
         if (dispatch == null) throw new IllegalStateException("Canonical Session dispatch is missing.");
         if (dispatch.isFrame()) {
+            if (dispatch.getLineContext() != null) sender.sendFrame(player, dispatch.getLineContext());
             sender.sendFrame(player, dispatch.getFrame());
         } else if (dispatch.isClosed()) {
             sender.sendClose(player, dispatch.getClose());

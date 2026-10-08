@@ -37,14 +37,9 @@ public final class StoryPackageConflictDiagnostics {
             groups.put("角色", required.getActors());
             groups.put("物品", required.getItems());
             groups.put("物品组", required.getItemGroups());
-            groups.put("对话", required.getDialogues());
-            groups.put("旧版任务", required.getQuests());
             groups.put("会话", required.getSessions());
             groups.put("任务", required.getTasks());
-            groups.put(
-                value.getManifest()
-                    .isDgrsV1() ? "故事" : "旧版故事",
-                Collections.singletonList(required.getStory()));
+            groups.put("故事", Collections.singletonList(required.getStory()));
             groups.put("故事", union(groups.getOrDefault("故事", Collections.emptyList()), required.getCanonicalStories()));
             groups.put("故事资源归属", required.getCanonicalMemberships());
             for (Map.Entry<String, List<String>> group : groups.entrySet()) {
@@ -57,8 +52,7 @@ public final class StoryPackageConflictDiagnostics {
                         continue;
                     }
                     if (first.owner == next.owner) continue;
-                    boolean exclusive = "故事".equals(group.getKey()) || "旧版故事".equals(group.getKey())
-                        || "故事资源归属".equals(group.getKey());
+                    boolean exclusive = "故事".equals(group.getKey()) || "故事资源归属".equals(group.getKey());
                     if (!exclusive && Arrays.equals(first.bytes, next.bytes)) continue;
                     conflicts++;
                     lines.add("冲突 " + conflicts + "：" + next.type + "「" + next.name + "」[" + next.id + "]");
@@ -234,12 +228,7 @@ public final class StoryPackageConflictDiagnostics {
         String context() {
             CanonicalGraphResource story = owner.getSnapshot()
                 .getCanonicalStory(owner.getStoryId());
-            String storyName = story == null ? (owner.getSnapshot()
-                .getStory(owner.getStoryId()) == null ? owner.getStoryId()
-                    : owner.getSnapshot()
-                        .getStory(owner.getStoryId())
-                        .getTitle())
-                : story.getDisplayName();
+            String storyName = story == null ? owner.getStoryId() : story.getDisplayName();
             return "故事「" + storyName + "」[" + owner.getStoryId() + "]；包 " + owner.getPackageId();
         }
 

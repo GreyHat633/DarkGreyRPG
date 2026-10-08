@@ -81,7 +81,7 @@ public final class PublicOutputPriority0336Probe {
     }
 
     private static void noSettlementRemainsActive() {
-        String json = "{\"schema_version\":2,\"identity_format\":\"story-uid-v1\",\"resource_kind\":\"task\","
+        String json = "{\"schema_version\":3,\"identity_format\":\"story-uid-v1\",\"resource_kind\":\"task\","
             + "\"id\":{\"story_uid\":\"ST-2345-6789-ABCD-EFGH\",\"kind\":\"task\",\"local_id\":\"empty\"},"
             + "\"display_name\":\"Empty\",\"graph\":{\"nodes\":[],\"connections\":[]}}";
         CanonicalGraphResource empty = new CanonicalGraphResourceLoader().load(
@@ -128,7 +128,7 @@ public final class PublicOutputPriority0336Probe {
                     "description",
                     new JsonPrimitive(description),
                     "entity",
-                    new JsonPrimitive("slime"),
+                    new JsonPrimitive("ST-2345-6789-ABCD-EFGH~actor~slime"),
                     "required",
                     new JsonPrimitive(1)));
             final CanonicalGraphResource task = new CanonicalGraphResource(
@@ -181,9 +181,13 @@ public final class PublicOutputPriority0336Probe {
                         .get(0)
                         .getDescription()),
                 "Journal must use the same display fallback");
-            require(runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Blank description must execute");
+            require(
+                runtime.accept(CanonicalTaskEvent.killEntity("ST-2345-6789-ABCD-EFGH~actor~slime")),
+                "Blank description must execute");
             require("done".equals(runtime.getResultPortId()), "Objective completion must settle once");
-            require(!runtime.accept(CanonicalTaskEvent.killEntity("slime")), "Duplicate must not settle again");
+            require(
+                !runtime.accept(CanonicalTaskEvent.killEntity("ST-2345-6789-ABCD-EFGH~actor~slime")),
+                "Duplicate must not settle again");
             require(
                 "done".equals(
                     CanonicalTaskRuntime.restore(task, runtime.snapshot())

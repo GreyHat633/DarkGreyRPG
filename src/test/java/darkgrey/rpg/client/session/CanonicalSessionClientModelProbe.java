@@ -22,7 +22,7 @@ public final class CanonicalSessionClientModelProbe {
         require(DialoguePreferences.resolve(-1) == 60, "global speed selected");
         require(DialoguePreferences.resolve(0) == 0, "zero override stays immediate");
         require(DialoguePreferences.resolve(120) == 120, "custom override wins");
-        CanonicalSessionFrame inherited = line(10L, "story_a", "node_inherit").withTextSpeed(-1);
+        CanonicalSessionFrame inherited = line(10L, "ST-2345-6789-ABCD-EFGH", "node_inherit").withTextSpeed(-1);
         ByteBuf inheritedBytes = Unpooled.buffer();
         inherited.toBytes(inheritedBytes);
         CanonicalSessionFrame decodedInherited = new CanonicalSessionFrame();
@@ -53,7 +53,7 @@ public final class CanonicalSessionClientModelProbe {
                 .equals("123"),
             "120 characters per second");
         CanonicalSessionClientModel model = new CanonicalSessionClientModel();
-        CanonicalSessionFrame line = line(11L, "story_a", "node_line");
+        CanonicalSessionFrame line = line(11L, "ST-2345-6789-ABCD-EFGH", "node_line");
         require(model.acceptFrame(line), "new frame accepted");
         require(
             model.continueAction()
@@ -65,23 +65,23 @@ public final class CanonicalSessionClientModelProbe {
                 .equals("node_line"),
             "continue uses current node");
         ByteBuf changedBytes = Unpooled.buffer();
-        line(11L, "story_a", "node_changed").toBytes(changedBytes);
+        line(11L, "ST-2345-6789-ABCD-EFGH", "node_changed").toBytes(changedBytes);
         line.fromBytes(changedBytes);
         changedBytes.release();
         require("node_line".equals(model.getCurrentNodeId()), "model detaches incoming frame");
-        CanonicalSessionFrame portraitLine = lineWithPortrait(11L, "story_a", "node_portrait");
+        CanonicalSessionFrame portraitLine = lineWithPortrait(11L, "ST-2345-6789-ABCD-EFGH", "node_portrait");
         require(model.acceptFrame(portraitLine), "portrait line accepted");
         require(
             "media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png"
                 .equals(model.getVisiblePortraitRef()),
             "line portrait becomes visible context");
-        require(!model.acceptFrame(line(12L, "story_a", "node_stale")), "transport fence");
-        require(!model.acceptFrame(line(11L, "story_b", "node_other")), "Story fence");
+        require(!model.acceptFrame(line(12L, "ST-2345-6789-ABCD-EFGH", "node_stale")), "transport fence");
+        require(!model.acceptFrame(line(11L, "ST-JKLM-NPQR-STUV-WXYZ", "node_other")), "Story fence");
 
         CanonicalSessionFrame emptyChoice = new CanonicalSessionFrame(
             11L,
-            "story_a",
-            "session_a",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session_a",
             "empty_choice",
             CanonicalSessionFrame.Kind.CHOICE,
             "",
@@ -103,13 +103,30 @@ public final class CanonicalSessionClientModelProbe {
                 model.choiceAction("yes")
                     .getCurrentNodeId()),
             "retained text cannot replace action identity");
-        require(!model.acceptFrame(line(12L, "story_a", "stale")), "reject foreign context");
+        require(!model.acceptFrame(line(12L, "ST-2345-6789-ABCD-EFGH", "stale")), "reject foreign context");
         require("Text".equals(model.getVisibleText()), "foreign frame cannot overwrite context");
+        CanonicalSessionClientModel restored = new CanonicalSessionClientModel();
+        CanonicalSessionFrame previousPage = new CanonicalSessionFrame(
+            11L,
+            emptyChoice.getStoryId(),
+            emptyChoice.getSessionResourceId(),
+            "long_line",
+            CanonicalSessionFrame.Kind.LINE,
+            "Speaker",
+            "第一页\n第二页\n最后一页",
+            Collections.emptyList());
+        restored.acceptFrame(previousPage);
+        restored.acceptFrame(emptyChoice);
+        restored.layout("restored-choice", 100, 1, (cluster, bold) -> 1);
+        require(
+            restored.getVisibleText()
+                .equals("最后一页"),
+            "cold Choice restore shows last display page");
 
         CanonicalSessionFrame choice = new CanonicalSessionFrame(
             11L,
-            "story_a",
-            "session_a",
+            "ST-2345-6789-ABCD-EFGH",
+            "ST-2345-6789-ABCD-EFGH~session~session_a",
             "node_choice",
             CanonicalSessionFrame.Kind.CHOICE,
             "",
@@ -133,8 +150,8 @@ public final class CanonicalSessionClientModelProbe {
                 model.choiceAction("1");
             }
         }, "array index rejected");
-        require(!model.acceptClose(new CanonicalSessionClose(12L, "story_a")), "stale close rejected");
-        require(model.acceptClose(new CanonicalSessionClose(11L, "story_a")), "matching close accepted");
+        require(!model.acceptClose(new CanonicalSessionClose(12L, "ST-2345-6789-ABCD-EFGH")), "stale close rejected");
+        require(model.acceptClose(new CanonicalSessionClose(11L, "ST-2345-6789-ABCD-EFGH")), "matching close accepted");
         require(!model.isActive(), "close clears state");
         require(
             model.getVisibleText()
@@ -147,8 +164,8 @@ public final class CanonicalSessionClientModelProbe {
             model.acceptFrame(
                 new CanonicalSessionFrame(
                     12L,
-                    "story_new",
-                    "session_a",
+                    "ST-AAAA-BBBB-CCCC-DDDD",
+                    "ST-2345-6789-ABCD-EFGH~session~session_a",
                     "choice",
                     CanonicalSessionFrame.Kind.CHOICE,
                     "",
@@ -159,7 +176,7 @@ public final class CanonicalSessionClientModelProbe {
             model.getVisibleText()
                 .isEmpty(),
             "new session cannot inherit old text");
-        require(model.acceptClose(new CanonicalSessionClose(12L, "story_new")), "new close");
+        require(model.acceptClose(new CanonicalSessionClose(12L, "ST-AAAA-BBBB-CCCC-DDDD")), "new close");
         for (int[] size : new int[][] { { 320, 240 }, { 427, 240 }, { 640, 360 }, { 960, 540 }, { 1920, 1080 } }) {
             CanonicalDialogueLayout layout = new CanonicalDialogueLayout(size[0], size[1]);
             require(layout.left == size[0] / 20, "five percent horizontal safe margin");
@@ -186,20 +203,26 @@ public final class CanonicalSessionClientModelProbe {
             require(!layout.containsDialogue(size[0] / 2, layout.top - 1), "world click excluded");
         }
         System.out.println("CANONICAL_DIALOGUE_PRESENTATION_PROBE=PASS");
-        require(model.acceptFrame(line(13L, "story_new", "new_line")), "new identity accepted");
+        require(model.acceptFrame(line(13L, "ST-AAAA-BBBB-CCCC-DDDD", "new_line")), "new identity accepted");
         System.out.println("CANONICAL_SESSION_CLIENT_MODEL_PROBE=PASS");
     }
 
     private static void closedTransportCannotResurrect() {
         CanonicalSessionClientModel model = new CanonicalSessionClientModel();
-        CanonicalSessionFrame retired = line(11L, "story_a", "node_line");
+        CanonicalSessionFrame retired = line(11L, "ST-2345-6789-ABCD-EFGH", "node_line");
         require(model.acceptFrame(retired), "cancel fixture line accepted");
-        require(model.acceptClose(new CanonicalSessionClose(11L, "story_a")), "matching cancellation accepted");
-        require(!model.acceptFrame(retired) && !model.isActive(), "closed transport resurrected old line");
-        require(!model.acceptFrame(line(10L, "story_a", "node_old")), "older transport resurrected after close");
-        require(model.acceptFrame(line(12L, "story_a", "node_new")), "new transport rejected after cancellation");
         require(
-            !model.acceptClose(new CanonicalSessionClose(11L, "story_a")) && model.isActive(),
+            model.acceptClose(new CanonicalSessionClose(11L, "ST-2345-6789-ABCD-EFGH")),
+            "matching cancellation accepted");
+        require(!model.acceptFrame(retired) && !model.isActive(), "closed transport resurrected old line");
+        require(
+            !model.acceptFrame(line(10L, "ST-2345-6789-ABCD-EFGH", "node_old")),
+            "older transport resurrected after close");
+        require(
+            model.acceptFrame(line(12L, "ST-2345-6789-ABCD-EFGH", "node_new")),
+            "new transport rejected after cancellation");
+        require(
+            !model.acceptClose(new CanonicalSessionClose(11L, "ST-2345-6789-ABCD-EFGH")) && model.isActive(),
             "stale close cancelled newer Session");
         model.clear();
         require(model.acceptFrame(retired), "new world did not reset transport fence");
@@ -209,7 +232,7 @@ public final class CanonicalSessionClientModelProbe {
         return new CanonicalSessionFrame(
             transportId,
             storyId,
-            "session_a",
+            "ST-2345-6789-ABCD-EFGH~session~session_a",
             nodeId,
             CanonicalSessionFrame.Kind.LINE,
             "Speaker",
@@ -219,11 +242,11 @@ public final class CanonicalSessionClientModelProbe {
 
     private static void verifySameNodePages() {
         CanonicalSessionClientModel pages = new CanonicalSessionClientModel();
-        CanonicalSessionFrame first = line(33L, "pages", "same_node").withTextSpeed(1)
+        CanonicalSessionFrame first = line(33L, "ST-2222-3333-4444-5555", "same_node").withTextSpeed(1)
             .withPresentation(darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY, 1L, true);
         require(pages.acceptFrame(first) && pages.finishVisibleText(), "first page can be completed");
         require(pages.acceptFrame(first) && !pages.finishVisibleText(), "repeat sync does not restart completed text");
-        CanonicalSessionFrame second = lineWithPortrait(33L, "pages", "same_node").withTextSpeed(1)
+        CanonicalSessionFrame second = lineWithPortrait(33L, "ST-2222-3333-4444-5555", "same_node").withTextSpeed(1)
             .withPresentation(darkgrey.rpg.session.runtime.CanonicalSessionPresentation.EMPTY, 2L, true);
         require(pages.acceptFrame(second) && pages.finishVisibleText(), "same node new epoch restarts reveal");
         require(
@@ -242,7 +265,7 @@ public final class CanonicalSessionClientModelProbe {
         return new CanonicalSessionFrame(
             transportId,
             storyId,
-            "session_a",
+            "ST-2345-6789-ABCD-EFGH~session~session_a",
             nodeId,
             CanonicalSessionFrame.Kind.LINE,
             "Speaker",

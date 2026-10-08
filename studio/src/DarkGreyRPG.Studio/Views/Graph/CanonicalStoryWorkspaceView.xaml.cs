@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Documents;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.ViewModels.Graph;
@@ -73,8 +74,12 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     private Point _resourceDragStart;
     private ICanonicalStoryTreeItem? _resourceDragItem;
     private bool _resourceDragReleased;
-    private Button? _resourceReorderPreviewButton;
-    private bool _resourceReorderInsertAfter;
+    private OutputReorderPreview? _resourceReorderPreview;
+    private ItemsControl? _resourceReorderList;
+    private ICanonicalStoryTreeItem[]? _resourceReorderItems;
+    private AdornerLayer? _resourceReorderLayer;
+    private int _resourceReorderOldIndex;
+    private DispatcherTimer? _resourceReorderTimer;
     private long _appliedStoryNodeFocusSequence;
     private bool _storyNodeFocusQueued;
     private Func<CanonicalChoiceOptionRemovalConfirmation, bool>? _choiceOptionRemovalConfirmation;
@@ -119,8 +124,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     public Point ResourceDragGhostViewportPosition =>
         new(Canvas.GetLeft(ResourceDragGhost), Canvas.GetTop(ResourceDragGhost));
     public Vector ResourceDragGhostPointerOffset => ResourceNodePointerAnchor;
-    public string ResourceReorderPreviewPlacement => _resourceReorderPreviewButton is null
-        ? string.Empty : _resourceReorderInsertAfter ? "after" : "before";
+    public string ResourceReorderPreviewPlacement => _resourceReorderPreview is null ? string.Empty : "animated";
 
     /// <summary>
     /// Optional test/host injection for Choice-option removal confirmation.
@@ -293,7 +297,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
     {
         _resourceDragStart = args.GetPosition(this);
         _resourceDragItem = sender is Button { Tag: ICanonicalStoryTreeItem item }
-            && (CanPlaceResource(item) || item is CanonicalStoryActorItem or CanonicalStoryItemItem)
+            && (item is CanonicalStoryGraphItem or CanonicalStoryActorItem or CanonicalStoryItemItem)
                 ? item
                 : null;
     }
@@ -313,8 +317,14 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var effect = DragDropEffects.None;
         var source = (DependencyObject)sender;
         _resourceDragReleased = false;
+        var dragWorkspace = Workspace;
         QueryContinueDragEventHandler observeRelease = (_, query) =>
+        {
             _resourceDragReleased = !query.EscapePressed && (query.KeyStates & DragDropKeyStates.LeftMouseButton) == 0;
+            if (query.EscapePressed || !IsLoaded || !IsVisible || !ReferenceEquals(Workspace, dragWorkspace)
+                || Window.GetWindow(this) is { IsActive: false })
+            { query.Action = DragAction.Cancel; query.Handled = true; }
+        };
         DragDrop.AddQueryContinueDragHandler(source, observeRelease);
         try
         {
@@ -342,58 +352,94 @@ public partial class CanonicalStoryWorkspaceView : UserControl
 
     private void ResourceItem_OnDragOver(object sender, DragEventArgs args)
     {
-        var button = sender as Button;
-        var target = button?.Tag as ICanonicalStoryTreeItem;
-        var valid = button is not null && target is not null
-            && TryGetDraggedResource(args.Data, out var item) && item is not null
-            && Workspace?.CanReorderResource(item, target!) == true;
+        var valid = sender is Button button && TryGetDraggedResource(args.Data, out var item) && item is not null
+            && LinePagesEditor.Ancestor<ItemsControl>(button) is { } list && PreviewResourceReorder(list, item, args);
         args.Effects = valid ? DragDropEffects.Move : DragDropEffects.None;
-        if (valid)
-        {
-            var insertAfter = args.GetPosition(button!).Y >= Math.Max(1d, button!.ActualHeight) / 2d;
-            ShowResourceReorderPreview(button!, insertAfter);
-        }
-        else ClearResourceReorderPreview();
+        if (!valid) ClearResourceReorderPreview();
         args.Handled = true;
+    }
+
+    private void ResourceList_OnDragOver(object sender, DragEventArgs args)
+    {
+        var valid = sender is ItemsControl list && TryGetDraggedResource(args.Data, out var item) && item is not null
+            && PreviewResourceReorder(list, item, args);
+        args.Effects = valid ? DragDropEffects.Move : DragDropEffects.None;
+        if (!valid) ClearResourceReorderPreview();
+        args.Handled = true;
+    }
+
+    private bool PreviewResourceReorder(ItemsControl list, ICanonicalStoryTreeItem source, DragEventArgs args)
+    {
+        if (!list.Items.Contains(source) || Workspace is null) return false;
+        var items = list.Items.Cast<ICanonicalStoryTreeItem>().ToArray();
+        if (items.Length < 2) return false;
+        if (_resourceReorderList != list || _resourceReorderItems is null || !items.SequenceEqual(_resourceReorderItems))
+        {
+            ClearResourceReorderPreview();
+            var index = Array.IndexOf(items, source);
+            var layer = AdornerLayer.GetAdornerLayer(list);
+            if (index < 0 || layer is null) return false;
+            _resourceReorderList = list; _resourceReorderItems = items; _resourceReorderOldIndex = index;
+            _resourceReorderLayer = layer;
+            _resourceReorderPreview = new OutputReorderPreview(list, source.DisplayName, false, index, TranslatePoint(_resourceDragStart, list));
+            layer.Add(_resourceReorderPreview);
+            _resourceReorderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
+            _resourceReorderTimer.Tick += (_, _) =>
+            {
+                if (_resourceReorderList is not { } active || _resourceReorderPreview is null) return;
+                var scroll = LinePagesEditor.Ancestor<ScrollViewer>(active);
+                if (scroll is null) return;
+                var point = Mouse.GetPosition(scroll);
+                if (point.X < 0 || point.X > scroll.ActualWidth) return;
+                var delta = point.Y < 30 ? -12 : point.Y > scroll.ActualHeight - 30 ? 12 : 0;
+                if (delta == 0) return;
+                scroll.ScrollToVerticalOffset(scroll.VerticalOffset + delta); scroll.UpdateLayout();
+                _resourceReorderPreview.Locate(Mouse.GetPosition(active));
+            };
+            _resourceReorderTimer.Start();
+        }
+        return _resourceReorderPreview!.Locate(args.GetPosition(list)).HasValue;
     }
 
     private void ResourceItem_OnDragLeave(object sender, DragEventArgs args)
     {
-        if (ReferenceEquals(sender, _resourceReorderPreviewButton)) ClearResourceReorderPreview();
+        if (_resourceReorderList is { } list)
+        {
+            var point = args.GetPosition(list);
+            if (point.X < 0 || point.X > list.ActualWidth || point.Y < 0 || point.Y > list.ActualHeight)
+                ClearResourceReorderPreview();
+        }
         args.Handled = true;
     }
 
     private void ResourceItem_OnDrop(object sender, DragEventArgs args)
     {
-        var insertAfter = _resourceReorderInsertAfter;
+        var index = _resourceReorderList is { } list ? _resourceReorderPreview?.Locate(args.GetPosition(list)) : null;
+        var items = _resourceReorderItems;
+        var oldIndex = _resourceReorderOldIndex;
         ClearResourceReorderPreview();
-        args.Effects = sender is Button { Tag: ICanonicalStoryTreeItem target }
-            && TryGetDraggedResource(args.Data, out var item)
-            && item is not null
-            && Workspace?.ReorderResource(item, target, insertAfter) == true
-                ? DragDropEffects.Move
-                : DragDropEffects.None;
+        args.Effects = DragDropEffects.None;
+        if (items is not null && index is { } destination && TryGetDraggedResource(args.Data, out var source)
+            && source is not null && ReferenceEquals(items[oldIndex], source))
+        {
+            if (destination == oldIndex) args.Effects = DragDropEffects.Move;
+            else
+            {
+                var remaining = items.Where(item => !ReferenceEquals(item, source)).ToArray();
+                var after = destination == remaining.Length;
+                var target = after ? remaining[^1] : remaining[destination];
+                if (Workspace?.ReorderResource(source, target, after) == true) args.Effects = DragDropEffects.Move;
+            }
+        }
         args.Handled = true;
-    }
-
-    private void ShowResourceReorderPreview(Button button, bool insertAfter)
-    {
-        if (!ReferenceEquals(_resourceReorderPreviewButton, button)) ClearResourceReorderPreview();
-        _resourceReorderPreviewButton = button;
-        _resourceReorderInsertAfter = insertAfter;
-        button.BorderBrush = (Brush)FindResource("AccentFillColorDefaultBrush");
-        button.BorderThickness = insertAfter ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 0);
     }
 
     private void ClearResourceReorderPreview()
     {
-        if (_resourceReorderPreviewButton is not null)
-        {
-            _resourceReorderPreviewButton.ClearValue(Control.BorderBrushProperty);
-            _resourceReorderPreviewButton.ClearValue(Control.BorderThicknessProperty);
-        }
-        _resourceReorderPreviewButton = null;
-        _resourceReorderInsertAfter = false;
+        _resourceReorderTimer?.Stop(); _resourceReorderTimer = null;
+        _resourceReorderPreview?.Dispose();
+        if (_resourceReorderPreview is not null) _resourceReorderLayer?.Remove(_resourceReorderPreview);
+        _resourceReorderPreview = null; _resourceReorderList = null; _resourceReorderItems = null; _resourceReorderLayer = null;
     }
 
     private void WorkspaceGraph_OnDragOver(object sender, DragEventArgs args)

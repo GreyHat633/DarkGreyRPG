@@ -110,8 +110,8 @@ public final class DgrsArchiveReaderProbe {
             String manifestJson = manifest();
             StoryPackageManifest parsed = StoryPackageManifest
                 .read(manifestJson.getBytes(StandardCharsets.UTF_8), "valid.dgrs!/manifest.json");
-            require(parsed.isDgrsV1(), "valid DGRS manifest identity was not retained");
-            expectManifestReject(manifestJson.replace("\"format_version\":1", "\"format_version\":999"));
+            require(parsed.isCurrentDgrs(), "valid DGRS manifest identity was not retained");
+            expectManifestReject(manifestJson.replace("\"format_version\":3", "\"format_version\":999"));
             expectManifestReject(
                 manifestJson.replace("\"actors\":[]", "\"actors\":[\"Actors/a.json\",\"actors/A.json\"]"));
             expectManifestReject(manifestJson.replace("\"actors\":[]", "\"actors\":[\"actors:bad/a.json\"]"));
@@ -174,13 +174,8 @@ public final class DgrsArchiveReaderProbe {
     }
 
     private static String manifest() {
-        return "{\"format\":\"dgrs\",\"format_version\":1,\"producer\":\"DarkGreyRPGStudio\","
-            + "\"producer_version\":\"0.3.2.0\",\"schema_version\":1,\"package_id\":\"story\","
-            + "\"package_version\":\"0.3.2.0\",\"story_id\":\"story\",\"story_schema_version\":1,"
-            + "\"required_resources\":{\"story\":\"resources/canonical/stories/story.json\","
-            + "\"actors\":[],\"items\":[],\"item_groups\":[],\"dialogues\":[],\"quests\":[],"
-            + "\"canonical_stories\":[\"resources/canonical/stories/story.json\"],"
-            + "\"canonical_memberships\":[],\"sessions\":[],\"tasks\":[]}}";
+        return CurrentPackageProbeFixtures.manifest(CurrentPackageProbeFixtures.A)
+            .toString();
     }
 
     private static void require(boolean condition, String message) {

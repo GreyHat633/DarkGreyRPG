@@ -3,7 +3,6 @@ using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.IO;
-using DarkGreyRPG.Studio.Core.Stories;
 
 namespace DarkGreyRPG.Studio.Tests;
 
@@ -56,7 +55,7 @@ public sealed class CanonicalStoryLifecycleServiceTests
     }
 
     [TestMethod]
-    public void DeleteRemovesOwnedFilesAndPreservesReferencedResourcesAndLegacyStory()
+    public void DeleteRemovesOwnedFilesAndPreservesCurrentReferencesAndExistingEmptyDirectories()
     {
         using var project = new TestProjectDirectory();
         var store = new CanonicalProjectGraphStore(project.Root);
@@ -69,7 +68,11 @@ public sealed class CanonicalStoryLifecycleServiceTests
         store.Memberships.Replace(new CanonicalStoryMembershipManifest(
             "ST-2345-6789-ABCD-EFGH",
             ownedResources: new CanonicalStoryMembershipSet { Actors = ["ST-2345-6789-ABCD-EFGH~actor~guard"] }));
-        new StoryRepository(project.Root).CreateStory("ST-2345-6789-ABCD-EFGH", "Legacy Story");
+        service.Create("ST-JKLM-NPQR-STUV-WXYZ", "Provider");
+        var actors = new CanonicalStoryActorLifecycleService(store, actorRepository);
+        actors.CreateOwned("ST-JKLM-NPQR-STUV-WXYZ", "ST-JKLM-NPQR-STUV-WXYZ~actor~shared", "Shared");
+        actors.AddReference("ST-2345-6789-ABCD-EFGH", "ST-JKLM-NPQR-STUV-WXYZ~actor~shared");
+        Directory.CreateDirectory(Path.Combine(project.Root, "stories"));
 
         var plan = service.GetDeletionPlan("ST-2345-6789-ABCD-EFGH");
         Assert.IsTrue(plan.CanDelete);
@@ -78,7 +81,9 @@ public sealed class CanonicalStoryLifecycleServiceTests
         Assert.IsFalse(File.Exists(store.Stories.GetPath("ST-2345-6789-ABCD-EFGH")));
         Assert.IsFalse(File.Exists(store.Memberships.GetPath("ST-2345-6789-ABCD-EFGH")));
         Assert.IsFalse(File.Exists(actorRepository.GetActorPath("ST-2345-6789-ABCD-EFGH~actor~guard")));
-        Assert.IsTrue(File.Exists(Path.Combine(project.Root, "stories", "ST-2345-6789-ABCD-EFGH.json")));
+        Assert.IsTrue(Directory.Exists(Path.Combine(project.Root, "stories")));
+        Assert.IsTrue(File.Exists(actorRepository.GetActorPath("ST-JKLM-NPQR-STUV-WXYZ~actor~shared")));
+        Assert.IsTrue(File.Exists(store.Stories.GetPath("ST-JKLM-NPQR-STUV-WXYZ")));
     }
 
     [TestMethod]

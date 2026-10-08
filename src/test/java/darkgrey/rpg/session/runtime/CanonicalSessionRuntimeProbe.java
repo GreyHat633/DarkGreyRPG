@@ -29,7 +29,7 @@ public final class CanonicalSessionRuntimeProbe {
         verifyLinearStartLineEnd();
         verifyPagedLines();
         verifyExactStartAndChoiceHistory();
-        verifyLogicActivationAndChoiceOutputs();
+        verifyLogicActivationAndRetiredChoiceRejection();
         verifyFlowJudgment();
         verifySnapshotDetachAndRestore();
         verifyFailures();
@@ -147,12 +147,7 @@ public final class CanonicalSessionRuntimeProbe {
                     node(
                         "choice",
                         "choice",
-                        ports(
-                            in("flow_in"),
-                            out("flow_accept"),
-                            out("flow_decline"),
-                            logicOut("accept"),
-                            logicOut("decline")),
+                        ports(in("flow_in"), out("flow_accept"), out("flow_decline")),
                         choiceProps()),
                     node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done"))),
                 Arrays.asList(
@@ -162,7 +157,7 @@ public final class CanonicalSessionRuntimeProbe {
                     edge("choice", "flow_decline", "end", "flow_in"))));
     }
 
-    private static void verifyLogicActivationAndChoiceOutputs() {
+    private static void verifyLogicActivationAndRetiredChoiceRejection() {
         CanonicalGraphResource condition = session(
             "activation",
             new CanonicalGraph(
@@ -191,21 +186,35 @@ public final class CanonicalSessionRuntimeProbe {
                     .getFinalEndPortId()),
             "false activation chose true branch");
 
-        CanonicalGraphResource choice = session(
-            "logic-choice",
+        CanonicalGraphResource current = pagedSession("[]");
+        CanonicalGraphNode original = current.getGraph()
+            .getNodes()
+            .get(2);
+        List<CanonicalGraphPort> retiredPorts = new java.util.ArrayList<CanonicalGraphPort>(original.getPorts());
+        retiredPorts.add(logicOut("accept"));
+        List<CanonicalGraphNode> retiredNodes = new java.util.ArrayList<CanonicalGraphNode>(
+            current.getGraph()
+                .getNodes());
+        retiredNodes.set(2, node(original.getId(), original.getType(), retiredPorts, original.getProperties()));
+        final CanonicalGraphResource retired = session(
+            "retired-choice",
+            new CanonicalGraph(
+                retiredNodes,
+                current.getGraph()
+                    .getConnections()));
+        expectFailure(new Runnable() {
+
+            @Override
+            public void run() {
+                CanonicalSessionRuntime.start(retired);
+            }
+        }, "session.choice.output_logic.retired");
+        // General Logic nodes still use current Start activation, independently of Choice.
+        CanonicalGraphResource logic = session(
+            "logic",
             new CanonicalGraph(
                 Arrays.asList(
                     node("start", "start", startPorts(), empty()),
-                    node(
-                        "choice",
-                        "choice",
-                        ports(
-                            in("flow_in"),
-                            out("flow_accept"),
-                            out("flow_decline"),
-                            logicOut("accept"),
-                            logicOut("decline")),
-                        choiceProps()),
                     node("or", "or", ports(logicIn("left"), logicIn("right"), logicOut("logic_out")), empty()),
                     node("and", "and", ports(logicIn("left"), logicIn("right"), logicOut("logic_out")), empty()),
                     node("not", "not", ports(logicIn("logic_in"), logicOut("logic_out")), empty()),
@@ -221,60 +230,34 @@ public final class CanonicalSessionRuntimeProbe {
                         props("port_id", "negated", "display_name", "Negated")),
                     node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done"))),
                 Arrays.asList(
-                    edge("start", "flow_out", "choice", "flow_in"),
-                    edge("choice", "flow_accept", "end", "flow_in"),
-                    edge("choice", "flow_decline", "end", "flow_in"),
-                    logicEdge("choice", "accept", "or", "left"),
-                    logicEdge("choice", "decline", "or", "right"),
+                    edge("start", "flow_out", "end", "flow_in"),
+                    logicEdge("start", "logic_out", "or", "left"),
                     logicEdge("start", "logic_out", "and", "left"),
-                    logicEdge("choice", "accept", "and", "right"),
+                    logicEdge("start", "logic_out", "and", "right"),
                     logicEdge("and", "logic_out", "not", "logic_in"),
                     logicEdge("or", "logic_out", "published", "logic_in"),
                     logicEdge("not", "logic_out", "negated", "logic_in"))));
-        CanonicalSessionRuntime runtime = CanonicalSessionRuntime.start(choice);
-        require(
-            Boolean.FALSE.equals(
-                runtime.getPublicLogicOutputs()
-                    .get("picked")),
-            "unselected choice leaked true state");
-        require(
-            Boolean.FALSE.equals(
-                runtime.getInternalLogicValues()
-                    .get("and.logic_out")),
-            "unconnected And input was not false");
-        runtime.choose("accept");
-        require(
-            Boolean.TRUE.equals(
-                runtime.getInternalLogicValues()
-                    .get("choice.accept")),
-            "selected choice state missing");
-        require(
-            Boolean.FALSE.equals(
-                runtime.getInternalLogicValues()
-                    .get("choice.decline")),
-            "unselected choice state changed");
-        require(
-            Boolean.TRUE.equals(
-                runtime.getPublicLogicOutputs()
-                    .get("picked")),
-            "public Logic output did not publish Or state");
-        require(
-            Boolean.TRUE.equals(
-                runtime.getPublicLogicOutputs()
-                    .get("negated")),
-            "Not did not invert And false");
-        CanonicalSessionRuntime activated = CanonicalSessionRuntime.start(choice, true);
-        activated.choose("accept");
-        require(
-            Boolean.TRUE.equals(
-                activated.getInternalLogicValues()
-                    .get("and.logic_out")),
-            "And did not combine two true inputs");
-        require(
-            Boolean.FALSE.equals(
-                activated.getPublicLogicOutputs()
-                    .get("negated")),
-            "Not did not invert And true");
+        for (boolean active : new boolean[] { false, true }) {
+            CanonicalSessionRuntime runtime = CanonicalSessionRuntime.start(logic, active);
+            require(
+                Boolean.valueOf(active)
+                    .equals(
+                        runtime.getPublicLogicOutputs()
+                            .get("picked")),
+                "Or activation lost");
+            require(
+                Boolean.valueOf(active)
+                    .equals(
+                        runtime.getInternalLogicValues()
+                            .get("and.logic_out")),
+                "And activation lost");
+            require(
+                Boolean.valueOf(!active)
+                    .equals(
+                        runtime.getPublicLogicOutputs()
+                            .get("negated")),
+                "Not inversion lost");
+        }
     }
 
     private static void verifyFlowJudgment() {
@@ -386,11 +369,7 @@ public final class CanonicalSessionRuntimeProbe {
                 "line",
                 ports(in("flow_in"), out("flow_out")),
                 props("speaker_actor_id", "a", "text", "First")),
-            node(
-                "choice",
-                "choice",
-                ports(in("flow_in"), out("flow_accept"), out("flow_decline"), logicOut("accept"), logicOut("decline")),
-                choiceProps()),
+            node("choice", "choice", ports(in("flow_in"), out("flow_accept"), out("flow_decline")), choiceProps()),
             node(
                 "line_b",
                 "line",
@@ -456,11 +435,7 @@ public final class CanonicalSessionRuntimeProbe {
     private static void verifySnapshotDetachAndRestore() {
         CanonicalGraphResource resource = session(
             node("start", "start", startPorts(), empty()),
-            node(
-                "choice",
-                "choice",
-                ports(in("flow_in"), out("flow_accept"), out("flow_decline"), logicOut("accept"), logicOut("decline")),
-                choiceProps()),
+            node("choice", "choice", ports(in("flow_in"), out("flow_accept"), out("flow_decline")), choiceProps()),
             node("end", "end", ports(in("flow_in")), props("port_id", "yes_end", "display_name", "Yes")),
             edge("start", "flow_out", "choice", "flow_in"),
             edge("choice", "flow_accept", "end", "flow_in"),
@@ -600,18 +575,17 @@ public final class CanonicalSessionRuntimeProbe {
             edge("start", "flow_out", "choice", "flow_in"),
             edge("choice", "flow_yes", "end", "flow_in"));
         require(
-            "".equals(
-                CanonicalSessionRuntime.start(blankPrompt)
-                    .currentStep()
-                    .getPrompt()),
-            "Blank Studio Choice prompt was not preserved");
+            CanonicalSessionRuntime.start(blankPrompt)
+                .currentStep()
+                .getKind() == CanonicalSessionStep.Kind.CHOICE,
+            "Legacy Choice prompt must not prevent choice execution");
 
         CanonicalGraphResource unknown = session(
             node("start", "start", startPorts(), empty()),
             node(
                 "choice",
                 "choice",
-                ports(in("flow_in"), out("flow_yes"), logicOut("yes")),
+                ports(in("flow_in"), out("flow_yes")),
                 rawProps("prompt", "\"Pick\"", "options", "[{}]")),
             edge("start", "flow_out", "choice", "flow_in"));
         expectFailure(new Runnable() {
@@ -627,7 +601,7 @@ public final class CanonicalSessionRuntimeProbe {
             node(
                 "choice",
                 "choice",
-                ports(in("flow_in"), out("flow_yes"), logicOut("yes")),
+                ports(in("flow_in"), out("flow_yes")),
                 rawProps(
                     "prompt",
                     "\"Pick\"",
@@ -651,7 +625,7 @@ public final class CanonicalSessionRuntimeProbe {
             node(
                 "choice",
                 "choice",
-                ports(in("flow_in"), out("flow_yes"), logicOut("a"), logicOut("b")),
+                ports(in("flow_in"), out("flow_yes")),
                 rawProps(
                     "prompt",
                     "\"Pick\"",
@@ -674,7 +648,7 @@ public final class CanonicalSessionRuntimeProbe {
             node(
                 "choice",
                 "choice",
-                ports(in("flow_in"), out("flow_yes"), out("unused"), logicOut("yes")),
+                ports(in("flow_in"), out("flow_yes"), out("unused")),
                 rawProps(
                     "prompt",
                     "\"Pick\"",
@@ -715,7 +689,7 @@ public final class CanonicalSessionRuntimeProbe {
             node(
                 "choice",
                 "choice",
-                ports(in("flow_in"), out("flow_yes"), logicOut("yes"), logicOut("extra")),
+                ports(in("flow_in"), out("flow_yes"), logicOut("extra")),
                 rawProps(
                     "prompt",
                     "\"Pick\"",
@@ -730,7 +704,7 @@ public final class CanonicalSessionRuntimeProbe {
             public void run() {
                 CanonicalSessionRuntime.start(extraLogicOutput);
             }
-        }, "session.choice.option.mapping");
+        }, "session.choice.output_logic.retired");
 
         CanonicalGraphResource wrongLogicKind = session(
             node("start", "start", startPorts(), empty()),
@@ -752,7 +726,7 @@ public final class CanonicalSessionRuntimeProbe {
             public void run() {
                 CanonicalSessionRuntime.start(wrongLogicKind);
             }
-        }, "session.choice.option.logic.kind");
+        }, "session.choice.option.mapping");
 
         CanonicalGraphResource malformedLine = session(
             node("start", "start", startPorts(), empty()),
@@ -851,19 +825,20 @@ public final class CanonicalSessionRuntimeProbe {
                     node(
                         "choice",
                         "choice",
-                        ports(in("flow_in"), out("flow_yes"), logicOut("yes")),
+                        ports(in("flow_in"), out("flow_yes")),
                         rawProps(
                             "prompt",
                             "\"Pick\"",
                             "options",
                             "[{\"option_id\":\"yes\",\"display_text\":\"Yes\",\"flow_port_id\":\"flow_yes\"}]")),
+                    node("other_logic", "not", ports(logicIn("logic_in"), logicOut("logic_out")), empty()),
                     node("and", "and", ports(logicIn("left"), logicIn("right"), logicOut("logic_out")), empty()),
                     node("end", "end", ports(in("flow_in")), props("port_id", "done", "display_name", "Done"))),
                 Arrays.asList(
                     edge("start", "flow_out", "choice", "flow_in"),
                     edge("choice", "flow_yes", "end", "flow_in"),
                     logicEdge("start", "logic_out", "and", "left"),
-                    logicEdge("choice", "yes", "and", "left"))));
+                    logicEdge("other_logic", "logic_out", "and", "left"))));
         expectFailure(new Runnable() {
 
             @Override

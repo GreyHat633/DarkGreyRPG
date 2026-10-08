@@ -3,7 +3,7 @@ package darkgrey.rpg.graph.canonical;
 /** Immutable current-identity canonical Story/Session/Task envelope. */
 public final class CanonicalGraphResource {
 
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int CURRENT_SCHEMA_VERSION = 3;
 
     private final int schemaVersion;
     private final CanonicalGraphResourceKind resourceKind;

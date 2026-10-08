@@ -537,6 +537,17 @@ public final class CanonicalSessionWorldStateNbtCodec {
     private static void requireKeys(NBTTagCompound tag, Set<String> allowed, String label) {
         if (tag == null) throw malformed(label);
         Set<String> keys = new HashSet<String>(tag.func_150296_c());
+        if ("world state".equals(label) && keys.remove("line_contexts")) {
+            requireType(tag, "line_contexts", COMPOUND);
+            NBTTagCompound contexts = tag.getCompoundTag("line_contexts");
+            for (String key : contexts.func_150296_c()) {
+                requireType(contexts, key, 7);
+                darkgrey.rpg.network.message.canonical.CanonicalSessionFrame frame = CanonicalSessionSavedData
+                    .decodeLineContext(contexts.getByteArray(key));
+                if (!Long.toString(frame.getTransportId())
+                    .equals(key)) throw malformed("Line context transport");
+            }
+        }
         if ("world state".equals(label) && keys.remove("presentation_texts")) {
             if (!tag.hasKey("presentation_texts", COMPOUND)) throw malformed("presentation_texts");
             NBTTagCompound presentations = tag.getCompoundTag("presentation_texts");

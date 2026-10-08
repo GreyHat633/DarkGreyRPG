@@ -36,20 +36,16 @@ public sealed class ActorIdentityDialogViewModelTests
     public void StoryIdentityIsReadOnlyWhileDisplayNameRemainsEditable()
     {
         const string uid = "ST-2345-6789-ABCD-EFGH";
-        var viewModel = ResourceIdentityDialogViewModel.ForCreate(ProjectResourceType.Story, uid);
-        Assert.IsTrue(viewModel.IsStoryIdentity);
+        var viewModel = new StoryCreationViewModel(uid);
+        Assert.AreEqual(uid, viewModel.StoryUid.Value);
+        Assert.IsFalse(typeof(StoryCreationViewModel).GetProperty(nameof(StoryCreationViewModel.StoryUid))!.CanWrite);
         Assert.AreEqual(string.Empty, viewModel.DisplayName);
         Assert.IsFalse(viewModel.CanConfirm);
-        viewModel.Id = "ST-JKLM-NPQR-STUV-WXYZ";
-        viewModel.EditableId = "Author:other";
-        viewModel.ApplySuggestionCommand.Execute(null);
-        Assert.AreEqual(uid, viewModel.Id);
-        Assert.IsFalse(viewModel.HasSuggestion);
         viewModel.DisplayName = "";
         Assert.IsFalse(viewModel.CanConfirm);
         viewModel.DisplayName = "新名称";
         Assert.IsTrue(viewModel.CanConfirm);
-        Assert.AreEqual(uid, viewModel.Id);
+        Assert.AreEqual(uid, viewModel.StoryUid.Value);
     }
 
     [TestMethod]
@@ -57,9 +53,7 @@ public sealed class ActorIdentityDialogViewModelTests
     {
         foreach (var id in new[] { "new_story", "GreyHat_:new_story", "ST-0000-0000-0000-0000" })
         {
-            var viewModel = ResourceIdentityDialogViewModel.ForCreate(ProjectResourceType.Story, id);
-            Assert.IsFalse(viewModel.CanConfirm, id);
-            Assert.IsFalse(viewModel.HasSuggestion, id);
+            Assert.ThrowsExactly<ArgumentException>(() => new StoryCreationViewModel(id));
         }
     }
 }

@@ -11,7 +11,7 @@ public sealed class GraphAccessibilityTests
     [STATestMethod]
     public void SharedCanvasPeersExposeDeclaredAutomationIds()
     {
-        AssertCanvasAutomationId(new StoryFlowEditorView(), "CanvasViewport", "StoryFlowCanvasViewport");
+        AssertAutomationId(new CanonicalGraphEditorView().ViewportElement, "CanonicalGraphViewport");
         var projectGraph = new ProjectGraphView();
         var editor = projectGraph.FindName("Editor") as CanonicalGraphEditorView;
         Assert.IsNotNull(editor);

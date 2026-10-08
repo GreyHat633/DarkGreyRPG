@@ -18,6 +18,13 @@ import darkgrey.rpg.proxy.CommonProxy;
 public final class ClientProxy extends CommonProxy {
 
     @Override
+    public void openCanonicalTaskView(int dimension) {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft.thePlayer != null && minecraft.theWorld != null && minecraft.thePlayer.dimension == dimension)
+            minecraft.displayGuiScreen(new darkgrey.rpg.client.gui.GuiCanonicalTaskScreen());
+    }
+
+    @Override
     public void acceptPackageManager(long request, net.minecraft.nbt.NBTTagCompound data) {
         ClientPackageManager.accept(request, data);
     }
@@ -104,8 +111,8 @@ public final class ClientProxy extends CommonProxy {
 
     @Override
     public void openNominatorEntityGui(int entityId, UUID entityUuid, String displayName, String entityType,
-        String individual, List<String> groups, List<String> typeGroups, String story, long revision,
-        long catalogRevision, darkgrey.rpg.nominator.NominatorCatalog catalog) {
+        String individual, List<String> groups, String story, long revision, long catalogRevision,
+        darkgrey.rpg.nominator.NominatorCatalog catalog) {
         Minecraft.getMinecraft()
             .displayGuiScreen(
                 new GuiNominatorEntity(
@@ -115,7 +122,6 @@ public final class ClientProxy extends CommonProxy {
                     entityType,
                     individual,
                     groups,
-                    typeGroups,
                     story,
                     revision,
                     catalogRevision,

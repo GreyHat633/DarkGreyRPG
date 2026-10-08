@@ -64,14 +64,13 @@ public static class CurrentProjectValidator
                     foreach (var id in node.Properties.Values.SelectMany(Graphs.Definitions.DynamicContentText.ItemReferences))
                         if (!declared.Contains(new(DgrResourceKind.Item, id)) && !declared.Contains(new(DgrResourceKind.ItemGroup, id)))
                             throw new InvalidDataException($"动态内容引用未声明物品 '{id}'。");
-                    void Require(string field, DgrResourceKind kind, bool nativeTarget = false, bool allowItemGroup = false)
+                    void Require(string field, DgrResourceKind kind, bool allowItemGroup = false)
                     {
                         if (!node.Properties.TryGetValue(field, out var value) || value.ValueKind != JsonValueKind.String) return;
                         var id = value.GetString()!;
                         if (id.Length == 0) return; // An unfinished authoring selection remains editable.
                         if (declared.Contains(new(kind, id))) return;
                         if (allowItemGroup && declared.Contains(new(DgrResourceKind.ItemGroup, id))) return;
-                        if (nativeTarget && !ResourceAddress.IsKey(id)) return;
                         throw new InvalidDataException($"Story '{membership.StoryId}', node '{node.Id}' references undeclared {kind} '{id}'.");
                     }
                     if (graph.ResourceKind == GraphResourceKind.Story)
@@ -100,9 +99,9 @@ public static class CurrentProjectValidator
                     {
                         switch (Text(node, "objective_type"))
                         {
-                            case "kill_entity": Require("entity", DgrResourceKind.Actor, nativeTarget: true); break;
+                            case "kill_entity": Require("entity", DgrResourceKind.Actor); break;
                             case "submit_item": Require("actor_id", DgrResourceKind.Actor); goto case "collect_item";
-                            case "collect_item": Require("item", DgrResourceKind.Item, nativeTarget: true, allowItemGroup: true); break;
+                            case "collect_item": Require("item", DgrResourceKind.Item, allowItemGroup: true); break;
                             case "interact_actor": Require("actor_id", DgrResourceKind.Actor); break;
                         }
                     }

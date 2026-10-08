@@ -60,110 +60,13 @@
             </Setter>
         </Style>
 
-        <DataTemplate x:Key="ActorEditorTemplate">
-            <Grid Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" /><RowDefinition Height="14" /><RowDefinition Height="Auto" /><RowDefinition Height="12" />
-                    <RowDefinition Height="Auto" /><RowDefinition Height="12" /><RowDefinition Height="*" /><RowDefinition Height="12" />
-                    <RowDefinition Height="Auto" /><RowDefinition Height="16" /><RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <DockPanel Grid.Row="0">
-                    <TextBlock DockPanel.Dock="Right" Margin="12,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SaveStateText}" />
-                    <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding DisplayName}" />
-                </DockPanel>
-                <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="角色 ID" /><TextBox Grid.Column="1" Padding="8,5" IsReadOnly="True" Text="{Binding Id, Mode=OneWay}" /></Grid>
-                <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="显示名称" /><TextBox Grid.Column="1" Padding="8,5" AutomationProperties.Name="角色显示名称" Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" /></Grid>
-                <ScrollViewer Grid.Row="6" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <StackPanel>
-                            <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding SupportsPortraits}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                        <TextBlock Text="默认头像" FontWeight="SemiBold"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
-                            <Button Content="导入图片…" Tag="default" Click="ImportActorPortrait_OnClick"/>
-                            <Button Content="移除默认头像" Margin="6,0,0,0" Click="RemoveActorDefaultPortrait_OnClick"/>
-                            <TextBlock Margin="8,4,0,0" Text="{Binding DefaultPortraitStatus}"/>
-                        </StackPanel>
-                        <TextBlock Text="头像变体" FontWeight="SemiBold" Margin="0,10,0,4"/>
-                        <ListBox Height="100" ItemsSource="{Binding PortraitVariants}" SelectedItem="{Binding SelectedPortraitVariant}" DisplayMemberPath="Name"/>
-                        <TextBlock Text="变体名称" Margin="0,6,0,3"/>
-                        <TextBox Text="{Binding PortraitVariantName, UpdateSourceTrigger=PropertyChanged}"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <Button Content="导入为新变体…" Tag="variant" Click="ImportActorPortrait_OnClick"/>
-                            <Button Content="重命名选中变体" Margin="6,0,0,0" Click="RenameActorPortrait_OnClick"/>
-                            <Button Content="移除选中变体" Margin="6,0,0,0" Click="RemoveActorPortrait_OnClick"/>
-                        </StackPanel>
-                        </StackPanel>
-                        <TextBlock Text="备注" Margin="0,10,0,3"/>
-                        <TextBox MinHeight="70" AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </ScrollViewer>
-                <Grid Grid.Row="8"><Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock VerticalAlignment="Center" Text="标签" /><TextBox Grid.Column="1" Padding="8,5" ToolTip="使用逗号分隔多个标签" Text="{Binding TagsText, UpdateSourceTrigger=PropertyChanged}" /></Grid>
-                <DockPanel Grid.Row="10"><Button DockPanel.Dock="Right" Width="96" Height="32" Command="{Binding DataContext.SaveActorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="保存角色" Content="保存" /><TextBlock Margin="0,7,12,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Text="{Binding ValidationText}" /></DockPanel>
-            </Grid>
-        </DataTemplate>
-        <DataTemplate x:Key="DialogueEditorTemplate"><views:DialogueEditorView /></DataTemplate>
-        <DataTemplate x:Key="QuestEditorTemplate"><views:QuestEditorView /></DataTemplate>
+
+
+
         <Geometry x:Key="ReferenceIconGeometry">M3,6 C3,3.8 4.8,2 7,2 H9 V4 H7 C5.9,4 5,4.9 5,6 C5,7.1 5.9,8 7,8 H9 V10 H7 C4.8,10 3,8.2 3,6 Z M9,6 C9,4.9 9.9,4 11,4 H13 C15.2,4 17,5.8 17,8 C17,10.2 15.2,12 13,12 H11 V10 H13 C14.1,10 15,9.1 15,8 C15,6.9 14.1,6 13,6 H11 V8 H9 V6 Z M7,5 H13 V7 H7 V5 Z</Geometry>
         <Geometry x:Key="MissingIconGeometry">M10,1 L19,18 H1 Z M10,6 V12 M10,15 V16</Geometry>
-        <DataTemplate x:Key="StoryActorMembershipTemplate">
-            <Border MinHeight="56" Margin="0,0,0,4" Padding="8,5" CornerRadius="3" ToolTip="{Binding MembershipTooltip}">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
-                        <Setter Property="BorderBrush" Value="Transparent" />
-                        <Setter Property="BorderThickness" Value="3,0,0,0" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsMouseOver}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" /></DataTrigger>
-                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" /></DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <DockPanel LastChildFill="True">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource AccentFillColorDefaultBrush}" Data="{StaticResource ReferenceIconGeometry}">
-                            <Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding IsReferenced}" Value="True" /><Condition Binding="{Binding IsResolved}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Path.Style>
-                        </Path>
-                        <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource SystemFillColorCautionBrush}" StrokeThickness="1.5" Data="{StaticResource MissingIconGeometry}">
-                            <Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsMissing}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Path.Style>
-                        </Path>
-                    </StackPanel>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Margin="0,2,0,0" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                </DockPanel>
-            </Border>
-        </DataTemplate>
-        <DataTemplate x:Key="StoryResourceMembershipTemplate">
-            <Border MinHeight="56" Margin="0,0,0,4" Padding="8,5" CornerRadius="3" ToolTip="{Binding MembershipTooltip}">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
-                        <Setter Property="BorderBrush" Value="Transparent" />
-                        <Setter Property="BorderThickness" Value="3,0,0,0" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsMouseOver}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" /></DataTrigger>
-                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" /></DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <DockPanel LastChildFill="True">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource AccentFillColorDefaultBrush}" Data="{StaticResource ReferenceIconGeometry}">
-                            <Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding IsReferenced}" Value="True" /><Condition Binding="{Binding IsResolved}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Path.Style>
-                        </Path>
-                        <Path Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource SystemFillColorCautionBrush}" StrokeThickness="1.5" Data="{StaticResource MissingIconGeometry}">
-                            <Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsMissing}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Path.Style>
-                        </Path>
-                    </StackPanel>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Margin="0,2,0,0" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Id}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Margin="0,2,0,0" FontSize="11" Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="{Binding DraftBadge}" />
-                    </StackPanel>
-                </DockPanel>
-            </Border>
-        </DataTemplate>
+
+
             </ResourceDictionary>
     </Window.Resources>
     <Window.InputBindings>
@@ -173,7 +76,6 @@
         <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAllCommand}" />
         <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCurrentCommand}" />
         <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCurrentCommand}" />
-        <KeyBinding Key="D" Modifiers="Control" Command="{Binding DuplicateActorCommand}" />
         <KeyBinding Key="Delete" Command="{Binding DeleteCurrentResourceCommand}" />
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static ApplicationCommands.Find}" />
     </Window.InputBindings>
@@ -219,7 +121,6 @@
                 <MenuItem Header="撤销" Command="{Binding UndoCurrentCommand}" InputGestureText="Ctrl+Z" />
                 <MenuItem Header="重做" Command="{Binding RedoCurrentCommand}" InputGestureText="Ctrl+Y" />
                 <Separator />
-                <MenuItem Header="复制资源" Command="{Binding DuplicateActorCommand}" InputGestureText="Ctrl+D" />
                 <MenuItem Header="{Binding SelectedStoryResourceActionText}" Command="{Binding DeleteCurrentResourceCommand}" InputGestureText="Delete" />
                 <MenuItem Header="查找" Command="{x:Static ApplicationCommands.Find}" InputGestureText="Ctrl+F" />
             </MenuItem>
@@ -360,6 +261,8 @@
                     <Border Padding="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4">
                         <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding BottomPanel.SelectedTab.Page}" Value="Problems"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                        <DockPanel>
+                        <Button DockPanel.Dock="Top" Content="清空问题" Command="{Binding Problems.ClearCommand}" HorizontalAlignment="Right" Margin="0,0,0,8" AutomationProperties.AutomationId="ClearProblemsButton" />
                         <ListView x:Name="ProblemList" ItemsSource="{Binding Problems.Problems}" BorderThickness="0" MouseDoubleClick="ProblemList_OnMouseDoubleClick">
                             <ListView.View>
                                 <GridView>
@@ -370,6 +273,7 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
+                        </DockPanel>
                     </Border>
 
                     <Border Padding="18" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
@@ -398,7 +302,7 @@
                                 <Style.Triggers>
                                     <MultiDataTrigger>
                                         <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" />
+
                                             <Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" />
                                         </MultiDataTrigger.Conditions>
                                         <Setter Property="Visibility" Value="Visible" />
@@ -531,22 +435,7 @@
                         </views:StoryNavigationList>
                     </DockPanel>
 
-                    <DockPanel>
-                        <DockPanel.Style>
-                            <Style TargetType="DockPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="True" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
-                        </DockPanel.Style>
-                        <Button DockPanel.Dock="Top" Margin="0,0,0,12" Padding="8,6" HorizontalContentAlignment="Left" Command="{Binding ShowProjectHomeCommand}" Content="← 返回项目首页" />
-                        <TextBlock DockPanel.Dock="Top" FontSize="17" FontWeight="SemiBold" Text="{Binding StoryWorkspace.StoryDisplayName}" TextWrapping="Wrap" />
-                        <TextBlock DockPanel.Dock="Top" Margin="0,3,0,12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryWorkspace.StoryId}" />
-                        <ListBox ItemsSource="{Binding StoryWorkspace.Routes}" SelectedItem="{Binding StoryWorkspace.SelectedRoute, Mode=TwoWay}"
-                                 BorderThickness="0" HorizontalContentAlignment="Stretch" Background="Transparent"
-                                 AutomationProperties.Name="故事页面列表">
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem"><Setter Property="Padding" Value="10,9" /><Setter Property="Margin" Value="0,2" /><Setter Property="HorizontalContentAlignment" Value="Stretch" /><Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" /></Trigger><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" /></Trigger></Style.Triggers></Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate><DataTemplate><TextBlock FontWeight="SemiBold" Text="{Binding Title}" /></DataTemplate></ListBox.ItemTemplate>
-                        </ListBox>
-                    </DockPanel>
+
 
                 </Grid>
             </Border>
@@ -567,7 +456,7 @@
 
                     <Grid>
                         <Grid.Style>
-                            <Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding HasProject}" Value="True" /><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="False" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /><Condition Binding="{Binding ProjectHome.IsHomeVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
+                            <Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding HasProject}" Value="True" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /><Condition Binding="{Binding ProjectHome.IsHomeVisible}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style>
                         </Grid.Style>
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                         <DockPanel>
@@ -658,104 +547,7 @@
                         <graphViews:CanonicalStoryWorkspaceView Workspace="{Binding CanonicalStoryWorkspace}" />
                     </Grid>
 
-                    <Grid>
-                        <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding StoryWorkspace.HasStory}" Value="True" /><Condition Binding="{Binding IsCanonicalStoryWorkspaceVisible}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style>
-                        <Grid.RowDefinitions><RowDefinition Height="*" /></Grid.RowDefinitions>
-                        <Grid Grid.Row="0">
-                            <Grid>
-                                <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding StoryWorkspace.CurrentRoute}" Value="Actors"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
-                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                                <Grid Margin="0,0,0,12" AutomationProperties.Name="Story 角色页面命令栏" AutomationProperties.AutomationId="StoryActorCommandBar">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                    <TextBlock MaxWidth="220" VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding StoryWorkspace.StoryDisplayName}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Grid.Column="1" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="/ 角色" />
-                                    <TextBox Grid.Column="2" MinWidth="80" Padding="8,5" VerticalContentAlignment="Center" AutomationProperties.Name="搜索故事角色" Text="{Binding StoryWorkspace.Actors.SearchText, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Grid.Column="3" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryWorkspace.Actors.FilteredMemberships.Count, StringFormat={}{0} 个角色}" AutomationProperties.Name="当前过滤角色数量" />
-                                    <StackPanel Grid.Column="4" Margin="12,0,0,0" Orientation="Horizontal">
-                                        <Button MinWidth="88" Height="32" Margin="0,0,8,0" Command="{Binding NewActorCommand}" Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="创建角色" Content="+ 创建" />
-                                        <Button MinWidth="76" Height="32" Command="{Binding ReferenceActorCommand}" AutomationProperties.Name="引用角色" Content="引用" />
-                                    </StackPanel>
-                                </Grid>
-                                <Grid Grid.Row="1">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="{Binding StoryResourceLibraryWidth, ElementName=RootWindow, Mode=TwoWay}" MinWidth="220" MaxWidth="380" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                    <Grid>
-                                        <ListBox ItemsSource="{Binding StoryWorkspace.Actors.FilteredMemberships}"
-                                                 SelectedItem="{Binding SelectedStoryActor, Mode=TwoWay}"
-                                                 ItemTemplate="{StaticResource StoryActorMembershipTemplate}"
-                                                 BorderThickness="0" HorizontalContentAlignment="Stretch" AutomationProperties.Name="故事角色列表"
-                                                 ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
-                                            <ListBox.ItemContainerStyle>
-                                                <Style TargetType="ListBoxItem"><Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="0" /><Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /></Style>
-                                            </ListBox.ItemContainerStyle>
-                                        </ListBox>
-                                    </Grid>
-                                    <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" AutomationProperties.Name="调整 Story 角色资源库宽度" />
-                                    <Border Grid.Column="2" Padding="16" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4">
-                                        <Grid>
-                                            <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                                            <Grid>
-                                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="选择本故事中的角色开始编辑。">
-                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding CurrentActor}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                                </TextBlock>
-                                                <ContentControl Content="{Binding CurrentActor}" ContentTemplate="{StaticResource ActorEditorTemplate}">
-                                                    <ContentControl.Style><Style TargetType="ContentControl"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><Trigger Property="Content" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger></Style.Triggers></Style></ContentControl.Style>
-                                                </ContentControl>
-                                            </Grid>
-                                            <StackPanel Grid.Row="1" Margin="0,12,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
-                                                <Button MinWidth="96" Height="32" Margin="0,0,8,0" Command="{Binding ViewActorReferencesCommand}" Content="查看引用" />
-                                                <Button MinWidth="96" Height="32" Margin="0,0,8,0" Command="{Binding RemoveActorReferenceCommand}" Content="解除引用" />
-                                                <Button MinWidth="96" Height="32" Command="{Binding DeleteActorCommand}" Content="删除资源" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </Grid>
-                            </Grid>
 
-                            <Grid>
-                                <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding StoryWorkspace.CurrentRoute}" Value="Dialogues"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
-                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                                <Grid Margin="0,0,0,12" AutomationProperties.Name="Story 对话页面命令栏" AutomationProperties.AutomationId="StoryDialogueCommandBar">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                    <TextBlock MaxWidth="220" VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding StoryWorkspace.StoryDisplayName}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Grid.Column="1" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="/ 对话" />
-                                    <TextBox Grid.Column="2" MinWidth="80" Padding="8,5" VerticalContentAlignment="Center" AutomationProperties.Name="搜索 Dialogue" Text="{Binding StoryWorkspace.Dialogues.SearchText, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Grid.Column="3" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryWorkspace.Dialogues.FilteredItems.Count, StringFormat={}{0} 个对话}" AutomationProperties.Name="当前过滤对话数量" />
-                                    <StackPanel Grid.Column="4" Margin="12,0,0,0" Orientation="Horizontal"><Button MinWidth="88" Height="32" Margin="0,0,8,0" Command="{Binding NewStoryResourceCommand}" Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="创建 Dialogue" Content="+ 创建" /><Button MinWidth="104" Height="32" Margin="0,0,8,0" Command="{Binding DuplicateStoryResourceCommand}" AutomationProperties.Name="从现有复制 Dialogue" Content="从现有复制" /><Button MinWidth="76" Height="32" Command="{Binding ReferenceStoryResourceCommand}" AutomationProperties.Name="引用 Dialogue" Content="引用" /></StackPanel>
-                                </Grid>
-                                <Grid Grid.Row="1">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="{Binding StoryResourceLibraryWidth, ElementName=RootWindow, Mode=TwoWay}" MinWidth="220" MaxWidth="380" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                    <Grid><ListBox PreviewMouseRightButtonDown="StoryResourceList_OnPreviewMouseRightButtonDown" ItemsSource="{Binding StoryWorkspace.Dialogues.FilteredItems}" SelectedItem="{Binding SelectedStoryResource, Mode=TwoWay}" ItemTemplate="{StaticResource StoryResourceMembershipTemplate}" BorderThickness="0" HorizontalContentAlignment="Stretch" AutomationProperties.Name="故事 Dialogue 列表" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"><ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="0" /><Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /></Style></ListBox.ItemContainerStyle></ListBox></Grid>
-                                    <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" AutomationProperties.Name="调整 Story 对话资源库宽度" />
-                                    <Border Grid.Column="2" Padding="16" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4"><Grid><Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><Grid><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="选择对话开始编辑。"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding CurrentDialogue}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><ContentControl HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Content="{Binding CurrentDialogue}" ContentTemplate="{StaticResource DialogueEditorTemplate}"><ContentControl.Style><Style TargetType="ContentControl"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><Trigger Property="Content" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger></Style.Triggers></Style></ContentControl.Style></ContentControl></Grid><StackPanel Grid.Row="1" Margin="0,12,0,0" Orientation="Horizontal" HorizontalAlignment="Right"><Button MinWidth="96" Height="32" Margin="0,0,8,0" Command="{Binding ViewStoryResourceReferencesCommand}" Content="查看引用" /><Button MinWidth="96" Height="32" Margin="0,0,8,0" Command="{Binding RemoveStoryResourceReferenceCommand}" Content="解除引用" /><Button MinWidth="96" Height="32" Command="{Binding DeleteStoryResourceCommand}" Content="{Binding SelectedStoryResourceActionText}" /></StackPanel></Grid></Border>
-                                </Grid>
-                            </Grid>
-
-                            <Grid>
-                                <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding StoryWorkspace.CurrentRoute}" Value="Quests"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
-                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                                <Grid Margin="0,0,0,12" AutomationProperties.Name="Story 任务页面命令栏" AutomationProperties.AutomationId="StoryQuestCommandBar">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                    <TextBlock MaxWidth="220" VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding StoryWorkspace.StoryDisplayName}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Grid.Column="1" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="/ 任务" />
-                                    <TextBox Grid.Column="2" MinWidth="80" Padding="8,5" VerticalContentAlignment="Center" AutomationProperties.Name="搜索 Quest" Text="{Binding StoryWorkspace.Quests.SearchText, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Grid.Column="3" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StoryWorkspace.Quests.FilteredItems.Count, StringFormat={}{0} 个任务}" AutomationProperties.Name="当前过滤任务数量" />
-                                    <StackPanel Grid.Column="4" Margin="12,0,0,0" Orientation="Horizontal"><Button MinWidth="88" Height="32" Margin="0,0,8,0" Command="{Binding NewStoryResourceCommand}" Style="{DynamicResource AccentButtonStyle}" AutomationProperties.Name="创建 Quest" Content="+ 创建" /><Button MinWidth="104" Height="32" Margin="0,0,8,0" Command="{Binding DuplicateStoryResourceCommand}" AutomationProperties.Name="从现有复制 Quest" Content="从现有复制" /><Button MinWidth="76" Height="32" Command="{Binding ReferenceStoryResourceCommand}" AutomationProperties.Name="引用 Quest" Content="引用" /></StackPanel>
-                                </Grid>
-                                <Grid Grid.Row="1">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="{Binding StoryResourceLibraryWidth, ElementName=RootWindow, Mode=TwoWay}" MinWidth="220" MaxWidth="380" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                    <Grid><ListBox PreviewMouseRightButtonDown="StoryResourceList_OnPreviewMouseRightButtonDown" ItemsSource="{Binding StoryWorkspace.Quests.FilteredItems}" SelectedItem="{Binding SelectedStoryResource, Mode=TwoWay}" ItemTemplate="{StaticResource StoryResourceMembershipTemplate}" BorderThickness="0" HorizontalContentAlignment="Stretch" AutomationProperties.Name="故事 Quest 列表" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"><ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="0" /><Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /></Style></ListBox.ItemContainerStyle></ListBox></Grid>
-                                    <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" AutomationProperties.Name="调整 Story 任务资源库宽度" />
-                                    <Border Grid.Column="2" Padding="16" Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="4"><Grid><Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><Grid><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="选择任务开始编辑。"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding CurrentQuest}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><ContentControl HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Content="{Binding CurrentQuest}" ContentTemplate="{StaticResource QuestEditorTemplate}"><ContentControl.Style><Style TargetType="ContentControl"><Setter Property="Visibility" Value="Visible" /><Style.Triggers><Trigger Property="Content" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger></Style.Triggers></Style></ContentControl.Style></ContentControl></Grid><StackPanel Grid.Row="1" Margin="0,12,0,0" Orientation="Horizontal" HorizontalAlignment="Right"><Button MinWidth="96" Height="32" Margin="0,0,8,0" Command="{Binding ViewStoryResourceReferencesCommand}" Content="查看引用" /><Button MinWidth="96" Height="32" Margin="0,0,8,0" Command="{Binding RemoveStoryResourceReferenceCommand}" Content="解除引用" /><Button MinWidth="96" Height="32" Command="{Binding DeleteStoryResourceCommand}" Content="{Binding SelectedStoryResourceActionText}" /></StackPanel></Grid></Border>
-                                </Grid>
-                            </Grid>
-
-                            <Grid>
-                                <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding StoryWorkspace.CurrentRoute}" Value="Flow"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Grid.Style>
-                                <views:StoryFlowEditorView DataContext="{Binding CurrentFlow}" />
-                            </Grid>
-                        </Grid>
-                    </Grid>
                 </Grid>
             </Border>
 

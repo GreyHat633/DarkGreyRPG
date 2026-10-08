@@ -4,8 +4,6 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
 import darkgrey.rpg.DarkGreyRpg;
-import darkgrey.rpg.network.message.C2SQuestJournalRequest;
-import darkgrey.rpg.network.message.S2CQuestJournal;
 import darkgrey.rpg.network.message.canonical.CanonicalSessionAction;
 import darkgrey.rpg.network.message.canonical.CanonicalSessionClose;
 import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
@@ -72,8 +70,12 @@ public final class DialogueNetwork {
             darkgrey.rpg.diagnostics.PlayerStatePacket.class,
             PLAYER_INSPECTION_DISCRIMINATOR,
             Side.CLIENT);
-        CHANNEL.registerMessage(S2CQuestJournal.Handler.class, S2CQuestJournal.class, 3, Side.CLIENT);
-        CHANNEL.registerMessage(C2SQuestJournalRequest.Handler.class, C2SQuestJournalRequest.class, 4, Side.SERVER);
+        // Retired Quest Journal discriminators 3/4 remain unassigned.
+        CHANNEL.registerMessage(
+            darkgrey.rpg.network.message.canonical.CanonicalTaskViewOpen.Handler.class,
+            darkgrey.rpg.network.message.canonical.CanonicalTaskViewOpen.class,
+            34,
+            Side.CLIENT);
         CHANNEL.registerMessage(CanonicalSessionActionHandler.class, CanonicalSessionAction.class, 5, Side.SERVER);
         CHANNEL.registerMessage(CanonicalSessionFrameHandler.class, CanonicalSessionFrame.class, 6, Side.CLIENT);
         CHANNEL.registerMessage(CanonicalSessionCloseHandler.class, CanonicalSessionClose.class, 7, Side.CLIENT);

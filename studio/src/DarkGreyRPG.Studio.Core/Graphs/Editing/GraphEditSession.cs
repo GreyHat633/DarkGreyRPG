@@ -977,6 +977,11 @@ public sealed class GraphEditSession
             return Fail([ObjectivePropertyIssue("graph.objective.type.invalid",
                 $"Unsupported objective type '{type}'.",
                 CanonicalTaskObjectiveSchema.TypeProperty, node.Id)]);
+        var candidate = Clone(node);
+        candidate.Properties[property] = JsonSerializer.SerializeToElement(targetId);
+        var targetIssues = CanonicalTaskObjectiveSchema.Validate(candidate)
+            .Where(issue => issue.Field == $"properties.{property}").ToArray();
+        if (targetIssues.Length != 0) return Fail(targetIssues);
         if (node.Properties.TryGetValue(property, out var existing)
             && existing.ValueKind == JsonValueKind.String
             && string.Equals(existing.GetString(), targetId, StringComparison.Ordinal))
@@ -1216,7 +1221,7 @@ public sealed class GraphEditSession
                 "Two unique opaque IDs are required for a Session Choice option.", "ports", nodeId)]);
 
         var before = DeepClone(Document);
-        options!.Add(new(optionId, displayText, flowPortId, HasLegacyLogicOutput: false, conditionPortId));
+        options!.Add(new(optionId, displayText, flowPortId, conditionPortId));
         ApplySessionChoiceOptions(node!, options);
         return CommitValidatedChoice(before, node!);
     }
@@ -1829,10 +1834,6 @@ public sealed class GraphEditSession
                 element.GetProperty("option_id").GetString()!,
                 element.GetProperty("display_text").GetString()!,
                 element.GetProperty("flow_port_id").GetString()!,
-                (choiceNode.Ports ?? []).Any(port => port is not null
-                    && port.IsOutput
-                    && port.InterfaceKind == GraphInterfaceKind.Logic
-                    && string.Equals(port.Id, element.GetProperty("option_id").GetString(), StringComparison.Ordinal)),
                 element.TryGetProperty("condition_port_id", out var condition) ? condition.GetString() : null,
                 element.TryGetProperty("unavailable_behavior", out var behavior) ? behavior.GetString()! : "hide",
                 element.TryGetProperty("unavailable_hint", out var hint) ? hint.GetString()! : "", SessionChoiceSchema.ConditionEnabled(element, Document, nodeId)))
@@ -1861,8 +1862,6 @@ public sealed class GraphEditSession
             var option = options[index];
             node.Ports.Add(new(option.FlowPortId, option.DisplayText, false, GraphInterfaceKind.Flow, index));
             if (option.ConditionPortId is not null) node.Ports.Add(new(option.ConditionPortId, $"条件 · {option.DisplayText}", true, GraphInterfaceKind.Logic, index));
-            if (option.HasLegacyLogicOutput)
-                node.Ports.Add(new(option.OptionId, $"已选择：{option.DisplayText}", false, GraphInterfaceKind.Logic, index));
         }
     }
 
@@ -2147,7 +2146,7 @@ public sealed class GraphEditSession
         string OptionId,
         string DisplayText,
         string FlowPortId,
-        bool HasLegacyLogicOutput, string? ConditionPortId = null, string Behavior = "hide", string Hint = "", bool Enabled = false);
+        string? ConditionPortId = null, string Behavior = "hide", string Hint = "", bool Enabled = false);
 }
 
 /// <summary>Short alias for consumers that call the object an editor session.</summary>

@@ -1,3 +1,4 @@
+using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using System.Windows;
 using System.Windows.Controls;
 using DarkGreyRPG.Studio.ViewModels;
@@ -14,7 +15,7 @@ public sealed class ProjectGraphHelpLayout0331Tests
     {
         using var directory = new ProjectGraph0331Directory();
         var view = new ProjectGraphView();
-        var clean = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var clean = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         view.DataContext = clean;
         Layout(view);
         var error = (TextBlock)view.FindName("LogicError");
@@ -23,7 +24,7 @@ public sealed class ProjectGraphHelpLayout0331Tests
         var store = new DarkGreyRPG.Studio.Core.Graphs.Resources.CanonicalProjectGraphStore(directory.Root);
         Directory.CreateDirectory(Path.GetDirectoryName(store.StoryLogicGraph.Path)!);
         File.WriteAllText(store.StoryLogicGraph.Path, "{}");
-        var failed = new ProjectGraphViewModel([], projectDirectory: directory.Root);
+        var failed = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: directory.Root);
         view.DataContext = failed;
         Layout(view);
         Assert.AreEqual(Visibility.Visible, error.Visibility);

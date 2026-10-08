@@ -146,7 +146,7 @@ tasks.withType<Test>().configureEach {
     failOnNoDiscoveredTests.set(false)
 }
 
-tasks.register<JavaExec>("phase1ProjectProbe") {
+tasks.register<JavaExec>("currentProject0400Probe") {
     group = "verification"
     description = "Runs the Phase 1 project loader and snapshot rollback probe."
     dependsOn("testClasses")
@@ -160,63 +160,6 @@ tasks.register<JavaExec>("phase1ProjectProbe") {
     mainClass.set("darkgrey.rpg.project.ProjectRepositoryProbe")
     args(
         layout.buildDirectory.dir("phase1-runtime-probe").get().asFile.absolutePath,
-    )
-}
-
-tasks.register("phase2DialogueProbe") {
-    group = "verification"
-    description = "Runs Dialogue loading, flow, Result, and network codec probes."
-    dependsOn("phase1ProjectProbe")
-}
-
-tasks.register("phase3QuestProbe") {
-    group = "verification"
-    description = "Runs Quest loading, groups, progress, persistence, and Journal codec probes."
-    dependsOn("phase1ProjectProbe")
-}
-
-tasks.register("phase4StoryProbe") {
-    group = "verification"
-    description = "Runs Story loading, graph, executor registry, and variable persistence probes."
-    dependsOn("phase1ProjectProbe")
-}
-
-tasks.register("phase5LiveProbe") {
-    group = "verification"
-    description = "Runs Live protocol, debugger trace, and Play Test snapshot probes."
-    dependsOn("phase1ProjectProbe")
-}
-
-tasks.register<JavaExec>("studio21VerticalSliceProbe") {
-    group = "verification"
-    description = "Loads the Studio 2.1 acceptance project and verifies named Dialogue exits enter the kingdom/empire Stories."
-    dependsOn("testClasses")
-    classpath = files(
-        layout.buildDirectory.dir("classes/java/test"),
-        layout.buildDirectory.dir("classes/java/main"),
-        layout.buildDirectory.dir("classes/java/patchedMc"),
-        layout.buildDirectory.dir("resources/main"),
-        layout.buildDirectory.dir("resources/patchedMc"),
-    ) + configurations.getByName("testRuntimeClasspath")
-    mainClass.set("darkgrey.rpg.project.Studio21VerticalSliceProbe")
-    args(layout.projectDirectory.dir(".tooling/2.1-acceptance/DarkGrey-2.1-Acceptance").asFile.absolutePath)
-}
-
-tasks.register<JavaExec>("studio21RegressionProbe") {
-    group = "verification"
-    description = "Runs the full legacy project/dialogue/quest/story/live regression probe against the complete Phase 5 content pack."
-    dependsOn("testClasses")
-    classpath = files(
-        layout.buildDirectory.dir("classes/java/test"),
-        layout.buildDirectory.dir("classes/java/main"),
-        layout.buildDirectory.dir("classes/java/patchedMc"),
-        layout.buildDirectory.dir("resources/main"),
-        layout.buildDirectory.dir("resources/patchedMc"),
-    ) + configurations.getByName("testRuntimeClasspath")
-    mainClass.set("darkgrey.rpg.project.ProjectRepositoryProbe")
-    args(
-        layout.buildDirectory.dir("studio21-regression-probe").get().asFile.absolutePath,
-        layout.projectDirectory.dir("build/phase5-content-pack").asFile.absolutePath,
     )
 }
 
@@ -434,9 +377,9 @@ tasks.register<JavaExec>("canonicalTaskJournalProjectionProbe") {
     mainClass.set("darkgrey.rpg.task.journal.CanonicalTaskJournalProjectionProbe")
 }
 
-tasks.register<JavaExec>("canonicalTaskJournalIntegrationProbe") {
+tasks.register<JavaExec>("canonicalTaskView0400Probe") {
     group = "verification"
-    description = "Runs the Stage 4 canonical-to-legacy Quest Journal integration probe."
+    description = "Verifies the current Task journal window transport, projection, and retired discriminator holes."
     dependsOn("testClasses")
     classpath = files(
         layout.buildDirectory.dir("classes/java/test"),
@@ -445,7 +388,7 @@ tasks.register<JavaExec>("canonicalTaskJournalIntegrationProbe") {
         layout.buildDirectory.dir("resources/main"),
         layout.buildDirectory.dir("resources/patchedMc"),
     ) + configurations.getByName("testRuntimeClasspath")
-    mainClass.set("darkgrey.rpg.quest.runtime.CanonicalTaskJournalIntegrationProbe")
+    mainClass.set("darkgrey.rpg.task.journal.CanonicalTaskView0400Probe")
 }
 
 tasks.register<JavaExec>("canonicalTaskStage4SurfaceProbe") {
@@ -630,6 +573,34 @@ tasks.register<JavaExec>("itemIdentitySavedDataProbe") {
     mainClass.set("darkgrey.rpg.item.identity.ItemIdentitySavedDataProbe")
 }
 
+tasks.register<JavaExec>("nominatorCurrentActions0400Probe") {
+    group = "verification"
+    description = "Verifies unified Nominator permissions, revision fences, and physical slot return."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.nominator.NominatorCurrentActions0400Probe")
+}
+
+tasks.register<JavaExec>("nominator0400Probe") {
+    group = "verification"
+    description = "Verifies current Nominator MapStorage isolation, concrete identity, and restart."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.nominator.Nominator0400Probe")
+}
+
 tasks.register<JavaExec>("nominatorStage4Probe") {
     group = "verification"
     description = "Runs the Stage 4 nominator search, permission, conflict, and multi-group probe."
@@ -707,6 +678,13 @@ tasks.register<JavaExec>("actorSchema3ProjectRepositoryProbe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.project.ActorSchema3ProjectRepositoryProbe")
     args(layout.buildDirectory.dir("actor-schema3-project-repository-probe").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("taskCandidate0400Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.creator.TaskCandidate0400Probe")
 }
 
 tasks.register<JavaExec>("storyPackageLoaderProbe") {
@@ -1010,6 +988,14 @@ tasks.register<JavaExec>("runtimeInteractionUi0336Probe") {
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.story.canonical.server.RuntimeInteractionUi0336Probe")
     args(providers.gradleProperty("interactionGroupFixture").getOrElse(layout.projectDirectory.file("run/client/DarkGreyRPG/StoryPackages/故事组（1）.dgrs.g").asFile.absolutePath))
+}
+
+tasks.register<JavaExec>("canonicalOnly0400PackageProbe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.CanonicalOnly0400PackageProbe")
+    args(providers.gradleProperty("canonicalOnlyFixtures").getOrElse(layout.projectDirectory.dir(".tooling/0400-p5-package-fixture/Project").asFile.absolutePath))
 }
 
 tasks.register<JavaExec>("tavernRepeat0336Probe") {

@@ -275,13 +275,14 @@ public sealed class UiReview0335Tests
     public void OtherNodeEditorsObservePeerEditsWithoutReselecting()
     {
         foreach (var (scope, type, property, value) in new[] {
-            (GraphScope.Session, "choice", "prompt", JsonSerializer.SerializeToElement("新提示")),
+            (GraphScope.Session, "choice", "options", JsonSerializer.SerializeToElement(new[] { new { option_id = "option", display_text = "新选项", flow_port_id = "flow" } })),
             (GraphScope.Session, "music", "volume", JsonSerializer.SerializeToElement(.35)),
             (GraphScope.Session, "screen", "transition", JsonSerializer.SerializeToElement(new { type = "fade", direction = "left", duration = 1 })),
             (GraphScope.Task, "objective", "description", JsonSerializer.SerializeToElement("新目标")),
             (GraphScope.Story, "action", "message", JsonSerializer.SerializeToElement("新消息")) })
         {
             var node = GraphNodeFactory.Create(scope, type, "node");
+            if (type == "choice") SessionChoiceSchema.InitializeWithoutConditions(node, "option", "flow");
             if (type == "action") Assert.IsTrue(CanonicalStoryActionSchema.TryInitializeType(node, CanonicalStoryActionSchema.SendMessage, out _));
             var host = new GraphEditorHostViewModel(new GraphDocument([node]), scope);
             using var first = new CanonicalNodeInspectorViewModel(host, host.Nodes.Single());

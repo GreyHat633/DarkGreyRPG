@@ -2,12 +2,12 @@ package darkgrey.rpg.task.forge;
 
 import java.util.Map;
 
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import com.google.gson.JsonElement;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
+import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.item.identity.ItemIdentitySavedData;
 
 /** Uses existing server-owned Item/Group identity and exact Objective metadata. */
@@ -16,20 +16,27 @@ public final class CanonicalTaskInventory {
     private CanonicalTaskInventory() {}
 
     public static boolean matches(ItemStack stack, CanonicalGraphNode objective, ItemIdentitySavedData identities) {
-        if (stack == null || stack.getItem() == null || stack.stackSize <= 0) return false;
-        String target = objective.getProperties()
-            .get("item")
-            .getAsString();
-        Object registry = Item.itemRegistry.getNameForObject(stack.getItem());
-        boolean identity = target.equals(registry == null ? "" : registry.toString())
-            || identities.matchingItemIds(stack)
-                .contains(target)
-            || identities.matchingGroupIds(stack)
-                .contains(target);
+        if (stack == null || stack.getItem() == null || stack.stackSize <= 0 || objective == null || identities == null)
+            return false;
+        JsonElement value = objective.getProperties()
+            .get("item");
+        if (value == null || !value.isJsonPrimitive()
+            || !value.getAsJsonPrimitive()
+                .isString())
+            return false;
+        String target = value.getAsString();
+        if (!ResourceAddress.isKey(target)) return false;
+        ResourceAddress.Kind kind = ResourceAddress.fromKey(target)
+            .getKind();
+        boolean identity = kind == ResourceAddress.Kind.ITEM && identities.matchingItemIds(stack)
+            .contains(target) || kind == ResourceAddress.Kind.ITEM_GROUP
+                && identities.matchingGroupIds(stack)
+                    .contains(target);
         if (!identity) return false;
-        for (Map.Entry<String, JsonElement> field : objective.getProperties()
-            .get("metadata")
-            .getAsJsonObject()
+        JsonElement metadata = objective.getProperties()
+            .get("metadata");
+        if (metadata == null || !metadata.isJsonObject()) return false;
+        for (Map.Entry<String, JsonElement> field : metadata.getAsJsonObject()
             .entrySet())
             if (!"damage".equals(field.getKey()) || !String.valueOf(stack.getItemDamage())
                 .equals(

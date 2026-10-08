@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DarkGreyRPG.Studio.Core.Identity;
 using DarkGreyRPG.Studio.Core.Validation;
 
 namespace DarkGreyRPG.Studio.Core.Graphs.Definitions;
@@ -88,6 +89,10 @@ public static class CanonicalStoryActionSchema
         {
             case GiveItem:
                 ValidateString(properties, ItemIdProperty, issues, node.Id);
+                var itemId = ReadString(properties, ItemIdProperty);
+                if (!string.IsNullOrEmpty(itemId) && (!ResourceAddress.IsKey(itemId)
+                    || ResourceAddress.FromKey(itemId).Kind != ResourceKind.Item))
+                    issues.Add(Issue("graph.story.action.item.invalid", "请选择 DGR 个体物品。", $"properties.{ItemIdProperty}", node.Id));
                 ValidateInteger(properties, AmountProperty, int.MinValue, issues, node.Id);
                 break;
             case GiveXp:

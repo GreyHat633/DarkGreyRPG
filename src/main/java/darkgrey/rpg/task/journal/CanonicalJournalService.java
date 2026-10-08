@@ -1,23 +1,18 @@
 package darkgrey.rpg.task.journal;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import darkgrey.rpg.network.DialogueNetwork;
-import darkgrey.rpg.network.message.S2CQuestJournal;
-import darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter;
-import darkgrey.rpg.quest.runtime.QuestJournalEntry;
+import darkgrey.rpg.network.message.canonical.CanonicalTaskViewOpen;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
+import darkgrey.rpg.task.runtime.CanonicalTaskObjectiveStatus;
 
-/**
- * Canonical owner for the Quest Journal transport boundary.
- *
- * <p>
- * The client packet remains a compatibility DTO, but its contents are
- * projected only from canonical Task instances.
- * </p>
- */
+/** Read-only command orchestration over the current Task journal and presentation. */
 public final class CanonicalJournalService {
 
     private final CanonicalTaskForgeManager canonicalTaskManager;
@@ -27,22 +22,31 @@ public final class CanonicalJournalService {
         this.canonicalTaskManager = canonicalTaskManager;
     }
 
-    /** Returns the canonical Task journal through the existing wire DTO adapter. */
-    public List<QuestJournalEntry> getJournal(EntityPlayerMP player) {
-        List<QuestJournalEntry> result = new java.util.ArrayList<QuestJournalEntry>();
-        for (CanonicalTaskJournalEntry entry : canonicalTaskManager.getJournal(player)) result.add(
-            CanonicalTaskLegacyJournalAdapter
-                .adapt(entry, text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player)));
-        return java.util.Collections.unmodifiableList(result);
+    public List<CanonicalTaskJournalEntry> getJournal(EntityPlayerMP player) {
+        return canonicalTaskManager.getJournal(player);
     }
 
-    public List<QuestJournalEntry> journal(EntityPlayerMP player) {
-        return getJournal(player);
-    }
-
-    /** Sends the canonical projection using the existing Quest Journal packet. */
     public void openJournal(EntityPlayerMP player) {
         if (player == null) throw new IllegalArgumentException("Journal player is required.");
-        DialogueNetwork.CHANNEL.sendTo(new S2CQuestJournal(getJournal(player)), player);
+        darkgrey.rpg.creator.CanonicalTaskPresentationServer.push(player, true);
+        DialogueNetwork.CHANNEL.sendTo(new CanonicalTaskViewOpen(player.dimension), player);
+    }
+
+    /** Current command text; the task menu continues to use its existing structured projection. */
+    public static List<String> objectiveLines(CanonicalTaskJournalEntry entry, UnaryOperator<String> resolveText) {
+        if (entry == null || resolveText == null)
+            throw new IllegalArgumentException("Journal text context is required.");
+        List<String> lines = new ArrayList<String>();
+        for (CanonicalTaskJournalObjectiveRow row : entry.getObjectiveRows()) {
+            if (row.getRuntimeStatus() != CanonicalTaskObjectiveStatus.ACTIVE) continue;
+            String line = row.getDisplayLine();
+            if (row.getDescription()
+                .startsWith(darkgrey.rpg.session.runtime.DynamicContentText.PREFIX))
+                line = line.replace(row.getDescription(), resolveText.apply(row.getDescription()));
+            StringBuilder safe = new StringBuilder();
+            for (char value : line.toCharArray()) safe.append(value < 0x20 || value == 0x7f ? '?' : value);
+            lines.add(safe.toString());
+        }
+        return Collections.unmodifiableList(lines);
     }
 }

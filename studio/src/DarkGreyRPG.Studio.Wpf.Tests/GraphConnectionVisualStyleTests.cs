@@ -50,47 +50,23 @@ public sealed class GraphConnectionVisualStyleTests
     }
 
     [STATestMethod]
-    public void StoryFlowNodeInvocationCarriesStableEffectivePortIdsAfterLayout()
+    public void CurrentNodeInvocationUsesEffectivePortIdAfterLayout()
     {
-        var node = new StoryFlowNodeEditorItem(
-            "sequence_node",
-            "Sequence",
-            0,
-            0,
-            new Dictionary<string, string>(),
-            edit => edit());
-        var control = new StoryFlowNodeControl(node);
-        var root = new Grid { Width = 500, Height = 300 };
-        root.Children.Add(control);
-
-        root.Measure(new Size(500, 300));
-        root.Arrange(new Rect(0, 0, 500, 300));
-        root.UpdateLayout();
-
-        var output = control.OutputPorts.Single();
-        output.PortId = "stable_step_id";
-        output.DisplayName = "显示步骤";
-        FlowPortInvokedEventArgs? outputArgs = null;
-        control.OutputInvoked += (_, args) => outputArgs = args;
-
-        output.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-
-        Assert.IsNotNull(outputArgs);
-        Assert.AreEqual("stable_step_id", outputArgs!.PortName);
-        Assert.AreEqual(output.EffectivePortId, outputArgs.Port.EffectivePortId);
-        Assert.AreNotEqual(output.DisplayName, outputArgs.PortName);
-
-        var input = control.Input;
-        input.PortId = "stable_input_id";
-        input.DisplayName = "显示输入";
-        FlowPortInvokedEventArgs? inputArgs = null;
-        control.InputInvoked += (_, args) => inputArgs = args;
-
-        input.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-
-        Assert.IsNotNull(inputArgs);
-        Assert.AreEqual("stable_input_id", inputArgs!.PortName);
-        Assert.AreEqual(input.EffectivePortId, inputArgs.Port.EffectivePortId);
-        Assert.AreNotEqual(input.DisplayName, inputArgs.PortName);
+        var host = new ViewModels.Graph.GraphEditorHostViewModel(new GraphDocument([
+            Core.Graphs.Definitions.GraphNodeFactory.Create(Core.Graphs.Definitions.GraphScope.Session, "line", "line")]), Core.Graphs.Definitions.GraphScope.Session);
+        var control = new CanonicalGraphNodeControl(host.Nodes.Single());
+        var root = new Grid { Width = 500, Height = 300 }; root.Children.Add(control);
+        root.Measure(new Size(500, 300)); root.Arrange(new Rect(0, 0, 500, 300)); root.UpdateLayout();
+        foreach (var port in control.PortControls.Where(port => port.InterfaceKind == GraphInterfaceKind.Flow))
+        {
+            var stableId = port.EffectivePortId;
+            port.DisplayName = "显示名称";
+            string? invoked = null;
+            port.Click += (_, _) => invoked = port.EffectivePortId;
+            port.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.AreEqual(stableId, invoked);
+            Assert.AreNotEqual(port.DisplayName, invoked);
+        }
+        Assert.HasCount(2, control.PortControls);
     }
 }

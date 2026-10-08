@@ -6,15 +6,13 @@ namespace DarkGreyRPG.Studio.Core.Graphs.Definitions;
 
 /// <summary>
 /// Session Choice contract. New options expose only their stable Flow output.
-/// A persisted Logic output whose ID equals <c>option_id</c> is accepted only as
-/// a lossless 0.3.1.4 compatibility port; it is not created for new authoring.
+/// Each option may expose a condition Logic input; output Logic ports are retired.
 /// </summary>
 public static class SessionChoiceSchema
 {
-    public const string PromptProperty = "prompt";
     public const string OptionsProperty = "options";
 
-    public static void InitializeLegacy(GraphNode node, string optionId, string flowPortId)
+    public static void InitializeWithoutConditions(GraphNode node, string optionId, string flowPortId)
     {
         InitializeDefault(node, optionId, flowPortId);
         node.Ports.RemoveAll(p => p.IsInput && p.InterfaceKind == GraphInterfaceKind.Logic);
@@ -34,7 +32,6 @@ public static class SessionChoiceSchema
             throw new ArgumentException("Choice option_id and flow_port_id must be distinct.", nameof(flowPortId));
 
         const string displayText = "选项 1";
-        node.Properties[PromptProperty] = JsonSerializer.SerializeToElement(string.Empty);
         node.Properties[OptionsProperty] = JsonSerializer.SerializeToElement(new[]
         {
             new Dictionary<string, object>(StringComparer.Ordinal)
@@ -147,44 +144,11 @@ public static class SessionChoiceSchema
             issues.Add(Issue("graph.session.choice.port_id.collision", "Choice condition identity must differ from option and Flow identities.", "ports", node.Id));
         ValidatePorts(options.Select(option => (option.FlowPortId, option.DisplayText)).ToArray(), flowOutputs,
             GraphInterfaceKind.Flow, issues, node.Id);
-        ValidateLegacyLogicPorts(options, logicOutputs, issues, node.Id);
+        foreach (var port in logicOutputs)
+            issues.Add(Issue("graph.session.choice.output_logic.retired",
+                $"Session Choice Logic output '{port.Id}' is retired. Use its Flow result.",
+                $"ports[{port.Id}]", node.Id));
         return issues;
-    }
-
-    private static void ValidateLegacyLogicPorts(
-        IReadOnlyList<(string OptionId, string DisplayText, string FlowPortId)> options,
-        IReadOnlyList<GraphPort> actual,
-        List<ValidationIssue> issues,
-        string nodeId)
-    {
-        var expected = options.ToDictionary(option => option.OptionId, StringComparer.Ordinal);
-        foreach (var port in actual)
-        {
-            if (!expected.TryGetValue(port.Id, out var option))
-            {
-                issues.Add(Issue("graph.session.choice.legacy_logic.unmapped",
-                    $"Legacy Session Choice Logic output '{port.Id}' does not map to an option_id.",
-                    $"ports[{port.Id}]", nodeId));
-                continue;
-            }
-
-            var duplicates = actual.Count(candidate => string.Equals(candidate.Id, port.Id, StringComparison.Ordinal));
-            if (duplicates != 1)
-            {
-                issues.Add(Issue("graph.session.choice.legacy_logic.duplicate",
-                    $"Legacy Session Choice Logic output '{port.Id}' must occur at most once.",
-                    $"ports[{port.Id}]", nodeId));
-                continue;
-            }
-
-            var expectedOrder = options.ToList().FindIndex(candidate =>
-                string.Equals(candidate.OptionId, port.Id, StringComparison.Ordinal));
-            if (!string.Equals(port.DisplayName, LogicDisplayName(option.DisplayText), StringComparison.Ordinal)
-                || port.Order != expectedOrder)
-                issues.Add(Issue("graph.session.choice.legacy_logic.presentation",
-                    $"Legacy Session Choice Logic output '{port.Id}' label/order is out of sync with its option.",
-                    $"ports[{port.Id}]", nodeId));
-        }
     }
 
     private static void ValidatePorts(
@@ -223,8 +187,6 @@ public static class SessionChoiceSchema
         var result = value.GetString();
         return string.IsNullOrWhiteSpace(result) ? null : result;
     }
-
-    private static string LogicDisplayName(string displayText) => $"已选择：{displayText}";
 
     private static ValidationIssue Issue(string code, string message, string field, string nodeId)
         => new(code, message, field, NodeId: string.IsNullOrWhiteSpace(nodeId) ? null : nodeId);

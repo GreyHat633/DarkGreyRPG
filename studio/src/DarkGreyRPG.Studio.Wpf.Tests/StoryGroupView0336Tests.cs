@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.IO;
 using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Packaging;
@@ -59,7 +59,7 @@ public sealed class StoryGroupView0336Tests
             output.Properties["port_id"] = JsonSerializer.SerializeToElement("native_output");
             output.Properties["display_name"] = JsonSerializer.SerializeToElement("Native output");
             nativeGraph.Nodes.Add(output); nativeStory.Graph = nativeGraph; targetStore.Stories.Replace(nativeStory);
-            var model = new ProjectGraphViewModel([], projectDirectory: target);
+            var model = new ProjectGraphViewModel(new CanonicalProjectStoryGraphSnapshot([], [], []), projectDirectory: target);
             var host = model.CanonicalHost!;
             var edit = 0; host.EditMetadata(() => edit = 0, () => edit = 1);
             var references = Path.Combine(target, "references"); Directory.CreateDirectory(references);

@@ -102,7 +102,7 @@ public final class DgrsPackageRuntimeProbe {
                 .getCanonicalStory(loaded.getStoryId());
             require(
                 loaded.getManifest()
-                    .isDgrsV1(),
+                    .isCurrentDgrs(),
                 "Runtime did not retain DGRS v1 identity");
             require(loaded.getDirectory() == null, "DGRS package still depends on a materialized directory");
             require(

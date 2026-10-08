@@ -19,6 +19,8 @@ import io.netty.buffer.ByteBuf;
 /** Server snapshot used to initialize the entity nominator GUI. */
 public final class S2CNominatorEntityOpen implements IMessage {
 
+    public static final int PROTOCOL_MARKER = 0x44475240;
+
     private int entityId;
     private UUID entityUuid;
     private long revision;
@@ -29,7 +31,6 @@ public final class S2CNominatorEntityOpen implements IMessage {
     private String displayName;
     private String entityType;
     private NominatorCatalog catalog;
-    private List<String> typeGroups = Collections.emptyList();
 
     public S2CNominatorEntityOpen() {}
 
@@ -51,19 +52,16 @@ public final class S2CNominatorEntityOpen implements IMessage {
     }
 
     public S2CNominatorEntityOpen(int entityId, UUID uuid, long revision, String displayName, String entityType,
-        String individual, List<String> groups, List<String> typeGroups, String story, NominatorCatalog catalog) {
+        String individual, List<String> groups, String story, NominatorCatalog catalog) {
         this(entityId, uuid, revision, individual, groups, story);
         this.displayName = displayName;
         this.entityType = entityType;
-        this.typeGroups = typeGroups == null ? Collections.<String>emptyList()
-            : Collections.unmodifiableList(new ArrayList<String>(typeGroups));
         this.catalog = catalog;
     }
 
     public S2CNominatorEntityOpen(int entityId, UUID uuid, long revision, long catalogRevision, String displayName,
-        String entityType, String individual, List<String> groups, List<String> typeGroups, String story,
-        NominatorCatalog catalog) {
-        this(entityId, uuid, revision, displayName, entityType, individual, groups, typeGroups, story, catalog);
+        String entityType, String individual, List<String> groups, String story, NominatorCatalog catalog) {
+        this(entityId, uuid, revision, displayName, entityType, individual, groups, story, catalog);
         this.catalogRevision = catalogRevision;
     }
 
@@ -86,7 +84,6 @@ public final class S2CNominatorEntityOpen implements IMessage {
         S2CNominatorEntityOpen packet = from(entity.getEntityId(), entity.getUniqueID(), selections);
         packet.displayName = entity.getCommandSenderName();
         packet.entityType = darkgrey.rpg.nominator.NominatorService.entityType(entity);
-        packet.typeGroups = selections.getTypeGroups(packet.entityType);
         packet.catalog = catalog;
         packet.catalogRevision = DarkGreyRpg.getProjectRepository()
             .getSnapshotRevision();
@@ -129,17 +126,13 @@ public final class S2CNominatorEntityOpen implements IMessage {
         return entityType;
     }
 
-    public List<String> getTypeGroups() {
-        return new ArrayList<String>(typeGroups);
-    }
-
     public NominatorCatalog getCatalog() {
         return catalog;
     }
 
     @Override
     public void fromBytes(ByteBuf buffer) {
-        if (buffer.readInt() != 0x44475236)
+        if (buffer.readInt() != PROTOCOL_MARKER)
             throw new IllegalArgumentException("Unsupported Nominator identity protocol");
         entityId = buffer.readInt();
         entityUuid = new UUID(buffer.readLong(), buffer.readLong());
@@ -153,11 +146,6 @@ public final class S2CNominatorEntityOpen implements IMessage {
         groups = Collections.unmodifiableList(decoded);
         displayName = readString(buffer);
         entityType = readString(buffer);
-        int typeCount = buffer.readUnsignedByte();
-        if (typeCount > 32) throw new IllegalArgumentException("Too many type groups.");
-        List<String> types = new ArrayList<String>();
-        for (int i = 0; i < typeCount; i++) types.add(NominatorIdentityCodec.read(buffer, ResourceAddress.Kind.ACTOR));
-        typeGroups = Collections.unmodifiableList(types);
         catalogRevision = buffer.readLong();
         catalog = NominatorCatalogCodec.read(buffer);
         if (buffer.isReadable()) throw new IllegalArgumentException("Trailing nominator catalog data.");
@@ -165,7 +153,7 @@ public final class S2CNominatorEntityOpen implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buffer) {
-        buffer.writeInt(0x44475236);
+        buffer.writeInt(PROTOCOL_MARKER);
         buffer.writeInt(entityId);
         buffer.writeLong(entityUuid.getMostSignificantBits());
         buffer.writeLong(entityUuid.getLeastSignificantBits());
@@ -177,9 +165,6 @@ public final class S2CNominatorEntityOpen implements IMessage {
         for (String group : groups) NominatorIdentityCodec.write(buffer, group, ResourceAddress.Kind.ACTOR);
         writeString(buffer, displayName);
         writeString(buffer, entityType);
-        if (typeGroups.size() > 32) throw new IllegalArgumentException("Too many type groups.");
-        buffer.writeByte(typeGroups.size());
-        for (String group : typeGroups) NominatorIdentityCodec.write(buffer, group, ResourceAddress.Kind.ACTOR);
         buffer.writeLong(catalogRevision);
         NominatorCatalogCodec.write(
             buffer,
@@ -222,7 +207,6 @@ public final class S2CNominatorEntityOpen implements IMessage {
                         message.entityType,
                         message.individual,
                         message.groups,
-                        message.typeGroups,
                         message.story,
                         message.revision,
                         message.catalogRevision,

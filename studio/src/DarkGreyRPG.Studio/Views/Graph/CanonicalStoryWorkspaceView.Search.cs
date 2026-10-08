@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -63,7 +63,7 @@ public partial class CanonicalStoryWorkspaceView
         var path = tail switch
         {
             "task_metadata.description" => "InspectorTaskEditor.TaskDescription",
-            "speaker_actor_id" => "SelectedSpeakerId", "prompt" => "ChoicePrompt",
+            "speaker_actor_id" => "SelectedSpeakerId",
             "text" => "LineText", "main" => "TitleMain", "subtitle" => "TitleSubtitle",
             "message" => "StoryActionMessage", "description" => "ObjectiveDescription",
             "item" => "SelectedObjectiveItemId", "entity" => "SelectedObjectiveActorId",

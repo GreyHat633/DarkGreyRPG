@@ -6,6 +6,55 @@ using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
 var root = Path.GetFullPath(args[0]);
+if (args.Length > 1 && args[1] == "validate-0400")
+{
+    void Validate(string path)
+    {
+        if (path.EndsWith(".dgrs.g", StringComparison.Ordinal))
+            _ = DarkGreyRPG.Studio.Core.Packaging.DgrsGroupPackageValidator.Validate(path);
+        else _ = DarkGreyRPG.Studio.Core.Packaging.DgrsPackageValidator.Validate(path);
+    }
+    Validate(Path.Combine(root, "Exports", "owner.dgrs"));
+    Validate(Path.Combine(root, "Groups", "current.dgrs.g"));
+    var results = new List<object>();
+    foreach (var path in new[] { "RetiredPackages", "RetiredContracts" }.SelectMany(folder => Directory.GetFiles(Path.Combine(root, folder))))
+    {
+        var original = File.ReadAllBytes(path);
+        try { Validate(path); throw new InvalidOperationException($"Retired package accepted: {path}"); }
+        catch (DarkGreyRPG.Studio.Core.Packaging.StoryPackageException exception)
+        {
+            if (!original.SequenceEqual(File.ReadAllBytes(path))) throw new InvalidOperationException($"Rejected package rewritten: {path}");
+            results.Add(new { path, result = "REJECTED_UNCHANGED", reason = exception.Message });
+        }
+    }
+    if (results.Count != 21) throw new InvalidOperationException("Expected 21 current package rejection vectors.");
+    File.WriteAllText(Path.Combine(root, "CSharpRejectionResults.json"), JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+    Console.WriteLine("CSHARP_0400_SAME_STUDIO_SINGLE_GROUP_CONTRACTS=PASS rejected=21");
+    return;
+}
+if (args.Length > 1 && args[1] == "finish-group-0400")
+{
+    var fixtureStore = new CanonicalProjectGraphStore(root);
+    foreach (var uid in new[] { "ST-EEEE-FFFF-GGGG-HHHH", "ST-JJJJ-KKKK-MMMM-NNNN" })
+    {
+        var definition = fixtureStore.Stories.Load(uid);
+        var graph = definition.Graph!;
+        var groupStart = graph.Nodes.Single(node => node.Type == "start");
+        var triggers = System.Text.Json.Nodes.JsonNode.Parse(groupStart.Properties["triggers"].GetRawText())!;
+        triggers[0]!["trigger_properties"]!["x"] = uid == "ST-EEEE-FFFF-GGGG-HHHH" ? 40 : 60;
+        triggers[0]!["trigger_properties"]!["y"] = 4;
+        groupStart.Properties["triggers"] = JsonSerializer.SerializeToElement(triggers);
+        var terminal = GraphNodeFactory.Create(GraphScope.StoryFlow, "terminate", "finished");
+        terminal.Properties["port_id"] = JsonSerializer.SerializeToElement("finished");
+        terminal.Properties["display_name"] = JsonSerializer.SerializeToElement("0400 组故事完成");
+        graph.Nodes.Add(terminal);
+        graph.Connections.Add(new(groupStart.Id, triggers[0]!["port_id"]!.GetValue<string>(), terminal.Id, "flow_in", GraphInterfaceKind.Flow));
+        definition.Graph = graph;
+        fixtureStore.Stories.Replace(definition);
+    }
+    Console.WriteLine("CURRENT_GROUP_CONNECTED_FLOW_FIXTURE=PASS");
+    return;
+}
 if (args.Length > 1 && args[1] == "fingerprint")
 {
     var members = DarkGreyRPG.Studio.Core.Packaging.OfflineDgrsPackageReader.ReadContainer(root);
@@ -14,7 +63,7 @@ if (args.Length > 1 && args[1] == "fingerprint")
 }
 new ProjectService().CreateProject(root, "identity_fixture", "当前身份实机验收");
 var store = new CanonicalProjectGraphStore(root);
-if (args.Length > 1 && args[1] == "closeout")
+if (args.Length > 1 && args[1] is "closeout" or "construction-0400")
 {
     const string single = "ST-AAAA-BBBB-CCCC-DDDD";
     const string groupA = "ST-EEEE-FFFF-GGGG-HHHH";
@@ -81,6 +130,40 @@ if (args.Length > 1 && args[1] == "closeout")
     closeoutTask.Graph = new GraphDocument([closeoutObjective, reward, settle],
         [new("reach", "logic_status", "reward", "logic_in", GraphInterfaceKind.Logic),
          new("reach", "logic_status", "settle", "logic_in", GraphInterfaceKind.Logic)]);
+    if (args[1] == "construction-0400")
+    {
+        var victimId = single + "~actor~victim";
+        var itemId = single + "~item~sample";
+        var groupId = single + "~item_group~supplies";
+        new CanonicalStoryActorLifecycleService(store).CreateOwned(single, CanonicalStoryActorKind.Individual, victimId, "0400 击杀目标");
+        var targetItems = new CanonicalStoryItemLifecycleService(store);
+        targetItems.CreateOwned(single, CanonicalStoryItemKind.Individual, itemId, "0400 提交物品");
+        targetItems.CreateOwned(single, CanonicalStoryItemKind.Collective, groupId, "0400 收集物品组");
+        var kill = GraphNodeFactory.Create(GraphScope.Task, "objective", "kill");
+        CanonicalTaskObjectiveSchema.TryInitializeType(kill, CanonicalTaskObjectiveSchema.KillEntity, out _);
+        kill.Properties["entity"] = JsonSerializer.SerializeToElement(victimId);
+        kill.Properties["required"] = JsonSerializer.SerializeToElement(1);
+        kill.Properties["description"] = JsonSerializer.SerializeToElement("击杀已指名的具体实体");
+        var collect = GraphNodeFactory.Create(GraphScope.Task, "objective", "collect");
+        CanonicalTaskObjectiveSchema.TryInitializeType(collect, CanonicalTaskObjectiveSchema.CollectItem, out _);
+        collect.Properties["item"] = JsonSerializer.SerializeToElement(groupId);
+        collect.Properties["required"] = JsonSerializer.SerializeToElement(2);
+        collect.Properties["description"] = JsonSerializer.SerializeToElement("持有两份已指名的组物品");
+        var submit = GraphNodeFactory.Create(GraphScope.Task, "objective", "submit");
+        CanonicalTaskObjectiveSchema.TryInitializeType(submit, CanonicalTaskObjectiveSchema.SubmitItem, out _);
+        submit.Properties["item"] = JsonSerializer.SerializeToElement(itemId);
+        submit.Properties["actor_id"] = JsonSerializer.SerializeToElement(actorId);
+        submit.Properties["required"] = JsonSerializer.SerializeToElement(2);
+        submit.Properties["description"] = JsonSerializer.SerializeToElement("向已指名接待员原子提交两份物品");
+        var all = GraphNodeFactory.Create(GraphScope.Task, "and", "all");
+        var objectives = new[] { closeoutObjective, kill, collect, submit };
+        foreach (var targetNode in objectives)
+            all.Ports.Add(new GraphPort("condition_" + targetNode.Id, targetNode.DisplayName, true, GraphInterfaceKind.Logic, all.Ports.Count));
+        var edges = objectives.Select(targetNode => new GraphConnection(targetNode.Id, "logic_status", all.Id, "condition_" + targetNode.Id, GraphInterfaceKind.Logic)).ToList();
+        edges.Add(new(all.Id, "logic_out", reward.Id, "logic_in", GraphInterfaceKind.Logic));
+        edges.Add(new(all.Id, "logic_out", settle.Id, "logic_in", GraphInterfaceKind.Logic));
+        closeoutTask.Graph = new GraphDocument([.. objectives, all, reward, settle], edges);
+    }
     store.Tasks.Replace(closeoutTask);
     var start = GraphNodeFactory.Create(GraphScope.StoryFlow, "start", "start");
     StoryStartSchema.InitializeDefault(start, "entry", StoryStartSchema.ActorInteraction, actorId);
@@ -146,7 +229,7 @@ if (args.Length > 1 && args[1] == "runtime-task")
         [new(start.Id, "entry", placement.Id, "flow_in", GraphInterfaceKind.Flow),
          new(placement.Id, resultPort, stop.Id, "flow_in", GraphInterfaceKind.Flow)]);
     store.Stories.Replace(story);
-    new DarkGreyRPG.Studio.Core.Packaging.DgrsStoryPackageExporter(root).Build(uid, Path.Combine(root, "Packages", "task.dgrs"), "0.3.3.6");
+    new DarkGreyRPG.Studio.Core.Packaging.DgrsStoryPackageExporter(root).Build(uid, Path.Combine(root, "Packages", "task.dgrs"), "0.4.0.0");
     Console.WriteLine(root);
     return;
 }
@@ -179,16 +262,19 @@ var task = store.Tasks.Load(Key(ResourceKind.Task));
 var objective = GraphNodeFactory.Create(GraphScope.Task, "objective", "objective");
 objective.Properties["description"] = JsonSerializer.SerializeToElement("验证角色目标");
 objective.Properties["entity"] = JsonSerializer.SerializeToElement(Key(ResourceKind.Actor));
-task.Graph = new GraphDocument(task.Graph!.Nodes.Append(objective), task.Graph.Connections);
+task.Graph = new GraphDocument(task.Graph!.Nodes.Where(node => node.Id != objective.Id).Append(objective), task.Graph.Connections);
 store.Tasks.Replace(task);
 var description = DynamicContentText.Encode([new(Text: "角色："), new(Type: "actor_name", ActorId: Key(ResourceKind.Actor))]);
 File.WriteAllText(Path.Combine(root, "dynamic.txt"), description);
 Console.WriteLine(root);
 
-new DarkGreyRPG.Studio.Core.Packaging.DgrsStoryPackageExporter(root).Build(consumer.Value, Path.Combine(root, "Packages", "consumer.dgrs"), "0.3.3.6");
+new DarkGreyRPG.Studio.Core.Packaging.DgrsStoryPackageExporter(root).Build(consumer.Value, Path.Combine(root, "Packages", "consumer.dgrs"), "0.4.0.0");
 
 if (args.Length > 1 && args[1] is "group" or "runtime-group" or "runtime-media" or "runtime-media-three")
 {
+    if (args[1] == "group")
+        new DarkGreyRPG.Studio.Core.Packaging.DgrsStoryPackageExporter(root).Build(owner.Value,
+            Path.Combine(root, "Exports", "owner.dgrs"), "0.4.0.0");
     if (args[1] is "runtime-group" or "runtime-media" or "runtime-media-three")
     {
         var definition = store.Sessions.Load(Key(ResourceKind.Session));
@@ -296,5 +382,5 @@ if (args.Length > 1 && args[1] is "group" or "runtime-group" or "runtime-media" 
         store.StoryLogicGraph.Save([new(owner.Value, "group_output", consumer.Value, "group_input"),
             new(third, "group_output", consumer.Value, "group_input_c")]);
     }
-    new DarkGreyRPG.Studio.Core.Packaging.DgrsGroupPackageExporter(root).Build(owner.Value, Path.Combine(root, "Groups", "current.dgrs.g"), "0.3.3.6");
+    new DarkGreyRPG.Studio.Core.Packaging.DgrsGroupPackageExporter(root).Build(owner.Value, Path.Combine(root, "Groups", "current.dgrs.g"), "0.4.0.0");
 }

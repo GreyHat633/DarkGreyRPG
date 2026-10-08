@@ -25,8 +25,7 @@ public sealed class CanonicalStoryDiscoveryShellTests
             new[] { "ST-JKLM-NPQR-STUV-WXYZ", "ST-2345-6789-ABCD-EFGH" },
             shell.ProjectHome.Stories.Select(story => story.Id).ToArray());
         var canonical = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
-        Assert.IsTrue(canonical.IsCanonicalOnly);
-        Assert.IsFalse(canonical.CanDeleteLegacyStory);
+        Assert.IsTrue(canonical.HasCanonicalStory);
         shell.OpenStory(canonical);
         Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
         Assert.AreEqual("ST-2345-6789-ABCD-EFGH", shell.CanonicalStoryWorkspace!.StoryEditor.Id);
@@ -45,7 +44,6 @@ public sealed class CanonicalStoryDiscoveryShellTests
         Assert.AreEqual(1, shell.ProjectHome.Stories.Count(story => story.Id == "ST-2345-6789-ABCD-EFGH"));
         var shared = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
         Assert.AreEqual("Canonical Shared", shared.DisplayName);
-        Assert.IsFalse(shared.HasLegacyStory);
         Assert.IsTrue(shared.HasCanonicalStory);
         shell.ProjectHome.SelectedStory = shared;
         Assert.IsTrue(shell.DeleteSelectedStoryCommand.CanExecute(null));
@@ -53,13 +51,16 @@ public sealed class CanonicalStoryDiscoveryShellTests
         Assert.IsTrue(shell.HasCanonicalStoryWorkspace);
 
         var incomplete = shell.ProjectHome.Stories.Single(story => story.Id == "ST-JKLM-NPQR-STUV-WXYZ");
-        Assert.IsTrue(incomplete.IsCanonicalOnly);
+        Assert.IsTrue(incomplete.HasCanonicalStory);
         Assert.AreEqual("数据不完整", incomplete.TagsText);
         Assert.IsTrue(shell.Problems.Problems.Any(problem =>
             problem.Source == "canonical-discovery/ST-JKLM-NPQR-STUV-WXYZ"
             && problem.Code == "story.discovery.root.missing"));
+        var previousWorkspace = shell.CanonicalStoryWorkspace;
         shell.OpenStory(incomplete);
-        Assert.IsFalse(shell.HasCanonicalStoryWorkspace);
+        Assert.AreSame(previousWorkspace, shell.CanonicalStoryWorkspace);
+        Assert.AreEqual("ST-2345-6789-ABCD-EFGH", shell.CanonicalStoryWorkspace!.StoryEditor.Id);
+        Assert.AreEqual(OutputKind.Error, shell.Output.Entries.Last().Kind);
         StringAssert.Contains(shell.StatusMessage, "打开故事");
     }
 
@@ -112,10 +113,7 @@ public sealed class CanonicalStoryDiscoveryShellTests
         public ProjectService Setup { get; }
         public CanonicalProjectGraphStore Store { get; }
 
-        public void CreateLegacyStory(string id, string displayName)
-            => Setup.CreateStory(id, displayName);
-
-        public void CreateCanonicalStory(
+public void CreateCanonicalStory(
             string id,
             string displayName,
             IEnumerable<GraphNode>? nodes = null)

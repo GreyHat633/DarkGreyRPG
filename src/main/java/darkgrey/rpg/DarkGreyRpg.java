@@ -185,9 +185,6 @@ public final class DarkGreyRpg {
             new CommandDarkGreyRpg(
                 projectRepository,
                 editorSessions,
-                null,
-                null,
-                null,
                 canonicalSessionManager,
                 canonicalTaskManager,
                 canonicalStoryManager,

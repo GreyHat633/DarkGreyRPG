@@ -27,12 +27,12 @@ public final class CanonicalSessionCommandProbe {
 
         ProjectSnapshot project = CanonicalSessionForgeProbeProject.create();
         require(
-            Arrays.asList("story_a")
+            Arrays.asList("ST-2345-6789-ABCD-EFGH")
                 .equals(CommandDarkGreyRpg.canonicalSessionStoryIds(project)),
             "canonical Story completion");
         require(
             Arrays.asList("place_a")
-                .equals(CommandDarkGreyRpg.canonicalSessionPlacementIds(project, "story_a")),
+                .equals(CommandDarkGreyRpg.canonicalSessionPlacementIds(project, "ST-2345-6789-ABCD-EFGH")),
             "Session aggregate completion");
         require(
             Collections.emptyList()

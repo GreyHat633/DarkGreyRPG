@@ -712,7 +712,7 @@ public final class CanonicalProjectContentLoader {
                 if ("interact_actor".equals(type)) requireProperty(node, "actor_id", declared.actors, "actor");
                 else if ("collect_item".equals(type) || "submit_item".equals(type)) {
                     String id = property(node, "item");
-                    if (id != null && !nativeTarget(id)) {
+                    if (id != null) {
                         if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                             "project.content.graph.reference.invalid",
                             "Graph node '" + node.getId() + "' has an invalid item ID.");
@@ -729,7 +729,7 @@ public final class CanonicalProjectContentLoader {
                     }
                 } else if ("kill_entity".equals(type)) {
                     String id = property(node, "entity");
-                    if (id != null && !nativeTarget(id)) {
+                    if (id != null) {
                         if (!ResourceAddress.isKey(id)) throw CanonicalProjectContentException.failure(
                             "project.content.graph.reference.invalid",
                             "Graph node '" + node.getId() + "' has an invalid actor ID.");
@@ -784,10 +784,6 @@ public final class CanonicalProjectContentLoader {
         return value != null && value.isJsonPrimitive()
             && value.getAsJsonPrimitive()
                 .isString() ? value.getAsString() : "";
-    }
-
-    private static boolean nativeTarget(String id) {
-        return !ResourceAddress.isKey(id);
     }
 
     private static CanonicalProjectContentException undeclared(String kind, String id, String nodeId) {

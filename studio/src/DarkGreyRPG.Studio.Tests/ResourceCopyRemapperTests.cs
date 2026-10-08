@@ -66,20 +66,21 @@ public sealed class ResourceCopyRemapperTests
     }
 
     [TestMethod]
-    public void TaskTargetsAndSessionSpeakerCopyButDescriptionsAndNativeTargetsStay()
+    public void TaskTargetsAndSessionSpeakerCopyButDescriptionsStayAndNativeTargetsReject()
     {
         var actor = Key(A, ResourceKind.Actor, "slimes"); var copiedActor = Key(B, ResourceKind.Actor, "slimes");
         var items = Key(A, ResourceKind.ItemGroup, "coins"); var copiedItems = Key(B, ResourceKind.ItemGroup, "coins");
         var map = new ResourceCopyRemapper(); map.Add(DgrResourceKind.Actor, actor, copiedActor); map.Add(DgrResourceKind.ItemGroup, items, copiedItems);
         var task = map.Rewrite(new GraphResourceEnvelope(GraphResourceKind.Task, Key(A, ResourceKind.Task, "task"), "slimes", new([
             Node("kill", "objective", new { objective_type = "kill_entity", entity = actor, description = actor }),
-            Node("native", "objective", new { objective_type = "kill_entity", entity = "minecraft:slime" }),
             Node("collect", "objective", new { objective_type = "collect_item", item = items }),
         ])));
         Assert.AreEqual(copiedActor, task.Graph!.Nodes[0].Properties["entity"].GetString());
         Assert.AreEqual(actor, task.Graph.Nodes[0].Properties["description"].GetString());
-        Assert.AreEqual("minecraft:slime", task.Graph.Nodes[1].Properties["entity"].GetString());
-        Assert.AreEqual(copiedItems, task.Graph.Nodes[2].Properties["item"].GetString());
+        Assert.AreEqual(copiedItems, task.Graph.Nodes[1].Properties["item"].GetString());
+        Assert.Throws<ArgumentException>(() => map.Rewrite(new GraphResourceEnvelope(GraphResourceKind.Task,
+            Key(A, ResourceKind.Task, "bad"), "Bad", new([
+                Node("native", "objective", new { objective_type = "kill_entity", entity = "minecraft:slime" })]))));
         var session = map.Rewrite(new GraphResourceEnvelope(GraphResourceKind.Session, Key(A, ResourceKind.Session, "session"), "slimes", new([
             Node("line", "line", new { speaker_actor_id = actor, pages = new[] { new { page_id = "page", text = actor } } })])));
         Assert.AreEqual(copiedActor, session.Graph!.Nodes[0].Properties["speaker_actor_id"].GetString());

@@ -26,8 +26,6 @@ import org.apache.logging.log4j.Logger;
 import cpw.mods.fml.common.Loader;
 import darkgrey.rpg.compat.customnpcs.CustomNpcActorBinding;
 import darkgrey.rpg.content.ModItems;
-import darkgrey.rpg.dialogue.DialogueDefinition;
-import darkgrey.rpg.dialogue.runtime.DialogueSessionManager;
 import darkgrey.rpg.entitytools.StorageBoxState;
 import darkgrey.rpg.entitytools.StoragePayload;
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
@@ -46,8 +44,6 @@ import darkgrey.rpg.project.packages.StoryPackageGenerationDelta;
 import darkgrey.rpg.project.packages.StoryPackageGenerationLifecycle;
 import darkgrey.rpg.project.packages.StoryPackageLoader;
 import darkgrey.rpg.project.packages.StoryPackageRuntimeReloader;
-import darkgrey.rpg.quest.runtime.QuestJournalEntry;
-import darkgrey.rpg.quest.runtime.QuestRuntimeService;
 import darkgrey.rpg.runtime.ActorBindingActions;
 import darkgrey.rpg.runtime.ChatMessages;
 import darkgrey.rpg.runtime.EditorSessionManager;
@@ -56,11 +52,11 @@ import darkgrey.rpg.session.forge.CanonicalSessionForgeManager;
 import darkgrey.rpg.story.canonical.forge.CanonicalStoryForgeManager;
 import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
-import darkgrey.rpg.story.runtime.StoryRuntimeService;
 import darkgrey.rpg.task.event.CanonicalTaskDispatchResult;
 import darkgrey.rpg.task.forge.CanonicalTaskForgeManager;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
 import darkgrey.rpg.task.journal.CanonicalJournalService;
+import darkgrey.rpg.task.journal.CanonicalTaskJournalEntry;
 import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 
 public final class CommandDarkGreyRpg extends CommandBase {
@@ -77,85 +73,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
     private final StoryPackageLoader storyPackageLoader;
     private List<String> lastPackageReloadErrors;
 
-    /** Original constructor retained for legacy registrations and probes. */
     public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
-        DialogueSessionManager dialogueSessions, QuestRuntimeService questRuntime, StoryRuntimeService storyRuntime) {
-        this(
-            repository,
-            sessions,
-            dialogueSessions,
-            questRuntime,
-            storyRuntime,
-            new CanonicalSessionForgeManager(repository),
-            null,
-            null,
-            null);
-    }
-
-    public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
-        DialogueSessionManager dialogueSessions, QuestRuntimeService questRuntime, StoryRuntimeService storyRuntime,
-        CanonicalSessionForgeManager canonicalSessionManager) {
-        this(
-            repository,
-            sessions,
-            dialogueSessions,
-            questRuntime,
-            storyRuntime,
-            canonicalSessionManager,
-            null,
-            null,
-            null);
-    }
-
-    /** Compatibility overload for callers that only supply the Stage 4 Task manager. */
-    public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
-        DialogueSessionManager dialogueSessions, QuestRuntimeService questRuntime, StoryRuntimeService storyRuntime,
-        CanonicalTaskForgeManager canonicalTaskManager) {
-        this(
-            repository,
-            sessions,
-            dialogueSessions,
-            questRuntime,
-            storyRuntime,
-            new CanonicalSessionForgeManager(repository),
-            canonicalTaskManager,
-            null,
-            null);
-    }
-
-    public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
-        DialogueSessionManager dialogueSessions, QuestRuntimeService questRuntime, StoryRuntimeService storyRuntime,
-        CanonicalSessionForgeManager canonicalSessionManager, CanonicalTaskForgeManager canonicalTaskManager) {
-        this(
-            repository,
-            sessions,
-            dialogueSessions,
-            questRuntime,
-            storyRuntime,
-            canonicalSessionManager,
-            canonicalTaskManager,
-            null,
-            null);
-    }
-
-    public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
-        DialogueSessionManager dialogueSessions, QuestRuntimeService questRuntime, StoryRuntimeService storyRuntime,
-        CanonicalSessionForgeManager canonicalSessionManager, CanonicalTaskForgeManager canonicalTaskManager,
-        CanonicalStoryForgeManager canonicalStoryManager) {
-        this(
-            repository,
-            sessions,
-            dialogueSessions,
-            questRuntime,
-            storyRuntime,
-            canonicalSessionManager,
-            canonicalTaskManager,
-            canonicalStoryManager,
-            null);
-    }
-
-    public CommandDarkGreyRpg(ProjectRepository repository, EditorSessionManager sessions,
-        DialogueSessionManager dialogueSessions, QuestRuntimeService questRuntime, StoryRuntimeService storyRuntime,
         CanonicalSessionForgeManager canonicalSessionManager, CanonicalTaskForgeManager canonicalTaskManager,
         CanonicalStoryForgeManager canonicalStoryManager, StoryPackageLoader storyPackageLoader) {
         if (canonicalSessionManager == null)
@@ -183,7 +101,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/dgr <status|reload|actor|dialogue|quest|story|session|task|dimension|inspect|debug>";
+        return "/dgr <status|reload|actor|story|session|task|dimension|inspect|debug>";
     }
 
     @Override
@@ -256,14 +174,6 @@ public final class CommandDarkGreyRpg extends CommandBase {
             processActor(sender, arguments);
             return;
         }
-        if ("dialogue".equalsIgnoreCase(arguments[0])) {
-            processDialogue(sender, arguments);
-            return;
-        }
-        if ("quest".equalsIgnoreCase(arguments[0])) {
-            processQuest(sender, arguments);
-            return;
-        }
         if ("story".equalsIgnoreCase(arguments[0])) {
             processStory(sender, arguments);
             return;
@@ -292,7 +202,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
                 (EntityPlayerMP) sender);
             return;
         }
-        String usage = "/dgr debug <player dimension <online_player> <-1|0|1>|nominator clear_type_group <entity_type> <group_id>|item <bind_exact|bind_exact_group|bind_fuzzy> <id>|story <start|set_logic|state> [online_player] ...|task <start|emit_kill|state> [online_player] ...|cnpc <bind_nearest <npc_id>|bind_group_nearest <group_id>|list_nearby>|storage <interact_nearest|release_here|status>>";
+        String usage = "/dgr debug <player dimension <online_player> <-1|0|1>|item <bind_exact|bind_exact_group|bind_fuzzy> <id>|story <start|set_logic|state> [online_player] ...|task <start|emit_kill|state> [online_player] ...|cnpc <bind_nearest <npc_id>|bind_group_nearest <group_id>|list_nearby>|storage <interact_nearest|release_here|status>>";
         if (arguments.length == 5 && "player".equalsIgnoreCase(arguments[1])
             && "dimension".equalsIgnoreCase(arguments[2])) {
             EntityPlayerMP player = namedMultiplayerPlayer(arguments[3]);
@@ -561,16 +471,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
             throw new WrongUsageException(usage);
         }
         NominatorResult result;
-        if (arguments.length == 5 && "nominator".equalsIgnoreCase(arguments[1])
-            && "clear_type_group".equalsIgnoreCase(arguments[2])) {
-            result = NominatorService.bindEntityTypeGroup(
-                true,
-                arguments[3],
-                arguments[4],
-                false,
-                repository.getSnapshot(),
-                NominatorSavedData.get());
-        } else if (arguments.length == 4 && "item".equalsIgnoreCase(arguments[1])) {
+        if (arguments.length == 4 && "item".equalsIgnoreCase(arguments[1])) {
             EntityPlayerMP player = requireMultiplayerPlayer(sender);
             ItemStack held = player.getHeldItem();
             String action = arguments[2].toLowerCase();
@@ -696,10 +597,10 @@ public final class CommandDarkGreyRpg extends CommandBase {
                     + "）");
         } else if ("journal".equals(action)) {
             requireLength(arguments, 2, "/dgr task journal");
-            openQuestJournal(requireMultiplayerPlayer(sender));
+            openTaskJournal(requireMultiplayerPlayer(sender));
         } else if ("progress".equals(action)) {
             requireLength(arguments, 2, "/dgr task progress");
-            showQuestProgress(requireMultiplayerPlayer(sender));
+            showTaskProgress(requireMultiplayerPlayer(sender));
         } else {
             throw new WrongUsageException(taskUsage(arguments));
         }
@@ -845,35 +746,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
                 + runtime.getExternalLogicInputs());
     }
 
-    private void processQuest(ICommandSender sender, String[] arguments) {
-        if (arguments.length < 2) {
-            throw new WrongUsageException("/dgr quest <list|info|start|journal|progress|reset>");
-        }
-        String action = arguments[1].toLowerCase();
-        if ("list".equals(action)) {
-            listTasks(sender);
-        } else if ("info".equals(action)) {
-            requireLength(arguments, 3, "/dgr quest info <id>");
-            showTask(sender, arguments[2]);
-        } else if ("start".equals(action)) {
-            requireLength(arguments, 3, "/dgr quest start <id>");
-            ChatMessages
-                .error(sender, "旧版任务启动已停用，请使用规范任务：/dgr task start <task_id> <story_instance_id> <placement_id>");
-        } else if ("journal".equals(action)) {
-            requireLength(arguments, 2, "/dgr quest journal");
-            openQuestJournal(requireMultiplayerPlayer(sender));
-        } else if ("progress".equals(action)) {
-            requireLength(arguments, 2, "/dgr quest progress");
-            showQuestProgress(requireMultiplayerPlayer(sender));
-        } else if ("reset".equals(action)) {
-            requireLength(arguments, 3, "/dgr quest reset <id>");
-            ChatMessages.error(sender, "旧版任务重置已停用，请使用规范任务：/dgr task progress 或 /dgr story reset <story_id>");
-        } else {
-            throw new WrongUsageException("/dgr quest <list|info|start|journal|progress|reset>");
-        }
-    }
-
-    private void openQuestJournal(EntityPlayerMP player) {
+    private void openTaskJournal(EntityPlayerMP player) {
         if (canonicalJournalService == null) {
             ChatMessages.error(player, "规范任务日志服务当前不可用。");
             return;
@@ -881,19 +754,21 @@ public final class CommandDarkGreyRpg extends CommandBase {
         canonicalJournalService.openJournal(player);
     }
 
-    private void showQuestProgress(EntityPlayerMP player) {
+    private void showTaskProgress(EntityPlayerMP player) {
         if (canonicalJournalService == null) {
             ChatMessages.error(player, "规范任务日志服务当前不可用。");
             return;
         }
-        List<QuestJournalEntry> entries = canonicalJournalService.getJournal(player);
+        List<CanonicalTaskJournalEntry> entries = canonicalJournalService.getJournal(player);
         if (entries.isEmpty()) {
             ChatMessages.info(player, "任务日志为空。");
             return;
         }
-        for (QuestJournalEntry entry : entries) {
+        for (CanonicalTaskJournalEntry entry : entries) {
             ChatMessages.info(player, entry.getTitle() + " [" + entry.getStatus() + "]");
-            for (String objective : entry.getObjectiveLines()) {
+            for (String objective : CanonicalJournalService.objectiveLines(
+                entry,
+                text -> darkgrey.rpg.session.forge.DynamicContentResolver.resolve(text, player))) {
                 ChatMessages.info(player, "  " + objective);
             }
         }
@@ -1032,70 +907,6 @@ public final class CommandDarkGreyRpg extends CommandBase {
                     + "。");
     }
 
-    private void processDialogue(ICommandSender sender, String[] arguments) {
-        if (arguments.length < 2) {
-            throw new WrongUsageException("/dgr dialogue <list|info|play|start|last-result>");
-        }
-        String action = arguments[1].toLowerCase();
-        if ("list".equals(action)) {
-            listDialogues(sender);
-        } else if ("info".equals(action)) {
-            requireLength(arguments, 3, "/dgr dialogue info <id>");
-            showDialogue(sender, arguments[2]);
-        } else if ("play".equals(action)) {
-            requireLength(arguments, 3, "/dgr dialogue play <id>");
-            ChatMessages.error(sender, "独立对话启动已停用，请使用规范 Session：/dgr session play <story_id> <aggregate_node_id>");
-        } else if ("start".equals(action)) {
-            requireLength(arguments, 3, "/dgr dialogue start <id>");
-            ChatMessages.error(sender, "独立对话启动已停用，请使用规范 Session：/dgr session play <story_id> <aggregate_node_id>");
-        } else if ("last-result".equals(action)) {
-            requireLength(arguments, 2, "/dgr dialogue last-result");
-            showLastResult(requirePlayer(sender));
-        } else {
-            throw new WrongUsageException("/dgr dialogue <list|info|play|start|last-result>");
-        }
-    }
-
-    private void listDialogues(ICommandSender sender) {
-        if (repository.getSnapshot()
-            .getDialogues()
-            .isEmpty()) {
-            ChatMessages.info(sender, "当前没有已加载的对话。");
-            return;
-        }
-        ChatMessages.info(
-            sender,
-            "对话（" + repository.getSnapshot()
-                .getDialogues()
-                .size() + "）：");
-        for (DialogueDefinition dialogue : repository.getSnapshot()
-            .getDialogues()
-            .values()) {
-            ChatMessages.info(sender, "- " + dialogue.getId() + " — " + dialogue.getTitle());
-        }
-    }
-
-    private void showDialogue(ICommandSender sender, String id) {
-        DialogueDefinition dialogue = repository.getSnapshot()
-            .getDialogue(id);
-        if (dialogue == null) {
-            ChatMessages.error(sender, "未知对话 ID：" + id);
-            return;
-        }
-        ChatMessages.info(sender, "对话：" + dialogue.getId() + " — " + dialogue.getTitle());
-        ChatMessages.info(sender, "发言角色：" + dialogue.getSpeakers());
-        ChatMessages.info(
-            sender,
-            "入口：" + dialogue.getEntry()
-                + "，节点："
-                + dialogue.getNodes()
-                    .size());
-    }
-
-    private void showLastResult(EntityPlayer player) {
-        ChatMessages.info(player, "独立旧版对话结果已停用，请通过规范 Session 查看当前流程：/dgr session resume <story_id>");
-    }
-
     private void processActor(ICommandSender sender, String[] arguments) {
         if (arguments.length < 2) {
             throw new WrongUsageException("/dgr actor <list|info|select|bind|unbind>");
@@ -1225,18 +1036,7 @@ public final class CommandDarkGreyRpg extends CommandBase {
     public List addTabCompletionOptions(ICommandSender sender, String[] arguments) {
         if (arguments.length == 1) {
             List<String> roots = new ArrayList<String>(
-                Arrays.asList(
-                    "inspect",
-                    "status",
-                    "reload",
-                    "actor",
-                    "dialogue",
-                    "quest",
-                    "story",
-                    "session",
-                    "task",
-                    "dimension",
-                    "buff"));
+                Arrays.asList("inspect", "status", "reload", "actor", "story", "session", "task", "dimension", "buff"));
             if (sender.canCommandSenderUseCommand(2, "dgr")) roots.add("debug");
             return getListOfStringsFromIterableMatchingLastWord(arguments, roots);
         }
@@ -1257,30 +1057,6 @@ public final class CommandDarkGreyRpg extends CommandBase {
                     .getActors()
                     .keySet());
             return getListOfStringsFromIterableMatchingLastWord(arguments, actorIds);
-        }
-        if (arguments.length == 2 && "dialogue".equalsIgnoreCase(arguments[0])) {
-            return getListOfStringsMatchingLastWord(arguments, "list", "info", "play", "start", "last-result");
-        }
-        if (arguments.length == 3 && "dialogue".equalsIgnoreCase(arguments[0])
-            && Arrays.asList("info", "play")
-                .contains(arguments[1].toLowerCase())) {
-            List<String> dialogueIds = new ArrayList<String>(
-                repository.getSnapshot()
-                    .getDialogues()
-                    .keySet());
-            return getListOfStringsFromIterableMatchingLastWord(arguments, dialogueIds);
-        }
-        if (arguments.length == 2 && "quest".equalsIgnoreCase(arguments[0])) {
-            return getListOfStringsMatchingLastWord(arguments, "list", "info", "start", "journal", "progress", "reset");
-        }
-        if (arguments.length == 3 && "quest".equalsIgnoreCase(arguments[0])
-            && Arrays.asList("info", "start", "reset")
-                .contains(arguments[1].toLowerCase())) {
-            List<String> questIds = new ArrayList<String>(
-                repository.getSnapshot()
-                    .getCanonicalTasks()
-                    .keySet());
-            return getListOfStringsFromIterableMatchingLastWord(arguments, questIds);
         }
         if (arguments.length == 2 && "story".equalsIgnoreCase(arguments[0])) {
             return getListOfStringsMatchingLastWord(arguments, "list", "info", "start", "state", "reset");

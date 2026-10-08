@@ -2,7 +2,6 @@ using System.Text.Json;
 using DarkGreyRPG.Studio.Core.Actors;
 using DarkGreyRPG.Studio.Core.IO;
 using DarkGreyRPG.Studio.Core.Projects;
-using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 
 namespace DarkGreyRPG.Studio.Tests;
@@ -87,63 +86,16 @@ public sealed class M2CoreTests
     }
 
     [TestMethod]
-    public void EntryPresentationSerializesAsStructuredConfiguration()
-    {
-        var json = StorySerializer.Serialize(new StoryResource
-        {
-            Id = "presentation_story",
-            DisplayName = "Presentation",
-            EntryPresentation = new StoryEntryPresentation
-            {
-                Mode = "title",
-                Eyebrow = "Fate changed",
-                Title = "Royal Mystery",
-                DurationSeconds = 4.0,
-            },
-        });
-
-        StringAssert.Contains(json, "\"entry_presentation\": {");
-        var roundTrip = StorySerializer.Deserialize(json);
-        Assert.AreEqual("title", roundTrip.EntryPresentation.Mode);
-        Assert.AreEqual("Fate changed", roundTrip.EntryPresentation.Eyebrow);
-        Assert.AreEqual(4.0, roundTrip.EntryPresentation.DurationSeconds);
-    }
-
-    [TestMethod]
     public void StoryNodePropertiesPreserveRuntimeJsonValueTypes()
     {
-        var story = StorySerializer.Deserialize("""
-            {
-              "schema_version": 1,
-              "id": "typed_properties",
-              "title": "Typed Properties",
-              "entry": "give_item",
-              "nodes": [
-                {
-                  "id": "give_item",
-                  "type": "give_item",
-                  "position": { "x": 12.5, "y": 24 },
-                  "properties": {
-                    "item": "minecraft:emerald",
-                    "metadata": 0,
-                    "amount": 3,
-                    "enabled": true
-                  }
-                }
-              ],
-              "connections": [],
-              "metadata": { "notes": "", "tags": [] }
-            }
-            """);
-
-        var properties = story.Nodes.Single().Properties;
-        Assert.AreEqual(JsonValueKind.String, properties["item"].ValueKind);
-        Assert.AreEqual(0, properties["metadata"].GetInt32());
-        Assert.AreEqual(3, properties["amount"].GetInt32());
-        Assert.IsTrue(properties["enabled"].GetBoolean());
-
-        var roundTrip = StorySerializer.Deserialize(StorySerializer.Serialize(story));
-        Assert.AreEqual(3, roundTrip.Nodes.Single().Properties["amount"].GetInt32());
+        var node = Core.Graphs.Definitions.GraphNodeFactory.Create(Core.Graphs.Definitions.GraphScope.StoryFlow, "title", "title");
+        node.Properties["duration_seconds"] = JsonSerializer.SerializeToElement(4.5);
+        node.Properties["description"] = JsonSerializer.SerializeToElement("Typed properties");
+        var story = new GraphResourceEnvelope(GraphResourceKind.Story, "ST-2345-6789-ABCD-EFGH", "Typed", new Core.Graphs.GraphDocument([node]));
+        var roundTrip = GraphResourceEnvelopeSerializer.Deserialize(GraphResourceEnvelopeSerializer.Serialize(story));
+        var properties = roundTrip.Graph!.Nodes.Single().Properties;
+        Assert.AreEqual(JsonValueKind.String, properties["description"].ValueKind);
+        Assert.AreEqual(4.5, properties["duration_seconds"].GetDouble());
     }
 
     [TestMethod]

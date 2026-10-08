@@ -43,16 +43,26 @@ public final class CanonicalTaskJournalProjectionProbe {
         resources.put(sequential.getId(), sequential);
 
         CanonicalTaskInstanceStore store = new CanonicalTaskInstanceStore();
-        store.start(player, "z-story", "active", parallel, 20L);
-        store.acceptEvent(player, "z-story", "active", CanonicalTaskEvent.killEntity("slime"), 21L);
-        store.start(player, "a-story", "settled", settledResource, 10L);
-        store.acceptEvent(player, "a-story", "settled", CanonicalTaskEvent.killEntity("slime"), 11L);
-        store.start(player, "b-story", "cancelled", parallel, 20L);
-        store.cancelByStory(player, "b-story");
-        store.start(player, "c-story", "error", parallel, 30L);
-        require(store.markError(player, "c-story", "error"), "error transition");
-        store.start(player, "d-story", "sequential", sequential, 40L);
-        store.start(other, "other", "ignored", parallel, 1L);
+        store.start(player, "ST-2345-6789-ABCD-EFGZ", "active", parallel, 20L);
+        store.acceptEvent(
+            player,
+            "ST-2345-6789-ABCD-EFGZ",
+            "active",
+            CanonicalTaskEvent.killEntity("ST-2345-6789-ABCD-EFGH~actor~slime"),
+            21L);
+        store.start(player, "ST-2345-6789-ABCD-EFGH", "settled", settledResource, 10L);
+        store.acceptEvent(
+            player,
+            "ST-2345-6789-ABCD-EFGH",
+            "settled",
+            CanonicalTaskEvent.killEntity("ST-2345-6789-ABCD-EFGH~actor~slime"),
+            11L);
+        store.start(player, "ST-2345-6789-ABCD-EFGJ", "cancelled", parallel, 20L);
+        store.cancelByStory(player, "ST-2345-6789-ABCD-EFGJ");
+        store.start(player, "ST-2345-6789-ABCD-EFGK", "error", parallel, 30L);
+        require(store.markError(player, "ST-2345-6789-ABCD-EFGK", "error"), "error transition");
+        store.start(player, "ST-2345-6789-ABCD-EFGL", "sequential", sequential, 40L);
+        store.start(other, "ST-2345-6789-ABCD-EFGM", "ignored", parallel, 1L);
 
         List<CanonicalTaskInstanceSnapshot> sourceSnapshots = new ArrayList<CanonicalTaskInstanceSnapshot>(
             store.snapshots());
@@ -81,12 +91,12 @@ public final class CanonicalTaskJournalProjectionProbe {
         require(
             entries.get(1)
                 .getStoryInstanceId()
-                .equals("b-story"),
+                .equals("ST-2345-6789-ABCD-EFGJ"),
             "identity tie ordering first");
         require(
             entries.get(2)
                 .getStoryInstanceId()
-                .equals("z-story"),
+                .equals("ST-2345-6789-ABCD-EFGZ"),
             "identity tie ordering second");
         require(
             entries.get(2)
@@ -153,8 +163,10 @@ public final class CanonicalTaskJournalProjectionProbe {
             "Task metadata did not reach journal");
         require(
             "任务整体说明\n背景".equals(
-                darkgrey.rpg.quest.runtime.CanonicalTaskLegacyJournalAdapter.adapt(entries.get(2))
-                    .getDescription()),
+                darkgrey.rpg.creator.CanonicalTaskUiProjection.project(Collections.singletonList(entries.get(2)))
+                    .getTagList("tasks", 10)
+                    .getCompoundTagAt(0)
+                    .getString("description")),
             "Task author description did not reach client transport");
 
         // Results are detached and immutable, including the source list and every exposed collection.
@@ -174,7 +186,11 @@ public final class CanonicalTaskJournalProjectionProbe {
                 .getPublicLogicState());
 
         // Strict resource and snapshot corruption gates.
-        CanonicalTaskInstanceSnapshot activeSnapshot = sourceSnapshot(player, "z-story", "active", parallel);
+        CanonicalTaskInstanceSnapshot activeSnapshot = sourceSnapshot(
+            player,
+            "ST-2345-6789-ABCD-EFGZ",
+            "active",
+            parallel);
         expectFailure(single(player, activeSnapshot, resolver(Collections.<String, CanonicalGraphResource>emptyMap())));
         expectFailure(
             single(
@@ -358,7 +374,12 @@ public final class CanonicalTaskJournalProjectionProbe {
         CanonicalGraphResource resource) {
         CanonicalTaskInstanceStore source = new CanonicalTaskInstanceStore();
         source.start(player, story, placement, resource, 20L);
-        source.acceptEvent(player, story, placement, CanonicalTaskEvent.killEntity("slime"), 21L);
+        source.acceptEvent(
+            player,
+            story,
+            placement,
+            CanonicalTaskEvent.killEntity("ST-2345-6789-ABCD-EFGH~actor~slime"),
+            21L);
         return source.get(player, story, placement)
             .snapshot();
     }
@@ -393,40 +414,46 @@ public final class CanonicalTaskJournalProjectionProbe {
                 "kill",
                 "objective",
                 Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
-                objective("kill_entity", required, "entity", "slime")),
+                objective("kill_entity", required, "entity", "ST-2345-6789-ABCD-EFGH~actor~slime")),
             node(
                 "collect",
                 "objective",
                 Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
-                objective("collect_item", required, "item", "iron", "metadata", "{\"grade\":\"raw\"}")),
+                objective(
+                    "collect_item",
+                    required,
+                    "item",
+                    "ST-2345-6789-ABCD-EFGH~item~iron",
+                    "metadata",
+                    "{\"grade\":\"raw\"}")),
             node(
                 "interact",
                 "objective",
                 Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
-                objective("interact_actor", required, "actor_id", "guard")),
-            node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty()),
+                objective("interact_actor", required, "actor_id", "ST-2345-6789-ABCD-EFGH~actor~guard")),
+            node("settle", "settle", Collections.singletonList(port("logic_in", true, 0)), settlementProperties()),
             node(
                 "done",
                 "logic_output",
                 Collections.singletonList(port("logic_in", true, 0)),
-                props("port_id", "done", "display_name", "Done")));
+                publicLogicProperties()));
         List<CanonicalGraphConnection> edges = new ArrayList<CanonicalGraphConnection>();
         edges.add(edge("activate", "logic_out", "kill", "prerequisite"));
         if (sequential) {
             edges.add(edge("kill", "logic_status", "collect", "prerequisite"));
             edges.add(edge("collect", "logic_status", "interact", "prerequisite"));
-            edges.add(edge("interact", "logic_status", "settle", "result"));
+            edges.add(edge("interact", "logic_status", "settle", "logic_in"));
             edges.add(edge("interact", "logic_status", "done", "logic_in"));
         } else {
             edges.add(edge("activate", "logic_out", "collect", "prerequisite"));
             edges.add(edge("activate", "logic_out", "interact", "prerequisite"));
-            edges.add(edge("kill", "logic_status", "settle", "result"));
+            edges.add(edge("kill", "logic_status", "settle", "logic_in"));
             edges.add(edge("kill", "logic_status", "done", "logic_in"));
         }
         return new CanonicalGraphResource(
-            1,
+            CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
             CanonicalGraphResourceKind.TASK,
-            id,
+            "ST-2345-6789-ABCD-EFGH~task~" + id,
             title,
             new CanonicalGraph(nodes, edges),
             new darkgrey.rpg.graph.canonical.CanonicalTaskMetadata("任务整体说明\n背景"));
@@ -440,16 +467,17 @@ public final class CanonicalTaskJournalProjectionProbe {
                 "objective-" + index,
                 "objective",
                 Arrays.asList(port("prerequisite", true, 0), port("logic_status", false, 1)),
-                objective("kill_entity", 1, "entity", "entity-" + index)));
-        nodes.add(node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty()));
+                objective("kill_entity", 1, "entity", "ST-2345-6789-ABCD-EFGH~actor~entity_" + index)));
+        nodes.add(
+            node("settle", "settle", Collections.singletonList(port("logic_in", true, 0)), settlementProperties()));
         List<CanonicalGraphConnection> edges = new ArrayList<CanonicalGraphConnection>();
         for (int index = 0; index < count; index++)
             edges.add(edge("activate", "logic_out", "objective-" + index, "prerequisite"));
-        edges.add(edge("objective-0", "logic_status", "settle", "result"));
+        edges.add(edge("objective-0", "logic_status", "settle", "logic_in"));
         return new CanonicalGraphResource(
-            1,
+            CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
             CanonicalGraphResourceKind.TASK,
-            id,
+            "ST-2345-6789-ABCD-EFGH~task~" + id,
             "Many Objectives",
             new CanonicalGraph(nodes, edges),
             new darkgrey.rpg.graph.canonical.CanonicalTaskMetadata("任务整体说明\n背景"));
@@ -474,7 +502,7 @@ public final class CanonicalTaskJournalProjectionProbe {
                     .getPorts(),
                 properties));
         return new CanonicalGraphResource(
-            1,
+            CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
             CanonicalGraphResourceKind.TASK,
             source.getId(),
             source.getDisplayName(),
@@ -492,7 +520,7 @@ public final class CanonicalTaskJournalProjectionProbe {
             Collections.singletonMap(
                 "entries",
                 new JsonParser().parse(
-                    "[{\"type\":\"xp\",\"amount\":-7},{\"type\":\"xp\",\"amount\":0},{\"type\":\"item\",\"item\":\"coin\",\"amount\":3}]")));
+                    "[{\"type\":\"xp\",\"amount\":-7},{\"type\":\"xp\",\"amount\":0},{\"type\":\"item\",\"item\":\"ST-2345-6789-ABCD-EFGH~item~coin\",\"amount\":3}]")));
         CanonicalGraphNode second = node(
             "second",
             "reward",
@@ -504,7 +532,7 @@ public final class CanonicalTaskJournalProjectionProbe {
             Collections.<CanonicalGraphPort>emptyList(),
             Collections.singletonMap("entries", new JsonParser().parse("[{\"type\":\"xp\",\"amount\":999}]")));
         CanonicalGraphResource resource = new CanonicalGraphResource(
-            1,
+            CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
             CanonicalGraphResourceKind.TASK,
             "preview",
             "Preview",
@@ -540,7 +568,7 @@ public final class CanonicalTaskJournalProjectionProbe {
             "objective",
             "objective",
             Arrays.asList(port("logic_status", false, 0)),
-            objective("kill_entity", 3, "entity", "Pig"));
+            objective("kill_entity", 3, "entity", "ST-2345-6789-ABCD-EFGH~actor~pig"));
         Map<String, JsonElement> activeProperties = new LinkedHashMap<String, JsonElement>(
             actualObjective.getProperties());
         activeProperties.put("prerequisite_enabled", new JsonParser().parse("false"));
@@ -551,7 +579,7 @@ public final class CanonicalTaskJournalProjectionProbe {
             Arrays.asList(port("logic_in", true, 0)),
             second.getProperties());
         CanonicalGraphResource valid = new CanonicalGraphResource(
-            1,
+            CanonicalGraphResource.CURRENT_SCHEMA_VERSION,
             CanonicalGraphResourceKind.TASK,
             "valid_preview",
             "Valid Preview",
@@ -559,10 +587,14 @@ public final class CanonicalTaskJournalProjectionProbe {
                 Arrays.asList(
                     actualObjective,
                     actualReward,
-                    node("settle", "settle", Collections.singletonList(port("result", true, 0)), empty())),
+                    node(
+                        "settle",
+                        "settle",
+                        Collections.singletonList(port("logic_in", true, 0)),
+                        settlementProperties())),
                 Arrays.asList(
                     edge("objective", "logic_status", "reward", "logic_in"),
-                    edge("objective", "logic_status", "settle", "result"))));
+                    edge("objective", "logic_status", "settle", "logic_in"))));
         require(
             darkgrey.rpg.task.runtime.CanonicalTaskRuntime.start(valid)
                 .isActive(),
@@ -573,6 +605,18 @@ public final class CanonicalTaskJournalProjectionProbe {
                 .tagCount() == 1,
             "runtime-valid objective exposes its direct reward");
         System.out.println("TASK_DIRECT_REWARD_PREVIEW=PASS");
+    }
+
+    private static Map<String, JsonElement> publicLogicProperties() {
+        Map<String, JsonElement> result = props("port_id", "done", "display_name", "Done");
+        result.put("display_order", new JsonParser().parse("0"));
+        return result;
+    }
+
+    private static Map<String, JsonElement> settlementProperties() {
+        Map<String, JsonElement> result = props("port_id", "result", "display_name", "Complete");
+        result.put("display_order", new JsonParser().parse("0"));
+        return result;
     }
 
     private static Map<String, JsonElement> objective(String type, int required, String key, String value) {

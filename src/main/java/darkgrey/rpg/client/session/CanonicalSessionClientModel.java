@@ -172,7 +172,9 @@ public final class CanonicalSessionClientModel {
 
     public synchronized void layout(String key, double width, int rows, DialogueDisplayPages.Metrics metrics) {
         if (frame == null || key.equals(layoutKey)) return;
-        int start = displayPages == null ? 0 : displayPages.start(displayPage);
+        int start = displayPages == null
+            ? (frame.getKind() == CanonicalSessionFrame.Kind.CHOICE ? visibleText.length() : 0)
+            : displayPages.start(displayPage);
         int shown = start + getVisibleText().length();
         displayPages = DialogueDisplayPages.measure(visibleText, width, rows, metrics);
         displayPage = displayPages.pageAt(start);

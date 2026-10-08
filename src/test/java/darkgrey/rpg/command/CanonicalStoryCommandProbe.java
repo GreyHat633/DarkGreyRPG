@@ -22,8 +22,14 @@ public final class CanonicalStoryCommandProbe {
         require(source.contains("canonicalStoryManager.reset(player, arguments[2])"), "canonical Story reset source");
         require(source.contains("canonicalJournalService.getJournal(player)"), "canonical Journal progress source");
         require(
-            journalSource.contains("CanonicalTaskLegacyJournalAdapter.adapt"),
-            "canonical Journal adapter boundary");
+            journalSource.contains("canonicalTaskManager.getJournal(player)")
+                && journalSource.contains("CanonicalTaskPresentationServer.push")
+                && journalSource.contains("new CanonicalTaskViewOpen")
+                && !journalSource.contains("CanonicalTaskLegacyJournalAdapter"),
+            "current Journal projection and menu");
+        require(
+            !source.contains("processQuest") && !source.contains("processDialogue"),
+            "retired command dispatchers removed");
         require(
             "/dgr task <list|info|start|journal|progress>".equals(CommandDarkGreyRpg.taskUsage(null)),
             "canonical Task usage");

@@ -1,14 +1,12 @@
 package darkgrey.rpg.network;
 
 import cpw.mods.fml.relauncher.Side;
-import darkgrey.rpg.network.message.nominator.C2SNominatorEntityBind;
 import darkgrey.rpg.network.message.nominator.C2SNominatorEntityOpen;
-import darkgrey.rpg.network.message.nominator.C2SNominatorInventoryBind;
 import darkgrey.rpg.network.message.nominator.C2SNominatorInventoryOpen;
 import darkgrey.rpg.network.message.nominator.S2CNominatorEntityOpen;
 import darkgrey.rpg.network.message.nominator.S2CNominatorInventoryOpen;
 
-/** Registers nominator request packets; no client packet can mutate state. */
+/** Registers current nominator operations and snapshots. */
 public final class NominatorNetwork {
 
     private static boolean registered;
@@ -17,10 +15,7 @@ public final class NominatorNetwork {
 
     public static synchronized void registerCommon() {
         if (registered) return;
-        DialogueNetwork.CHANNEL
-            .registerMessage(C2SNominatorEntityBind.Handler.class, C2SNominatorEntityBind.class, 8, Side.SERVER);
-        DialogueNetwork.CHANNEL
-            .registerMessage(C2SNominatorInventoryBind.Handler.class, C2SNominatorInventoryBind.class, 9, Side.SERVER);
+        // Retired write discriminators 8/9 remain unassigned.
         DialogueNetwork.CHANNEL
             .registerMessage(C2SNominatorEntityOpen.Handler.class, C2SNominatorEntityOpen.class, 10, Side.SERVER);
         DialogueNetwork.CHANNEL

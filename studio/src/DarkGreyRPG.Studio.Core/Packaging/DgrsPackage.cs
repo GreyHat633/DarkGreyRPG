@@ -153,9 +153,10 @@ public static class DgrsPackageValidator
         catch (StoryPackageException) { throw; }
         catch (Exception exception) when (exception is IOException or InvalidDataException
             or UnauthorizedAccessException or NotSupportedException or JsonException or ArgumentException
-            or InvalidOperationException or ActorRepositoryException)
+            or InvalidOperationException or ActorRepositoryException or GraphResourceEnvelopeException
+            or CanonicalStoryMembershipException)
         {
-            throw new StoryPackageException($"Could not open DGRS package '{path}'.", exception);
+            throw new StoryPackageException($"Could not open DGRS package '{path}': {exception.Message}", exception);
         }
     }
 
@@ -225,8 +226,6 @@ public static class DgrsPackageValidator
         foreach (var path in required.Actors) yield return path;
         foreach (var path in required.Items) yield return path;
         foreach (var path in required.ItemGroups) yield return path;
-        foreach (var path in required.Dialogues) yield return path;
-        foreach (var path in required.Quests) yield return path;
         foreach (var path in required.CanonicalStories) yield return path;
         foreach (var path in required.CanonicalMemberships) yield return path;
         foreach (var path in required.Sessions) yield return path;
@@ -315,17 +314,16 @@ public static class DgrsPackageValidator
         var issues = GraphNodeShapeValidator.Validate(graph, scope);
         if (scope != GraphScope.Task) return issues;
 
-        var dormant = (graph.Nodes ?? [])
-            .Where(node => node is not null
-                && string.Equals(node.Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal)
-                && CanonicalTaskObjectiveSchema.IsDormantUnselectedTarget(graph, node))
-            .Select(node => node!.Id)
-            .ToHashSet(StringComparer.Ordinal);
+        var dormant = (graph.Nodes ?? []).Where(node => node is not null)
+            .GroupBy(node => node.Id, StringComparer.Ordinal)
+            .Where(nodes => nodes.Count() == 1
+                && string.Equals(nodes.Single().Type, CanonicalTaskObjectiveSchema.NodeType, StringComparison.Ordinal)
+                && CanonicalTaskObjectiveSchema.IsDormantUnselectedTarget(graph, nodes.Single()))
+            .ToDictionary(nodes => nodes.Key, nodes => nodes.Single(), StringComparer.Ordinal);
         if (dormant.Count == 0) return issues;
 
-        return issues.Where(issue => issue.Code != "graph.objective.target.invalid"
-            || issue.NodeId is null
-            || !dormant.Contains(issue.NodeId));
+        return issues.Where(issue => issue.NodeId is null || !dormant.TryGetValue(issue.NodeId, out var node)
+            || CanonicalTaskObjectiveSchema.AllowDraftIssues(node, [issue]).Count != 0);
     }
 
     internal static string ReadText(ZipArchiveEntry entry)

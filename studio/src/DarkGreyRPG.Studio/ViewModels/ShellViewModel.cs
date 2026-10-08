@@ -1,17 +1,14 @@
-﻿using DarkGreyRPG.Studio.Core.Identity;
+using DarkGreyRPG.Studio.Core.Identity;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Markup;
 using DarkGreyRPG.Studio.Core.Actors;
-using DarkGreyRPG.Studio.Core.Dialogues;
 using DarkGreyRPG.Studio.Core.Graphs;
 using DarkGreyRPG.Studio.Core.Graphs.Definitions;
 using DarkGreyRPG.Studio.Core.Graphs.Resources;
 using DarkGreyRPG.Studio.Core.Projects;
-using DarkGreyRPG.Studio.Core.Quests;
-using DarkGreyRPG.Studio.Core.Stories;
 using DarkGreyRPG.Studio.Core.Items;
 using DarkGreyRPG.Studio.Core.Packaging;
 using DarkGreyRPG.Studio.Core.Validation;
@@ -32,29 +29,13 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly ICanonicalStoryResourceDialogs _canonicalStoryResourceDialogs;
     private readonly IItemWorkspaceDialogs _itemWorkspaceDialogs;
     private readonly IProjectWorkspaceDialogs _projectWorkspaceDialogs;
-    private readonly IFlowWorkspaceDialogs _flowWorkspaceDialogs;
     private readonly ICrashLogService _crashLogService;
     private readonly IDgrsExportPathPicker _dgrsExportPathPicker;
     private readonly Func<string, CanonicalProjectGraphStore> _canonicalGraphStoreFactory;
-    private readonly HashSet<string> _ignoredFlowRecoveries = new(StringComparer.Ordinal);
-    private StoryFlowRecoveryStore? _flowRecoveryStore;
-    private ActorResourceInfo? _selectedActor;
-    private StoryActorMembershipViewModel? _selectedStoryActor;
-    private StoryActorsViewModel? _observedStoryActors;
-    private StoryDialoguesViewModel? _observedStoryDialogues;
-    private StoryQuestsViewModel? _observedStoryQuests;
-    private ActorEditorViewModel? _currentActor;
-    private DialogueEditorViewModel? _currentDialogue;
-    private QuestEditorViewModel? _currentQuest;
-    private StoryFlowEditorViewModel? _currentFlow;
     private CanonicalStoryWorkspaceViewModel? _canonicalStoryWorkspace;
     private CanonicalProjectGraphStore? _canonicalGraphStore;
     private CanonicalGraphResourceSaveCoordinator? _canonicalSaveCoordinator;
     private IReadOnlyList<CanonicalStoryDiscoveryIssue> _canonicalStoryDiscoveryIssues = [];
-    private StoryResourceMembershipViewModel? _selectedStoryResource;
-    private readonly Dictionary<string, DialogueDocument> _dialogueDrafts = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, QuestDocument> _questDrafts = new(StringComparer.Ordinal);
-    private string _searchText = string.Empty;
     private bool _isResourceBrowserVisible = true;
     private bool _isCanonicalStoryWorkspaceVisible;
     private string _projectDisplayName = "未打开项目";
@@ -68,7 +49,6 @@ public sealed partial class ShellViewModel : ObservableObject
         IActorWorkspaceDialogs? actorWorkspaceDialogs = null,
         IProjectWorkspaceDialogs? projectWorkspaceDialogs = null,
         IResourceWorkspaceDialogs? resourceWorkspaceDialogs = null,
-        IFlowWorkspaceDialogs? flowWorkspaceDialogs = null,
         ICrashLogService? crashLogService = null,
         ICanonicalStoryResourceDialogs? canonicalStoryResourceDialogs = null,
         Func<string, CanonicalProjectGraphStore>? canonicalGraphStoreFactory = null,
@@ -85,7 +65,6 @@ public sealed partial class ShellViewModel : ObservableObject
         _resourceWorkspaceDialogs = resourceWorkspaceDialogs ?? new NullResourceWorkspaceDialogs();
         _canonicalStoryResourceDialogs = canonicalStoryResourceDialogs ?? new NullCanonicalStoryResourceDialogs();
         _itemWorkspaceDialogs = itemWorkspaceDialogs ?? new NullItemWorkspaceDialogs();
-        _flowWorkspaceDialogs = flowWorkspaceDialogs ?? new NullFlowWorkspaceDialogs();
         _crashLogService = crashLogService ?? new CrashLogService();
         _dgrsExportPathPicker = dgrsExportPathPicker ?? new NullDgrsExportPathPicker();
         _offlinePackageDialogs = offlinePackageDialogs ?? NullOfflinePackageDialogs.Instance;
@@ -96,24 +75,9 @@ public sealed partial class ShellViewModel : ObservableObject
             ?? (projectDirectory => new CanonicalProjectGraphStore(projectDirectory));
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
-        SaveActorCommand = new RelayCommand(SaveActor, () => CurrentActor?.CanSave == true);
         SaveCurrentResourceCommand = new RelayCommand(SaveAll, CanSaveAll);
         UndoCurrentCommand = new RelayCommand(UndoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanUndo == true || LatestCanonicalUndoHost is not null || ActiveEditor?.UndoCommand.CanExecute(null) == true || CanUndoReference());
         RedoCurrentCommand = new RelayCommand(RedoCurrent, () => CanonicalStoryWorkspace?.InspectorPortraitEditor?.CanRedo == true || NextCanonicalRedoHost is not null || (ActiveEditor is not CanonicalGraphResourceEditorViewModel && ActiveEditor?.RedoCommand.CanExecute(null) == true) || CanRedoReference());
-        NewActorCommand = new RelayCommand(NewActor, CanCreateOrReferenceActor);
-        ReferenceActorCommand = new RelayCommand(ReferenceActor, CanCreateOrReferenceActor);
-        RemoveActorReferenceCommand = new RelayCommand(RemoveActorReference, CanRemoveActorReference);
-        ViewActorReferencesCommand = new RelayCommand(ViewActorReferences, CanViewActorReferences);
-        DuplicateActorCommand = new RelayCommand(DuplicateActor, CanMutateSelectedActor);
-        RenameActorCommand = new RelayCommand(RenameActor, CanMutateSelectedActor);
-        DeleteActorCommand = new RelayCommand(DeleteActor, CanDeleteSelectedActor);
-        NewStoryResourceCommand = new RelayCommand(NewStoryResource, CanCreateOrReferenceStoryResource);
-        ReferenceStoryResourceCommand = new RelayCommand(ReferenceStoryResource, CanCreateOrReferenceStoryResource);
-        RemoveStoryResourceReferenceCommand = new RelayCommand(RemoveStoryResourceReference, CanRemoveStoryResourceReference);
-        ViewStoryResourceReferencesCommand = new RelayCommand(ViewStoryResourceReferences, () => SelectedStoryResource?.Descriptor is not null);
-        DeleteStoryResourceCommand = new RelayCommand(DeleteStoryResource, CanDeleteSelectedStoryResource);
-        DeleteCurrentResourceCommand = new RelayCommand(DeleteCurrentResource, CanDeleteCurrentResource);
-        DuplicateStoryResourceCommand = new RelayCommand(DuplicateStoryResource, CanCreateOrReferenceStoryResource);
         SaveAllCommand = new RelayCommand(SaveAll, CanSaveAll);
         OpenProjectDirectoryCommand = new RelayCommand(OpenProjectDirectory, () => HasProject);
         ValidateProjectCommand = new RelayCommand(ValidateProject, () => HasProject);
@@ -124,7 +88,7 @@ public sealed partial class ShellViewModel : ObservableObject
         DeleteSelectedStoryCommand = new RelayCommand(
             DeleteSelectedStory,
             () => HasProject && ProjectHome.SelectedStory is { } story
-                && (story.HasCanonicalStory || story.CanDeleteLegacyStory));
+                && story.HasCanonicalStory);
         ShowProjectHomeCommand = new RelayCommand(ShowProjectHome, () => HasProject);
         ShowProjectGraphCommand = new RelayCommand(ShowProjectGraph, () => HasProject);
         CopyStoryContentCommand = new RelayCommand(CopyStoryContent,
@@ -136,24 +100,17 @@ public sealed partial class ShellViewModel : ObservableObject
             () => IsResourceBrowserVisible = !IsResourceBrowserVisible);
         ToggleBottomPanelCommand = new RelayCommand(
             BottomPanel.Toggle);
-        StoryWorkspace.CanLeaveActorsRoute = TryLeaveActorEditor;
-        StoryWorkspace.CanLeaveRoute = TryLeaveRoute;
         ProjectHome.PropertyChanged += OnProjectHomePropertyChanged;
         ProjectHome.OpenStoryFlowRequested += ProjectHomeOnOpenStoryFlowRequested;
         ProjectHome.OpenStoryRequested += ProjectHomeOnOpenStoryRequested;
-        StoryWorkspace.PropertyChanged += OnStoryWorkspacePropertyChanged;
         Output.Append("DarkGrey RPG Studio 已启动。", source: "Studio");
     }
 
     public ObservableCollection<ActorResourceInfo> Actors { get; } = [];
 
-    public ObservableCollection<ActorResourceInfo> FilteredActors { get; } = [];
-
     public ObservableCollection<RecentProjectItemViewModel> RecentProjects { get; } = [];
 
     public ProjectHomeViewModel ProjectHome { get; } = new();
-
-    public StoryWorkspaceViewModel StoryWorkspace { get; } = new();
 
     public NavigationViewModel Navigation { get; } = new();
 
@@ -170,8 +127,8 @@ public sealed partial class ShellViewModel : ObservableObject
     public IReadOnlyDictionary<string, string?> GetCrashLogDetails() => new Dictionary<string, string?>(StringComparer.Ordinal)
     {
         ["Current Project"] = HasProject ? ProjectDirectory : null,
-        ["Current Story"] = StoryWorkspace.HasStory ? StoryWorkspace.StoryId : null,
-        ["Current Route"] = StoryWorkspace.HasStory ? StoryWorkspace.CurrentRoute : null,
+        ["Current Story"] = CanonicalStoryWorkspace?.StoryEditor.Id ?? ProjectHome.SelectedStory?.Id,
+        ["Current Route"] = IsCanonicalStoryWorkspaceVisible ? CanonicalStoryWorkspace?.ActiveEditor?.Id : ProjectHome.Route.ToString(),
         ["Last UI Command"] = LastUiCommand,
     };
 
@@ -190,41 +147,11 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public RelayCommand NewProjectCommand { get; }
 
-    public RelayCommand SaveActorCommand { get; }
-
     public RelayCommand SaveCurrentResourceCommand { get; }
 
     public RelayCommand UndoCurrentCommand { get; }
 
     public RelayCommand RedoCurrentCommand { get; }
-
-    public RelayCommand NewActorCommand { get; }
-
-    public RelayCommand ReferenceActorCommand { get; }
-
-    public RelayCommand RemoveActorReferenceCommand { get; }
-
-    public RelayCommand ViewActorReferencesCommand { get; }
-
-    public RelayCommand DuplicateActorCommand { get; }
-
-    public RelayCommand RenameActorCommand { get; }
-
-    public RelayCommand DeleteActorCommand { get; }
-
-    public RelayCommand NewStoryResourceCommand { get; }
-
-    public RelayCommand ReferenceStoryResourceCommand { get; }
-
-    public RelayCommand RemoveStoryResourceReferenceCommand { get; }
-
-    public RelayCommand ViewStoryResourceReferencesCommand { get; }
-
-    public RelayCommand DeleteStoryResourceCommand { get; }
-
-    public RelayCommand DeleteCurrentResourceCommand { get; }
-
-    public RelayCommand DuplicateStoryResourceCommand { get; }
 
     public RelayCommand SaveAllCommand { get; }
 
@@ -287,18 +214,6 @@ public sealed partial class ShellViewModel : ObservableObject
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    public string SearchText
-    {
-        get => _searchText;
-        set
-        {
-            if (SetProperty(ref _searchText, value ?? string.Empty))
-            {
-                RefreshActorFilter();
-            }
-        }
-    }
-
     public bool IsResourceBrowserVisible
     {
         get => _isResourceBrowserVisible;
@@ -310,86 +225,6 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     public bool EffectiveResourceBrowserVisible => IsResourceBrowserVisible && !IsCanonicalStoryWorkspaceVisible;
-
-    public ActorResourceInfo? SelectedActor
-    {
-        get => _selectedActor;
-        set
-        {
-            if (_selectedActor is not null &&
-                CurrentActor?.Document.IsDirty == true &&
-                !string.Equals(_selectedActor.Id, value?.Id, StringComparison.Ordinal))
-            {
-                if (!_actorWorkspaceDialogs.ConfirmSaveBeforeSwitch(_selectedActor) || !TrySaveCurrentActor())
-                {
-                    return;
-                }
-            }
-
-            if (!SetProperty(ref _selectedActor, value))
-            {
-                return;
-            }
-
-            OpenSelectedActor();
-            RaiseWorkspaceCommandStates();
-        }
-    }
-
-    /// <summary>Story Actors page binding that preserves the existing Actor editor workflow.</summary>
-    public StoryActorMembershipViewModel? SelectedStoryActor
-    {
-        get => _selectedStoryActor;
-        set
-        {
-            var nextActorId = value?.Actor?.Id;
-            if (CurrentActor?.Document.IsDirty == true &&
-                !string.Equals(_selectedActor?.Id, nextActorId, StringComparison.Ordinal))
-            {
-                if (_selectedActor is null ||
-                    !_actorWorkspaceDialogs.ConfirmSaveBeforeSwitch(_selectedActor) ||
-                    !TrySaveCurrentActor())
-                {
-                    return;
-                }
-            }
-
-            if (!SetProperty(ref _selectedStoryActor, value)) return;
-            if (StoryWorkspace.Actors is not null)
-                StoryWorkspace.Actors.SelectedMembership = value;
-            if (value?.Actor is not null)
-                SelectedActor = Actors.FirstOrDefault(actor => actor.Id == value.Actor.Id) ?? value.Actor;
-            else if (value is not null)
-                ReportWarning($"Story Actor '{value.Id}' 未解析，无法打开编辑器。", $"story/{StoryWorkspace.StoryId}/actor/{value.Id}");
-            RaiseWorkspaceCommandStates();
-        }
-    }
-
-    /// <summary>Selected Dialogue or Quest membership for the active Story route.</summary>
-    public StoryResourceMembershipViewModel? SelectedStoryResource
-    {
-        get => _selectedStoryResource;
-        set
-        {
-            var currentId = _selectedStoryResource?.Id;
-            if (!string.Equals(currentId, value?.Id, StringComparison.Ordinal) && !TryLeaveCurrentStoryResourceEditor())
-            {
-                return;
-            }
-
-            if (!SetProperty(ref _selectedStoryResource, value)) return;
-            OnPropertyChanged(nameof(SelectedStoryResourceActionText));
-            if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Dialogues && StoryWorkspace.Dialogues is not null)
-                StoryWorkspace.Dialogues.SelectedItem = value;
-            if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Quests && StoryWorkspace.Quests is not null)
-                StoryWorkspace.Quests.SelectedItem = value;
-            OpenSelectedStoryResource();
-            RaiseWorkspaceCommandStates();
-        }
-    }
-
-    public string SelectedStoryResourceActionText =>
-        SelectedStoryResource?.IsDraft == true ? "放弃草稿" : "删除资源";
 
     public bool TryClose()
     {
@@ -435,7 +270,7 @@ public sealed partial class ShellViewModel : ObservableObject
             return false;
         }
 
-        if (!TryResolveStoryResourceDraftBeforeProjectSwitch() || HasUnsavedDocuments())
+        if (HasUnsavedDocuments())
         {
             ReportWarning("当前项目有未保存的资源；请先保存后再打开其他项目。", "Project");
             return false;
@@ -447,39 +282,25 @@ public sealed partial class ShellViewModel : ObservableObject
     public void OpenProblem(ProblemItem problem)
     {
         ArgumentNullException.ThrowIfNull(problem);
-        var canonicalPrefix = problem.Source?.StartsWith("export/story/", StringComparison.Ordinal) == true
-            ? "export/story/" : "canonical/story/";
-        if (problem.Source?.StartsWith(canonicalPrefix, StringComparison.Ordinal) == true
-            && problem.NodeId is { } canonicalNode && problem.GraphResourceId is { } resourceId)
+        var prefix = problem.Source?.StartsWith("export/story/", StringComparison.Ordinal) == true ? "export/story/" : "canonical/story/";
+        if (problem.Source?.StartsWith(prefix, StringComparison.Ordinal) == true
+            && problem.NodeId is { } nodeId && problem.GraphResourceId is { } resourceId)
         {
-            var storyId = problem.Source[canonicalPrefix.Length..];
-            var story = ProjectHome.Stories.FirstOrDefault(candidate => candidate.Id == storyId);
-            if (story is not null) OpenStory(story);
-            if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
-                CanonicalStoryWorkspace.RequestResourceNodeFocus(resourceId, canonicalNode, problem.Field);
+            var storyId = problem.Source[prefix.Length..];
+            if (ProjectHome.Stories.FirstOrDefault(story => story.Id == storyId) is { } story) OpenStory(story);
+            if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId) CanonicalStoryWorkspace.RequestResourceNodeFocus(resourceId, nodeId, problem.Field);
             return;
         }
         if (TryOpenProjectGraphProblem(problem)) return;
-        if (TryOpenFlowProblem(problem)) return;
-
         const string actorPrefix = "actor/";
-        if (problem.Source?.StartsWith(actorPrefix, StringComparison.Ordinal) != true)
-        {
-            return;
-        }
-
-        var id = problem.Source[actorPrefix.Length..];
-        var actor = Actors.FirstOrDefault(candidate => candidate.Id == id);
-        if (actor is null)
-        {
-            ReportWarning($"问题引用的 Actor '{id}' 当前不在资源列表中。", "Problems");
-            return;
-        }
-
-        // Actor editing remains available from the Story workspace during M1,
-        // while Story is the only content-oriented top-level navigation item.
-        Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-        SelectedActor = actor;
+        if (problem.Source?.StartsWith(actorPrefix, StringComparison.Ordinal) != true) return;
+        var actorId = problem.Source[actorPrefix.Length..];
+        if (!Actors.Any(actor => actor.Id == actorId)) { ReportWarning("问题引用的角色当前不在资源列表中。", "Problems"); return; }
+        var owner = ResourceAddress.FromKey(actorId).StoryUid.Value;
+        if (TryOpenCanonicalStory(owner) != CanonicalOpenResult.Opened) return;
+        if (CanonicalStoryWorkspace!.Folders.Single(folder => folder.Kind == CanonicalStoryFolderKind.Actors).Items
+            .OfType<CanonicalStoryActorItem>().FirstOrDefault(item => item.Id == actorId) is { } item)
+            CanonicalStoryWorkspace.SelectTreeItem(item);
     }
 
     private bool TryOpenProjectGraphProblem(ProblemItem problem)
@@ -503,118 +324,11 @@ public sealed partial class ShellViewModel : ObservableObject
         return true;
     }
 
-    private bool TryOpenFlowProblem(ProblemItem problem)
-    {
-        var parts = problem.Source?.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (parts is not { Length: >= 4 } ||
-            !string.Equals(parts[0], "story", StringComparison.Ordinal) ||
-            !string.Equals(parts[2], "flow", StringComparison.Ordinal))
-            return false;
-
-        var storyId = parts[1];
-        var nodeId = parts[3];
-        if (CurrentFlow?.Id == storyId && StoryWorkspace.StoryId == storyId)
-        {
-            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-            StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-        }
-        else
-        {
-            OpenStoryFlow(storyId);
-        }
-        if (CurrentFlow?.Id != storyId) return true;
-        if (!CurrentFlow.RequestProblemFocus(nodeId, problem.Field))
-            ReportWarning($"问题引用的 Flow 节点 '{nodeId}' 当前不存在。", problem.Source);
-        else
-            StatusMessage = $"已定位 Story Flow 问题：{storyId}/{nodeId}/{problem.Field ?? "node"}";
-        return true;
-    }
-
-    public ActorEditorViewModel? CurrentActor
-    {
-        get => _currentActor;
-        private set
-        {
-            if (_currentActor is not null)
-            {
-                _currentActor.PropertyChanged -= OnCurrentActorPropertyChanged;
-            }
-
-            if (!SetProperty(ref _currentActor, value))
-            {
-                return;
-            }
-
-            if (_currentActor is not null)
-            {
-                _currentActor.PropertyChanged += OnCurrentActorPropertyChanged;
-            }
-
-            RaiseCurrentEditorStates();
-        }
-    }
-
-    public DialogueEditorViewModel? CurrentDialogue
-    {
-        get => _currentDialogue;
-        private set
-        {
-            if (_currentDialogue is not null) _currentDialogue.PropertyChanged -= OnCurrentResourceEditorPropertyChanged;
-            if (!SetProperty(ref _currentDialogue, value)) return;
-            if (_currentDialogue is not null) _currentDialogue.PropertyChanged += OnCurrentResourceEditorPropertyChanged;
-            RaiseCurrentEditorStates();
-        }
-    }
-
-    public QuestEditorViewModel? CurrentQuest
-    {
-        get => _currentQuest;
-        private set
-        {
-            if (_currentQuest is not null) _currentQuest.PropertyChanged -= OnCurrentResourceEditorPropertyChanged;
-            if (!SetProperty(ref _currentQuest, value)) return;
-            if (_currentQuest is not null) _currentQuest.PropertyChanged += OnCurrentResourceEditorPropertyChanged;
-            RaiseCurrentEditorStates();
-        }
-    }
-
-    public StoryFlowEditorViewModel? CurrentFlow
-    {
-        get => _currentFlow;
-        private set
-        {
-            if (_currentFlow is not null)
-            {
-                _currentFlow.PropertyChanged -= OnCurrentResourceEditorPropertyChanged;
-                _currentFlow.UndoCommand.CanExecuteChanged -= OnFlowHistoryCanExecuteChanged;
-                _currentFlow.RedoCommand.CanExecuteChanged -= OnFlowHistoryCanExecuteChanged;
-            }
-            if (!SetProperty(ref _currentFlow, value)) return;
-            if (_currentFlow is not null)
-            {
-                _currentFlow.PropertyChanged += OnCurrentResourceEditorPropertyChanged;
-                _currentFlow.UndoCommand.CanExecuteChanged += OnFlowHistoryCanExecuteChanged;
-                _currentFlow.RedoCommand.CanExecuteChanged += OnFlowHistoryCanExecuteChanged;
-            }
-            RaiseCurrentEditorStates();
-        }
-    }
-
     public CanonicalStoryWorkspaceViewModel? CanonicalStoryWorkspace => _canonicalStoryWorkspace;
     public bool HasCanonicalStoryWorkspace => CanonicalStoryWorkspace is not null;
     public bool IsCanonicalStoryWorkspaceVisible => _isCanonicalStoryWorkspaceVisible;
 
-    public IWorkspaceEditorViewModel? ActiveEditor => (IWorkspaceEditorViewModel?)(IsCanonicalStoryWorkspaceVisible
-            ? CanonicalStoryWorkspace?.ActiveEditor
-            : null)
-        ?? (StoryWorkspace.CurrentRoute switch
-        {
-            StoryWorkspaceRoutes.Actors => CurrentActor,
-            StoryWorkspaceRoutes.Dialogues => CurrentDialogue,
-            StoryWorkspaceRoutes.Quests => CurrentQuest,
-            StoryWorkspaceRoutes.Flow => CurrentFlow,
-            _ => null,
-        });
+    public IWorkspaceEditorViewModel? ActiveEditor => IsCanonicalStoryWorkspaceVisible ? CanonicalStoryWorkspace?.ActiveEditor : null;
 
     private void OpenProject()
     {
@@ -624,7 +338,7 @@ public sealed partial class ShellViewModel : ObservableObject
             return;
         }
 
-        if (!TryResolveStoryResourceDraftBeforeProjectSwitch() || HasUnsavedDocuments())
+        if (HasUnsavedDocuments())
         {
             ReportWarning("当前项目有未保存的资源；请先保存后再打开其他项目。", "Project");
             return;
@@ -664,35 +378,23 @@ public sealed partial class ShellViewModel : ObservableObject
                     Output.Append("已保留媒体孤立文件：" + exception.Message, source: "Project/Media");
                 }
             }
-            _dialogueDrafts.Clear();
-            _questDrafts.Clear();
-            _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
             SetCanonicalStoryWorkspace(null);
             _canonicalGraphStore = candidateStore;
             _canonicalSaveCoordinator = new CanonicalGraphResourceSaveCoordinator(_canonicalGraphStore);
-            _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
             _graphClipboard.SetProject(ProjectDirectory);
             RememberProject(project.ProjectDirectory);
             LoadActorList();
             LoadStoryList();
-            CurrentActor = null;
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            CurrentFlow = null;
-            _selectedStoryResource = null;
-            OnPropertyChanged(nameof(SelectedStoryResource));
             RefreshHomeResourceFolders();
             ProjectHome.ShowHome();
-            StoryWorkspace.CloseStory();
             RefreshProblems();
             ReportSuccess(
                 isRestore
                     ? $"已恢复上次项目，共 {Actors.Count} 个 Actor。"
                     : $"项目已打开，共 {Actors.Count} 个 Actor。",
                 "Project");
-            ReportPendingFlowRecoveries();
             OnPropertyChanged(nameof(HasProject));
             RaiseWorkspaceCommandStates();
             return true;
@@ -700,7 +402,6 @@ public sealed partial class ShellViewModel : ObservableObject
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or JsonException
                 or ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
-                or StoryRepositoryException or StoryNotFoundException or StoryDataException
                 or GraphResourceRepositoryException or GraphResourceEnvelopeException
                 or CanonicalStoryLogicGraphRepositoryException)
         {
@@ -721,7 +422,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void NewProject()
     {
-        if (!TryResolveStoryResourceDraftBeforeProjectSwitch() || HasUnsavedDocuments())
+        if (HasUnsavedDocuments())
         {
             ReportWarning("当前项目有未保存的资源；请先保存后再新建项目。", "Project");
             return;
@@ -743,28 +444,17 @@ public sealed partial class ShellViewModel : ObservableObject
                 request.ProjectDirectory,
                 request.Id,
                 request.DisplayName);
-            _dialogueDrafts.Clear();
-            _questDrafts.Clear();
-            _flowRecoveryStore = new StoryFlowRecoveryStore(project.ProjectDirectory);
             SetCanonicalStoryWorkspace(null);
             _canonicalGraphStore = _canonicalGraphStoreFactory(project.ProjectDirectory);
             _canonicalSaveCoordinator = new CanonicalGraphResourceSaveCoordinator(_canonicalGraphStore);
-            _ignoredFlowRecoveries.Clear();
             ProjectDisplayName = $"{project.Project.DisplayName} ({project.Project.Id})";
             ProjectDirectory = project.ProjectDirectory;
             _graphClipboard.SetProject(ProjectDirectory);
             RememberProject(project.ProjectDirectory);
             LoadActorList();
             LoadStoryList();
-            CurrentActor = null;
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            CurrentFlow = null;
-            _selectedStoryResource = null;
-            OnPropertyChanged(nameof(SelectedStoryResource));
             RefreshHomeResourceFolders();
             ProjectHome.ShowHome();
-            StoryWorkspace.CloseStory();
             OnPropertyChanged(nameof(HasProject));
             RaiseWorkspaceCommandStates();
             RefreshProblems();
@@ -791,17 +481,13 @@ public sealed partial class ShellViewModel : ObservableObject
             Actors.Add(actor);
         }
 
-        RefreshActorFilter();
 
-        _selectedActor = null;
-        OnPropertyChanged(nameof(SelectedActor));
     }
 
     private void LoadStoryList()
     {
         var project = _projectService.CurrentProject
             ?? throw new ProjectException("No project is open.");
-        var stories = project.Stories.ListStories();
         var discovery = _canonicalGraphStore is null
             ? new CanonicalStoryDiscoverySnapshot([])
             : new CanonicalStoryDiscoveryService(_canonicalGraphStore).Discover();
@@ -810,7 +496,6 @@ public sealed partial class ShellViewModel : ObservableObject
             : new CanonicalProjectStoryGraphService(_canonicalGraphStore).Derive();
         _canonicalStoryDiscoveryIssues = discovery.Issues;
         ProjectHome.ReplaceDiscoveredStories(
-            stories,
             discovery.Items.Select(ToCanonicalStoryHomeEntry).ToArray(),
             projectDirectory: project.ProjectDirectory,
             canonicalGraph: canonicalProjectGraph);
@@ -847,58 +532,10 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void OpenSelectedStory()
     {
-        var selected = ProjectHome.SelectedStory;
-        if (selected is null) return;
-        if (CanonicalStoryWorkspace?.StoryEditor.Id == selected.Id && !IsCanonicalStoryWorkspaceVisible)
+        if (ProjectHome.SelectedStory is not { } selected || !HasProject) return;
+        if (TryOpenCanonicalStory(selected.Id) == CanonicalOpenResult.NotPresent)
         {
-            ShowRetainedCanonicalStoryWorkspace();
-            return;
-        }
-        if (!TryLeaveCurrentEditor()) return;
-        var project = _projectService.CurrentProject;
-        if (project is null) return;
-
-        try
-        {
-            var canonicalResult = TryOpenCanonicalStory(selected.Id);
-            if (canonicalResult == CanonicalOpenResult.Opened) return;
-            if (canonicalResult == CanonicalOpenResult.Failed)
-            {
-                SetCanonicalStoryWorkspace(null, retainDrafts: true);
-                StoryWorkspace.CloseStory();
-                return;
-            }
-            SetCanonicalStoryWorkspace(null, retainDrafts: true);
-            var story = project.Stories.LoadStory(selected.Id);
-            var actors = project.Actors.ListActors();
-            var descriptors = GetResourceDescriptors(project, story, _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id));
-            StoryWorkspace.OpenStory(
-                story,
-                actors,
-                descriptors,
-                GetActorHomeStoryNames(project, actors),
-                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Dialogue),
-                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Quest),
-                _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray(),
-                _questDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray());
-            ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(item => item.Id == story.Id);
-            _selectedStoryActor = null;
-            OnPropertyChanged(nameof(SelectedStoryActor));
-            _selectedActor = null;
-            OnPropertyChanged(nameof(SelectedActor));
-            CurrentActor = null;
-            _selectedStoryResource = null;
-            OnPropertyChanged(nameof(SelectedStoryResource));
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            CurrentFlow = CreateFlowEditor(story.Id);
-            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-            StatusMessage = $"已打开 Story：{story.Id}（角色）";
-            Output.Append(StatusMessage, source: $"story/{story.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("打开 Story", exception);
+            ReportWarning($"故事 '{selected.DisplayName}' 缺少可打开的现行定义；文件保持原样。", $"canonical/story/{selected.Id}");
         }
     }
 
@@ -924,8 +561,6 @@ public sealed partial class ShellViewModel : ObservableObject
                 workspace.ApplyResourceSnapshot(new CanonicalStoryWorkspaceLoader(store).Load(storyId),
                     workspace.SelectedFolderKind ?? CanonicalStoryFolderKind.Sessions);
             ConfigureCanonicalResourceActions(workspace);
-            ClearAllEditorSelections();
-            StoryWorkspace.CloseStory();
             SetCanonicalStoryWorkspace(workspace);
             Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
             ReplaceCanonicalValidation(workspace);
@@ -1049,7 +684,7 @@ public sealed partial class ShellViewModel : ObservableObject
                     && node.Properties.TryGetValue("speaker_actor_id", out var speaker) && speaker.ValueKind == JsonValueKind.String && speaker.GetString() == actor.Id
                     && node.Properties.TryGetValue("portrait_variant", out var name) && name.ValueKind == JsonValueKind.String && name.GetString() == variant.Name);
             };
-            editor.PropertyChanged += (_, _) => { SaveCurrentResourceCommand.RaiseCanExecuteChanged(); UndoCurrentCommand.RaiseCanExecuteChanged(); RedoCurrentCommand.RaiseCanExecuteChanged(); };
+            editor.PropertyChanged += (_, _) => { ReplaceOpenActorValidation(); SaveCurrentResourceCommand.RaiseCanExecuteChanged(); UndoCurrentCommand.RaiseCanExecuteChanged(); RedoCurrentCommand.RaiseCanExecuteChanged(); };
             return editor;
         };
         if (_projectService.CurrentProject?.Project is { } project)
@@ -1094,51 +729,56 @@ public sealed partial class ShellViewModel : ObservableObject
         workspace.ReferenceItemRequested = ReferenceCanonicalStoryItem;
         workspace.DeleteResourceRequested = DeleteCanonicalStoryResource;
         workspace.RenameResourceRequested = RenameCanonicalStoryResource;
-        workspace.ResourceOrderChangeRequested = PersistCanonicalStoryResourceOrder;
+        workspace.ResourceOrderChangeRequested = (kind, handles) => PersistCanonicalStoryResourceOrder(workspace, kind, handles);
         workspace.RefreshResourceCommandStates();
     }
 
     private bool PersistCanonicalStoryResourceOrder(
+        CanonicalStoryWorkspaceViewModel workspace,
         CanonicalStoryFolderKind folderKind,
         IReadOnlyList<string> handles)
     {
-        var workspace = CanonicalStoryWorkspace;
         var store = _canonicalGraphStore;
-        if (workspace is null || store is null) return false;
+        if (store is null) return false;
         try
         {
             var membership = store.Memberships.Load(workspace.StoryEditor.Id);
-            var order = membership.DisplayOrder;
-            switch (folderKind)
+            var before = folderKind switch
             {
-                case CanonicalStoryFolderKind.Actors:
-                    order.Actors = [.. handles];
-                    break;
-                case CanonicalStoryFolderKind.Items:
-                    order.Items = [.. handles];
-                    break;
-                case CanonicalStoryFolderKind.Sessions:
-                    order.Sessions = [.. handles];
-                    break;
-                case CanonicalStoryFolderKind.Tasks:
-                    order.Tasks = [.. handles];
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(folderKind), folderKind, null);
+                CanonicalStoryFolderKind.Actors => membership.DisplayOrder.Actors.ToArray(),
+                CanonicalStoryFolderKind.Items => membership.DisplayOrder.Items.ToArray(),
+                CanonicalStoryFolderKind.Sessions => membership.DisplayOrder.Sessions.ToArray(),
+                CanonicalStoryFolderKind.Tasks => membership.DisplayOrder.Tasks.ToArray(),
+                _ => throw new ArgumentOutOfRangeException(nameof(folderKind)),
+            };
+            var beforeVisible = workspace.ResourceOrderHandles(folderKind).ToArray();
+            var after = handles.ToArray();
+            if (beforeVisible.SequenceEqual(after)) return true;
+            void Apply(IReadOnlyList<string> saved, IReadOnlyList<string> shown)
+            {
+                var current = store.Memberships.Load(workspace.StoryEditor.Id);
+                var order = current.DisplayOrder;
+                switch (folderKind)
+                {
+                    case CanonicalStoryFolderKind.Actors: order.Actors = [.. saved]; break;
+                    case CanonicalStoryFolderKind.Items: order.Items = [.. saved]; break;
+                    case CanonicalStoryFolderKind.Sessions: order.Sessions = [.. saved]; break;
+                    case CanonicalStoryFolderKind.Tasks: order.Tasks = [.. saved]; break;
+                    default: throw new ArgumentOutOfRangeException(nameof(folderKind));
+                }
+                current.SchemaVersion = CanonicalStoryMembershipManifest.CurrentSchemaVersion;
+                current.DisplayOrder = order;
+                store.Memberships.Replace(current);
+                workspace.ApplyResourceOrder(folderKind, shown);
             }
-            membership.SchemaVersion = CanonicalStoryMembershipManifest.CurrentSchemaVersion;
-            membership.DisplayOrder = order;
-            store.Memberships.Replace(membership);
+            workspace.StoryEditor.Host.EditMetadata(() => Apply(before, beforeVisible), () => Apply(after, after));
+            UndoCurrentCommand.RaiseCanExecuteChanged(); RedoCurrentCommand.RaiseCanExecuteChanged();
             return true;
         }
         catch (Exception exception) when (exception is CanonicalStoryMembershipException
-            or CanonicalStoryMembershipRepositoryException
-            or IOException
-            or UnauthorizedAccessException)
+            or CanonicalStoryMembershipRepositoryException or IOException or UnauthorizedAccessException)
         {
-            ReportFailure(
-                "保存资源顺序",
-                exception,
+            ReportFailure("保存资源顺序", exception,
                 sourceOverride: $"canonical/story/{workspace.StoryEditor.Id}/membership");
             return false;
         }
@@ -1315,7 +955,7 @@ public sealed partial class ShellViewModel : ObservableObject
             if (request.Kind != kind.Value)
                 throw new InvalidOperationException("Actor creation dialog returned a different identity kind.");
 
-            var created = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
+            var created = new CanonicalStoryActorLifecycleService(store, project.Actors)
                 .CreateOwned(workspace.StoryEditor.Id, request.Kind, suggestedId, request.DisplayName, request.Tags);
             LoadActorList();
             ReloadCanonicalStoryWorkspace(
@@ -1339,7 +979,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (_offlinePackageDialogs is not NullOfflinePackageDialogs)
         {
-            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id);
+            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id, CanonicalStoryFolderKind.Actors);
             return;
         }
         var workspace = CanonicalStoryWorkspace;
@@ -1363,7 +1003,7 @@ public sealed partial class ShellViewModel : ObservableObject
             if (!candidates.Any(candidate => string.Equals(candidate.Id, choice.Id, StringComparison.Ordinal)))
                 throw new InvalidOperationException("Actor picker returned an item outside the offered scope.");
 
-            new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories)
+            new CanonicalStoryActorLifecycleService(store, project.Actors)
                 .AddReference(workspace.StoryEditor.Id, choice.Id);
             ReloadCanonicalStoryWorkspace(
                 workspace.StoryEditor.Id,
@@ -1421,7 +1061,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (_offlinePackageDialogs is not NullOfflinePackageDialogs)
         {
-            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id);
+            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id, FolderFor(resourceKind));
             return;
         }
         var workspace = CanonicalStoryWorkspace;
@@ -1510,7 +1150,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (_offlinePackageDialogs is not NullOfflinePackageDialogs)
         {
-            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id);
+            PickOfflineResourceReference(CanonicalStoryWorkspace?.StoryEditor.Id, CanonicalStoryFolderKind.Items);
             return;
         }
         var workspace = CanonicalStoryWorkspace;
@@ -1686,7 +1326,7 @@ public sealed partial class ShellViewModel : ObservableObject
             return;
 
         var storyId = workspace.StoryEditor.Id;
-        var service = new CanonicalStoryActorLifecycleService(store, project.Actors, project.Stories);
+        var service = new CanonicalStoryActorLifecycleService(store, project.Actors);
         try
         {
             if (isReferenced)
@@ -1713,9 +1353,9 @@ public sealed partial class ShellViewModel : ObservableObject
             {
                 _actorWorkspaceDialogs.ShowReferences(
                     actor,
-                    DescribeCanonicalActorBlockers(plan, store, project.Stories));
+                    DescribeCanonicalActorBlockers(plan, store));
                 ReportWarning(
-                    $"角色 '{actor.Id}' 仍被其它新格式或旧版故事占用/引用，未删除。",
+                    $"角色 '{actor.Id}' 仍被其它故事占用/引用，未删除。",
                     $"canonical/actor/{actor.Id}");
                 return;
             }
@@ -1886,34 +1526,14 @@ public sealed partial class ShellViewModel : ObservableObject
         }
     }
 
-    private static IReadOnlyList<ResourceDescriptor> DescribeCanonicalActorBlockers(
-        CanonicalStoryActorDeletionPlan plan,
-        CanonicalProjectGraphStore store,
-        StoryRepository legacyStories)
+    private static IReadOnlyList<ResourceDescriptor> DescribeCanonicalActorBlockers(CanonicalStoryActorDeletionPlan plan, CanonicalProjectGraphStore store)
         => plan.Blockers.Select(blocker =>
         {
-            var sourceLabel = blocker.IsCanonical ? "新格式" : "旧版";
-            var membershipLabel = blocker.IsOwned ? "占用" : "引用";
             string displayName;
-            string path;
-            if (blocker.IsCanonical)
-            {
-                try { displayName = store.Stories.Load(blocker.StoryId).DisplayName; }
-                catch (GraphResourceRepositoryException) { displayName = blocker.StoryId; }
-                path = store.Memberships.GetPath(blocker.StoryId);
-            }
-            else
-            {
-                try { displayName = legacyStories.LoadStory(blocker.StoryId).DisplayName; }
-                catch (StoryNotFoundException) { displayName = blocker.StoryId; }
-                path = Path.Combine(legacyStories.StoriesDirectory, blocker.StoryId + ".json");
-            }
-
-            return new ResourceDescriptor(
-                ProjectResourceType.Story,
-                blocker.StoryId,
-                $"[{sourceLabel} {membershipLabel}] {displayName}",
-                path);
+            try { displayName = store.Stories.Load(blocker.StoryId).DisplayName; }
+            catch (GraphResourceRepositoryException) { displayName = blocker.StoryId; }
+            return new ResourceDescriptor(ProjectResourceType.Story, blocker.StoryId,
+                $"[{(blocker.IsOwned ? "占用" : "引用")}] {displayName}", store.Memberships.GetPath(blocker.StoryId));
         }).ToArray();
 
     private static GraphResourceRepository CanonicalRepository(
@@ -2025,9 +1645,9 @@ public sealed partial class ShellViewModel : ObservableObject
 
         try
         {
-            var lifecycle = new CanonicalStoryLifecycleService(_canonicalGraphStore, project.Actors, project.Stories);
+            var lifecycle = new CanonicalStoryLifecycleService(_canonicalGraphStore, project.Actors);
             var allocatedUid = lifecycle.AllocateStoryUid();
-            var request = _resourceWorkspaceDialogs.RequestCreate(ProjectResourceType.Story, allocatedUid.Value);
+            var request = _resourceWorkspaceDialogs.RequestCreateStory(allocatedUid.Value);
             if (request is null) return;
 
             var story = lifecycle.Create(allocatedUid.Value, request.DisplayName);
@@ -2056,45 +1676,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void DeleteSelectedStory()
     {
-        var selected = ProjectHome.SelectedStory;
-        if (selected is null || _projectService.CurrentProject is null) return;
-
-        if (selected.HasCanonicalStory)
-        {
-            DeleteSelectedCanonicalStory(selected);
-            return;
-        }
-        if (!selected.CanDeleteLegacyStory) return;
-
-        try
-        {
-            var plan = _projectService.GetStoryDeletionPlan(selected.Id);
-            if (plan.Blockers.Count > 0)
-            {
-                ReportWarning(
-                    $"无法删除故事 '{selected.Id}'：{string.Join("；", plan.Blockers)}",
-                    $"story/{selected.Id}");
-                return;
-            }
-            var resourcesToDelete = plan.ActorIds.Select(id => $"角色：{id}")
-                .Concat(plan.DialogueIds.Select(id => $"对话：{id}"))
-                .Concat(plan.QuestIds.Select(id => $"任务：{id}"))
-                .ToArray();
-            if (!_projectWorkspaceDialogs.ConfirmDeleteStory(selected.Id, selected.DisplayName, resourcesToDelete)) return;
-
-            _projectService.DeleteStory(selected.Id);
-            _flowRecoveryStore?.Delete(selected.Id);
-            LoadStoryList();
-            RefreshHomeResourceFolders();
-            ProjectHome.ShowHome();
-            StatusMessage = $"故事 '{selected.Id}' 已从项目中删除。";
-            Output.Append(StatusMessage, OutputKind.Success, $"story/{selected.Id}");
-            Toast.Show(StatusMessage, ToastKind.Success);
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("删除故事", exception, selected.Id);
-        }
+        if (ProjectHome.SelectedStory is { } selected && HasProject) DeleteSelectedCanonicalStory(selected);
     }
 
     public void OpenStory(StoryListItemViewModel story)
@@ -2106,50 +1688,19 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public void OpenStoryFlow(string storyId)
     {
-        var story = ProjectHome.Stories.FirstOrDefault(item => item.Id == storyId);
-        if (story is null) return;
+        if (ProjectHome.Stories.FirstOrDefault(item => item.Id == storyId) is not { } story) return;
         OpenStory(story);
-        if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
-        {
-            CanonicalStoryWorkspace.ReturnToStory();
-            StatusMessage = $"已从故事图谱打开故事流程：{storyId}";
-            Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
-            return;
-        }
-        if (!StoryWorkspace.HasStory || StoryWorkspace.StoryId != storyId) return;
-        StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-        StatusMessage = $"已从故事图谱打开 Story Flow：{storyId}";
-        Output.Append(StatusMessage, source: $"story/{storyId}/flow");
+        if (CanonicalStoryWorkspace?.StoryEditor.Id != storyId) return;
+        CanonicalStoryWorkspace.ReturnToStory();
+        StatusMessage = $"已从故事图谱打开故事流程：{storyId}";
+        Output.Append(StatusMessage, source: $"canonical/story/{storyId}");
     }
 
     public void OpenStoryFlowNode(string storyId, string nodeId, string? field = null)
     {
-        if (CurrentFlow?.Id == storyId && StoryWorkspace.StoryId == storyId)
-        {
-            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-            StoryWorkspace.SelectRoute(StoryWorkspaceRoutes.Flow);
-        }
-        else
-        {
-            OpenStoryFlow(storyId);
-        }
-        if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId)
-        {
-            if (!CanonicalStoryWorkspace.RequestStoryNodeFocus(nodeId, field))
-                ReportWarning($"故事流程 '{storyId}' 中不存在唯一节点 '{nodeId}'。", $"canonical/story/{storyId}/flow/{nodeId}");
-            return;
-        }
-        if (CurrentFlow?.Id != storyId) return;
-        if (!CurrentFlow.RequestProblemFocus(nodeId, field))
-            ReportWarning($"Story Flow '{storyId}' 中不存在节点 '{nodeId}'。", $"story/{storyId}/flow/{nodeId}");
-    }
-
-    public void FocusCurrentFlowProblems()
-    {
-        if (CurrentFlow is not null)
-            ReplaceFlowValidationSource(CurrentFlow);
-        BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
-        BottomPanel.IsExpanded = true;
+        OpenStoryFlow(storyId);
+        if (CanonicalStoryWorkspace?.StoryEditor.Id == storyId && !CanonicalStoryWorkspace.RequestStoryNodeFocus(nodeId, field))
+            ReportWarning($"故事流程 '{storyId}' 中不存在唯一节点 '{nodeId}'。", $"canonical/story/{storyId}/flow/{nodeId}");
     }
 
     public void FocusProjectGraphProblems()
@@ -2161,364 +1712,24 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void ShowProjectHome()
     {
-        if (CanonicalStoryWorkspace is { } canonicalWorkspace)
+        if (CanonicalStoryWorkspace is { } workspace)
         {
-            ProjectHome.Graph.RefreshStoryBoundary(canonicalWorkspace.StoryEditor.CreatePersistenceSnapshot(),
-                () => TrySaveCanonicalResource(canonicalWorkspace.StoryEditor, canonicalWorkspace));
+            ProjectHome.Graph.RefreshStoryBoundary(workspace.StoryEditor.CreatePersistenceSnapshot(),
+                () => TrySaveCanonicalResource(workspace.StoryEditor, workspace));
             SetCanonicalStoryWorkspaceVisible(false);
-            ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story =>
-                story.Id == canonicalWorkspace.StoryEditor.Id);
+            ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story => story.Id == workspace.StoryEditor.Id);
             RefreshHomeResourceFolders();
-            ProjectHome.ShowHome();
-            Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-            return;
         }
-        if (!TryLeaveCurrentEditor()) return;
-        var storyId = StoryWorkspace.StoryId;
-        var canonicalStoryId = CanonicalStoryWorkspace?.StoryEditor.Id;
-        ClearAllEditorSelections();
-        SetCanonicalStoryWorkspace(null);
-        StoryWorkspace.CloseStory();
-        LoadStoryList();
-        ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(story =>
-            story.Id == (canonicalStoryId ?? storyId));
         ProjectHome.ShowHome();
         Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
     }
 
     private void ShowProjectGraph()
     {
-        if (!TryLeaveCurrentEditor()) return;
-        ClearAllEditorSelections();
         SetCanonicalStoryWorkspace(null, retainDrafts: true);
-        StoryWorkspace.CloseStory();
         LoadStoryList();
         ProjectHome.ShowGraph();
         Navigation.SelectedItem = Navigation.Items.Single(item => item.Page == "Story");
-    }
-
-    private void ClearAllEditorSelections()
-    {
-        _selectedStoryActor = null;
-        OnPropertyChanged(nameof(SelectedStoryActor));
-        _selectedActor = null;
-        OnPropertyChanged(nameof(SelectedActor));
-        CurrentActor = null;
-        _selectedStoryResource = null;
-        OnPropertyChanged(nameof(SelectedStoryResource));
-        CurrentDialogue = null;
-        CurrentQuest = null;
-        CurrentFlow = null;
-    }
-
-    private bool TryLeaveActorEditor()
-    {
-        if (CurrentActor?.Document.IsDirty != true || SelectedActor is null) return true;
-        if (!_actorWorkspaceDialogs.ConfirmSaveBeforeSwitch(SelectedActor)) return false;
-        return TrySaveCurrentActor();
-    }
-
-    private bool TryLeaveRoute(string route) => route switch
-    {
-        StoryWorkspaceRoutes.Actors => TryLeaveActorEditor(),
-        StoryWorkspaceRoutes.Dialogues or StoryWorkspaceRoutes.Quests => TryLeaveCurrentStoryResourceEditor(),
-        StoryWorkspaceRoutes.Flow => true,
-        _ => true,
-    };
-
-    private bool TryLeaveCurrentEditor()
-    {
-        if (CanonicalStoryWorkspace is not null) return true;
-        if (CurrentFlow?.IsDirty == true && !TryResolveUnsavedFlow()) return false;
-        return TryLeaveRoute(StoryWorkspace.CurrentRoute);
-    }
-
-    private bool TryResolveStoryResourceDraftBeforeProjectSwitch() =>
-        (CurrentDialogue?.Document.IsNewDraft != true && CurrentQuest?.Document.IsNewDraft != true)
-        || TryLeaveCurrentStoryResourceEditor();
-
-    private bool TryResolveUnsavedFlow()
-    {
-        if (CurrentFlow?.IsDirty != true) return true;
-        return _flowWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(CurrentFlow) switch
-        {
-            UnsavedChangesChoice.Save => TrySaveCurrentFlow(),
-            UnsavedChangesChoice.Discard => DiscardCurrentFlowDraft(),
-            _ => false,
-        };
-    }
-
-    private bool DiscardCurrentFlowDraft()
-    {
-        if (CurrentFlow is null) return true;
-        var storyId = CurrentFlow.Id;
-        _flowRecoveryStore?.Delete(storyId);
-        CurrentFlow = CreateFlowEditor(storyId);
-        Problems.RemoveSourceTree($"story/{storyId}/flow");
-        return true;
-    }
-
-    private bool TryLeaveCurrentStoryResourceEditor()
-    {
-        if (CurrentDialogue?.Document.IsNewDraft == true && SelectedStoryResource is { } draftMembership)
-        {
-            var draftResource = new ResourceDescriptor(ProjectResourceType.Dialogue, draftMembership.Id, draftMembership.DisplayName, string.Empty);
-            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
-            {
-                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
-                UnsavedChangesChoice.Discard => DiscardCurrentDialogueDraft(),
-                _ => false,
-            };
-        }
-
-        if (CurrentQuest?.Document.IsNewDraft == true && SelectedStoryResource is { } questDraftMembership)
-        {
-            var draftResource = new ResourceDescriptor(ProjectResourceType.Quest, questDraftMembership.Id, questDraftMembership.DisplayName, string.Empty);
-            return _resourceWorkspaceDialogs.ConfirmCloseWithUnsavedChanges(draftResource) switch
-            {
-                UnsavedChangesChoice.Save => TrySaveCurrentStoryResource(),
-                UnsavedChangesChoice.Discard => DiscardCurrentQuestDraft(),
-                _ => false,
-            };
-        }
-
-        if (ActiveEditor?.IsDirty != true || SelectedStoryResource?.Descriptor is not { } resource) return true;
-        if (!_resourceWorkspaceDialogs.ConfirmSaveBeforeSwitch(resource)) return false;
-        return TrySaveCurrentStoryResource();
-    }
-
-    private bool DiscardCurrentDialogueDraft()
-    {
-        if (CurrentDialogue?.Document is not { IsNewDraft: true } document) return true;
-        var id = document.Id;
-        try
-        {
-            _projectService.DiscardDialogueDraft(document);
-            _dialogueDrafts.Remove(id);
-            StoryWorkspace.Dialogues?.RemoveDraft(id);
-            CurrentDialogue = null;
-            _selectedStoryResource = null;
-            OnPropertyChanged(nameof(SelectedStoryResource));
-            OnPropertyChanged(nameof(SelectedStoryResourceActionText));
-            ReportSuccess($"Dialogue 草稿 '{id}' 已放弃。", $"dialogue/{id}");
-            RaiseWorkspaceCommandStates();
-            return true;
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportResourceFailure("放弃 Dialogue 草稿", exception, ProjectResourceType.Dialogue, id);
-            return false;
-        }
-    }
-
-    private bool DiscardCurrentQuestDraft()
-    {
-        if (CurrentQuest?.Document is not { IsNewDraft: true } document) return true;
-        var id = document.Id;
-        try
-        {
-            _projectService.DiscardQuestDraft(document);
-            _questDrafts.Remove(id);
-            StoryWorkspace.Quests?.RemoveDraft(id);
-            CurrentQuest = null;
-            _selectedStoryResource = null;
-            OnPropertyChanged(nameof(SelectedStoryResource));
-            OnPropertyChanged(nameof(SelectedStoryResourceActionText));
-            ReportSuccess($"Quest 草稿 '{id}' 已放弃。", $"quest/{id}");
-            RaiseWorkspaceCommandStates();
-            return true;
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportResourceFailure("放弃 Quest 草稿", exception, ProjectResourceType.Quest, id);
-            return false;
-        }
-    }
-
-    private static IReadOnlyList<ResourceDescriptor> GetResourceDescriptors(ProjectSession project, StoryResource story, IEnumerable<DialogueDocument>? dialogueDrafts = null)
-    {
-        var dialogueIds = story.OwnedResources.Dialogues.Concat(story.ReferencedResources.Dialogues).ToHashSet(StringComparer.Ordinal);
-        var questIds = story.OwnedResources.Quests.Concat(story.ReferencedResources.Quests).ToHashSet(StringComparer.Ordinal);
-        var values = project.Dialogues.ListDialogues()
-            .Where(resource => dialogueIds.Contains(resource.Id))
-            .Select(resource => new ResourceDescriptor(ProjectResourceType.Dialogue, resource.Id, resource.DisplayName, resource.Path))
-            .Concat(project.Quests.ListQuests()
-                .Where(resource => questIds.Contains(resource.Id))
-                .Select(resource => new ResourceDescriptor(ProjectResourceType.Quest, resource.Id, resource.DisplayName, resource.Path)))
-            .ToList();
-        return values;
-    }
-
-    private static IReadOnlyDictionary<string, string> GetActorHomeStoryNames(
-        ProjectSession project,
-        IReadOnlyList<ActorResourceInfo> actors)
-    {
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var actor in actors)
-        {
-            var homeStory = project.Registry.GetHomeStory(ProjectResourceType.Actor, actor.Id);
-            if (homeStory is null) continue;
-            values[actor.Id] = string.IsNullOrWhiteSpace(homeStory.DisplayName)
-                ? homeStory.Id
-                : homeStory.DisplayName;
-        }
-        return values;
-    }
-
-    private static IReadOnlyDictionary<string, string> GetResourceHomeStoryNames(
-        ProjectSession project,
-        IReadOnlyList<ResourceDescriptor> descriptors,
-        ProjectResourceType resourceType)
-    {
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var descriptor in descriptors.Where(item => item.Type == resourceType))
-        {
-            var homeStory = project.Registry.GetHomeStory(descriptor.Type, descriptor.Id);
-            if (homeStory is null) continue;
-            values[descriptor.Id] = string.IsNullOrWhiteSpace(homeStory.DisplayName)
-                ? homeStory.Id
-                : homeStory.DisplayName;
-        }
-        return values;
-    }
-
-    private void RefreshActorFilter()
-    {
-        var query = SearchText.Trim();
-        FilteredActors.Clear();
-        foreach (var actor in Actors.Where(actor => MatchesSearch(actor, query)))
-        {
-            FilteredActors.Add(actor);
-        }
-    }
-
-    private static bool MatchesSearch(ActorResourceInfo actor, string query) =>
-        query.Length == 0 ||
-        actor.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-        actor.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
-        actor.Tags.Any(tag => tag.Contains(query, StringComparison.CurrentCultureIgnoreCase));
-
-    private void OpenSelectedActor()
-    {
-        if (SelectedActor is null)
-        {
-            CurrentActor = null;
-            return;
-        }
-
-        try
-        {
-            CurrentActor = new ActorEditorViewModel(_projectService.OpenActor(SelectedActor.Id));
-            StatusMessage = $"已加载 Actor：{SelectedActor.Id}";
-            Output.Append(StatusMessage, source: $"actor/{SelectedActor.Id}");
-        }
-        catch (Exception exception) when (
-            exception is ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException)
-        {
-            CurrentActor = null;
-            ReportFailure("加载 Actor", exception, SelectedActor.Id);
-        }
-    }
-
-    private void OpenSelectedStoryResource()
-    {
-        var descriptor = SelectedStoryResource?.Descriptor;
-        var project = _projectService.CurrentProject;
-        if (project is null)
-        {
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            return;
-        }
-
-        if (descriptor is null && SelectedStoryResource?.IsDraft != true)
-        {
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            return;
-        }
-
-            var resourceType = descriptor?.Type ?? SelectedStoryResource?.ResourceType ?? ProjectResourceType.Dialogue;
-        var resourceId = descriptor?.Id ?? SelectedStoryResource?.Id ?? string.Empty;
-        try
-        {
-            var actorIds = project.Actors.ListActors().Select(actor => actor.Id).ToArray();
-            if (SelectedStoryResource?.IsDraft == true && _dialogueDrafts.TryGetValue(SelectedStoryResource.Id, out var draft))
-            {
-                CurrentQuest = null;
-                CurrentDialogue = new DialogueEditorViewModel(draft, actorIds);
-                StatusMessage = $"已加载 Dialogue 草稿：{draft.Id}";
-                Output.Append(StatusMessage, source: $"dialogue/{draft.Id}");
-                return;
-            }
-            if (SelectedStoryResource?.IsDraft == true && _questDrafts.TryGetValue(SelectedStoryResource.Id, out var questDraft))
-            {
-                CurrentDialogue = null;
-                CurrentQuest = new QuestEditorViewModel(questDraft, actorIds);
-                StatusMessage = $"已加载 Quest 草稿：{questDraft.Id}";
-                Output.Append(StatusMessage, source: $"quest/{questDraft.Id}");
-                return;
-            }
-            if (descriptor is null)
-            {
-                CurrentDialogue = null;
-                CurrentQuest = null;
-                return;
-            }
-            if (descriptor.Type == ProjectResourceType.Dialogue)
-            {
-                CurrentQuest = null;
-                CurrentDialogue = new DialogueEditorViewModel(_projectService.OpenDialogue(descriptor.Id), actorIds);
-            }
-            else if (descriptor.Type == ProjectResourceType.Quest)
-            {
-                CurrentDialogue = null;
-                CurrentQuest = new QuestEditorViewModel(_projectService.OpenQuest(descriptor.Id), actorIds);
-            }
-            StatusMessage = $"已加载 {descriptor.Type}：{descriptor.Id}";
-            Output.Append(StatusMessage, source: $"{descriptor.Type.ToString().ToLowerInvariant()}/{descriptor.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            ReportResourceFailure($"加载 {resourceType}", exception, resourceType, resourceId);
-        }
-    }
-
-    private void SaveCurrentResource()
-    {
-        if (CanonicalStoryWorkspace is not null)
-        {
-            if (CanonicalStoryWorkspace.InspectorPortraitEditor is { } portrait)
-            {
-                if (portrait.CanSave)
-                {
-                    SaveOpenActor(portrait.Document);
-                    ReloadCanonicalStoryWorkspace(CanonicalStoryWorkspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, portrait.Document.Id);
-                }
-                return;
-            }
-            TrySaveCanonicalResource();
-            return;
-        }
-        if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Actors)
-        {
-            SaveActor();
-            return;
-        }
-
-        if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Flow)
-        {
-            if (!TrySaveCurrentFlow()) return;
-            RefreshCurrentStory();
-            return;
-        }
-
-        var selectedId = SelectedStoryResource?.Id;
-        if (selectedId is null) return;
-        if (!TrySaveCurrentStoryResource()) return;
-        RefreshCurrentStory(selectedResourceId: selectedId);
     }
 
     private bool TrySaveCanonicalResource(CanonicalGraphResourceEditorViewModel? target = null, CanonicalStoryWorkspaceViewModel? owner = null)
@@ -2610,8 +1821,7 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             var service = new CanonicalStoryLifecycleService(
                 _canonicalGraphStore,
-                project.Actors,
-                project.Stories);
+                project.Actors);
             var plan = service.GetDeletionPlan(selected.Id);
             if (!plan.CanDelete)
             {
@@ -2687,137 +1897,6 @@ public sealed partial class ShellViewModel : ObservableObject
         ReportWarning($"保存前无法同步 Story Flow 聚合接口：{details}", source);
     }
 
-    private bool TrySaveCurrentStoryResource()
-    {
-        try
-        {
-            if (CurrentDialogue is not null)
-            {
-                var wasDraft = CurrentDialogue.Document.IsNewDraft;
-                var dialogueId = CurrentDialogue.Id;
-                _projectService.SaveDialogue(CurrentDialogue.Document);
-                if (wasDraft)
-                {
-                    _dialogueDrafts.Remove(dialogueId);
-                    if (_projectService.CurrentProject?.Dialogues.ListDialogues().FirstOrDefault(item => item.Id == dialogueId) is { } saved)
-                    {
-                        StoryWorkspace.Dialogues?.PromoteDraft(
-                            dialogueId,
-                            new ResourceDescriptor(ProjectResourceType.Dialogue, saved.Id, saved.DisplayName, saved.Path));
-                    }
-                }
-                ReportSuccess($"Dialogue '{dialogueId}' 已保存到磁盘。", $"dialogue/{dialogueId}");
-                return true;
-            }
-            if (CurrentQuest is not null)
-            {
-                var wasDraft = CurrentQuest.Document.IsNewDraft;
-                var questId = CurrentQuest.Id;
-                _projectService.SaveQuest(CurrentQuest.Document);
-                if (wasDraft && _projectService.CurrentProject?.Quests.ListQuests().FirstOrDefault(item => item.Id == questId) is { } savedQuest)
-                {
-                    _questDrafts.Remove(questId);
-                    StoryWorkspace.Quests?.PromoteDraft(
-                        questId,
-                        new ResourceDescriptor(ProjectResourceType.Quest, savedQuest.Id, savedQuest.DisplayName, savedQuest.Path));
-                }
-                ReportSuccess($"Quest '{questId}' 已保存到磁盘。", $"quest/{questId}");
-                return true;
-            }
-            return true;
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            var type = CurrentDialogue is not null ? ProjectResourceType.Dialogue : ProjectResourceType.Quest;
-            var id = CurrentDialogue?.Id ?? CurrentQuest?.Id;
-            ReportResourceFailure($"保存 {type}", exception, type, id);
-            return false;
-        }
-    }
-
-    private StoryFlowEditorViewModel CreateFlowEditor(string storyId)
-    {
-        var project = _projectService.CurrentProject ?? throw new ProjectException("No project is open.");
-        var story = project.Stories.LoadStory(storyId);
-        var actorIds = project.Actors.ListActors().Select(actor => actor.Id).Distinct(StringComparer.Ordinal).ToArray();
-        var dialogueIds = project.Dialogues.ListDialogues().Select(dialogue => dialogue.Id).Distinct(StringComparer.Ordinal).ToArray();
-        var questIds = project.Quests.ListQuests().Select(quest => quest.Id).Distinct(StringComparer.Ordinal).ToArray();
-        var storyActorIds = story.OwnedResources.Actors.Concat(story.ReferencedResources.Actors).Distinct(StringComparer.Ordinal).ToArray();
-        var storyDialogueIds = story.OwnedResources.Dialogues.Concat(story.ReferencedResources.Dialogues).Distinct(StringComparer.Ordinal).ToArray();
-        var storyQuestIds = story.OwnedResources.Quests.Concat(story.ReferencedResources.Quests).Distinct(StringComparer.Ordinal).ToArray();
-        var storyIds = project.Stories.ListStories().Select(candidate => candidate.Id).ToArray();
-        var document = project.Stories.LoadStoryDocument(storyId);
-        var recovery = _ignoredFlowRecoveries.Contains(storyId) ? null : _flowRecoveryStore?.Load(storyId);
-        if (recovery?.Resource is not null)
-        {
-            switch (_flowWorkspaceDialogs.ChooseRecovery(recovery))
-            {
-                case StoryFlowRecoveryChoice.Recover:
-                    document.Replace(recovery.Resource);
-                    ReportWarning($"已恢复 Story Flow '{storyId}' 的编辑器草稿；正式 Story JSON 尚未改变。", $"story/{storyId}/flow");
-                    break;
-                case StoryFlowRecoveryChoice.Delete:
-                    _flowRecoveryStore?.Delete(storyId);
-                    break;
-                default:
-                    _ignoredFlowRecoveries.Add(storyId);
-                    break;
-            }
-        }
-        return new StoryFlowEditorViewModel(
-            document, actorIds, dialogueIds, questIds, storyIds,
-            storyActorIds, storyDialogueIds, storyQuestIds);
-    }
-
-    private bool TrySaveCurrentFlow()
-    {
-        if (CurrentFlow?.IsDirty != true) return true;
-        try
-        {
-            if (CurrentFlow.ValidationErrors.Count != 0)
-            {
-                ReplaceFlowValidationSource(CurrentFlow);
-                BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
-                BottomPanel.IsExpanded = true;
-                ReportWarning($"Story Flow '{CurrentFlow.Id}' 仍有校验错误，尚未保存。", $"story/{CurrentFlow.Id}/flow");
-                return false;
-            }
-            var project = _projectService.CurrentProject ?? throw new ProjectException("No project is open.");
-            project.Stories.SaveStory(CurrentFlow.Document);
-            _flowRecoveryStore?.Delete(CurrentFlow.Id);
-            _ignoredFlowRecoveries.Remove(CurrentFlow.Id);
-            Problems.RemoveSourceTree($"story/{CurrentFlow.Id}/flow");
-            ReportSuccess($"Story Flow '{CurrentFlow.Id}' 已保存到磁盘。", $"story/{CurrentFlow.Id}/flow");
-            return true;
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("保存 Story Flow", exception, CurrentFlow?.Id);
-            return false;
-        }
-    }
-
-    private void SaveActor()
-    {
-        if (CurrentActor is null)
-        {
-            return;
-        }
-
-        try
-        {
-            var document = SaveOpenActor(CurrentActor.Document);
-            var selectedId = document.Id;
-            RefreshCurrentStory(selectedId);
-            ReportSuccess($"Actor '{selectedId}' 已保存到磁盘。", $"actor/{selectedId}");
-        }
-        catch (Exception exception) when (
-            IsWorkspaceException(exception) || IsCanonicalResourceLifecycleException(exception))
-        {
-            ReportFailure("保存 Actor", exception, CurrentActor?.Id);
-        }
-    }
-
     private ActorDocument SaveOpenActor(ActorDocument document)
     {
         var project = _projectService.CurrentProject
@@ -2837,58 +1916,23 @@ public sealed partial class ShellViewModel : ObservableObject
         return _projectService.SaveActor(document);
     }
 
-    private bool TrySaveCurrentActor()
-    {
-        if (CurrentActor is null)
-        {
-            return true;
-        }
-
-        try
-        {
-            SaveOpenActor(CurrentActor.Document);
-            ReportSuccess($"Actor '{CurrentActor.Id}' 已保存到磁盘。", $"actor/{CurrentActor.Id}");
-            return true;
-        }
-        catch (Exception exception) when (
-            IsWorkspaceException(exception) || IsCanonicalResourceLifecycleException(exception))
-        {
-            ReportFailure("保存 Actor", exception, CurrentActor?.Id);
-            return false;
-        }
-    }
-
     private void SaveAll()
         => TrySaveAll();
 
     private bool TrySaveAll()
     {
-        var selectedResourceId = SelectedStoryResource?.Id;
-        var selectedActorId = SelectedStoryActor?.Id;
-        var promotingDraft = CurrentDialogue?.Document.IsNewDraft == true || CurrentQuest?.Document.IsNewDraft == true;
         foreach (var retained in _retainedStoryWorkspaces.Values.ToArray())
             if (!TrySaveAllCanonicalResources(retained)) return false;
-        if (CanonicalStoryWorkspace is { } workspace)
-        {
-            if (!TrySaveAllCanonicalResources(workspace)) return false;
-        }
+        if (CanonicalStoryWorkspace is { } workspace && !TrySaveAllCanonicalResources(workspace)) return false;
         try
         {
-            if (CurrentFlow?.IsDirty == true && !TrySaveCurrentFlow()) return false;
-            if ((CurrentDialogue?.Document.IsNewDraft == true || CurrentQuest?.Document.IsNewDraft == true)
-                && !TrySaveCurrentStoryResource()) return false;
-            foreach (var actor in _projectService.OpenActorDocuments.Where(document => document.IsDirty).ToArray())
-                SaveOpenActor(actor);
+            foreach (var actor in _projectService.OpenActorDocuments.Where(document => document.IsDirty).ToArray()) SaveOpenActor(actor);
             _projectService.SaveAll();
-            if (promotingDraft && CanonicalStoryWorkspace is null)
-                RefreshCurrentStory(selectedActorId, selectedResourceId);
             ReportSuccess("所有未保存的资源已写入磁盘。", "Project");
-            SaveActorCommand.RaiseCanExecuteChanged();
-            SaveCurrentResourceCommand.RaiseCanExecuteChanged();
-            RaiseWorkspaceCommandStates();
+            RaiseCurrentEditorStates();
             return !HasUnsavedDocuments();
         }
-        catch (Exception exception) when (IsWorkspaceException(exception))
+        catch (Exception exception) when (IsWorkspaceException(exception) || IsCanonicalResourceLifecycleException(exception))
         {
             ReportFailure("保存全部", exception);
             return false;
@@ -2916,12 +1960,8 @@ public sealed partial class ShellViewModel : ObservableObject
     private bool CanSaveAll() =>
         HasProject && HasUnsavedDocuments();
 
-    private bool HasUnsavedDocuments() =>
-        _projectService.OpenActorDocuments.Any(document => document.IsDirty) ||
-        _projectService.OpenDialogueDocuments.Any(document => document.IsDirty) ||
-        _projectService.OpenQuestDocuments.Any(document => document.IsDirty) ||
-        CurrentFlow?.IsDirty == true ||
-        CanonicalStoryWorkspace?.HasDirtyEditors == true || _retainedStoryWorkspaces.Values.Any(workspace => workspace.HasDirtyEditors);
+    private bool HasUnsavedDocuments() => _projectService.OpenActorDocuments.Any(document => document.IsDirty)
+        || CanonicalStoryWorkspace?.HasDirtyEditors == true || _retainedStoryWorkspaces.Values.Any(workspace => workspace.HasDirtyEditors);
 
     private void OpenProjectDirectory()
     {
@@ -3071,6 +2111,7 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             var issues = _projectService.ValidateProject();
             ReplaceValidationSource("project", issues);
+            ReplaceOpenActorValidation();
             BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
             if (issues.Count == 0)
             {
@@ -3111,527 +2152,8 @@ public sealed partial class ShellViewModel : ObservableObject
         Toast.Show("保存完成；请在 Minecraft 执行 /dgrpg reload。", ToastKind.Success);
     }
 
-    private void NewActor()
-    {
-        var project = _projectService.CurrentProject;
-        if (project is null || !StoryWorkspace.HasStory || !TryLeaveActorEditor())
-        {
-            return;
-        }
-
-        var mode = _actorWorkspaceDialogs.RequestCreationMode(StoryWorkspace.StoryDisplayName);
-        if (mode is null)
-        {
-            return;
-        }
-
-        if (mode == ActorCreationMode.Blank)
-        {
-            var request = _actorWorkspaceDialogs.RequestCreate(project.Actors.GetAvailableId("new_actor"));
-            if (request is null) return;
-            ExecuteWorkspaceOperation(
-                () => _projectService.CreateActorInStory(StoryWorkspace.StoryId, request.Id, request.DisplayName),
-                document => $"Actor '{document.Id}' 已创建并归入“{StoryWorkspace.StoryDisplayName}”。");
-            return;
-        }
-
-        var source = _actorWorkspaceDialogs.PickActor(Actors, ActorPickerMode.ImportAsNew, StoryWorkspace.StoryDisplayName);
-        if (source is null) return;
-        var importRequest = _actorWorkspaceDialogs.RequestImportIdentity(
-            source,
-            project.Actors.GetAvailableId(source.Id + "_copy"));
-        if (importRequest is null) return;
-        ExecuteWorkspaceOperation(
-            () =>
-            {
-                var imported = _projectService.ImportActorAsNew(source.Id, importRequest.Id, StoryWorkspace.StoryId);
-                imported.DisplayName = importRequest.DisplayName;
-                return _projectService.SaveActor(imported);
-            },
-            document => $"Actor '{document.Id}' 已作为独立副本导入“{StoryWorkspace.StoryDisplayName}”。");
-    }
-
-    private void ReferenceActor()
-    {
-        var project = _projectService.CurrentProject;
-        var storyActors = StoryWorkspace.Actors;
-        if (project is null || storyActors is null || !TryLeaveActorEditor()) return;
-        var existingIds = storyActors.Memberships.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
-        var candidates = Actors.Where(actor => !existingIds.Contains(actor.Id)).ToArray();
-        var selected = _actorWorkspaceDialogs.PickActor(
-            candidates,
-            ActorPickerMode.Reference,
-            StoryWorkspace.StoryDisplayName);
-        if (selected is null) return;
-
-        try
-        {
-            _projectService.AddActorReference(StoryWorkspace.StoryId, selected.Id);
-            RefreshCurrentStory(selected.Id);
-            ReportSuccess(
-                $"已引用 Actor '{selected.Id}'；多个故事将共享同一份角色数据。",
-                $"actor/{selected.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("引用 Actor", exception, selected.Id);
-        }
-    }
-
-    private void RemoveActorReference()
-    {
-        var membership = SelectedStoryActor;
-        if (membership?.Actor is null || !membership.IsReferenced || !TryLeaveActorEditor()) return;
-        if (!_actorWorkspaceDialogs.ConfirmRemoveReference(membership.Actor, StoryWorkspace.StoryDisplayName)) return;
-
-        try
-        {
-            _projectService.RemoveActorReference(StoryWorkspace.StoryId, membership.Id);
-            RefreshCurrentStory();
-            ReportSuccess(
-                $"已从“{StoryWorkspace.StoryDisplayName}”解除 Actor '{membership.Id}' 的引用；角色文件未删除。",
-                $"actor/{membership.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("解除 Actor 引用", exception, membership.Id);
-        }
-    }
-
-    private void ViewActorReferences()
-    {
-        if (SelectedActor is null) return;
-        try
-        {
-            _actorWorkspaceDialogs.ShowReferences(
-                SelectedActor,
-                _projectService.GetActorReferences(SelectedActor.Id));
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("查看 Actor 引用", exception, SelectedActor.Id);
-        }
-    }
-
-    private void DuplicateActor()
-    {
-        if (SelectedActor is null)
-        {
-            return;
-        }
-
-        ExecuteWorkspaceOperation(
-            () => _projectService.DuplicateActor(SelectedActor.Id),
-            document => $"Actor 已复制为 '{document.Id}'。");
-    }
-
-    private void RenameActor()
-    {
-        if (SelectedActor is null || _projectService.CurrentProject is null)
-        {
-            return;
-        }
-
-        var sourceId = SelectedActor.Id;
-        var suggestedId = _projectService.CurrentProject.Actors.GetAvailableId(sourceId + "_renamed");
-        var targetId = _actorWorkspaceDialogs.RequestRename(SelectedActor, suggestedId);
-        if (targetId is null)
-        {
-            return;
-        }
-
-        ExecuteWorkspaceOperation(
-            () => _projectService.RenameActor(sourceId, targetId),
-            document => $"Actor '{sourceId}' 已编辑为 '{document.Id}'。");
-    }
-
-    private void DeleteActor()
-    {
-        if (SelectedActor is null)
-        {
-            return;
-        }
-        var deletedId = SelectedActor.Id;
-        try
-        {
-            var references = _projectService.GetActorReferences(deletedId);
-            if (references.Count > 0)
-            {
-                _actorWorkspaceDialogs.ShowReferences(SelectedActor, references);
-                ReportWarning(
-                    $"Actor '{deletedId}' 仍被 {references.Count} 个故事引用；请先解除引用。",
-                    $"actor/{deletedId}");
-                return;
-            }
-            if (!_actorWorkspaceDialogs.ConfirmDelete(SelectedActor)) return;
-
-            _projectService.DeleteActor(deletedId);
-            CurrentActor = null;
-            RefreshCurrentStory();
-            ReportSuccess($"Actor '{deletedId}' 已从磁盘删除。", $"actor/{deletedId}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("删除 Actor", exception, deletedId);
-        }
-        finally
-        {
-            RaiseWorkspaceCommandStates();
-        }
-    }
-
-    private ProjectResourceType? CurrentStoryResourceType => StoryWorkspace.CurrentRoute switch
-    {
-        StoryWorkspaceRoutes.Dialogues => ProjectResourceType.Dialogue,
-        StoryWorkspaceRoutes.Quests => ProjectResourceType.Quest,
-        _ => null,
-    };
-
-    private void NewStoryResource()
-    {
-        _lastUiCommand = nameof(NewStoryResource);
-        var project = _projectService.CurrentProject;
-        var type = CurrentStoryResourceType;
-        try
-        {
-            if (project is null || type is null || !StoryWorkspace.HasStory || !TryLeaveCurrentStoryResourceEditor()) return;
-            if (type == ProjectResourceType.Dialogue)
-            {
-                var draftRequest = _resourceWorkspaceDialogs.RequestCreate(
-                    ProjectResourceType.Dialogue,
-                    project.Dialogues.GetAvailableId("new_dialogue"));
-                if (draftRequest is null) return;
-                var draft = _projectService.CreateDialogueDraftInStory(
-                    StoryWorkspace.StoryId,
-                    draftRequest.Id,
-                    draftRequest.DisplayName);
-                _dialogueDrafts[draft.Id] = draft;
-                RefreshCurrentStory(selectedResourceId: draft.Id);
-                ReportSuccess($"Dialogue 草稿 '{draft.Id}' 已创建。", $"dialogue/{draft.Id}");
-                return;
-            }
-
-            if (type == ProjectResourceType.Quest)
-            {
-                var draftRequest = _resourceWorkspaceDialogs.RequestCreate(
-                    ProjectResourceType.Quest,
-                    project.Quests.GetAvailableId("new_quest"));
-                if (draftRequest is null) return;
-                var draft = _projectService.CreateQuestDraftInStory(
-                    StoryWorkspace.StoryId,
-                    draftRequest.Id,
-                    draftRequest.DisplayName);
-                _questDrafts[draft.Id] = draft;
-                RefreshCurrentStory(selectedResourceId: draft.Id);
-                ReportSuccess($"Quest 草稿 '{draft.Id}' 已创建。", $"quest/{draft.Id}");
-                return;
-            }
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
-        {
-            ReportResourceFailure($"创建 {type}", exception, type ?? ProjectResourceType.Dialogue, SelectedStoryResource?.Id);
-        }
-    }
-
-    private void DuplicateStoryResource()
-    {
-        _lastUiCommand = nameof(DuplicateStoryResource);
-        var project = _projectService.CurrentProject;
-        var type = CurrentStoryResourceType;
-        ResourceDescriptor? source = null;
-        try
-        {
-            if (project is null || type is null || !StoryWorkspace.HasStory || !TryLeaveCurrentStoryResourceEditor()) return;
-
-            // The picker is deliberately typed and contains only persisted resources. The
-            // identity dialog and Core draft API are the only later mutation points.
-            var candidates = GetAllProjectResourceDescriptors(project, type.Value);
-            source = _resourceWorkspaceDialogs.PickResource(
-                type.Value,
-                candidates,
-                ResourcePickerMode.ImportAsNew,
-                StoryWorkspace.StoryDisplayName);
-            if (source is null) return;
-
-            var suggestedId = type == ProjectResourceType.Dialogue
-                ? project.Dialogues.GetAvailableId(source.Id + "_copy")
-                : project.Quests.GetAvailableId(source.Id + "_copy");
-            var identity = _resourceWorkspaceDialogs.RequestImportIdentity(type.Value, source, suggestedId);
-            if (identity is null) return;
-
-            if (type == ProjectResourceType.Dialogue)
-            {
-                var draft = _projectService.CreateDialogueDraftFromExistingInStory(
-                    StoryWorkspace.StoryId, source.Id, identity.Id, identity.DisplayName);
-                _dialogueDrafts[draft.Id] = draft;
-            }
-            else
-            {
-                var draft = _projectService.CreateQuestDraftFromExistingInStory(
-                    StoryWorkspace.StoryId, source.Id, identity.Id, identity.DisplayName);
-                _questDrafts[draft.Id] = draft;
-            }
-
-            RefreshCurrentStory(selectedResourceId: identity.Id);
-            ReportSuccess($"{type.Value} 草稿 '{identity.Id}' 已从 '{source.Id}' 创建。", $"{type.Value.ToString().ToLowerInvariant()}/{identity.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
-        {
-            ReportResourceFailure($"复制 {type}", exception, type ?? ProjectResourceType.Dialogue, source?.Id);
-        }
-    }
-
-    private void ReferenceStoryResource()
-    {
-        _lastUiCommand = nameof(ReferenceStoryResource);
-        var project = _projectService.CurrentProject;
-        var type = CurrentStoryResourceType;
-        ResourceDescriptor? selected = null;
-        try
-        {
-            if (project is null || type is null || !TryLeaveCurrentStoryResourceEditor()) return;
-            var page = type == ProjectResourceType.Dialogue
-                ? (StoryResourceMembershipListViewModel?)StoryWorkspace.Dialogues
-                : StoryWorkspace.Quests;
-            var existingIds = page?.Items.Select(item => item.Id).ToHashSet(StringComparer.Ordinal) ?? [];
-            var candidates = GetAllProjectResourceDescriptors(project, type.Value)
-                .Where(resource => !existingIds.Contains(resource.Id)).ToArray();
-            selected = _resourceWorkspaceDialogs.PickResource(type.Value, candidates, ResourcePickerMode.Reference, StoryWorkspace.StoryDisplayName);
-            if (selected is null) return;
-
-            if (type == ProjectResourceType.Dialogue) _projectService.AddDialogueReference(StoryWorkspace.StoryId, selected.Id);
-            else _projectService.AddQuestReference(StoryWorkspace.StoryId, selected.Id);
-            RefreshCurrentStory(selectedResourceId: selected.Id);
-            ReportSuccess($"已引用 {type.Value} '{selected.Id}'；多个故事共享同一份数据。", $"{type.Value.ToString().ToLowerInvariant()}/{selected.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
-        {
-            ReportResourceFailure($"引用 {type}", exception, type ?? ProjectResourceType.Dialogue, selected?.Id);
-        }
-    }
-
-    private void RemoveStoryResourceReference()
-    {
-        _lastUiCommand = nameof(RemoveStoryResourceReference);
-        var membership = SelectedStoryResource;
-        var type = CurrentStoryResourceType;
-        try
-        {
-            if (membership?.Descriptor is not { } descriptor || type is null || !membership.IsReferenced || !TryLeaveCurrentStoryResourceEditor()) return;
-            if (!_resourceWorkspaceDialogs.ConfirmRemoveReference(descriptor, StoryWorkspace.StoryDisplayName)) return;
-
-            if (type == ProjectResourceType.Dialogue) _projectService.RemoveDialogueReference(StoryWorkspace.StoryId, membership.Id);
-            else _projectService.RemoveQuestReference(StoryWorkspace.StoryId, membership.Id);
-            RefreshCurrentStory();
-            ReportSuccess($"已解除 {type.Value} '{membership.Id}' 的故事引用；资源文件未删除。", $"{type.Value.ToString().ToLowerInvariant()}/{membership.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
-        {
-            ReportResourceFailure($"解除 {type} 引用", exception, type ?? ProjectResourceType.Dialogue, membership?.Id);
-        }
-    }
-
-    private void ViewStoryResourceReferences()
-    {
-        _lastUiCommand = nameof(ViewStoryResourceReferences);
-        var descriptor = SelectedStoryResource?.Descriptor;
-        if (descriptor is null) return;
-        try
-        {
-            var references = descriptor.Type == ProjectResourceType.Dialogue
-                ? _projectService.GetDialogueReferences(descriptor.Id)
-                : _projectService.GetQuestReferences(descriptor.Id);
-            _resourceWorkspaceDialogs.ShowReferences(descriptor, references);
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
-        {
-            ReportResourceFailure("查看资源引用", exception, descriptor.Type, descriptor.Id);
-        }
-    }
-
-    private void DeleteStoryResource()
-    {
-        _lastUiCommand = nameof(DeleteStoryResource);
-        var membership = SelectedStoryResource;
-        if (membership is null) return;
-        if (membership.IsDraft)
-        {
-            var draft = new ResourceDescriptor(
-                membership.ResourceType,
-                membership.Id,
-                membership.DisplayName,
-                string.Empty);
-            if (!_resourceWorkspaceDialogs.ConfirmDiscardDraft(draft)) return;
-            if (membership.ResourceType == ProjectResourceType.Dialogue)
-                DiscardCurrentDialogueDraft();
-            else
-                DiscardCurrentQuestDraft();
-            return;
-        }
-        var descriptor = membership?.Descriptor;
-        if (descriptor is null) return;
-        var resourceType = descriptor.Type;
-        var resourceId = descriptor.Id;
-        try
-        {
-            if (membership!.IsReferenced || !TryLeaveCurrentStoryResourceEditor()) return;
-            var references = descriptor.Type == ProjectResourceType.Dialogue
-                ? _projectService.GetDialogueReferences(descriptor.Id)
-                : _projectService.GetQuestReferences(descriptor.Id);
-            if (references.Count > 0)
-            {
-                _resourceWorkspaceDialogs.ShowReferences(descriptor, references);
-                ReportWarning($"{descriptor.Type} '{descriptor.Id}' 仍被 {references.Count} 个故事引用；请先解除引用。", $"{descriptor.Type.ToString().ToLowerInvariant()}/{descriptor.Id}");
-                return;
-            }
-            if (!_resourceWorkspaceDialogs.ConfirmDelete(descriptor)) return;
-            if (descriptor.Type == ProjectResourceType.Dialogue) _projectService.DeleteDialogue(descriptor.Id);
-            else _projectService.DeleteQuest(descriptor.Id);
-            CurrentDialogue = null;
-            CurrentQuest = null;
-            RefreshCurrentStory();
-            ReportSuccess($"{descriptor.Type} '{descriptor.Id}' 已从磁盘删除。", $"{descriptor.Type.ToString().ToLowerInvariant()}/{descriptor.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception) || IsRecoverableUiException(exception))
-        {
-            ReportResourceFailure($"删除 {resourceType}", exception, resourceType, resourceId);
-        }
-    }
-
-    private void DeleteCurrentResource()
-    {
-        if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Actors) DeleteActor();
-        else DeleteStoryResource();
-    }
-
-    private bool CanCreateOrReferenceStoryResource() =>
-        HasProject && StoryWorkspace.HasStory && CurrentStoryResourceType is not null;
-
-    private bool CanRemoveStoryResourceReference() =>
-        SelectedStoryResource?.IsReferenced == true && ActiveEditor?.IsDirty != true;
-
-    private bool CanDeleteSelectedStoryResource() =>
-        SelectedStoryResource?.IsDraft == true ||
-        SelectedStoryResource is { IsReferenced: false, Descriptor: not null } && ActiveEditor?.IsDirty != true;
-
-    private bool CanDeleteCurrentResource() => StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Actors
-        ? CanDeleteSelectedActor()
-        : CanDeleteSelectedStoryResource();
-
-    private static IReadOnlyList<ResourceDescriptor> GetAllProjectResourceDescriptors(ProjectSession project, ProjectResourceType type)
-    {
-        var resources = type == ProjectResourceType.Dialogue
-            ? project.Dialogues.ListDialogues().Select(resource => (resource.Id, resource.DisplayName, resource.Path))
-            : project.Quests.ListQuests().Select(resource => (resource.Id, resource.DisplayName, resource.Path));
-        return resources.Select(resource =>
-        {
-            var homeStory = project.Registry.GetHomeStory(type, resource.Id);
-            var homeStoryName = homeStory is null
-                ? null
-                : string.IsNullOrWhiteSpace(homeStory.DisplayName) ? homeStory.Id : homeStory.DisplayName;
-            return new ResourceDescriptor(type, resource.Id, resource.DisplayName, resource.Path, homeStoryName);
-        }).ToArray();
-    }
-
-    private void ExecuteWorkspaceOperation(
-        Func<ActorDocument> operation,
-        Func<ActorDocument, string> successMessage)
-    {
-        try
-        {
-            var document = operation();
-            var selectedId = document.Id;
-            if (CanonicalStoryWorkspace is { } workspace)
-            {
-                LoadActorList();
-                ReloadCanonicalStoryWorkspace(workspace.StoryEditor.Id, CanonicalStoryFolderKind.Actors, selectedId);
-                SelectedActor = Actors.FirstOrDefault(actor => actor.Id == selectedId);
-            }
-            else RefreshCurrentStory(selectedId);
-            ReportSuccess(successMessage(document), $"actor/{document.Id}");
-        }
-        catch (Exception exception) when (IsWorkspaceException(exception))
-        {
-            ReportFailure("Actor 操作", exception, SelectedActor?.Id);
-        }
-        finally
-        {
-            RaiseWorkspaceCommandStates();
-        }
-    }
-
-    private bool CanMutateSelectedActor() =>
-        SelectedActor is not null &&
-        (CurrentActor is null || !CurrentActor.Document.IsDirty);
-
-    private bool CanCreateOrReferenceActor() =>
-        HasProject && StoryWorkspace.HasStory &&
-        string.Equals(StoryWorkspace.CurrentRoute, StoryWorkspaceRoutes.Actors, StringComparison.Ordinal);
-
-    private bool CanRemoveActorReference() =>
-        SelectedStoryActor?.IsReferenced == true && CanMutateSelectedActor();
-
-    private bool CanViewActorReferences() => SelectedActor is not null;
-
-    private bool CanDeleteSelectedActor() =>
-        CanMutateSelectedActor() && SelectedStoryActor?.IsReferenced != true;
-
-    private void RefreshCurrentStory(string? selectedActorId = null, string? selectedResourceId = null)
-    {
-        var project = _projectService.CurrentProject;
-        if (project is null) return;
-        var storyId = StoryWorkspace.StoryId;
-        var route = StoryWorkspace.CurrentRoute;
-        CurrentActor = null;
-        CurrentDialogue = null;
-        CurrentQuest = null;
-        CurrentFlow = null;
-        _selectedStoryActor = null;
-        OnPropertyChanged(nameof(SelectedStoryActor));
-        _selectedStoryResource = null;
-        OnPropertyChanged(nameof(SelectedStoryResource));
-        LoadActorList();
-        LoadStoryList();
-        if (string.IsNullOrWhiteSpace(storyId))
-        {
-            SelectedActor = selectedActorId is null
-                ? null
-                : Actors.FirstOrDefault(actor => actor.Id == selectedActorId);
-            return;
-        }
-
-        var story = project.Stories.LoadStory(storyId);
-        var actors = project.Actors.ListActors();
-        var descriptors = GetResourceDescriptors(project, story, _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id));
-        StoryWorkspace.OpenStory(
-            story,
-            actors,
-            descriptors,
-            GetActorHomeStoryNames(project, actors),
-                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Dialogue),
-                GetResourceHomeStoryNames(project, descriptors, ProjectResourceType.Quest),
-                _dialogueDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray(),
-                _questDrafts.Values.Where(draft => draft.DraftOwnerStoryId == story.Id).ToArray());
-        StoryWorkspace.SelectRoute(route);
-        CurrentFlow = CreateFlowEditor(storyId);
-        ProjectHome.SelectedStory = ProjectHome.Stories.FirstOrDefault(item => item.Id == storyId);
-        if (selectedActorId is not null)
-        {
-            SelectedStoryActor = StoryWorkspace.Actors?.Memberships.FirstOrDefault(item => item.Id == selectedActorId);
-        }
-        if (selectedResourceId is not null)
-        {
-            SelectedStoryResource = route == StoryWorkspaceRoutes.Dialogues
-                ? StoryWorkspace.Dialogues?.Items.FirstOrDefault(item => item.Id == selectedResourceId)
-                : StoryWorkspace.Quests?.Items.FirstOrDefault(item => item.Id == selectedResourceId);
-        }
-        RaiseWorkspaceCommandStates();
-    }
-
     private static bool IsWorkspaceException(Exception exception) =>
         exception is ProjectException or ActorRepositoryException or ActorDataException or ActorValidationException
-            or DialogueException or QuestException
-            or StoryRepositoryException or StoryNotFoundException or StoryDataException or StoryValidationException
             or ItemRepositoryException or ItemDataException or ItemValidationException;
 
     internal static bool IsRecoverableUiException(Exception exception) =>
@@ -3712,106 +2234,8 @@ public sealed partial class ShellViewModel : ObservableObject
         Output.Append(StatusMessage, source: $"story/{story.Id}");
     }
 
-    private void OnStoryWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (args.PropertyName == nameof(StoryWorkspaceViewModel.Actors))
-        {
-            if (_observedStoryActors is not null)
-                _observedStoryActors.PropertyChanged -= OnStoryActorsPropertyChanged;
-            _observedStoryActors = (sender as StoryWorkspaceViewModel)?.Actors;
-            if (_observedStoryActors is not null)
-                _observedStoryActors.PropertyChanged += OnStoryActorsPropertyChanged;
-            return;
-        }
-
-        if (args.PropertyName == nameof(StoryWorkspaceViewModel.Dialogues))
-        {
-            if (_observedStoryDialogues is not null)
-                _observedStoryDialogues.PropertyChanged -= OnStoryResourceListPropertyChanged;
-            _observedStoryDialogues = (sender as StoryWorkspaceViewModel)?.Dialogues;
-            if (_observedStoryDialogues is not null)
-                _observedStoryDialogues.PropertyChanged += OnStoryResourceListPropertyChanged;
-            return;
-        }
-
-        if (args.PropertyName == nameof(StoryWorkspaceViewModel.Quests))
-        {
-            if (_observedStoryQuests is not null)
-                _observedStoryQuests.PropertyChanged -= OnStoryResourceListPropertyChanged;
-            _observedStoryQuests = (sender as StoryWorkspaceViewModel)?.Quests;
-            if (_observedStoryQuests is not null)
-                _observedStoryQuests.PropertyChanged += OnStoryResourceListPropertyChanged;
-            return;
-        }
-
-        if (args.PropertyName == nameof(StoryWorkspaceViewModel.Story))
-            return;
-
-        if (args.PropertyName == nameof(StoryWorkspaceViewModel.CurrentRoute) && StoryWorkspace.HasStory)
-        {
-            if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Dialogues)
-            {
-                CurrentActor = null;
-                CurrentQuest = null;
-                _selectedStoryResource = StoryWorkspace.Dialogues?.SelectedItem;
-            }
-            else if (StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Quests)
-            {
-                CurrentActor = null;
-                CurrentDialogue = null;
-                _selectedStoryResource = StoryWorkspace.Quests?.SelectedItem;
-            }
-            else
-            {
-                _selectedStoryResource = null;
-                CurrentDialogue = null;
-                CurrentQuest = null;
-            }
-            OnPropertyChanged(nameof(SelectedStoryResource));
-            OpenSelectedStoryResource();
-            OnPropertyChanged(nameof(ActiveEditor));
-            StatusMessage = $"Story：{StoryWorkspace.StoryId} / {StoryWorkspace.SelectedRoute.Title}";
-            RaiseWorkspaceCommandStates();
-        }
-    }
-
-    private void OnStoryActorsPropertyChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (args.PropertyName == nameof(StoryActorsViewModel.SelectedMembership) &&
-            sender is StoryActorsViewModel actors)
-        {
-            var previous = SelectedStoryActor;
-            SelectedStoryActor = actors.SelectedMembership;
-            if (!ReferenceEquals(SelectedStoryActor, actors.SelectedMembership))
-                actors.SelectedMembership = previous;
-        }
-    }
-
-    private void OnStoryResourceListPropertyChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (args.PropertyName != nameof(StoryResourceMembershipListViewModel.SelectedItem)) return;
-        if (sender == StoryWorkspace.Dialogues && StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Dialogues)
-            SelectedStoryResource = StoryWorkspace.Dialogues?.SelectedItem;
-        else if (sender == StoryWorkspace.Quests && StoryWorkspace.CurrentRoute == StoryWorkspaceRoutes.Quests)
-            SelectedStoryResource = StoryWorkspace.Quests?.SelectedItem;
-    }
-
     private void RaiseWorkspaceCommandStates()
     {
-        NewActorCommand.RaiseCanExecuteChanged();
-        ReferenceActorCommand.RaiseCanExecuteChanged();
-        RemoveActorReferenceCommand.RaiseCanExecuteChanged();
-        ViewActorReferencesCommand.RaiseCanExecuteChanged();
-        DuplicateActorCommand.RaiseCanExecuteChanged();
-        RenameActorCommand.RaiseCanExecuteChanged();
-        DeleteActorCommand.RaiseCanExecuteChanged();
-        NewStoryResourceCommand.RaiseCanExecuteChanged();
-        ReferenceStoryResourceCommand.RaiseCanExecuteChanged();
-        RemoveStoryResourceReferenceCommand.RaiseCanExecuteChanged();
-        ViewStoryResourceReferencesCommand.RaiseCanExecuteChanged();
-        DeleteStoryResourceCommand.RaiseCanExecuteChanged();
-        DeleteCurrentResourceCommand.RaiseCanExecuteChanged();
-        DuplicateStoryResourceCommand.RaiseCanExecuteChanged();
         SaveCurrentResourceCommand.RaiseCanExecuteChanged();
         UndoCurrentCommand.RaiseCanExecuteChanged();
         RedoCurrentCommand.RaiseCanExecuteChanged();
@@ -3831,43 +2255,24 @@ public sealed partial class ShellViewModel : ObservableObject
         ExportSelectedStoryPackageCommand.RaiseCanExecuteChanged();
     }
 
+    private void ReplaceOpenActorValidation()
+    {
+        Problems.RemoveSourceTree("actor");
+        foreach (var document in _projectService.OpenActorDocuments)
+            ReplaceValidationSource($"actor/{document.Id}", document.ValidationIssues);
+    }
+
     private void RefreshProblems()
     {
-        if (CanonicalStoryWorkspace is { } canonical)
-        {
-            ReplaceCanonicalValidation(canonical);
-            return;
-        }
-        if (CurrentFlow is not null)
-            ReplaceFlowValidationSource(CurrentFlow);
-
-        if (CurrentActor is not null)
-        {
-            ReplaceValidationSource($"actor/{CurrentActor.Id}", CurrentActor.Document.ValidationIssues);
-            return;
-        }
-
-        if (CurrentDialogue is not null)
-        {
-            ReplaceValidationSource($"dialogue/{CurrentDialogue.Id}", CurrentDialogue.ValidationIssues);
-            return;
-        }
-
-        if (CurrentQuest is not null)
-        {
-            ReplaceValidationSource($"quest/{CurrentQuest.Id}", CurrentQuest.ValidationIssues);
-            return;
-        }
-
-        if (_projectService.CurrentProject is not null)
+        ReplaceOpenActorValidation();
+        if (CanonicalStoryWorkspace is { } workspace) { ReplaceCanonicalValidation(workspace); return; }
+        if (HasProject)
         {
             ReplaceValidationSource("project", _projectService.ValidateProject());
             UpdateProjectGraphProblems();
             UpdateCanonicalStoryDiscoveryProblems();
-            return;
         }
-
-        Problems.ClearAll();
+        else Problems.ClearAll();
     }
 
     private void ReplaceCanonicalValidation(CanonicalStoryWorkspaceViewModel workspace)
@@ -3885,26 +2290,10 @@ public sealed partial class ShellViewModel : ObservableObject
             source,
             issues.Select(issue => new ProblemItem(issue.Severity, issue.Code, issue.Message, issue.Field, source)));
 
-    private void ReplaceFlowValidationSource(StoryFlowEditorViewModel flow)
-    {
-        var rootSource = $"story/{flow.Id}/flow";
-        Problems.ReplaceForSourceTree(
-            rootSource,
-            flow.ValidationIssues.Select(issue => new ProblemItem(
-                issue.Severity,
-                issue.Code,
-                issue.Message,
-                issue.Field,
-                string.IsNullOrWhiteSpace(issue.NodeId) ? rootSource : $"{rootSource}/{issue.NodeId}")));
-    }
-
     private void UpdateProjectGraphProblems()
     {
         var problems = ProjectHome.Graph.Diagnostics.Select(issue => new ProblemItem(
-                issue.Code is "project_graph.target.missing"
-                    or "project_graph.target.invalid"
-                    or "project_graph.enter_story.malformed"
-                    or "project_graph.enter_story.ambiguous"
+                ProjectGraphViewModel.IsErrorDiagnostic(issue)
                     ? ValidationSeverity.Error
                     : ValidationSeverity.Warning,
                 issue.Code,
@@ -3987,42 +2376,6 @@ public sealed partial class ShellViewModel : ObservableObject
         }
     }
 
-    private void ReportResourceFailure(
-        string action,
-        Exception exception,
-        ProjectResourceType type,
-        string? resourceId,
-        bool writeCrashLog = true)
-    {
-        if (writeCrashLog)
-        {
-            LogCrash(exception, action);
-        }
-
-        var id = resourceId ?? "unknown";
-        var source = $"{type.ToString().ToLowerInvariant()}/{id}";
-        var message = $"{action}失败：{exception.Message}";
-        StatusMessage = message;
-        Output.Append(message, OutputKind.Error, source);
-        Toast.Show(message, ToastKind.Error);
-
-        IReadOnlyList<ValidationIssue>? issues = exception switch
-        {
-            DialogueValidationException dialogue => dialogue.Issues,
-            QuestValidationException quest => quest.Issues,
-            _ => null,
-        };
-        if (issues is not null)
-        {
-            ReplaceValidationSource(source, issues);
-            BottomPanel.SelectedTab = BottomPanel.Tabs.Single(tab => tab.Page == "Problems");
-        }
-        else
-        {
-            Problems.ReplaceForSource(source, [new ProblemItem(ValidationSeverity.Error, "operation.failure", message, Source: source)]);
-        }
-    }
-
     private void LogCrash(Exception exception, string context)
     {
         try
@@ -4036,52 +2389,9 @@ public sealed partial class ShellViewModel : ObservableObject
         }
     }
 
-    private void OnCurrentActorPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
-    {
-        SaveActorCommand.RaiseCanExecuteChanged();
-        RaiseCurrentEditorStates();
-    }
-
-    private void OnCurrentResourceEditorPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
-    {
-        if (sender is StoryFlowEditorViewModel flow && eventArgs.PropertyName == nameof(StoryFlowEditorViewModel.IsDirty))
-            CaptureFlowRecovery(flow);
-        RaiseCurrentEditorStates();
-    }
-
-    private void OnFlowHistoryCanExecuteChanged(object? sender, EventArgs eventArgs)
-    {
-        UndoCurrentCommand.RaiseCanExecuteChanged();
-        RedoCurrentCommand.RaiseCanExecuteChanged();
-    }
-
-    private void CaptureFlowRecovery(StoryFlowEditorViewModel flow)
-    {
-        if (_flowRecoveryStore is null) return;
-        try
-        {
-            if (flow.IsDirty)
-                _flowRecoveryStore.Save(flow.Document.ToResource(), flow.Document.SourcePath);
-            else
-                _flowRecoveryStore.Delete(flow.Id);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidDataException)
-        {
-            ReportWarning($"Story Flow '{flow.Id}' 的恢复草稿写入失败：{exception.Message}", $"story/{flow.Id}/flow/recovery");
-        }
-    }
-
-    private void ReportPendingFlowRecoveries()
-    {
-        var count = _flowRecoveryStore?.Enumerate().Count ?? 0;
-        if (count > 0)
-            ReportWarning($"检测到 {count} 个 Story Flow 恢复草稿；打开对应 Story 时可恢复、忽略或删除。", "story/recovery");
-    }
-
     private void RaiseCurrentEditorStates()
     {
         OnPropertyChanged(nameof(ActiveEditor));
-        SaveActorCommand.RaiseCanExecuteChanged();
         SaveCurrentResourceCommand.RaiseCanExecuteChanged();
         UndoCurrentCommand.RaiseCanExecuteChanged();
         RedoCurrentCommand.RaiseCanExecuteChanged();
@@ -4132,20 +2442,8 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private sealed class NullResourceWorkspaceDialogs : IResourceWorkspaceDialogs
     {
-        public ResourceCreationMode? RequestCreationMode(ProjectResourceType type, string storyDisplayName) => null;
-        public ResourceIdentityRequest? RequestCreate(ProjectResourceType type, string suggestedId) => null;
-        public ResourceIdentityRequest? RequestImportIdentity(ProjectResourceType type, ResourceDescriptor source, string suggestedId) => null;
-        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates, ResourcePickerMode mode, string storyDisplayName) => null;
-        public bool ConfirmDelete(ResourceDescriptor resource) => false;
-        public bool ConfirmDiscardDraft(ResourceDescriptor resource) => false;
-        public bool ConfirmRemoveReference(ResourceDescriptor resource, string storyDisplayName) => false;
-        public void ShowReferences(ResourceDescriptor resource, IReadOnlyList<ResourceDescriptor> references) { }
-        public bool ConfirmSaveBeforeSwitch(ResourceDescriptor resource) => false;
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(ResourceDescriptor resource) => UnsavedChangesChoice.Cancel;
-    }
-
-    private sealed class NullFlowWorkspaceDialogs : IFlowWorkspaceDialogs
-    {
-        public UnsavedChangesChoice ConfirmCloseWithUnsavedChanges(StoryFlowEditorViewModel flow) => UnsavedChangesChoice.Cancel;
+        public StoryCreationRequest? RequestCreateStory(string allocatedStoryUid) => null;
+        public ResourceDescriptor? PickResource(ProjectResourceType type, IReadOnlyList<ResourceDescriptor> candidates,
+            ResourcePickerMode mode, string storyDisplayName) => null;
     }
 }

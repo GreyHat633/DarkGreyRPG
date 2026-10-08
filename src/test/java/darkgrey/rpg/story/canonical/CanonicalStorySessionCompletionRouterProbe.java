@@ -257,7 +257,6 @@ public final class CanonicalStorySessionCompletionRouterProbe {
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
-            Collections.emptyMap(),
             new CanonicalProjectContent(stories, sessions, Collections.emptyMap(), memberships));
     }
 

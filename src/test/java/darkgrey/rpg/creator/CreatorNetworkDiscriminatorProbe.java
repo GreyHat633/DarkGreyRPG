@@ -50,8 +50,12 @@ public final class CreatorNetworkDiscriminatorProbe {
                 ids.put(id, ids.containsKey(id) ? ids.get(id) + "," + m.group(3) : m.group(3));
             }
         }
-        if (ids.size() != 31) throw new AssertionError("Expected 31 packet identities, found " + ids);
-        for (int i = 3; i <= 33; i++) if (!ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
+        if (ids.size() != 28) throw new AssertionError("Expected 28 current packet identities, found " + ids);
+        for (int retired : new int[] { 3, 4, 8, 9 })
+            if (ids.containsKey(retired)) throw new AssertionError("Retired discriminator reused: " + retired);
+        for (int i = 5; i <= 34; i++)
+            if (i != 8 && i != 9 && !ids.containsKey(i)) throw new AssertionError("Missing discriminator " + i);
+        if (!"CLIENT".equals(ids.get(34))) throw new AssertionError("Current Task window open side mismatch");
         if (!"CLIENT".equals(ids.get(17)) || !"SERVER".equals(ids.get(18)))
             throw new AssertionError("Creator packet side mismatch");
         if (!"CLIENT".equals(ids.get(24)) || !"SERVER".equals(ids.get(25)))

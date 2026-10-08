@@ -141,7 +141,7 @@ public sealed class GraphNodeDefinitionSchemaTests
         AssertProperties(GraphScope.Session, "line",
             ("speaker_actor_id", JsonValueKind.String), ("text", JsonValueKind.String));
         AssertProperties(GraphScope.Session, "choice",
-            ("prompt", JsonValueKind.String), ("options", JsonValueKind.Array));
+            ("options", JsonValueKind.Array));
         AssertProperties(GraphScope.Session, "end",
             ("port_id", JsonValueKind.String), ("display_name", JsonValueKind.String), ("display_order", JsonValueKind.Number));
         AssertProperties(GraphScope.Session, "logic_output",

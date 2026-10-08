@@ -13,7 +13,6 @@ import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ItemResourceDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.project.packages.LoadedStoryPackage;
-import darkgrey.rpg.story.StoryDefinition;
 
 /** Bounded, server-produced data used by the nominator screens. */
 public final class NominatorCatalog {
@@ -43,13 +42,9 @@ public final class NominatorCatalog {
     public static NominatorCatalog from(ProjectSnapshot snapshot) {
         if (snapshot == null) throw new IllegalArgumentException("Project snapshot is required.");
         Map<String, Story> storiesById = new java.util.LinkedHashMap<String, Story>();
-        for (StoryDefinition value : snapshot.getStories()
-            .values())
-            storiesById
-                .put(value.getId(), new Story(value.getId(), value.getTitle(), value.getNotes(), value.getTags()));
         for (CanonicalGraphResource value : snapshot.getCanonicalStories()
             .values())
-            if (!storiesById.containsKey(value.getId())) storiesById.put(
+            storiesById.put(
                 value.getId(),
                 new Story(value.getId(), value.getDisplayName(), "", Collections.<String>emptyList()));
         List<Actor> actors = new ArrayList<Actor>();
@@ -160,9 +155,7 @@ public final class NominatorCatalog {
         ProjectSnapshot packageSnapshot = value.getSnapshot();
         String storyId = value.getStoryId();
         CanonicalGraphResource canonical = packageSnapshot.getCanonicalStory(storyId);
-        StoryDefinition legacy = packageSnapshot.getStory(storyId);
-        String displayName = canonical != null ? canonical.getDisplayName()
-            : legacy == null ? storyId : legacy.getTitle();
+        String displayName = canonical == null ? storyId : canonical.getDisplayName();
         Set<String> actorIds = new LinkedHashSet<String>();
         Set<String> itemIds = new LinkedHashSet<String>();
         Set<String> itemGroupIds = new LinkedHashSet<String>();

@@ -226,12 +226,12 @@ public final class Construction0335Probe {
         System.out.println("CONSTRUCTION_0335_SCREEN_CHOICE_TEXT_SNAPSHOT=PASS");
     }
 
-    private static void candidatePages() throws Exception {
+    public static void candidatePages() throws Exception {
         java.lang.reflect.Field repository = darkgrey.rpg.DarkGreyRpg.class.getDeclaredField("projectRepository");
         repository.setAccessible(true);
         repository.set(
             null,
-            new darkgrey.rpg.project.ProjectRepository(new java.io.File(".tooling/0335/CandidateProbeProject")));
+            new darkgrey.rpg.project.ProjectRepository(new java.io.File(".tooling/0400/CandidateProbeProject")));
         java.lang.reflect.Method register = net.minecraft.item.Item.itemRegistry.getClass()
             .getDeclaredMethod("addObjectRaw", int.class, String.class, Object.class);
         register.setAccessible(true);
@@ -241,7 +241,7 @@ public final class Construction0335Probe {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setString("value", "candidate" + i + repeat('a', i == 120 ? 9000 : 1800));
             bindings.addGroupMember(
-                "probe:group",
+                "ST-2345-6789-ABCD-EFGH~item_group~supplies",
                 new darkgrey.rpg.item.identity.ItemGroupMember(
                     darkgrey.rpg.item.identity.ItemMatchMode.EXACT,
                     new darkgrey.rpg.item.identity.ItemStackDefinition("probe:item", i, tag)));
@@ -249,7 +249,7 @@ public final class Construction0335Probe {
         CanonicalGraphNode objective = node(
             "objective",
             "objective",
-            "{\"objective_type\":\"collect_item\",\"item\":\"probe:group\",\"metadata\":{}}");
+            "{\"objective_type\":\"collect_item\",\"item\":\"ST-2345-6789-ABCD-EFGH~item_group~supplies\",\"metadata\":{}}");
         NBTTagCompound summary = darkgrey.rpg.creator.TaskCandidateIndex.summary(objective, bindings);
         require(
             summary.getBoolean("group") && summary.getInteger("total") == 121
@@ -273,7 +273,7 @@ public final class Construction0335Probe {
             require(page.getInteger("next") > cursor, "finite candidate cursor progresses");
             cursor = page.getInteger("next");
         }
-        bindings.releaseGroup("probe:group");
+        bindings.releaseGroup("ST-2345-6789-ABCD-EFGH~item_group~supplies");
         require(
             darkgrey.rpg.creator.TaskCandidateIndex.summary(objective, bindings)
                 .getInteger("total") == 0,

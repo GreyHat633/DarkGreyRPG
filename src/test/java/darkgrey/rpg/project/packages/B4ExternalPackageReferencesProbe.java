@@ -276,9 +276,6 @@ public final class B4ExternalPackageReferencesProbe {
             actors,
             Collections.emptyMap(),
             Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
             canonical);
         return new LoadedStoryPackage(
             manifest,

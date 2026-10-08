@@ -393,11 +393,14 @@ public sealed partial class GraphEditorHostViewModel : ObservableObject
         => Refresh(_commandBridge.LastValidationIssues);
 
     public void RefreshProjectedStoryBoundary(string storyId)
+        => RefreshProjectedStoryBoundaries([storyId]);
+
+    internal void RefreshProjectedStoryBoundaries(IReadOnlyList<string> storyIds)
     {
         if (Scope != GraphScope.Project) throw new InvalidOperationException("Story boundary projection requires project scope.");
         Refresh();
         // Canvas ports are retained visuals; refreshing only view models leaves old sockets on screen.
-        PortsChanged?.Invoke(this, new GraphPortsChangedEventArgs([storyId]));
+        PortsChanged?.Invoke(this, new GraphPortsChangedEventArgs(storyIds));
     }
 
     public void RefreshAggregatePresentation(GraphResourceEnvelope resource)

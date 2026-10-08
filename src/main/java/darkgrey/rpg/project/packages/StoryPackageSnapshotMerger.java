@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import darkgrey.rpg.dialogue.DialogueDefinition;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
 import darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection;
@@ -20,8 +19,6 @@ import darkgrey.rpg.project.ItemResourceDefinition;
 import darkgrey.rpg.project.ProjectDefinition;
 import darkgrey.rpg.project.ProjectLoadException;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.quest.QuestDefinition;
-import darkgrey.rpg.story.StoryDefinition;
 
 /** Builds one server-authoritative resource snapshot from installed Story Packages. */
 public final class StoryPackageSnapshotMerger {
@@ -36,9 +33,6 @@ public final class StoryPackageSnapshotMerger {
         Map<String, ActorDefinition> actors = new LinkedHashMap<String, ActorDefinition>();
         Map<String, ItemResourceDefinition> items = new LinkedHashMap<String, ItemResourceDefinition>();
         Map<String, ItemResourceDefinition> itemGroups = new LinkedHashMap<String, ItemResourceDefinition>();
-        Map<String, DialogueDefinition> dialogues = new LinkedHashMap<String, DialogueDefinition>();
-        Map<String, QuestDefinition> quests = new LinkedHashMap<String, QuestDefinition>();
-        Map<String, StoryDefinition> stories = new LinkedHashMap<String, StoryDefinition>();
         Map<String, CanonicalGraphResource> canonicalStories = new LinkedHashMap<String, CanonicalGraphResource>();
         Map<String, CanonicalGraphResource> sessions = new LinkedHashMap<String, CanonicalGraphResource>();
         Map<String, CanonicalGraphResource> tasks = new LinkedHashMap<String, CanonicalGraphResource>();
@@ -47,8 +41,6 @@ public final class StoryPackageSnapshotMerger {
         Map<String, byte[]> actorOrigins = new LinkedHashMap<String, byte[]>();
         Map<String, byte[]> itemOrigins = new LinkedHashMap<String, byte[]>();
         Map<String, byte[]> itemGroupOrigins = new LinkedHashMap<String, byte[]>();
-        Map<String, byte[]> dialogueOrigins = new LinkedHashMap<String, byte[]>();
-        Map<String, byte[]> questOrigins = new LinkedHashMap<String, byte[]>();
         Map<String, byte[]> sessionOrigins = new LinkedHashMap<String, byte[]>();
         Map<String, byte[]> taskOrigins = new LinkedHashMap<String, byte[]>();
         for (LoadedStoryPackage value : packages.values()) {
@@ -56,10 +48,8 @@ public final class StoryPackageSnapshotMerger {
             ProjectSnapshot snapshot = value.getSnapshot();
             StoryPackageManifest.RequiredResources required = value.getManifest()
                 .getRequiredResources();
-            Map<String, ?> primaryStories = value.getManifest()
-                .isDgrsV1() ? snapshot.getCanonicalStories() : snapshot.getStories();
-            String primaryStoryType = value.getManifest()
-                .isDgrsV1() ? "canonical Story" : "Story";
+            Map<String, CanonicalGraphResource> primaryStories = snapshot.getCanonicalStories();
+            String primaryStoryType = "canonical Story";
             requireIds(primaryStories.keySet(), Collections.singleton(value.getStoryId()), primaryStoryType, owner);
             requireIds(
                 primaryStories.keySet(),
@@ -87,15 +77,6 @@ public final class StoryPackageSnapshotMerger {
                 required.getItemGroups(),
                 "Item Group",
                 value);
-            putAllShared(
-                dialogues,
-                dialogueOrigins,
-                snapshot.getDialogues(),
-                required.getDialogues(),
-                "Dialogue",
-                value);
-            putAllShared(quests, questOrigins, snapshot.getQuests(), required.getQuests(), "Quest", value);
-            putAllExclusive(stories, snapshot.getStories(), "Story", owner);
             putAllExclusive(canonicalStories, snapshot.getCanonicalStories(), "canonical Story", owner);
             putAllShared(
                 sessions,
@@ -146,9 +127,6 @@ public final class StoryPackageSnapshotMerger {
             actors,
             items,
             itemGroups,
-            dialogues,
-            quests,
-            stories,
             canonical);
     }
 

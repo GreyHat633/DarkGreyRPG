@@ -17,13 +17,13 @@ public sealed class CanonicalStoryLifecycleShellTests
     {
         using var project = new LifecycleProjectFixture();
         project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Canonical Shared");
-        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors, project.Session.Stories)
+        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors)
             .CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~owned_actor", "Owned Actor");
         var resources = new CanonicalStoryResourceLifecycleService(project.Store);
         resources.CreateOwnedSession("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~session~owned_session", "Owned Session");
         resources.CreateOwnedTask("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~task~owned_task", "Owned Task");
         project.CreateCanonicalStory("ST-JKLM-NPQR-STUV-WXYZ", "Other");
-        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors, project.Session.Stories)
+        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors)
             .CreateOwned("ST-JKLM-NPQR-STUV-WXYZ", "ST-JKLM-NPQR-STUV-WXYZ~actor~referenced_actor", "Referenced Actor");
         var membership = project.Store.Memberships.Load("ST-2345-6789-ABCD-EFGH");
         project.Store.Memberships.Replace(new CanonicalStoryMembershipManifest(
@@ -75,13 +75,14 @@ public sealed class CanonicalStoryLifecycleShellTests
     {
         using var project = new LifecycleProjectFixture();
         project.CreateCanonicalStory("ST-2345-6789-ABCD-EFGH", "Opening");
-        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors, project.Session.Stories)
+        new CanonicalStoryActorLifecycleService(project.Store, project.Session.Actors)
             .CreateOwned("ST-2345-6789-ABCD-EFGH", "ST-2345-6789-ABCD-EFGH~actor~teacher", "Teacher");
 
         var dialogs = new FakeProjectWorkspaceDialogs { CanonicalDeleteConfirmed = true };
         var shell = project.OpenShell(dialogs);
-        shell.SelectedActor = shell.Actors.Single(actor => actor.Id == "ST-2345-6789-ABCD-EFGH~actor~teacher");
-        shell.CurrentActor!.DisplayName = "unsaved";
+        shell.OpenStory(shell.ProjectHome.Stories.Single());
+        shell.CanonicalStoryWorkspace!.SelectTreeItem(shell.CanonicalStoryWorkspace.ActorItems.Single());
+        shell.CanonicalStoryWorkspace.InspectorPortraitEditor!.DisplayName = "unsaved";
         shell.ProjectHome.SelectedStory = shell.ProjectHome.Stories.Single(story => story.Id == "ST-2345-6789-ABCD-EFGH");
 
         shell.DeleteSelectedStoryCommand.Execute(null);
@@ -183,7 +184,7 @@ public sealed class CanonicalStoryLifecycleShellTests
         public string ActorPath(string id) => Session.Actors.GetActorPath(id);
 
         public void CreateCanonicalStory(string id, string displayName)
-            => new CanonicalStoryLifecycleService(Store, Session.Actors, Session.Stories)
+            => new CanonicalStoryLifecycleService(Store, Session.Actors)
                 .Create(id, displayName);
 
         public ShellViewModel OpenShell(IProjectWorkspaceDialogs dialogs)

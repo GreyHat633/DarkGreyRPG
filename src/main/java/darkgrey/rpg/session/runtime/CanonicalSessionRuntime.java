@@ -194,8 +194,7 @@ public final class CanonicalSessionRuntime {
             }
         }
         if (changed && currentStep != null && currentStep.getKind() == CanonicalSessionStep.Kind.CHOICE)
-            currentStep = CanonicalSessionStep
-                .choice(currentNodeId, optionalString(currentNode(), "prompt"), parseChoiceOptions(currentNode()));
+            currentStep = CanonicalSessionStep.choice(currentNodeId, parseChoiceOptions(currentNode()));
         return false;
     }
 
@@ -309,8 +308,7 @@ public final class CanonicalSessionRuntime {
             if ("choice".equals(type)) {
                 if (lineEpoch == Long.MAX_VALUE) throw fail("session.choice.epoch", "Choice epoch exhausted.");
                 lineEpoch++;
-                currentStep = CanonicalSessionStep
-                    .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
+                currentStep = CanonicalSessionStep.choice(node.getId(), parseChoiceOptions(node));
                 return;
             }
             if ("end".equals(type)) {
@@ -376,8 +374,7 @@ public final class CanonicalSessionRuntime {
         else if ("logic_input".equals(type)) {
             Boolean external = externalLogicInputs.get(requiredString(node, "port_id", "session.logic_input"));
             value = external != null && external.booleanValue();
-        } else if ("choice".equals(type)) value = portId.equals(selectedChoiceOptions.get(node.getId()));
-        else if ("flow_judgment".equals(type))
+        } else if ("flow_judgment".equals(type))
             value = "executed".equals(portId) && executedFlowJudgmentNodeIds.contains(node.getId());
         else if ("and".equals(type) || "or".equals(type)) {
             boolean all = "and".equals(type);
@@ -546,11 +543,14 @@ public final class CanonicalSessionRuntime {
     }
 
     private void validateChoicePorts(CanonicalGraphNode node) {
+        for (CanonicalGraphPort port : node.getPorts())
+            if (port.isOutput() && port.getKind() == CanonicalGraphInterfaceKind.LOGIC) throw failure(
+                "session.choice.output_logic.retired",
+                "Choice node '" + node.getId() + "' has retired Logic output '" + port.getId() + "'.");
         Map<String, CanonicalGraphPort> ports = portMap(node, "choice");
         CanonicalGraphPort input = ports.remove("flow_in");
         if (input == null || !input.isInput() || input.getKind() != CanonicalGraphInterfaceKind.FLOW)
             throw failure("session.choice.port.missing", "Choice requires Flow input 'flow_in'.");
-        optionalString(node, "prompt");
         List<CanonicalSessionChoiceOption> options = parseChoiceOptions(node);
         Set<String> flows = new HashSet<String>();
         Set<String> ids = new HashSet<String>();
@@ -562,7 +562,6 @@ public final class CanonicalSessionRuntime {
                 "session.choice.option.duplicate",
                 "Choice option_id is duplicated: " + option.getOptionId());
             CanonicalGraphPort flow = ports.remove(option.getFlowPortId());
-            CanonicalGraphPort logic = ports.remove(option.getOptionId());
             if (option.getConditionPortId() != null) {
                 CanonicalGraphPort condition = ports.remove(option.getConditionPortId());
                 if (condition == null || !condition.isInput()
@@ -573,14 +572,12 @@ public final class CanonicalSessionRuntime {
                 throw failure("session.choice.option.mapping", "Choice Flow outputs must map one-to-one to options.");
             if (!flow.isOutput() || flow.getKind() != CanonicalGraphInterfaceKind.FLOW)
                 throw failure("session.choice.option.flow.kind", "Choice option Flow output is invalid.");
-            if (logic != null && (!logic.isOutput() || logic.getKind() != CanonicalGraphInterfaceKind.LOGIC))
-                throw failure("session.choice.option.logic.kind", "Choice option Logic output is invalid.");
             if (!hasExactlyOneTarget(node, flow.getId())) throw failure(
                 "session.choice.option.unconnected",
                 "Choice option Flow output is unconnected: " + flow.getId());
             if (option.getFlowPortId()
                 .equals(option.getOptionId()))
-                throw failure("session.choice.option.mapping", "Choice Flow and Logic IDs must be distinct.");
+                throw failure("session.choice.option.mapping", "Choice Flow and option IDs must be distinct.");
         }
         if (!ports.isEmpty()) throw failure(
             "session.choice.option.mapping",
@@ -826,8 +823,7 @@ public final class CanonicalSessionRuntime {
         } else
             if (status == CanonicalSessionStatus.ACTIVE && "line".equals(node.getType())) currentStep = lineStep(node);
             else if (status == CanonicalSessionStatus.ACTIVE && "choice".equals(node.getType()))
-                currentStep = CanonicalSessionStep
-                    .choice(node.getId(), optionalString(node, "prompt"), parseChoiceOptions(node));
+                currentStep = CanonicalSessionStep.choice(node.getId(), parseChoiceOptions(node));
             else if (status == CanonicalSessionStatus.COMPLETED && "end".equals(node.getType()))
                 currentStep = CanonicalSessionStep.end(
                     node.getId(),
@@ -1049,15 +1045,6 @@ public final class CanonicalSessionRuntime {
         if (!(value instanceof JsonPrimitive) || !value.getAsJsonPrimitive()
             .isString()) throw failure("session.line.property.type", "Line property must be a string or null: " + name);
         return blank(value.getAsString()) ? null : value.getAsString();
-    }
-
-    private static String optionalString(CanonicalGraphNode node, String name) {
-        JsonElement value = node.getProperties()
-            .get(name);
-        if (value == null) return null;
-        if (!(value instanceof JsonPrimitive) || !value.getAsJsonPrimitive()
-            .isString()) throw failure("session.choice.prompt.type", "Choice prompt must be a string.");
-        return value.getAsString();
     }
 
     private static String optionString(JsonObject object, String name) {

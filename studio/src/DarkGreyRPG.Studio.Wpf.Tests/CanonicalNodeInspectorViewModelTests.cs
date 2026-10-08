@@ -20,7 +20,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
             var objective = GraphNodeFactory.Create(GraphScope.Task,
                 CanonicalTaskObjectiveSchema.NodeType, $"objective_{index}");
             objective.Properties[CanonicalTaskObjectiveSchema.EntityProperty] =
-                JsonSerializer.SerializeToElement($"entity_{index}");
+                JsonSerializer.SerializeToElement($"ST-2345-6789-ABCD-EFGH~actor~entity_{index}");
             nodes.Add(objective);
         }
         for (var index = 0; index < 70; index++)
@@ -199,7 +199,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void ChoiceOptionsUseFlowOnlySemanticCommandsAndHideStableIdsFromDisplay()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(choice, "option_1", "flow_1");
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
@@ -242,21 +242,17 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void ReferencedChoiceRemoveFailsClosedAndRetainsOption()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(choice, "option_1", "flow_1");
         choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
         {
             new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
             new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
         });
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
-        choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
-        choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
-        var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
-        target.Properties["port_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~known");
-        target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
+        var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "line", "logic").Candidate!;
         var graph = new GraphDocument([choice, target], [
-            new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic)]);
+            new GraphConnection("choice", "flow_2", "logic", "flow_in", GraphInterfaceKind.Flow)]);
         using var editor = new CanonicalGraphResourceEditorViewModel(
             new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
                 DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceKind.Session,
@@ -337,7 +333,7 @@ public sealed class CanonicalNodeInspectorViewModelTests
     public void MinimumChoiceOptionValidationDoesNotRequestConfirmation()
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", "choice");
-        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(choice, "option_1", "flow_1");
         using var editor = ChoiceEditor(choice);
         using var inspector = new CanonicalNodeInspectorViewModel(editor.Host,
             editor.Host.Nodes.Single(node => node.NodeId == "choice"));
@@ -611,11 +607,9 @@ public sealed class CanonicalNodeInspectorViewModelTests
         var connections = new List<GraphConnection>();
         if (includeReference)
         {
-            var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "logic_output", "logic").Candidate!;
-            target.Properties["port_id"] = JsonSerializer.SerializeToElement("ST-2345-6789-ABCD-EFGH~actor~known");
-            target.Properties["display_name"] = JsonSerializer.SerializeToElement("Known");
+            var target = new GraphNodeAuthoringService().Create(new GraphDocument(), GraphScope.Session, "line", "logic").Candidate!;
             nodes.Add(target);
-            connections.Add(new GraphConnection("choice", "option_2", "logic", "logic_in", GraphInterfaceKind.Logic));
+            connections.Add(new GraphConnection("choice", "flow_2", "logic", "flow_in", GraphInterfaceKind.Flow));
         }
 
         return new(new DarkGreyRPG.Studio.Core.Graphs.Resources.GraphResourceEnvelope(
@@ -626,16 +620,14 @@ public sealed class CanonicalNodeInspectorViewModelTests
     private static GraphNode ReferencedChoice(string nodeId, bool includeReference)
     {
         var choice = GraphNodeFactory.Create(GraphScope.Session, "choice", nodeId);
-        SessionChoiceSchema.InitializeLegacy(choice, "option_1", "flow_1");
+        SessionChoiceSchema.InitializeWithoutConditions(choice, "option_1", "flow_1");
         choice.Properties["options"] = JsonSerializer.SerializeToElement(new[]
         {
             new { option_id = "option_1", display_text = "One", flow_port_id = "flow_1" },
             new { option_id = "option_2", display_text = "Two", flow_port_id = "flow_2" },
         });
         choice.Ports.Single(port => port.Id == "flow_1").DisplayName = "One";
-        choice.Ports.Add(new GraphPort("option_1", "已选择：One", false, GraphInterfaceKind.Logic, 0));
         choice.Ports.Add(new GraphPort("flow_2", "Two", false, GraphInterfaceKind.Flow, 1));
-        choice.Ports.Add(new GraphPort("option_2", "已选择：Two", false, GraphInterfaceKind.Logic, 1));
         if (!includeReference) return choice;
 
         return choice;

@@ -42,7 +42,7 @@ public sealed class OfflineResourcePickerViewModel : ObservableObject
     public string Explanation => "展开故事文件夹，选择要引用的资源。";
     public ObservableCollection<OfflineResourceFolder> Folders { get; } = [];
     public bool HasMatches => Folders.Count != 0;
-    public string EmptyText => _folders.Length == 0 ? "项目中没有可引用的资源。" : "没有匹配的资源。";
+    public string EmptyText => _folders.Length == 0 ? $"没有可用于{Title}的资源。" : "没有匹配的资源。";
     public string SearchText
     {
         get => _searchText;

@@ -45,7 +45,7 @@ public final class StoryGroupPackageReader {
                     .isNumber()
                 || root.get("format_version")
                     .getAsBigDecimal()
-                    .intValueExact() != 2)
+                    .intValueExact() != 3)
                 throw new ProjectLoadException("Unsupported Group identity/version");
             String displayName = text(root, "display_name");
             if (displayName.trim()
@@ -155,7 +155,7 @@ public final class StoryGroupPackageReader {
                     .isNumber()
                 || root.get("format_version")
                     .getAsBigDecimal()
-                    .intValueExact() != 2)
+                    .intValueExact() != 3)
                 throw new ProjectLoadException("Unsupported Group identity/version");
             String displayName = text(root, "display_name");
             if (displayName.trim()
