@@ -4,7 +4,7 @@
   "implementation_branch": "codex/0.4.0.0",
   "implementation_status": "IMPLEMENTED",
   "technical_status": "IMPLEMENTED_AUTOMATED_PASS_NATIVE_TARGETED_PASS_COVERAGE_LIMITS_RECORDED",
-  "delivery_status": "DEVELOPMENT_DIST_DELIVERED",
+  "delivery_status": "FINISHED_PRODUCT_LOCAL_AND_GITHUB_RELEASE_PUBLISHED",
   "contracts": {
     "graph_schema": 3,
     "nominator_saved_data_schema": 4,
@@ -103,8 +103,8 @@
     "native_additional_item_filter": "NOT_RUN_CURRENT_NATIVE_TASK_METADATA_EMPTY; AUTOMATED_FORGE_FILTER_CHECKS_PASS",
     "manual_audio_listening": "NOT_RUN_NATIVE_BACKEND_TWO_PLAY_COMMANDS_QUEUED"
   },
-  "finished_product_created": false,
-  "remote_release_modified": false,
+  "finished_product_created": true,
+  "remote_release_modified": true,
   "user_accepted": false,
   "scope_status": "APPROVED",
   "implementation_commit": "99f3df91de56fd8ffc6122414988fcac06f777ff",
@@ -237,5 +237,76 @@
       "NATIVE_ALL_SEARCH_DEACTIVATION_REFERENCED_GROUP_DRAG_COMBINATIONS"
     ],
     "current_source_locator": "codex/0.4.0.0 HEAD; local GitHub upload receipt verifies exact commit"
+  },
+  "finished_product_release": {
+    "authorization": "2026-10-08 user explicitly requested artifacts packaging and GitHub Release",
+    "local_product_directory": "artifacts/DGR0.4.0.0",
+    "source_commit": "a80040c81f12f22a34fac7fb8e20017dbb3a00b2",
+    "source_branch": "codex/0.4.0.0",
+    "tag": "v0.4.0.0",
+    "release_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.0",
+    "release_id": 406654705,
+    "published_at": "2026-10-08T09:32:33Z",
+    "draft": false,
+    "prerelease": false,
+    "five_asset_remote_sizes_and_sha256_verified": true,
+    "assets": [
+      {
+        "id": 621356417,
+        "name": "DarkGreyRPGStudio-0.4.0.0-win-x64.zip",
+        "size": 236964268,
+        "digest": "sha256:ab5f2a3388de26e1a88b8ac97dd8e85c99fb0f41662f122ef0aa0f3e6f304e59",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.0/DarkGreyRPGStudio-0.4.0.0-win-x64.zip"
+      },
+      {
+        "id": 621356237,
+        "name": "darkgrey_rpg-0.4.0.0.jar",
+        "size": 1843025,
+        "digest": "sha256:0d971907c95602ae94544b684d27e145014a9b5a4f9d1a79dedf1e6508ff8cd9",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.0/darkgrey_rpg-0.4.0.0.jar"
+      },
+      {
+        "id": 621365737,
+        "name": "README.md",
+        "size": 4119,
+        "digest": "sha256:e7fde44f9af58bc09e2fbf59f7566a1f8e47cf32ebe19f30507c9f419525ae72",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.0/README.md"
+      },
+      {
+        "id": 621365845,
+        "name": "ReleaseManifest.json",
+        "size": 4601,
+        "digest": "sha256:ef8d53af39fd3edd5bfa20a4381a13b573aa53fe271d4f02a88c11efaa2a0018",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.0/ReleaseManifest.json"
+      },
+      {
+        "id": 621365924,
+        "name": "SHA256SUMS.txt",
+        "size": 383,
+        "digest": "sha256:58642f350d468405d2888c84284868ae62961d5377485193ee789eae9847a68d",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.0/SHA256SUMS.txt"
+      }
+    ],
+    "studio_zip_data_excluded": true,
+    "program_files_verified": 410,
+    "zip_entries": 411,
+    "jar_crc": "PASS",
+    "zip_crc": "PASS",
+    "actual_extracted_native_smoke": "PASS",
+    "bundled_runtime_module_paths_checked": true,
+    "moved_project_reopen": "PASS",
+    "ffmpeg_and_ffprobe": "PASS_EXIT_0",
+    "authority_data_preserved_during_packaging": {
+      "file_count": 2690,
+      "bytes": 68773074,
+      "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+    },
+    "release_summary": "Release.md",
+    "full_version_user_acceptance": false
   }
 }
