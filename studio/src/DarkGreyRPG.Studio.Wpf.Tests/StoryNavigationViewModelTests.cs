@@ -17,6 +17,42 @@ namespace DarkGreyRPG.Studio.Wpf.Tests;
 [TestClass]
 public sealed class StoryNavigationViewModelTests
 {
+    [TestMethod]
+    public void GroupMembersReorderWithoutChangingTopLevelMembershipOrConnections()
+    {
+        using var f = new CurrentNavigationFixture();
+        const string member = "ST-JKLM-NPQR-STUV-WXYZ", single = "ST-AAAA-BBBB-CCCC-DDDD";
+        var lifecycle = new CanonicalStoryLifecycleService(f.Store);
+        lifecycle.Create(member, "ZZ Member"); lifecycle.Create(single, "Single");
+        AddBoundary(f.Store, CurrentNavigationFixture.Owner, "logic_output");
+        AddBoundary(f.Store, member, "logic_input");
+        f.Store.StoryLogicGraph.Save([new(CurrentNavigationFixture.Owner, "boundary", member, "boundary")]);
+        f.Shell.OpenProjectCommand.Execute(null);
+        var graph = f.Shell.ProjectHome.Graph;
+        var group = graph.StoryGroups.Groups.Single();
+        var connections = File.ReadAllBytes(f.Store.StoryLogicGraph.Path);
+        string[] Members() => f.Shell.ProjectHome.GroupedStories.Cast<StoryListItemViewModel>().Where(story => story.NavigationGroup?.Key == group.Key).Select(story => story.Id).ToArray();
+        string[] Top() => f.Shell.ProjectHome.GroupedStories.Cast<StoryListItemViewModel>().Select(story => story.NavigationKey).Distinct().ToArray();
+        var original = Members(); var top = Top();
+        graph.MoveNavigationEntry(original[1], original[0]);
+        CollectionAssert.AreEqual(original.Reverse().ToArray(), Members());
+        CollectionAssert.AreEqual(top, Top());
+        CollectionAssert.AreEqual(connections, File.ReadAllBytes(f.Store.StoryLogicGraph.Path));
+        f.Shell.UndoCurrentCommand.Execute(null);
+        CollectionAssert.AreEqual(original, Members());
+        f.Shell.RedoCurrentCommand.Execute(null);
+        CollectionAssert.AreEqual(original.Reverse().ToArray(), Members());
+        var memberTokens = graph.Presentation.NavigationOrder.Where(group.Members.Contains).ToArray();
+        graph.MoveNavigationEntry(group.Key, single, top[0] == group.Key);
+        CollectionAssert.AreEqual(memberTokens, graph.Presentation.NavigationOrder.Where(group.Members.Contains).ToArray());
+        var beforeInvalid = graph.Presentation.NavigationOrder.ToArray();
+        graph.MoveNavigationEntry(member, single);
+        CollectionAssert.AreEqual(beforeInvalid, graph.Presentation.NavigationOrder);
+        f.Shell.OpenProjectCommand.Execute(null);
+        CollectionAssert.AreEqual(original.Reverse().ToArray(), Members());
+        CollectionAssert.AreEqual(connections, File.ReadAllBytes(f.Store.StoryLogicGraph.Path));
+    }
+
     [STATestMethod]
     public void NavigationLandingUsesRealGroupedContainersWithInheritedDataContext()
     {

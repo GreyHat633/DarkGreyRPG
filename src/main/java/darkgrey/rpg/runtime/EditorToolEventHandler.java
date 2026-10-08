@@ -9,6 +9,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import darkgrey.rpg.content.ModItems;
 import darkgrey.rpg.live.LivePickService;
+import darkgrey.rpg.nominator.NominatorDataUnavailableException;
 import darkgrey.rpg.project.ProjectRepository;
 
 public final class EditorToolEventHandler {
@@ -46,16 +47,20 @@ public final class EditorToolEventHandler {
             return;
         }
 
-        if (player.isSneaking()) {
-            ActorBindingActions.inspect(repository, player, target);
-        } else {
-            String selectedActor = sessions.getSelectedActor(player);
-            if (selectedActor == null) {
+        try {
+            if (player.isSneaking()) {
                 ActorBindingActions.inspect(repository, player, target);
-                ChatMessages.info(player, "Use /dgrpg actor select <id> before binding.");
             } else {
-                ActorBindingActions.bind(repository, player, target, selectedActor);
+                String selectedActor = sessions.getSelectedActor(player);
+                if (selectedActor == null) {
+                    ActorBindingActions.inspect(repository, player, target);
+                    ChatMessages.info(player, "Use /dgrpg actor select <id> before binding.");
+                } else {
+                    ActorBindingActions.bind(repository, player, target, selectedActor);
+                }
             }
+        } catch (NominatorDataUnavailableException failure) {
+            ChatMessages.error(player, NominatorDataUnavailableException.PLAYER_MESSAGE);
         }
         event.setCanceled(true);
     }

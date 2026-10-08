@@ -687,6 +687,20 @@ tasks.register<JavaExec>("taskCandidate0400Probe") {
     mainClass.set("darkgrey.rpg.creator.TaskCandidate0400Probe")
 }
 
+tasks.register<JavaExec>("nominatorFailureBoundary0400Probe") {
+    group = "verification"
+    description = "Verifies failed Nominator reads cannot escape tool opens or correlated responses into the tick loop."
+    dependsOn("testClasses")
+    classpath = files(
+        layout.buildDirectory.dir("classes/java/test"),
+        layout.buildDirectory.dir("classes/java/main"),
+        layout.buildDirectory.dir("classes/java/patchedMc"),
+        layout.buildDirectory.dir("resources/main"),
+        layout.buildDirectory.dir("resources/patchedMc"),
+    ) + configurations.getByName("testRuntimeClasspath")
+    mainClass.set("darkgrey.rpg.nominator.NominatorFailureBoundary0400Probe")
+}
+
 tasks.register<JavaExec>("storyPackageLoaderProbe") {
     group = "verification"
     description = "Runs the Stage 3 Story Package load/replace/rollback/isolation probe."

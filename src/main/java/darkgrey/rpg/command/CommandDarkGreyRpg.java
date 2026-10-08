@@ -111,6 +111,14 @@ public final class CommandDarkGreyRpg extends CommandBase {
 
     @Override
     public void processCommand(ICommandSender sender, String[] arguments) {
+        try {
+            executeCommand(sender, arguments);
+        } catch (darkgrey.rpg.nominator.NominatorDataUnavailableException failure) {
+            ChatMessages.error(sender, darkgrey.rpg.nominator.NominatorDataUnavailableException.PLAYER_MESSAGE);
+        }
+    }
+
+    private void executeCommand(ICommandSender sender, String[] arguments) {
         if (arguments.length == 0) {
             throw new WrongUsageException(getCommandUsage(sender));
         }

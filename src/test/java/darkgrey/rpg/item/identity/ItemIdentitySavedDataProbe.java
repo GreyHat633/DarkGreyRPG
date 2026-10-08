@@ -13,15 +13,17 @@ public final class ItemIdentitySavedDataProbe {
         NBTTagCompound named = new NBTTagCompound();
         named.setString("display", "Royal Key");
         ItemStackDefinition key = new ItemStackDefinition("minecraft:tripwire_hook", 0, named);
-        require(data.bindItem("royal_key", key), "bind exact Item ID");
-        require(!data.bindItem("royal_key", key), "idempotent Item ID bind");
-        require(data.bindItem("Team:Token", key), "bind uppercase local Item ID");
-        require(data.bindItem("Team:token", key), "bind case-distinct Item ID");
+        require(data.bindItem("ST-2345-6789-ABCD-EFGH~item~royal_key", key), "bind exact Item ID");
+        require(!data.bindItem("ST-2345-6789-ABCD-EFGH~item~royal_key", key), "idempotent Item ID bind");
+        require(data.bindItem("ST-2345-6789-ABCD-EFGH~item~token_first", key), "bind first current Item ID");
+        require(data.bindItem("ST-2345-6789-ABCD-EFGH~item~token_second", key), "bind second current Item ID");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                data.bindItem("royal_key", new ItemStackDefinition("minecraft:stick", 0, null));
+                data.bindItem(
+                    "ST-2345-6789-ABCD-EFGH~item~royal_key",
+                    new ItemStackDefinition("minecraft:stick", 0, null));
             }
         }, "conflicting Item ID");
 
@@ -31,12 +33,18 @@ public final class ItemIdentitySavedDataProbe {
         ItemGroupMember gold = new ItemGroupMember(
             ItemMatchMode.FUZZY,
             new ItemStackDefinition("minecraft:golden_sword", 0, null));
-        require(data.addGroupMember("sword", iron), "first fuzzy Group member");
-        require(data.addGroupMember("sword", gold), "second fuzzy Group member");
-        require(!data.addGroupMember("sword", iron), "duplicate Group member rejected");
-        require(data.addGroupMember("weapon", iron), "same item in multiple Groups");
-        require(data.addGroupMember("Team:Tokens", iron), "bind uppercase local Item Group ID");
-        require(data.addGroupMember("Team:tokens", iron), "bind case-distinct Item Group ID");
+        require(data.addGroupMember("ST-2345-6789-ABCD-EFGH~item_group~sword", iron), "first fuzzy Group member");
+        require(data.addGroupMember("ST-2345-6789-ABCD-EFGH~item_group~sword", gold), "second fuzzy Group member");
+        require(
+            !data.addGroupMember("ST-2345-6789-ABCD-EFGH~item_group~sword", iron),
+            "duplicate Group member rejected");
+        require(data.addGroupMember("ST-2345-6789-ABCD-EFGH~item_group~weapon", iron), "same item in multiple Groups");
+        require(
+            data.addGroupMember("ST-2345-6789-ABCD-EFGH~item_group~tokens_first", iron),
+            "bind first current Item Group ID");
+        require(
+            data.addGroupMember("ST-2345-6789-ABCD-EFGH~item_group~tokens_second", iron),
+            "bind second current Item Group ID");
 
         NBTTagCompound checkpoint = new NBTTagCompound();
         data.writeToNBT(checkpoint);
@@ -46,33 +54,33 @@ public final class ItemIdentitySavedDataProbe {
         restarted.writeToNBT(deterministic);
         require(checkpoint.equals(deterministic), "deterministic restart");
         require(
-            restarted.getItem("royal_key")
+            restarted.getItem("ST-2345-6789-ABCD-EFGH~item~royal_key")
                 .equals(key),
             "exact Item ID restart");
         require(
-            restarted.getItem("Team:Token")
+            restarted.getItem("ST-2345-6789-ABCD-EFGH~item~token_first")
                 .equals(key),
-            "uppercase local Item ID restart");
+            "first current Item ID restart");
         require(
-            restarted.getItem("Team:token")
+            restarted.getItem("ST-2345-6789-ABCD-EFGH~item~token_second")
                 .equals(key),
-            "case-distinct Item ID restart");
+            "second current Item ID restart");
         require(
-            restarted.getGroup("sword")
+            restarted.getGroup("ST-2345-6789-ABCD-EFGH~item_group~sword")
                 .size() == 2,
             "multi-member Group restart");
         require(
-            restarted.getGroup("weapon")
+            restarted.getGroup("ST-2345-6789-ABCD-EFGH~item_group~weapon")
                 .size() == 1,
             "multi-Group restart");
         require(
-            restarted.getGroup("Team:Tokens")
+            restarted.getGroup("ST-2345-6789-ABCD-EFGH~item_group~tokens_first")
                 .size() == 1,
-            "uppercase local Item Group restart");
+            "first current Item Group restart");
         require(
-            restarted.getGroup("Team:tokens")
+            restarted.getGroup("ST-2345-6789-ABCD-EFGH~item_group~tokens_second")
                 .size() == 1,
-            "case-distinct Item Group restart");
+            "second current Item Group restart");
 
         NBTTagCompound unknown = (NBTTagCompound) checkpoint.copy();
         unknown.setString("unknown", "reject");
@@ -80,7 +88,7 @@ public final class ItemIdentitySavedDataProbe {
         System.out.println("ITEM_IDENTITY_EXACT_ROUNDTRIP=PASS");
         System.out.println("ITEM_GROUP_EXACT_FUZZY_MODEL=PASS");
         System.out.println("ITEM_MULTI_GROUP_RESTART=PASS");
-        System.out.println("ITEM_GROUP_CASE_SENSITIVE_RESTART=PASS");
+        System.out.println("ITEM_GROUP_CURRENT_IDS_RESTART=PASS");
     }
 
     private static void rejectRead(final NBTTagCompound value, String label) {

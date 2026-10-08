@@ -51,15 +51,21 @@ public final class C2SNominatorEntityOpen implements IMessage {
                         || entity == null
                         || entity.dimension != player.dimension
                         || player.getDistanceSqToEntity(entity) > 64.0D) return;
-                    DialogueNetwork.CHANNEL.sendTo(
-                        S2CNominatorEntityOpen.from(
-                            entity,
-                            NominatorSavedData.get(),
-                            darkgrey.rpg.nominator.NominatorCatalog.from(
-                                darkgrey.rpg.DarkGreyRpg.getProjectRepository()
-                                    .getSnapshot(),
-                                darkgrey.rpg.DarkGreyRpg.getStoryPackageLoader())),
-                        player);
+                    darkgrey.rpg.nominator.NominatorOpenBoundary.run(player, new Runnable() {
+
+                        @Override
+                        public void run() {
+                            DialogueNetwork.CHANNEL.sendTo(
+                                S2CNominatorEntityOpen.from(
+                                    entity,
+                                    NominatorSavedData.get(),
+                                    darkgrey.rpg.nominator.NominatorCatalog.from(
+                                        darkgrey.rpg.DarkGreyRpg.getProjectRepository()
+                                            .getSnapshot(),
+                                        darkgrey.rpg.DarkGreyRpg.getStoryPackageLoader())),
+                                player);
+                        }
+                    });
                 }
             });
             return null;

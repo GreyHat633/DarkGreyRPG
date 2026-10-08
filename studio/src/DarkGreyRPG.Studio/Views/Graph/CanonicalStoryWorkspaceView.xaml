@@ -89,7 +89,9 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </StackPanel>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer x:Name="ResourceListViewport" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              AllowDrop="True" PreviewDragOver="ResourceViewport_OnDragOver"
+                              PreviewDragLeave="ResourceItem_OnDragLeave" PreviewDrop="ResourceItem_OnDrop">
                     <ItemsControl ItemsSource="{Binding Folders}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:CanonicalStoryFolderViewModel}">
@@ -107,7 +109,7 @@
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}" />
                                         </Grid>
                                     </Expander.Header>
-                                    <ItemsControl ItemsSource="{Binding Items}" AllowDrop="True"
+                                    <ItemsControl ItemsSource="{Binding Items}" AllowDrop="True" Background="Transparent"
                                                   PreviewDragOver="ResourceList_OnDragOver" PreviewDragLeave="ResourceItem_OnDragLeave" PreviewDrop="ResourceItem_OnDrop">
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Background="Transparent" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>

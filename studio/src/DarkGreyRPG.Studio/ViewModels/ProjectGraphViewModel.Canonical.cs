@@ -58,14 +58,27 @@ public sealed partial class ProjectGraphViewModel
     public void MoveNavigationEntry(string key, string target, bool afterTarget = false)
     {
         if (CanonicalHost is null || key == target) return;
-        var order = Presentation.NavigationOrder.Concat(StoryGroups.Groups.Select(g => g.Key))
-            .Concat(StoryGroups.Singles).Distinct(StringComparer.Ordinal).ToList();
-        if (!order.Remove(key) || !order.Contains(target)) return;
-        order.Insert(order.IndexOf(target) + (afterTarget ? 1 : 0), key);
-        if (order.SequenceEqual(Presentation.NavigationOrder)) return;
+        var memberScope = StoryGroups.ByStory.GetValueOrDefault(key);
+        if (memberScope is not null && StoryGroups.ByStory.GetValueOrDefault(target)?.Key != memberScope.Key) return;
+        var scope = OrderNavigationKeys((IEnumerable<string>?)memberScope?.Members ?? StoryGroups.Groups.Select(group => group.Key).Concat(StoryGroups.Singles), memberScope is not null).ToArray();
+        var moved = scope.ToList();
+        if (!moved.Remove(key) || !moved.Contains(target)) return;
+        moved.Insert(moved.IndexOf(target) + (afterTarget ? 1 : 0), key);
+        if (moved.SequenceEqual(scope)) return;
+        var order = Presentation.NavigationOrder.Concat(scope).Distinct(StringComparer.Ordinal).ToArray();
+        var scopeKeys = scope.ToHashSet(StringComparer.Ordinal);
+        var next = 0;
+        for (var index = 0; index < order.Length; index++)
+            if (scopeKeys.Contains(order[index])) order[index] = moved[next++];
         var before = Presentation;
-        var after = before with { NavigationOrder = order.ToArray() };
+        var after = before with { NavigationOrder = order };
         CanonicalHost.EditMetadata(() => SavePresentation(before), () => SavePresentation(after));
+    }
+    private IEnumerable<string> OrderNavigationKeys(IEnumerable<string> keys, bool members)
+    {
+        int Rank(string key) { var index = Array.IndexOf(Presentation.NavigationOrder, key); return index < 0 ? int.MaxValue : index; }
+        return keys.OrderBy(Rank).ThenBy(key => members ? Nodes.FirstOrDefault(node => node.Id == key)?.DisplayName ?? key : key,
+            members ? StringComparer.CurrentCulture : StringComparer.Ordinal).ThenBy(key => key, StringComparer.Ordinal);
     }
     private void SavePresentation(StoryGraphPresentation state)
     {

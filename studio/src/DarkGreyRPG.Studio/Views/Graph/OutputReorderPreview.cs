@@ -26,6 +26,7 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
     private double _gapY;
     private bool _show;
     private double _scrollShift;
+    private Rect _viewport;
     public double GapHeight => _rows[_oldIndex].Height;
     public double GapY => _gapY;
     internal IReadOnlyList<double> OriginalTops => _rows.Select(row => row.Top).ToArray();
@@ -54,17 +55,21 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
             transform.Children.Add(row.Transform); transform.Children.Add(row.Offset);
             row.Element.SetCurrentValue(RenderTransformProperty, transform);
         }
-        _rows[oldIndex].Element.SetCurrentValue(OpacityProperty, 0d);
         Locate(pointer);
     }
 
     public void SetScrollShift(double shift) => _scrollShift = shift;
 
-    public int? Locate(Point pointer)
+    public int? Locate(Point pointer) => Locate(pointer, new Rect(0, 0, _list.ActualWidth, _list.ActualHeight));
+
+    public int? Locate(Point pointer, Rect viewport)
     {
         _pointer = pointer;
-        _show = pointer.X >= 0 && pointer.X <= _list.ActualWidth && pointer.Y >= 0 && pointer.Y <= _list.ActualHeight;
-        if (!_show) { InvalidateVisual(); return null; }
+        _viewport = viewport;
+        if (viewport.IsEmpty || !viewport.Contains(pointer)) { Suspend(); return null; }
+        var entering = !_show;
+        _show = true;
+        _rows[_oldIndex].Element.SetCurrentValue(OpacityProperty, 0d);
         var insertion = _rows.Length;
         for (var index = 0; index < _rows.Length; index++)
             if (pointer.Y < _rows[index].Top + _scrollShift + _rows[index].Height / 2) { insertion = index; break; }
@@ -77,7 +82,7 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
             if (index == remaining.Length) break;
             var row = remaining[index];
             var offset = y - row.Top - _scrollShift;
-            if (destination != _destination || !_show || !SystemParameters.ClientAreaAnimation)
+            if (destination != _destination || entering || !SystemParameters.ClientAreaAnimation)
             {
                 var from = row.Offset.Y;
                 row.Offset.BeginAnimation(TranslateTransform.YProperty, null);
@@ -94,9 +99,23 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
         return destination;
     }
 
+    public void Suspend()
+    {
+        if (!_show) return;
+        _show = false;
+        foreach (var row in _rows)
+        {
+            row.Offset.BeginAnimation(TranslateTransform.YProperty, null);
+            row.Offset.Y = 0;
+        }
+        _rows[_oldIndex].Element.SetCurrentValue(OpacityProperty, _rows[_oldIndex].Opacity);
+        InvalidateVisual();
+    }
+
     protected override void OnRender(DrawingContext drawing)
     {
         if (!_show) return;
+        drawing.PushClip(new RectangleGeometry(_viewport));
         var accent = _list.TryFindResource("AccentFillColorDefaultBrush") as Brush ?? SystemColors.HighlightBrush;
         var text = _list.TryFindResource("TextFillColorPrimaryBrush") as Brush ?? SystemColors.WindowTextBrush;
         var background = _list.TryFindResource("CardBackgroundFillColorDefaultBrush") as Brush ?? SystemColors.WindowBrush;
@@ -113,6 +132,7 @@ internal sealed class OutputReorderPreview : Adorner, IDisposable
         Label(_displayName, 13, new Point(card.X + 27, card.Y + (card.Height - 18) / 2), Math.Max(10, card.Width - 35 - priorityWidth));
         if (_isTaskFlow)
             Label($"优先级 {_destination + 1}", 11, new Point(card.Right - priorityWidth, card.Y + (card.Height - 16) / 2), priorityWidth - 6);
+        drawing.Pop();
         void Label(string value, double size, Point at, double available)
         {
             var label = new FormattedText(value, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,

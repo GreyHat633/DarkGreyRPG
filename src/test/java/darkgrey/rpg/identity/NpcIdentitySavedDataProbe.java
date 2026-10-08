@@ -20,33 +20,35 @@ public final class NpcIdentitySavedDataProbe {
         NpcIdentitySavedData data = NpcIdentitySavedData.get(storage);
         require(data == NpcIdentitySavedData.get(storage), "MapStorage reuse");
         NpcHostIdentity wolf = new NpcHostIdentity(FIRST, "minecraft:wolf", 0);
-        require(data.bind("tavern_boss", wolf), "initial bind");
+        require(data.bind("ST-2345-6789-ABCD-EFGH~actor~tavern_boss", wolf), "initial bind");
         require(data.isDirty(), "bind dirty");
         data.setDirty(false);
-        require(!data.bind("tavern_boss", wolf), "idempotent bind");
+        require(!data.bind("ST-2345-6789-ABCD-EFGH~actor~tavern_boss", wolf), "idempotent bind");
         require(!data.isDirty(), "idempotent clean");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                data.bind("tavern_boss", new NpcHostIdentity(SECOND, "minecraft:wolf", 0));
+                data.bind("ST-2345-6789-ABCD-EFGH~actor~tavern_boss", new NpcHostIdentity(SECOND, "minecraft:wolf", 0));
             }
         }, "duplicate NPC ID");
         reject(new Runnable() {
 
             @Override
             public void run() {
-                data.bind("another", wolf);
+                data.bind("ST-2345-6789-ABCD-EFGH~actor~another", wolf);
             }
         }, "duplicate host");
         require(!data.isDirty(), "conflicts clean");
 
         require(
-            data.bind("Team:Guard", new NpcHostIdentity(THIRD, "minecraft:wolf", 0)),
-            "uppercase local NPC ID bind");
-        require(data.bind("Team:guard", new NpcHostIdentity(FOURTH, "minecraft:wolf", 0)), "case-distinct NPC ID bind");
-        require(data.getHost("Team:Guard") != null, "uppercase local NPC lookup");
-        require(data.getHost("Team:guard") != null, "case-distinct NPC lookup");
+            data.bind("ST-2345-6789-ABCD-EFGH~actor~guard_first", new NpcHostIdentity(THIRD, "minecraft:wolf", 0)),
+            "first current NPC ID bind");
+        require(
+            data.bind("ST-2345-6789-ABCD-EFGH~actor~guard_second", new NpcHostIdentity(FOURTH, "minecraft:wolf", 0)),
+            "second current NPC ID bind");
+        require(data.getHost("ST-2345-6789-ABCD-EFGH~actor~guard_first") != null, "first current NPC lookup");
+        require(data.getHost("ST-2345-6789-ABCD-EFGH~actor~guard_second") != null, "second current NPC lookup");
 
         NBTTagCompound checkpoint = new NBTTagCompound();
         data.writeToNBT(checkpoint);
@@ -60,26 +62,29 @@ public final class NpcIdentitySavedDataProbe {
         restarted.writeToNBT(deterministic);
         require(checkpoint.equals(deterministic), "deterministic restart");
         require(
-            restarted.getHost("tavern_boss")
+            restarted.getHost("ST-2345-6789-ABCD-EFGH~actor~tavern_boss")
                 .getEntityUuid()
                 .equals(FIRST),
             "restart lookup by ID");
-        require("tavern_boss".equals(restarted.getNpcId(FIRST)), "restart lookup by host");
-        require(restarted.getHost("Team:Guard") != null, "uppercase local NPC restart");
-        require(restarted.getHost("Team:guard") != null, "case-distinct NPC restart");
+        require("ST-2345-6789-ABCD-EFGH~actor~tavern_boss".equals(restarted.getNpcId(FIRST)), "restart lookup by host");
+        require(restarted.getHost("ST-2345-6789-ABCD-EFGH~actor~guard_first") != null, "first current NPC restart");
+        require(restarted.getHost("ST-2345-6789-ABCD-EFGH~actor~guard_second") != null, "second current NPC restart");
         require(
-            restarted.getHost("Team:Guard") != restarted.getHost("Team:guard"),
-            "case-distinct NPC bindings collapsed");
+            restarted.getHost("ST-2345-6789-ABCD-EFGH~actor~guard_first")
+                != restarted.getHost("ST-2345-6789-ABCD-EFGH~actor~guard_second"),
+            "second current NPC bindings collapsed");
 
         NpcHostIdentity revived = new NpcHostIdentity(SECOND, "customnpcs:customnpc", 0, "cnpc:owner");
-        require(restarted.transfer("tavern_boss", revived), "explicit revival transfer");
+        require(restarted.transfer("ST-2345-6789-ABCD-EFGH~actor~tavern_boss", revived), "explicit revival transfer");
         require(restarted.getNpcId(FIRST) == null, "old host released only by transfer");
-        require("tavern_boss".equals(restarted.getNpcId(SECOND)), "new host owns identity");
+        require(
+            "ST-2345-6789-ABCD-EFGH~actor~tavern_boss".equals(restarted.getNpcId(SECOND)),
+            "new host owns identity");
         restarted.setDirty(false);
-        require(!restarted.transfer("tavern_boss", revived), "idempotent transfer");
+        require(!restarted.transfer("ST-2345-6789-ABCD-EFGH~actor~tavern_boss", revived), "idempotent transfer");
         require(!restarted.isDirty(), "idempotent transfer clean");
         require(restarted.unbindHost(SECOND), "explicit unbind");
-        require(restarted.getHost("tavern_boss") == null, "unbind frees ID");
+        require(restarted.getHost("ST-2345-6789-ABCD-EFGH~actor~tavern_boss") == null, "unbind frees ID");
 
         NBTTagCompound unknown = (NBTTagCompound) checkpoint.copy();
         unknown.setString("unexpected", "reject");
@@ -94,7 +99,7 @@ public final class NpcIdentitySavedDataProbe {
         System.out.println("NPC_IDENTITY_EXTERNAL_REGISTRY=PASS");
         System.out.println("NPC_IDENTITY_UNIQUE_CONFLICT=PASS");
         System.out.println("NPC_IDENTITY_TRANSFER_RESTART=PASS");
-        System.out.println("NPC_IDENTITY_CASE_SENSITIVE_RESTART=PASS");
+        System.out.println("NPC_IDENTITY_CURRENT_IDS_RESTART=PASS");
     }
 
     private static void rejectRead(final NBTTagCompound value, String label) {

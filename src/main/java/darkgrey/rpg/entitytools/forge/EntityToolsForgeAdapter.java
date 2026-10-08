@@ -81,6 +81,7 @@ public final class EntityToolsForgeAdapter {
     private static void publishExternalState(Entity entity, EntitySpawnSpec spec) {
         List<String> groups = spec.getGroups();
         String npcId = spec.getReservedNpcId();
+        NominatorSavedData selections = npcId != null || !groups.isEmpty() ? NominatorSavedData.get() : null;
         if (npcId != null) {
             NpcIdentitySavedData identities = NpcIdentitySavedData.get();
             NpcHostIdentity current = identities.getHost(npcId);
@@ -95,8 +96,7 @@ public final class EntityToolsForgeAdapter {
                 current.getCompatibilityKey());
             identities.observe(observed);
         }
-        if (npcId != null || !groups.isEmpty()) NominatorSavedData.get()
-            .put(new NominatorEntityBinding(entity.getUniqueID(), npcId, groups, null));
+        if (selections != null) selections.put(new NominatorEntityBinding(entity.getUniqueID(), npcId, groups, null));
     }
 
     private static NBTTagCompound merge(EntitySpawnSpec spec) {

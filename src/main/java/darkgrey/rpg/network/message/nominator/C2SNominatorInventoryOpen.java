@@ -35,8 +35,21 @@ public final class C2SNominatorInventoryOpen implements IMessage {
                         || player.getHeldItem()
                             .getItem() != ModItems.nominator)
                         return;
-                    player.openGui(DarkGreyRpg.instance, NominatorGuiHandler.ITEM_NOMINATOR, player.worldObj, 0, 0, 0);
-                    darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(S2CNominatorInventoryOpen.from(player), player);
+                    darkgrey.rpg.nominator.NominatorOpenBoundary.run(player, new Runnable() {
+
+                        @Override
+                        public void run() {
+                            S2CNominatorInventoryOpen snapshot = S2CNominatorInventoryOpen.from(player);
+                            player.openGui(
+                                DarkGreyRpg.instance,
+                                NominatorGuiHandler.ITEM_NOMINATOR,
+                                player.worldObj,
+                                0,
+                                0,
+                                0);
+                            darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(snapshot, player);
+                        }
+                    });
                 }
             });
             return null;

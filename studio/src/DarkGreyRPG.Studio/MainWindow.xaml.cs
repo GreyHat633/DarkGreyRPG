@@ -176,7 +176,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (DataContext is ShellViewModel shell) shell.SelectedReferencedPackage = null;
         _navigationDragKey = FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject)?.DataContext
-            is StoryListItemViewModel story ? story.NavigationKey : null;
+            is StoryListItemViewModel story ? story.Id : null;
         _navigationDragOrigin = e.GetPosition(this);
     }
 

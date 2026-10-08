@@ -316,12 +316,17 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var data = new DataObject(ResourceDragFormat, item);
         var effect = DragDropEffects.None;
         var source = (DependencyObject)sender;
+        if (LinePagesEditor.Ancestor<ItemsControl>(source) is { } sourceList)
+            BeginResourceReorder(sourceList, item);
         _resourceDragReleased = false;
         var dragWorkspace = Workspace;
         QueryContinueDragEventHandler observeRelease = (_, query) =>
         {
             _resourceDragReleased = !query.EscapePressed && (query.KeyStates & DragDropKeyStates.LeftMouseButton) == 0;
             if (query.EscapePressed || !IsLoaded || !IsVisible || !ReferenceEquals(Workspace, dragWorkspace)
+                || _resourceReorderList is { } originalList && (_resourceReorderItems is null
+                    || !originalList.Items.Cast<ICanonicalStoryTreeItem>().SequenceEqual(_resourceReorderItems)
+                    || LinePagesEditor.Ancestor<Expander>(originalList) is { IsExpanded: false })
                 || Window.GetWindow(this) is { IsActive: false })
             { query.Action = DragAction.Cancel; query.Handled = true; }
         };
@@ -355,7 +360,7 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var valid = sender is Button button && TryGetDraggedResource(args.Data, out var item) && item is not null
             && LinePagesEditor.Ancestor<ItemsControl>(button) is { } list && PreviewResourceReorder(list, item, args);
         args.Effects = valid ? DragDropEffects.Move : DragDropEffects.None;
-        if (!valid) ClearResourceReorderPreview();
+        if (!valid) _resourceReorderPreview?.Suspend();
         args.Handled = true;
     }
 
@@ -364,21 +369,48 @@ public partial class CanonicalStoryWorkspaceView : UserControl
         var valid = sender is ItemsControl list && TryGetDraggedResource(args.Data, out var item) && item is not null
             && PreviewResourceReorder(list, item, args);
         args.Effects = valid ? DragDropEffects.Move : DragDropEffects.None;
-        if (!valid) ClearResourceReorderPreview();
+        if (!valid) _resourceReorderPreview?.Suspend();
         args.Handled = true;
+    }
+
+    private void ResourceViewport_OnDragOver(object sender, DragEventArgs args)
+    {
+        if (_resourceReorderList is not { } list || !TryGetDraggedResource(args.Data, out var item) || item is null) return;
+        var valid = PreviewResourceReorder(list, item, args);
+        args.Effects = valid ? DragDropEffects.Move : DragDropEffects.None;
+        if (!valid) _resourceReorderPreview?.Suspend();
+        args.Handled = true;
+    }
+
+    private Rect ResourceReorderBounds(ItemsControl list)
+    {
+        var bounds = DragViewport.Bounds(list);
+        // Only the final category owns the unused space below its rows. Other categories stay separate.
+        if (Workspace?.Folders.LastOrDefault() != list.DataContext) return bounds;
+        var viewport = DragViewport.Bounds(ResourceListViewport);
+        var topLeft = ResourceListViewport.TranslatePoint(viewport.TopLeft, list);
+        var bottomRight = ResourceListViewport.TranslatePoint(viewport.BottomRight, list);
+        return new Rect(new Point(Math.Max(0, topLeft.X), Math.Max(0, topLeft.Y)),
+            new Point(Math.Min(list.ActualWidth, bottomRight.X), Math.Max(0, bottomRight.Y)));
     }
 
     private bool PreviewResourceReorder(ItemsControl list, ICanonicalStoryTreeItem source, DragEventArgs args)
     {
-        if (!list.Items.Contains(source) || Workspace is null) return false;
+        if (_resourceReorderList != list || _resourceReorderItems is null || !list.Items.Cast<ICanonicalStoryTreeItem>().SequenceEqual(_resourceReorderItems)) return false;
+        return _resourceReorderPreview?.Locate(DragViewport.Pointer(list), ResourceReorderBounds(list)).HasValue == true;
+    }
+
+    private void BeginResourceReorder(ItemsControl list, ICanonicalStoryTreeItem source)
+    {
+        if (!list.Items.Contains(source) || Workspace is null) return;
         var items = list.Items.Cast<ICanonicalStoryTreeItem>().ToArray();
-        if (items.Length < 2) return false;
+        if (items.Length < 2) return;
         if (_resourceReorderList != list || _resourceReorderItems is null || !items.SequenceEqual(_resourceReorderItems))
         {
             ClearResourceReorderPreview();
             var index = Array.IndexOf(items, source);
             var layer = AdornerLayer.GetAdornerLayer(list);
-            if (index < 0 || layer is null) return false;
+            if (index < 0 || layer is null) return;
             _resourceReorderList = list; _resourceReorderItems = items; _resourceReorderOldIndex = index;
             _resourceReorderLayer = layer;
             _resourceReorderPreview = new OutputReorderPreview(list, source.DisplayName, false, index, TranslatePoint(_resourceDragStart, list));
@@ -387,34 +419,33 @@ public partial class CanonicalStoryWorkspaceView : UserControl
             _resourceReorderTimer.Tick += (_, _) =>
             {
                 if (_resourceReorderList is not { } active || _resourceReorderPreview is null) return;
+                var activePoint = DragViewport.Pointer(active);
+                if (!_resourceReorderPreview.Locate(activePoint, ResourceReorderBounds(active)).HasValue) return;
                 var scroll = LinePagesEditor.Ancestor<ScrollViewer>(active);
                 if (scroll is null) return;
-                var point = Mouse.GetPosition(scroll);
+                var point = active.TranslatePoint(activePoint, scroll);
                 if (point.X < 0 || point.X > scroll.ActualWidth) return;
                 var delta = point.Y < 30 ? -12 : point.Y > scroll.ActualHeight - 30 ? 12 : 0;
                 if (delta == 0) return;
                 scroll.ScrollToVerticalOffset(scroll.VerticalOffset + delta); scroll.UpdateLayout();
-                _resourceReorderPreview.Locate(Mouse.GetPosition(active));
+                _resourceReorderPreview.Locate(DragViewport.Pointer(active), ResourceReorderBounds(active));
             };
             _resourceReorderTimer.Start();
         }
-        return _resourceReorderPreview!.Locate(args.GetPosition(list)).HasValue;
     }
 
     private void ResourceItem_OnDragLeave(object sender, DragEventArgs args)
     {
         if (_resourceReorderList is { } list)
         {
-            var point = args.GetPosition(list);
-            if (point.X < 0 || point.X > list.ActualWidth || point.Y < 0 || point.Y > list.ActualHeight)
-                ClearResourceReorderPreview();
+            _resourceReorderPreview?.Locate(DragViewport.Pointer(list), ResourceReorderBounds(list));
         }
         args.Handled = true;
     }
 
     private void ResourceItem_OnDrop(object sender, DragEventArgs args)
     {
-        var index = _resourceReorderList is { } list ? _resourceReorderPreview?.Locate(args.GetPosition(list)) : null;
+        var index = _resourceReorderList is { } list ? _resourceReorderPreview?.Locate(DragViewport.Pointer(list), ResourceReorderBounds(list)) : null;
         var items = _resourceReorderItems;
         var oldIndex = _resourceReorderOldIndex;
         ClearResourceReorderPreview();

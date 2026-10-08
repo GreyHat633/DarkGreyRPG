@@ -16,7 +16,8 @@ public final class RuntimeDirectoryVisuals extends Gui {
     private RuntimeDirectoryVisuals() {}
 
     public static void heading(FontRenderer font, String text, int x, int y, int width) {
-        text(font, "\u00a7l" + text, x, y, width, DgrUiPalette.STORY_TEXT);
+        // Vanilla's duplicated-stroke bold makes small Unicode glyphs uneven; color and spacing carry hierarchy.
+        text(font, text, x, y, width, DgrUiPalette.STORY_TEXT);
         drawRect(x, y + 15, x + width, y + 16, DgrUiPalette.BORDER);
     }
 
@@ -50,13 +51,7 @@ public final class RuntimeDirectoryVisuals extends Gui {
             drawRect(icon + 2, y + 9, icon + 5, y + 10, color);
             drawRect(icon + 2, y + 12, icon + 5, y + 13, color);
         }
-        text(
-            font,
-            (folder ? "\u00a7l" : "") + name,
-            icon + 12,
-            textY,
-            Math.max(0, width - (icon + 12 - x) - 5 - reservedWidth),
-            DgrUiPalette.TEXT);
+        text(font, name, icon + 12, textY, Math.max(0, width - (icon + 12 - x) - 5 - reservedWidth), DgrUiPalette.TEXT);
     }
 
     public static int textY(FontRenderer font, int rowTop) {

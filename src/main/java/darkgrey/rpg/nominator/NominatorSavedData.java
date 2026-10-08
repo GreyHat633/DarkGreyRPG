@@ -57,8 +57,9 @@ public final class NominatorSavedData extends WorldSavedData {
             data.requireUsable();
             return data;
         }
-        if (loaded != null)
-            throw new IllegalStateException("Unexpected Nominator SavedData type; original data is protected.");
+        if (loaded != null) throw new NominatorDataUnavailableException(
+            DATA_NAME,
+            new IllegalStateException("Unexpected SavedData type."));
         NominatorSavedData created = new NominatorSavedData();
         storage.setData(DATA_NAME, created);
         return created;
@@ -99,12 +100,7 @@ public final class NominatorSavedData extends WorldSavedData {
 
     /** MapStorage can cache a failed reader; never let that instance become writable empty data. */
     public synchronized void requireUsable() {
-        if (awaitingRead || readFailure != null) throw new IllegalStateException(
-            "Nominator SavedData '" + mapName
-                + "' was not read with current schema "
-                + SCHEMA_VERSION
-                + "; original data is protected.",
-            readFailure);
+        if (awaitingRead || readFailure != null) throw new NominatorDataUnavailableException(mapName, readFailure);
     }
 
     @Override

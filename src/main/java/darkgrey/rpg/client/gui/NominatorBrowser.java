@@ -149,7 +149,8 @@ public final class NominatorBrowser extends Gui {
         packageMotion.advance(seconds);
         resourceMotion.advance(seconds);
         search.drawTextBox();
-        if (query.isEmpty() && !search.isFocused()) font.drawString("名称 / 标签", x + 4, y + 5, 0x888888);
+        if (query.isEmpty() && !search.isFocused())
+            RuntimeDirectoryVisuals.text(font, "名称 / 标签", x + 4, y + 5, width - 8, 0x888888);
         drawRect(x, y + 24, x + width, y + height, DgrUiPalette.SUB_PANEL);
         drawRect(x + split, y + 24, x + split + 1, y + height, DgrUiPalette.BORDER);
         RuntimeDirectoryVisuals.heading(font, "故事包", x + 4, y + 25, split - 8);

@@ -176,6 +176,31 @@ public sealed class OutputReferenceFix0336Tests
     }
 
     [STATestMethod]
+    public void ViewportExitRestoresRowsAndReentryKeepsOriginalGeometry()
+    {
+        var list = new StackPanel { Width = 210 };
+        var rows = new FrameworkElement[] { new Border { Height = 44 }, new Border { Height = 44 }, new Border { Height = 44 } };
+        foreach (var row in rows) list.Children.Add(row);
+        using var window = new TestWindow(list);
+        using var preview = new OutputReorderPreview(list, rows, "边界资源", false, 0, new Point(12, 18));
+        var height = list.ActualHeight;
+        var viewport = new Rect(3, 4, 195, 119);
+        for (var repeat = 0; repeat < 20; repeat++)
+        {
+            Assert.AreEqual(2, preview.Locate(new Point(197.5, 122.5), viewport));
+            Assert.AreEqual(0d, rows[0].Opacity);
+            Assert.IsNull(preview.Locate(new Point(198.5, 122.5), viewport));
+            Assert.AreEqual(1d, rows[0].Opacity);
+            foreach (var row in rows)
+                Assert.AreEqual(0d, ((TranslateTransform)((TransformGroup)row.RenderTransform).Children[^1]).Y);
+            CollectionAssert.AreEqual(new[] { 0d, 44d, 88d }, preview.OriginalTops.ToArray());
+            Assert.AreEqual(1, preview.Locate(new Point(12, 85), viewport));
+            Assert.AreEqual(44d, preview.GapY);
+            Assert.AreEqual(height, list.ActualHeight);
+        }
+    }
+
+    [STATestMethod]
     public void CreatingTasksDoesNotRebuildUnrelatedOutputEditorsOrLoseDrafts()
     {
         using var directory = new DirectoryFixture();

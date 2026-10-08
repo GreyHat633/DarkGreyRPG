@@ -3,7 +3,7 @@
   "baseline_commit": "51582ae8fe8a71214f2306ecd08492129171cff5",
   "implementation_branch": "codex/0.4.0.0",
   "implementation_status": "IMPLEMENTED",
-  "technical_status": "AUTOMATED_PASS_NATIVE_MAJOR_SAMPLES_PASS_TWO_OPEN_ACCEPTANCE_GAPS",
+  "technical_status": "IMPLEMENTED_AUTOMATED_PASS_NATIVE_TARGETED_PASS_COVERAGE_LIMITS_RECORDED",
   "delivery_status": "DEVELOPMENT_DIST_DELIVERED",
   "contracts": {
     "graph_schema": 3,
@@ -32,7 +32,7 @@
     "baseline_java": "PASS",
     "studio_native_ui": "PASS_AUTHOR_APPEND_UNDO_REDO_DRAFT_PAGE_KEYS_COMBINE_SEARCH_USAGE_REFERENCE_IMPORT_PORT_REFRESH",
     "minecraft": "PASS_BASE_SP_BASE_DEDICATED_CNPC_DEDICATED_CNPC_INTEGRATED_MINIMUM_NATIVE_IDENTITY_INVENTORY_CHOICE_SETTLEMENT_DISABLED_ISOLATION_PRESENTATION",
-    "data_preservation": "PASS_AUTHORITY_2690_FILES_68772849_BYTES_UNCHANGED_AND_410_PROGRAM_FILES_MATCH_CANDIDATE",
+    "data_preservation": "PASS_AUTHORITY_2690_FILES_68773074_BYTES_UNCHANGED_AND_410_PROGRAM_FILES_MATCH_CANDIDATE",
     "p1_core": "PASS_508_SKIPPED_11",
     "p1_wpf": "PASS_692_SKIPPED_1",
     "p1_wpf_package_followup": "PASS_58",
@@ -44,7 +44,7 @@
     "p4_choice_wpf": "PASS_51",
     "p4_lifecycle_core": "PASS_30",
     "current_core": "PASS_499_SKIPPED_11_FAILED_0",
-    "current_wpf": "PASS_665_SKIPPED_1_FAILED_0",
+    "current_wpf": "PASS_667_SKIPPED_1_FAILED_0",
     "p5_package_core": "PASS_38",
     "p5_same_package_rejection": "PASS_21_CSHARP_AND_JAVA",
     "p6_resource_enter_regression": "RED_1_THEN_GREEN_32",
@@ -54,17 +54,19 @@
     "wpf_previous_io_replacement_failure": "PASS_IN_TARGETED_19_AND_COMPLETE_655_RECHECK_ORIGINAL_FAILURE_RETAINED",
     "wpf_receipt": "evidence/p6-wpf-clean-full-recheck-receipt.json",
     "six_fixes_runtime": "PASS_BUILD_AND_8_SESSION_PROBES",
-    "six_fixes_receipt": "evidence/six-fixes-delivery-validation-receipt.json"
+    "six_fixes_receipt": "evidence/six-fixes-delivery-validation-receipt.json",
+    "drag_crash_runtime": "PASS_BUILD_AND_22_CURRENT_PROBES",
+    "drag_crash_receipt": "evidence/drag-crash-delivery-validation-receipt.json"
   },
   "studio": {
     "authoritative_path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
     "promoted": true,
-    "candidate_binaries": "evidence/six-fixes-authority-binaries.json",
+    "candidate_binaries": "evidence/drag-crash-authority-binaries.json",
     "blocking_process_id": null,
     "blocking_reason": null,
-    "data_before": "evidence/six-fixes-authority-data-before-promotion-final.json",
-    "data_after": "evidence/six-fixes-authority-data-after-promotion.json",
-    "promotion_receipt": "evidence/six-fixes-authority-promotion-receipt.json",
+    "data_before": "evidence/drag-crash-authority-data-before-promotion-final.json",
+    "data_after": "evidence/drag-crash-authority-data-after-promotion.json",
+    "promotion_receipt": "evidence/drag-crash-authority-promotion-receipt.json",
     "binaries": [
       {
         "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
@@ -75,14 +77,14 @@
       {
         "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
         "productVersion": "0.4.0.0",
-        "size": 1453568,
-        "sha256": "D78EDA6AE9FB9FDF9686665C27A9ECAE318C8096A32EAA2FE07DD0193C9CDF4A"
+        "size": 1458688,
+        "sha256": "542F8B01708A84BBF0D9A938F10E5949621549C19BE50EFE363A8FF152BED3EF"
       },
       {
         "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
-        "productVersion": "1.0.0+51582ae8fe8a71214f2306ecd08492129171cff5",
+        "productVersion": "1.0.0+011a6613489e549b1eb2fd47d3d2a04dfc1268dd",
         "size": 1108480,
-        "sha256": "D275FA27BF0C707B6A630ADF72E026102AD157EA7E72FC8558F80462167BE0EB"
+        "sha256": "CAEE334E05986BDC04E559D86A050BC8A9FAAB9213BF6B5F7FD879C81D3B506A"
       },
       {
         "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\StudioProgramFiles.json",
@@ -91,7 +93,7 @@
         "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
       }
     ],
-    "final_verification_receipt": "evidence/six-fixes-final-authority-verification.json"
+    "final_verification_receipt": "evidence/drag-crash-delivery-validation-receipt.json"
   },
   "remaining_phases": [
     "P6_NATIVE_ADDITIONAL_ITEM_FILTER",
@@ -109,12 +111,12 @@
   "legacy_business_compatibility": false,
   "multi_minecraft_version_work": false,
   "retirement_inventory_status": "APPROVED_RETIREMENTS_DETACHED_AND_REMOVED_AUDIT_ONLY_DECISIONS_RECORDED",
-  "production_source_manifest_sha256": "a1f4cd003dac37e4202f3fadeea45814907e09fcb06df107e93e7d904efd3312",
-  "production_source_manifest": "evidence/six-fixes-delivery-source-provenance.json",
+  "production_source_manifest_sha256": "7fdbb6ea318486497a02e1021ce23a0d31c4522beed224b70dbd722677664ad5",
+  "production_source_manifest": "evidence/drag-crash-delivery-source-provenance.json",
   "runtime_jar": {
     "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\build\\libs\\darkgrey_rpg-0.4.0.0.jar",
-    "size": 1838497,
-    "sha256": "601B337231C534FEF43FCE159A1CE7F646B92B3B5C8C68558AEDD141904541FD",
+    "size": 1843025,
+    "sha256": "0D971907C95602AE94544B684D27E145014A9B5A4F9D1A79DEDF1E6508FF8CD9",
     "version": "0.4.0.0",
     "minecraft_version": "1.7.10",
     "zip_integrity": "PASS"
@@ -216,8 +218,24 @@
     "repository": "https://github.com/GreyHat633/DarkGreyRPG",
     "implementation_commit": "99f3df91de56fd8ffc6122414988fcac06f777ff",
     "verification": "Remote branch SHA must match final local HEAD",
-    "scope_audit": "evidence/six-fixes-github-upload-scope-audit.json",
-    "upload_receipt": "evidence/six-fixes-github-upload-receipt.json",
-    "generated_artifacts_in_upload": false
+    "scope_audit": "evidence/drag-crash-github-upload-scope-audit.json",
+    "upload_receipt": "evidence/drag-crash-github-upload-receipt.json",
+    "generated_artifacts_in_upload": false,
+    "current_fix_baseline_commit": "011a6613489e549b1eb2fd47d3d2a04dfc1268dd"
+  },
+  "drag_crash_fix": {
+    "baseline_commit": "011a6613489e549b1eb2fd47d3d2a04dfc1268dd",
+    "summary": "DragCrashFixes.md",
+    "original_test_world_table_unchanged": {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\run\\client\\saves\\新的世界\\data\\darkgrey_rpg_nominator.dat",
+      "size": 391,
+      "sha256": "E9F5683573580BA79DB1864A91B299D86B0B805ED902A822044594CBD6744752"
+    },
+    "pending_native_coverage": [
+      "NATIVE_DEVELOPMENT_CLIENT_CNPC_FULL_OPERATION_MATRIX",
+      "NATIVE_ALL_ENTITY_TOOL_STORAGE_COMMAND_FAILURE_COMBINATIONS",
+      "NATIVE_ALL_SEARCH_DEACTIVATION_REFERENCED_GROUP_DRAG_COMBINATIONS"
+    ],
+    "current_source_locator": "codex/0.4.0.0 HEAD; local GitHub upload receipt verifies exact commit"
   }
 }

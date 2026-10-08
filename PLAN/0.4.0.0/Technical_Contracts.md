@@ -73,3 +73,11 @@ required_resources 删除 dialogues / quests 字段、DTO、路径枚举与诊�
 WorldSavedData 增加可选 `line_contexts` 缓存，按活动 transport 仅保留最近一份已解析台词的既有静默 LINE 帧，严格校验字节、类型和 transport；缺失时旧存档可读取。恢复按 LINE→CHOICE 顺序，LINE 保留原历史 epoch、使用当前演出状态和投影修订，不播放语音／画面，不改变真实 Choice 游标；终态缓存清理。旧 presentation_texts 的 prompt 槽兼容读取，但不再展示。
 
 故事出口编辑改真实源节点 display_name；端口 ID、display_order、连线与运行语义不变，空名称拒绝，外部来源只读。列表只写已有 NavigationOrder／membership DisplayOrder，不新增资源文件格式。类型入口在候选生成和最终确认均校验 Kind、SourceStoryId 和来源资格；通用资源入口保持全部类型。
+
+## 2026-10-08 指名器、拖动及字体修复
+
+Nominator SavedData 保持 schema 4。读取失败、未完成读取或保存的 readFailure 形成明确的不可用状态，禁止默认空表／自动迁移／覆盖原文件；操作预检先于 NPC 身份写入。失败响应保留既有 token／sequence，revision 与 npcRevision 未读到时为 -1，原网络结构不变。工具打开边界提示取消，队列本身不吞全部异常。
+
+NavigationOrder 复用原列表字段：组标题 Key 排顶层组件，稳定 Story ID 排当前组成员；只替换对应作用域的条目，缺少成员顺序沿用当前显示顺序。不会跨组移动，也不改引用包。拖动原始几何与预览实例整个会话保持，真实指针进入／离开视口控制显示，子控件 leave 不决定销毁；滚动只更新几何偏移。
+
+字体仍使用 Minecraft 原位图资源，目录标题／组不额外套 §l，搜索占位文本复用既有像素对齐与最近邻采样路径；不更改全局 FontRenderer 或新增字体资源。

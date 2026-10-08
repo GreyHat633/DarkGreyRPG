@@ -31,12 +31,17 @@ public final class NominatorActions {
 
     public static void handle(EntityPlayerMP player, NBTTagCompound request) {
         ProjectRepository repo = DarkGreyRpg.getProjectRepository();
-        NominatorCatalog catalog = NominatorCatalog.from(repo.getSnapshot(), DarkGreyRpg.getStoryPackageLoader());
+        NominatorCatalog catalog = new NominatorCatalog(
+            java.util.Collections.<NominatorCatalog.Story>emptyList(),
+            java.util.Collections.<NominatorCatalog.Actor>emptyList(),
+            java.util.Collections.<NominatorCatalog.Item>emptyList(),
+            java.util.Collections.<NominatorCatalog.Item>emptyList());
         NominatorSavedData selections = null;
         NpcIdentitySavedData npc = null;
         ItemIdentitySavedData items = null;
         NominatorResult result;
         try {
+            catalog = NominatorCatalog.from(repo.getSnapshot(), DarkGreyRpg.getStoryPackageLoader());
             if (request.getBoolean("items")) items = ItemIdentitySavedData.get();
             else {
                 selections = NominatorSavedData.get();
@@ -51,17 +56,54 @@ public final class NominatorActions {
                 selections,
                 npc,
                 items);
+        } catch (NominatorDataUnavailableException e) {
+            result = NominatorResult
+                .rejected(NominatorDataUnavailableException.CODE, NominatorDataUnavailableException.PLAYER_MESSAGE);
         } catch (RuntimeException e) {
             DarkGreyRpg.LOG.warn("Nominator operation rejected", e);
             result = NominatorResult.rejected("invalid_request", "服务器拒绝了该请求。");
         }
+        NBTTagCompound response = response(request, result, repo.getSnapshotRevision(), selections, npc, items);
+        DialogueNetwork.CHANNEL.sendTo(new S2CNominatorActionResult(response, catalog), player);
+    }
+
+    static NBTTagCompound response(NBTTagCompound request, NominatorResult result, long catalogRevision,
+        NominatorSavedData selections, NpcIdentitySavedData npc, ItemIdentitySavedData items) {
+        NBTTagCompound response = correlatedResponse(request, result, catalogRevision);
+        try {
+            appendSnapshot(response, request, selections, npc, items);
+        } catch (NominatorDataUnavailableException failure) {
+            response = correlatedResponse(
+                request,
+                NominatorResult
+                    .rejected(NominatorDataUnavailableException.CODE, NominatorDataUnavailableException.PLAYER_MESSAGE),
+                catalogRevision);
+        } catch (RuntimeException failure) {
+            DarkGreyRpg.LOG.warn("Nominator response snapshot rejected", failure);
+            response = correlatedResponse(
+                request,
+                NominatorResult.rejected("invalid_request", "服务器无法读取指名快照，本次操作已取消。"),
+                catalogRevision);
+        }
+        return response;
+    }
+
+    private static NBTTagCompound correlatedResponse(NBTTagCompound request, NominatorResult result,
+        long catalogRevision) {
         NBTTagCompound response = new NBTTagCompound();
         response.setString("token", request.getString("token"));
         response.setInteger("sequence", request.getInteger("sequence"));
         response.setString("code", result.getCode());
         response.setString("message", result.getExplanation());
         response.setBoolean("accepted", result.isAccepted());
-        response.setLong("catalogRevision", repo.getSnapshotRevision());
+        response.setLong("catalogRevision", catalogRevision);
+        response.setLong("revision", -1L);
+        response.setLong("npcRevision", -1L);
+        return response;
+    }
+
+    private static void appendSnapshot(NBTTagCompound response, NBTTagCompound request, NominatorSavedData selections,
+        NpcIdentitySavedData npc, ItemIdentitySavedData items) {
         response.setLong(
             "revision",
             request.getBoolean("items") ? items == null ? -1 : items.getRevision()
@@ -84,7 +126,6 @@ public final class NominatorActions {
                             .toString());
             } catch (IllegalArgumentException ignored) {}
         }
-        DialogueNetwork.CHANNEL.sendTo(new S2CNominatorActionResult(response, catalog), player);
     }
 
     private static NominatorResult execute(EntityPlayerMP player, NBTTagCompound q, NominatorCatalog catalog,

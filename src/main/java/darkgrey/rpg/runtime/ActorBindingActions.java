@@ -65,10 +65,10 @@ public final class ActorBindingActions {
             return false;
         }
 
-        NpcIdentitySavedData.get()
-            .unbindHost(target.getUniqueID());
         NominatorSavedData selections = NominatorSavedData.get();
         NominatorEntityBinding existing = selections.get(target.getUniqueID());
+        NpcIdentitySavedData.get()
+            .unbindHost(target.getUniqueID());
         if (existing != null) selections
             .put(new NominatorEntityBinding(target.getUniqueID(), null, existing.getGroupIds(), existing.getStoryId()));
         ChatMessages.success(player, "Removed Actor binding " + oldActorId + ".");

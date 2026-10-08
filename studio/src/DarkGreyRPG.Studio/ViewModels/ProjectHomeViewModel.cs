@@ -874,7 +874,11 @@ public sealed class ProjectHomeViewModel : ObservableObject
             var rank = Rank(left.NavigationKey).CompareTo(Rank(right.NavigationKey));
             if (rank != 0) return rank;
             var section = StringComparer.Ordinal.Compare(left.NavigationKey, right.NavigationKey);
-            return section != 0 ? section : StringComparer.CurrentCulture.Compare(left.DisplayName, right.DisplayName);
+            if (section != 0) return section;
+            var memberRank = Rank(left.Id).CompareTo(Rank(right.Id));
+            if (memberRank != 0) return memberRank;
+            var name = StringComparer.CurrentCulture.Compare(left.DisplayName, right.DisplayName);
+            return name != 0 ? name : StringComparer.Ordinal.Compare(left.Id, right.Id);
         }
     }
 
