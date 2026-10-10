@@ -1,5 +1,7 @@
 # 0.4.0.2 验收记录
 
+> 以下为发布前开发验收快照。2026-10-10 已按用户要求完成本地成品与 GitHub Release，最新发布状态见 [Release.md](Release.md) 和 DELIVERY.json；本记录中的未发布表述指开发收尾时点。
+
 状态 **DEVELOPMENT_COMPLETE_WITH_RECORDED_LIMITS**。当前开发交付 Runtime **1896860 B**、SHA256 **8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC**；build／42项Probe通过，698个生产class只有唯一受管原始绘字入口。Studio Core510、WPF667／1skip通过，权威dist已提升并保留Data。原施工规格仍为PLAN.md；过程、失败反例和修复详见Implementation.md。最终结果与原始文件hash见evidence/summary.json及reproducibility.json，交付索引见DELIVERY.json。未创建本版源码推送、标签、成品包或GitHub Release。
 
 字体已统一单次无阴影绘制、像素定位和最近邻采样，普通工具页面遮住底层HUD；覆盖通知、追踪、诊断、输入框、浮层、图标签与标题，三主题和GUI1/2/3等原生证据保留。字体／GUI／媒体／tick／队列等组件与已测检查点同字节。正式三组服务端参考测量使用冻结2629，客户端一组帧对照使用冻结1B；后续改变的只读诊断、收据日志、线性历史reader和停止兜底有各自当前hash回归，不能声称历史测量进程曾加载当前JAR。组件边界见0402-final-source-provenance.json。

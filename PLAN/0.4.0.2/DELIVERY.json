@@ -36,8 +36,8 @@
   "acceptance": "Acceptance.md",
   "evidence": {
     "file": "PLAN/0.4.0.2/evidence/summary.json",
-    "bytes": 24964,
-    "sha256": "470CF03580A93315FFD58D9EA37345385DE73AB015137E0FEA1B7EE30C4F2E24"
+    "bytes": 26205,
+    "sha256": "08E944F4718DDD21E5AF2F9BF86E367634BA4C57F0BDC751A2EE5FB233F27235"
   },
   "preserved_items": {
     "npc_identity_corrupt_file_special": "DEFERRED_BY_USER",
@@ -45,9 +45,27 @@
     "old_development_cnpc_mapping": "BLOCKED_HISTORICAL"
   },
   "release": {
-    "push": false,
-    "tag": false,
-    "finished_product_package": false,
-    "github_release": false
-  }
+    "authorized": true,
+    "authorization": "User: 上传github并打包release",
+    "push": true,
+    "tag": true,
+    "finished_product_package": true,
+    "github_release": true,
+    "existing_tag_moved": false,
+    "existing_release_modified": false,
+    "source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+    "source_branch": "codex/0.4.0.2",
+    "local_product_directory": "artifacts/DGR0.4.0.2",
+    "release_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.2",
+    "tag_name": "v0.4.0.2",
+    "release_id": 408610614,
+    "published_at": "2026-10-10T03:47:06Z",
+    "assets_verified": 5,
+    "latest": true,
+    "record": "Release.md",
+    "remote_receipt": "evidence/github-release.json",
+    "user_accepted_full_version": false
+  },
+  "delivery_status": "FINISHED_PRODUCT_LOCAL_AND_GITHUB_RELEASE_PUBLISHED",
+  "recorded_at": "2026-10-10T03:47:55.444033+00:00"
 }

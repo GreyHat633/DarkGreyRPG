@@ -351,10 +351,26 @@
     "old_development_cnpc_mapping": "BLOCKED_HISTORICAL"
   },
   "release": {
-    "push": false,
-    "tag": false,
-    "finished_product_package": false,
-    "github_release": false
+    "authorized": true,
+    "authorization": "User: 上传github并打包release",
+    "push": true,
+    "tag": true,
+    "finished_product_package": true,
+    "github_release": true,
+    "existing_tag_moved": false,
+    "existing_release_modified": false,
+    "source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+    "source_branch": "codex/0.4.0.2",
+    "local_product_directory": "artifacts/DGR0.4.0.2",
+    "release_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.2",
+    "tag_name": "v0.4.0.2",
+    "release_id": 408610614,
+    "published_at": "2026-10-10T03:47:06Z",
+    "assets_verified": 5,
+    "latest": true,
+    "record": "Release.md",
+    "remote_receipt": "evidence/github-release.json",
+    "user_accepted_full_version": false
   },
   "sources": [
     {
@@ -616,6 +632,21 @@
       "file": "PLAN/0.4.0.2/evidence/warmup-Final-linear-robust-60-linear-final-60.json",
       "bytes": 27197,
       "sha256": "C477EB3A3679A98D607D2871ED47577400EDAB5593757CF3E162845F7FD39184"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/github-release.json",
+      "bytes": 2163,
+      "sha256": "DE75EEFE7BDFC100A905EF3E7F4B182108085D2A2F73655B8E0DA15B66DE08FB"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/release-manifest.json",
+      "bytes": 6267,
+      "sha256": "151AAE75D83D8F5BE0C6F0ED0A63BDED9BE0B609A0D66DEB656AF7F730A6A99C"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/release-package-verification.json",
+      "bytes": 3871,
+      "sha256": "5328E92FDC4E03BACF35CE9AADA9D6E2EE76BC6E7469577A0F386C9234AFC490"
     }
   ]
 }

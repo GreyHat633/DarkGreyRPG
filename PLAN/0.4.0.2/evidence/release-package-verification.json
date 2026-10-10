@@ -1,0 +1,97 @@
+{
+  "status": "PASS_LOCAL_PRODUCT_PORTABILITY_AND_REMOTE_DIGESTS",
+  "source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+  "local_directory": "artifacts/DGR0.4.0.2",
+  "archives": {
+    "recorded_at": "2026-10-10T03:40:13.753097+00:00",
+    "source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+    "jar_version": "0.4.0.2",
+    "jar_crc": "PASS",
+    "zip_crc": "PASS",
+    "program_file_count": 410,
+    "archive_file_count": 411,
+    "program_hashes_match_authority": true,
+    "contains_data": false,
+    "formal_runtime_has_no_acceptance_driver_or_minecraft_replacements": true,
+    "archives": [
+      {
+        "file": "Mod/darkgrey_rpg-0.4.0.2.jar",
+        "bytes": 1896860,
+        "sha256": "8b416c270c017873d5d18f96cbb5ca89f67ec88643809731e185776bb62043fc"
+      },
+      {
+        "file": "Studio/DarkGreyRPGStudio-0.4.0.2-win-x64.zip",
+        "bytes": 236964399,
+        "sha256": "fbfc980b6f7bd1e23cf2d4bacabc69e248c2df91f12bc50ff72ac76e2a28a385"
+      }
+    ]
+  },
+  "extraction": {
+    "zip_sha256": "fbfc980b6f7bd1e23cf2d4bacabc69e248c2df91f12bc50ff72ac76e2a28a385",
+    "extracted_path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Extracted",
+    "file_count": 411,
+    "all_extracted_hashes_match_contents_manifest": true,
+    "data_absent_before_first_launch": true,
+    "root_files": [
+      "DarkGreyRPGStudio.exe"
+    ]
+  },
+  "independent_startup": {
+    "Version": "0.4.0.2",
+    "DotnetRoot": "Nonexistent task directory",
+    "WorkingDirectory": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release",
+    "FirstTitle": "DarkGrey RPG Studio 0.4.0.2",
+    "BundledRuntimeModules": [
+      {
+        "Name": "hostfxr.dll",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Extracted\\Program\\hostfxr.dll"
+      },
+      {
+        "Name": "hostpolicy.dll",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Extracted\\Program\\hostpolicy.dll"
+      },
+      {
+        "Name": "coreclr.dll",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Extracted\\Program\\coreclr.dll"
+      },
+      {
+        "Name": "wpfgfx_cor3.dll",
+        "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Extracted\\Program\\wpfgfx_cor3.dll"
+      }
+    ],
+    "DefaultProjectDestination": "Data/Projects/Project",
+    "FirstLaunchTheme": "Dark",
+    "SettingsProjectPath": "Data\\Projects\\Project",
+    "SharedSettingsImported": false,
+    "MovedWindowTitle": "0.4.0.2 解压便携验证 — DarkGrey RPG Studio 0.4.0.2",
+    "MovedDirectoryProjectRestored": true,
+    "ffmpeg": {
+      "ExitCode": 0,
+      "Version": "ffmpeg version 9.0-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+      "Executable": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Moved\\Tools\\FFmpeg\\ffmpeg.exe"
+    },
+    "ffprobe": {
+      "ExitCode": 0,
+      "Version": "ffprobe version 9.0-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+      "Executable": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-release\\Moved\\Tools\\FFmpeg\\ffprobe.exe"
+    },
+    "IndependentStartup": true,
+    "Status": "PASS",
+    "RecordedAt": "2026-10-10T11:43:06.2217928+08:00"
+  },
+  "authority_data": {
+    "status": "PASS_UNCHANGED_DURING_PACKAGING",
+    "authority_updated_this_packaging": false,
+    "before": {
+      "file_count": 2690,
+      "bytes": 68773074,
+      "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+    },
+    "after": {
+      "file_count": 2690,
+      "bytes": 68773074,
+      "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+    },
+    "all_file_paths_sizes_sha256_equal": true
+  }
+}
