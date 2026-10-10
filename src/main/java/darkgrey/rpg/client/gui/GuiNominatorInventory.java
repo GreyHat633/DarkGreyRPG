@@ -243,30 +243,39 @@ public final class GuiNominatorInventory extends GuiContainer {
 
     @Override
     protected void drawGuiContainerForegroundLayer(int mx, int my) {
-        fontRendererObj
-            .drawString("物品指名器", (xSize - fontRendererObj.getStringWidth("物品指名器")) / 2, 8, DgrUiPalette.TEXT);
+        DgrUiText.left(
+            fontRendererObj,
+            "物品指名器",
+            (xSize - fontRendererObj.getStringWidth("物品指名器")) / 2,
+            8,
+            DgrUiPalette.TEXT);
         String inventoryTitle = "玩家背包";
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             inventoryTitle,
             inventoryLeft + (162 - fontRendererObj.getStringWidth(inventoryTitle)) / 2,
             ySize - 123,
             DgrUiPalette.SECONDARY);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             "物品指名",
             operationLeft + (82 - fontRendererObj.getStringWidth("物品指名")) / 2,
             ySize - 128,
             DgrUiPalette.TEXT);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             "物品解绑",
             operationLeft + (82 - fontRendererObj.getStringWidth("物品解绑")) / 2,
             ySize - 67,
             DgrUiPalette.TEXT);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             "装备栏",
             armorLeft + 8 - fontRendererObj.getStringWidth("装备栏") / 2,
             ySize - 123,
             DgrUiPalette.SECONDARY);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             fontRendererObj.trimStringToWidth(controls.message, xSize - 16),
             8,
             ySize - 12,

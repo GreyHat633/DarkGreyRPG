@@ -28,18 +28,28 @@ public final class GramophoneNetwork {
         @Override
         public IMessage onMessage(final GramophonePacket packet, MessageContext context) {
             if (packet.operation != GramophonePacket.SAVE && packet.operation != GramophonePacket.DELETE) return null;
+            final EntityPlayerMP player = context.getServerHandler().playerEntity;
             if (PENDING.incrementAndGet() > 128) {
                 PENDING.decrementAndGet();
+                packet.operation = GramophonePacket.RESULT;
+                packet.status = "服务器繁忙，请稍后重试。";
+                if (player.playerNetServerHandler.netManager.isChannelOpen()) CHANNEL.sendTo(packet, player);
                 return null;
             }
-            final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(() -> {
+            java.util.concurrent.atomic.AtomicBoolean held = new java.util.concurrent.atomic.AtomicBoolean(true);
+            Runnable release = () -> { if (held.compareAndSet(true, false)) PENDING.decrementAndGet(); };
+            MainThreadScheduler.scheduleServer(player, () -> {
                 try {
                     if (!player.playerNetServerHandler.netManager.isChannelOpen()) return;
                     GramophoneServer.save(player, packet);
                 } finally {
-                    PENDING.decrementAndGet();
+                    release.run();
                 }
+            }, () -> {
+                release.run();
+                packet.operation = GramophonePacket.RESULT;
+                packet.status = "请求未执行，请稍后重试。";
+                if (player.playerNetServerHandler.netManager.isChannelOpen()) CHANNEL.sendTo(packet, player);
             });
             return null;
         }
@@ -51,10 +61,12 @@ public final class GramophoneNetwork {
         public IMessage onMessage(final GramophonePacket packet, MessageContext context) {
             final Object connection = context.getClientHandler();
             MainThreadScheduler.scheduleClient(
+                connection,
                 () -> {
                     if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                         DarkGreyRpg.proxy.acceptGramophone(packet);
-                });
+                },
+                () -> MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }
@@ -64,17 +76,29 @@ public final class GramophoneNetwork {
         @Override
         public IMessage onMessage(final GramophoneMediaPacket packet, MessageContext context) {
             if (packet.operation < 0 || packet.operation > GramophoneMediaPacket.FETCH) return null;
+            EntityPlayerMP player = context.getServerHandler().playerEntity;
             if (PENDING.incrementAndGet() > 128) {
                 PENDING.decrementAndGet();
+                packet.operation = GramophoneMediaPacket.ERROR;
+                packet.data = new byte[0];
+                packet.message = "服务器繁忙，请稍后重试。";
+                if (player.playerNetServerHandler.netManager.isChannelOpen()) CHANNEL.sendTo(packet, player);
                 return null;
             }
-            EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(() -> {
+            java.util.concurrent.atomic.AtomicBoolean held = new java.util.concurrent.atomic.AtomicBoolean(true);
+            Runnable release = () -> { if (held.compareAndSet(true, false)) PENDING.decrementAndGet(); };
+            MainThreadScheduler.scheduleServer(player, () -> {
                 try {
                     GramophoneLocalServer.accept(player, packet);
                 } finally {
-                    PENDING.decrementAndGet();
+                    release.run();
                 }
+            }, () -> {
+                release.run();
+                packet.operation = GramophoneMediaPacket.ERROR;
+                packet.data = new byte[0];
+                packet.message = "请求未执行，请稍后重试。";
+                if (player.playerNetServerHandler.netManager.isChannelOpen()) CHANNEL.sendTo(packet, player);
             });
             return null;
         }
@@ -86,10 +110,12 @@ public final class GramophoneNetwork {
         public IMessage onMessage(final GramophoneMediaPacket packet, MessageContext context) {
             Object connection = context.getClientHandler();
             MainThreadScheduler.scheduleClient(
+                connection,
                 () -> {
                     if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                         DarkGreyRpg.proxy.acceptGramophoneMedia(packet);
-                });
+                },
+                () -> MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

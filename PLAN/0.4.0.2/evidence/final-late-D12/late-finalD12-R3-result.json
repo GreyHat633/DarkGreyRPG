@@ -1,0 +1,294 @@
+{
+  "status": "PASS_LATE_RELEASE_AFTER_Y_LOADED",
+  "runtime_sha256": "D12C39D98A7B65785DE95A375F7C79377D994FE783FA8AFE3A8416FDEE786590",
+  "pid": 35820,
+  "completed": "2026-10-10T03:20:31.9120543+08:00",
+  "old_in_flight": 5,
+  "before": {
+    "tick": 8270,
+    "network": 1,
+    "peak_network": 1,
+    "media_in_flight": 5,
+    "queue_pending": 0,
+    "source_host": {
+      "uuid": "8529f4e3-3a64-487b-8c28-2d9d0a2e0650",
+      "class": "noppes.npcs.entity.EntityCustomNpc",
+      "resolved_actors": [
+        "ST-4EUB-29DN-V8J6-VTY3~actor~host",
+        "ST-5UTG-DFCB-NQAQ-X4QF~actor~r6d7c51d48cb5e734a7b7daed7d233c36"
+      ]
+    },
+    "spawned_victim_types": [],
+    "players": [
+      {
+        "name": "DGR402ClientF",
+        "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+        "inventory": 0,
+        "receipts": 0,
+        "xp": 0,
+        "dimension": 0,
+        "entity_changes": 1,
+        "additional_stories": [
+          {
+            "story": "ST-2222-2222-2222-EC6J",
+            "run": 1791566856641,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-EC6K",
+            "run": 1791566857491,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-EC6L",
+            "run": 1791566858340,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-ECCS",
+            "run": 1791573482511,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-ECCT",
+            "run": 1791573483417,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-ECCU",
+            "run": 1791573484263,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-ECD4",
+            "run": 1791573615714,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-ECD5",
+            "run": 1791573616568,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-ECD6",
+            "run": 1791573617463,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+            "run": 1791564135233,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-EEEE-FFFF-GGGG-HHHH",
+            "run": 1791565864771,
+            "status": "TERMINATED"
+          },
+          {
+            "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+            "run": 1791565865754,
+            "status": "TERMINATED"
+          }
+        ],
+        "group_kill": {
+          "status": "SETTLED",
+          "run": 1791564375955,
+          "progress": {
+            "objective": 2
+          }
+        },
+        "group_zero": {
+          "status": "ACTIVE",
+          "run": 1791565900413,
+          "progress": {
+            "objective": 0
+          }
+        },
+        "group_story_status": "ACTIVE"
+      }
+    ],
+    "source_leases": [
+      {
+        "story": "ST-4EUB-29DN-V8J6-VTY3",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6J",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6K",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6L",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECCS",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECCT",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECCU",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECD4",
+        "leases": 3
+      },
+      {
+        "story": "ST-2222-2222-2222-ECD5",
+        "leases": 3
+      },
+      {
+        "story": "ST-2222-2222-2222-ECD6",
+        "leases": 2
+      },
+      {
+        "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+        "leases": 1
+      },
+      {
+        "story": "ST-EEEE-FFFF-GGGG-HHHH",
+        "leases": 1
+      },
+      {
+        "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+        "leases": 1
+      }
+    ]
+  },
+  "Y_before": {
+    "status": "OBSERVED",
+    "tick": 7870,
+    "world_loaded": true,
+    "world_identity": 1989550834,
+    "connection_identity": 1856125320,
+    "gui": "",
+    "active": true,
+    "queue_pending": 0,
+    "queue_accepted": 1997,
+    "queue_completed": 1997,
+    "queue_cancelled": 0,
+    "queue_failed": 0,
+    "frame_overflow": 0,
+    "media_running_bundles": 0,
+    "media_ready_bundles": 0,
+    "media_active": 13,
+    "media_retired": 0,
+    "media_pins": 32,
+    "media_bundles": 10,
+    "media_downloading_bundles": 0,
+    "media_queued_bundles": 0,
+    "media_network_requests": 593,
+    "media_cache_hits": 7,
+    "texture_count": 0,
+    "texture_pending": 0,
+    "texture_uploads": 0,
+    "texture_pixels": 0
+  },
+  "Y_after": {
+    "status": "OBSERVED",
+    "tick": 7960,
+    "world_loaded": true,
+    "world_identity": 1989550834,
+    "connection_identity": 1856125320,
+    "gui": "",
+    "active": true,
+    "queue_pending": 0,
+    "queue_accepted": 2015,
+    "queue_completed": 2015,
+    "queue_cancelled": 0,
+    "queue_failed": 0,
+    "frame_overflow": 0,
+    "media_running_bundles": 0,
+    "media_ready_bundles": 0,
+    "media_active": 13,
+    "media_retired": 0,
+    "media_pins": 32,
+    "media_bundles": 10,
+    "media_downloading_bundles": 0,
+    "media_queued_bundles": 0,
+    "media_network_requests": 593,
+    "media_cache_hits": 7,
+    "texture_count": 0,
+    "texture_pending": 0,
+    "texture_uploads": 0,
+    "texture_pixels": 0
+  },
+  "source_after": {
+    "tick": 8460,
+    "network": 0,
+    "peak_network": 1,
+    "media_in_flight": 0,
+    "queue_pending": 0,
+    "source_host": {
+      "uuid": "8529f4e3-3a64-487b-8c28-2d9d0a2e0650",
+      "class": "noppes.npcs.entity.EntityCustomNpc",
+      "resolved_actors": [
+        "ST-4EUB-29DN-V8J6-VTY3~actor~host",
+        "ST-5UTG-DFCB-NQAQ-X4QF~actor~r6d7c51d48cb5e734a7b7daed7d233c36"
+      ]
+    },
+    "spawned_victim_types": [],
+    "players": [],
+    "source_leases": [
+      {
+        "story": "ST-4EUB-29DN-V8J6-VTY3",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6J",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6K",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6L",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECCS",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECCT",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECCU",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECD4",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECD5",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-ECD6",
+        "leases": 1
+      },
+      {
+        "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+        "leases": 1
+      },
+      {
+        "story": "ST-EEEE-FFFF-GGGG-HHHH",
+        "leases": 1
+      },
+      {
+        "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+        "leases": 1
+      }
+    ]
+  }
+}

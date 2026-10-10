@@ -12,6 +12,8 @@ import net.minecraft.world.WorldServer;
 
 import darkgrey.rpg.DarkGreyRpg;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatEligibility;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
@@ -107,7 +109,7 @@ public final class PlayerStateInspection {
             lines.add("状态：已存待续接记录；未尝试执行或修复。");
             add(lines, "所属 Story", entry, "story_id");
             add(lines, "Placement", entry, "aggregate_placement_id");
-            add(lines, "关联 Session", entry, "session_resource_id");
+            addAddress(lines, "关联 Session", entry, "session_resource_id", ResourceAddress.Kind.SESSION);
             lines.add("会话实例编号：" + entry.getLong("transport_id"));
             add(lines, "选定出口", entry, "selected_end_port_id");
             add(lines, "续接目标节点", entry, "target_node_id");
@@ -139,9 +141,11 @@ public final class PlayerStateInspection {
             if (!player.toString()
                 .equals(record.getString("player_uuid"))) continue;
             NBTTagCompound runtime = "Story".equals(kind) ? record.getCompoundTag("runtime") : record;
-            String resourceId = record.getString(
-                "Story".equals(kind) ? "story_id"
-                    : "Session".equals(kind) ? "session_resource_id" : "task_resource_id");
+            String resourceId = "Story".equals(kind) ? record.getString("story_id")
+                : resourceId(
+                    record,
+                    "Session".equals(kind) ? "session_resource_id" : "task_resource_id",
+                    "Session".equals(kind) ? ResourceAddress.Kind.SESSION : ResourceAddress.Kind.TASK);
             CanonicalGraphResource resource = "Story".equals(kind) ? project.getCanonicalStory(resourceId)
                 : "Session".equals(kind) ? project.getCanonicalSession(resourceId)
                     : project.getCanonicalTask(resourceId);
@@ -188,7 +192,13 @@ public final class PlayerStateInspection {
             add(lines, "当前节点", runtime, "current_node_id");
             add(lines, "开始入口", runtime, "trigger_port_id");
             add(lines, "等待种类", runtime, "wait_kind");
-            add(lines, "等待对象", runtime, "wait_resource_id");
+            addAddress(
+                lines,
+                "等待对象",
+                runtime,
+                "wait_resource_id",
+                "SESSION".equals(runtime.getString("wait_kind")) ? ResourceAddress.Kind.SESSION
+                    : ResourceAddress.Kind.TASK);
             if ("Session".equals(kind) && record.hasKey("line_page_index", 3))
                 lines.add("作者页位置：" + (record.getInteger("line_page_index") + 1) + "（不推断离线屏幕）");
             if ("Session".equals(kind) && record.hasKey("transport_id", 4))
@@ -284,6 +294,23 @@ public final class PlayerStateInspection {
     private static void add(List<String> lines, String label, NBTTagCompound record, String key) {
         if (record.hasKey(key, 8) && !record.getString(key)
             .isEmpty()) lines.add(label + "：" + record.getString(key));
+    }
+
+    /** Detached display only. Invalid raw records remain visible and are validated separately. */
+    static String resourceId(NBTTagCompound record, String key, ResourceAddress.Kind kind) {
+        if (record.hasKey(key, 8)) return record.getString(key);
+        if (!record.hasKey(key, 10)) return "";
+        try {
+            return ResourceAddressNbt.read(record, key, kind);
+        } catch (IllegalArgumentException invalid) {
+            return "";
+        }
+    }
+
+    private static void addAddress(List<String> lines, String label, NBTTagCompound record, String key,
+        ResourceAddress.Kind kind) {
+        String id = resourceId(record, key, kind);
+        if (!id.isEmpty()) lines.add(label + "：" + id);
     }
 
     private static String status(String value) {

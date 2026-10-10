@@ -1,0 +1,32 @@
+{
+  "program_files": 410,
+  "status": "PASS_AUTHORITATIVE_STUDIO_FINAL_RECHECK",
+  "personal_Data_writes": false,
+  "at": "2026-10-10T08:49:25.5526317+08:00",
+  "authority": [
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+      "productVersion": "0.4.0.2",
+      "size": 204288,
+      "sha256": "8E569CC39547BCA0BB9E537BFC4BD42E048318B5720657735176C8F30CB97829"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+      "productVersion": "0.4.0.2",
+      "size": 1458688,
+      "sha256": "CEA0089E4187FD5839ABF015B687CC3199EF50EB0B99CE4496774925526A538D"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+      "productVersion": "0.4.0.2+3bd57b62c2e9a3a7eb6f409b755599470b39c41c",
+      "size": 1107968,
+      "sha256": "51155A4D6C0679AF75383C846EACC4AF8BB4D574A12A0C9DD43BB81791556FFB"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\StudioProgramFiles.json",
+      "productVersion": null,
+      "size": 19562,
+      "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
+    }
+  ]
+}

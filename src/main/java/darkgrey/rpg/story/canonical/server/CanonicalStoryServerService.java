@@ -11,10 +11,8 @@ import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceException;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
 import darkgrey.rpg.project.ProjectSnapshot;
-import darkgrey.rpg.session.instance.CanonicalSessionResourceResolver;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
 import darkgrey.rpg.story.canonical.instance.CanonicalStoryInstanceSnapshot;
-import darkgrey.rpg.story.canonical.instance.CanonicalStoryResourceResolver;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryActionConfiguration;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatPolicy;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStorySnapshot;
@@ -42,19 +40,7 @@ public final class CanonicalStoryServerService {
         this.project = project;
         this.data = data;
         this.startAdmission = java.util.Objects.requireNonNull(startAdmission, "startAdmission");
-        data.bindAvailable(new CanonicalSessionResourceResolver() {
-
-            @Override
-            public CanonicalGraphResource resolve(String sessionResourceId) {
-                return CanonicalStoryServerService.this.project.getCanonicalSession(sessionResourceId);
-            }
-        }, new CanonicalStoryResourceResolver() {
-
-            @Override
-            public CanonicalGraphResource resolve(String storyId) {
-                return CanonicalStoryServerService.this.project.getCanonicalStory(storyId);
-            }
-        });
+        data.bindProject(project, true);
     }
 
     public CanonicalStoryDispatch startByEntry(UUID playerUuid, String storyId, long activationTime) {
@@ -202,6 +188,18 @@ public final class CanonicalStoryServerService {
     public CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId) {
         if (!startAdmission.test(storyId)) return CanonicalStoryStartDisposition.CONTAINER_BLOCKED;
         return data.startDisposition(requirePlayer(playerUuid), requireText(storyId, "Story ID"));
+    }
+
+    /** Temporary admission failures retain the source claim for a later recovery. */
+    public boolean terminalFlowTemporarilyBlocked(String storyId, String portId) {
+        for (darkgrey.rpg.graph.canonical.CanonicalStoryLogicConnection connection : project
+            .getCanonicalStoryLogicConnections())
+            if (connection.getInterfaceKind() == darkgrey.rpg.graph.canonical.CanonicalGraphInterfaceKind.FLOW
+                && storyId.equals(connection.getSourceStoryId())
+                && portId.equals(connection.getSourcePortId()))
+                return project.getCanonicalStory(connection.getTargetStoryId()) == null
+                    || !startAdmission.test(connection.getTargetStoryId());
+        return false;
     }
 
     public boolean isStartEligible(UUID playerUuid, String storyId) {

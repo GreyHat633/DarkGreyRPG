@@ -40,7 +40,7 @@ public final class NominatorBrowser extends Gui {
         metrics = RuntimeDirectoryVisuals.metrics(font);
         this.catalog = catalog;
         this.items = items;
-        search = new GuiTextField(font, x, y, width, 18);
+        search = new GuiDgrTextField(font, x, y, width, 18);
         search.setMaxStringLength(128);
         selectedPackage = catalog.getPackageChoices()
             .isEmpty() ? ""

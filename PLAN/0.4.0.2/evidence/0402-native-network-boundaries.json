@@ -1,0 +1,256 @@
+{
+  "status": "PASS_ASSERTED_NATIVE_BOUNDARIES",
+  "evidence_layers": [
+    "N",
+    "C",
+    "S"
+  ],
+  "inputs": {
+    "scenario": "MixedAuthored",
+    "runtime_sha256": "4D289CCEB9F623579770CB44BB90AB116888BF9B51D5FC03ECC9BFF247E3BC57",
+    "driver_sha256": "D644D69BDF15E55F2C09EBF0A2F5DD20DE451787AB2EA1CD4471285909065F9A",
+    "seed": 40202,
+    "heap_mib": 512
+  },
+  "ordinary_author_packages": [
+    {
+      "name": "0400 库存验收.dgrs",
+      "sha256": "DD020AE635F999F0D5EED7C4E7AE4DB49F44C5CAEF28C9A73BCFCA7D9B6E695A",
+      "bytes": 13801
+    },
+    {
+      "name": "故事组（1）.dgrs.g",
+      "sha256": "6474CE58D92B4DC8F102290957B75B741FDA2917DA261A1020A450C5039D11CB",
+      "bytes": 11863
+    }
+  ],
+  "test_only_load_packages": [
+    {
+      "name": "ST-2222-2222-2222-EAPP.dgrs",
+      "bytes": 2736,
+      "sha256": "9D9E0F4DE85ACC6FA6F74664539845E609FF45B35D61624E70865CBF81A1F7BA"
+    },
+    {
+      "name": "ST-2222-2222-2222-EAPQ.dgrs",
+      "bytes": 2952,
+      "sha256": "8472D8218385064B7133F65F44EF4F4F22BAAE868FDBE4EDACA69DF00BCB085B"
+    },
+    {
+      "name": "ST-AAAA-BBBB-CCCC-DDDD.dgrs",
+      "bytes": 2850,
+      "sha256": "50C04419532B1CB58536E36B289BB55233935F3EAEDC96BED1E331DBC8F9F550"
+    }
+  ],
+  "formal_dependencies": [
+    {
+      "name": "+unimixins-all-1.7.10-0.3.1.jar",
+      "bytes": 5519796,
+      "sha256": "AD0EA4F92DAF7BF7EC5C10E16258425E47929126954AEA5D80DF69CE26CD7318"
+    },
+    {
+      "name": "CustomNPC-Plus-1.11.1-fixed-v1.jar",
+      "bytes": 17844086,
+      "sha256": "48AB697E63E8CC059592597F88A9FA00FAD23E447B553996E1EF04510BE2F2D3"
+    }
+  ],
+  "native_single_chain": {
+    "tick": 28168,
+    "network": 2,
+    "peak_network": 2,
+    "media_in_flight": 0,
+    "queue_pending": 0,
+    "players": [
+      {
+        "name": "DGR402ClientG",
+        "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+        "inventory": 0,
+        "receipts": 2,
+        "xp": 7,
+        "dimension": 0,
+        "task_status": "SETTLED",
+        "task_run": 1791535805178,
+        "progress": {
+          "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+          "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+          "node_a96eeee3cca8417bab363bba391a36a5": 2,
+          "node_f576e9772cf04d3a84c911888744bd62": 2
+        },
+        "story_run": 1791535760477,
+        "story_status": "TERMINATED",
+        "entity_changes": 1
+      },
+      {
+        "name": "DGR402ClientF",
+        "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+        "inventory": 0,
+        "receipts": 2,
+        "xp": 7,
+        "dimension": 0,
+        "task_status": "SETTLED",
+        "task_run": 1791535733489,
+        "progress": {
+          "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+          "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+          "node_a96eeee3cca8417bab363bba391a36a5": 2,
+          "node_f576e9772cf04d3a84c911888744bd62": 2
+        },
+        "story_run": 1791535538114,
+        "story_status": "TERMINATED",
+        "entity_changes": 7
+      }
+    ],
+    "source_leases": [
+      {
+        "story": "ST-4EUB-29DN-V8J6-VTY3",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EAPP",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EAPQ",
+        "leases": 1
+      },
+      {
+        "story": "ST-AAAA-BBBB-CCCC-DDDD",
+        "leases": 1
+      },
+      {
+        "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+        "leases": 1
+      },
+      {
+        "story": "ST-EEEE-FFFF-GGGG-HHHH",
+        "leases": 1
+      },
+      {
+        "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+        "leases": 1
+      }
+    ]
+  },
+  "interleaving": [
+    {
+      "name": "DGR402ClientG",
+      "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+      "inventory": 2,
+      "receipts": 0,
+      "xp": 0,
+      "dimension": 0,
+      "task_status": "ACTIVE",
+      "task_run": 1791535805178,
+      "progress": {
+        "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+        "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+        "node_a96eeee3cca8417bab363bba391a36a5": 2,
+        "node_f576e9772cf04d3a84c911888744bd62": 0
+      },
+      "story_run": 1791535760477,
+      "story_status": "ACTIVE",
+      "entity_changes": 1
+    },
+    {
+      "name": "DGR402ClientF",
+      "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+      "inventory": 0,
+      "receipts": 2,
+      "xp": 7,
+      "dimension": 0,
+      "task_status": "SETTLED",
+      "task_run": 1791535733489,
+      "progress": {
+        "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+        "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+        "node_a96eeee3cca8417bab363bba391a36a5": 2,
+        "node_f576e9772cf04d3a84c911888744bd62": 2
+      },
+      "story_run": 1791535538114,
+      "story_status": "TERMINATED",
+      "entity_changes": 7
+    }
+  ],
+  "late_media": {
+    "inflight_requests": 10,
+    "maximum_source_leases": 11,
+    "released_requests": 0,
+    "released_source_leases": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "client_after_switch": {
+      "status": "OBSERVED",
+      "tick": 23720,
+      "world_loaded": true,
+      "world_identity": 990395680,
+      "connection_identity": 1875660455,
+      "gui": "",
+      "active": true,
+      "queue_pending": 0,
+      "queue_accepted": 638,
+      "queue_completed": 638,
+      "queue_cancelled": 0,
+      "queue_failed": 0,
+      "frame_overflow": 0,
+      "media_active": 0,
+      "media_retired": 0,
+      "media_pins": 3,
+      "media_bundles": 1,
+      "media_downloading_bundles": 0,
+      "media_queued_bundles": 0,
+      "media_network_requests": 17,
+      "media_cache_hits": 0,
+      "texture_count": 0,
+      "texture_pending": 0,
+      "texture_uploads": 0,
+      "texture_pixels": 0
+    }
+  },
+  "reconnect_count": 10,
+  "replacement_connection_identities": [
+    1875660455,
+    349449926,
+    1524438560,
+    1238298886,
+    234526867,
+    248125806,
+    157821415,
+    1905012547,
+    1480995600,
+    221948403
+  ],
+  "death_respawn": {
+    "before_entity_changes": 6,
+    "after_entity_changes": 7,
+    "task_run": 1791535733489,
+    "progress": {
+      "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+      "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+      "node_a96eeee3cca8417bab363bba391a36a5": 2,
+      "node_f576e9772cf04d3a84c911888744bd62": 0
+    }
+  },
+  "no_content_reload": "same run/progress/inventory/XP/receipts for both native players",
+  "scope_limits": [
+    "single authored package business chain passed; group container only loaded in this evidence",
+    "tiny three media assets; large media and 3/10 pressure not proved here",
+    "direct dimension fixture missing vanilla portal cooldown; initial attempt NOT_PASS; corrected driver built for repeat",
+    "60 minute driver still running, not claimed complete",
+    "human audio perception NOT_RUN"
+  ],
+  "raw_evidence": [
+    "late-media-F-after.json",
+    "late-media-F-inflight.json",
+    "late-media-X-inflight.json",
+    "late-media-X-released.json",
+    "late-media-Y-after.json",
+    "native-reconnects.jsonl",
+    "native-death-before-respawn.json",
+    "native-death-after-respawn.json"
+  ]
+}

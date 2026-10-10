@@ -33,12 +33,46 @@ public final class GramophoneLocalServer {
         });
     private static final Map<Path, GramophoneBlobStore> STORES = new HashMap<Path, GramophoneBlobStore>(); // worker
                                                                                                            // only
-    private static final Map<UUID, Upload> UPLOADS = new HashMap<UUID, Upload>(); // server thread
-    private static final Set<String> BUSY = new HashSet<String>();
-    private static final Set<String> COMMITTING = new HashSet<String>();
+    private static final Map<UUID, Upload> UPLOADS = new java.util.concurrent.ConcurrentHashMap<UUID, Upload>();
+    private static final Set<String> BUSY = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final Set<String> COMMITTING = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final ThreadLocal<MainThreadScheduler.Scope> IO_SCOPE = new ThreadLocal<>();
     private static Path mediaRoot;
     private static long lastMaintenance;
-    private static boolean maintenancePending;
+    private static volatile boolean maintenancePending;
+
+    private static void executeIO(Runnable action) {
+        MainThreadScheduler.Scope scope = MainThreadScheduler.serverScope();
+        IO.execute(() -> {
+            IO_SCOPE.set(scope);
+            try {
+                action.run();
+            } finally {
+                IO_SCOPE.remove();
+            }
+        });
+    }
+
+    private static void completion(Runnable action, Runnable cancel) {
+        MainThreadScheduler.Scope scope = IO_SCOPE.get();
+        if (scope == null) scope = MainThreadScheduler.serverScope();
+        final MainThreadScheduler.Scope owner = scope;
+        MainThreadScheduler
+            .completeServer(owner, action, () -> { if (owner == MainThreadScheduler.serverScope()) cancel.run(); });
+    }
+
+    public static void stop() {
+        for (Map.Entry<UUID, Upload> entry : UPLOADS.entrySet()) cancel(entry.getKey(), entry.getValue());
+        UPLOADS.clear();
+        BUSY.clear();
+        COMMITTING.clear();
+        maintenancePending = false;
+        try {
+            executeIO(STORES::clear);
+        } catch (java.util.concurrent.RejectedExecutionException failure) {
+            darkgrey.rpg.DarkGreyRpg.LOG.warn("Gramophone store cleanup delayed", failure);
+        }
+    }
 
     private static final class Upload {
 
@@ -204,7 +238,7 @@ public final class GramophoneLocalServer {
                             storage.install(active.temporary, info.hash);
                             active.temporary = null;
                         }
-                        MainThreadScheduler.scheduleServer(() -> {
+                        completion(() -> {
                             BUSY.remove(busyKey);
                             if (active.cancelled || UPLOADS.get(id) != active) return;
                             try {
@@ -217,6 +251,10 @@ public final class GramophoneLocalServer {
                                 cancel(id, active);
                                 errorNow(player, active.request, e.getMessage());
                             }
+                        }, () -> {
+                            BUSY.remove(busyKey);
+                            cancel(id, active);
+                            errorNow(player, active.request, "完成请求未执行，请重新打开设备核对。");
                         });
                     } else {
                         packet.operation = GramophoneMediaPacket.ACK;
@@ -225,7 +263,7 @@ public final class GramophoneLocalServer {
                         reply(player, packet);
                     }
                 } catch (Exception e) {
-                    MainThreadScheduler.scheduleServer(() -> cancel(id, active));
+                    completion(() -> cancel(id, active), () -> cancel(id, active));
                     error(player, packet, e);
                 }
             }, player, packet);
@@ -236,7 +274,7 @@ public final class GramophoneLocalServer {
 
     private static void submit(Runnable task, EntityPlayerMP player, GramophoneMediaPacket packet) {
         try {
-            IO.execute(task);
+            executeIO(task);
         } catch (java.util.concurrent.RejectedExecutionException e) {
             BUSY.remove(player.getUniqueID() + ":" + packet.token);
             errorNow(player, packet, "媒体队列已满，请稍后重试");
@@ -244,10 +282,13 @@ public final class GramophoneLocalServer {
     }
 
     private static void reply(EntityPlayerMP player, GramophoneMediaPacket packet) {
-        MainThreadScheduler.scheduleServer(() -> {
+        completion(() -> {
             BUSY.remove(player.getUniqueID() + ":" + packet.token);
             if (player.playerNetServerHandler.netManager.isChannelOpen())
                 GramophoneNetwork.CHANNEL.sendTo(packet, player);
+        }, () -> {
+            BUSY.remove(player.getUniqueID() + ":" + packet.token);
+            errorNow(player, packet, "媒体回应未完成，请重试。");
         });
     }
 
@@ -275,7 +316,7 @@ public final class GramophoneLocalServer {
         upload.cancelled = true;
         if (UPLOADS.get(player) == upload) UPLOADS.remove(player);
         try {
-            IO.execute(() -> { if (upload.temporary != null) GramophoneFiles.retire(upload.temporary); });
+            executeIO(() -> { if (upload.temporary != null) GramophoneFiles.retire(upload.temporary); });
         } catch (java.util.concurrent.RejectedExecutionException ignored) { /*
                                                                              * Stale incoming files are recovered on
                                                                              * next startup.
@@ -292,13 +333,13 @@ public final class GramophoneLocalServer {
             Set<String> pins = new HashSet<String>();
             for (Upload upload : UPLOADS.values()) pins.add(upload.request.hash);
             try {
-                IO.execute(() -> {
+                executeIO(() -> {
                     try {
                         for (GramophoneBlobStore storage : STORES.values()) storage.collect(pins);
                     } catch (IOException e) {
                         darkgrey.rpg.DarkGreyRpg.LOG.warn("Gramophone delayed collection failed", e);
                     } finally {
-                        MainThreadScheduler.scheduleServer(() -> maintenancePending = false);
+                        completion(() -> maintenancePending = false, () -> maintenancePending = false);
                     }
                 });
             } catch (java.util.concurrent.RejectedExecutionException e) {
@@ -314,10 +355,10 @@ public final class GramophoneLocalServer {
         config.revision = tile.revision + 1;
         Path path = storePath(tile.getWorldObj());
         try {
-            IO.execute(() -> {
+            executeIO(() -> {
                 try {
                     store(path).commit(config);
-                    MainThreadScheduler.scheduleServer(() -> {
+                    completion(() -> {
                         COMMITTING.remove(key);
                         if (tile.isInvalid()) {
                             removed(tile);
@@ -338,9 +379,12 @@ public final class GramophoneLocalServer {
                                 GramophoneNetwork.CHANNEL.sendTo(transfer, player);
                             }
                         }
+                    }, () -> {
+                        COMMITTING.remove(key);
+                        MainThreadScheduler.rejectServer(player);
                     });
                 } catch (Exception e) {
-                    MainThreadScheduler.scheduleServer(() -> {
+                    completion(() -> {
                         COMMITTING.remove(key);
                         config.revision = tile.revision;
                         config.operation = GramophonePacket.RESULT;
@@ -348,6 +392,9 @@ public final class GramophoneLocalServer {
                         if (player.playerNetServerHandler.netManager.isChannelOpen())
                             GramophoneNetwork.CHANNEL.sendTo(config, player);
                         if (transfer != null) errorNow(player, transfer, readable(e));
+                    }, () -> {
+                        COMMITTING.remove(key);
+                        MainThreadScheduler.rejectServer(player);
                     });
                 }
             });
@@ -378,20 +425,26 @@ public final class GramophoneLocalServer {
         GramophonePacket current = tile.snapshot(GramophonePacket.STATE);
         Path path = storePath(tile.getWorldObj());
         try {
-            IO.execute(() -> {
+            executeIO(() -> {
                 try {
                     GramophonePacket saved = store(path).saved(current.key());
-                    MainThreadScheduler.scheduleServer(() -> {
+                    completion(() -> {
                         tile.restoring = false;
                         if (tile.isInvalid() || !GramophoneServer.loaded(tile)) return;
                         if (saved != null && saved.revision >= tile.revision) apply(tile, saved);
                         tile.ready = true;
+                    }, () -> {
+                        tile.restoring = false;
+                        tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                     });
                 } catch (Exception e) {
-                    MainThreadScheduler.scheduleServer(() -> {
+                    completion(() -> {
                         tile.restoring = false;
                         tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
                         tile.recoveryError = readable(e);
+                    }, () -> {
+                        tile.restoring = false;
+                        tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                     });
                     darkgrey.rpg.DarkGreyRpg.LOG.error("Gramophone durable configuration recovery failed", e);
                 }
@@ -410,7 +463,7 @@ public final class GramophoneLocalServer {
         tombstone.revision++;
         Path path = storePath(tile.getWorldObj());
         try {
-            IO.execute(() -> {
+            executeIO(() -> {
                 try {
                     store(path).commit(tombstone);
                     store(path).collect(new HashSet<String>());
@@ -429,7 +482,7 @@ public final class GramophoneLocalServer {
         for (Map.Entry<UUID, Upload> entry : new HashMap<UUID, Upload>(UPLOADS).entrySet())
             if (entry.getValue().store.equals(path)) cancel(entry.getKey(), entry.getValue());
         try {
-            IO.execute(() -> STORES.remove(path));
+            executeIO(() -> STORES.remove(path));
         } catch (java.util.concurrent.RejectedExecutionException e) {
             darkgrey.rpg.DarkGreyRpg.LOG.warn("Gramophone store close queue full");
         }

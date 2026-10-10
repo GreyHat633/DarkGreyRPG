@@ -153,6 +153,8 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     private RuntimeException readFailure;
     private CanonicalSessionResourceResolver boundSessionResolver;
     private CanonicalStoryResourceResolver boundStoryResolver;
+    /** Owned by this SavedData only; immutable content contains no World or player references. */
+    private darkgrey.rpg.project.ProjectSnapshot boundProject;
     /** Idempotency keys for terminal Flow routing; keyed by player, Story run and public port. */
     private final Set<String> claimedStoryTerminalRoutes = new HashSet<String>();
     private final Set<String> pendingStoryTerminalRoutes = new HashSet<String>();
@@ -248,6 +250,16 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         bindInternal(sessionResolver, storyResolver, true);
     }
 
+    /** Production resource fence. A fresh resolver/service is not a new installed snapshot. */
+    public synchronized void bindProject(darkgrey.rpg.project.ProjectSnapshot project, boolean discardUnavailable) {
+        requireReadable();
+        if (project == null) throw new IllegalArgumentException("Project snapshot is required.");
+        if (bound && pendingRaw == null && boundProject == project) return;
+        bindInternal(project::getCanonicalSession, project::getCanonicalStory, discardUnavailable);
+        // Publish only after the full replacement has validated and committed.
+        boundProject = project;
+    }
+
     private void bindInternal(CanonicalSessionResourceResolver resolver, CanonicalStoryResourceResolver storyResolver) {
         bindInternal(resolver, storyResolver, false);
     }
@@ -327,6 +339,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         pendingRaw = null;
         boundSessionResolver = resolver;
         boundStoryResolver = storyResolver;
+        boundProject = null;
         bound = true;
         if (discarded) markDirty();
     }
@@ -401,10 +414,10 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         if (storyStore.getSnapshot(playerUuid, resource.getId()) == null
             && !startDisposition(playerUuid, resource.getId()).isEligible())
             throw new IllegalStateException("Retained Story history blocks this Start.");
-        NBTTagCompound before = persistedState();
         boolean restart = storyStore.startDisposition(playerUuid, resource.getId())
             == darkgrey.rpg.story.canonical.runtime.CanonicalStoryStartDisposition.REPEATABLE_RESTART;
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, resource.getId());
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstanceSnapshot result = candidate
             .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime)
             .snapshot();
@@ -415,8 +428,7 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             store.cancelByStory(playerUuid, resource.getId());
             continuations = withoutContinuation(playerUuid, resource.getId());
         }
-        storyStore = candidate;
-        markWorldIfChanged(before);
+        commitStory(candidate, before);
         return result;
     }
 
@@ -556,12 +568,11 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized CanonicalStoryInstanceSnapshot setStoryLogicInputs(UUID playerUuid, String storyId,
         Map<String, Boolean> values, long eventTime) {
         requireStoryBound();
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, storyId);
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
         instance.setLogicInputs(values, eventTime);
-        storyStore = candidate;
-        markWorldIfChanged(before);
+        commitStory(candidate, before);
         return instance.snapshot();
     }
 
@@ -573,6 +584,11 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
     public synchronized List<CanonicalStoryInstanceSnapshot> storySnapshots() {
         requireBound();
         return storyStore.snapshots();
+    }
+
+    public synchronized List<CanonicalStoryInstanceSnapshot> storySnapshots(UUID playerUuid) {
+        requireBound();
+        return storyStore.snapshots(playerUuid);
     }
 
     public synchronized boolean getStorySessionActivationLogic(UUID playerUuid, String storyId) {
@@ -614,64 +630,60 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
         requireStoryBound();
         CanonicalStoryPendingContinuation continuation = findContinuation(playerUuid, storyId);
         if (continuation == null) throw new IllegalStateException("Pending Story continuation does not exist.");
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, storyId);
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
         instance.resumeSession(continuation, eventTime);
         List<CanonicalStoryPendingContinuation> remaining = withoutContinuation(playerUuid, storyId);
-        storyStore = candidate;
         continuations = remaining;
-        markWorldIfChanged(before);
+        commitStory(candidate, before);
+        markDirty(); // Consuming the durable handoff is also a world-state change.
         return instance.snapshot();
     }
 
     public synchronized CanonicalStoryInstanceSnapshot resumeStoryTask(UUID playerUuid, String storyId,
         CanonicalTaskInstanceSnapshot task, long eventTime) {
         requireStoryBound();
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, storyId);
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
         instance.resumeTask(task, eventTime);
-        storyStore = candidate;
-        markWorldIfChanged(before);
+        commitStory(candidate, before);
         return instance.snapshot();
     }
 
     public synchronized CanonicalStoryInstanceSnapshot completeStoryTitle(UUID playerUuid, String storyId,
         String nodeId, long eventTime) {
         requireStoryBound();
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, storyId);
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
         instance.completeTitle(nodeId, eventTime);
-        storyStore = candidate;
-        markWorldIfChanged(before);
+        commitStory(candidate, before);
         return instance.snapshot();
     }
 
     public synchronized CanonicalStoryInstanceSnapshot completeStoryAction(UUID playerUuid, String storyId,
         String actionNodeId, long eventTime) {
         requireStoryBound();
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, storyId);
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
         instance.completeAction(actionNodeId, eventTime);
-        storyStore = candidate;
-        markWorldIfChanged(before);
+        commitStory(candidate, before);
         return instance.snapshot();
     }
 
     public synchronized boolean markStoryError(UUID playerUuid, String storyId, long eventTime) {
         requireStoryBound();
-        NBTTagCompound before = persistedState();
-        CanonicalStoryInstanceStore candidate = cloneStoryStore();
+        CanonicalStoryInstanceStore candidate = cloneStoryStore(playerUuid, storyId);
+        NBTTagCompound before = candidate.writeToNbt();
         CanonicalStoryInstance instance = requireStoryInstance(candidate, playerUuid, storyId);
         boolean changed = instance.markError(eventTime);
         if (changed) {
-            storyStore = candidate;
             store.cancelByStory(playerUuid, storyId);
             continuations = withoutContinuation(playerUuid, storyId);
-            markWorldIfChanged(before);
+            commitStory(candidate, before);
         }
         return changed;
     }
@@ -1175,10 +1187,22 @@ public final class CanonicalSessionSavedData extends WorldSavedData {
             throw new IllegalStateException("Canonical Story data is not bound to a resource resolver.");
     }
 
-    private CanonicalStoryInstanceStore cloneStoryStore() {
+    private CanonicalStoryInstanceStore cloneStoryStore(UUID player, String storyId) {
         CanonicalStoryInstanceStore result = new CanonicalStoryInstanceStore();
-        result.readFromNbt(storyStore.writeToNbt(), boundStoryResolver);
+        CanonicalStoryInstanceSnapshot snapshot = storyStore.getSnapshot(player, storyId);
+        if (snapshot != null) result.readFromNbt(
+            CanonicalStoryInstanceNbtCodec.encode(java.util.Collections.singletonList(snapshot)),
+            boundStoryResolver);
         return result;
+    }
+
+    private void commitStory(CanonicalStoryInstanceStore candidate, NBTTagCompound before) {
+        if (before.equals(candidate.writeToNbt())) return;
+        for (CanonicalStoryInstanceSnapshot snapshot : candidate.snapshots()) {
+            storyStore.replaceValidated(candidate.get(snapshot.getPlayerUuid(), snapshot.getStoryId()));
+            storyHistory.observe(snapshot);
+        }
+        markDirty();
     }
 
     private static void restoreStories(CanonicalStoryInstanceStore target,

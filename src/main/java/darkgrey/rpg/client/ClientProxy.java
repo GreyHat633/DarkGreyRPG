@@ -54,6 +54,13 @@ public final class ClientProxy extends CommonProxy {
     }
 
     @Override
+    public void rejectClientQueue(Object connection) {
+        if (isCurrentClientConnection(connection))
+            ((net.minecraft.client.network.NetHandlerPlayClient) connection).getNetworkManager()
+                .closeChannel(new net.minecraft.util.ChatComponentText("DarkGrey RPG 客户端请求队列已满或请求失败，请重新连接。"));
+    }
+
+    @Override
     public void acceptCreatorSnapshot(int kind, net.minecraft.nbt.NBTTagCompound data) {
         if (kind == 0) CreatorInspectClient.accept(data);
         else CanonicalTaskClientStore.accept(data);

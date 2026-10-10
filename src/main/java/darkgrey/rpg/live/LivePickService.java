@@ -21,6 +21,10 @@ public final class LivePickService {
 
     private final Map<UUID, PickRequest> requests = new ConcurrentHashMap<UUID, PickRequest>();
 
+    public void stop() {
+        requests.clear();
+    }
+
     public void begin(EntityPlayerMP player, String kind, String requestId, LiveMessageSink sink) {
         requests.put(player.getUniqueID(), new PickRequest(kind, requestId, sink));
         ChatMessages.info(player, instructions(kind));

@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-10-09T13:31:23.7582291+08:00",
+  "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+  "lingering_cim_records": [
+    {
+      "pid": 8348,
+      "status": "CLOSED_DELETING_KERNEL_REMNANT",
+      "exit_code": 0,
+      "is_process_deleting": true,
+      "has_windows": false,
+      "user_confirmed_closed": true
+    }
+  ],
+  "result": "PASS_TARGET_EXITED"
+}

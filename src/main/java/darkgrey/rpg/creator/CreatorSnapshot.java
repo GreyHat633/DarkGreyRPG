@@ -63,14 +63,14 @@ public final class CreatorSnapshot implements IMessage {
         @Override
         public IMessage onMessage(final CreatorSnapshot message, MessageContext context) {
             final Object connection = context.netHandler;
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
                     if (!DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;
                     DarkGreyRpg.proxy.acceptCreatorSnapshot(message.kind, message.data);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

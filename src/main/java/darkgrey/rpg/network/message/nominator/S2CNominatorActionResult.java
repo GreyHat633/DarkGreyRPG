@@ -37,12 +37,13 @@ public final class S2CNominatorActionResult implements IMessage {
     public static final class Handler implements IMessageHandler<S2CNominatorActionResult, IMessage> {
 
         public IMessage onMessage(final S2CNominatorActionResult m, MessageContext ctx) {
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            final Object connection = ctx.netHandler;
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 public void run() {
                     DarkGreyRpg.proxy.acceptNominatorResult(m.data, m.catalog);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

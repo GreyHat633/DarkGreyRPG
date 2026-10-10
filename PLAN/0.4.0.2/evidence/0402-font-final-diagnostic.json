@@ -1,0 +1,124 @@
+{
+  "status": "PASS_FINAL_DIAGNOSTIC_TEXT_AND_QUERY",
+  "queries": [
+    {
+      "client": "ClientF",
+      "font_diagnostic_flags_enabled": true,
+      "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+      "driver_sha256": "A2EF1DF59EAF99FD73FBE8FE751215F1209F01C54F11001F727BBA69F12D0062",
+      "scope": "client monotonic pre-encode to accepted matching response, physical mouse-down excluded",
+      "correct_response_ids": true,
+      "samples": 50,
+      "p50_ms": 149.6049,
+      "p95_ms": 149.9064,
+      "p99_ms": 151.2812,
+      "max_ms": 151.2812,
+      "raw": {
+        "file": "font-final-3756-diagnostic.csv",
+        "bytes": 2541,
+        "sha256": "AE7821B330CC7EEECBC6624AE1212DDCEC925834076F9DB5C1A1C4E07299E22B"
+      },
+      "states": {
+        "file": "font-final-3756-diagnostic.json",
+        "bytes": 48139,
+        "sha256": "66D64F5E84D49280D88131A592B7D4EEB602C379DB9E96CFB848A439C1469BD7"
+      },
+      "screenshots": [
+        {
+          "file": "font-final-3756-diagnostic.png",
+          "bytes": 43178,
+          "sha256": "8A0746F7D1FCAA66804547EE6116DCC2B27900EC4A93165DACDFE651032DF796"
+        },
+        {
+          "file": "font-final-3756-diagnostic-task.png",
+          "bytes": 43326,
+          "sha256": "F60208D9C80BAD7E3F545D1EBF5F14281B16046589C0326C41517ABE4D710965"
+        }
+      ],
+      "interaction_gate_pass": true
+    },
+    {
+      "client": "ClientG",
+      "font_diagnostic_flags_enabled": false,
+      "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+      "driver_sha256": "A2EF1DF59EAF99FD73FBE8FE751215F1209F01C54F11001F727BBA69F12D0062",
+      "scope": "client monotonic pre-encode to accepted matching response, physical mouse-down excluded",
+      "correct_response_ids": true,
+      "samples": 50,
+      "p50_ms": 149.7239,
+      "p95_ms": 150.1056,
+      "p99_ms": 150.6052,
+      "max_ms": 150.6052,
+      "raw": {
+        "file": "font-final-3756-production-diagnostic.csv",
+        "bytes": 2541,
+        "sha256": "05CECD777EE013D911D17D2188775E88C06CF7BC8756A9B3F10C7676BAF4C4B5"
+      },
+      "states": {
+        "file": "font-final-3756-production-diagnostic.json",
+        "bytes": 48087,
+        "sha256": "D08A510BBF7F3D0D8E0CCEACAA688DF39191F9895879E131AB1539E20D66CDF1"
+      },
+      "screenshots": [
+        {
+          "file": "font-final-3756-production-diagnostic.png",
+          "bytes": 43641,
+          "sha256": "EC668454456061DDC9CCDC32604EB5F0688E4A53B772BD94EFF0DD0548190EA2"
+        },
+        {
+          "file": "font-final-3756-production-diagnostic-task.png",
+          "bytes": 43578,
+          "sha256": "04499829A1370AE84CE52D51108BECAA061AA46255835CBCBCBE2F9C774B72A4"
+        }
+      ],
+      "interaction_gate_pass": true
+    }
+  ],
+  "native_frames": [
+    {
+      "scene": "final-diagnostic-task-hot",
+      "font_diagnostic_flags_enabled": true,
+      "samples": 2431,
+      "p50_ms": 16.6666,
+      "p95_ms": 16.8352,
+      "p99_ms": 16.9742,
+      "max_ms": 18.0804,
+      "peaks_250_ms": [],
+      "raw": {
+        "file": "frames-final-diagnostic-task-hot.csv",
+        "bytes": 102102,
+        "sha256": "0342E99FA6B3D064B7691D811663061A3DA64AA2548F31435939467B85401B28"
+      },
+      "metadata": {
+        "file": "frames-final-diagnostic-task-hot.json",
+        "bytes": 2407,
+        "sha256": "BAB892B5470C3DC15CB8F290F75C8334C789823A36452E1EE81E011F872DA6D1"
+      },
+      "scope": "Foreground stable diagnostic Task detail for 40 seconds; frame interval includes frame limiting/vsync. No cold/hot media comparison or equal-scene baseline is claimed."
+    },
+    {
+      "scene": "final-production-diagnostic-task-hot",
+      "font_diagnostic_flags_enabled": false,
+      "samples": 2400,
+      "p50_ms": 16.6668,
+      "p95_ms": 16.7833,
+      "p99_ms": 16.8869,
+      "max_ms": 17.5834,
+      "peaks_250_ms": [],
+      "raw": {
+        "file": "frames-final-production-diagnostic-task-hot.csv",
+        "bytes": 98400,
+        "sha256": "123BC1D5A4603AE714F0BBFBAA2E571B052D940E37889EB8042C27FA833C5E1E"
+      },
+      "metadata": {
+        "file": "frames-final-production-diagnostic-task-hot.json",
+        "bytes": 2415,
+        "sha256": "832CE1BAD7708C17D10A4D85CBD91CD04D9065C05D094E5C81B0546AB8E768A0"
+      },
+      "scope": "Foreground stable diagnostic Task detail for 40 seconds; frame interval includes frame limiting/vsync. No cold/hot media comparison or equal-scene baseline is claimed."
+    }
+  ],
+  "other_pages": "See 0402-font-native-evidence.json and 0402-final-source-provenance.json: all font/UI entries are identical to the fully reviewed frozen font checkpoint.",
+  "overall_version_acceptance": "IN_PROGRESS",
+  "release_created": false
+}

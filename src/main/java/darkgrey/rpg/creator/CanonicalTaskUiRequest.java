@@ -39,7 +39,7 @@ public final class CanonicalTaskUiRequest implements IMessage {
         @Override
         public IMessage onMessage(final CanonicalTaskUiRequest message, MessageContext context) {
             final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 @Override
                 public void run() {
@@ -50,7 +50,7 @@ public final class CanonicalTaskUiRequest implements IMessage {
                     if (player.playerNetServerHandler == null || player.isDead) return;
                     CanonicalTaskPresentationServer.push(player, true);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectServer(player));
             return null;
         }
     }

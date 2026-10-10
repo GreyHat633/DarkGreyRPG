@@ -21,6 +21,11 @@ public final class CanonicalStoryEventAdapter {
         this.stories = stories;
     }
 
+    public void stop() {
+        regions.clear();
+        stories.stop();
+    }
+
     @SubscribeEvent
     public void onEntityInteract(EntityInteractEvent event) {
         if (!(event.entityPlayer instanceof EntityPlayerMP)) return;

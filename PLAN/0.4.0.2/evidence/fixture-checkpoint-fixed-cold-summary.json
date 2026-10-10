@@ -1,0 +1,52 @@
+{
+  "status": "PASS_DRIVER_ASSERTIONS_PERFORMANCE_RECORDED",
+  "exit_code": 0,
+  "at": "2026-10-10T02:00:17.1604726+08:00",
+  "inputs": {
+    "pid": 51320,
+    "started": "2026-10-10T01:59:07.7069628+08:00",
+    "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-mixed-driver-checkpoint-validation",
+    "stage": "checkpoint-fixed-cold",
+    "scenario": "MixedLifecycle",
+    "baseline": false,
+    "args": [
+      "-Xms128m",
+      "-Xmx512m",
+      "-Ddgr0402.ticks=1200",
+      "-Ddgr0402.warmupTicks=0",
+      "-Ddgr0402.active=10",
+      "-Ddgr0402.users=4",
+      "-Ddgr0402.nodes=20",
+      "-Ddgr0402.offline=0",
+      "-Ddgr0402.network=0",
+      "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-mixed-driver-checkpoint-validation\"",
+      "-Ddgr0402.profileDrivers=true",
+      "-Ddgr0402.scenario=MixedLifecycle",
+      "-jar",
+      "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+      "nogui"
+    ],
+    "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+    "driver_sha256": "A1E16F50AAD5B5D8F265EB57ED0E66227862739B994C354A7F9A66D2EA7EF27A",
+    "seed": 40202,
+    "logical_users": 4,
+    "actual_network_required": 0,
+    "active_tasks": 10,
+    "nodes": 20,
+    "offline_instances": 0,
+    "heap_mib": 512,
+    "measurement_minutes": 1,
+    "warmup_minutes": 0
+  },
+  "complete_tick": {
+    "samples": 1200,
+    "p95_ns": 2421400,
+    "p99_ns": 75967800,
+    "max_ns": 235691700,
+    "scope": "full MC tick entry through return"
+  },
+  "reference_gate_pass": false,
+  "has_250ms_spike": false,
+  "has_500ms_spike": false,
+  "world_data_deleted": false
+}

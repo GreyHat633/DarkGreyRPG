@@ -1,0 +1,138 @@
+{
+  "status": "PASS_BOUNDED_TEST_OUTPUT_SHARING",
+  "production_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "failed_long": {
+    "status": "FAIL_TEST_HEARTBEAT_FILE_REPLACEMENT",
+    "last_observed_tick": 17210,
+    "scope": "This aborted long run is not included as completed final acceptance or performance."
+  },
+  "failed_first_repair_probe": "The controlled lock exposed the second direct heartbeat writer in the Mixed test verifier; that attempt remains failed.",
+  "short_sharing": {
+    "native_players": 2,
+    "ticks": 2400,
+    "controlled_reader_hold_ms": 10,
+    "reader_attempts": 400,
+    "retry_events": 19,
+    "retry_counts": [
+      2,
+      7,
+      7,
+      5,
+      1,
+      5,
+      2,
+      4,
+      5,
+      13,
+      6,
+      7,
+      8,
+      4,
+      6,
+      6,
+      5,
+      6,
+      4
+    ],
+    "all_business_assertions": "PASS"
+  },
+  "persistent_sharing": {
+    "injected_hold_seconds": 2,
+    "status": "EXPECTED_TEST_FAILURE_OBSERVED",
+    "finite_retries_exhaust_then_propagate": true,
+    "stop_maintenance_references_zero": true
+  },
+  "fix_scope": "Only synthetic test-output files. Atomic replacement keeps the prior complete observation visible; at most 19 one-millisecond waits, then failure propagates. Full-tick scopes include retry time. Shared native readers allow FILE_SHARE_DELETE. Production JAR unchanged.",
+  "raw": [
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-pass/observation-sharing-pass-summary.json",
+      "bytes": 1812,
+      "sha256": "764596700557594179565DE266E86834A3EBE9199A39DF617E615BB367298210"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-pass/authored-result.json",
+      "bytes": 223,
+      "sha256": "9D0D0B9E70BBEC63E67DF381830513FD9F81765610F3A671FC76CD2098FAF848"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-pass/journal-cache-stop.json",
+      "bytes": 61,
+      "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-pass/observation-sharing-pass-stdout.log",
+      "bytes": 25401,
+      "sha256": "94742D770754B5EAFF4C3AA11D85B1FCAB7B8093E6FB89DC0934E07F1B5DA29E"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-pass/observation-sharing-pass-inputs.json",
+      "bytes": 1295,
+      "sha256": "7A2A469313961631982598104AF416BEBFC5F1EE51DC5442E1E07AE1747A7105"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-bounded/expected-sharing-input.json",
+      "bytes": 154,
+      "sha256": "0001C848AD3EE44DF80BC3D32D58EDE5C8B04747A30905C8745F30E79A20EEE3"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-bounded/failure.txt",
+      "bytes": 237,
+      "sha256": "DC1884987E7ED08B2DFBFDC0F139B4D28E2ACD6EA04459BD20202A8A6CA00108"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-bounded/journal-cache-stop.json",
+      "bytes": 61,
+      "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-bounded/expected-sharing-exhaustion-stdout.log",
+      "bytes": 20462,
+      "sha256": "F642F3BFCFE8362313FF6A0E3F61B547135D4B423DD17815804626187009B956"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-sharing-bounded/owned-process.json",
+      "bytes": 1306,
+      "sha256": "F4B54F9D2B72958F5BB3441F0D06F74FC7587064A285DF0C0D3BDC6C9DA06233"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/linear-final-60-stdout.log",
+      "bytes": 28080,
+      "sha256": "18E20A5D4D0607DD54FFBD4093811302313FD7E41F1DC26E615A6F93F831238D"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/linear-final-60-inputs.json",
+      "bytes": 1285,
+      "sha256": "91D3D210ED789DBEC89D304CD12061A28FAA80CB6063135AE30022FB15A29CDA"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/authored-FAIL.txt",
+      "bytes": 225,
+      "sha256": "6B5A14D04D3F30F7C1F75855FC0750ACBA347D463A7764333DC33D7B1437211D"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/journal-cache-stop.json",
+      "bytes": 61,
+      "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-check/failure.txt",
+      "bytes": 192,
+      "sha256": "3E5894CE47404CA7E8D2824EA83B09B0A2C4E77F4702F60EFCE9ADD25A5F4622"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-check/observation-sharing-check-stdout.log",
+      "bytes": 23661,
+      "sha256": "EDF43191CF5F10AA74270F1450D0ED2FE8A10D2572FC79189621CDBB552A2356"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-check/owned-process.json",
+      "bytes": 1296,
+      "sha256": "8BA8484410D419D162EB4435910503D55B083A7F509CF41C13F2F884A452364B"
+    },
+    {
+      "file": ".tooling/0402/Logs/final-shared-observation-driver-build.log",
+      "bytes": 3684,
+      "sha256": "E560AD0BBFF24D38F674BB9BA284B38763E24E7D2D00544F5D42C8C5134D94D2"
+    }
+  ]
+}

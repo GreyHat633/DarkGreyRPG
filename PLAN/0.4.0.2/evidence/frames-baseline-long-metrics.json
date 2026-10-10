@@ -1,0 +1,43 @@
+{
+  "status": "MEASURED_NATIVE_HOT_AFTER_FIVE_MINUTE_WARMUP",
+  "runtime_sha256": "569E97050C4281EF0B89AED9EEDFEB18DE7C34CC4651E24530339C95D87F1629",
+  "warmup_seconds_lower_bound": 333.4717311,
+  "selection": "Last 605 batch seconds from two approved captures; capture boundary gap is not counted as observed frames.",
+  "metrics": {
+    "samples": 36002,
+    "observed_frame_intervals_seconds": 600.0095427,
+    "p50_ms": 16.6657,
+    "p95_ms": 16.8057,
+    "p99_ms": 16.9277,
+    "max_ms": 27.0923,
+    "at_least_250ms": 0,
+    "at_least_500ms": 0,
+    "peaks": []
+  },
+  "sources": [
+    {
+      "scene": "final-baseline-cold-01",
+      "raw": ".tooling/0402/Logs/frames-final-baseline-cold-01.csv",
+      "sha256": "A0B2BCD297DCDEDCAC6373F22AE637B6AF87BA721D81A59CE338547E6518EF9A",
+      "bytes": 141594,
+      "metadata": ".tooling/0402/Logs/frames-final-baseline-cold-01.json",
+      "metadata_sha256": "FD2ADFB1C49C783BD26D791A244B9DF5B5571BB0DBCABCC724C58F156262F2D7"
+    },
+    {
+      "scene": "final-baseline-hot-main-01",
+      "raw": ".tooling/0402/Logs/frames-final-baseline-hot-main-01.csv",
+      "sha256": "6588544072FB1DCCF7CD744C29CE805F84BB95AD34BE6A3621B769B5BE69267C",
+      "bytes": 1458490,
+      "metadata": ".tooling/0402/Logs/frames-final-baseline-hot-main-01.json",
+      "metadata_sha256": "192E1C2094B4D9966F1E0C5BEE6370D948E22FE0B91E56036735BF6CE8E2D607"
+    },
+    {
+      "scene": "final-baseline-hot-main-tail-01",
+      "raw": ".tooling/0402/Logs/frames-final-baseline-hot-main-tail-01.csv",
+      "sha256": "A6175D2C5278A1CF73DF4D59D8628E5D8F07960BC70FE26797D4041B0D927531",
+      "bytes": 444070,
+      "metadata": ".tooling/0402/Logs/frames-final-baseline-hot-main-tail-01.json",
+      "metadata_sha256": "9FB853CA7C4CE505645C820DB5AEE918CBC8F79829D4CE380C86596CFEEBB2A4"
+    }
+  ]
+}

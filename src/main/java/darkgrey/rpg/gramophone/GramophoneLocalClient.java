@@ -3,7 +3,6 @@ package darkgrey.rpg.gramophone;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -30,10 +29,12 @@ public final class GramophoneLocalClient {
             t.setDaemon(true);
             return t;
         });
-    private static final Map<String, Download> DOWNLOADS = new HashMap<String, Download>();
-    private static Upload upload;
+    private static final Map<String, Download> DOWNLOADS = new java.util.concurrent.ConcurrentHashMap<String, Download>();
+    private static volatile Upload upload;
 
     private static final class Download {
+
+        final MainThreadScheduler.Scope scope = MainThreadScheduler.clientScope();
 
         final GramophoneMediaPacket request;
         final Object world = Minecraft.getMinecraft().theWorld;
@@ -48,6 +49,9 @@ public final class GramophoneLocalClient {
     }
 
     private static final class Upload {
+
+        final MainThreadScheduler.Scope scope = MainThreadScheduler.clientScope();
+        volatile boolean callbackCancelled;
 
         final GramophoneMediaPacket request;
         final GramophoneMediaInfo media;
@@ -81,12 +85,19 @@ public final class GramophoneLocalClient {
                 try {
                     GramophoneFiles.directory(directory);
                     download.path = Files.createTempFile(directory, "track-", ".dgrmp3");
-                    MainThreadScheduler.scheduleClient(() -> {
+                    if (download.future.isDone()) {
+                        GramophoneFiles.retire(download.path);
+                        return;
+                    }
+                    MainThreadScheduler.completeClient(download.scope, () -> {
                         if (current(download)) GramophoneNetwork.CHANNEL.sendToServer(request);
                         else fail(download, "媒体上下文已关闭");
-                    });
+                    }, () -> fail(download, "媒体回应未执行或上下文已关闭"));
                 } catch (IOException e) {
-                    MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));
+                    MainThreadScheduler.completeClient(
+                        download.scope,
+                        () -> fail(download, e.getMessage()),
+                        () -> fail(download, "媒体回应未执行或上下文已关闭"));
                 }
             });
         } catch (java.util.concurrent.RejectedExecutionException e) {
@@ -101,7 +112,7 @@ public final class GramophoneLocalClient {
     }
 
     private static void fail(Download value, String message) {
-        DOWNLOADS.remove(value.request.token);
+        DOWNLOADS.remove(value.request.token, value);
         value.future.completeExceptionally(new IOException(message));
         GramophoneFiles.retire(value.path);
     }
@@ -154,15 +165,15 @@ public final class GramophoneLocalClient {
                             GramophoneMediaInfo info = GramophoneMediaInfo.inspect(download.path);
                             if (!info.hash.equals(packet.hash) || info.bytes != packet.total)
                                 throw new IOException("媒体下载指纹校验失败");
-                            MainThreadScheduler.scheduleClient(() -> {
+                            MainThreadScheduler.completeClient(download.scope, () -> {
                                 if (!current(download)) {
                                     fail(download, "媒体上下文已关闭");
                                     return;
                                 }
                                 DOWNLOADS.remove(packet.token);
-                                download.future.complete(info);
-                            });
-                        } else MainThreadScheduler.scheduleClient(() -> {
+                                if (!download.future.complete(info)) GramophoneFiles.retire(info.path);
+                            }, () -> fail(download, "媒体回应未执行或上下文已关闭"));
+                        } else MainThreadScheduler.completeClient(download.scope, () -> {
                             if (!current(download)) {
                                 fail(download, "媒体上下文已关闭");
                                 return;
@@ -170,9 +181,15 @@ public final class GramophoneLocalClient {
                             download.request.offset = download.offset;
                             download.request.total = packet.total;
                             GramophoneNetwork.CHANNEL.sendToServer(download.request);
-                        });
+                        }, () -> fail(download, "媒体回应未执行或上下文已关闭"));
                     } catch (Exception e) {
-                        MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));
+                        MainThreadScheduler.completeClient(
+                            download.scope,
+                            () -> fail(download, e.getMessage()),
+                            () -> fail(download, "媒体回应未执行或上下文已关闭"));
+                    } finally {
+                        if (download.future.isCompletedExceptionally() || download.future.isCancelled())
+                            GramophoneFiles.retire(download.path);
                     }
                 });
             } catch (java.util.concurrent.RejectedExecutionException e) {
@@ -213,13 +230,15 @@ public final class GramophoneLocalClient {
                         file.seek(next.offset);
                         file.readFully(next.data);
                     }
-                    MainThreadScheduler
-                        .scheduleClient(() -> { if (upload == active) GramophoneNetwork.CHANNEL.sendToServer(next); });
+                    MainThreadScheduler.completeClient(
+                        active.scope,
+                        () -> { if (upload == active) GramophoneNetwork.CHANNEL.sendToServer(next); },
+                        () -> active.callbackCancelled = true);
                 } catch (Exception e) {
-                    MainThreadScheduler.scheduleClient(() -> {
+                    MainThreadScheduler.completeClient(active.scope, () -> {
                         active.owner.transferStatus("上传读取失败：" + e.getMessage(), true);
                         cancel(active.owner);
-                    });
+                    }, () -> active.callbackCancelled = true);
                 }
             });
         } catch (java.util.concurrent.RejectedExecutionException e) {
@@ -229,6 +248,10 @@ public final class GramophoneLocalClient {
     }
 
     public static void tick() {
+        if (upload != null && upload.callbackCancelled) {
+            upload.owner.transferStatus("上传请求未执行，请重新打开设备后重试。", true);
+            cancel(upload.owner);
+        }
         long now = System.nanoTime();
         for (Download value : new java.util.ArrayList<Download>(DOWNLOADS.values()))
             if (!current(value) || now - value.touched > TimeUnit.SECONDS.toNanos(60)) fail(value, "媒体下载超时或上下文已关闭");

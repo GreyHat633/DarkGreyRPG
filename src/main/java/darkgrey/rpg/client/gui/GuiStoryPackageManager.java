@@ -523,9 +523,10 @@ public final class GuiStoryPackageManager extends GuiScreen {
             geometry.x + geometry.width,
             geometry.y + geometry.height,
             DgrUiPalette.WINDOW_PANEL);
-        fontRendererObj.drawString("§l故事包管理", geometry.x + 12, geometry.y + 10, DgrUiPalette.STORY_TEXT);
+        DgrUiText.left(fontRendererObj, "§l故事包管理", geometry.x + 12, geometry.y + 10, DgrUiPalette.STORY_TEXT);
         int[] counts = listing.getIntArray("counts");
-        if (counts.length == 4) fontRendererObj.drawString(
+        if (counts.length == 4) DgrUiText.left(
+            fontRendererObj,
             "启用 " + counts[0] + "  禁用 " + counts[1] + "  冲突 " + counts[2] + "  错误 " + counts[3],
             geometry.x + 12,
             geometry.y + 33,
@@ -585,7 +586,8 @@ public final class GuiStoryPackageManager extends GuiScreen {
         }
         if (graph) drawGraph();
         else drawLines(lines());
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             fontRendererObj.trimStringToWidth(message.isEmpty() ? "成员继承故事组状态" : message, geometry.width - 24),
             geometry.x + 12,
             bottom() + 6,
@@ -607,7 +609,8 @@ public final class GuiStoryPackageManager extends GuiScreen {
             for (int i = first; i < Math.min(lines.size(), first + visible + 2); i++) {
                 String line = lines.get(i);
                 boolean label = line.startsWith("\u0001");
-                fontRendererObj.drawString(
+                DgrUiText.left(
+                    fontRendererObj,
                     label ? line.substring(1) : line,
                     geometry.x + nav() + 9,
                     top() + i * 12 - detailScroll.pixelOffset(),
@@ -740,17 +743,20 @@ public final class GuiStoryPackageManager extends GuiScreen {
     }
 
     private void drawGraph() {
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             "§l" + fontRendererObj.trimStringToWidth(selectedRow().getString("name"), geometry.width - nav() - 22),
             geometry.x + nav() + 10,
             top(),
             DgrUiPalette.STORY_TEXT);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             stateName(selectedRow().getString("state")) + " · " + graphNodes.size() + " 个故事",
             geometry.x + nav() + 10,
             top() + 13,
             DgrUiPalette.SECONDARY);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             fontRendererObj.trimStringToWidth("Flow 实线 / Logic 虚线 · 拖动平移 / 滚轮缩放", geometry.width - nav() - 22),
             geometry.x + nav() + 10,
             top() + 26,
@@ -759,48 +765,73 @@ public final class GuiStoryPackageManager extends GuiScreen {
         if (viewport.width == 0 || viewport.height == 0) return;
         int scale = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight).getScaleFactor();
         GL11.glPushAttrib(GL11.GL_SCISSOR_BIT);
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(
-            viewport.left * scale,
-            mc.displayHeight - (viewport.top + viewport.height) * scale,
-            viewport.width * scale,
-            viewport.height * scale);
-        GL11.glPushMatrix();
         try {
-            GL11.glTranslated(viewport.left + panX, viewport.top + panY, 0);
-            GL11.glScaled(zoom, zoom, 1);
-            for (NBTTagCompound edge : graphEdges) {
-                double[] a = point(edge.getString("from")), b = point(edge.getString("to"));
-                if (a == null || b == null) continue;
-                double ax = a[0] + 125, ay = a[1] + 20, bx = b[0], by = b[1] + 20;
-                line(ax, ay, bx, by, "LOGIC".equals(edge.getString("kind")), DgrUiPalette.SECONDARY);
-                double angle = Math.atan2(by - ay, bx - ax);
-                line(bx, by, bx - 7 * Math.cos(angle - .5), by - 7 * Math.sin(angle - .5), false, DgrUiPalette.TEXT);
-                line(bx, by, bx - 7 * Math.cos(angle + .5), by - 7 * Math.sin(angle + .5), false, DgrUiPalette.TEXT);
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            GL11.glScissor(
+                viewport.left * scale,
+                mc.displayHeight - (viewport.top + viewport.height) * scale,
+                viewport.width * scale,
+                viewport.height * scale);
+            GL11.glPushMatrix();
+            try {
+                GL11.glTranslated(viewport.left + panX, viewport.top + panY, 0);
+                GL11.glScaled(zoom, zoom, 1);
+                for (NBTTagCompound edge : graphEdges) {
+                    double[] a = point(edge.getString("from")), b = point(edge.getString("to"));
+                    if (a == null || b == null) continue;
+                    double ax = a[0] + 125, ay = a[1] + 20, bx = b[0], by = b[1] + 20;
+                    line(ax, ay, bx, by, "LOGIC".equals(edge.getString("kind")), DgrUiPalette.SECONDARY);
+                    double angle = Math.atan2(by - ay, bx - ax);
+                    line(
+                        bx,
+                        by,
+                        bx - 7 * Math.cos(angle - .5),
+                        by - 7 * Math.sin(angle - .5),
+                        false,
+                        DgrUiPalette.TEXT);
+                    line(
+                        bx,
+                        by,
+                        bx - 7 * Math.cos(angle + .5),
+                        by - 7 * Math.sin(angle + .5),
+                        false,
+                        DgrUiPalette.TEXT);
+                }
+                for (Map.Entry<String, NBTTagCompound> entry : graphNodes.entrySet()) {
+                    double[] p = point(entry.getKey());
+                    if (!viewport.intersects(p[0], p[1], 125, 40)) continue;
+                    int x = (int) p[0], y = (int) p[1];
+                    drawRect(
+                        x,
+                        y,
+                        x + 125,
+                        y + 40,
+                        entry.getKey()
+                            .equals(selectedMember) ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.BORDER);
+                    drawRect(x + 1, y + 1, x + 124, y + 39, DgrUiPalette.SUB_PANEL);
+                }
+            } finally {
+                GL11.glPopMatrix();
             }
+            // Geometry zoom remains continuous; glyphs are drawn in screen space on the font pixel grid.
+            double textScale = darkgrey.rpg.client.session.DialogueFontScale.effective(zoom, scale);
             for (Map.Entry<String, NBTTagCompound> entry : graphNodes.entrySet()) {
                 double[] p = point(entry.getKey());
-                if (!viewport.intersects(p[0], p[1], 125, 40)) continue;
-                int x = (int) p[0], y = (int) p[1];
-                drawRect(
-                    x,
-                    y,
-                    x + 125,
-                    y + 40,
-                    entry.getKey()
-                        .equals(selectedMember) ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.BORDER);
-                drawRect(x + 1, y + 1, x + 124, y + 39, DgrUiPalette.SUB_PANEL);
-                fontRendererObj.drawString(
-                    fontRendererObj.trimStringToWidth(
-                        entry.getValue()
-                            .getString("name"),
-                        117),
-                    x + 4,
-                    y + 4,
+                if (!viewport.intersects(p[0], p[1], 125, 40)
+                    || 40 * zoom < fontRendererObj.FONT_HEIGHT * textScale + 2) continue;
+                String label = DgrUiText.label(
+                    entry.getValue()
+                        .getString("name"));
+                label = fontRendererObj.trimStringToWidth(label, Math.max(1, (int) (117 * zoom / textScale)));
+                DialogueFontDrawing.draw(
+                    fontRendererObj,
+                    label,
+                    viewport.left + panX + (p[0] + 4) * zoom,
+                    viewport.top + panY + (p[1] + 4) * zoom,
+                    textScale,
                     DgrUiPalette.TEXT);
             }
         } finally {
-            GL11.glPopMatrix();
             GL11.glPopAttrib();
         }
     }

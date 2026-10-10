@@ -1,0 +1,18 @@
+{
+  "time": "2026-10-09T12:12:15.0094253+08:00",
+  "baseline": "3bd57b62c2e9a3a7eb6f409b755599470b39c41c",
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz",
+    "NumberOfCores": 6,
+    "NumberOfLogicalProcessors": 12
+  },
+  "os": {
+    "Caption": "Microsoft Windows 10 家庭中文版",
+    "TotalVisibleMemorySize": 16682800,
+    "FreePhysicalMemory": 1543576
+  },
+  "disk": {
+    "Used": 954023063552,
+    "Free": 46163247104
+  }
+}

@@ -48,10 +48,10 @@ public final class CanonicalMediaClient {
     private static final Map<String, State> ACTIVE = new HashMap<String, State>();
     private static VerifiedMediaCache cache;
     private static StoryMediaCacheIndex packages;
-    private static boolean loadingIndex;
-    private static boolean journalDirty;
-    private static boolean packagesDirty = true;
-    private static boolean journalWorking;
+    private static volatile boolean loadingIndex;
+    private static volatile boolean journalDirty;
+    private static volatile boolean packagesDirty = true;
+    private static volatile boolean journalWorking;
     private static long nextMaintenance;
     private static Object connection;
     private static final Map<String, StoryMediaPlan.Descriptor> KNOWN = new java.util.LinkedHashMap<String, StoryMediaPlan.Descriptor>();
@@ -94,6 +94,8 @@ public final class CanonicalMediaClient {
         Object next = mc.getNetHandler();
         if (connection == next) return;
         connection = next;
+        loadingIndex = false;
+        journalWorking = false;
         lastBudgetTrace = null;
         scope = mc.isSingleplayer() && mc.getIntegratedServer() != null ? "local:" + mc.getIntegratedServer()
             .getFolderName() + "|"
@@ -130,6 +132,7 @@ public final class CanonicalMediaClient {
         if (packages != null || loadingIndex) return;
         final VerifiedMediaCache store = cache();
         loadingIndex = true;
+        final MainThreadScheduler.Scope queueScope = MainThreadScheduler.clientScope();
         try {
             IO.execute(new Runnable() {
 
@@ -145,7 +148,7 @@ public final class CanonicalMediaClient {
                         restored = new StoryMediaCacheIndex();
                     }
                     final StoryMediaCacheIndex result = restored;
-                    MainThreadScheduler.scheduleClient(new Runnable() {
+                    MainThreadScheduler.completeClient(queueScope, new Runnable() {
 
                         @Override
                         public void run() {
@@ -159,7 +162,7 @@ public final class CanonicalMediaClient {
                             journalDirty = true;
                             packagesDirty = true;
                         }
-                    });
+                    }, () -> { if (queueScope == MainThreadScheduler.clientScope()) loadingIndex = false; });
                 }
             });
         } catch (RejectedExecutionException failure) {
@@ -169,6 +172,7 @@ public final class CanonicalMediaClient {
 
     private static void collectLegacyOrphans() {
         final VerifiedMediaCache store = cache();
+        final MainThreadScheduler.Scope queueScope = MainThreadScheduler.clientScope();
         try {
             IO.execute(new Runnable() {
 
@@ -187,14 +191,14 @@ public final class CanonicalMediaClient {
                     } catch (Exception failure) {
                         DarkGreyRpg.LOG.warn("Could not inspect legacy media cache", failure);
                     }
-                    MainThreadScheduler.scheduleClient(new Runnable() {
+                    MainThreadScheduler.completeClient(queueScope, new Runnable() {
 
                         @Override
                         public void run() {
                             orphans.removeAll(packages.ownedRefs());
                             DELETE_PENDING.addAll(orphans);
                         }
-                    });
+                    }, () -> {});
                 }
             });
         } catch (RejectedExecutionException ignored) {}
@@ -408,6 +412,7 @@ public final class CanonicalMediaClient {
         deleting.removeAll(packages.ownedRefs());
         final StoryMediaCacheIndex index = packages;
         final VerifiedMediaCache store = cache();
+        final MainThreadScheduler.Scope queueScope = MainThreadScheduler.clientScope();
         journalWorking = true;
         journalDirty = false;
         nextMaintenance = System.nanoTime() + 1000000000L;
@@ -431,7 +436,7 @@ public final class CanonicalMediaClient {
                         DarkGreyRpg.LOG.warn("Could not maintain story media cache", failure);
                     }
                     final boolean success = saved;
-                    MainThreadScheduler.scheduleClient(new Runnable() {
+                    MainThreadScheduler.completeClient(queueScope, new Runnable() {
 
                         @Override
                         public void run() {
@@ -440,6 +445,11 @@ public final class CanonicalMediaClient {
                             journalWorking = false;
                             if (!success) journalDirty = true;
                             packagesDirty = true;
+                        }
+                    }, () -> {
+                        if (queueScope == MainThreadScheduler.clientScope()) {
+                            journalWorking = false;
+                            journalDirty = true;
                         }
                     });
                 }
@@ -608,7 +618,7 @@ public final class CanonicalMediaClient {
                     } else found = importFromLocalPackage(state, store);
                 } catch (Exception ignored) {}
                 final boolean available = found;
-                MainThreadScheduler.scheduleClient(new Runnable() {
+                MainThreadScheduler.completeClient(state.queueScope, new Runnable() {
 
                     @Override
                     public void run() {
@@ -617,7 +627,7 @@ public final class CanonicalMediaClient {
                         if (available) completed(state, store.path(state.ref));
                         else request(state);
                     }
-                });
+                }, () -> state.cancelledCompletion = true);
             }
         });
     }
@@ -626,6 +636,10 @@ public final class CanonicalMediaClient {
         synchronizeConnection();
         initializeIndex();
         for (State state : ACTIVE.values()) {
+            if (state.cancelledCompletion) {
+                state.cancelledCompletion = false;
+                fail(state);
+            }
             if (state.ready == null && !state.working && !state.waiting && System.nanoTime() >= state.retryAt) {
                 packagesDirty = true;
                 break;
@@ -765,7 +779,7 @@ public final class CanonicalMediaClient {
                 close(state);
             }
             final boolean done = complete, bad = failed;
-            MainThreadScheduler.scheduleClient(() -> {
+            MainThreadScheduler.completeClient(state.queueScope, () -> {
                 if (!current(state) || state.retired) return;
                 state.working = false;
                 if (bad) {
@@ -778,7 +792,7 @@ public final class CanonicalMediaClient {
                     request(state);
                     drainWindow(state);
                 }
-            });
+            }, () -> state.cancelledCompletion = true);
         });
     }
 
@@ -857,6 +871,8 @@ public final class CanonicalMediaClient {
         }
 
         volatile boolean retired;
+        volatile boolean cancelledCompletion;
+        final MainThreadScheduler.Scope queueScope = MainThreadScheduler.clientScope();
         volatile boolean music;
         final long id;
         final String ref;

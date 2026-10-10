@@ -1,0 +1,92 @@
+{
+  "status": "PASS_REAL_LOGIN_AND_PERIODIC_PENDING_RECOVERY",
+  "layer": "A/S/N",
+  "process": {
+    "pid": 17604,
+    "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Pending-Plain-R2",
+    "stage": "restore-final",
+    "started": "2026-10-10T00:35:28.6489297+08:00",
+    "args": [
+      "-Xms128m",
+      "-Xmx512m",
+      "-Ddgr0402.scenario=PendingNative",
+      "-Ddgr0402.pendingMode=restore",
+      "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Pending-Plain-R2\"",
+      "-jar",
+      "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+      "nogui"
+    ],
+    "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+    "driver_sha256": "A730043721CDE9D446580DC5CD7BAB7CDBA82FFE105B33171CC119A64A0DE59B"
+  },
+  "result": {
+    "status": "PASS",
+    "tick": 997,
+    "phase": 3,
+    "network_peak": 2,
+    "first_target_run": 1791563749561,
+    "existing_target_run": 1791563726863,
+    "timer_target_run": 1791563775019,
+    "forge_recover_called_by_test": false,
+    "unrelated_unchanged": true
+  },
+  "files": [
+    {
+      "file": "pending-final-pending-native-result.json",
+      "bytes": 221,
+      "sha256": "C383770906DAE3F46C03FEE3CEBE9BD0EF7641E17DCE2E8BB3F8381EB9C0C46C"
+    },
+    {
+      "file": "pending-final-pending-native-prepared.json",
+      "bytes": 811,
+      "sha256": "398C7E9D0015BED956C0D2E8F6F349B77E97CF77F79390AC94AEAC67D853D1BA"
+    },
+    {
+      "file": "pending-final-pending-native-cold-ready.json",
+      "bytes": 199,
+      "sha256": "A27B72FF0B56BDCE3707DD8990B637677E24BAAB8BDEE964501E3E3198076810"
+    },
+    {
+      "file": "pending-final-native-login-recovered.json",
+      "bytes": 213,
+      "sha256": "8A9F515C9BA955A3EF2A24094C5F1E5473951A093CCA7395CF0B81B1BD3651C9"
+    },
+    {
+      "file": "pending-final-native-timer-recovered.json",
+      "bytes": 225,
+      "sha256": "089C4BD2B41968C1861FEB6927BD34281A83A428D31A943D294A8DE3ED378E04"
+    },
+    {
+      "file": "pending-final-restore-final-stdout.log",
+      "bytes": 15057,
+      "sha256": "3B64E113DD9C9BA9F9E1827C9385AA444DFB00720A92192722E7280FB54D31F2"
+    }
+  ],
+  "fixtures": [
+    {
+      "file": "PendingLogin.dgrs.g",
+      "bytes": 5194,
+      "sha256": "5F48DCB091672EC4F2C4A9FF4C5FCFC9920C21289D39A89AB5C997B67B12AE79"
+    },
+    {
+      "file": "PendingTimer.dgrs.g",
+      "bytes": 5194,
+      "sha256": "EB31E6DFF1F6696179418B2B3748D363E7B0EEB4BA36F408D67ADFED432977C6"
+    }
+  ],
+  "scope": "Current legal test-generated Flow groups; two real native clients after normal save/restart. Fixture prepares pending source claims through the service; it never invokes the Forge recovery entry. Real login and the production periodic entry perform recovery. Existing target activation remains unchanged. Each stable observation window is 220 ticks; unrelated player image and clean dirty state are asserted.",
+  "retained_failed_attempts": [
+    {
+      "case": "Pending-Native-Final",
+      "kind": "Forge handshake failure and original Minecraft reconnect exception; CNPC present",
+      "cause_attribution": "Stack locations only; no baseline proof of the responsible component"
+    },
+    {
+      "case": "Pending-Plain-Final",
+      "kind": "Test-only MCP/SRG reflection mismatch (writeToNBT) after native login recovery",
+      "fixed_in_driver": true
+    }
+  ],
+  "ordinary_studio_authorship_claim": false,
+  "overall_version_acceptance": "IN_PROGRESS"
+}

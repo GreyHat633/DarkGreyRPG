@@ -1,0 +1,209 @@
+{
+  "status": "FAILED_ATTEMPTS_RETAINED_SEPARATE_FROM_FINAL_PASS",
+  "cases": [
+    {
+      "case": "Final1B-cold-stack-profile",
+      "status": "FAIL_FIXTURE_WITH_CONFIRMED_RUNTIME_FINDINGS",
+      "reason": "Diagnostic finish was requested with owned work/media pending, causing fixture assertion failure. The cold thread dump confirmed quadratic terminal-history decoding; Forge skipped stopping cleanup and left ten journal/recovery contexts. Those two production findings were subsequently fixed; this run remains failed.",
+      "original_runtime_sha256": "1B764E139F073CADFC8B660EB28A1D5C89B6DB08A8BBBC8E2AF923DD11A7CD85",
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/authored-FAIL.txt",
+          "bytes": 63,
+          "sha256": "5C14CD9512A596625A56F437349DD7AF5276684C403AF0464A12B5C43F8001C5"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/cold-stack-stderr.log",
+          "bytes": 5161,
+          "sha256": "77ED85BFDC3656967306331F9A01710EA9E4D072A25ED4828882793B47F59E47"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/cold-stack-stdout.log",
+          "bytes": 29693,
+          "sha256": "E1014C760ECD2AB226DB2B2B7E6A046E981725F165E5F0D26AE4C744532C874E"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/crash-reports/crash-2026-10-10_06.29.21-server.txt",
+          "bytes": 3852,
+          "sha256": "98F1EA326C72F949A6CCE4EF7E2AE108257F95ACC6D3DF9D46B62604EBB0456D"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/first-completion-thread-dump.txt",
+          "bytes": 11533,
+          "sha256": "C4B70FE15DC796F37F91D4A519B3B124E2F2D16A3F522C7E38FADD741AB2BCC0"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/journal-cache-stop.json",
+          "bytes": 63,
+          "sha256": "94A5B3CFFC6CD5CC6D8C2BE5129B0B31EF39275173A5217FA79987826E0FB0E9"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/owned-process.json",
+          "bytes": 1283,
+          "sha256": "C9555C9ED5347B241FDBFE85B891C603F4D8DEBC2036CF5A8303CED03BC5DBE0"
+        }
+      ]
+    },
+    {
+      "case": "Final-linear-session-60",
+      "status": "PASS_SERVER_CHAIN_PACKET_OBSERVER_INCOMPLETE",
+      "reason": "Actual F submit settled once and server cold correctness passed. Windows sharing conflict interrupted direct native observer JSON writing before the second duplicate batch. Packet completeness was not claimed. Observer writes now use atomic replacement with finite retry.",
+      "original_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-session-60/authored-result.json",
+          "bytes": 223,
+          "sha256": "9D0D0B9E70BBEC63E67DF381830513FD9F81765610F3A671FC76CD2098FAF848"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-session-60/journal-cache-stop.json",
+          "bytes": 61,
+          "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-session-60/linear-cold-check-stderr.log",
+          "bytes": 5161,
+          "sha256": "E11C3EC77B9C0CF53A81685CDBC2050CA8EFD4C607ED9413556346323BCAD67A"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-session-60/linear-cold-check-stdout.log",
+          "bytes": 22938,
+          "sha256": "1DB748128460DC26BD74A16BA15ACE324804D42666D490574F9B951F59A221FC"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-session-60/linear-cold-check-summary.json",
+          "bytes": 1801,
+          "sha256": "9F5DE48D84E0A9128B980B740D4B498BD7F5C8AB8BB82A642BC66A81136F3BAF"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-session-60/owned-process.json",
+          "bytes": 1283,
+          "sha256": "176B43055F4FB493AA4B187014106E038563CE7C31C73901DB16E20FF48621F2"
+        },
+        {
+          "file": ".tooling/0402/Worlds/ClientF/linear-cold-check-native-observer-FAIL.txt",
+          "bytes": 185,
+          "sha256": "811B8440C264EB3544078A375F3FBB732DAD9B4F1BAC3ED8BDD9E1D29CAF0B0E"
+        }
+      ]
+    },
+    {
+      "case": "Final-linear-final-60",
+      "status": "FAIL_NATIVE_SUBMIT_FIXTURE_TARGET",
+      "reason": "A Villager obstructed the bound CustomNPC; native F remained ACTIVE with two apples and unchanged XP/receipts. Finish asserted both chains completed and failed. Crash-stop cleanup passed; this is not successful author-chain evidence.",
+      "original_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-final-60/authored-FAIL.txt",
+          "bytes": 78,
+          "sha256": "1A4CDFCEA6E43F793206F78CF8779B70F19C75C08BEA1308FD939EE125614EA7"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-final-60/crash-reports/crash-2026-10-10_06.44.28-server.txt",
+          "bytes": 3859,
+          "sha256": "9E3CF1F010F0EE4354CD9BCC2B43720EBFC78A71398A1BDDA7298328C4907299"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-final-60/journal-cache-stop.json",
+          "bytes": 61,
+          "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-final-60/linear-packet-check-stderr.log",
+          "bytes": 5161,
+          "sha256": "44BD0BC2C0B00028947E5580472772B7B71A9600D099F215B2517A8AF6C5BF55"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-final-60/linear-packet-check-stdout.log",
+          "bytes": 30859,
+          "sha256": "C91A8AD1623B07643C58CD8D53C8DA52ECA633E97470002E1B22C4C6B304530F"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-final-60/owned-process.json",
+          "bytes": 1282,
+          "sha256": "0B166FA9CC7E39908B53C1EF7AFD3493FEB055B11DE35CCAD4437C8918A2E764"
+        }
+      ]
+    },
+    {
+      "case": "Final-linear-accepted-60",
+      "status": "FAIL_NATIVE_FIXTURE_DEADLINE",
+      "reason": "Attempted temporary source-host relocation was undone by the existing per-tick fixture anchor; recreation and entry began but the finite server deadline ended before native finish. No full author assertion was generated.",
+      "original_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-accepted-60/journal-cache-stop.json",
+          "bytes": 61,
+          "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-accepted-60/linear-native-check-stderr.log",
+          "bytes": 5161,
+          "sha256": "F43F9E8AA9C03E6D452A4AAB30D20C5A405EF6F5CA3034DB4705AED28125933E"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-accepted-60/linear-native-check-stdout.log",
+          "bytes": 24111,
+          "sha256": "054F95018248E771C5BF4E278654995BAF215815D16B6441136766F5CD966ACE"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-accepted-60/owned-process.json",
+          "bytes": 1288,
+          "sha256": "098F28074B3D97B51E14B858E1123D9F85CD68405BC8501C6D53A9418369076F"
+        }
+      ]
+    },
+    {
+      "case": "Final-linear-verified-60",
+      "status": "BOUNDARY_STOP_ONLY_NOT_FULL_NATIVE_PASS",
+      "reason": "An invalid test guard compared server and client-generated mob UUIDs. Controlled boundary-stop drained normally; missing complete Mixed/Authored assertions prevent full PASS. The corrected guard uses the shared network entity id.",
+      "original_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-verified-60/boundary-result.json",
+          "bytes": 118,
+          "sha256": "125F09C92E886F6957B02BAC58C9D82159DA5E9E02CB1FFC856C186CB5A0EC88"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-verified-60/journal-cache-stop.json",
+          "bytes": 61,
+          "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-verified-60/linear-native-check-stderr.log",
+          "bytes": 5161,
+          "sha256": "DC308DEB89EEF060C49CE58C05D364410706C7B195DCF9CAB3E50C02516EBF76"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-verified-60/linear-native-check-stdout.log",
+          "bytes": 21934,
+          "sha256": "A608118433A31EB262F20D783741B012E642944E98824310E6502FFBF4D78F52"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-verified-60/owned-process.json",
+          "bytes": 1288,
+          "sha256": "99C6B845EBEC8191FF0C3A6EAE0985A4F1821CB259D2C51A0B53B15262FC1206"
+        }
+      ]
+    },
+    {
+      "case": "Final-linear-closed-60 initial connection attempt",
+      "status": "FAIL_HANDSHAKE_ATTEMPT_SUCCESSFUL_NATIVE_MENU_RECONNECT",
+      "reason": "Forge HandshakeCompletionHandler NPE observed on initial login. Owned server thread dump was sleeping normally. Native menu cancel and sequential reconnect succeeded. No causal assignment to DGR is supported by the available stack.",
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-closed-60/linear-native-check-stdout.log",
+          "bytes": 57959,
+          "sha256": "F0863B703528A5F58AFBAE740025D0BBC003310DFEFAD3C05FE29B09882827BE"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-linear-closed-60/connection-stall-server-threads.txt",
+          "bytes": 16462,
+          "sha256": "99B567F2BA38C6A69B722531CEEB46CF7F07A778446AA15CD45ACA4A253CCC60"
+        }
+      ],
+      "successful_followup": "0402-linear-native-packet-replay.json"
+    }
+  ],
+  "policy": "A corrected preparation or successful later run does not relabel the failed attempt. Expected crash injection is separately recorded in 0402-linear-history-and-stop.json."
+}

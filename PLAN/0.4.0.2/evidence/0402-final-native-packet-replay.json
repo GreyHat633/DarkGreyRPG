@@ -1,0 +1,177 @@
+{
+  "status": "PASS_REAL_CHANNEL_STALE_CHOICES",
+  "layer": "N/C/S",
+  "runtime_sha256": "1B764E139F073CADFC8B660EB28A1D5C89B6DB08A8BBBC8E2AF923DD11A7CD85",
+  "driver_sha256": "8A43E615EE7A76F46C4A8752A1EC84FD1D609FB1BCD366AE9C747E48DD0833DB",
+  "method": "Capture an enabled CHOICE from the real authored frame; native click accepts it. Send three copies after 60 client ticks through DialogueNetwork.CHANNEL.sendToServer while ACTIVE, then again after actual CNPC settlement.",
+  "network_scope": "Application-layer delay and duplicate messages over the real channel; no TCP packet-loss claim.",
+  "phases": [
+    {
+      "phase": "active",
+      "players_before_and_after": [
+        {
+          "name": "DGR402ClientF",
+          "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+          "inventory": 0,
+          "receipts": 2,
+          "xp": 7,
+          "dimension": 0,
+          "task_status": "ACTIVE",
+          "task_run": 1791584179752,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 0,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 0,
+            "node_a96eeee3cca8417bab363bba391a36a5": 0,
+            "node_f576e9772cf04d3a84c911888744bd62": 0
+          },
+          "story_run": 1791584137141,
+          "story_status": "ACTIVE",
+          "entity_changes": 1,
+          "additional_stories": []
+        },
+        {
+          "name": "DGR402ClientG",
+          "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+          "inventory": 0,
+          "receipts": 4,
+          "xp": 14,
+          "dimension": 0,
+          "task_status": "SETTLED",
+          "task_run": 1791580077810,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+            "node_a96eeee3cca8417bab363bba391a36a5": 2,
+            "node_f576e9772cf04d3a84c911888744bd62": 2
+          },
+          "story_run": 1791580040948,
+          "story_status": "TERMINATED",
+          "entity_changes": 1,
+          "additional_stories": []
+        }
+      ],
+      "server_tick_before": 1950,
+      "server_tick_after": 2340,
+      "responses": 3,
+      "awaiting_server_after": false
+    },
+    {
+      "phase": "settled",
+      "players_before_and_after": [
+        {
+          "name": "DGR402ClientF",
+          "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+          "inventory": 0,
+          "receipts": 4,
+          "xp": 14,
+          "dimension": 0,
+          "task_status": "SETTLED",
+          "task_run": 1791584179752,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+            "node_a96eeee3cca8417bab363bba391a36a5": 2,
+            "node_f576e9772cf04d3a84c911888744bd62": 2
+          },
+          "story_run": 1791584137141,
+          "story_status": "TERMINATED",
+          "entity_changes": 1,
+          "additional_stories": []
+        },
+        {
+          "name": "DGR402ClientG",
+          "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+          "inventory": 0,
+          "receipts": 4,
+          "xp": 14,
+          "dimension": 0,
+          "task_status": "SETTLED",
+          "task_run": 1791580077810,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+            "node_a96eeee3cca8417bab363bba391a36a5": 2,
+            "node_f576e9772cf04d3a84c911888744bd62": 2
+          },
+          "story_run": 1791580040948,
+          "story_status": "TERMINATED",
+          "entity_changes": 1,
+          "additional_stories": []
+        }
+      ],
+      "server_tick_before": 2750,
+      "server_tick_after": 3110,
+      "responses": 3,
+      "awaiting_server_after": false
+    }
+  ],
+  "normal_native_replay": "F XP7->14, receipts2->4, two apples consumed once; G unchanged.",
+  "raw": [
+    {
+      "file": ".tooling/0402/Worlds/ClientF/packet-fixture-events-1B-frozen.jsonl",
+      "bytes": 1325,
+      "sha256": "6F6163873F8F4FD41650F81B789F6608BE566C0059707F69BA4CE863D12E74F0"
+    },
+    {
+      "file": ".tooling/0402/Worlds/ClientF/final1B-queued-cold-native-stdout.log",
+      "bytes": 21907,
+      "sha256": "299D09ED121CD1C5D8C68FDE1AB1D1AA60200E898F1D487D3328119256F6872A"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/cold-native-initial-state.json",
+      "bytes": 1513,
+      "sha256": "72FC0D871A2C42134F491B844EBF867D39BA79AB266C5211266532F7ED0AA7F5"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-before-stale-active.json",
+      "bytes": 1509,
+      "sha256": "E7144F125142FD25EF229B9026094216C3319363502ADE1F8938A1A65E5B5BCE"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-after-stale-active.json",
+      "bytes": 1509,
+      "sha256": "BED0E3FA7CD2AAB6F4CC745F9E0CFE0BC54DAED3AA37283BDDD3BDC24F3A705A"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-active-client-before.json",
+      "bytes": 677,
+      "sha256": "0E28DAE3F35C271B3D0639B4062121F823CBC9E28A6313E8FE310CB0106F1D96"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-active-client-after.json",
+      "bytes": 677,
+      "sha256": "E46749346EFDFA09A135DA85117BD41009E3FF9D9F9CD959FCA040E04DC1F540"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-active-log-offset.json",
+      "bytes": 86,
+      "sha256": "606FFEA2E3DB0FE195D89B82A6D10895AD74F6862EC348423A126010DA5B063C"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-before-stale-settled.json",
+      "bytes": 1515,
+      "sha256": "4A0593961B0A8A99CCAC61E80366C310B82518044E1553ABC9C51060BE51C19F"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-after-stale-settled.json",
+      "bytes": 1515,
+      "sha256": "44FE213E22ED3739010323A20A1717DC73F9F10EEDB08C66C6AD6AA6A36A84D1"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-settled-client-before.json",
+      "bytes": 674,
+      "sha256": "BD10E4E9F8E2B803F86FF19AF2795B5FB830D631EA53DB4C4BCF2321C946C7B8"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-settled-client-after.json",
+      "bytes": 674,
+      "sha256": "7578FD22E8365B3650EFF9B5F00347801EB0FF19F7B2E40877804A91CF6924A8"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-queued-authored-60/packet-settled-log-offset.json",
+      "bytes": 86,
+      "sha256": "9114B01DCEF956752BB437917F2FC81E9F2A01FB42F479A3DB22E6F1E4A1F5A3"
+    }
+  ],
+  "raw_relocation_note": "Original event bytes frozen before later candidate tests append to the working event log; SHA unchanged."
+}

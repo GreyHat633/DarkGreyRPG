@@ -22,6 +22,10 @@ public final class CanonicalTitleServer {
 
     private CanonicalTitleServer() {}
 
+    public static synchronized void stop() {
+        QUEUES.clear();
+    }
+
     public static synchronized boolean enqueue(EntityPlayerMP player, CanonicalStoryDispatch dispatch,
         Runnable completed) {
         if (player == null || player.playerNetServerHandler == null) return false;
@@ -87,11 +91,15 @@ public final class CanonicalTitleServer {
         if (entry.token != token || entry.pending
             || System.nanoTime() - entry.started < entry.title.duration() * 1000000000.0) return;
         entry.pending = true;
-        MainThreadScheduler.scheduleServer(new Runnable() {
+        MainThreadScheduler.scheduleServer(player, new Runnable() {
 
             @Override
             public void run() {
                 complete(player, token);
+            }
+        }, () -> {
+            synchronized (CanonicalTitleServer.class) {
+                entry.pending = false;
             }
         });
     }

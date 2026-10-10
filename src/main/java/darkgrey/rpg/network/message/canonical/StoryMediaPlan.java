@@ -195,14 +195,14 @@ public final class StoryMediaPlan implements IMessage {
         @Override
         public IMessage onMessage(final StoryMediaPlan message, MessageContext context) {
             final Object connection = context.netHandler;
-            darkgrey.rpg.network.MainThreadScheduler.scheduleClient(new Runnable() {
+            darkgrey.rpg.network.MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
                     if (darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                         darkgrey.rpg.media.CanonicalMediaClient.acceptPlan(message);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

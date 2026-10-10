@@ -1,0 +1,32 @@
+{
+  "source_sha256": "dd020ae635f999f0d5eed7c4e7ae4db49f44c5caef28c9a73bcfca7d9b6e695a",
+  "generated_not_studio_export": true,
+  "seed": 403810,
+  "frame_fixture": false,
+  "packages": [
+    {
+      "story": "ST-2222-2222-2222-ECD4",
+      "sha256": "7ee46313d6e372ba15336bd37ad82e9467ea1635fe2a456ef96d0d908ac08031",
+      "bytes": 6320555,
+      "png_pixels_each": 1048576,
+      "png_count": 2,
+      "shared_audio": true
+    },
+    {
+      "story": "ST-2222-2222-2222-ECD5",
+      "sha256": "5ad95c7816c7e62544d02a9432db2a99f3ca325c488538127997101173076061",
+      "bytes": 6320555,
+      "png_pixels_each": 1048576,
+      "png_count": 2,
+      "shared_audio": true
+    },
+    {
+      "story": "ST-2222-2222-2222-ECD6",
+      "sha256": "d75e166a24db99f00bdfd92baa756466bf3607579b805ea47f5628c4d61e08de",
+      "bytes": 6320555,
+      "png_pixels_each": 1048576,
+      "png_count": 2,
+      "shared_audio": true
+    }
+  ]
+}

@@ -225,6 +225,89 @@ public final class TaskNotificationsPlanProbe {
         accept(0, event("f", "t", "failed", ""));
         require(field(state("cards").get("t"), "terminal").equals("任务失败"), "failure result");
         darkgrey.rpg.client.TaskNotificationCards.clear();
+        java.lang.reflect.Field slots = darkgrey.rpg.client.TaskNotificationCards.class
+            .getDeclaredField("visibleSlots");
+        slots.setAccessible(true);
+        slots.setInt(null, 2);
+        accept(
+            0,
+            event("short-a", "a", "received", ""),
+            event("short-b", "b", "received", ""),
+            event("short-c", "c", "received", ""),
+            event("short-d", "d", "received", ""));
+        require(state("cards").size() == 2 && state("pending").size() == 2, "short viewport queues both extra cards");
+        accept(1000000000L, event("short-c-update", "c", "objective_active", "排队目标"));
+        require(
+            ((Map<?, ?>) field(state("pending").get("c"), "active")).containsKey("排队目标"),
+            "queued card retains its incoming update");
+        accept(5200000000L);
+        require(
+            state("cards").containsKey("c") && state("cards").containsKey("d") && state("pending").isEmpty(),
+            "both queued cards admitted in order after departure");
+        require(
+            ((Long) field(state("cards").get("c"), "entered")) == 5200000000L
+                && ((Long) field(state("cards").get("c"), "exitAt")) == 9800000000L,
+            "queued card gets its complete animation and four-second reading period");
+        darkgrey.rpg.client.TaskNotificationCards.clear();
+        viewportResizeChecks();
+    }
+
+    private static void prepareFrame(long now, int height) throws Exception {
+        java.lang.reflect.Method frame = darkgrey.rpg.client.TaskNotificationCards.class.getDeclaredMethod(
+            "prepareFrame",
+            long.class,
+            int.class,
+            int.class,
+            darkgrey.rpg.client.TaskNotificationCards.TextWidth.class);
+        frame.setAccessible(true);
+        frame.invoke(
+            null,
+            now,
+            height,
+            176,
+            (darkgrey.rpg.client.TaskNotificationCards.TextWidth) text -> text.codePointCount(0, text.length()) * 6);
+        for (Object card : state("cards").values()) {
+            require(
+                field(card, "titleLines") != null && field(card, "bodyLines") != null,
+                "every visible card is ready for drawing in the same frame");
+            require(!((List<?>) field(card, "titleLines")).isEmpty(), "admitted title is already laid out");
+        }
+    }
+
+    private static void viewportResizeChecks() throws Exception {
+        for (int shortHeight : new int[] { 220, 120 }) {
+            darkgrey.rpg.client.TaskNotificationCards.clear();
+            accept(
+                0,
+                event("resize-a", "a", "received", ""),
+                event("resize-b", "b", "received", ""),
+                event("resize-c", "c", "received", ""),
+                event("resize-d", "d", "received", ""));
+            prepareFrame(100000000L, shortHeight);
+            int shortSlots = shortHeight == 220 ? 2 : 1;
+            require(
+                state("cards").size() == shortSlots && state("pending").size() == 4 - shortSlots,
+                "shrinking viewport defers excess cards");
+            accept(200000000L, event("resize-d-update", "d", "objective_active", "排队目标"));
+            prepareFrame(300000000L, 340);
+            require(
+                state("cards").size() == 3 && state("pending").containsKey("d"),
+                "expanded viewport admits waiting cards in FIFO order");
+            require(
+                ((Long) field(state("cards").get("c"), "entered")) == 300000000L,
+                "newly visible card starts reading at admission");
+            prepareFrame(5200000000L, 340);
+            require(
+                state("cards").containsKey("d") && state("pending").isEmpty(),
+                "expired cards hand over their slots before frame layout");
+            Object last = state("cards").get("d");
+            require(
+                ((List<?>) field(last, "bodyLines")).toString()
+                    .contains("排队目标"),
+                "queued update is present in the first visible frame");
+            require(((Long) field(last, "exitAt")) == 9800000000L, "replacement retains its complete reading period");
+        }
+        darkgrey.rpg.client.TaskNotificationCards.clear();
     }
 
     private static CanonicalTaskJournalEntry task(CanonicalTaskInstanceStatus status,

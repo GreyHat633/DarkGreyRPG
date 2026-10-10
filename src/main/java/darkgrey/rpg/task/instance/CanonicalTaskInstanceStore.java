@@ -19,6 +19,7 @@ import darkgrey.rpg.task.runtime.CanonicalTaskEvent;
 public final class CanonicalTaskInstanceStore {
 
     private final Map<Key, CanonicalTaskInstance> instances = new LinkedHashMap<Key, CanonicalTaskInstance>();
+    private final Map<UUID, Map<Key, CanonicalTaskInstance>> byPlayer = new LinkedHashMap<>();
     private final LongSupplier clock;
 
     public CanonicalTaskInstanceStore() {
@@ -56,6 +57,7 @@ public final class CanonicalTaskInstanceStore {
         CanonicalTaskInstance created = CanonicalTaskInstance
             .start(playerUuid, storyInstanceId, taskNodePlacementId, resource, activationTime);
         instances.put(key, created);
+        indexPlayer(key, created);
         return created;
     }
 
@@ -80,6 +82,7 @@ public final class CanonicalTaskInstanceStore {
         Key key = new Key(instance.getPlayerUuid(), instance.getStoryInstanceId(), instance.getTaskNodePlacementId());
         if (!instances.containsKey(key)) throw new IllegalStateException("Task instance is missing.");
         instances.put(key, instance);
+        indexPlayer(key, instance);
     }
 
     public synchronized CanonicalTaskInstance getInstance(UUID playerUuid, String storyInstanceId,
@@ -102,12 +105,15 @@ public final class CanonicalTaskInstanceStore {
         int removed = 0;
         java.util.Iterator<Map.Entry<Key, CanonicalTaskInstance>> iterator = instances.entrySet()
             .iterator();
-        while (iterator.hasNext()) if (storyIds.contains(
-            iterator.next()
-                .getKey().story)) {
-                    iterator.remove();
-                    removed++;
-                }
+        while (iterator.hasNext()) {
+            Key key = iterator.next()
+                .getKey();
+            if (storyIds.contains(key.story)) {
+                iterator.remove();
+                removePlayer(key);
+                removed++;
+            }
+        }
         return removed;
     }
 
@@ -123,6 +129,7 @@ public final class CanonicalTaskInstanceStore {
                 .getKey();
             if (playerUuid.equals(key.player) && storyInstanceId.equals(key.story)) {
                 iterator.remove();
+                removePlayer(key);
                 removed++;
             }
         }
@@ -185,6 +192,19 @@ public final class CanonicalTaskInstanceStore {
     public synchronized List<CanonicalTaskInstanceSnapshot> snapshots() {
         List<CanonicalTaskInstanceSnapshot> result = new ArrayList<CanonicalTaskInstanceSnapshot>();
         for (CanonicalTaskInstance instance : instances.values()) result.add(instance.snapshot());
+        return sorted(result);
+    }
+
+    /** Detached snapshots retain the full-save order while visiting only this player's instances. */
+    public synchronized List<CanonicalTaskInstanceSnapshot> snapshots(UUID playerUuid) {
+        if (playerUuid == null) throw new IllegalArgumentException("Task player is required.");
+        List<CanonicalTaskInstanceSnapshot> result = new ArrayList<>();
+        Map<Key, CanonicalTaskInstance> owned = byPlayer.get(playerUuid);
+        if (owned != null) for (CanonicalTaskInstance instance : owned.values()) result.add(instance.snapshot());
+        return sorted(result);
+    }
+
+    private static List<CanonicalTaskInstanceSnapshot> sorted(List<CanonicalTaskInstanceSnapshot> result) {
         Collections.sort(result, new Comparator<CanonicalTaskInstanceSnapshot>() {
 
             @Override
@@ -234,6 +254,21 @@ public final class CanonicalTaskInstanceStore {
         }
         instances.clear();
         instances.putAll(replacement);
+        byPlayer.clear();
+        for (Map.Entry<Key, CanonicalTaskInstance> entry : replacement.entrySet())
+            indexPlayer(entry.getKey(), entry.getValue());
+    }
+
+    private void indexPlayer(Key key, CanonicalTaskInstance instance) {
+        byPlayer.computeIfAbsent(key.player, ignored -> new LinkedHashMap<>())
+            .put(key, instance);
+    }
+
+    private void removePlayer(Key key) {
+        Map<Key, CanonicalTaskInstance> owned = byPlayer.get(key.player);
+        if (owned == null) return;
+        owned.remove(key);
+        if (owned.isEmpty()) byPlayer.remove(key.player);
     }
 
     public synchronized void restore(NBTTagCompound root, CanonicalTaskResourceResolver resolver) {

@@ -63,12 +63,12 @@ public final class C2SNominatorAction implements IMessage {
 
         public IMessage onMessage(final C2SNominatorAction m, MessageContext ctx) {
             final EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 public void run() {
                     NominatorActions.handle(player, m.data);
                 }
-            });
+            }, () -> darkgrey.rpg.nominator.NominatorActions.queueRejected(player, m.data));
             return null;
         }
     }

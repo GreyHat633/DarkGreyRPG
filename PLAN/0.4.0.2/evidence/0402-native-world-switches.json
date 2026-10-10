@@ -1,0 +1,505 @@
+{
+  "status": "PASS",
+  "layer": "C+S",
+  "same_jvm_pid": 11652,
+  "worlds": [
+    "WorldA0402",
+    "WorldB0402"
+  ],
+  "world_switches": 20,
+  "loads": 22,
+  "seed": 40201,
+  "actual_network_players": 0,
+  "same_story_uid_same_player_uuid_dimension_0": true,
+  "cold_restore_before_switches": true,
+  "runtime_sha256": "4D289CCEB9F623579770CB44BB90AB116888BF9B51D5FC03ECC9BFF247E3BC57",
+  "driver_sha256": "4F0F063E1DDE7985DD3256E632C46E40021A8A2FDE1BA93F9AAA3716FEC469AE",
+  "runs": {
+    "WorldA0402": [
+      1791528069496,
+      1791528069556
+    ],
+    "WorldB0402": [
+      1791528146739,
+      1791528146741
+    ]
+  },
+  "queue_after_normal_world_exit": {
+    "status": "OBSERVED",
+    "tick": 20390,
+    "world_loaded": false,
+    "world_identity": 0,
+    "connection_identity": 0,
+    "gui": "GuiMainMenu",
+    "active": true,
+    "queue_pending": 0,
+    "queue_accepted": 2116,
+    "queue_completed": 2116,
+    "queue_cancelled": 0,
+    "queue_failed": 0,
+    "frame_overflow": 0
+  },
+  "media_in_flight_switches": "NOT_RUN",
+  "operations": [
+    {
+      "at": "2026-10-09T15:08:12.7467352+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 2,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 159,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 3,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 66,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:08:20.7888291+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 3,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 66,
+        "tick": 20
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 4,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 160,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:08:28.6485489+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 4,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 160,
+        "tick": 20
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 5,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 68,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:08:36.9660134+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 5,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 68,
+        "tick": 20
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 6,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 161,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:08:45.2736585+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 6,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 162,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 7,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 70,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:08:53.1696446+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 7,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 70,
+        "tick": 20
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 8,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 163,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:09:56.7629591+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 8,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 219,
+        "tick": 1140
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 9,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 71,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:10:04.7314792+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 9,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 72,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 10,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 220,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:10:12.6049067+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 10,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 221,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 11,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 73,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:10:20.9144333+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 11,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 73,
+        "tick": 20
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 12,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 223,
+        "tick": 40
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:10:28.7861911+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 12,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 223,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 13,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 75,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:10:36.7158624+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 13,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 75,
+        "tick": 20
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 14,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 224,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:13:51.1419927+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 14,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 411,
+        "tick": 3760
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 15,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 77,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:13:59.4579349+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 15,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 78,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 16,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 412,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:14:07.3611230+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 16,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 413,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 17,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 79,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:14:15.2559893+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 17,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 80,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 18,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 414,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:14:23.5332542+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 18,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 415,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 19,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 82,
+        "tick": 40
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:14:31.8444470+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 19,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 82,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 20,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 416,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:14:39.7095400+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 20,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 417,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 21,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 83,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    },
+    {
+      "at": "2026-10-09T15:14:47.5262346+08:00",
+      "pid": 11652,
+      "before": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldB0402",
+        "generations": 21,
+        "source_run": 1791528146739,
+        "task_run": 1791528146741,
+        "events": 84,
+        "tick": 40
+      },
+      "after": {
+        "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+        "world": "WorldA0402",
+        "generations": 22,
+        "source_run": 1791528069496,
+        "task_run": 1791528069556,
+        "events": 418,
+        "tick": 20
+      },
+      "status": "PASS_ASSERTIONS"
+    }
+  ]
+}

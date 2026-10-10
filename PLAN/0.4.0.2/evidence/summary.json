@@ -1,0 +1,621 @@
+{
+  "status": "DEVELOPMENT_COMPLETE_WITH_RECORDED_LIMITS",
+  "version": "0.4.0.2",
+  "runtime": {
+    "file": "build/libs/darkgrey_rpg-0.4.0.2.jar",
+    "bytes": 1896860,
+    "sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC"
+  },
+  "source_input_digest": "B2F377A3EEB926651DCD0E02612E7C6BD72EC4C6F3660CDBB46E56D64C5C6E3C",
+  "evidence_hash_audit": {
+    "status": "PASS_REFERENCED_RECEIPT_HASHES",
+    "checked": 841
+  },
+  "runtime_build_and_probes": {
+    "build_exit_code": 0,
+    "probe_count": 42,
+    "probe_exit_code": 0,
+    "font_policy_production_classes": 698,
+    "only_managed_raw_font_entry": true
+  },
+  "studio": {
+    "core_pass": 510,
+    "wpf_pass": 667,
+    "wpf_skip": 1,
+    "authoritative_files": [
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+        "productVersion": "0.4.0.2",
+        "size": 204288,
+        "sha256": "8E569CC39547BCA0BB9E537BFC4BD42E048318B5720657735176C8F30CB97829"
+      },
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+        "productVersion": "0.4.0.2",
+        "size": 1458688,
+        "sha256": "CEA0089E4187FD5839ABF015B687CC3199EF50EB0B99CE4496774925526A538D"
+      },
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+        "productVersion": "0.4.0.2+3bd57b62c2e9a3a7eb6f409b755599470b39c41c",
+        "size": 1107968,
+        "sha256": "51155A4D6C0679AF75383C846EACC4AF8BB4D574A12A0C9DD43BB81791556FFB"
+      },
+      {
+        "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\StudioProgramFiles.json",
+        "productVersion": null,
+        "size": 19562,
+        "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
+      }
+    ],
+    "user_data_preserved_during_promotion": true,
+    "later_user_edits_not_compared_to_old_data_snapshot": true
+  },
+  "formal_server_reference": {
+    "pairs": 3,
+    "logical_users": 4,
+    "network_players": 0,
+    "active_tasks": 100,
+    "objectives_per_task": 20,
+    "heap_mib": 512,
+    "warmup_minutes": 5,
+    "measurement_minutes": 10,
+    "status": "PASS",
+    "frozen_measured_runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48",
+    "current_hash_inheritance": "Diagnostic projection, receipt-key validation/encoding, journal gzip and verified-byte caching, linear terminal-route duplicate detection, and stopped-event fallback changed after frozen 2629. The Task manager adds only cache cleanup on stop; main-mod source only adds a stopped-event fallback to its existing cleanup. Tick/queue/index/media/font entries retain identical bytes. Storage, receipt transactions and stop lifecycle require current-hash regressions; historical measurements do not claim the new hash ran in those processes."
+  },
+  "final_mixed": {
+    "measurement_minutes": 60,
+    "measurement_ticks": 72000,
+    "warmup_minutes": 5,
+    "total_ticks": 78000,
+    "logical_users": 4,
+    "mixed_tasks_per_cycle": 12,
+    "actual_saved_world_seed": 40202,
+    "network_players_observed": 2,
+    "native_observed_seconds": 3763.248154,
+    "live_ledger_monitor_seconds": 3572.865017,
+    "queued_jobs": 76440,
+    "complete_tick": {
+      "samples": 72000,
+      "p95_ns": 10638000,
+      "p99_ns": 177847600,
+      "max_ns": 607887500,
+      "scope": "full MC tick entry through return"
+    },
+    "cold_restart_tick": {
+      "samples": 6000,
+      "p95_ns": 12069100,
+      "p99_ns": 198244400,
+      "max_ns": 653251900,
+      "scope": "full MC tick entry through return"
+    },
+    "native_replay": "Both actual native chains completed during warmup: F XP21->28/receipts6->8 and G XP14->21/receipts4->6; two apples consumed once each. G first submit did not latch, then a second actual interaction settled once; the first unchanged state is retained.",
+    "controlled_logout_login": {
+      "finished": "2026-10-10T08:04:57.0430184+08:00",
+      "new_world": 1552241278,
+      "client": "ClientG",
+      "old_connection": 541275835,
+      "new_connection": 1236550934,
+      "deadline": "2026-10-10T08:06:44.8296076+08:00",
+      "status": "COMPLETE",
+      "started": "2026-10-10T08:04:44.8273406+08:00",
+      "unaffected_F_connection": 1748850603
+    },
+    "native_observation_scope": "Two clients connected except the explicit, timestamped G logout/login window. The unaffected F connection remains stable; G connection changes exactly once with unchanged business ledger. Transition observations are preserved separately.",
+    "journal_cache_stop": "0 journal contexts / 0 recovery contexts on both normal stops"
+  },
+  "client_frames": {
+    "final-baseline-cold-01": {
+      "samples": 3596,
+      "observed_frame_intervals_seconds": 60.0809648,
+      "p50_ms": 16.6671,
+      "p95_ms": 16.8216,
+      "p99_ms": 16.9763,
+      "max_ms": 176.1064,
+      "at_least_250ms": 0,
+      "at_least_500ms": 0,
+      "peaks": []
+    },
+    "final-baseline-hot-01": {
+      "samples": 3630,
+      "observed_frame_intervals_seconds": 60.4976721,
+      "p50_ms": 16.6651,
+      "p95_ms": 16.817,
+      "p99_ms": 16.9528,
+      "max_ms": 23.1473,
+      "at_least_250ms": 0,
+      "at_least_500ms": 0,
+      "peaks": []
+    },
+    "baseline-long": {
+      "samples": 36002,
+      "observed_frame_intervals_seconds": 600.0095427,
+      "p50_ms": 16.6657,
+      "p95_ms": 16.8057,
+      "p99_ms": 16.9277,
+      "max_ms": 27.0923,
+      "at_least_250ms": 0,
+      "at_least_500ms": 0,
+      "peaks": []
+    },
+    "final1B-candidate-cold-01": {
+      "samples": 3591,
+      "observed_frame_intervals_seconds": 59.9976318,
+      "p50_ms": 16.6662,
+      "p95_ms": 16.8441,
+      "p99_ms": 16.9766,
+      "max_ms": 168.3663,
+      "at_least_250ms": 0,
+      "at_least_500ms": 0,
+      "peaks": []
+    },
+    "final1B-candidate-hot-01": {
+      "samples": 3600,
+      "observed_frame_intervals_seconds": 59.9975867,
+      "p50_ms": 16.6663,
+      "p95_ms": 16.8408,
+      "p99_ms": 16.9985,
+      "max_ms": 27.7727,
+      "at_least_250ms": 0,
+      "at_least_500ms": 0,
+      "peaks": []
+    },
+    "final1B-candidate-hot-main-01": {
+      "samples": 36061,
+      "observed_frame_intervals_seconds": 600.9926394,
+      "p50_ms": 16.6656,
+      "p95_ms": 16.8158,
+      "p99_ms": 16.9352,
+      "max_ms": 19.5318,
+      "at_least_250ms": 0,
+      "at_least_500ms": 0,
+      "peaks": []
+    }
+  },
+  "client_frame_inheritance": "Frames were measured on frozen 1B. All font/UI/media/queue classes retain identical bytes in 8B; the two changes after 1B affect terminal history decoding and stopped-event fallback. This does not claim an 8B process produced the historical frame samples.",
+  "current_runtime_history_and_stop": {
+    "status": "PASS_CURRENT_RUNTIME_HISTORY_AND_STOP_FIXES",
+    "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+    "linear_decode": {
+      "entries": 60000,
+      "terminal_entries": 40000,
+      "pending_entries": 20000,
+      "observed_decode_ns": 46126800,
+      "assertions": [
+        "Input order and all keys retained",
+        "Exact source NBT unchanged",
+        "Unbound read remains clean",
+        "Duplicate keys rejected at positions 0, 10000 and 19999 in both lists"
+      ],
+      "historical_root_cause": "ArrayList.contains for each terminal-route key; synchronous quadratic duplicate detection verified by cold first-completion thread dump before native client startup."
+    },
+    "expected_crash_stop": {
+      "status": "PASS_EXPECTED_CRASH_STOP_CLEANUP",
+      "before": {
+        "status": "ARMED_EXPECTED_CRASH",
+        "journal_contexts_before": 8
+      },
+      "after": {
+        "status": "PASS",
+        "journal_contexts": 0,
+        "recovered_contexts": 0
+      },
+      "process_exit_code": 0,
+      "expected_uncaught_error": "DGR0402_EXPECTED_ISOLATED_CRASH_STOP",
+      "exception_not_swallowed": true,
+      "at": "2026-10-10T06:35:24.6640319+08:00"
+    },
+    "same_jvm_world_switch": {
+      "switches": [
+        {
+          "at": "2026-10-10T07:11:21.6924418+08:00",
+          "stage": "linear-stop-worlds",
+          "pid": 46760,
+          "before": {
+            "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+            "world": "WorldA0402",
+            "generations": 1,
+            "source_run": 1791528069496,
+            "task_run": 1791528069556,
+            "events": 616,
+            "tick": 200
+          },
+          "after": {
+            "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+            "world": "WorldB0402",
+            "generations": 2,
+            "source_run": 1791528146739,
+            "task_run": 1791528146741,
+            "events": 104,
+            "tick": 20
+          },
+          "status": "PASS_ASSERTIONS"
+        },
+        {
+          "at": "2026-10-10T07:11:29.5486341+08:00",
+          "stage": "linear-stop-worlds",
+          "pid": 46760,
+          "before": {
+            "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+            "world": "WorldB0402",
+            "generations": 2,
+            "source_run": 1791528146739,
+            "task_run": 1791528146741,
+            "events": 105,
+            "tick": 40
+          },
+          "after": {
+            "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+            "world": "WorldA0402",
+            "generations": 3,
+            "source_run": 1791528069496,
+            "task_run": 1791528069556,
+            "events": 617,
+            "tick": 20
+          },
+          "status": "PASS_ASSERTIONS"
+        }
+      ],
+      "loads": 3,
+      "normal_native_menu_quit": true,
+      "scope": "Two current-hash switches supplement the historical 3756 20-switch test for the newly added stopped-event fallback."
+    },
+    "raw": [
+      {
+        "file": ".tooling/0402/Final/AfterLinearHistory/commands.json",
+        "bytes": 2462,
+        "sha256": "96413BA9402DA78EAC4EA04DCF1082E18B3BCA26FBF34280DD998B1D63EE7547"
+      },
+      {
+        "file": ".tooling/0402/Final/AfterLinearHistory/build.log",
+        "bytes": 3243,
+        "sha256": "B174B7DA05B0BE8EFB0725A42A3B3112D1EAE4C66E49A02B185FF1F48434A61F"
+      },
+      {
+        "file": ".tooling/0402/Final/AfterLinearHistory/probes.log",
+        "bytes": 76373,
+        "sha256": "A79FDE7BC4FDD10003C8091879918C2605225F9D192CC503DD546B0337A4DE21"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final-linear-crash-stop/owned-process.json",
+        "bytes": 822,
+        "sha256": "EF340A2FD2716374356DBDACFCAA6768CB58DA489D802E6687FDFCAAC2A2AA37"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-before.json",
+        "bytes": 61,
+        "sha256": "B67BAED7E667DF297C0D74AF74AFF1C7BD9460913F9632DCEF8FBF9058B1FB55"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-result.json",
+        "bytes": 427,
+        "sha256": "9CBD0F70849D4120453778970DB32019C078D06C2C7092C43D685259FD9234AA"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final-linear-crash-stop/journal-cache-stop.json",
+        "bytes": 61,
+        "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-stdout.log",
+        "bytes": 24810,
+        "sha256": "120D22D232DADBA760824AE99B423B71C14A9F9DEE8C4480BB67EC430C5687FC"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-stderr.log",
+        "bytes": 5161,
+        "sha256": "C27809491998E07B3E06FAEEFDB71BEED6F1AE1FD718A75A3D67436E0C02C5F2"
+      },
+      {
+        "file": ".tooling/0402/Worlds/ClientC/owned-client.json",
+        "bytes": 8098,
+        "sha256": "4BA16111E0247DA524CC78C4D67843B7358CFAEF99A2D757EB31F091F9B194F5"
+      },
+      {
+        "file": ".tooling/0402/Worlds/ClientC/linear-stop-worlds-stdout.log",
+        "bytes": 24657,
+        "sha256": "1CD2BF054DCBF57EA3D92182BA03707B493C725B0F482508736432AA9E136F3A"
+      },
+      {
+        "file": ".tooling/0402/Worlds/ClientC/linear-stop-worlds-stderr.log",
+        "bytes": 0,
+        "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+      },
+      {
+        "file": ".tooling/0402/Worlds/ClientC/native-world-state.json",
+        "bytes": 154,
+        "sha256": "9E891388A160AEA5F1C1B8B5E5951C7A247D4CA20CE1AC73704CD9AF68759BA5"
+      },
+      {
+        "file": ".tooling/0402/Logs/native-world-switches.jsonl",
+        "bytes": 25077,
+        "sha256": "D78D32649CCBB8E69CB728804F8771BAD1DB5C5E9B5877CDD8D72F3CFAF87D23"
+      },
+      {
+        "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/first-completion-thread-dump.txt",
+        "bytes": 11533,
+        "sha256": "C4B70FE15DC796F37F91D4A519B3B124E2F2D16A3F522C7E38FADD741AB2BCC0"
+      }
+    ]
+  },
+  "limits": [
+    "Exploration at 1000/5000 ACTIVE or 300 objectives exceeded the fixed reference gate; no maximum player capacity is promised.",
+    "Cumulative receipt stress includes synchronous durable transactions and fixture checkpoint/reset/save costs; it is not the formal reference workload.",
+    "Historical co-running spikes retain their original incomplete attribution; they are not silently relabelled as current-hash measurements.",
+    "VSync frame measurements cover one native comparison pair and the recorded scenes only."
+  ],
+  "preserved_items": {
+    "npc_identity_corrupt_file_special": "DEFERRED_BY_USER",
+    "manual_audio_perception": "NOT_RUN",
+    "old_development_cnpc_mapping": "BLOCKED_HISTORICAL"
+  },
+  "release": {
+    "push": false,
+    "tag": false,
+    "finished_product_package": false,
+    "github_release": false
+  },
+  "sources": [
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-final-source-provenance.json",
+      "bytes": 119892,
+      "sha256": "BBF7741013D1B139EEAD490C823F6A9A045540D1D90ABA2C1332A2C27789749E"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-final-reference-metrics.json",
+      "bytes": 288005,
+      "sha256": "49B3DC8595584C875853B972C562C1B6DBEF58D38DF037867DD3BFD8CE617607"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-exploration-metrics.json",
+      "bytes": 1660738,
+      "sha256": "CF571747AABA6163E1478D27D923DDC45E1EB97A8B490A5D44275C13B5774E04"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-final-native-frame-comparison.json",
+      "bytes": 8007,
+      "sha256": "7F44D0C8C766200B06E13C786254C1D863E7A0FE1942D401AD3591BE6E1CB416"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-linear-native-packet-replay.json",
+      "bytes": 7706,
+      "sha256": "26476FE8A22B19F0070471C1ACF40E21843DC05E92729A10AF82C7A5E34CEBA1"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-linear-history-and-stop.json",
+      "bytes": 5920,
+      "sha256": "87F05C6C8F081A830677C800E59A41D982ACD09581CE48B982B37F242A171AB8"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-font-native-evidence.json",
+      "bytes": 6315,
+      "sha256": "DB5E3F6AE62065F4495FFE5F7D9FFFBB67EF919A2B9E854996DB24B8A7C0DCEC"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-font-final-diagnostic.json",
+      "bytes": 4886,
+      "sha256": "B249D5FDCDB838A65BBF8861505A1D660FC37F7E1B904DEAD73F2CA5B8175FA0"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-pending-final-native.json",
+      "bytes": 3558,
+      "sha256": "42062819FADF429920CC7BCCD656336C58DEAD4BE67E99313D178CBC1E3A0AC6"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-cnpc-final-native.json",
+      "bytes": 10606,
+      "sha256": "CE26C5FE77BD0CC5FE0FBFB405317937701D171047377554EDDD9517CCFEBDF2"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-world-final-native.json",
+      "bytes": 8561,
+      "sha256": "CDFB0D6EB9C954BEB15A883F1794E1CA40CFD2A4F445EA990C6C667F75DD6EF5"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-network-final-native.json",
+      "bytes": 8287,
+      "sha256": "CB1B478A0BC79413E451E66B39D8CC679F7F3DD8169380C4474355BC818A2CF7"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-authority-binaries-final.json",
+      "bytes": 1066,
+      "sha256": "0A4E9C7C024C2CCFCE822D642668FB117F4C17D8DA0DDE61D625FFD7D99AAE17"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-authority-final-recheck.json",
+      "bytes": 1298,
+      "sha256": "40E931BC26D3254ACF2CC49A2DFBB73CCAADBC8FB766F0E4F7BDAD2EB5EC395A"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-final-failed-fixtures.json",
+      "bytes": 7822,
+      "sha256": "28659A8EF13CECD72A35EBCC3AB9BB30662D8D81D19C69EE0184155AD9F085CC"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-linear-failed-fixtures.json",
+      "bytes": 10540,
+      "sha256": "F7C484B62BA8D0C7351AFD34917DBB3BF7DA50FFBE8B66B7D0A7D4E34343E662"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-linear-idle-scopes.json",
+      "bytes": 2307,
+      "sha256": "7491AF2C1BBB8B8A26893CB495647E07DC8F8A94EA1CBA6AA8D2CD9FC9CB92C9"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-observation-file-sharing.json",
+      "bytes": 5268,
+      "sha256": "32761011E69EDE374D9B2DF1367929ABB46F9806D9CDC997CDAF81E1D3D21243"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-final-client-driver-component.json",
+      "bytes": 17701,
+      "sha256": "5EF24BCBFDFF8DE13B344C734DAAAA53DC5189CA3DC92824094FB8FE64DB4EDC"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/0402-final-pressure-scopes.json",
+      "bytes": 5910,
+      "sha256": "8F3CB126523DAB06562409A1AC573AF8F633DFF484E59394CD0188AD4350D702"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-observations.csv",
+      "bytes": 18008,
+      "sha256": "827009372DEE8BC9649E21E4891DA474BC13A2EF4894C1A84A44FB2A86ECC530"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-final-state.json",
+      "bytes": 1551,
+      "sha256": "FB0D2C0E69742C8E1592C8223247CC686E5AE55AFB9D229BBC6566416048AA24"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-60-summary.json",
+      "bytes": 1803,
+      "sha256": "FDB686307664FFBED31421F3972F63B5FFC0DC7FCF8AD3F048D2A1218E6FAC8F"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-summary.json",
+      "bytes": 1799,
+      "sha256": "AF29B8DF77CE8FA202134F19B0670AAE650C9C992471682F482EB78FB7DEB16D"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/mixed-cold-restore.json",
+      "bytes": 126,
+      "sha256": "F57E2B7915A78B76738A9067AF27763F2834CE0844DF0FBCD1B3E32AF10D2F3A"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/observed-world-inputs.json",
+      "bytes": 770,
+      "sha256": "8B3ECE6ACC1A2B40EDC765A81A8E630647821D4945F7C484CD63B44E039F1A13"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-60-authored-result.json",
+      "bytes": 223,
+      "sha256": "9D0D0B9E70BBEC63E67DF381830513FD9F81765610F3A671FC76CD2098FAF848"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-native-initial-state.json",
+      "bytes": 1545,
+      "sha256": "7160D867EDBD057CB1589CD820479967DE42F48F7E01A9624AFB6F44B11F62C8"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-before-client-login.json",
+      "bytes": 2835,
+      "sha256": "9EE06A36DFEB089E1B79E24EEDD6912655AF9220CDF35EC42CCDF6F17782C564"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-native-observations.jsonl",
+      "bytes": 1438,
+      "sha256": "FFAFBEC8251E6B77A0C3BCEA431733C4BA59590437F56844849BBDEB489D77A3"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-switch-window.json",
+      "bytes": 342,
+      "sha256": "F9645EBCAE4AF6CC45FCC48912E710A4697C110A9446FFEEE0A957433D2964C7"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-reconnect-before-server.json",
+      "bytes": 1551,
+      "sha256": "3A54D0005A550ECB710531870833A9DC11C4D7BCBB19D7B19A788CDDB6E4FE0C"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-reconnect-disconnected-server.json",
+      "bytes": 1104,
+      "sha256": "074E4252B5F3FD97DD85D1E98139217E64E1C92BDD2426723E2FE1B75C813213"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-reconnect-after-server.json",
+      "bytes": 1551,
+      "sha256": "E2A508B21AF941D35A74691D5036923257D285E3908262AAEABD24F918DCF36E"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-transition-observations.jsonl",
+      "bytes": 10843,
+      "sha256": "76C95DD094E4108A2FF6C06C73CA4F683B251C7078984895267A3C631C908BDF"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/native-long-tail-observations.jsonl",
+      "bytes": 107312,
+      "sha256": "96B4AF6472B50064F8F3359AC78B6FEC2FA50421964FAD7DE15078B040AB2FA1"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/long-F-before.json",
+      "bytes": 1545,
+      "sha256": "FFBFCB68EE45962690B18272E98CB12029E69A92E11BCC9331F9A224AE32EC2A"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/long-F-after.json",
+      "bytes": 1548,
+      "sha256": "84174973E4387C9BDA13B56529C55254F7CBB446C5A664842E4B437A48121836"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/long-G-before.json",
+      "bytes": 1548,
+      "sha256": "84174973E4387C9BDA13B56529C55254F7CBB446C5A664842E4B437A48121836"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/long-G-after.json",
+      "bytes": 1550,
+      "sha256": "B85DEDCD6DBA06DF3A97E9F89631A91EEE79BB756DADF220ADC78555E72F1676"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/long-G-first-submit-unsettled.json",
+      "bytes": 1545,
+      "sha256": "6E47B1CFC28AA203A42699CC73EB697769809CB4F0CE03F1B7F0F8953C6458B8"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final1B-cold-repeat-profile-cold-repeat.json",
+      "bytes": 30784,
+      "sha256": "C4709AF57A57430A53B17650B75A61844F9BC2A56A94EF5EBEB77EE750A365DE"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final1B-idle10000-profile-idle-final1B.json",
+      "bytes": 3690,
+      "sha256": "DD09BE79CF40C72506955402693FE6F863E653CE720D2EC74EF02ACC365C4D3F"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final1B-queued-authored-60-final1B-queued-60.json",
+      "bytes": 365494,
+      "sha256": "6D7472F3734E2B948600A4305AC8881BB34070BCC9659BAD4D3B61E27719915D"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final1B-queued-authored-60-final1B-queued-cold.json",
+      "bytes": 46004,
+      "sha256": "D7EAA9898497A359D765909A65842B9F5F536AAD91F676B1480025A5F8D12040"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final1B-queued-authored-check-queued-authored-check.json",
+      "bytes": 21804,
+      "sha256": "0A01649F0893564778F6FAE8A6DC5FE673550D3C53C383E584D6D35858D69C94"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final-linear-closed-60-linear-native-check.json",
+      "bytes": 52801,
+      "sha256": "E261A38C976EFD31A86827F655C9AEBC7751156D8DDEC771355E1FECC5A7B3A0"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final-linear-idle10000-linear-idle-10000.json",
+      "bytes": 3707,
+      "sha256": "A0EC637B069FE2080DE49040B4498789E84974BCD9B55B7B01CFC107C4B3A816"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final-linear-robust-60-linear-final-60.json",
+      "bytes": 367451,
+      "sha256": "6F127DA33C7CAF40DD3EB2A5E3998AA32AA2B6698A39A50695D33426D8A54E66"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final-linear-robust-60-linear-final-cold.json",
+      "bytes": 34702,
+      "sha256": "40F17390AD96A6E2777998995C8D161C7D3F8A7D37B93135F3AFEF4D7CF024EA"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/warmup-Final1B-queued-authored-60-final1B-queued-60.json",
+      "bytes": 27255,
+      "sha256": "F4B8686E5605FB4986BE45E9084DB72CEA4DF2AF688B360DE73A792CF65B2A47"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/warmup-Final-linear-robust-60-linear-final-60.json",
+      "bytes": 27197,
+      "sha256": "C477EB3A3679A98D607D2871ED47577400EDAB5593757CF3E162845F7FD39184"
+    }
+  ]
+}

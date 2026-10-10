@@ -35,4 +35,8 @@ public final class CanonicalStoryRegionEntryTracker {
     public synchronized void forget(UUID playerUuid) {
         if (playerUuid != null) previousByPlayer.remove(playerUuid);
     }
+
+    public synchronized void clear() {
+        previousByPlayer.clear();
+    }
 }

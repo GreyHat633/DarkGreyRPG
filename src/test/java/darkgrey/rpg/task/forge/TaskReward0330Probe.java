@@ -138,6 +138,15 @@ public final class TaskReward0330Probe {
             throw expected;
         } catch (InjectedCrash expected) {}
         require(live.count == 0, "Crash before apply changed live inventory");
+        Path journalFile = directory.resolve(player.toString() + ".nbt");
+        NBTTagCompound fastRecord = net.minecraft.nbt.CompressedStreamTools
+            .func_152457_a(Files.readAllBytes(journalFile), new net.minecraft.nbt.NBTSizeTracker(8 * 1024 * 1024));
+        require(
+            fastRecord.getCompoundTag("image")
+                .equals(image(16, first)),
+            "Vanilla reads fast gzip after-image");
+        // Simulate an unchanged pre-optimization gzip journal; recovery must accept it.
+        Files.write(journalFile, net.minecraft.nbt.CompressedStreamTools.compress(fastRecord));
         FakeState restart = new FakeState();
         require(new CanonicalTaskTransactionJournal(directory).recover(player, restart), "Prepared record recovery");
         require(restart.count == 16 && restart.checkpoints == 1, "After-image recovery");
@@ -166,6 +175,57 @@ public final class TaskReward0330Probe {
             throw new AssertionError("Overwrote pending recovery");
         } catch (IOException expected) {}
         require(journal.recover(player, unrecovered) && unrecovered.count == 25, "Old journal lost");
+        UUID accumulatedPlayer = UUID.randomUUID();
+        NBTTagCompound accumulated = image(31, first);
+        for (int i = 0; i < 2048; i++) {
+            String suffix = Integer.toHexString(i);
+            accumulated.getCompoundTag("receipts")
+                .setBoolean(repeat('0').substring(suffix.length()) + suffix, true);
+        }
+        FakeState accumulatedState = new FakeState();
+        require(journal.commit(accumulatedPlayer, first, accumulated, accumulatedState), "Cumulative gzip commit");
+        NBTTagCompound accumulatedRecord = net.minecraft.nbt.CompressedStreamTools.func_152457_a(
+            Files.readAllBytes(directory.resolve(accumulatedPlayer.toString() + ".nbt")),
+            new net.minecraft.nbt.NBTSizeTracker(8 * 1024 * 1024));
+        require(
+            accumulatedRecord.getCompoundTag("image")
+                .equals(accumulated),
+            "No receipt lost during fast compression");
+        FakeState accumulatedRestart = new FakeState();
+        require(journal.recover(accumulatedPlayer, accumulatedRestart), "Cumulative gzip cold read");
+        require(
+            accumulatedRestart.receipts.equals(accumulated.getCompoundTag("receipts")),
+            "Cumulative gzip recovery receipts");
+        Path accumulatedFile = directory.resolve(accumulatedPlayer.toString() + ".nbt");
+        byte[] validBytes = Files.readAllBytes(accumulatedFile);
+        java.nio.file.attribute.FileTime originalTime = Files.getLastModifiedTime(accumulatedFile);
+        byte[] damaged = validBytes.clone();
+        damaged[damaged.length / 2] ^= 8;
+        Files.write(accumulatedFile, damaged);
+        Files.setLastModifiedTime(accumulatedFile, originalTime);
+        NBTTagCompound nextAccumulated = (NBTTagCompound) accumulated.copy();
+        nextAccumulated.getCompoundTag("receipts")
+            .setBoolean(second, true);
+        try {
+            journal.commit(accumulatedPlayer, second, nextAccumulated, accumulatedState);
+            throw new AssertionError("Cached journal trusted changed bytes with identical size/time");
+        } catch (IOException expected) {}
+        require(java.util.Arrays.equals(damaged, Files.readAllBytes(accumulatedFile)), "Corrupt journal overwritten");
+        require(
+            accumulatedState.count == 31 && !accumulatedState.hasReceipt(second),
+            "Corrupt cache check mutated player");
+        Files.write(accumulatedFile, validBytes);
+        require(
+            journal.commit(accumulatedPlayer, second, nextAccumulated, accumulatedState),
+            "Verified bytes resume after restoration");
+        for (int i = 0; i < 260; i++) journal.commit(UUID.randomUUID(), first, image(i, first), new FakeState());
+        java.lang.reflect.Field verified = CanonicalTaskTransactionJournal.class.getDeclaredField("verified");
+        verified.setAccessible(true);
+        require(((java.util.Map<?, ?>) verified.get(journal)).size() == 256, "Journal digest cache is bounded");
+        FakeState evictedRestart = new FakeState();
+        require(
+            journal.recover(accumulatedPlayer, evictedRestart) && evictedRestart.hasReceipt(second),
+            "Eviction preserves journal recovery");
         System.out.println("TASK_REWARD_0330_ATOMIC_JOURNAL_CRASH_WINDOWS=PASS");
     }
 

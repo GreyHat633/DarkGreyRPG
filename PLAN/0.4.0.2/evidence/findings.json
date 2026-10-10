@@ -1,0 +1,184 @@
+{
+  "status": "FINAL_FINDINGS_RECONCILED_WITH_OBSERVED_LIMITS",
+  "findings": [
+    {
+      "id": "F01",
+      "kind": "runtime_bug",
+      "problem": "同一存储和资源快照下，Story/Session四条周期入口反复全量恢复和替换实例容器。",
+      "resolution": "复用已绑定的不可变快照；首次、快照更替及失败门禁仍走现行验证。",
+      "validation": "800次真实入口基线重建800次；修复后零重复重建，并验证无内容reload和真正包资格更替。",
+      "status": "RESOLVED",
+      "evidence": [
+        "../Implementation.md",
+        "0402-final-reference-metrics.json"
+      ]
+    },
+    {
+      "id": "F02",
+      "kind": "runtime_bug",
+      "problem": "null-first恢复提前退出，使已保存的pending终结路由不能自动创建目标。",
+      "resolution": "登录和周期恢复共用有界入口，保持claim/target/applied和run幂等。",
+      "validation": "真实保存冷启动后两名原生玩家的登录及在线定时恢复；稳定220tick，已有target与无关对象不变。",
+      "status": "RESOLVED",
+      "evidence": [
+        "0402-pending-final-native.json"
+      ]
+    },
+    {
+      "id": "F03",
+      "kind": "measured_hotspot",
+      "problem": "Task派发为判断变化反复序列化全世界；玩家查询复制全量实例；节点属性深复制反复解析JSON。",
+      "resolution": "使用权威变更结果、玩家索引和保持隔离的JSON树深复制。",
+      "validation": "原1000 ACTIVE反例最大2117ms；定向修复消除原反例，正式参考三组通过；1000/5000压力档仍单列。",
+      "status": "RESOLVED_WITH_CAPACITY_BOUNDARY",
+      "evidence": [
+        "0402-final-reference-metrics.json",
+        "0402-exploration-metrics.json"
+      ]
+    },
+    {
+      "id": "F04",
+      "kind": "runtime_bug",
+      "problem": "奖励发放后新SETTLED实例未立即进入完成历史。",
+      "resolution": "只观察本次新结算实例；重复奖励不写dirty、不重复归档。",
+      "validation": "最小失败回归与5 seed各2000步独立业务台账通过。",
+      "status": "RESOLVED",
+      "evidence": [
+        "../Implementation.md",
+        "0402-final-source-provenance.json"
+      ]
+    },
+    {
+      "id": "F05",
+      "kind": "design_risk",
+      "problem": "主线程队列无界准入、单次排空和异常逃出；基线noop突发没有构成已发生的业务丢失事故。",
+      "resolution": "普通1024+完成256共用FIFO；server64/client32及2ms预算；拒绝、取消、Runtime和Error有各自责任。",
+      "validation": "受控时钟、满载完成槽、执行/取消守恒及实际128/256突发； 最终78000tick（含预热）、72000测量tick和6000tick严格冷恢复通过；所有76440个夹具队列作业执行，正常停止缓存引用0。",
+      "status": "RESOLVED_FINAL_RUNTIME_VALIDATED",
+      "evidence": [
+        "queue-call-sites.json",
+        "../Implementation.md"
+      ]
+    },
+    {
+      "id": "F06",
+      "kind": "lifecycle_boundary",
+      "problem": "异步完成须绑定真实服务器、连接和资源代次，退出和准入失败必须释放所有权。",
+      "resolution": "迁移调用者到有范围的完成队列和幂等清理；保留3并发/10包名额及整包完整性合同。",
+      "validation": "Y世界已加载后释放X的5个旧在途，Y连接/GUI/纹理未复活旧内容，X队列归0、source lease归1。",
+      "status": "RESOLVED",
+      "evidence": [
+        "final-late-D12",
+        "0402-network-final-native.json"
+      ]
+    },
+    {
+      "id": "F07",
+      "kind": "runtime_visual_bug",
+      "problem": "局部字体修复漏掉诊断、输入框、浮层、图标签和标题；阴影、强制粗体、小数缩放和底层HUD透字形成重复笔画。",
+      "resolution": "统一受管单次无阴影绘字、最近邻和像素定位；普通工具表面不透明；图标签在几何zoom结束后绘制。",
+      "validation": "GUI1/2/3、Unicode、125%/150%、三主题及代表界面原生验证；当前8B扫描698个生产class，唯一受管原始绘字入口。",
+      "status": "RESOLVED",
+      "evidence": [
+        "0402-font-native-evidence.json",
+        "0402-font-final-diagnostic.json",
+        "0402-final-source-provenance.json"
+      ]
+    },
+    {
+      "id": "F08",
+      "kind": "runtime_bug",
+      "problem": "通知布局在缩放/窗口切换时出现空测量对象异常。",
+      "resolution": "正确处理布局测量和缩放边界。",
+      "validation": "定向通知Probe及12次原生窗口往返通过。",
+      "status": "RESOLVED",
+      "evidence": [
+        "../Implementation.md",
+        "0402-font-native-evidence.json"
+      ]
+    },
+    {
+      "id": "F09",
+      "kind": "runtime_diagnostic_bug",
+      "problem": "只读诊断仍按旧字符串结构投影当前compound资源地址，合法任务被显示为资源缺失。",
+      "resolution": "使用当前Task/Session/wait的结构地址投影，不改原NBT。",
+      "validation": "当前格式及坏compound回归，两原生客户端各50次匹配查询和密集详情画面通过。",
+      "status": "RESOLVED",
+      "evidence": [
+        "0402-font-final-diagnostic.json",
+        "0402-final-source-provenance.json"
+      ]
+    },
+    {
+      "id": "F10",
+      "kind": "measured_hotspot",
+      "problem": "累计收据交易中逐键regex/String.format、重复日志解码和默认gzip产生同步开销。",
+      "resolution": "保持原收据合同和hash输入；快速gzip带原格式回退；每次读真实文件字节，以有界SHA缓存避免相同已验证字节的重复解码；按世界路径关联journal并停止清理。",
+      "validation": "vanilla双向兼容、2048累计收据、同长度同mtime坏文件拒绝、256缓存上界/驱逐恢复及1B短真实队列运行通过； 最终78000tick（含预热）、72000测量tick和6000tick严格冷恢复通过；所有76440个夹具队列作业执行，正常停止缓存引用0。",
+      "status": "RESOLVED_FINAL_RUNTIME_VALIDATED",
+      "evidence": [
+        "0402-final-source-provenance.json",
+        "profile-Final1B-queued-authored-check-queued-authored-check.json"
+      ]
+    },
+    {
+      "id": "F11",
+      "kind": "test_fixture_failures",
+      "problem": "早期夹具存在退休schema、未安装资格、宿主chunk/高度、单表身份准备、检查点台账不同步、脚本user参数/前景句柄错误以及不相容快照替换。",
+      "resolution": "修正测试输入和准备，保留失败世界、退出码和日志；未放宽生产reader，未将旧失败改成PASS。混合提交改用生产预算队列，同phase四份到达不变。",
+      "validation": "当前短MixedAuthored及此前检查点/双表/原生脚本复验通过；新长测来源独立记录。 原生observer共享冲突、NPC追踪/遮挡、UUID测试守卫及有限测试期限失败均保留，改用原子观察写入和共享网络entity id后当前8B真实交互及长冷检查通过；Forge握手NPE未强归责DGR。 一次17210tick长测因测试心跳原子替换占用中止；统一三处测试输出后19次短暂占用全部恢复，2秒占用明确失败并停服，不吞持续写入错误。最终从独立正常检查点重跑，原失败未计完整PASS。",
+      "status": "CORRECTED_WITH_FAILURES_RETAINED",
+      "evidence": [
+        "../Implementation.md",
+        "0402-fixture-checkpoint-order-validation.json",
+        "0402-cnpc-final-native.json",
+        "0402-linear-failed-fixtures.json",
+        "0402-observation-file-sharing.json"
+      ]
+    },
+    {
+      "id": "F12",
+      "kind": "measurement_boundary",
+      "problem": "历史高压力、共同运行、初始化和周期强制保存的峰值不能作为正式参考性能，也不能被无依据归因于GC。",
+      "resolution": "保留原始记录；正式100 ACTIVE/4逻辑用户/20目标/512MiB三组冻结对照单列，当前累计收据与空闲分段计时补测单列。",
+      "validation": "5000 ACTIVE压力515.962ms由32用户同tick事件操作计时定位。独占空闲分段确认首次fixture初始化与vanilla每900tick保存；当前累计历史混合／冷恢复／空闲保留全部峰值，不能归因GC或当正式参考。",
+      "status": "RECORDED_CAPACITY_AND_MEASUREMENT_LIMITS",
+      "evidence": [
+        "0402-exploration-metrics.json",
+        "0402-final-reference-metrics.json",
+        "0402-final-idle-scopes.json",
+        "0402-linear-idle-scopes.json"
+      ]
+    },
+    {
+      "id": "F13",
+      "kind": "measured_hotspot",
+      "problem": "约9768条终结历史冷读首次完成回调稳定复现2.44～3.45秒同步停顿；线程栈确认逐条ArrayList.contains重复检查导致二次复杂度。",
+      "resolution": "临时HashSet严格检测terminal/pending重复，结果List保持原顺序、全部键、schema与失败隔离；不删除或截断历史。",
+      "validation": "60000条NBT回归约46.13ms、保序/dirty/原NBT/重复拒绝通过；当前8B完整65分钟及严格保存冷启动通过，旧反例保留。",
+      "status": "RESOLVED_FINAL_RUNTIME_VALIDATED",
+      "evidence": [
+        "0402-linear-history-and-stop.json",
+        "profile-Final1B-queued-authored-60-final1B-queued-cold.json",
+        "profile-Final-linear-robust-60-linear-final-cold.json"
+      ]
+    },
+    {
+      "id": "F14",
+      "kind": "runtime_lifecycle_bug",
+      "problem": "实际Forge异常停止可能跳过FMLServerStoppingEvent，旧维护引用保留10个journal/10个recovery。",
+      "resolution": "现有幂等清理由FMLServerStoppedEvent兜底复用；原异常仍外传。",
+      "validation": "当前8B受控LinkageError前8个journal、后两表0；同JVM两次世界切换/三次加载、完整长测与冷读正常停止0/0通过。",
+      "status": "RESOLVED_FINAL_RUNTIME_VALIDATED",
+      "evidence": [
+        "0402-linear-history-and-stop.json",
+        "0402-linear-failed-fixtures.json"
+      ]
+    }
+  ],
+  "preserved_items": {
+    "npc_identity_corrupt_file_special": "DEFERRED_BY_USER",
+    "manual_audio_perception": "NOT_RUN",
+    "old_development_cnpc_mapping": "BLOCKED_HISTORICAL"
+  }
+}

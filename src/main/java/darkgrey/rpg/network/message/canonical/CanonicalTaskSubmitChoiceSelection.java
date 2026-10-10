@@ -54,14 +54,14 @@ public final class CanonicalTaskSubmitChoiceSelection implements IMessage {
         @Override
         public IMessage onMessage(final CanonicalTaskSubmitChoiceSelection message, final MessageContext context) {
             final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 @Override
                 public void run() {
                     DarkGreyRpg.getCanonicalTaskManager()
                         .selectSubmitCandidate(player, message.token, message.optionIndex);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectServer(player));
             return null;
         }
     }

@@ -16,17 +16,28 @@ public final class CanonicalSessionActionHandler implements IMessageHandler<Cano
     public IMessage onMessage(final CanonicalSessionAction message, final MessageContext context) {
         final EntityPlayerMP player = context == null || context.getServerHandler() == null ? null
             : context.getServerHandler().playerEntity;
-        MainThreadScheduler.scheduleServer(new Runnable() {
+        MainThreadScheduler.scheduleServer(player, new Runnable() {
 
             @Override
             public void run() {
                 CanonicalSessionForgeManager manager = DarkGreyRpg.getCanonicalSessionManager();
-                if (manager != null && manager.handleAction(player, message)
-                    && message.getKind() == CanonicalSessionAction.Kind.CHOICE)
+                boolean accepted = manager != null && manager.handleAction(player, message);
+                if (!accepted) reject(player, message);
+                if (accepted && message.getKind() == CanonicalSessionAction.Kind.CHOICE)
                     darkgrey.rpg.network.DialogueNetwork.CHANNEL
                         .sendTo(new darkgrey.rpg.network.message.canonical.CanonicalChoiceReceipt(message), player);
             }
-        });
+        }, () -> reject(player, message));
         return null;
+    }
+
+    private static void reject(EntityPlayerMP player, CanonicalSessionAction message) {
+        if (player != null && player.playerNetServerHandler != null
+            && player.playerNetServerHandler.netManager.isChannelOpen())
+            darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(
+                new darkgrey.rpg.network.message.canonical.CanonicalSessionNotice(
+                    message.getTransportId(),
+                    message.getStoryId()),
+                player);
     }
 }

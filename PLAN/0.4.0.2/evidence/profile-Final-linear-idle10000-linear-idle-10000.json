@@ -1,0 +1,101 @@
+{
+  "status": "MEASURED_PROFILE_WITH_CORRECTNESS_ASSERTIONS",
+  "case": "Final-linear-idle10000",
+  "stage": "linear-idle-10000",
+  "summary": {
+    "status": "PASS_DRIVER_ASSERTIONS_PERFORMANCE_RECORDED",
+    "exit_code": 0,
+    "at": "2026-10-10T08:49:04.7960678+08:00",
+    "inputs": {
+      "pid": 43936,
+      "started": "2026-10-10T08:46:54.3770318+08:00",
+      "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-linear-idle10000",
+      "stage": "linear-idle-10000",
+      "scenario": "Idle",
+      "baseline": false,
+      "args": [
+        "-Xms128m",
+        "-Xmx512m",
+        "-Ddgr0402.ticks=2400",
+        "-Ddgr0402.warmupTicks=1200",
+        "-Ddgr0402.active=0",
+        "-Ddgr0402.users=4",
+        "-Ddgr0402.nodes=20",
+        "-Ddgr0402.offline=10000",
+        "-Ddgr0402.network=0",
+        "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-linear-idle10000\"",
+        "-Ddgr0402.submissionSpacingTicks=0",
+        "-Ddgr0402.profileDrivers=true",
+        "-Ddgr0402.scenario=Idle",
+        "-jar",
+        "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+        "nogui"
+      ],
+      "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+      "driver_sha256": "655B775B841B0F025690D93C3BBC527D212309B6F003A485BA340701C14FC557",
+      "seed": 40202,
+      "logical_users": 4,
+      "actual_network_required": 0,
+      "active_tasks": 0,
+      "nodes": 20,
+      "offline_instances": 10000,
+      "heap_mib": 512,
+      "measurement_minutes": 1,
+      "warmup_minutes": 1,
+      "configured_level_seed": "40202"
+    },
+    "complete_tick": {
+      "samples": 1200,
+      "p95_ns": 217000,
+      "p99_ns": 1272500,
+      "max_ns": 44650800,
+      "scope": "MinecraftServer.tick entry through return, test-only ASM"
+    },
+    "reference_gate_pass": true,
+    "has_250ms_spike": false,
+    "has_500ms_spike": false,
+    "world_data_deleted": false
+  },
+  "sample_count": 1200,
+  "p50_ms": 0.1369,
+  "at_least_250ms": 0,
+  "at_least_500ms": 0,
+  "peaks": [],
+  "raw": [
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-summary.json",
+      "bytes": 1775,
+      "sha256": "0EDD3E835F718581E969856872D042F78463C6216C89C1419309C7266245BFF7"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-complete-tick-samples.csv",
+      "bytes": 12943,
+      "sha256": "018006766CF7A38BA69D29DEA18FF9ED1A98315B08C486BAC2A585008AB10738"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-driver-tick-profile.csv",
+      "bytes": 593,
+      "sha256": "63D5C55E871A5C5C078C72B1A5659EB1BA64515A9BFF923C3F21340B55563478"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-driver-tick-profile-inputs.json",
+      "bytes": 120,
+      "sha256": "3A03ECB5FDDB76D291ABC515E8F1FDC5F1F2EBD6BB6DF21274FA803F84CFB9C2"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-memory-queue.csv",
+      "bytes": 740,
+      "sha256": "E637D357DC56BF312DB5F2CA5DBAB3E11C1C81B5A76784E739AF9D001C479CA4"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-inputs.json",
+      "bytes": 1241,
+      "sha256": "ABD46BB8E2466D0602856256E0231B981AE0DDAC9772EACBED2342188C002589"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-operation-samples.csv",
+      "bytes": 51,
+      "sha256": "1760C23FF543D925E2100AF90F04BC4B5C167522660913C810BBDD4B709953D5"
+    }
+  ]
+}

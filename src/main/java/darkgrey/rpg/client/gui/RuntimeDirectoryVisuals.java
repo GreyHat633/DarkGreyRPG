@@ -74,7 +74,7 @@ public final class RuntimeDirectoryVisuals extends Gui {
     }
 
     public static void text(FontRenderer font, String text, int x, int y, int width, int color) {
-        CanonicalDialogueRenderer.drawText(font, RuntimeRowText.fit(text, width, metrics(font)), x, y, 1.0, color);
+        DgrUiText.left(font, RuntimeRowText.fit(DgrUiText.label(text), width, metrics(font)), x, y, color);
     }
 
     public static void tooltip(FontRenderer font, List<String> lines, int mouseX, int mouseY, int screenWidth,
@@ -94,8 +94,8 @@ public final class RuntimeDirectoryVisuals extends Gui {
             GL11.glTranslatef(0, 0, 300);
             drawRect(left - 3, top - 3, left + width + 3, top + height + 3, DgrUiPalette.BORDER);
             drawRect(left - 2, top - 2, left + width + 2, top + height + 2, DgrUiPalette.SUB_PANEL);
-            for (int i = 0; i < wrapped.size(); i++) CanonicalDialogueRenderer
-                .drawText(font, wrapped.get(i), left, top + i * (font.FONT_HEIGHT + 2), 1.0, DgrUiPalette.TEXT);
+            for (int i = 0; i < wrapped.size(); i++)
+                DgrUiText.left(font, wrapped.get(i), left, top + i * (font.FONT_HEIGHT + 2), DgrUiPalette.TEXT);
         } finally {
             GL11.glPopMatrix();
             GL11.glPopAttrib();

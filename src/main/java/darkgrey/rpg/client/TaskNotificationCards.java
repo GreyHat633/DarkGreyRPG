@@ -18,14 +18,15 @@ import net.minecraft.nbt.NBTTagList;
 import org.lwjgl.opengl.GL11;
 
 import darkgrey.rpg.client.gui.DgrUiPalette;
+import darkgrey.rpg.client.gui.DialogueFontDrawing;
 
 /** Client presentation only; authoritative task transitions arrive from the server. */
 public final class TaskNotificationCards {
 
     private static final long SLIDE = 600000000L, READ = 4000000000L;
-    private static final double TITLE_SCALE = 1.25;
-    private static final int TITLE_LINE_HEIGHT = 13;
+    private static final int TITLE_LINE_HEIGHT = 11;
     private static final int HEIGHT = 95, GAP = 5;
+    private static int visibleSlots = 3;
     private static final LinkedHashMap<String, Card> cards = new LinkedHashMap<String, Card>();
     private static final LinkedHashMap<String, Card> pending = new LinkedHashMap<String, Card>();
     private static final LinkedHashSet<String> seen = new LinkedHashSet<String>();
@@ -36,6 +37,7 @@ public final class TaskNotificationCards {
         cards.clear();
         pending.clear();
         seen.clear();
+        visibleSlots = 3;
     }
 
     public static synchronized void accept(NBTTagList events, long now) {
@@ -79,7 +81,7 @@ public final class TaskNotificationCards {
         Iterator<Card> it = cards.values()
             .iterator();
         while (it.hasNext()) if (now >= it.next().exitAt + SLIDE) it.remove();
-        while (cards.size() < 3 && !pending.isEmpty()) {
+        while (cards.size() < visibleSlots && !pending.isEmpty()) {
             String key = pending.keySet()
                 .iterator()
                 .next();
@@ -93,6 +95,10 @@ public final class TaskNotificationCards {
             card.yAt = now;
             cards.put(key, card);
         }
+        reflow(now);
+    }
+
+    private static void reflow(long now) {
         int nextY = 0;
         for (Card card : cards.values()) {
             double target = nextY;
@@ -119,25 +125,12 @@ public final class TaskNotificationCards {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.theWorld == null || mc.thePlayer == null) return;
         long now = System.nanoTime();
-        advance(now);
         ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
-        // Reserve three slots even when only one is visible, so queue changes never resize text.
-        double scale = Math.min(1, (resolution.getScaledHeight() - 24.0) / (3 * (HEIGHT + GAP)));
-        scale = Math.max(0.25, scale);
-        int screenWidth = (int) (resolution.getScaledWidth() / scale);
+        int screenWidth = resolution.getScaledWidth();
         boolean leftSide = darkgrey.rpg.client.session.PlayerUiPreferences.notificationSide()
             == darkgrey.rpg.client.session.PlayerUiPreferences.Side.LEFT;
         int width = Math.min(190, screenWidth / 2), x = leftSide ? 8 : screenWidth - width - 8;
-        for (Card card : cards.values()) {
-            card.titleLines = lines(mc.fontRenderer, "\u00a7l" + card.title, (int) ((width - 14) / TITLE_SCALE), 2);
-            card.bodyLines = card.body()
-                .isEmpty() ? Collections.<String>emptyList() : lines(mc.fontRenderer, card.body(), width - 14, 2);
-            card.height = 17 + card.titleLines.size() * TITLE_LINE_HEIGHT + 5;
-            if (!card.bodyLines.isEmpty()) card.height += 7 + card.bodyLines.size() * 10;
-            if (card.active.size() > 1 && card.terminal.isEmpty()) card.height += 10;
-            if (!card.completed.isEmpty() && card.terminal.isEmpty() && !card.active.isEmpty()) card.height += 10;
-        }
-        advance(now);
+        prepareFrame(now, resolution.getScaledHeight(), width - 14, value -> mc.fontRenderer.getStringWidth(value));
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glPushMatrix();
         try {
@@ -146,11 +139,16 @@ public final class TaskNotificationCards {
             GL11.glEnable(GL11.GL_BLEND);
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             GL11.glColor4f(1, 1, 1, 1);
-            GL11.glScaled(scale, scale, 1);
             for (Card card : cards.values()) {
                 int left = x + (leftSide ? -1 : 1) * (int) Math.round((width + 8) * card.offset(now));
                 int top = 12 + (int) Math.round(card.y(now));
-                Gui.drawRect(left, top, left + width, top + card.height, DgrUiPalette.WINDOW_PANEL);
+                // Cards overlap other HUDs; their text must not show through this foreground surface.
+                Gui.drawRect(
+                    left,
+                    top,
+                    left + width,
+                    top + card.height,
+                    0xFF000000 | (DgrUiPalette.WINDOW_PANEL & 0xFFFFFF));
                 Gui.drawRect(left, top, left + width, top + 1, DgrUiPalette.SELECTED_BORDER);
                 Gui.drawRect(left, top + card.height - 1, left + width, top + card.height, DgrUiPalette.BORDER);
                 Gui.drawRect(left, top, left + 1, top + card.height, DgrUiPalette.BORDER);
@@ -158,14 +156,7 @@ public final class TaskNotificationCards {
                 small(mc.fontRenderer, card.label, left + 7, top + 6, width - 14);
                 int textY = top + 17;
                 for (String line : card.titleLines) {
-                    GL11.glPushMatrix();
-                    try {
-                        GL11.glTranslated(left + 7, textY, 0);
-                        GL11.glScaled(TITLE_SCALE, TITLE_SCALE, 1);
-                        mc.fontRenderer.drawString(line, 0, 0, DgrUiPalette.TEXT);
-                    } finally {
-                        GL11.glPopMatrix();
-                    }
+                    DialogueFontDrawing.draw(mc.fontRenderer, line, left + 7, textY, 1, DgrUiPalette.TEXT);
                     textY += TITLE_LINE_HEIGHT;
                 }
                 if (!card.bodyLines.isEmpty()) {
@@ -176,7 +167,7 @@ public final class TaskNotificationCards {
                         textY += 10;
                     }
                     for (String line : card.bodyLines) {
-                        mc.fontRenderer.drawString(line, left + 7, textY, DgrUiPalette.TEXT);
+                        DialogueFontDrawing.draw(mc.fontRenderer, line, left + 7, textY, 1, DgrUiPalette.TEXT);
                         textY += 10;
                     }
                 }
@@ -192,15 +183,35 @@ public final class TaskNotificationCards {
         }
     }
 
-    private static void small(FontRenderer font, String value, int x, int y, int width) {
-        GL11.glPushMatrix();
-        try {
-            GL11.glTranslated(x, y, 0);
-            GL11.glScaled(0.85, 0.85, 1);
-            font.drawString(lines(font, value, (int) (width / 0.85), 1).get(0), 0, 0, DgrUiPalette.SECONDARY);
-        } finally {
-            GL11.glPopMatrix();
+    /** Admit and expire before layout; drawing and reflow cannot add an unlaid-out card. */
+    private static void prepareFrame(long now, int screenHeight, int textWidth, TextWidth measure) {
+        // Keep glyphs at native size. A short viewport queues extra cards instead of shrinking their text.
+        // The tallest card is 91 GUI units: two title/body lines and both objective summaries.
+        visibleSlots = Math.max(1, Math.min(3, (screenHeight - 24) / (91 + GAP)));
+        while (cards.size() > visibleSlots) {
+            String last = null;
+            for (String key : cards.keySet()) last = key;
+            LinkedHashMap<String, Card> deferred = new LinkedHashMap<String, Card>();
+            deferred.put(last, cards.remove(last));
+            deferred.putAll(pending);
+            pending.clear();
+            pending.putAll(deferred);
         }
+        advance(now);
+        for (Card card : cards.values()) {
+            card.titleLines = wrap(card.title, textWidth, 2, measure);
+            card.bodyLines = card.body()
+                .isEmpty() ? Collections.<String>emptyList() : wrap(card.body(), textWidth, 2, measure);
+            card.height = 17 + card.titleLines.size() * TITLE_LINE_HEIGHT + 5;
+            if (!card.bodyLines.isEmpty()) card.height += 7 + card.bodyLines.size() * 10;
+            if (card.active.size() > 1 && card.terminal.isEmpty()) card.height += 10;
+            if (!card.completed.isEmpty() && card.terminal.isEmpty() && !card.active.isEmpty()) card.height += 10;
+        }
+        reflow(now);
+    }
+
+    private static void small(FontRenderer font, String value, int x, int y, int width) {
+        DialogueFontDrawing.draw(font, lines(font, value, width, 1).get(0), x, y, 1, DgrUiPalette.SECONDARY);
     }
 
     private static List<String> lines(final FontRenderer font, String text, int width, int limit) {

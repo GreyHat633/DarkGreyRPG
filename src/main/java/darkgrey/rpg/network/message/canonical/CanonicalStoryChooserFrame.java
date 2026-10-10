@@ -83,14 +83,15 @@ public final class CanonicalStoryChooserFrame implements IMessage {
 
         @Override
         public IMessage onMessage(final CanonicalStoryChooserFrame message, MessageContext context) {
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            final Object connection = context.netHandler;
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
                     Minecraft.getMinecraft()
                         .displayGuiScreen(new GuiCanonicalStoryChooser(message));
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

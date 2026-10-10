@@ -1,0 +1,11 @@
+{
+  "status": "PASS_TEST_DRIVER_COMPONENT_DIFF",
+  "before_sha256": "84AB57FEF141E056B4525B3D2A3C3442474083E70FC06CE10B3EC244F2254573",
+  "after_sha256": "8A43E615EE7A76F46C4A8752A1EC84FD1D609FB1BCD366AE9C747E48DD0833DB",
+  "changed_entries": [
+    "darkgrey/rpg/persistence/StabilityClient0402Observer.class",
+    "darkgrey/rpg/persistence/StabilityClient0402PacketFixture.class",
+    "darkgrey/rpg/persistence/StabilityServer0402Driver.class"
+  ],
+  "mixed_workload_and_transformer_identical_bytes": true
+}

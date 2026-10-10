@@ -1,0 +1,290 @@
+{
+  "status": "PASS_TEN_NATIVE_CONNECTION_SWITCHES_PARTIAL_LATE_AFTER_Y",
+  "layer": "S/N/C",
+  "connections": 10,
+  "trace": "0402-final-connections-10.jsonl",
+  "before_server": {
+    "tick": 10380,
+    "network": 2,
+    "peak_network": 2,
+    "media_in_flight": 7,
+    "queue_pending": 0,
+    "source_host": {
+      "uuid": "0be17e61-2b00-4aee-bf25-9fb1a3efe675",
+      "class": "noppes.npcs.entity.EntityCustomNpc",
+      "resolved_actors": [
+        "ST-4EUB-29DN-V8J6-VTY3~actor~host",
+        "ST-5UTG-DFCB-NQAQ-X4QF~actor~r6d7c51d48cb5e734a7b7daed7d233c36"
+      ]
+    },
+    "transfer_target": {
+      "uuid": "bfe13c41-bdd1-4a48-ad4e-e8eecf4e83a5",
+      "class": "noppes.npcs.entity.EntityCustomNpc",
+      "resolved_actors": []
+    },
+    "spawned_victim_types": [],
+    "players": [
+      {
+        "name": "DGR402ClientF",
+        "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+        "inventory": 0,
+        "receipts": 0,
+        "xp": 0,
+        "dimension": 0,
+        "entity_changes": 1,
+        "additional_stories": [
+          {
+            "story": "ST-2222-2222-2222-EC6J",
+            "run": 1791566856641,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-EC6K",
+            "run": 1791566857491,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-2222-2222-2222-EC6L",
+            "run": 1791566858340,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+            "run": 1791564135233,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-EEEE-FFFF-GGGG-HHHH",
+            "run": 1791565864771,
+            "status": "TERMINATED"
+          },
+          {
+            "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+            "run": 1791565865754,
+            "status": "TERMINATED"
+          }
+        ],
+        "group_kill": {
+          "status": "SETTLED",
+          "run": 1791564375955,
+          "progress": {
+            "objective": 2
+          }
+        },
+        "group_zero": {
+          "status": "ACTIVE",
+          "run": 1791565900413,
+          "progress": {
+            "objective": 0
+          }
+        },
+        "group_story_status": "ACTIVE"
+      },
+      {
+        "name": "DGR402ClientG",
+        "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+        "inventory": 0,
+        "receipts": 0,
+        "xp": 0,
+        "dimension": 0,
+        "entity_changes": 1,
+        "additional_stories": [
+          {
+            "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+            "run": 1791564524042,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-EEEE-FFFF-GGGG-HHHH",
+            "run": 1791565967402,
+            "status": "TERMINATED"
+          },
+          {
+            "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+            "run": 1791565967906,
+            "status": "TERMINATED"
+          }
+        ],
+        "group_kill": {
+          "status": "SETTLED",
+          "run": 1791564532893,
+          "progress": {
+            "objective": 2
+          }
+        },
+        "group_zero": {
+          "status": "ACTIVE",
+          "run": 1791565975250,
+          "progress": {
+            "objective": 0
+          }
+        },
+        "group_story_status": "ACTIVE"
+      }
+    ],
+    "source_leases": [
+      {
+        "story": "ST-4EUB-29DN-V8J6-VTY3",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6J",
+        "leases": 4
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6K",
+        "leases": 3
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6L",
+        "leases": 3
+      },
+      {
+        "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+        "leases": 1
+      },
+      {
+        "story": "ST-EEEE-FFFF-GGGG-HHHH",
+        "leases": 1
+      },
+      {
+        "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+        "leases": 1
+      }
+    ]
+  },
+  "after_release_server": {
+    "tick": 11820,
+    "network": 1,
+    "peak_network": 2,
+    "media_in_flight": 0,
+    "queue_pending": 0,
+    "source_host": {
+      "uuid": "0be17e61-2b00-4aee-bf25-9fb1a3efe675",
+      "class": "noppes.npcs.entity.EntityCustomNpc",
+      "resolved_actors": [
+        "ST-4EUB-29DN-V8J6-VTY3~actor~host",
+        "ST-5UTG-DFCB-NQAQ-X4QF~actor~r6d7c51d48cb5e734a7b7daed7d233c36"
+      ]
+    },
+    "transfer_target": {
+      "uuid": "bfe13c41-bdd1-4a48-ad4e-e8eecf4e83a5",
+      "class": "noppes.npcs.entity.EntityCustomNpc",
+      "resolved_actors": []
+    },
+    "spawned_victim_types": [],
+    "players": [
+      {
+        "name": "DGR402ClientG",
+        "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+        "inventory": 0,
+        "receipts": 0,
+        "xp": 0,
+        "dimension": 0,
+        "entity_changes": 1,
+        "additional_stories": [
+          {
+            "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+            "run": 1791564524042,
+            "status": "ACTIVE"
+          },
+          {
+            "story": "ST-EEEE-FFFF-GGGG-HHHH",
+            "run": 1791565967402,
+            "status": "TERMINATED"
+          },
+          {
+            "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+            "run": 1791565967906,
+            "status": "TERMINATED"
+          }
+        ],
+        "group_kill": {
+          "status": "SETTLED",
+          "run": 1791564532893,
+          "progress": {
+            "objective": 2
+          }
+        },
+        "group_zero": {
+          "status": "ACTIVE",
+          "run": 1791565975250,
+          "progress": {
+            "objective": 0
+          }
+        },
+        "group_story_status": "ACTIVE"
+      }
+    ],
+    "source_leases": [
+      {
+        "story": "ST-4EUB-29DN-V8J6-VTY3",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6J",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6K",
+        "leases": 1
+      },
+      {
+        "story": "ST-2222-2222-2222-EC6L",
+        "leases": 1
+      },
+      {
+        "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+        "leases": 1
+      },
+      {
+        "story": "ST-EEEE-FFFF-GGGG-HHHH",
+        "leases": 1
+      },
+      {
+        "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+        "leases": 1
+      }
+    ]
+  },
+  "files": [
+    {
+      "file": "network-final3756-after-release-X-server.json",
+      "bytes": 1398,
+      "sha256": "C950CCDB7E553F6E3BEF745980E8F19F11EAB5FC84FE88151B72C0ABF7C7D04B"
+    },
+    {
+      "file": "network-final3756-before-disconnect-client.json",
+      "bytes": 580,
+      "sha256": "C3BF4922CA099E5811EA447C0B1A1F6EABA9CC68924BB742BDF812B507FF3E69"
+    },
+    {
+      "file": "network-final3756-before-disconnect-server.json",
+      "bytes": 2196,
+      "sha256": "00732C720C12DD7EA40C3727F7F5B0588564FB33FBC3BDB79C564489FFE5D60D"
+    },
+    {
+      "file": "network-final3756-before-media-client.json",
+      "bytes": 554,
+      "sha256": "7F4FAFBD4C54A340F0B0114D65C4FD1FDC887F019F6A3CFB1D83CCDAE224D82D"
+    },
+    {
+      "file": "network-final3756-first-connect-failed.json",
+      "bytes": 556,
+      "sha256": "79ABEC1E697E3102C596CFAF1F62D856914BABDC8D6110CEABDC71B733973041"
+    },
+    {
+      "file": "network-final3756-Y-after-ten.json",
+      "bytes": 558,
+      "sha256": "CA4AECC3A0F38AA63E7D8AEF2270EA5486435D7F7441B01E76CDC86F49C5B282"
+    }
+  ],
+  "scope": "One native JVM performs 10 successful X/Y changes. X really had seven in-flight operations and leases 4/3/3; actual disconnect followed by worker release returns all source leases to one, in-flight and queue to zero. Y has no carried-over DGR UI/running bundle. The first Y attempt timed out; workers were released while disconnected before the successful Y retry. This does not prove releasing late work after Y has already loaded.",
+  "late_release_after_Y_loaded": "PARTIAL_FINAL_RETEST_PENDING",
+  "fixture_origin": {
+    "file": "final-network-generated-inputs.json",
+    "bytes": 912,
+    "sha256": "545D416461C3BEFCC50F26C3FC05308E16E30511FDECD74E8E1692656D256E32"
+  },
+  "overall_version_acceptance": "IN_PROGRESS"
+}

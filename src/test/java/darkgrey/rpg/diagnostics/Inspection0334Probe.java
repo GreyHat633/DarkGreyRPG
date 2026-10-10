@@ -1,20 +1,40 @@
 package darkgrey.rpg.diagnostics;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import darkgrey.rpg.graph.canonical.CanonicalGraph;
+import darkgrey.rpg.graph.canonical.CanonicalGraphConnection;
+import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
+import darkgrey.rpg.graph.canonical.CanonicalGraphPort;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.graph.canonical.CanonicalGraphResourceKind;
+import darkgrey.rpg.graph.canonical.CanonicalProjectContent;
+import darkgrey.rpg.identity.ResourceAddress;
+import darkgrey.rpg.identity.ResourceAddressNbt;
 import darkgrey.rpg.project.ProjectSnapshot;
+import darkgrey.rpg.session.instance.CanonicalSessionInstanceNbtCodec;
+import darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot;
+import darkgrey.rpg.session.runtime.CanonicalSessionSnapshot;
+import darkgrey.rpg.session.runtime.CanonicalSessionStatus;
 import darkgrey.rpg.session.runtime.DynamicContentText;
+import darkgrey.rpg.task.instance.CanonicalTaskInstanceNbtCodec;
+import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
+import darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus;
+import darkgrey.rpg.task.runtime.CanonicalTaskSnapshot;
+import darkgrey.rpg.task.runtime.CanonicalTaskStatus;
 import io.netty.buffer.Unpooled;
 
 public final class Inspection0334Probe {
 
     public static void main(String[] args) throws Exception {
         readableSummary();
+        currentAddressProjection();
         java.io.Reader vectorFile = new java.io.InputStreamReader(
             new java.io.FileInputStream("src/test/resources/dynamic-content-0334.json"),
             "UTF-8");
@@ -77,7 +97,7 @@ public final class Inspection0334Probe {
         decoded.fromBytes(buffer);
         if (decoded.request != 42 || !decoded.data.equals(packet.data)) throw new AssertionError("Packet roundtrip");
         String source = DynamicContentText.PREFIX
-            + "[\"你好\",{\"type\":\"player_name\"},{\"type\":\"item_count\",\"item_id\":\"demo:iron\"}]";
+            + "[\"你好\",{\"type\":\"player_name\"},{\"type\":\"item_count\",\"item_id\":{\"story_uid\":\"ST-AAAA-BBBB-CCCC-DDDD\",\"kind\":\"item\",\"local_id\":\"iron\"}}]";
         String a = DynamicContentText.resolve(source, new DynamicContentText.Resolver() {
 
             public String resolve(String type, String item) {
@@ -131,6 +151,147 @@ public final class Inspection0334Probe {
         }
         System.out.println(
             "Inspection0334Probe PASS: detached read, malformed record retention, placement separation, player isolation, bounded packet roundtrip, dynamic text");
+    }
+
+    private static void currentAddressProjection() {
+        String uid = "ST-AAAA-BBBB-CCCC-DDDD", taskId = uid + "~task~inspection",
+            sessionId = uid + "~session~inspection";
+        UUID player = new UUID(402, 334);
+        java.util.Map<String, com.google.gson.JsonElement> taskProperties = new java.util.LinkedHashMap<>();
+        java.util.Map<String, com.google.gson.JsonElement> sessionProperties = new java.util.LinkedHashMap<>();
+        taskProperties.put("resource_id", new com.google.gson.JsonPrimitive(taskId));
+        sessionProperties.put("resource_id", new com.google.gson.JsonPrimitive(sessionId));
+        CanonicalGraphNode taskNode = new CanonicalGraphNode(
+            "task-placement",
+            "task",
+            "任务",
+            Collections.<CanonicalGraphPort>emptyList(),
+            taskProperties);
+        CanonicalGraphNode sessionNode = new CanonicalGraphNode(
+            "session-placement",
+            "session",
+            "会话",
+            Collections.<CanonicalGraphPort>emptyList(),
+            sessionProperties);
+        CanonicalGraphResource story = new CanonicalGraphResource(
+            3,
+            CanonicalGraphResourceKind.STORY,
+            uid,
+            "当前格式故事",
+            new CanonicalGraph(
+                java.util.Arrays.asList(taskNode, sessionNode),
+                Collections.<CanonicalGraphConnection>emptyList()));
+        CanonicalGraphResource task = new CanonicalGraphResource(
+            3,
+            CanonicalGraphResourceKind.TASK,
+            taskId,
+            "当前格式任务",
+            new CanonicalGraph(
+                Collections.<CanonicalGraphNode>emptyList(),
+                Collections.<CanonicalGraphConnection>emptyList()));
+        CanonicalGraphResource session = new CanonicalGraphResource(
+            3,
+            CanonicalGraphResourceKind.SESSION,
+            sessionId,
+            "当前格式会话",
+            new CanonicalGraph(
+                Collections.singletonList(
+                    new CanonicalGraphNode(
+                        "end",
+                        "end",
+                        "结束",
+                        Collections.<CanonicalGraphPort>emptyList(),
+                        Collections.emptyMap())),
+                Collections.<CanonicalGraphConnection>emptyList()));
+        ProjectSnapshot empty = ProjectSnapshot.empty();
+        ProjectSnapshot project = new ProjectSnapshot(
+            empty.getProject(),
+            empty.getActors(),
+            empty.getItems(),
+            empty.getItemGroups(),
+            new CanonicalProjectContent(
+                Collections.singletonMap(uid, story),
+                Collections.singletonMap(sessionId, session),
+                Collections.singletonMap(taskId, task),
+                Collections.emptyMap()));
+        CanonicalTaskSnapshot taskRuntime = new CanonicalTaskSnapshot(
+            taskId,
+            "current-fingerprint",
+            CanonicalTaskStatus.ACTIVE,
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            true,
+            null);
+        NBTTagCompound taskRoot = CanonicalTaskInstanceNbtCodec.encode(
+            Collections.singletonList(
+                new CanonicalTaskInstanceSnapshot(
+                    player,
+                    uid,
+                    "task-placement",
+                    taskId,
+                    CanonicalTaskInstanceStatus.ACTIVE,
+                    100L,
+                    null,
+                    taskRuntime)));
+        CanonicalSessionSnapshot sessionRuntime = new CanonicalSessionSnapshot(
+            sessionId,
+            "end",
+            CanonicalSessionStatus.COMPLETED,
+            Collections.emptyList(),
+            Collections.emptyMap(),
+            "end",
+            Collections.emptyMap());
+        NBTTagCompound sessionRoot = CanonicalSessionInstanceNbtCodec.encode(
+            Collections.singletonList(
+                new CanonicalSessionInstanceSnapshot(
+                    player,
+                    uid,
+                    "session-placement",
+                    sessionId,
+                    200L,
+                    sessionRuntime)));
+        for (String kind : new String[] { "Task", "Session" }) {
+            NBTTagCompound root = "Task".equals(kind) ? taskRoot : sessionRoot;
+            NBTTagCompound before = (NBTTagCompound) root.copy();
+            List<NBTTagCompound> rows = new ArrayList<>();
+            PlayerStateInspection.collect(rows, kind, root, player, "当前服务器状态", project);
+            String output = rows.toString();
+            if (rows.size() != 1 || !output.contains("当前格式" + ("Task".equals(kind) ? "任务" : "会话"))
+                || output.contains("资源已缺失")
+                || output.contains("异常：")
+                || !before.equals(root)) throw new AssertionError("Current structured address projection: " + output);
+        }
+        NBTTagCompound runtime = new NBTTagCompound(), record = new NBTTagCompound();
+        runtime.setString("status", "ACTIVE");
+        record.setTag("runtime", runtime);
+        for (ResourceAddress.Kind kind : new ResourceAddress.Kind[] { ResourceAddress.Kind.TASK,
+            ResourceAddress.Kind.SESSION }) {
+            runtime.setString("wait_kind", kind.name());
+            runtime.setTag(
+                "wait_resource_id",
+                ResourceAddressNbt.write(kind == ResourceAddress.Kind.TASK ? taskId : sessionId, kind));
+            NBTTagCompound before = (NBTTagCompound) record.copy();
+            String summary = PlayerStateSummary
+                .build("Story", record, story, project, "当前状态", Collections.emptyList(), java.time.Clock.systemUTC())
+                .toString();
+            if (!summary.contains("等待内容：当前格式" + (kind == ResourceAddress.Kind.TASK ? "任务" : "会话"))
+                || summary.contains("资源已缺失")
+                || !before.equals(record)) throw new AssertionError(summary);
+        }
+        NBTTagCompound bad = (NBTTagCompound) taskRoot.copy();
+        bad.getTagList("instances", 10)
+            .getCompoundTagAt(0)
+            .getCompoundTag("task_resource_id")
+            .setString("kind", "session");
+        NBTTagCompound badBefore = (NBTTagCompound) bad.copy();
+        List<NBTTagCompound> badRows = new ArrayList<>();
+        PlayerStateInspection.collect(badRows, "Task", bad, player, "当前状态", project);
+        if (badRows.size() != 1 || !badRows.toString()
+            .contains("未通过结构校验") || !bad.equals(badBefore))
+            throw new AssertionError("Malformed compound must stay visible and unchanged");
+        System.out.println("CURRENT_STRUCTURED_ADDRESS_INSPECTION=PASS task/session/wait/detached/malformed");
     }
 
     private static void readableSummary() {

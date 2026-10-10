@@ -91,7 +91,7 @@ public final class StoryPackageManagerPacket implements IMessage {
                     && now - previous < 100000000L) return null;
                 last.put(player, now);
             }
-            MainThreadScheduler.scheduleServer(() -> {
+            MainThreadScheduler.scheduleServer(player, () -> {
                 StoryPackageLoader loader = DarkGreyRpg.getStoryPackageLoader();
                 if (loader == null) return;
                 if (current != loader) {
@@ -101,6 +101,11 @@ public final class StoryPackageManagerPacket implements IMessage {
                 NBTTagCompound result = manager
                     .request(player, player.canCommandSenderUseCommand(2, "dgr"), message.sequence, message.data);
                 DialogueNetwork.CHANNEL.sendTo(new StoryPackageManagerPacket(true, message.sequence, result), player);
+            }, () -> {
+                net.minecraft.nbt.NBTTagCompound denied = new net.minecraft.nbt.NBTTagCompound();
+                denied.setString("error", "请求未执行，请稍后重试。");
+                darkgrey.rpg.network.DialogueNetwork.CHANNEL
+                    .sendTo(new StoryPackageManagerPacket(true, message.sequence, denied), player);
             });
             return null;
         }
@@ -166,10 +171,10 @@ public final class StoryPackageManagerPacket implements IMessage {
         public IMessage onMessage(final StoryPackageManagerPacket message, MessageContext context) {
             if (!message.response) return null;
             final Object connection = context.netHandler;
-            MainThreadScheduler.scheduleClient(() -> {
+            MainThreadScheduler.scheduleClient(connection, () -> {
                 if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                     DarkGreyRpg.proxy.acceptPackageManager(message.sequence, message.data);
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

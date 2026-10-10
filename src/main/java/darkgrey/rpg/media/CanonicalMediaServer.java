@@ -47,6 +47,18 @@ public final class CanonicalMediaServer {
     }
 
     private static final java.util.concurrent.atomic.AtomicInteger IN_FLIGHT = new java.util.concurrent.atomic.AtomicInteger();
+
+    private static final class Reservation {
+
+        final darkgrey.rpg.network.MainThreadScheduler.Scope scope = darkgrey.rpg.network.MainThreadScheduler
+            .serverScope();
+        final java.util.concurrent.atomic.AtomicBoolean held = new java.util.concurrent.atomic.AtomicBoolean(true);
+
+        void release() {
+            if (held.compareAndSet(true, false)) IN_FLIGHT.decrementAndGet();
+        }
+    }
+
     private static final ThreadPoolExecutor MEDIA_WORKER = new ThreadPoolExecutor(
         MEDIA_WORKER_THREADS,
         MEDIA_WORKER_THREADS,
@@ -67,6 +79,16 @@ public final class CanonicalMediaServer {
         new ThreadPoolExecutor.AbortPolicy());
 
     private CanonicalMediaServer() {}
+
+    public static void stop() {
+        for (EntityPlayerMP player : new java.util.ArrayList<EntityPlayerMP>(FRAMES.keySet())) disconnected(player);
+        FRAMES.clear();
+        PORTRAITS.clear();
+        synchronized (RATES) {
+            RATES.clear();
+        }
+        StoryMediaServer.clear();
+    }
 
     public static void present(EntityPlayerMP player, CanonicalSessionFrame frame) {
         StoryMediaServer.presentFrame(player, frame);
@@ -110,17 +132,25 @@ public final class CanonicalMediaServer {
             if (++rate[1] > 256) return;
         }
         if (!reserveRequest()) return;
-        darkgrey.rpg.network.MainThreadScheduler.scheduleServer(new Runnable() {
+        final Reservation reservation = new Reservation();
+        darkgrey.rpg.network.MainThreadScheduler.scheduleServer(player, new Runnable() {
 
             @Override
             public void run() {
-                requestReserved(player, request);
+                requestReserved(player, request, reservation);
             }
-        });
+        }, reservation::release);
     }
 
     public static void request(EntityPlayerMP player, CanonicalMediaRequest request) {
-        if (reserveRequest()) requestReserved(player, request);
+        if (!reserveRequest()) return;
+        Reservation reservation = new Reservation();
+        try {
+            requestReserved(player, request, reservation);
+        } catch (RuntimeException failure) {
+            reservation.release();
+            throw failure;
+        }
     }
 
     /** Revoke presentation capabilities and stop client media when their package retires. */
@@ -154,11 +184,12 @@ public final class CanonicalMediaServer {
         }
     }
 
-    private static void requestReserved(EntityPlayerMP player, CanonicalMediaRequest request) {
+    private static void requestReserved(EntityPlayerMP player, CanonicalMediaRequest request, Reservation reservation) {
         if (player == null || player.playerNetServerHandler == null) {
-            IN_FLIGHT.decrementAndGet();
+            reservation.release();
             return;
         }
+        final net.minecraft.network.NetHandlerPlayServer connection = player.playerNetServerHandler;
         String ref = request.getMediaRef();
         LoadedStoryPackage packageSource = null;
         if (isAuthorized(player, ref) && DarkGreyRpg.getStoryPackageLoader() != null) {
@@ -189,20 +220,25 @@ public final class CanonicalMediaServer {
                             chunk = null;
                         }
                         final CanonicalMediaChunk response = chunk == null ? unavailable(request) : chunk;
-                        darkgrey.rpg.network.MainThreadScheduler.scheduleServer(new Runnable() {
+                        darkgrey.rpg.network.MainThreadScheduler.completeServer(reservation.scope, new Runnable() {
 
                             @Override
                             public void run() {
                                 // Recheck presentation ownership after disk work. A closed/replaced
                                 // session must never receive a chunk from its former generation.
                                 try {
-                                    if (isAuthorized(player, request.getMediaRef()))
+                                    if (player.playerNetServerHandler == connection && connection.playerEntity == player
+                                        && connection.netManager.isChannelOpen()
+                                        && isAuthorized(player, request.getMediaRef()))
                                         DialogueNetwork.CHANNEL.sendTo(response, player);
                                     else READER_CLEANUP.execute(() -> READERS.releaseOwner(owner(player)));
                                 } finally {
-                                    IN_FLIGHT.decrementAndGet();
+                                    reservation.release();
                                 }
                             }
+                        }, () -> {
+                            reservation.release();
+                            READER_CLEANUP.execute(() -> READERS.releaseOwner(owner(player)));
                         });
                     } finally {
                         if (sourceLease) source.releaseMediaRequest();
@@ -210,7 +246,7 @@ public final class CanonicalMediaServer {
                 }
             });
         } catch (RejectedExecutionException rejected) {
-            IN_FLIGHT.decrementAndGet();
+            reservation.release();
             if (sourceLease) source.releaseMediaRequest();
             DialogueNetwork.CHANNEL.sendTo(unavailable(request), player);
         }
@@ -219,6 +255,8 @@ public final class CanonicalMediaServer {
     private static boolean isAuthorized(EntityPlayerMP player, String ref) {
         CanonicalSessionFrame frame = FRAMES.get(player);
         return player != null && player.playerNetServerHandler != null
+            && player.playerNetServerHandler.playerEntity == player
+            && player.playerNetServerHandler.netManager.isChannelOpen()
             && (StoryMediaServer.authorizes(player, ref)
                 || frame != null && (ref.equals(PORTRAITS.get(player)) || ref.equals(frame.getVoiceRef())
                     || frame.getPresentation()

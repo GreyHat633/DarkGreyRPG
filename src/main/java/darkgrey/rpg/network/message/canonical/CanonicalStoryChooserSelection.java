@@ -55,14 +55,14 @@ public final class CanonicalStoryChooserSelection implements IMessage {
         @Override
         public IMessage onMessage(final CanonicalStoryChooserSelection message, final MessageContext context) {
             final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 @Override
                 public void run() {
                     DarkGreyRpg.getCanonicalStoryManager()
                         .selectActorCandidate(player, message.getToken(), message.getOptionIndex());
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectServer(player));
             return null;
         }
     }

@@ -36,13 +36,13 @@ public final class CanonicalSessionNotice implements IMessage {
 
         public IMessage onMessage(final CanonicalSessionNotice notice, MessageContext context) {
             final Object connection = context.netHandler;
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 public void run() {
                     if (!darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;
                     darkgrey.rpg.client.session.CanonicalSessionClientController.notice(notice.transport, notice.story);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

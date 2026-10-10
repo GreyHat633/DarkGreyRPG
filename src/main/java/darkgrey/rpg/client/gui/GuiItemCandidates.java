@@ -28,7 +28,8 @@ public final class GuiItemCandidates extends GuiScreen {
         int top = (height - panelHeight) / 2, bottom = top + panelHeight;
         drawRect(left, top, left + w, bottom, DgrUiPalette.BORDER);
         drawRect(left + 1, top + 1, left + w - 1, bottom - 1, DgrUiPalette.WINDOW_PANEL);
-        fontRendererObj.drawSplitString(title, left + 10, top + 10, w - 20, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText
+            .wrapped(fontRendererObj, title, left + 10, top + 10, w - 20, DgrUiPalette.TEXT);
         clipTop = top + header + 20;
         clipBottom = bottom - 24;
         clipLeft = left;
@@ -36,12 +37,13 @@ public final class GuiItemCandidates extends GuiScreen {
         scroll.bounds(strip.height(w - 20) - (clipBottom - clipTop));
         scroll.tick();
         strip.draw(left + 10, clipTop - scroll.pixelOffset(), w - 20, clipTop, clipBottom, x, y);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             strip.height(w - 20) > clipBottom - clipTop ? "Esc 返回 · 滚轮查看更多" : "Esc 返回",
             left + 10,
             bottom - 16,
             DgrUiPalette.SECONDARY);
-        if (strip.tooltip != null) drawHoveringText(strip.tooltip, x, y, fontRendererObj);
+        if (strip.tooltip != null) DgrUiText.tooltip(fontRendererObj, strip.tooltip, x, y, width, height);
     }
 
     public void handleMouseInput() {

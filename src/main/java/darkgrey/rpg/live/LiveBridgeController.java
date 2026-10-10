@@ -29,21 +29,24 @@ public final class LiveBridgeController {
     }
 
     public void onMessage(final JsonObject message, final LiveMessageSink sink) {
-        MainThreadScheduler.scheduleServer(new Runnable() {
+        MainThreadScheduler.scheduleServer(MainThreadScheduler.serverScope(), new Runnable() {
 
             @Override
             public void run() {
                 try {
                     handle(message, sink);
-                } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {
+                } catch (RuntimeException failure) {
                     sink.send(
                         response(
                             string(message, "request_id"),
                             false,
-                            darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException.PLAYER_MESSAGE));
+                            failure instanceof darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException
+                                ? darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException.PLAYER_MESSAGE
+                                : "服务器请求执行失败；请稍后重试。"));
+                    MainThreadScheduler.reportFailure("live-bridge", failure);
                 }
             }
-        });
+        }, () -> sink.send(response(string(message, "request_id"), false, "服务器请求未执行；请稍后重试。")));
     }
 
     private void handle(JsonObject message, LiveMessageSink sink) {

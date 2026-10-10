@@ -16,7 +16,6 @@ import darkgrey.rpg.network.message.canonical.CanonicalSessionFrame;
 import darkgrey.rpg.project.ActorDefinition;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.session.instance.CanonicalSessionInstanceSnapshot;
-import darkgrey.rpg.session.instance.CanonicalSessionResourceResolver;
 import darkgrey.rpg.session.persistence.CanonicalSessionSavedData;
 import darkgrey.rpg.session.runtime.CanonicalSessionSnapshot;
 import darkgrey.rpg.session.runtime.CanonicalSessionStatus;
@@ -61,13 +60,7 @@ public final class CanonicalSessionServerService {
         this.project = project;
         this.savedData = savedData;
         this.textResolver = resolver;
-        if (!savedData.isBound()) savedData.bind(new CanonicalSessionResourceResolver() {
-
-            @Override
-            public CanonicalGraphResource resolve(String sessionResourceId) {
-                return CanonicalSessionServerService.this.project.getCanonicalSession(sessionResourceId);
-            }
-        });
+        savedData.bindProject(project, false);
     }
 
     public CanonicalSessionServerService(CanonicalSessionSavedData savedData, ProjectSnapshot project) {

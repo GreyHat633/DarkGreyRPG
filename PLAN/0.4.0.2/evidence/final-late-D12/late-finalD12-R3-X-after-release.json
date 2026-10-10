@@ -1,0 +1,71 @@
+{
+  "tick": 8460,
+  "network": 0,
+  "peak_network": 1,
+  "media_in_flight": 0,
+  "queue_pending": 0,
+  "source_host": {
+    "uuid": "8529f4e3-3a64-487b-8c28-2d9d0a2e0650",
+    "class": "noppes.npcs.entity.EntityCustomNpc",
+    "resolved_actors": [
+      "ST-4EUB-29DN-V8J6-VTY3~actor~host",
+      "ST-5UTG-DFCB-NQAQ-X4QF~actor~r6d7c51d48cb5e734a7b7daed7d233c36"
+    ]
+  },
+  "spawned_victim_types": [],
+  "players": [],
+  "source_leases": [
+    {
+      "story": "ST-4EUB-29DN-V8J6-VTY3",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-EC6J",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-EC6K",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-EC6L",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-ECCS",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-ECCT",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-ECCU",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-ECD4",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-ECD5",
+      "leases": 1
+    },
+    {
+      "story": "ST-2222-2222-2222-ECD6",
+      "leases": 1
+    },
+    {
+      "story": "ST-5UTG-DFCB-NQAQ-X4QF",
+      "leases": 1
+    },
+    {
+      "story": "ST-EEEE-FFFF-GGGG-HHHH",
+      "leases": 1
+    },
+    {
+      "story": "ST-JJJJ-KKKK-MMMM-NNNN",
+      "leases": 1
+    }
+  ]
+}

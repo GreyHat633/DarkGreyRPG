@@ -1,0 +1,380 @@
+[
+  {
+    "file": "src/main/java/darkgrey/rpg/creator/CanonicalTaskUiRequest.java",
+    "line": 42,
+    "side": "Server",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalTaskUiRequest message, MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    long now = System.nanoTime();\n                    Long last = LAST.get(player);\n                    if (last != null && now - last < 250000000L) return;\n                    LAST.put(player, now);\n                    if (player.playerNetServerHandler == null || player.isDead) return;\n                    CanonicalTaskPresentationServer.push(player, true);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/creator/CreatorSnapshot.java",
+    "line": 66,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final CreatorSnapshot message, MessageContext context) {\n            final Object connection = context.netHandler;\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (!DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;\n                    DarkGreyRpg.proxy.acceptCreatorSnapshot(message.kind, message.data);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/diagnostics/PlayerStatePacket.java",
+    "line": 77,
+    "side": "Server",
+    "context": "                Long previous = LAST.get(player);\n                if (previous != null && now - previous.longValue() < 150000000L) return null;\n                LAST.put(player, Long.valueOf(now));\n            }\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (!player.canCommandSenderUseCommand(2, \"dgr\")) {\n                        NBTTagCompound denied = new NBTTagCompound();\n                        denied.setString(\"error\", \"没有管理员查询权限。\");\n                        DialogueNetwork.CHANNEL.sendTo(new PlayerStatePacket(2, message.request, denied), player);\n                        return;\n                    }\n                    NBTTagCompound response;\n                    try {\n                        response = PlayerStateInspection\n                            .query(message.data.getString(\"name\"), message.data.getInteger(\"page\"));\n                    } catch (RuntimeException failure) {\n                        response = new NBTTagCompound();\n                        response.setString(\"error\", \"读取失败；未修改玩家状态。\");\n                    }\n                    DialogueNetwork.CHANNEL.sendTo(new PlayerStatePacket(2, message.request, response), player);\n                }\n            });\n            return null;\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/diagnostics/PlayerStatePacket.java",
+    "line": 108,
+    "side": "Client",
+    "context": "        @Override\n        public IMessage onMessage(final PlayerStatePacket message, MessageContext context) {\n            final Object connection = context.netHandler;\n            if (message.kind == 1) return null;\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        DarkGreyRpg.proxy.acceptPlayerInspection(message.kind, message.request, message.data);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java",
+    "line": 61,
+    "side": "Client",
+    "context": "            dialog.setVisible(true);\n            String file = dialog.getFile(), folder = dialog.getDirectory();\n            dialog.dispose();\n            if (file != null && folder != null && !closed)\n                MainThreadScheduler.scheduleClient(() -> load(new java.io.File(folder, file).toPath(), null));\n        });\n    }\n\n    public void online(String url) {\n        if (closed) return;\n        clear();\n        try {\n            String normalized = OnlineMusicSource.parse(url)\n                .canonical();\n            GramophonePacket config = new GramophonePacket();\n            config.source = normalized;\n            shared(config, url);\n            return;\n        } catch (IllegalArgumentException unresolved) { /* short links are normalized by the bounded IO worker */ }\n        load(null, url);\n    }\n\n    public void saved(GramophonePacket config) {\n        if (closed || !config.source.startsWith(\"local:\")) return;\n        shared(config, null);\n    }\n"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java",
+    "line": 139,
+    "side": "Client",
+    "context": "                            }\n                        }\n                    } else {\n                        OnlineMusicSource resolved = OnlineMusicResolver.normalize(online);\n                        MainThreadScheduler.scheduleClient(() -> {\n                            if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory))\n                                return;\n                            GramophonePacket config = new GramophonePacket();\n                            config.source = resolved.canonical();\n                            // Normalization is IO; admission and lease ownership remain on the client thread.\n                            future = null;\n                            shared(config, online);\n                        });\n                        return;\n                    }\n                    GramophoneMediaInfo info = GramophoneMediaInfo.inspect(target);\n                    final String normalized = normalizedSource;\n                    MainThreadScheduler.scheduleClient(() -> {\n                        if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory)) {\n                            GramophoneFiles.retire(info.path);\n                            return;\n                        }\n                        preparing = false;\n                        leaseKey = \"preview:\" + (normalized == null ? \"local:\" + info.hash : normalized);\n                        media = GramophoneClient.retainPreview(leaseKey, info);\n                        label = local == null ? \"在线试听已就绪\"\n                            : local.getFileName()"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java",
+    "line": 152,
+    "side": "Client",
+    "context": "                        return;\n                    }\n                    GramophoneMediaInfo info = GramophoneMediaInfo.inspect(target);\n                    final String normalized = normalizedSource;\n                    MainThreadScheduler.scheduleClient(() -> {\n                        if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory)) {\n                            GramophoneFiles.retire(info.path);\n                            return;\n                        }\n                        preparing = false;\n                        leaseKey = \"preview:\" + (normalized == null ? \"local:\" + info.hash : normalized);\n                        media = GramophoneClient.retainPreview(leaseKey, info);\n                        label = local == null ? \"在线试听已就绪\"\n                            : local.getFileName()\n                                .toString();\n                        onlineInput = online;\n                        canonical = normalized;\n                        if (local == null) toggle();\n                    });\n                } catch (Exception e) {\n                    GramophoneFiles.retire(target);\n                    MainThreadScheduler.scheduleClient(() -> {\n                        if (!closed && ticket == generation) {\n                            preparing = false;\n                            label = \"音频不可用：\" + e.getMessage();\n                        }\n                    });"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java",
+    "line": 169,
+    "side": "Client",
+    "context": "                        if (local == null) toggle();\n                    });\n                } catch (Exception e) {\n                    GramophoneFiles.retire(target);\n                    MainThreadScheduler.scheduleClient(() -> {\n                        if (!closed && ticket == generation) {\n                            preparing = false;\n                            label = \"音频不可用：\" + e.getMessage();\n                        }\n                    });\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            preparing = false;\n            label = \"试听检查队列已满，请稍后重试\";\n        }\n    }\n\n    public void toggle() {\n        if (media == null) return;\n        if (playing) {\n            position = seconds();\n            if (preview != null) preview.stop();\n            preview = null;\n            playing = false;\n        } else start(position >= media.seconds - .1 ? 0 : position);\n    }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 84,
+    "side": "Client",
+    "context": "            IO.execute(() -> {\n                try {\n                    GramophoneFiles.directory(directory);\n                    download.path = Files.createTempFile(directory, \"track-\", \".dgrmp3\");\n                    MainThreadScheduler.scheduleClient(() -> {\n                        if (current(download)) GramophoneNetwork.CHANNEL.sendToServer(request);\n                        else fail(download, \"媒体上下文已关闭\");\n                    });\n                } catch (IOException e) {\n                    MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            fail(download, \"媒体传输队列已满\");\n        }\n        return download.future;\n    }\n\n    private static boolean current(Download value) {\n        return DOWNLOADS.get(value.request.token) == value && Minecraft.getMinecraft().theWorld == value.world\n            && !value.future.isCancelled();\n    }\n\n    private static void fail(Download value, String message) {\n        DOWNLOADS.remove(value.request.token);\n        value.future.completeExceptionally(new IOException(message));\n        GramophoneFiles.retire(value.path);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 89,
+    "side": "Client",
+    "context": "                        if (current(download)) GramophoneNetwork.CHANNEL.sendToServer(request);\n                        else fail(download, \"媒体上下文已关闭\");\n                    });\n                } catch (IOException e) {\n                    MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            fail(download, \"媒体传输队列已满\");\n        }\n        return download.future;\n    }\n\n    private static boolean current(Download value) {\n        return DOWNLOADS.get(value.request.token) == value && Minecraft.getMinecraft().theWorld == value.world\n            && !value.future.isCancelled();\n    }\n\n    private static void fail(Download value, String message) {\n        DOWNLOADS.remove(value.request.token);\n        value.future.completeExceptionally(new IOException(message));\n        GramophoneFiles.retire(value.path);\n    }\n\n    public static void upload(GramophoneMediaInfo media, GramophonePacket config, GuiGramophone owner) {\n        cancel(owner);\n        GramophoneMediaPacket request = packet(GramophoneMediaPacket.UPLOAD, config, media.hash);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 157,
+    "side": "Client",
+    "context": "                        if (download.offset == packet.total) {\n                            GramophoneMediaInfo info = GramophoneMediaInfo.inspect(download.path);\n                            if (!info.hash.equals(packet.hash) || info.bytes != packet.total)\n                                throw new IOException(\"媒体下载指纹校验失败\");\n                            MainThreadScheduler.scheduleClient(() -> {\n                                if (!current(download)) {\n                                    fail(download, \"媒体上下文已关闭\");\n                                    return;\n                                }\n                                DOWNLOADS.remove(packet.token);\n                                download.future.complete(info);\n                            });\n                        } else MainThreadScheduler.scheduleClient(() -> {\n                            if (!current(download)) {\n                                fail(download, \"媒体上下文已关闭\");\n                                return;\n                            }\n                            download.request.offset = download.offset;\n                            download.request.total = packet.total;\n                            GramophoneNetwork.CHANNEL.sendToServer(download.request);\n                        });\n                    } catch (Exception e) {\n                        MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));\n                    }\n                });\n            } catch (java.util.concurrent.RejectedExecutionException e) {\n                fail(download, \"媒体下载队列已满\");"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 165,
+    "side": "Client",
+    "context": "                                }\n                                DOWNLOADS.remove(packet.token);\n                                download.future.complete(info);\n                            });\n                        } else MainThreadScheduler.scheduleClient(() -> {\n                            if (!current(download)) {\n                                fail(download, \"媒体上下文已关闭\");\n                                return;\n                            }\n                            download.request.offset = download.offset;\n                            download.request.total = packet.total;\n                            GramophoneNetwork.CHANNEL.sendToServer(download.request);\n                        });\n                    } catch (Exception e) {\n                        MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));\n                    }\n                });\n            } catch (java.util.concurrent.RejectedExecutionException e) {\n                fail(download, \"媒体下载队列已满\");\n            }\n            return;\n        }\n        final Upload active = upload;\n        if (active == null || !active.request.token.equals(packet.token) || !active.request.hash.equals(packet.hash))\n            return;\n        if (Minecraft.getMinecraft().theWorld != active.world\n            || Minecraft.getMinecraft().currentScreen != active.owner) {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 175,
+    "side": "Client",
+    "context": "                            download.request.total = packet.total;\n                            GramophoneNetwork.CHANNEL.sendToServer(download.request);\n                        });\n                    } catch (Exception e) {\n                        MainThreadScheduler.scheduleClient(() -> fail(download, e.getMessage()));\n                    }\n                });\n            } catch (java.util.concurrent.RejectedExecutionException e) {\n                fail(download, \"媒体下载队列已满\");\n            }\n            return;\n        }\n        final Upload active = upload;\n        if (active == null || !active.request.token.equals(packet.token) || !active.request.hash.equals(packet.hash))\n            return;\n        if (Minecraft.getMinecraft().theWorld != active.world\n            || Minecraft.getMinecraft().currentScreen != active.owner) {\n            cancel(active.owner);\n            return;\n        }\n        active.touched = System.nanoTime();\n        if (packet.operation == GramophoneMediaPacket.ERROR || packet.operation == GramophoneMediaPacket.COMMITTED) {\n            active.owner\n                .transferStatus(packet.operation == GramophoneMediaPacket.COMMITTED ? \"已保存并上传\" : packet.message, true);\n            upload = null;\n            return;\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 217,
+    "side": "Client",
+    "context": "                        file.seek(next.offset);\n                        file.readFully(next.data);\n                    }\n                    MainThreadScheduler\n                        .scheduleClient(() -> { if (upload == active) GramophoneNetwork.CHANNEL.sendToServer(next); });\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleClient(() -> {\n                        active.owner.transferStatus(\"上传读取失败：\" + e.getMessage(), true);\n                        cancel(active.owner);\n                    });\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            active.owner.transferStatus(\"上传队列已满\", true);\n            cancel(active.owner);\n        }\n    }\n\n    public static void tick() {\n        long now = System.nanoTime();\n        for (Download value : new java.util.ArrayList<Download>(DOWNLOADS.values()))\n            if (!current(value) || now - value.touched > TimeUnit.SECONDS.toNanos(60)) fail(value, \"媒体下载超时或上下文已关闭\");\n        if (upload != null && (Minecraft.getMinecraft().theWorld != upload.world\n            || now - upload.touched > TimeUnit.SECONDS.toNanos(60))) {\n            upload.owner.transferStatus(\"上传超时或上下文已关闭，旧音乐保持\", true);\n            cancel(upload.owner);\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+    "line": 219,
+    "side": "Client",
+    "context": "                    }\n                    MainThreadScheduler\n                        .scheduleClient(() -> { if (upload == active) GramophoneNetwork.CHANNEL.sendToServer(next); });\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleClient(() -> {\n                        active.owner.transferStatus(\"上传读取失败：\" + e.getMessage(), true);\n                        cancel(active.owner);\n                    });\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            active.owner.transferStatus(\"上传队列已满\", true);\n            cancel(active.owner);\n        }\n    }\n\n    public static void tick() {\n        long now = System.nanoTime();\n        for (Download value : new java.util.ArrayList<Download>(DOWNLOADS.values()))\n            if (!current(value) || now - value.touched > TimeUnit.SECONDS.toNanos(60)) fail(value, \"媒体下载超时或上下文已关闭\");\n        if (upload != null && (Minecraft.getMinecraft().theWorld != upload.world\n            || now - upload.touched > TimeUnit.SECONDS.toNanos(60))) {\n            upload.owner.transferStatus(\"上传超时或上下文已关闭，旧音乐保持\", true);\n            cancel(upload.owner);\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 207,
+    "side": "Server",
+    "context": "                            if (active.cancelled) throw new IOException(\"上传已取消\");\n                            storage.install(active.temporary, info.hash);\n                            active.temporary = null;\n                        }\n                        MainThreadScheduler.scheduleServer(() -> {\n                            BUSY.remove(busyKey);\n                            if (active.cancelled || UPLOADS.get(id) != active) return;\n                            try {\n                                TileGramophone tile = target(player, active.request.device, true);\n                                GramophonePacket config = active.request.device;\n                                config.source = \"local:\" + active.request.hash;\n                                UPLOADS.remove(id);\n                                commit(player, tile, config, active.request);\n                            } catch (IOException e) {\n                                cancel(id, active);\n                                errorNow(player, active.request, e.getMessage());\n                            }\n                        });\n                    } else {\n                        packet.operation = GramophoneMediaPacket.ACK;\n                        packet.offset = active.offset;\n                        packet.data = new byte[0];\n                        reply(player, packet);\n                    }\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleServer(() -> cancel(id, active));\n                    error(player, packet, e);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 228,
+    "side": "Server",
+    "context": "                        packet.data = new byte[0];\n                        reply(player, packet);\n                    }\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleServer(() -> cancel(id, active));\n                    error(player, packet, e);\n                }\n            }, player, packet);\n        } catch (IOException e) {\n            errorNow(player, packet, e.getMessage());\n        }\n    }\n\n    private static void submit(Runnable task, EntityPlayerMP player, GramophoneMediaPacket packet) {\n        try {\n            IO.execute(task);\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            BUSY.remove(player.getUniqueID() + \":\" + packet.token);\n            errorNow(player, packet, \"媒体队列已满，请稍后重试\");\n        }\n    }\n\n    private static void reply(EntityPlayerMP player, GramophoneMediaPacket packet) {\n        MainThreadScheduler.scheduleServer(() -> {\n            BUSY.remove(player.getUniqueID() + \":\" + packet.token);\n            if (player.playerNetServerHandler.netManager.isChannelOpen())\n                GramophoneNetwork.CHANNEL.sendTo(packet, player);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 247,
+    "side": "Server",
+    "context": "        }\n    }\n\n    private static void reply(EntityPlayerMP player, GramophoneMediaPacket packet) {\n        MainThreadScheduler.scheduleServer(() -> {\n            BUSY.remove(player.getUniqueID() + \":\" + packet.token);\n            if (player.playerNetServerHandler.netManager.isChannelOpen())\n                GramophoneNetwork.CHANNEL.sendTo(packet, player);\n        });\n    }\n\n    private static void error(EntityPlayerMP player, GramophoneMediaPacket packet, Exception e) {\n        packet.data = new byte[0];\n        packet.operation = GramophoneMediaPacket.ERROR;\n        packet.message = readable(e);\n        reply(player, packet);\n    }\n\n    private static void errorNow(EntityPlayerMP player, GramophoneMediaPacket packet, String message) {\n        if (!player.playerNetServerHandler.netManager.isChannelOpen()) return;\n        packet.data = new byte[0];\n        packet.operation = GramophoneMediaPacket.ERROR;\n        packet.message = message == null ? \"媒体操作失败\" : message;\n        GramophoneNetwork.CHANNEL.sendTo(packet, player);\n    }\n\n    private static String readable(Exception e) {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 301,
+    "side": "Server",
+    "context": "                        for (GramophoneBlobStore storage : STORES.values()) storage.collect(pins);\n                    } catch (IOException e) {\n                        darkgrey.rpg.DarkGreyRpg.LOG.warn(\"Gramophone delayed collection failed\", e);\n                    } finally {\n                        MainThreadScheduler.scheduleServer(() -> maintenancePending = false);\n                    }\n                });\n            } catch (java.util.concurrent.RejectedExecutionException e) {\n                maintenancePending = false;\n            }\n        }\n    }\n\n    public static void commit(EntityPlayerMP player, TileGramophone tile, GramophonePacket config,\n        GramophoneMediaPacket transfer) {\n        String key = config.key();\n        COMMITTING.add(key);\n        config.revision = tile.revision + 1;\n        Path path = storePath(tile.getWorldObj());\n        try {\n            IO.execute(() -> {\n                try {\n                    store(path).commit(config);\n                    MainThreadScheduler.scheduleServer(() -> {\n                        COMMITTING.remove(key);\n                        if (tile.isInvalid()) {\n                            removed(tile);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 320,
+    "side": "Server",
+    "context": "        try {\n            IO.execute(() -> {\n                try {\n                    store(path).commit(config);\n                    MainThreadScheduler.scheduleServer(() -> {\n                        COMMITTING.remove(key);\n                        if (tile.isInvalid()) {\n                            removed(tile);\n                            if (transfer != null) errorNow(player, transfer, \"设备已被移除，未替换音乐\");\n                            return;\n                        }\n                        if (GramophoneServer.loaded(tile)) apply(tile, config);\n                        // A commit reserved before chunk unload remains durable; never force the chunk back in.\n                        GramophonePacket result = config;\n                        result.operation = GramophonePacket.RESULT;\n                        result.status = \"已保存\";\n                        if (player.playerNetServerHandler.netManager.isChannelOpen()) {\n                            GramophoneNetwork.CHANNEL.sendTo(result, player);\n                            if (transfer != null) {\n                                transfer.operation = GramophoneMediaPacket.COMMITTED;\n                                transfer.data = new byte[0];\n                                transfer.offset = transfer.total;\n                                GramophoneNetwork.CHANNEL.sendTo(transfer, player);\n                            }\n                        }\n                    });\n                } catch (Exception e) {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 343,
+    "side": "Server",
+    "context": "                            }\n                        }\n                    });\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleServer(() -> {\n                        COMMITTING.remove(key);\n                        config.revision = tile.revision;\n                        config.operation = GramophonePacket.RESULT;\n                        config.status = readable(e);\n                        if (player.playerNetServerHandler.netManager.isChannelOpen())\n                            GramophoneNetwork.CHANNEL.sendTo(config, player);\n                        if (transfer != null) errorNow(player, transfer, readable(e));\n                    });\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            COMMITTING.remove(key);\n            config.revision = tile.revision;\n            config.operation = GramophonePacket.RESULT;\n            config.status = \"保存队列已满，请稍后重试\";\n            GramophoneNetwork.CHANNEL.sendTo(config, player);\n        }\n    }\n\n    private static void apply(TileGramophone tile, GramophonePacket config) {\n        tile.source = config.source;\n        tile.radius = config.radius;"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 384,
+    "side": "Server",
+    "context": "        try {\n            IO.execute(() -> {\n                try {\n                    GramophonePacket saved = store(path).saved(current.key());\n                    MainThreadScheduler.scheduleServer(() -> {\n                        tile.restoring = false;\n                        if (tile.isInvalid() || !GramophoneServer.loaded(tile)) return;\n                        if (saved != null && saved.revision >= tile.revision) apply(tile, saved);\n                        tile.ready = true;\n                    });\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleServer(() -> {\n                        tile.restoring = false;\n                        tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);\n                        tile.recoveryError = readable(e);\n                    });\n                    darkgrey.rpg.DarkGreyRpg.LOG.error(\"Gramophone durable configuration recovery failed\", e);\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            tile.restoring = false;\n            tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);\n        }\n    }\n\n    public static void removed(TileGramophone tile) {\n        if (tile.getWorldObj() == null || tile.getWorldObj().isRemote) return;"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+    "line": 391,
+    "side": "Server",
+    "context": "                        if (saved != null && saved.revision >= tile.revision) apply(tile, saved);\n                        tile.ready = true;\n                    });\n                } catch (Exception e) {\n                    MainThreadScheduler.scheduleServer(() -> {\n                        tile.restoring = false;\n                        tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);\n                        tile.recoveryError = readable(e);\n                    });\n                    darkgrey.rpg.DarkGreyRpg.LOG.error(\"Gramophone durable configuration recovery failed\", e);\n                }\n            });\n        } catch (java.util.concurrent.RejectedExecutionException e) {\n            tile.restoring = false;\n            tile.retryRestore = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);\n        }\n    }\n\n    public static void removed(TileGramophone tile) {\n        if (tile.getWorldObj() == null || tile.getWorldObj().isRemote) return;\n        GramophonePacket tombstone = tile.snapshot(GramophonePacket.STATE);\n        tombstone.source = \"\";\n        tombstone.enabled = false;\n        tombstone.revision++;\n        Path path = storePath(tile.getWorldObj());\n        try {\n            IO.execute(() -> {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneNetwork.java",
+    "line": 36,
+    "side": "Server",
+    "context": "                PENDING.decrementAndGet();\n                return null;\n            }\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(() -> {\n                try {\n                    if (!player.playerNetServerHandler.netManager.isChannelOpen()) return;\n                    GramophoneServer.save(player, packet);\n                } finally {\n                    PENDING.decrementAndGet();\n                }\n            });\n            return null;\n        }\n    }\n\n    public static final class Client implements IMessageHandler<GramophonePacket, IMessage> {\n\n        @Override\n        public IMessage onMessage(final GramophonePacket packet, MessageContext context) {\n            final Object connection = context.getClientHandler();\n            MainThreadScheduler.scheduleClient(\n                () -> {\n                    if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        DarkGreyRpg.proxy.acceptGramophone(packet);\n                });\n            return null;"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneNetwork.java",
+    "line": 53,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final GramophonePacket packet, MessageContext context) {\n            final Object connection = context.getClientHandler();\n            MainThreadScheduler.scheduleClient(\n                () -> {\n                    if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        DarkGreyRpg.proxy.acceptGramophone(packet);\n                });\n            return null;\n        }\n    }\n\n    public static final class MediaServer implements IMessageHandler<GramophoneMediaPacket, IMessage> {\n\n        @Override\n        public IMessage onMessage(final GramophoneMediaPacket packet, MessageContext context) {\n            if (packet.operation < 0 || packet.operation > GramophoneMediaPacket.FETCH) return null;\n            if (PENDING.incrementAndGet() > 128) {\n                PENDING.decrementAndGet();\n                return null;\n            }\n            EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(() -> {\n                try {\n                    GramophoneLocalServer.accept(player, packet);\n                } finally {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneNetwork.java",
+    "line": 72,
+    "side": "Server",
+    "context": "                PENDING.decrementAndGet();\n                return null;\n            }\n            EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(() -> {\n                try {\n                    GramophoneLocalServer.accept(player, packet);\n                } finally {\n                    PENDING.decrementAndGet();\n                }\n            });\n            return null;\n        }\n    }\n\n    public static final class MediaClient implements IMessageHandler<GramophoneMediaPacket, IMessage> {\n\n        @Override\n        public IMessage onMessage(final GramophoneMediaPacket packet, MessageContext context) {\n            Object connection = context.getClientHandler();\n            MainThreadScheduler.scheduleClient(\n                () -> {\n                    if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        DarkGreyRpg.proxy.acceptGramophoneMedia(packet);\n                });\n            return null;\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneNetwork.java",
+    "line": 88,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final GramophoneMediaPacket packet, MessageContext context) {\n            Object connection = context.getClientHandler();\n            MainThreadScheduler.scheduleClient(\n                () -> {\n                    if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        DarkGreyRpg.proxy.acceptGramophoneMedia(packet);\n                });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/live/LiveBridgeController.java",
+    "line": 32,
+    "side": "Server",
+    "context": "        this.snapshots = new LiveStateSnapshotBuilder(repository);\n    }\n\n    public void onMessage(final JsonObject message, final LiveMessageSink sink) {\n        MainThreadScheduler.scheduleServer(new Runnable() {\n\n            @Override\n            public void run() {\n                try {\n                    handle(message, sink);\n                } catch (darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException failure) {\n                    sink.send(\n                        response(\n                            string(message, \"request_id\"),\n                            false,\n                            darkgrey.rpg.session.persistence.CanonicalSessionDataUnavailableException.PLAYER_MESSAGE));\n                }\n            }\n        });\n    }\n\n    private void handle(JsonObject message, LiveMessageSink sink) {\n        String type = string(message, \"type\");\n        String requestId = string(message, \"request_id\");\n        if (\"state.request\".equals(type)) {\n            JsonObject snapshot = snapshots.build();\n            addRequestId(snapshot, requestId);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java",
+    "line": 148,
+    "side": "Client",
+    "context": "                        DarkGreyRpg.LOG.warn(\"Could not restore media cache journal; rebuilding\", failure);\n                        restored = new StoryMediaCacheIndex();\n                    }\n                    final StoryMediaCacheIndex result = restored;\n                    MainThreadScheduler.scheduleClient(new Runnable() {\n\n                        @Override\n                        public void run() {\n                            packages = result;\n                            packages.suspend();\n                            loadingIndex = false;\n                            while (!PLAN_PENDING.isEmpty()) PLAN_PENDING.remove()\n                                .run();\n                            pumpPackages();\n                            collectLegacyOrphans();\n                            journalDirty = true;\n                            packagesDirty = true;\n                        }\n                    });\n                }\n            });\n        } catch (RejectedExecutionException failure) {\n            loadingIndex = false;\n        }\n    }\n\n    private static void collectLegacyOrphans() {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java",
+    "line": 190,
+    "side": "Client",
+    "context": "                        }\n                    } catch (Exception failure) {\n                        DarkGreyRpg.LOG.warn(\"Could not inspect legacy media cache\", failure);\n                    }\n                    MainThreadScheduler.scheduleClient(new Runnable() {\n\n                        @Override\n                        public void run() {\n                            orphans.removeAll(packages.ownedRefs());\n                            DELETE_PENDING.addAll(orphans);\n                        }\n                    });\n                }\n            });\n        } catch (RejectedExecutionException ignored) {}\n    }\n\n    public static void acceptPlan(StoryMediaPlan plan) {\n        synchronizeConnection();\n        if (plan.getRevision() <= appliedRevision || plan.getRevision() < planRevision) return;\n        if (plan.getChunkIndex() == 0) {\n            planRevision = plan.getRevision();\n            PLAN_DESCRIPTORS.clear();\n            PLAN_RUNNING.clear();\n            planNext = 0;\n            planCount = plan.getChunkCount();\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java",
+    "line": 434,
+    "side": "Client",
+    "context": "                    } catch (Exception failure) {\n                        DarkGreyRpg.LOG.warn(\"Could not maintain story media cache\", failure);\n                    }\n                    final boolean success = saved;\n                    MainThreadScheduler.scheduleClient(new Runnable() {\n\n                        @Override\n                        public void run() {\n                            DELETE_PENDING.removeAll(deleted);\n                            for (String ref : deleted) packages.invalidate(ref);\n                            journalWorking = false;\n                            if (!success) journalDirty = true;\n                            packagesDirty = true;\n                        }\n                    });\n                }\n            });\n        } catch (RejectedExecutionException failure) {\n            journalWorking = false;\n            journalDirty = true;\n            packagesDirty = true;\n        }\n    }\n\n    public static int getCachedPackageCount() {\n        return packages == null ? 0\n            : packages.entries()"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java",
+    "line": 611,
+    "side": "Client",
+    "context": "\n                    } else found = importFromLocalPackage(state, store);\n                } catch (Exception ignored) {}\n                final boolean available = found;\n                MainThreadScheduler.scheduleClient(new Runnable() {\n\n                    @Override\n                    public void run() {\n                        if (!current(state)) return;\n                        state.working = false;\n                        if (available) completed(state, store.path(state.ref));\n                        else request(state);\n                    }\n                });\n            }\n        });\n    }\n\n    public static void tick() {\n        synchronizeConnection();\n        initializeIndex();\n        for (State state : ACTIVE.values()) {\n            if (state.ready == null && !state.working && !state.waiting && System.nanoTime() >= state.retryAt) {\n                packagesDirty = true;\n                break;\n            }\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java",
+    "line": 768,
+    "side": "Client",
+    "context": "                failed = true;\n                close(state);\n            }\n            final boolean done = complete, bad = failed;\n            MainThreadScheduler.scheduleClient(() -> {\n                if (!current(state) || state.retired) return;\n                state.working = false;\n                if (bad) {\n                    fail(state);\n                    return;\n                }\n                state.window.written();\n                if (done) completed(state, store.path(state.ref));\n                else {\n                    request(state);\n                    drainWindow(state);\n                }\n            });\n        });\n    }\n\n    private static void fail(State state) {\n        state.waiting = false;\n        state.working = false;\n        state.retryAt = System.nanoTime() + 5000000000L;\n        packagesDirty = true;\n        MediaLatencyTrace.event(\"file_retry\", state.ref + \":\" + state.id, state.started, \"backoff_5s\");"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaServer.java",
+    "line": 113,
+    "side": "Server",
+    "context": "            // Up to three 8-chunk windows; retain a bounded 8 MiB/s request ceiling.\n            if (++rate[1] > 256) return;\n        }\n        if (!reserveRequest()) return;\n        darkgrey.rpg.network.MainThreadScheduler.scheduleServer(new Runnable() {\n\n            @Override\n            public void run() {\n                requestReserved(player, request);\n            }\n        });\n    }\n\n    public static void request(EntityPlayerMP player, CanonicalMediaRequest request) {\n        if (reserveRequest()) requestReserved(player, request);\n    }\n\n    /** Revoke presentation capabilities and stop client media when their package retires. */\n    public static void retireStories(java.util.Set<String> storyIds) {\n        StoryMediaServer.retireStories(storyIds);\n        java.util.Iterator<Map.Entry<EntityPlayerMP, CanonicalSessionFrame>> entries = FRAMES.entrySet()\n            .iterator();\n        while (entries.hasNext()) {\n            Map.Entry<EntityPlayerMP, CanonicalSessionFrame> entry = entries.next();\n            if (!storyIds.contains(\n                entry.getValue()\n                    .getStoryId()))"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaServer.java",
+    "line": 192,
+    "side": "Server",
+    "context": "                        } catch (java.io.IOException | RuntimeException failure) {\n                            chunk = null;\n                        }\n                        final CanonicalMediaChunk response = chunk == null ? unavailable(request) : chunk;\n                        darkgrey.rpg.network.MainThreadScheduler.scheduleServer(new Runnable() {\n\n                            @Override\n                            public void run() {\n                                // Recheck presentation ownership after disk work. A closed/replaced\n                                // session must never receive a chunk from its former generation.\n                                try {\n                                    if (isAuthorized(player, request.getMediaRef()))\n                                        DialogueNetwork.CHANNEL.sendTo(response, player);\n                                    else READER_CLEANUP.execute(() -> READERS.releaseOwner(owner(player)));\n                                } finally {\n                                    IN_FLIGHT.decrementAndGet();\n                                }\n                            }\n                        });\n                    } finally {\n                        if (sourceLease) source.releaseMediaRequest();\n                    }\n                }\n            });\n        } catch (RejectedExecutionException rejected) {\n            IN_FLIGHT.decrementAndGet();\n            if (sourceLease) source.releaseMediaRequest();"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/MainThreadScheduler.java",
+    "line": 14,
+    "side": "Server",
+    "context": "\n    private static final Queue<Runnable> SERVER_TASKS = new ConcurrentLinkedQueue<Runnable>();\n    private static final Queue<Runnable> CLIENT_TASKS = new ConcurrentLinkedQueue<Runnable>();\n\n    public static void scheduleServer(Runnable task) {\n        SERVER_TASKS.add(task);\n    }\n\n    public static void scheduleClient(Runnable task) {\n        CLIENT_TASKS.add(task);\n    }\n\n    @SubscribeEvent\n    public void onServerTick(TickEvent.ServerTickEvent event) {\n        if (event.phase == TickEvent.Phase.START) {\n            drain(SERVER_TASKS);\n        }\n    }\n\n    @SubscribeEvent\n    public void onClientTick(TickEvent.ClientTickEvent event) {\n        if (event.phase == TickEvent.Phase.START) {\n            drain(CLIENT_TASKS);\n        }\n    }\n\n    private static void drain(Queue<Runnable> tasks) {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/MainThreadScheduler.java",
+    "line": 18,
+    "side": "Client",
+    "context": "    public static void scheduleServer(Runnable task) {\n        SERVER_TASKS.add(task);\n    }\n\n    public static void scheduleClient(Runnable task) {\n        CLIENT_TASKS.add(task);\n    }\n\n    @SubscribeEvent\n    public void onServerTick(TickEvent.ServerTickEvent event) {\n        if (event.phase == TickEvent.Phase.START) {\n            drain(SERVER_TASKS);\n        }\n    }\n\n    @SubscribeEvent\n    public void onClientTick(TickEvent.ClientTickEvent event) {\n        if (event.phase == TickEvent.Phase.START) {\n            drain(CLIENT_TASKS);\n        }\n    }\n\n    private static void drain(Queue<Runnable> tasks) {\n        Runnable task;\n        while ((task = tasks.poll()) != null) {\n            task.run();\n        }"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalChoiceReceipt.java",
+    "line": 37,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalChoiceReceipt message, MessageContext context) {\n            final Object connection = context.netHandler;\n            darkgrey.rpg.network.MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        darkgrey.rpg.client.session.DialogueHistoryClient.acceptChoice(message.action);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalMediaChunk.java",
+    "line": 99,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalMediaChunk message, MessageContext context) {\n            final Object connection = context.netHandler;\n            darkgrey.rpg.network.MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        darkgrey.rpg.media.CanonicalMediaClient.accept(message);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionNotice.java",
+    "line": 39,
+    "side": "Client",
+    "context": "    public static final class Handler implements IMessageHandler<CanonicalSessionNotice, IMessage> {\n\n        public IMessage onMessage(final CanonicalSessionNotice notice, MessageContext context) {\n            final Object connection = context.netHandler;\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                public void run() {\n                    if (!darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;\n                    darkgrey.rpg.client.session.CanonicalSessionClientController.notice(notice.transport, notice.story);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalStoryChooserFrame.java",
+    "line": 86,
+    "side": "Client",
+    "context": "    public static final class Handler implements IMessageHandler<CanonicalStoryChooserFrame, IMessage> {\n\n        @Override\n        public IMessage onMessage(final CanonicalStoryChooserFrame message, MessageContext context) {\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    Minecraft.getMinecraft()\n                        .displayGuiScreen(new GuiCanonicalStoryChooser(message));\n                }\n            });\n            return null;\n        }\n    }\n\n    public static final class Option {\n\n        private final String storyId;\n        private final String displayName;\n        private final String status;\n        private final String groupName;\n\n        public Option(String storyId, String displayName, String status) {\n            this(storyId, displayName, status, \"独立故事\");\n        }\n"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalStoryChooserSelection.java",
+    "line": 58,
+    "side": "Server",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalStoryChooserSelection message, final MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    DarkGreyRpg.getCanonicalStoryManager()\n                        .selectActorCandidate(player, message.getToken(), message.getOptionIndex());\n                }\n            });\n            return null;\n        }\n    }\n\n    private static void validate(long value, int index) {\n        if (value <= 0) throw invalid(\"token must be positive\");\n        if (index < -1 || index > 255) throw invalid(\"option_index must be -1 through 255\");\n    }\n\n    private static IllegalArgumentException invalid(String message) {\n        return new IllegalArgumentException(\"Invalid canonical Story chooser payload: \" + message);\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskSubmit.java",
+    "line": 66,
+    "side": "Server",
+    "context": "    public static final class Handler implements IMessageHandler<CanonicalTaskSubmit, IMessage> {\n\n        public IMessage onMessage(final CanonicalTaskSubmit message, final MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                public void run() {\n                    // Submission is actor-bound. A packet from the task menu\n                    // has no server-side EntityInteractEvent and therefore\n                    // must never reach the inventory transaction path.\n                    player.addChatMessage(new net.minecraft.util.ChatComponentText(\"请与指定角色交互提交物品。\"));\n                    CanonicalTaskPresentationServer.push(player, true);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskSubmitChoiceFrame.java",
+    "line": 114,
+    "side": "Client",
+    "context": "    public static final class Handler implements IMessageHandler<CanonicalTaskSubmitChoiceFrame, IMessage> {\n\n        @Override\n        public IMessage onMessage(final CanonicalTaskSubmitChoiceFrame message, MessageContext context) {\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    Minecraft.getMinecraft()\n                        .displayGuiScreen(new GuiCanonicalTaskSubmitChooser(message));\n                }\n            });\n            return null;\n        }\n    }\n\n    public static final class Option {\n\n        private final String identity;\n        private final String display;\n        private final net.minecraft.nbt.NBTTagCompound preview;\n\n        public Option(String identity, String display) {\n            this(identity, display, new net.minecraft.nbt.NBTTagCompound());\n        }\n\n        public Option(String identity, String display, net.minecraft.nbt.NBTTagCompound preview) {"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskSubmitChoiceSelection.java",
+    "line": 57,
+    "side": "Server",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalTaskSubmitChoiceSelection message, final MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    DarkGreyRpg.getCanonicalTaskManager()\n                        .selectSubmitCandidate(player, message.token, message.optionIndex);\n                }\n            });\n            return null;\n        }\n    }\n\n    private static void validate(long token, int optionIndex) {\n        if (token <= 0 || optionIndex < -1 || optionIndex > 255) throw invalid(\"token or option index is invalid\");\n    }\n\n    private static IllegalArgumentException invalid(String message) {\n        return new IllegalArgumentException(\"Invalid Task submit choice: \" + message);\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskViewOpen.java",
+    "line": 44,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalTaskViewOpen message, MessageContext context) {\n            final Object connection = context.netHandler;\n            MainThreadScheduler.scheduleClient(() -> {\n                if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                    DarkGreyRpg.proxy.openCanonicalTaskView(message.dimension);\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTitleFrame.java",
+    "line": 72,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final CanonicalTitleFrame message, MessageContext context) {\n            final Object connection = context.netHandler;\n            darkgrey.rpg.network.MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        darkgrey.rpg.title.CanonicalTitleClient.accept(message);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/StoryMediaPlan.java",
+    "line": 198,
+    "side": "Client",
+    "context": "\n        @Override\n        public IMessage onMessage(final StoryMediaPlan message, MessageContext context) {\n            final Object connection = context.netHandler;\n            darkgrey.rpg.network.MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                        darkgrey.rpg.media.CanonicalMediaClient.acceptPlan(message);\n                }\n            });\n            return null;\n        }\n    }\n\n    private static List<Descriptor> freezeDescriptors(List<Descriptor> values) {\n        if (values == null || values.size() > MAX_PACKAGES) throw invalid(\"invalid package descriptors\");\n        LinkedHashSet<String> seen = new LinkedHashSet<String>();\n        List<Descriptor> copy = new ArrayList<Descriptor>();\n        for (Descriptor value : values) {\n            if (value == null || !seen.add(value.packageId)) throw invalid(\"duplicate package descriptor\");\n            copy.add(value);\n        }\n        return Collections.unmodifiableList(copy);\n    }\n"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/TaskPresentationPage.java",
+    "line": 72,
+    "side": "Client",
+    "context": "        @Override\n        public IMessage onMessage(final TaskPresentationPage message, MessageContext context) {\n            if (!message.response) return null;\n            final Object connection = context.netHandler;\n            MainThreadScheduler.scheduleClient(() -> {\n                if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                    darkgrey.rpg.client.TaskPresentationPages.accept(message.data);\n            });\n            return null;\n        }\n    }\n\n    public static final class Server implements IMessageHandler<TaskPresentationPage, IMessage> {\n\n        private static final AtomicInteger QUEUED = new AtomicInteger();\n        private static final Map<Object, Gate> GATES = new WeakHashMap<Object, Gate>();\n\n        @Override\n        public IMessage onMessage(final TaskPresentationPage message, MessageContext context) {\n            if (message.response) return null;\n            final net.minecraft.network.NetHandlerPlayServer connection = context.getServerHandler();\n            final EntityPlayerMP player = connection.playerEntity;\n            final Gate gate;\n            synchronized (GATES) {\n                Gate current = GATES.get(connection);\n                if (current == null) {\n                    current = new Gate();"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/canonical/TaskPresentationPage.java",
+    "line": 108,
+    "side": "Server",
+    "context": "                gate.requests++;\n                gate.queued++;\n                QUEUED.incrementAndGet();\n            }\n            MainThreadScheduler.scheduleServer(() -> {\n                try {\n                    if (player.playerNetServerHandler != connection || connection.playerEntity != player) return;\n                    NBTTagCompound result = darkgrey.rpg.creator.TaskPageServer.project(player, message.data);\n                    if (result == null) return;\n                    TaskPresentationPage packet = new TaskPresentationPage(true, result);\n                    io.netty.buffer.ByteBuf bytes = io.netty.buffer.Unpooled.buffer();\n                    try {\n                        packet.toBytes(bytes);\n                    } finally {\n                        bytes.release();\n                    }\n                    DialogueNetwork.CHANNEL.sendTo(packet, player);\n                } catch (RuntimeException invalid) { /* Invalid/stale request cannot change gameplay. */ } finally {\n                    synchronized (GATES) {\n                        gate.queued--;\n                        QUEUED.decrementAndGet();\n                    }\n                }\n            });\n            return null;\n        }\n"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/entitytools/C2SCopierTemplateAction.java",
+    "line": 100,
+    "side": "Server",
+    "context": "\n        @Override\n        public IMessage onMessage(final C2SCopierTemplateAction message, MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (player.inventory.currentItem != message.hotbarSlot) return;\n                    ItemStack held = player.getHeldItem();\n                    if (held == null || held.getItem() != ModItems.copier) return;\n                    try {\n                        CopierState state = ItemCopier.loadState(held);\n                        List<EntityTemplate> templates = state.getTemplates();\n                        if (templates.size() != message.expectedCount || message.templateIndex < 0\n                            || message.templateIndex >= templates.size()\n                            || !message.expectedEntityType.equals(\n                                templates.get(message.templateIndex)\n                                    .getEntityType()))\n                            throw new IllegalStateException(\"复制器模板列表已变化，请重新打开管理界面。\");\n                        if (message.operation == Operation.SELECT) {\n                            state.select(message.templateIndex);\n                            player.addChatMessage(\n                                new ChatComponentText(\n                                    \"已选择模板 \" + (message.templateIndex + 1) + \": \" + message.expectedEntityType));\n                        } else {\n                            state.remove(message.templateIndex);"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/nominator/C2SNominatorAction.java",
+    "line": 66,
+    "side": "Server",
+    "context": "    public static final class Handler implements IMessageHandler<C2SNominatorAction, IMessage> {\n\n        public IMessage onMessage(final C2SNominatorAction m, MessageContext ctx) {\n            final EntityPlayerMP player = ctx.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                public void run() {\n                    NominatorActions.handle(player, m.data);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/nominator/C2SNominatorEntityOpen.java",
+    "line": 43,
+    "side": "Server",
+    "context": "\n        @Override\n        public IMessage onMessage(final C2SNominatorEntityOpen message, MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    Entity entity = player.worldObj.getEntityByID(message.entityId);\n                    if (!NominatorPermission.canUse(player) || player.getHeldItem() == null\n                        || player.getHeldItem()\n                            .getItem() != ModItems.nominator\n                        || entity == null\n                        || entity.dimension != player.dimension\n                        || player.getDistanceSqToEntity(entity) > 64.0D) return;\n                    darkgrey.rpg.nominator.NominatorOpenBoundary.run(player, new Runnable() {\n\n                        @Override\n                        public void run() {\n                            DialogueNetwork.CHANNEL.sendTo(\n                                S2CNominatorEntityOpen.from(\n                                    entity,\n                                    NominatorSavedData.get(),\n                                    darkgrey.rpg.nominator.NominatorCatalog.from(\n                                        darkgrey.rpg.DarkGreyRpg.getProjectRepository()\n                                            .getSnapshot(),\n                                        darkgrey.rpg.DarkGreyRpg.getStoryPackageLoader())),"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/nominator/C2SNominatorInventoryOpen.java",
+    "line": 30,
+    "side": "Server",
+    "context": "\n        @Override\n        public IMessage onMessage(final C2SNominatorInventoryOpen message, MessageContext context) {\n            final EntityPlayerMP player = context.getServerHandler().playerEntity;\n            MainThreadScheduler.scheduleServer(new Runnable() {\n\n                @Override\n                public void run() {\n                    if (!NominatorPermission.canUse(player) || player.getHeldItem() == null\n                        || player.getHeldItem()\n                            .getItem() != ModItems.nominator)\n                        return;\n                    darkgrey.rpg.nominator.NominatorOpenBoundary.run(player, new Runnable() {\n\n                        @Override\n                        public void run() {\n                            S2CNominatorInventoryOpen snapshot = S2CNominatorInventoryOpen.from(player);\n                            player.openGui(\n                                DarkGreyRpg.instance,\n                                NominatorGuiHandler.ITEM_NOMINATOR,\n                                player.worldObj,\n                                0,\n                                0,\n                                0);\n                            darkgrey.rpg.network.DialogueNetwork.CHANNEL.sendTo(snapshot, player);\n                        }\n                    });"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/nominator/S2CNominatorActionResult.java",
+    "line": 40,
+    "side": "Client",
+    "context": "\n    public static final class Handler implements IMessageHandler<S2CNominatorActionResult, IMessage> {\n\n        public IMessage onMessage(final S2CNominatorActionResult m, MessageContext ctx) {\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                public void run() {\n                    DarkGreyRpg.proxy.acceptNominatorResult(m.data, m.catalog);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/nominator/S2CNominatorEntityOpen.java",
+    "line": 199,
+    "side": "Client",
+    "context": "    public static final class Handler implements IMessageHandler<S2CNominatorEntityOpen, IMessage> {\n\n        @Override\n        public IMessage onMessage(final S2CNominatorEntityOpen message, MessageContext context) {\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    DarkGreyRpg.proxy.openNominatorEntityGui(\n                        message.entityId,\n                        message.entityUuid,\n                        message.displayName,\n                        message.entityType,\n                        message.individual,\n                        message.groups,\n                        message.story,\n                        message.revision,\n                        message.catalogRevision,\n                        message.catalog);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/network/message/nominator/S2CNominatorInventoryOpen.java",
+    "line": 82,
+    "side": "Client",
+    "context": "    public static final class Handler implements IMessageHandler<S2CNominatorInventoryOpen, IMessage> {\n\n        @Override\n        public IMessage onMessage(final S2CNominatorInventoryOpen message, MessageContext context) {\n            MainThreadScheduler.scheduleClient(new Runnable() {\n\n                @Override\n                public void run() {\n                    DarkGreyRpg.proxy.openNominatorInventoryGui(\n                        message.catalog,\n                        message.revision,\n                        message.catalogRevision,\n                        message.selectedSlot);\n                }\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageManagerPacket.java",
+    "line": 94,
+    "side": "Server",
+    "context": "                if (message.data.getInteger(\"action\") != StoryPackageManagerService.CLOSE && previous != null\n                    && now - previous < 100000000L) return null;\n                last.put(player, now);\n            }\n            MainThreadScheduler.scheduleServer(() -> {\n                StoryPackageLoader loader = DarkGreyRpg.getStoryPackageLoader();\n                if (loader == null) return;\n                if (current != loader) {\n                    current = loader;\n                    manager = new StoryPackageManagerService(loader, new ForgeRuntime(loader));\n                }\n                NBTTagCompound result = manager\n                    .request(player, player.canCommandSenderUseCommand(2, \"dgr\"), message.sequence, message.data);\n                DialogueNetwork.CHANNEL.sendTo(new StoryPackageManagerPacket(true, message.sequence, result), player);\n            });\n            return null;\n        }\n    }\n\n    private static final class ForgeRuntime implements StoryPackageManagerService.RuntimeAccess {\n\n        private final StoryPackageLoader loader;\n\n        ForgeRuntime(StoryPackageLoader loader) {\n            this.loader = loader;\n        }\n"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageManagerPacket.java",
+    "line": 169,
+    "side": "Client",
+    "context": "        @Override\n        public IMessage onMessage(final StoryPackageManagerPacket message, MessageContext context) {\n            if (!message.response) return null;\n            final Object connection = context.netHandler;\n            MainThreadScheduler.scheduleClient(() -> {\n                if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))\n                    DarkGreyRpg.proxy.acceptPackageManager(message.sequence, message.data);\n            });\n            return null;\n        }\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionActionHandler.java",
+    "line": 19,
+    "side": "Server",
+    "context": "    @Override\n    public IMessage onMessage(final CanonicalSessionAction message, final MessageContext context) {\n        final EntityPlayerMP player = context == null || context.getServerHandler() == null ? null\n            : context.getServerHandler().playerEntity;\n        MainThreadScheduler.scheduleServer(new Runnable() {\n\n            @Override\n            public void run() {\n                CanonicalSessionForgeManager manager = DarkGreyRpg.getCanonicalSessionManager();\n                if (manager != null && manager.handleAction(player, message)\n                    && message.getKind() == CanonicalSessionAction.Kind.CHOICE)\n                    darkgrey.rpg.network.DialogueNetwork.CHANNEL\n                        .sendTo(new darkgrey.rpg.network.message.canonical.CanonicalChoiceReceipt(message), player);\n            }\n        });\n        return null;\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionCloseHandler.java",
+    "line": 16,
+    "side": "Client",
+    "context": "\n    @Override\n    public IMessage onMessage(final CanonicalSessionClose message, MessageContext context) {\n        final Object connection = context.netHandler;\n        MainThreadScheduler.scheduleClient(new Runnable() {\n\n            @Override\n            public void run() {\n                if (!darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;\n                CanonicalSessionClientController.acceptClose(message);\n            }\n        });\n        return null;\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionFrameHandler.java",
+    "line": 16,
+    "side": "Client",
+    "context": "\n    @Override\n    public IMessage onMessage(final CanonicalSessionFrame message, MessageContext context) {\n        final Object connection = context.netHandler;\n        MainThreadScheduler.scheduleClient(new Runnable() {\n\n            @Override\n            public void run() {\n                if (!darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;\n                CanonicalSessionClientController.acceptFrame(message);\n            }\n        });\n        return null;\n    }\n}"
+  },
+  {
+    "file": "src/main/java/darkgrey/rpg/title/CanonicalTitleServer.java",
+    "line": 90,
+    "side": "Server",
+    "context": "        Entry entry = queue.entries.peek();\n        if (entry.token != token || entry.pending\n            || System.nanoTime() - entry.started < entry.title.duration() * 1000000000.0) return;\n        entry.pending = true;\n        MainThreadScheduler.scheduleServer(new Runnable() {\n\n            @Override\n            public void run() {\n                complete(player, token);\n            }\n        });\n    }\n\n    private static synchronized void complete(EntityPlayerMP player, long token) {\n        Queue queue = QUEUES.get(player.getUniqueID());\n        if (queue == null || queue.player != player || queue.entries.isEmpty()) return;\n        Entry entry = queue.entries.peek();\n        if (entry.token != token || player.isDead || player.getHealth() <= 0) {\n            entry.pending = false;\n            return;\n        }\n        queue.entries.remove();\n        if (queue.entries.isEmpty()) QUEUES.remove(player.getUniqueID());\n        if (entry.title.waitForCompletion) entry.completed.run();\n        tick(player);\n    }\n"
+  }
+]

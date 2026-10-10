@@ -1,0 +1,36 @@
+{
+  "status": "PASS_TEST_FIXTURE_CHECKPOINT_ORDER_AND_COLD_RESTORE",
+  "layer": "S",
+  "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+  "driver_sha256": "A1E16F50AAD5B5D8F265EB57ED0E66227862739B994C354A7F9A66D2EA7EF27A",
+  "files": [
+    {
+      "file": "fixture-checkpoint-fixed-first-summary.json",
+      "sha256": "2C5D6BA4F381E2ABDC2B9C46DD399384F688B80D1D091F6F17518E706F047A05",
+      "bytes": 1723
+    },
+    {
+      "file": "fixture-checkpoint-fixed-cold-summary.json",
+      "sha256": "A4BDFB2B63DA49CBD406FB271D15337998AFF6EA096BF2D7EE70E7975B6B3043",
+      "bytes": 1723
+    },
+    {
+      "file": "fixture-mixed-cold-restore.json",
+      "sha256": "F57E2B7915A78B76738A9067AF27763F2834CE0844DF0FBCD1B3E32AF10D2F3A",
+      "bytes": 126
+    },
+    {
+      "file": "fixture-checkpoint-fixed-first-driver-tick-profile.csv",
+      "sha256": "2251DB210D5838D3F0625C1CC2E84BEA47E81DA3156982BFC17A1DA32BEC8BA1",
+      "bytes": 2287
+    },
+    {
+      "file": "fixture-checkpoint-fixed-cold-driver-tick-profile.csv",
+      "sha256": "7158A4DA4B88EA5C293F7176BE02F554F36AC6E20DCD921C6F3182C7E51DDFD2",
+      "bytes": 2524
+    }
+  ],
+  "scope": "Two separate 1200-tick runs with four logical users and zero native clients. Fixture persists each prepared inventory before publishing its independent ledger. Not the failed 10-minute authored profile, not a reference performance gate.",
+  "reference_gate_pass": false,
+  "overall_version_acceptance": "IN_PROGRESS"
+}

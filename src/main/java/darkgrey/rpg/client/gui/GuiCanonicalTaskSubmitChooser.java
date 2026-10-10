@@ -94,17 +94,24 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
         firstOption = Math.max(0, Math.min(firstOption, ((options.size() - 1) / pageSize()) * pageSize()));
         int visible = Math.min(options.size() - firstOption, pageSize());
         for (int row = 0; row < visible; row++) buttonList.add(
-            new GuiButton(
+            new GuiRpgButton(
                 OPTION_BASE + firstOption + row,
                 left + panelWidth - 112,
                 top + 60 + row * rowHeight,
                 96,
                 20,
                 "提交"));
-        buttonList.add(new GuiButton(CANCEL, left + panelWidth - 90, top + 38 + visible * rowHeight + 8, 70, 20, "取消"));
+        buttonList
+            .add(new GuiRpgButton(CANCEL, left + panelWidth - 90, top + 38 + visible * rowHeight + 8, 70, 20, "取消"));
         if (options.size() > pageSize()) {
-            GuiButton previous = new GuiButton(PREVIOUS, left + 16, top + 38 + visible * rowHeight + 8, 70, 20, "上一页");
-            GuiButton next = new GuiButton(NEXT, left + 92, top + 38 + visible * rowHeight + 8, 70, 20, "下一页");
+            GuiButton previous = new GuiRpgButton(
+                PREVIOUS,
+                left + 16,
+                top + 38 + visible * rowHeight + 8,
+                70,
+                20,
+                "上一页");
+            GuiButton next = new GuiRpgButton(NEXT, left + 92, top + 38 + visible * rowHeight + 8, 70, 20, "下一页");
             previous.enabled = firstOption > 0;
             next.enabled = firstOption + visible < options.size();
             buttonList.add(previous);
@@ -147,7 +154,8 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
         List<String> tooltip = null;
         for (int row = 0; row < visible; row++) {
             int y = top + 38 + row * rowHeight();
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 fontRendererObj.trimStringToWidth(
                     options.get(firstOption + row)
                         .getDisplay(),
@@ -159,7 +167,8 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
             int stripHeight = strip.height(contentWidth());
             strip.draw(left + 20, y + 18, contentWidth(), y + 18, y + 18 + stripHeight, mouseX, mouseY);
             if (strip.tooltip != null) tooltip = strip.tooltip;
-            fontRendererObj.drawSplitString(
+            darkgrey.rpg.client.gui.DgrUiText.wrapped(
+                fontRendererObj,
                 progress(firstOption + row),
                 left + 20,
                 y + 24 + stripHeight,
@@ -168,9 +177,9 @@ public final class GuiCanonicalTaskSubmitChooser extends GuiScreen {
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
         List<String> popupTooltip = ItemCandidatePopover.draw(width, height, mouseX, mouseY);
-        if (popupTooltip != null) drawHoveringText(popupTooltip, mouseX, mouseY, fontRendererObj);
+        if (popupTooltip != null) DgrUiText.tooltip(fontRendererObj, popupTooltip, mouseX, mouseY, width, height);
         else if (tooltip != null && !ItemCandidatePopover.contains(mouseX, mouseY))
-            drawHoveringText(tooltip, mouseX, mouseY, fontRendererObj);
+            DgrUiText.tooltip(fontRendererObj, tooltip, mouseX, mouseY, width, height);
     }
 
     @Override

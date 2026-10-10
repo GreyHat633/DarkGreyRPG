@@ -20,22 +20,26 @@ import darkgrey.rpg.item.identity.ItemIdentitySavedData;
 import darkgrey.rpg.item.identity.ItemStackDefinition;
 import darkgrey.rpg.task.instance.CanonicalTaskInstanceSnapshot;
 import darkgrey.rpg.task.persistence.CanonicalTaskTransactionJournal;
+import darkgrey.rpg.task.persistence.TaskReceiptKey;
 import darkgrey.rpg.task.runtime.CanonicalTaskRewardPackage;
 
 /** Server-thread inventory/XP transactions shared by Task rewards and submissions. */
 public final class CanonicalTaskPlayerTransactions {
 
     private static final String RECEIPTS = "DGRTaskReceipts";
-    private static final Map<EntityPlayerMP, Boolean> RECOVERED = Collections
-        .synchronizedMap(new WeakHashMap<EntityPlayerMP, Boolean>());
+    private static final Map<EntityPlayerMP, CanonicalTaskTransactionJournal> RECOVERED = Collections
+        .synchronizedMap(new WeakHashMap<EntityPlayerMP, CanonicalTaskTransactionJournal>());
+    private static final Map<EntityPlayerMP, JournalContext> JOURNALS = Collections
+        .synchronizedMap(new WeakHashMap<EntityPlayerMP, JournalContext>());
 
     private CanonicalTaskPlayerTransactions() {}
 
     public static void recover(EntityPlayerMP player) {
-        if (RECOVERED.containsKey(player)) return;
         try {
-            journal(player).recover(player.getUniqueID(), state(player));
-            RECOVERED.put(player, Boolean.TRUE);
+            CanonicalTaskTransactionJournal current = journal(player);
+            if (RECOVERED.get(player) == current) return;
+            current.recover(player.getUniqueID(), state(player));
+            RECOVERED.put(player, current);
         } catch (IOException | RuntimeException failure) {
             failClosed(player, failure);
         }
@@ -56,9 +60,15 @@ public final class CanonicalTaskPlayerTransactions {
                 digest.update((byte) bytes.length);
                 digest.update(bytes);
             }
-            StringBuilder result = new StringBuilder();
-            for (byte value : digest.digest()) result.append(String.format(java.util.Locale.ROOT, "%02x", value & 255));
-            return result.toString();
+            byte[] hash = digest.digest();
+            char[] result = new char[hash.length * 2];
+            String alphabet = "0123456789abcdef";
+            for (int i = 0; i < hash.length; i++) {
+                int value = hash[i] & 255;
+                result[i * 2] = alphabet.charAt(value >>> 4);
+                result[i * 2 + 1] = alphabet.charAt(value & 15);
+            }
+            return new String(result);
         } catch (NoSuchAlgorithmException impossible) {
             throw new IllegalStateException(impossible);
         }
@@ -197,12 +207,35 @@ public final class CanonicalTaskPlayerTransactions {
     private static CanonicalTaskTransactionJournal journal(EntityPlayerMP player) {
         if (!(player.worldObj.getSaveHandler() instanceof SaveHandler))
             throw new IllegalStateException("Task transactions require a verifiable player save handler.");
-        return new CanonicalTaskTransactionJournal(
-            player.worldObj.getSaveHandler()
-                .getWorldDirectory()
-                .toPath()
-                .resolve("data")
-                .resolve("dgr_task_transactions"));
+        java.nio.file.Path directory = player.worldObj.getSaveHandler()
+            .getWorldDirectory()
+            .toPath()
+            .resolve("data")
+            .resolve("dgr_task_transactions")
+            .toAbsolutePath()
+            .normalize();
+        JournalContext cached = JOURNALS.get(player);
+        if (cached == null || !cached.directory.equals(directory)) {
+            cached = new JournalContext(directory);
+            JOURNALS.put(player, cached);
+        }
+        return cached.journal;
+    }
+
+    public static void stop() {
+        JOURNALS.clear();
+        RECOVERED.clear();
+    }
+
+    private static final class JournalContext {
+
+        final java.nio.file.Path directory;
+        final CanonicalTaskTransactionJournal journal;
+
+        JournalContext(java.nio.file.Path directory) {
+            this.directory = directory;
+            this.journal = new CanonicalTaskTransactionJournal(directory);
+        }
     }
 
     private static CanonicalTaskTransactionJournal.PlayerState state(final EntityPlayerMP player) {
@@ -261,7 +294,7 @@ public final class CanonicalTaskPlayerTransactions {
             throw new IllegalArgumentException("Invalid Task inventory list type.");
         NBTTagCompound receipts = image.getCompoundTag("receipts");
         for (Object key : receipts.func_150296_c())
-            if (!(key instanceof String) || !((String) key).matches("[0-9a-f]{64}")
+            if (!(key instanceof String) || !TaskReceiptKey.isValid((String) key)
                 || !receipts.hasKey((String) key, 1)
                 || receipts.getByte((String) key) != 1)
                 throw new IllegalArgumentException("Invalid Task player receipt.");

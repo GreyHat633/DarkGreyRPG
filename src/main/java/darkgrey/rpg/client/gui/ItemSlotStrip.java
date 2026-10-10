@@ -133,7 +133,7 @@ public final class ItemSlotStrip {
         }
         y += count() == 0 ? 0 : 24;
         if (source.hasKey("notice") && y < clipBottom && y + 12 > clipTop) {
-            mc.fontRenderer.drawString("部分候选未展开 · 悬停查看", left, y, DgrUiPalette.SECONDARY);
+            DgrUiText.left(mc.fontRenderer, "部分候选未展开 · 悬停查看", left, y, DgrUiPalette.SECONDARY);
             if (mouseX >= left && mouseX < left + width && mouseY >= y && mouseY < y + 12)
                 tooltip = java.util.Collections.singletonList(source.getString("notice"));
         }
@@ -143,13 +143,13 @@ public final class ItemSlotStrip {
         Minecraft mc = Minecraft.getMinecraft();
         NBTTagCompound row = items.getCompoundTagAt(i);
         if ("xp".equals(row.getString("type"))) {
-            mc.fontRenderer.drawString(experience(row), x, y + 6, DgrUiPalette.TEXT);
+            DgrUiText.left(mc.fontRenderer, experience(row), x, y + 6, DgrUiPalette.TEXT);
             return;
         }
         int signed = row.getInteger("amount");
         long amount = Math.abs((long) signed);
         if (signed < 0) {
-            mc.fontRenderer.drawString("扣除", x, y + 6, DgrUiPalette.SECONDARY);
+            DgrUiText.left(mc.fontRenderer, "扣除", x, y + 6, DgrUiPalette.SECONDARY);
             x += 26;
         }
         boolean hover = mouseX >= x && mouseX < x + 20 && mouseY >= y && mouseY < y + 20;
@@ -166,18 +166,19 @@ public final class ItemSlotStrip {
                 GL11.glPopMatrix();
                 GL11.glPopAttrib();
             }
-        } else mc.fontRenderer.drawString("?", x + 7, y + 6, DgrUiPalette.SECONDARY);
+        } else DgrUiText.left(mc.fontRenderer, "?", x + 7, y + 6, DgrUiPalette.SECONDARY);
         if (amount > 0) {
             String number = Long.toString(amount);
             if (amount <= 99) {
-                // Vanilla stack-count pass: unlit white text with shadow, above the item depth.
+                // Unlit single-pass white count above the item depth.
                 // Restoring GL attributes alone does not clear the depth written by a 3D icon.
                 GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
                 try {
                     GL11.glDisable(GL11.GL_LIGHTING);
                     GL11.glDisable(GL11.GL_DEPTH_TEST);
                     GL11.glDisable(GL11.GL_BLEND);
-                    mc.fontRenderer.drawStringWithShadow(
+                    DgrUiText.left(
+                        mc.fontRenderer,
                         number,
                         x + 19 - mc.fontRenderer.getStringWidth(number),
                         y + 11,
@@ -185,7 +186,7 @@ public final class ItemSlotStrip {
                 } finally {
                     GL11.glPopAttrib();
                 }
-            } else mc.fontRenderer.drawString(number, x + 24, y + 6, DgrUiPalette.TEXT);
+            } else DgrUiText.left(mc.fontRenderer, number, x + 24, y + 6, DgrUiPalette.TEXT);
         }
         if (hover) {
             tooltip = new ArrayList<String>();

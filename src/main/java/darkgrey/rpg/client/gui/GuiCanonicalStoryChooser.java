@@ -98,12 +98,14 @@ public final class GuiCanonicalStoryChooser extends GuiScreen {
         for (int row = 0; row < visible; row++) {
             CanonicalStoryChooserFrame.Option option = options.get(first + row);
             int y = top + 35 + row * ROW_HEIGHT;
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 "\u00a7l" + fontRendererObj.trimStringToWidth(option.getDisplayName(), panelWidth - 110),
                 left + 12,
                 y,
                 DgrUiPalette.TEXT);
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 fontRendererObj.trimStringToWidth(option.getGroupName(), panelWidth - 110),
                 left + 12,
                 y + 14,

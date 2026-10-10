@@ -74,7 +74,7 @@ public final class PlayerStatePacket implements IMessage {
                 if (previous != null && now - previous.longValue() < 150000000L) return null;
                 LAST.put(player, Long.valueOf(now));
             }
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 @Override
                 public void run() {
@@ -94,6 +94,11 @@ public final class PlayerStatePacket implements IMessage {
                     }
                     DialogueNetwork.CHANNEL.sendTo(new PlayerStatePacket(2, message.request, response), player);
                 }
+            }, () -> {
+                net.minecraft.nbt.NBTTagCompound denied = new net.minecraft.nbt.NBTTagCompound();
+                denied.setString("error", "请求未执行，请稍后重试。");
+                darkgrey.rpg.network.DialogueNetwork.CHANNEL
+                    .sendTo(new PlayerStatePacket(2, message.request, denied), player);
             });
             return null;
         }
@@ -105,14 +110,14 @@ public final class PlayerStatePacket implements IMessage {
         public IMessage onMessage(final PlayerStatePacket message, MessageContext context) {
             final Object connection = context.netHandler;
             if (message.kind == 1) return null;
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
                     if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                         DarkGreyRpg.proxy.acceptPlayerInspection(message.kind, message.request, message.data);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

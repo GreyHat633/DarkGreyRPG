@@ -1,0 +1,277 @@
+{
+  "status": "PASS_FORMAL_CNPC_KILLS_AND_NATIVE_TRANSFER",
+  "layer": "S/N/C",
+  "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+  "native_process_inputs": {
+    "pid": 49216,
+    "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-Authored-CNPC",
+    "stage": "native-final-R2",
+    "started": "2026-10-10T01:02:06.7275234+08:00",
+    "args": [
+      "-Ddgr0402.authoredStoryCount=4",
+      "-Ddgr0402.authoredGroup=true",
+      "-Xms128m",
+      "-Xmx512m",
+      "-Ddgr0402.scenario=NormalAuthored",
+      "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-Authored-CNPC\"",
+      "-jar",
+      "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+      "nogui"
+    ],
+    "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+    "driver_sha256": "A2EF1DF59EAF99FD73FBE8FE751215F1209F01C54F11001F727BBA69F12D0062"
+  },
+  "cold_process_inputs": {
+    "pid": 41216,
+    "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-Authored-CNPC",
+    "stage": "native-final-R3-cold",
+    "started": "2026-10-10T01:18:45.7829088+08:00",
+    "args": [
+      "-Ddgr0402.authoredStoryCount=4",
+      "-Ddgr0402.authoredGroup=true",
+      "-Xms128m",
+      "-Xmx512m",
+      "-Ddgr0402.scenario=NormalAuthored",
+      "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-Authored-CNPC\"",
+      "-jar",
+      "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+      "nogui"
+    ],
+    "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+    "driver_sha256": "C0D4CDC36E609F089A5EE04A42B9716EE5944EA827029DF9CF846A416D5024E3"
+  },
+  "ordinary_group_export_sha256": "6474CE58D92B4DC8F102290957B75B741FDA2917DA261A1020A450C5039D11CB",
+  "business": {
+    "DGR402ClientG": {
+      "group_kill": {
+        "status": "SETTLED",
+        "run": 1791564532893,
+        "progress": {
+          "objective": 2
+        }
+      },
+      "group_zero": {
+        "status": "ACTIVE",
+        "run": 1791565975250,
+        "progress": {
+          "objective": 0
+        }
+      },
+      "group_story_status": "ACTIVE",
+      "xp": 0,
+      "receipts": 0,
+      "inventory": 0
+    },
+    "DGR402ClientF": {
+      "group_kill": {
+        "status": "SETTLED",
+        "run": 1791564375955,
+        "progress": {
+          "objective": 2
+        }
+      },
+      "group_zero": {
+        "status": "ACTIVE",
+        "run": 1791565900413,
+        "progress": {
+          "objective": 0
+        }
+      },
+      "group_story_status": "ACTIVE",
+      "xp": 0,
+      "receipts": 0,
+      "inventory": 0
+    }
+  },
+  "result": {
+    "status": "PASS",
+    "network_peak": 2,
+    "distinct_profiles": 2,
+    "assertions": "unchanged Studio group: two native kills of bound fixture entities (exact classes in authored-state), CNPC interaction, first ordered settlement, no extra receipts, zero-settlement ACTIVE"
+  },
+  "files": [
+    {
+      "file": "cnpc-final-R2-death.png",
+      "sha256": "CAF10C61043FFB318C738565C033F13A5283A06C3B9C752ED31A962436C2F4F0",
+      "bytes": 128387
+    },
+    {
+      "file": "cnpc-final-R2-F-conditional-choice.png",
+      "sha256": "BBA151B4D908EE2F91BACE2FAC5BAAF1BBC4196DACD26FD82D82EEDDA213302B",
+      "bytes": 120710
+    },
+    {
+      "file": "cnpc-final-R2-F-hostile-kill.png",
+      "sha256": "1C9CEE1C392C8D166962FC9914F67EA38F815C589D0F04145F11D5479990C5A1",
+      "bytes": 117992
+    },
+    {
+      "file": "cnpc-final-R2-F-second-hostile-kill.png",
+      "sha256": "91130C031E5B62EA86B14663D674DC47E86F2A07B570180A9574C3BED786E073",
+      "bytes": 113935
+    },
+    {
+      "file": "cnpc-final-R2-F-sword-attacks.png",
+      "sha256": "1B80A9735FEBE75B9AD21F1852020310516E4C9A0D9A10D4D646AF89BF877834",
+      "bytes": 122935
+    },
+    {
+      "file": "cnpc-final-R2-G-conditional-choice.png",
+      "sha256": "3478998F894CC8CF634FA9C41342A0DDF92A1F53F060819545C8F8291714938A",
+      "bytes": 94935
+    },
+    {
+      "file": "cnpc-final-R2-G-first-hostile-kill.png",
+      "sha256": "16807FF21B55D34DCD45F9806DA158E807D5F0380D462EA748FF45E8DDAC009D",
+      "bytes": 109068
+    },
+    {
+      "file": "cnpc-final-R2-G-second-hostile-kill.png",
+      "sha256": "D5946A76FE77B50D85147CEA48ED310583508AC9B6AA4B30A00A61B4A6093252",
+      "bytes": 92331
+    },
+    {
+      "file": "cnpc-final-R2-G-zero-active.png",
+      "sha256": "50AE4866599D78FCFF08CD4BDB6BF5A67ED37E782550EA8F5E5834D36127F227",
+      "bytes": 105795
+    },
+    {
+      "file": "cnpc-final-R2-respawn-recreated.png",
+      "sha256": "D233D45BFBFE97D6AC97B9F4A7C51791CF9391FD11752BA8891423D81A03C6BB",
+      "bytes": 103414
+    },
+    {
+      "file": "cnpc-final-R2-target-rebound.png",
+      "sha256": "850EC5322201F478640DCB62DD585564780EFFE65CB9CCABB048F4457D1C7380",
+      "bytes": 34365
+    },
+    {
+      "file": "cnpc-final-R2-target-unbound.png",
+      "sha256": "8D7532B899325FBFBC5AAE3A4EA5D68612EF14B0C7F25BB3E3BC196A7CD50CB2",
+      "bytes": 33923
+    },
+    {
+      "file": "cnpc-final-R2-transfer-complete.png",
+      "sha256": "8310A325F7BD91DAB5F52A4EC2334F418B17AF81FBC41EF4D026F19F27770895",
+      "bytes": 34501
+    },
+    {
+      "file": "cnpc-final-R2-transfer-confirm.png",
+      "sha256": "05DFB694E45C83984C15D4006D23941944CE7D9A3E2523FC304358E04ED3EB42",
+      "bytes": 39479
+    },
+    {
+      "file": "cnpc-final-R2-transfer-target-gui.png",
+      "sha256": "7339A7ACCA76B654C83B62BE7A201B57A27780D0A89EA314932A26336D217BDF",
+      "bytes": 34279
+    },
+    {
+      "file": "cnpc-final-R2-victim-advanced.png",
+      "sha256": "E74011E420A4F869C97021C72F74356DA9049368EA5DCD47B811A356BEBD4513",
+      "bytes": 107760
+    },
+    {
+      "file": "cnpc-final-R2-victim-config.png",
+      "sha256": "EE1BC9758EFC8B793CFEA46B750E3F9A583F749879CBDE9D16406CE0D740A542",
+      "bytes": 81896
+    },
+    {
+      "file": "cnpc-final-R2-victim-faction.png",
+      "sha256": "D3FFA3B728AE0D041BE49953E30F223CC9080794BA86C2FB17DFE57C90D1FC33",
+      "bytes": 64134
+    },
+    {
+      "file": "cnpc-final-R2-both-zero-active.json",
+      "sha256": "38614898A9078AD598502A33DE8BDBD6458C6B58A6190C578E13084DD4AD4060",
+      "bytes": 1743
+    },
+    {
+      "file": "cnpc-final-R2-F-second-hostile-kill.json",
+      "sha256": "53B561FB250268CF82C294E25CB4294B4D2F2F74BEA0C57AF0B3300C315B2659",
+      "bytes": 1362
+    },
+    {
+      "file": "cnpc-final-R2-host-removed.json",
+      "sha256": "CA8CBC0D48F8E183C999873AF440DBAA6E5FDBFAC628576E5C0948BFD880C5E0",
+      "bytes": 1874
+    },
+    {
+      "file": "cnpc-final-R2-respawn-recreated.json",
+      "sha256": "8E56F21ED8B60ABF4A24548DA287AFDEE76EFA00B216AE4D34BBCCB633EC3A89",
+      "bytes": 1910
+    },
+    {
+      "file": "cnpc-final-R2-saved-result.json",
+      "sha256": "A55968A2E315AC14D4206DA22ADDF1510A50752CBE113991BA5612190456117D",
+      "bytes": 259
+    },
+    {
+      "file": "cnpc-final-R2-target-rebound.json",
+      "sha256": "BD72E8657F1925D5B5F2BD36ED7F982C0A65A3594E78EB5ABE9DE2E15925AE49",
+      "bytes": 1874
+    },
+    {
+      "file": "cnpc-final-R2-target-unbound.json",
+      "sha256": "8E066598FFDC651AE64C8E46C28275201628B6D80AFBDB29A088228626095AF1",
+      "bytes": 1874
+    },
+    {
+      "file": "cnpc-final-R2-transfer-complete.json",
+      "sha256": "066C18E2E89C8974B0E7748328A7BD2F043B6C2CBF37547DCA289E99004668B4",
+      "bytes": 1874
+    },
+    {
+      "file": "cnpc-final-R3-cold-loaded.json",
+      "sha256": "B19591A3FDDDEDAB7EFD1A820D86B2F3DABBFCEEF0D5C4A6C5DFAFBE0EC0DA1B",
+      "bytes": 1706
+    }
+  ],
+  "victim_configuration": "Actual CNPC GUI changed the owned fixture faction from Friendly to Aggressive; default Friendly rejects player damage. Native mouse attacks with vanilla swords performed the kills. Fixture victim-reset removes an entity without incrementing kill progress.",
+  "native_transfer": "Actual nominator select/bind -> transfer-required modal -> native confirmation; source group retained, target gained individual; native unbind and rebind verified.",
+  "unbind_scope": {
+    "accepted_native_gui_reviewed": true,
+    "immediate_server_capture_matches_result": false,
+    "limitation": "Post-click observer copy predates the operation; retained as captured, not an S-layer unbind assertion."
+  },
+  "dimensions": {
+    "one_way_changes": 40,
+    "round_trips": 20,
+    "scene": "ACTIVE zero-settlement Task",
+    "file": "0402-final-dimensions-40.jsonl",
+    "asserted": "both exposed Task run/status/progress, Story status, inventory/XP/receipts"
+  },
+  "cold_restore": "Both real clients reconnect after normal save/stop/restart; original exposed business fields remain identical.",
+  "fixture_host_recreation_boundary": "R2 preparation directly transferred one identity table and left a former GUI selection; not a production nominator result. Test-only createHost now uses NominatorService dual-table operation. The old R2 evidence is retained; final physical replacement validation is recorded separately.",
+  "overall_version_acceptance": "IN_PROGRESS",
+  "final_dual_table_replacement": {
+    "status": "PASS_S_AND_NATIVE_TRANSFER",
+    "scope": "R3 native transfer/unbind/rebind with delayed observer capture, then test-owned physical host removal/recreation through production dual-table service; current former target has no residual individual, business fields unchanged.",
+    "files": [
+      {
+        "file": "cnpc-final-R3-cold-loaded.json",
+        "sha256": "B19591A3FDDDEDAB7EFD1A820D86B2F3DABBFCEEF0D5C4A6C5DFAFBE0EC0DA1B",
+        "bytes": 1706
+      },
+      {
+        "file": "cnpc-final-R3-host-recreated-dual-table.json",
+        "sha256": "3FF3962447D6498350C4C5D1BBB8E6AD29BF20E9B2B0DCEF24A5432892ED641E",
+        "bytes": 1838
+      },
+      {
+        "file": "cnpc-final-R3-target-rebound.json",
+        "sha256": "5753336C043080DC8D1F8507A7FB910B256EDADE51F22A7098D6F914C195B6F6",
+        "bytes": 1837
+      },
+      {
+        "file": "cnpc-final-R3-target-unbound.json",
+        "sha256": "C1018B013319E659D6C6D56785932BB6704FF563096BD88687B5992801091876",
+        "bytes": 1802
+      },
+      {
+        "file": "cnpc-final-R3-transfer-complete.json",
+        "sha256": "202A8B28A821161AF8957446796A6056D8524F611CA7BF86BC27E62C56D6064F",
+        "bytes": 1837
+      }
+    ]
+  }
+}

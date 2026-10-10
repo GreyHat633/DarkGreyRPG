@@ -392,11 +392,12 @@ public final class CanonicalSessionWorldStateNbtCodec {
         NBTTagList list = (NBTTagList) root.getTag(routeKey);
         if (list.tagCount() > 0 && list.func_150303_d() != COMPOUND) throw malformed("invalid terminal routes type");
         List<String> result = new ArrayList<String>();
+        Set<String> seen = new HashSet<String>();
         for (int index = 0; index < list.tagCount(); index++) {
             NBTTagCompound item = list.getCompoundTagAt(index);
             requireKeys(item, set("key"), "terminal route");
             String key = string(item, "key");
-            if (!result.isEmpty() && result.contains(key)) throw malformed("duplicate terminal route");
+            if (!seen.add(key)) throw malformed("duplicate terminal route");
             result.add(key);
         }
         return result;

@@ -61,7 +61,7 @@ public class GuiModernButton extends GuiButton {
             int textX = this.xPosition + (this.width / 2) - (stringWidth / 2);
             int textY = this.yPosition + (this.height - 8) / 2;
 
-            fontrenderer.drawString(this.displayString, textX, textY, textColor);
+            DgrUiText.left(fontrenderer, this.displayString, textX, textY, textColor);
         }
     }
 }

@@ -63,7 +63,7 @@ public final class CanonicalTaskSubmit implements IMessage {
 
         public IMessage onMessage(final CanonicalTaskSubmit message, final MessageContext context) {
             final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 public void run() {
                     // Submission is actor-bound. A packet from the task menu
@@ -72,7 +72,7 @@ public final class CanonicalTaskSubmit implements IMessage {
                     player.addChatMessage(new net.minecraft.util.ChatComponentText("请与指定角色交互提交物品。"));
                     CanonicalTaskPresentationServer.push(player, true);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectServer(player));
             return null;
         }
     }

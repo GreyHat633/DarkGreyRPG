@@ -150,15 +150,18 @@ public final class TaskPresentationPages {
         int total = summary.getInteger("total");
         int desired = (int) ((now / 1500000000L) % total);
         NBTTagCompound page = page(context, carousel.cursor);
+        if (page != null && page.hasKey("error")) return candidateError(page);
         if (page == null || desired < carousel.cursor || desired >= page.getInteger("next")) {
             int start = desired / 20 * 20;
             NBTTagCompound next = page(context, start);
             if (next == null) return carousel.last;
+            if (next.hasKey("error")) return candidateError(next);
             if (desired >= next.getInteger("next")) {
                 start = desired;
                 next = page(context, start);
             }
             if (next == null) return carousel.last;
+            if (next.hasKey("error")) return candidateError(next);
             carousel.cursor = start;
             page = next;
         }
@@ -169,6 +172,12 @@ public final class TaskPresentationPages {
             page(context, page.getInteger("next") < total ? page.getInteger("next") : 0);
         carousel.last = items.getCompoundTagAt(offset);
         return carousel.last;
+    }
+
+    private static NBTTagCompound candidateError(NBTTagCompound page) {
+        NBTTagCompound result = new NBTTagCompound();
+        result.setString("error", page.getString("error"));
+        return result;
     }
 
     public static synchronized void retry(NBTTagCompound context, int cursor) {

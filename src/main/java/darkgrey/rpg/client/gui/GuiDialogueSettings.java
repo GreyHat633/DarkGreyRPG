@@ -52,7 +52,8 @@ public final class GuiDialogueSettings extends GuiScreen {
             int tabWidth = (w - 32) / TABS.length;
             int tx = x + 16 + i * tabWidth;
             drawRect(tx, y + 30, tx + tabWidth, y + 51, tab == i ? DgrUiPalette.HOVER : DgrUiPalette.SUB_PANEL);
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 TABS[i],
                 tx + (tabWidth - fontRendererObj.getStringWidth(TABS[i])) / 2,
                 y + 36,
@@ -77,7 +78,7 @@ public final class GuiDialogueSettings extends GuiScreen {
         org.lwjgl.opengl.GL11.glPushMatrix();
         org.lwjgl.opengl.GL11.glTranslatef(0, -scroll.pixelOffset(), 0);
         if (tab == 0) {
-            fontRendererObj.drawString("主题", x + 20, y + 54, DgrUiPalette.SECONDARY);
+            DgrUiText.left(fontRendererObj, "主题", x + 20, y + 54, DgrUiPalette.SECONDARY);
             String[] themes = { "灰黑", "浅白", "蔚蓝" };
             drawChoices(
                 themes,
@@ -88,7 +89,7 @@ public final class GuiDialogueSettings extends GuiScreen {
             drawSlider(0, "语音", PlayerUiPreferences.voiceVolume());
             drawSlider(1, "BGM", PlayerUiPreferences.musicVolume());
         } else if (tab == 3) {
-            fontRendererObj.drawString("任务追踪", x + 20, y + 60, DgrUiPalette.SECONDARY);
+            DgrUiText.left(fontRendererObj, "任务追踪", x + 20, y + 60, DgrUiPalette.SECONDARY);
             drawRect(x + 20, y + 80, x + 29, y + 89, DgrUiPalette.BORDER);
             drawRect(x + 21, y + 81, x + 28, y + 88, DgrUiPalette.WINDOW_CONTENT);
             if (PlayerUiPreferences.trackNewTasks()) {
@@ -98,14 +99,14 @@ public final class GuiDialogueSettings extends GuiScreen {
                 drawRect(x + 25, y + 83, x + 26, y + 84, DgrUiPalette.TEXT);
                 drawRect(x + 26, y + 82, x + 27, y + 83, DgrUiPalette.TEXT);
             }
-            fontRendererObj.drawString("任务追踪默认开启", x + 35, y + 80, DgrUiPalette.TEXT);
-            fontRendererObj.drawString("任务追踪显示位置", x + 20, y + 103, DgrUiPalette.SECONDARY);
+            DgrUiText.left(fontRendererObj, "任务追踪默认开启", x + 35, y + 80, DgrUiPalette.TEXT);
+            DgrUiText.left(fontRendererObj, "任务追踪显示位置", x + 20, y + 103, DgrUiPalette.SECONDARY);
             drawChoices(
                 new String[] { "左侧", "右侧" },
                 PlayerUiPreferences.trackerSide()
                     .ordinal(),
                 y + 116);
-            fontRendererObj.drawString("任务弹窗显示位置", x + 20, y + 158, DgrUiPalette.SECONDARY);
+            DgrUiText.left(fontRendererObj, "任务弹窗显示位置", x + 20, y + 158, DgrUiPalette.SECONDARY);
             drawChoices(
                 new String[] { "左侧", "右侧" },
                 PlayerUiPreferences.notificationSide()
@@ -113,17 +114,21 @@ public final class GuiDialogueSettings extends GuiScreen {
                 y + 171);
         } else {
             drawSlider(0, "对话框背景不透明度", PlayerUiPreferences.opacity());
-            fontRendererObj.drawString("文字大小", x + 20, y + 91, DgrUiPalette.SECONDARY);
+            DgrUiText.left(fontRendererObj, "文字大小", x + 20, y + 91, DgrUiPalette.SECONDARY);
             drawChoices(
                 new String[] { "100%", "125%", "150%" },
                 PlayerUiPreferences.textScale() == 1 ? 0 : PlayerUiPreferences.textScale() == 1.25 ? 1 : 2,
                 y + textScaleChoicesTop());
             String actualScale = DialogueFontDrawing.scaleLabel();
-            if (!actualScale.isEmpty())
-                fontRendererObj.drawString(actualScale, x + 20, y + textScaleChoicesTop() + 30, DgrUiPalette.SECONDARY);
+            if (!actualScale.isEmpty()) DgrUiText
+                .left(fontRendererObj, actualScale, x + 20, y + textScaleChoicesTop() + 30, DgrUiPalette.SECONDARY);
             String label = DialoguePreferences.speed() == 0 ? "立即显示" : (int) DialoguePreferences.speed() + " 字/秒";
-            fontRendererObj
-                .drawString(label, x + w - 20 - fontRendererObj.getStringWidth(label), y + 150, DgrUiPalette.TEXT);
+            DgrUiText.left(
+                fontRendererObj,
+                label,
+                x + w - 20 - fontRendererObj.getStringWidth(label),
+                y + 150,
+                DgrUiPalette.TEXT);
             drawSlider(2, "台词显示速度", DialoguePreferences.sliderPosition() / 120);
             drawSlider(
                 3,
@@ -139,7 +144,7 @@ public final class GuiDialogueSettings extends GuiScreen {
             drawRect(x + w - 12, knob, x + w - 10, knob + 16, DgrUiPalette.SECONDARY);
         }
         drawRect(x + 16, y + h - 32, x + 116, y + h - 12, DgrUiPalette.SUB_PANEL);
-        fontRendererObj.drawString("恢复默认", x + 26, y + h - 26, DgrUiPalette.TEXT);
+        DgrUiText.left(fontRendererObj, "恢复默认", x + 26, y + h - 26, DgrUiPalette.TEXT);
         UtilityWindowChrome.drawGrip(geometry);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -212,7 +217,8 @@ public final class GuiDialogueSettings extends GuiScreen {
 
     private void drawSlider(int index, String label, double value) {
         int x = geometry.x + 20, y = geometry.y + sliderTop(index);
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             label + (tab == 1 && index != 0 ? "" : "  " + Math.round(value * 100) + "%"),
             x,
             y,
@@ -229,7 +235,8 @@ public final class GuiDialogueSettings extends GuiScreen {
             int x = geometry.x + 20 + i * cell;
             drawRect(x, y, x + cell - 4, y + 24, i == selected ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.BORDER);
             drawRect(x + 1, y + 1, x + cell - 5, y + 23, i == selected ? DgrUiPalette.HOVER : DgrUiPalette.SUB_PANEL);
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 labels[i],
                 x + (cell - 4 - fontRendererObj.getStringWidth(labels[i])) / 2,
                 y + 8,

@@ -29,6 +29,22 @@ public final class NominatorActions {
 
     private NominatorActions() {}
 
+    /** Correlated rejection without reading any world data, safe at queue admission. */
+    public static void queueRejected(EntityPlayerMP player, NBTTagCompound request) {
+        if (player == null || player.playerNetServerHandler == null
+            || !player.playerNetServerHandler.netManager.isChannelOpen()) return;
+        NBTTagCompound response = correlatedResponse(
+            request,
+            NominatorResult.rejected("server_busy", "请求未执行，请稍后重试。"),
+            -1L);
+        NominatorCatalog empty = new NominatorCatalog(
+            java.util.Collections.emptyList(),
+            java.util.Collections.emptyList(),
+            java.util.Collections.emptyList(),
+            java.util.Collections.emptyList());
+        DialogueNetwork.CHANNEL.sendTo(new S2CNominatorActionResult(response, empty), player);
+    }
+
     public static void handle(EntityPlayerMP player, NBTTagCompound request) {
         ProjectRepository repo = DarkGreyRpg.getProjectRepository();
         NominatorCatalog catalog = new NominatorCatalog(

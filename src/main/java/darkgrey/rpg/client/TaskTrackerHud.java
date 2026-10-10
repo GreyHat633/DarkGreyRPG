@@ -13,6 +13,7 @@ import net.minecraft.nbt.NBTTagList;
 
 import darkgrey.rpg.client.gui.CanonicalDialogueRenderer;
 import darkgrey.rpg.client.gui.DgrUiPalette;
+import darkgrey.rpg.client.gui.DialogueFontDrawing;
 import darkgrey.rpg.client.gui.ItemSlotStrip;
 import darkgrey.rpg.client.gui.TaskObjectiveText;
 import darkgrey.rpg.client.gui.TaskStoryRows;
@@ -137,7 +138,7 @@ public final class TaskTrackerHud {
         }
         int panelWidth = Math.min(Math.min(200, width / 4), right - 8);
         if (panelWidth < 30) return;
-        double nextScale = PlayerUiPreferences.textScale();
+        double nextScale = DialogueFontDrawing.scale();
         int nextWrap = Math.max(1, (int) ((panelWidth - 24) / nextScale));
         if (snapshotRevision != CanonicalTaskClientStore.getRevision()
             || selectionRevision != TaskTrackerClient.revision()
@@ -224,14 +225,16 @@ public final class TaskTrackerHud {
                                 org.lwjgl.opengl.GL11.glTranslated(left + 8, rowY, 0);
                                 org.lwjgl.opengl.GL11.glScaled(scale, scale, 1);
                                 row.icon.drawWhole(0, 0, wrapWidth);
-                                mc.fontRenderer.drawString(
-                                    row.text,
-                                    24,
-                                    (20 - mc.fontRenderer.FONT_HEIGHT) / 2,
-                                    DgrUiPalette.TEXT);
                             } finally {
                                 org.lwjgl.opengl.GL11.glPopMatrix();
                             }
+                            DialogueFontDrawing.draw(
+                                mc.fontRenderer,
+                                row.text,
+                                left + 8 + 24 * scale,
+                                rowY + (20 - mc.fontRenderer.FONT_HEIGHT) / 2 * scale,
+                                scale,
+                                DgrUiPalette.TEXT);
                         }
                         rowY += rowHeight(row, mc);
                     }

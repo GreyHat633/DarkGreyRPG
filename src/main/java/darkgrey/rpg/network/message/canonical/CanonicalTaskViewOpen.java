@@ -41,10 +41,10 @@ public final class CanonicalTaskViewOpen implements IMessage {
         @Override
         public IMessage onMessage(final CanonicalTaskViewOpen message, MessageContext context) {
             final Object connection = context.netHandler;
-            MainThreadScheduler.scheduleClient(() -> {
+            MainThreadScheduler.scheduleClient(connection, () -> {
                 if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                     DarkGreyRpg.proxy.openCanonicalTaskView(message.dimension);
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

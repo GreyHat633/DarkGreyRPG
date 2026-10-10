@@ -6,8 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.internal.LazilyParsedNumber;
 
 /** Immutable canonical node with detached arbitrary JSON properties. */
 public final class CanonicalGraphNode {
@@ -65,6 +69,21 @@ public final class CanonicalGraphNode {
     }
 
     private static JsonElement copy(JsonElement element) {
-        return new JsonParser().parse(element.toString());
+        if (element.isJsonNull()) return JsonNull.INSTANCE;
+        if (element.isJsonObject()) {
+            JsonObject result = new JsonObject();
+            for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject()
+                .entrySet()) result.add(entry.getKey(), copy(entry.getValue()));
+            return result;
+        }
+        if (element.isJsonArray()) {
+            JsonArray result = new JsonArray();
+            for (JsonElement value : element.getAsJsonArray()) result.add(copy(value));
+            return result;
+        }
+        JsonPrimitive value = element.getAsJsonPrimitive();
+        if (value.isBoolean()) return new JsonPrimitive(value.getAsBoolean());
+        if (value.isNumber()) return new JsonPrimitive(new LazilyParsedNumber(value.getAsString()));
+        return new JsonPrimitive(value.getAsString());
     }
 }

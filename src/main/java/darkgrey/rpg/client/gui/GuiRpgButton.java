@@ -61,7 +61,8 @@ public final class GuiRpgButton extends GuiButton {
                 drawRect(left + 4, cy, left + 6, cy + 3, color);
             }
         }
-        mc.fontRenderer.drawString(
+        DgrUiText.left(
+            mc.fontRenderer,
             displayString,
             left + gap,
             yPosition + (height - 8) / 2,

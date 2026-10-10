@@ -328,8 +328,61 @@ public final class CanonicalSessionSavedDataProbe {
             continuationRetired.getContinuations() == 1
                 && transferData.getPendingContinuation(PLAYER, "ST-2345-6789-ABCD-EFGH") == null,
             "Generation retirement did not remove the selected continuation");
+        assertLargeTerminalHistory();
         System.out.println("CANONICAL_SESSION_SAVED_DATA_PROBE=PASS");
         System.out.println("CANONICAL_SESSION_GENERATION_RETIREMENT=PASS");
+    }
+
+    private static void assertLargeTerminalHistory() {
+        NBTTagCompound root = CanonicalSessionWorldStateNbtCodec
+            .encode(Collections.emptyList(), Collections.emptyList());
+        java.util.List<String> expected = new java.util.ArrayList<String>();
+        NBTTagList history = new NBTTagList();
+        for (int i = 40000; i > 0; i--) {
+            String key = "terminal-history-" + i;
+            expected.add(key);
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("key", key);
+            history.appendTag(item);
+        }
+        root.setTag(CanonicalSessionWorldStateNbtCodec.TERMINAL_ROUTES_KEY, history);
+        NBTTagList pending = new NBTTagList();
+        for (int i = 0; i < 20000; i++) {
+            NBTTagCompound item = new NBTTagCompound();
+            item.setString("key", "pending-history-" + i);
+            pending.appendTag(item);
+        }
+        root.setTag(CanonicalSessionWorldStateNbtCodec.PENDING_TERMINAL_ROUTES_KEY, pending);
+        NBTTagCompound original = copyTag(root);
+        long started = System.nanoTime();
+        CanonicalSessionWorldStateNbtCodec.Decoded decoded = CanonicalSessionWorldStateNbtCodec.decode(root);
+        long elapsed = System.nanoTime() - started;
+        require(
+            decoded.getTerminalRoutes()
+                .equals(expected),
+            "Large terminal history preserves input order");
+        require(
+            decoded.getPendingTerminalRoutes()
+                .size() == 20000,
+            "Large pending history retained");
+        require(root.equals(original), "History decode is read-only");
+        CanonicalSessionSavedData saved = new CanonicalSessionSavedData();
+        saved.readFromNBT(root);
+        NBTTagCompound roundTrip = new NBTTagCompound();
+        saved.writeToNBT(roundTrip);
+        require(root.equals(roundTrip) && !saved.isDirty(), "Unbound large history round trip and dirty fence");
+        for (String key : new String[] { CanonicalSessionWorldStateNbtCodec.TERMINAL_ROUTES_KEY,
+            CanonicalSessionWorldStateNbtCodec.PENDING_TERMINAL_ROUTES_KEY }) {
+            for (int duplicateIndex : new int[] { 0, 10000, 19999 }) {
+                NBTTagCompound duplicate = copyTag(root);
+                NBTTagList list = duplicate.getTagList(key, 10);
+                list.appendTag(
+                    list.getCompoundTagAt(duplicateIndex)
+                        .copy());
+                rejectRead(duplicate, "Large history duplicate remains rejected: " + key + "/" + duplicateIndex);
+            }
+        }
+        System.out.println("CANONICAL_SESSION_LARGE_HISTORY=PASS entries=60000 decode_ns=" + elapsed);
     }
 
     private static CanonicalSessionResourceResolver resolver(final CanonicalGraphResource... resources) {

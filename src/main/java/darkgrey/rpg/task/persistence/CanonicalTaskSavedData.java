@@ -164,13 +164,16 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
     public synchronized CanonicalTaskInstanceSnapshot start(UUID playerUuid, String storyId, String placementId,
         CanonicalGraphResource resource) {
         requireBound();
-        NBTTagCompound before = persistedState();
+        boolean existed = store.get(playerUuid, storyId, placementId) != null;
         CanonicalTaskInstance instance = store.start(playerUuid, storyId, placementId, resource);
         index.reindex(
             instance.snapshot(),
             instance.getRuntime()
                 .getResource());
-        markIfChanged(before);
+        if (!existed) {
+            observeCompletion(instance);
+            markDirty();
+        }
         return instance.snapshot();
     }
 
@@ -182,13 +185,16 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
     public synchronized CanonicalTaskInstanceSnapshot start(UUID playerUuid, String storyId, String placementId,
         CanonicalGraphResource resource, long activationTime) {
         requireBound();
-        NBTTagCompound before = persistedState();
+        boolean existed = store.get(playerUuid, storyId, placementId) != null;
         CanonicalTaskInstance instance = store.start(playerUuid, storyId, placementId, resource, activationTime);
         index.reindex(
             instance.snapshot(),
             instance.getRuntime()
                 .getResource());
-        markIfChanged(before);
+        if (!existed) {
+            observeCompletion(instance);
+            markDirty();
+        }
         return instance.snapshot();
     }
 
@@ -203,13 +209,16 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         requireBound();
         CanonicalTaskInstance instance = store.get(playerUuid, storyId, placementId);
         if (instance == null) throw new IllegalStateException("Canonical Task instance does not exist.");
-        NBTTagCompound before = persistedState();
+        NBTTagCompound before = instanceState(instance);
         instance.setLogicInput(portId, value, eventTime);
         index.reindex(
             instance.snapshot(),
             instance.getRuntime()
                 .getResource());
-        markIfChanged(before);
+        if (!before.equals(instanceState(instance))) {
+            observeCompletion(instance);
+            markDirty();
+        }
         return instance.snapshot();
     }
 
@@ -222,6 +231,14 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
             instance.snapshot(),
             instance.getRuntime()
                 .getResource());
+        if (instance.isSettled()) {
+            CanonicalTaskInstanceSnapshot snapshot = instance.snapshot();
+            CanonicalGraphResource resource = instance.getRuntime()
+                .getResource();
+            for (darkgrey.rpg.task.journal.CanonicalTaskJournalEntry entry : darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+                .project(player, java.util.Collections.singletonList(snapshot), id -> resource))
+                completionHistory.observe(entry);
+        }
         markDirty();
         return instance.snapshot();
     }
@@ -252,7 +269,7 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
             if (effect != null) effect.commit();
             store.replaceExisting(staged);
             index.reindex(staged.snapshot(), resource);
-            captureCompletions();
+            observeCompletion(staged);
             markDirty();
             return staged.snapshot();
         } catch (RuntimeException failure) {
@@ -271,6 +288,11 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
     public synchronized List<CanonicalTaskInstanceSnapshot> snapshots() {
         requireBound();
         return store.snapshots();
+    }
+
+    public synchronized List<CanonicalTaskInstanceSnapshot> snapshots(UUID playerUuid) {
+        requireBound();
+        return store.snapshots(playerUuid);
     }
 
     public synchronized List<CanonicalTaskInstanceSnapshot> snapshotAll() {
@@ -384,7 +406,6 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
         List<CanonicalTaskInstanceSnapshot> settled = new ArrayList<CanonicalTaskInstanceSnapshot>();
         Map<CanonicalTaskInstanceIdentity, String> results = new LinkedHashMap<CanonicalTaskInstanceIdentity, String>();
         List<CanonicalTaskInstanceIdentity> errored = new ArrayList<CanonicalTaskInstanceIdentity>();
-        NBTTagCompound before = persistedState();
         for (CanonicalTaskInstanceIdentity identity : candidates) {
             CanonicalTaskInstance instance = store
                 .get(identity.getPlayerUuid(), identity.getStoryInstanceId(), identity.getTaskNodePlacementId());
@@ -410,7 +431,21 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
                 }
             }
         }
-        markIfChanged(before);
+        // The event/ERROR transitions already report their authoritative mutations.
+        // This operation removes no live identities; completion observation can stay scoped
+        // to newly settled candidates instead of encoding the whole world twice per player.
+        if (changed > 0 || !errored.isEmpty()) {
+            for (CanonicalTaskInstanceSnapshot snapshot : settled) {
+                CanonicalGraphResource resource = store
+                    .get(snapshot.getPlayerUuid(), snapshot.getStoryInstanceId(), snapshot.getTaskNodePlacementId())
+                    .getRuntime()
+                    .getResource();
+                for (darkgrey.rpg.task.journal.CanonicalTaskJournalEntry entry : darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+                    .project(snapshot.getPlayerUuid(), java.util.Collections.singletonList(snapshot), id -> resource))
+                    completionHistory.observe(entry);
+            }
+            markDirty();
+        }
         return new CanonicalTaskDispatchResult(candidates.size(), changed, settled, results, errored);
     }
 
@@ -522,6 +557,20 @@ public final class CanonicalTaskSavedData extends WorldSavedData {
                 completionHistory.observe(entry);
         }
         completionHistory.retainObserved(live);
+    }
+
+    private static NBTTagCompound instanceState(CanonicalTaskInstance instance) {
+        return CanonicalTaskInstanceNbtCodecBridge.encode(java.util.Collections.singletonList(instance.snapshot()));
+    }
+
+    private void observeCompletion(CanonicalTaskInstance instance) {
+        if (!instance.isSettled()) return;
+        CanonicalTaskInstanceSnapshot snapshot = instance.snapshot();
+        CanonicalGraphResource resource = instance.getRuntime()
+            .getResource();
+        for (darkgrey.rpg.task.journal.CanonicalTaskJournalEntry entry : darkgrey.rpg.task.journal.CanonicalTaskJournalProjector
+            .project(snapshot.getPlayerUuid(), java.util.Collections.singletonList(snapshot), id -> resource))
+            completionHistory.observe(entry);
     }
 
     private static NBTTagCompound copy(NBTTagCompound value) {

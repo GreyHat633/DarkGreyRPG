@@ -25,19 +25,20 @@ public final class GramophoneDraft {
             return t;
         });
     private final GuiGramophone owner;
+    private final MainThreadScheduler.Scope scope = MainThreadScheduler.clientScope();
     private Path directory;
     private Future<?> future;
     private volatile boolean closed;
     private volatile int generation;
     public GramophoneMediaInfo media;
-    public String label = "尚未导入";
+    public volatile String label = "尚未导入";
     public String onlineInput, canonical;
     private GramophoneAudio preview;
     private double position;
     private boolean playing;
     private boolean resumeAfterSeek;
     private long startedAt;
-    private boolean preparing;
+    private volatile boolean preparing;
     private String leaseKey;
     private GramophoneClient.PreviewLease sharedLease;
 
@@ -57,8 +58,11 @@ public final class GramophoneDraft {
             dialog.setVisible(true);
             String file = dialog.getFile(), folder = dialog.getDirectory();
             dialog.dispose();
-            if (file != null && folder != null && !closed)
-                MainThreadScheduler.scheduleClient(() -> load(new java.io.File(folder, file).toPath(), null));
+            if (file != null && folder != null && !closed) MainThreadScheduler
+                .completeClient(scope, () -> load(new java.io.File(folder, file).toPath(), null), () -> {
+                    preparing = false;
+                    label = "草稿请求未执行";
+                });
         });
     }
 
@@ -136,7 +140,7 @@ public final class GramophoneDraft {
                         }
                     } else {
                         OnlineMusicSource resolved = OnlineMusicResolver.normalize(online);
-                        MainThreadScheduler.scheduleClient(() -> {
+                        MainThreadScheduler.completeClient(scope, () -> {
                             if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory))
                                 return;
                             GramophonePacket config = new GramophonePacket();
@@ -144,12 +148,15 @@ public final class GramophoneDraft {
                             // Normalization is IO; admission and lease ownership remain on the client thread.
                             future = null;
                             shared(config, online);
+                        }, () -> {
+                            preparing = false;
+                            label = "草稿请求未执行";
                         });
                         return;
                     }
                     GramophoneMediaInfo info = GramophoneMediaInfo.inspect(target);
                     final String normalized = normalizedSource;
-                    MainThreadScheduler.scheduleClient(() -> {
+                    MainThreadScheduler.completeClient(scope, () -> {
                         if (closed || ticket != generation || !GramophoneClient.isCacheContext(workDirectory)) {
                             GramophoneFiles.retire(info.path);
                             return;
@@ -163,14 +170,21 @@ public final class GramophoneDraft {
                         onlineInput = online;
                         canonical = normalized;
                         if (local == null) toggle();
+                    }, () -> {
+                        GramophoneFiles.retire(info.path);
+                        preparing = false;
+                        label = "草稿请求未执行";
                     });
                 } catch (Exception e) {
                     GramophoneFiles.retire(target);
-                    MainThreadScheduler.scheduleClient(() -> {
+                    MainThreadScheduler.completeClient(scope, () -> {
                         if (!closed && ticket == generation) {
                             preparing = false;
                             label = "音频不可用：" + e.getMessage();
                         }
+                    }, () -> {
+                        preparing = false;
+                        label = "草稿请求未执行";
                     });
                 }
             });

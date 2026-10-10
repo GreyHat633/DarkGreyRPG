@@ -196,7 +196,8 @@ public final class S2CNominatorEntityOpen implements IMessage {
 
         @Override
         public IMessage onMessage(final S2CNominatorEntityOpen message, MessageContext context) {
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            final Object connection = context.netHandler;
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
@@ -212,7 +213,7 @@ public final class S2CNominatorEntityOpen implements IMessage {
                         message.catalogRevision,
                         message.catalog);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

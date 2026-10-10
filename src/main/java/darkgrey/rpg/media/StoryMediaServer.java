@@ -36,6 +36,10 @@ public final class StoryMediaServer {
 
     private StoryMediaServer() {}
 
+    public static synchronized void clear() {
+        STATES.clear();
+    }
+
     public static void bind(StoryPackageLoader value) {
         loader = value;
     }

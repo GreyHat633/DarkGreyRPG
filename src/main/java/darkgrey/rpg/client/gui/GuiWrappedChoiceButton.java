@@ -6,8 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 
-import darkgrey.rpg.client.session.PlayerUiPreferences;
-
 /** One measured rectangle for rendering and hit testing; oversized text remains scrollable. */
 public final class GuiWrappedChoiceButton extends GuiButton {
 
@@ -30,7 +28,7 @@ public final class GuiWrappedChoiceButton extends GuiButton {
 
     public GuiWrappedChoiceButton(int id, int x, int y, int width, int maximumHeight, String text, FontRenderer font) {
         super(id, x, y, width, 20, text);
-        scale = PlayerUiPreferences.textScale();
+        scale = DialogueFontDrawing.scale();
         lineHeight = (int) Math.ceil(font.FONT_HEIGHT * scale);
         lines = font.listFormattedStringToWidth(text, Math.max(1, (int) ((width - 24) / scale)));
         int naturalHeight = Math.max(20, lines.size() * lineHeight + 12);
@@ -80,7 +78,8 @@ public final class GuiWrappedChoiceButton extends GuiButton {
                 enabled || presentationOnly ? DgrUiPalette.TEXT : DgrUiPalette.DISABLED);
         }
         if (lines.size() > visibleLines) {
-            mc.fontRenderer.drawString(
+            DgrUiText.left(
+                mc.fontRenderer,
                 "滚轮阅读  " + (first + 1) + "–" + Math.min(lines.size(), first + visibleLines) + " / " + lines.size(),
                 xPosition + 8,
                 yPosition + height - 11,

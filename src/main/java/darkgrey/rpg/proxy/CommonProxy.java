@@ -25,6 +25,8 @@ public class CommonProxy {
         return false;
     }
 
+    public void rejectClientQueue(Object connection) {}
+
     public void acceptNominatorResult(net.minecraft.nbt.NBTTagCompound data, NominatorCatalog catalog) {}
 
     public void registerClientDialogueNetwork() {}

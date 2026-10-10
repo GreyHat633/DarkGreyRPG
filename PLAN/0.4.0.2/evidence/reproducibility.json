@@ -1,0 +1,371 @@
+{
+  "status": "SOURCE_AND_LOCAL_RAW_RECEIPTS_RECORDED",
+  "raw_location_scope": "Local ignored tooling retains synthetic worlds, logs and native captures; these are not distributed product files.",
+  "source_input_digest": "B2F377A3EEB926651DCD0E02612E7C6BD72EC4C6F3660CDBB46E56D64C5C6E3C",
+  "source_inputs_receipt": {
+    "file": "PLAN/0.4.0.2/evidence/0402-final-source-provenance.json",
+    "bytes": 119892,
+    "sha256": "BBF7741013D1B139EEAD490C823F6A9A045540D1D90ABA2C1332A2C27789749E"
+  },
+  "test_driver_build": {
+    "file": ".tooling/0402/Logs/final-shared-observation-driver-build.log",
+    "bytes": 3684,
+    "sha256": "E560AD0BBFF24D38F674BB9BA284B38763E24E7D2D00544F5D42C8C5134D94D2"
+  },
+  "runtime_build_and_probes": [
+    {
+      "file": ".tooling/0402/Final/AfterLinearHistory/commands.json",
+      "bytes": 2462,
+      "sha256": "96413BA9402DA78EAC4EA04DCF1082E18B3BCA26FBF34280DD998B1D63EE7547"
+    },
+    {
+      "file": ".tooling/0402/Final/AfterLinearHistory/build.log",
+      "bytes": 3243,
+      "sha256": "B174B7DA05B0BE8EFB0725A42A3B3112D1EAE4C66E49A02B185FF1F48434A61F"
+    },
+    {
+      "file": ".tooling/0402/Final/AfterLinearHistory/probes.log",
+      "bytes": 76373,
+      "sha256": "A79FDE7BC4FDD10003C8091879918C2605225F9D192CC503DD546B0337A4DE21"
+    }
+  ],
+  "native_client_driver_component_boundary": {
+    "status": "PASS_FINAL_TEST_DRIVER_COMPONENT_BOUNDARY",
+    "server_driver": {
+      "file": ".tooling/0402/Fixtures/dgr0402-isolated-stability-driver.jar",
+      "bytes": 134536,
+      "sha256": "655B775B841B0F025690D93C3BBC527D212309B6F003A485BA340701C14FC557"
+    },
+    "connected_client_driver": {
+      "file": ".tooling/0402/Worlds/ClientF/mods/dgr0402-isolated-stability-driver.jar",
+      "bytes": 133664,
+      "sha256": "CE1DB733695E969C08D9C8BFE63F9AFDF2A741D7554A1BB3398FAC435F250F0D"
+    },
+    "changed_entries": [
+      "darkgrey/rpg/persistence/Stability0402TestFiles.class",
+      "darkgrey/rpg/persistence/StabilityAuthored0402Verifier$Expected.class",
+      "darkgrey/rpg/persistence/StabilityAuthored0402Verifier.class",
+      "darkgrey/rpg/persistence/StabilityMixed0402Verifier.class",
+      "darkgrey/rpg/persistence/StabilityServer0402Driver.class"
+    ],
+    "all_client_observer_packet_frame_and_core_entries_identical": true,
+    "scope": "Client processes already ran CE1 when the server test writers were unified. The five changed/added entries are server fixture writers and the related inner class only. No current-source claim is made for the older client fixture writer; native observer and packet code are identical.",
+    "clients": [
+      {
+        "pid": 30048,
+        "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\ClientF",
+        "username": "DGR402ClientF",
+        "port": 25731,
+        "stage": "robust-native",
+        "args": [
+          "-Xms128m",
+          "-Xmx768m",
+          "-Djava.library.path=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\natives\"",
+          "-Ddgr0402.packetReceiptName=robust-native-packet-fixture-events",
+          "-Ddgr0402.clientRoot=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\ClientF\"",
+          "-cp",
+          "\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\mojang\\netty\\1.8.8\\netty-1.8.8.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\mojang\\realms\\1.3.5\\realms-1.3.5.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\commons\\commons-compress\\1.8.1\\commons-compress-1.8.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\httpcomponents\\httpclient\\4.3.3\\httpclient-4.3.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\commons-logging\\commons-logging\\1.1.3\\commons-logging-1.1.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\httpcomponents\\httpcore\\4.3.2\\httpcore-4.3.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\java3d\\vecmath\\1.3.1\\vecmath-1.3.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\sf\\trove4j\\trove4j\\3.0.3\\trove4j-3.0.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\ibm\\icu\\icu4j-core-mojang\\51.2\\icu4j-core-mojang-51.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\codecjorbis\\20101023\\codecjorbis-20101023.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\codecwav\\20101023\\codecwav-20101023.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\libraryjavasound\\20101123\\libraryjavasound-20101123.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\librarylwjglopenal\\20100824\\librarylwjglopenal-20100824.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\soundsystem\\20120107\\soundsystem-20120107.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\io\\netty\\netty-all\\4.0.10.Final\\netty-all-4.0.10.Final.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\commons-io\\commons-io\\2.4\\commons-io-2.4.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\commons-codec\\commons-codec\\1.9\\commons-codec-1.9.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\java\\jinput\\jinput\\2.0.5\\jinput-2.0.5.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\java\\jutils\\jutils\\1.0.0\\jutils-1.0.0.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\google\\code\\gson\\gson\\2.2.4\\gson-2.2.4.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\mojang\\authlib\\1.5.21\\authlib-1.5.21.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\logging\\log4j\\log4j-api\\2.0-beta9\\log4j-api-2.0-beta9.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\logging\\log4j\\log4j-core\\2.0-beta9\\log4j-core-2.0-beta9.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\lwjgl\\lwjgl\\lwjgl\\2.9.1\\lwjgl-2.9.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\lwjgl\\lwjgl\\lwjgl_util\\2.9.1\\lwjgl_util-2.9.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\tv\\twitch\\twitch\\5.16\\twitch-5.16.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\minecraftforge\\forge\\1.7.10-10.13.4.1614-1.7.10\\forge-1.7.10-10.13.4.1614-1.7.10.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\minecraft\\launchwrapper\\1.12\\launchwrapper-1.12.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\ow2\\asm\\asm-all\\5.0.3\\asm-all-5.0.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\typesafe\\akka\\akka-actor_2.11\\2.3.3\\akka-actor_2.11-2.3.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\typesafe\\config\\1.2.1\\config-1.2.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-actors-migration_2.11\\1.1.0\\scala-actors-migration_2.11-1.1.0.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-compiler\\2.11.1\\scala-compiler-2.11.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\plugins\\scala-continuations-library_2.11\\1.0.2\\scala-continuations-library_2.11-1.0.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\plugins\\scala-continuations-plugin_2.11.1\\1.0.2\\scala-continuations-plugin_2.11.1-1.0.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-library\\2.11.1\\scala-library-2.11.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-parser-combinators_2.11\\1.0.1\\scala-parser-combinators_2.11-1.0.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-reflect\\2.11.1\\scala-reflect-2.11.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-swing_2.11\\1.0.1\\scala-swing_2.11-1.0.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-xml_2.11\\1.0.2\\scala-xml_2.11-1.0.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\lzma\\lzma\\0.0.1\\lzma-0.0.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\sf\\jopt-simple\\jopt-simple\\4.5\\jopt-simple-4.5.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\google\\guava\\guava\\17.0\\guava-17.0.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\commons\\commons-lang3\\3.3.2\\commons-lang3-3.3.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\minecraft-1.7.10.jar\"",
+          "net.minecraft.launchwrapper.Launch",
+          "--username",
+          "DGR402ClientF",
+          "--version",
+          "1.7.10-Forge",
+          "--gameDir",
+          "\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\ClientF\"",
+          "--assetsDir",
+          "\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\assets\"",
+          "--assetIndex",
+          "1.7.10",
+          "--accessToken",
+          "0",
+          "--userProperties",
+          "{}",
+          "--userType",
+          "legacy",
+          "--tweakClass",
+          "cpw.mods.fml.common.launcher.FMLTweaker",
+          "--width",
+          "900",
+          "--height",
+          "640"
+        ],
+        "jar_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+        "driver_sha256": "CE1DB733695E969C08D9C8BFE63F9AFDF2A741D7554A1BB3398FAC435F250F0D"
+      },
+      {
+        "pid": 47396,
+        "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\ClientG",
+        "username": "DGR402ClientG",
+        "port": 25731,
+        "stage": "robust-native",
+        "args": [
+          "-Xms128m",
+          "-Xmx768m",
+          "-Djava.library.path=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\natives\"",
+          "-Ddgr0402.packetReceiptName=robust-native-packet-fixture-events",
+          "-Ddgr0402.clientRoot=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\ClientG\"",
+          "-cp",
+          "\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\mojang\\netty\\1.8.8\\netty-1.8.8.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\mojang\\realms\\1.3.5\\realms-1.3.5.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\commons\\commons-compress\\1.8.1\\commons-compress-1.8.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\httpcomponents\\httpclient\\4.3.3\\httpclient-4.3.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\commons-logging\\commons-logging\\1.1.3\\commons-logging-1.1.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\httpcomponents\\httpcore\\4.3.2\\httpcore-4.3.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\java3d\\vecmath\\1.3.1\\vecmath-1.3.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\sf\\trove4j\\trove4j\\3.0.3\\trove4j-3.0.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\ibm\\icu\\icu4j-core-mojang\\51.2\\icu4j-core-mojang-51.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\codecjorbis\\20101023\\codecjorbis-20101023.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\codecwav\\20101023\\codecwav-20101023.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\libraryjavasound\\20101123\\libraryjavasound-20101123.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\librarylwjglopenal\\20100824\\librarylwjglopenal-20100824.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\paulscode\\soundsystem\\20120107\\soundsystem-20120107.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\io\\netty\\netty-all\\4.0.10.Final\\netty-all-4.0.10.Final.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\commons-io\\commons-io\\2.4\\commons-io-2.4.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\commons-codec\\commons-codec\\1.9\\commons-codec-1.9.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\java\\jinput\\jinput\\2.0.5\\jinput-2.0.5.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\java\\jutils\\jutils\\1.0.0\\jutils-1.0.0.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\google\\code\\gson\\gson\\2.2.4\\gson-2.2.4.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\mojang\\authlib\\1.5.21\\authlib-1.5.21.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\logging\\log4j\\log4j-api\\2.0-beta9\\log4j-api-2.0-beta9.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\logging\\log4j\\log4j-core\\2.0-beta9\\log4j-core-2.0-beta9.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\lwjgl\\lwjgl\\lwjgl\\2.9.1\\lwjgl-2.9.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\lwjgl\\lwjgl\\lwjgl_util\\2.9.1\\lwjgl_util-2.9.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\tv\\twitch\\twitch\\5.16\\twitch-5.16.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\minecraftforge\\forge\\1.7.10-10.13.4.1614-1.7.10\\forge-1.7.10-10.13.4.1614-1.7.10.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\minecraft\\launchwrapper\\1.12\\launchwrapper-1.12.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\ow2\\asm\\asm-all\\5.0.3\\asm-all-5.0.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\typesafe\\akka\\akka-actor_2.11\\2.3.3\\akka-actor_2.11-2.3.3.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\typesafe\\config\\1.2.1\\config-1.2.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-actors-migration_2.11\\1.1.0\\scala-actors-migration_2.11-1.1.0.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-compiler\\2.11.1\\scala-compiler-2.11.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\plugins\\scala-continuations-library_2.11\\1.0.2\\scala-continuations-library_2.11-1.0.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\plugins\\scala-continuations-plugin_2.11.1\\1.0.2\\scala-continuations-plugin_2.11.1-1.0.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-library\\2.11.1\\scala-library-2.11.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-parser-combinators_2.11\\1.0.1\\scala-parser-combinators_2.11-1.0.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-reflect\\2.11.1\\scala-reflect-2.11.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-swing_2.11\\1.0.1\\scala-swing_2.11-1.0.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\scala-lang\\scala-xml_2.11\\1.0.2\\scala-xml_2.11-1.0.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\lzma\\lzma\\0.0.1\\lzma-0.0.1.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\net\\sf\\jopt-simple\\jopt-simple\\4.5\\jopt-simple-4.5.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\com\\google\\guava\\guava\\17.0\\guava-17.0.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\libraries\\org\\apache\\commons\\commons-lang3\\3.3.2\\commons-lang3-3.3.2.jar;E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\minecraft-1.7.10.jar\"",
+          "net.minecraft.launchwrapper.Launch",
+          "--username",
+          "DGR402ClientG",
+          "--version",
+          "1.7.10-Forge",
+          "--gameDir",
+          "\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\ClientG\"",
+          "--assetsDir",
+          "\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0400-minecraft\\Client Base\\assets\"",
+          "--assetIndex",
+          "1.7.10",
+          "--accessToken",
+          "0",
+          "--userProperties",
+          "{}",
+          "--userType",
+          "legacy",
+          "--tweakClass",
+          "cpw.mods.fml.common.launcher.FMLTweaker",
+          "--width",
+          "900",
+          "--height",
+          "640"
+        ],
+        "jar_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+        "driver_sha256": "CE1DB733695E969C08D9C8BFE63F9AFDF2A741D7554A1BB3398FAC435F250F0D"
+      }
+    ]
+  },
+  "native_connection_actions": {
+    "file": ".tooling/0402/Logs/resumed-native-connections.jsonl",
+    "bytes": 60910,
+    "sha256": "CD169931106A3AF85A705FD08574BE1D8B25EC4B9C8378775B2BCFC750722CCD"
+  },
+  "exact_process_inputs": [
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-60-inputs.json",
+      "bytes": 1285,
+      "sha256": "481CDBF7E010EA3B66FE8A06CD2964FF9D082ABF349B5E102A78DD4C8BEE6C13"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-inputs.json",
+      "bytes": 1282,
+      "sha256": "FBCCC186AC91F4D14B4367B47976E95107899927BA3A3B4D3E1221FB692D8DD8"
+    }
+  ],
+  "actual_saved_world_inputs": {
+    "status": "OBSERVED_SAVED_WORLD_INPUTS",
+    "case": "Final-linear-robust-60",
+    "actual_saved_world_seed": 40202,
+    "configured_level_seed": "40202",
+    "runner_requested_seed": 40202,
+    "seed_annotation": "Restarted copied worlds retain their saved seed. The runner parameter is not evidence of a changed world seed.",
+    "actual_mixed_tasks_per_cycle": 12,
+    "runner_active_parameter": 10,
+    "runner_nodes_parameter": 20,
+    "mixed_parameter_scope": "Mixed fixture uses its own fixed 3-Story graph per logical player; Active/Nodes runner parameters apply to ActiveTasks, not MixedAuthored.",
+    "level_dat_sha256_at_observation": "2284BC5BC62EF8AE5D1CD4A95199224359FB9A2E402429CCE933B8215D7D26D1",
+    "view_distance": 3,
+    "network_players_required": 2
+  },
+  "local_helpers": [
+    {
+      "file": ".tooling/0402/record_final_source.py",
+      "bytes": 5910,
+      "sha256": "46C214F4E62AA4C53F1ECE355E40B1A298055D9E12FC065013B0E496D0857621"
+    },
+    {
+      "file": ".tooling/0402/inspect_profiles.py",
+      "bytes": 3094,
+      "sha256": "AA1135E52898AFAF496E9021F3D514F691440E19BCBC41BF9F49FB4AC541C214"
+    },
+    {
+      "file": ".tooling/0402/record_world_inputs.py",
+      "bytes": 1665,
+      "sha256": "C6461C0D58D1F7CD93818C03A90C56F2C2D9FEE59AE32966BE4D6097FAB32B55"
+    },
+    {
+      "file": ".tooling/0402/record_warm_profiles.py",
+      "bytes": 2335,
+      "sha256": "DD68029C6BE09751A4C01AB3F4A3CD4E08441D7715A284E36F620C773260BF9B"
+    },
+    {
+      "file": ".tooling/0402/write_final_reports.py",
+      "bytes": 18050,
+      "sha256": "B662C6842EA238BA019D508F0D26A3DAF646CFB4E0CCDE1DBA56E5C73B26928E"
+    },
+    {
+      "file": ".tooling/0402/CloneMixedProfile.ps1",
+      "bytes": 2158,
+      "sha256": "C225956E3BBC3D2E310DD8D38B1189616C0C74757BA23CEE735C9DACEA04CF42"
+    },
+    {
+      "file": ".tooling/0402/Client.ps1",
+      "bytes": 5544,
+      "sha256": "D7C3031D4E32AA61232C5391FCF1F014118B68A4FB6F530317A776B9E2ABA8B4"
+    },
+    {
+      "file": ".tooling/0402/ConnectOwnedClient.ps1",
+      "bytes": 2385,
+      "sha256": "55DBA4103163F9981D5B7281088774C21C8BD1116C6373B4453DB097FD4A6937"
+    },
+    {
+      "file": ".tooling/0402/NativeFinalActions.ps1",
+      "bytes": 2314,
+      "sha256": "87B05EE2C8DAC7AA08848DFA569009E6A4FF573F6542715DB74E328059B59DE3"
+    },
+    {
+      "file": ".tooling/0402/GameActions.ps1",
+      "bytes": 8040,
+      "sha256": "6F961A39D86F8AC2B7F0A471A6C2E3B583C8C00DA4A0B7A778B73EC872C963D8"
+    },
+    {
+      "file": ".tooling/0402/MonitorLinearLong.ps1",
+      "bytes": 3997,
+      "sha256": "239BC3D97CF8FAEDF17B8493B5C0FA8041B99230866BF3564A5109454C2331E1"
+    },
+    {
+      "file": ".tooling/0402/MonitorNativeFinalTail.ps1",
+      "bytes": 1965,
+      "sha256": "D3CC24A93614C24F227C87D49F43E31642B038D6431E629418C9F46187D238B4"
+    },
+    {
+      "file": ".tooling/0402/record_packet_replay.py",
+      "bytes": 4546,
+      "sha256": "45634CAC5758F7B9F77A1023F94263BF6D3F10FAEF21BBDFC68F928034BF280F"
+    },
+    {
+      "file": ".tooling/0402/freeze_linear_packet.py",
+      "bytes": 1542,
+      "sha256": "89597EB2E2D9F8FC6AB733B5475454B0FF59380A12FD3343BF4835BF0C1F0B69"
+    },
+    {
+      "file": ".tooling/0402/VerifyNativePacketChain.ps1",
+      "bytes": 5371,
+      "sha256": "0E9258A4ABCDC43242C497A5D30221A84FA85C94353A2B7AFF56B8FD447800E7"
+    },
+    {
+      "file": ".tooling/0402/CompleteLongNativeF.ps1",
+      "bytes": 2678,
+      "sha256": "24008BEDBA76372C49D1DE54AA876C1C0C90D6AFA3A0B9371189B2191C3C3EC7"
+    },
+    {
+      "file": ".tooling/0402/CompleteLongNativeG.ps1",
+      "bytes": 2678,
+      "sha256": "CECA993742FB2EA9B2394BF2F019359A6B101CB1D954F09B0450306AC8067CD4"
+    },
+    {
+      "file": ".tooling/0402/ReconnectLongNativeG.ps1",
+      "bytes": 3719,
+      "sha256": "7DA0AC031292D8C3057FEDDFE9B947D5575365476BCCFD6ACE860F026D320E5C"
+    },
+    {
+      "file": ".tooling/0402/WaitFinalColdStart.ps1",
+      "bytes": 1362,
+      "sha256": "461655961C44B4FD263822CD66F2A8B2D734C2876269313B240F5275F9405944"
+    },
+    {
+      "file": ".tooling/0402/VerifyFinalColdNative.ps1",
+      "bytes": 1745,
+      "sha256": "1DDA22FA11ECC0A56400E6DE86A7F1C2C336CA58CAD31262890BA364B46065DA"
+    },
+    {
+      "file": ".tooling/0402/record_linear_fixes.py",
+      "bytes": 3510,
+      "sha256": "8A8AA2206C5C73C0443C9BEDEC9C2A6A0A4E18532D8D4CB71E6E59BE225732B4"
+    },
+    {
+      "file": ".tooling/0402/record_linear_failures.py",
+      "bytes": 4275,
+      "sha256": "D98A9177BCE7BAD2BA246EBBE27780AC3D745B73A3CE733B9CE0E6D3BDD7B6F8"
+    },
+    {
+      "file": ".tooling/0402/FinishNativeSafely.ps1",
+      "bytes": 747,
+      "sha256": "F7F48118B68026BCD4C28FE34B199207CC75579A81DBECC93FCAE62AE796ACE4"
+    },
+    {
+      "file": ".tooling/0402/CloneColdCheckpoint.ps1",
+      "bytes": 2242,
+      "sha256": "88BADFEC3C13610FCCA32D308F1A60A19CDAF5EAF24B7BF001EE83089A259F25"
+    },
+    {
+      "file": ".tooling/0402/RunExpectedCrashStop.ps1",
+      "bytes": 2756,
+      "sha256": "F95AE22BF07D915D11D2ED4ED9509D062F0BAC6CAAB04C12E8398FF76D2D57B6"
+    },
+    {
+      "file": ".tooling/0402/SwitchWorlds.ps1",
+      "bytes": 2350,
+      "sha256": "251EBF8A3342378987540C0E81DB5421216C6CA936050E3E6E31517CC3B4A61C"
+    },
+    {
+      "file": ".tooling/0402/record_idle_scopes.py",
+      "bytes": 2205,
+      "sha256": "F2EBCDB24BD739E5A683A277A0389AD7E42AFE6ED01BF2D1034637DAB37F5C59"
+    },
+    {
+      "file": ".tooling/0402/record_frame_comparison.py",
+      "bytes": 3575,
+      "sha256": "CCCFE326A4662BFAC13A3051965860FAB0D661A2C49960DD92C8059A46BA11EE"
+    },
+    {
+      "file": ".tooling/0402/record_failed_fixtures.py",
+      "bytes": 1782,
+      "sha256": "B817846E6D57669BF6E705FE5FA8B0DB4D00B0C8265556CF66028EC022FDE8CA"
+    },
+    {
+      "file": ".tooling/0402/record_final_pressure.py",
+      "bytes": 3209,
+      "sha256": "BE29C50EBA9C07605F680B1B5BDE2CDD46162DF48F3F1EB2A6E3647FD8FAC5AB"
+    },
+    {
+      "file": ".tooling/0402/record_observation_sharing.py",
+      "bytes": 5437,
+      "sha256": "88BAA789F8E863E841092A735CD6ECBC85916639C1A430E60AC455F322F95D45"
+    },
+    {
+      "file": ".tooling/0402/VerifyFinalAuthority.ps1",
+      "bytes": 1566,
+      "sha256": "EF9E683C07555F29AC485021C3CD33154DBDBC63251EE384E02D0263E23A0A36"
+    },
+    {
+      "file": ".tooling/0402/audit_evidence_receipts.py",
+      "bytes": 2498,
+      "sha256": "6EFD95AE096F495B8AB81ABB31BD0D42DDA87A5F689DEDDEE78441C61D21A037"
+    },
+    {
+      "file": ".tooling/0402/write_final_acceptance.py",
+      "bytes": 8617,
+      "sha256": "F84C4A8B802F22F5D17F7949C0AB3CA74E17415500730CEDD49504ABBA9B5409"
+    },
+    {
+      "file": ".tooling/0402/QuitOwnedClient.ps1",
+      "bytes": 2121,
+      "sha256": "C16A99A7E0C8D0B47B86692E2A5738FD7EB6ABC4070FC746F24E22588209CD93"
+    }
+  ],
+  "dependencies": [
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+      "bytes": 3018833,
+      "sha256": "00D1CA02192C7EFB87DA95552EBF247021F1E1D642F86D0A03076314DEF11529"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/minecraft_server.1.7.10.jar",
+      "bytes": 9605030,
+      "sha256": "C70870F00C4024D829E154F7E5F4E885B02DD87991726A3308D81F513972F3FC"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/mods/CustomNPC-Plus-1.11.1-fixed-v1.jar",
+      "bytes": 17844086,
+      "sha256": "48AB697E63E8CC059592597F88A9FA00FAD23E447B553996E1EF04510BE2F2D3"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/mods/+unimixins-all-1.7.10-0.3.1.jar",
+      "bytes": 5519796,
+      "sha256": "AD0EA4F92DAF7BF7EC5C10E16258425E47929126954AEA5D80DF69CE26CD7318"
+    }
+  ],
+  "no_user_world_or_studio_data_used_as_load_fixture": true,
+  "source_world_copy_not_modified": true
+}

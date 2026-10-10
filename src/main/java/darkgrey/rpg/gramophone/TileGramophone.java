@@ -57,8 +57,8 @@ public final class TileGramophone extends TileEntity {
         rangeMetadataReady = true;
     }
 
-    public boolean restoring;
-    public long retryRestore;
+    public volatile boolean restoring;
+    public volatile long retryRestore;
     public String recoveryError = "正在恢复设备配置…";
 
     @Override

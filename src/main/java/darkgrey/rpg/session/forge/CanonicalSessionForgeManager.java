@@ -19,7 +19,6 @@ import darkgrey.rpg.session.server.CanonicalSessionDispatch;
 import darkgrey.rpg.session.server.CanonicalSessionServerService;
 import darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRoute;
 import darkgrey.rpg.story.canonical.CanonicalStorySessionCompletionRouter;
-import darkgrey.rpg.story.canonical.instance.CanonicalStoryResourceResolver;
 
 /** Forge boundary for the canonical server-authoritative Session service. */
 public final class CanonicalSessionForgeManager {
@@ -297,13 +296,7 @@ public final class CanonicalSessionForgeManager {
         };
         CanonicalSessionSavedData savedData = savedDataProvider.get(player, resolver);
         if (savedData == null) throw new IllegalStateException("Canonical Session data is unavailable.");
-        savedData.bind(resolver, new CanonicalStoryResourceResolver() {
-
-            @Override
-            public darkgrey.rpg.graph.canonical.CanonicalGraphResource resolve(String storyId) {
-                return project.getCanonicalStory(storyId);
-            }
-        });
+        savedData.bindProject(project, false);
         return new ServiceContext(
             project,
             savedData,

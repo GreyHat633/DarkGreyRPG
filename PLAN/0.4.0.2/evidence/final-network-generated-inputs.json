@@ -1,0 +1,30 @@
+{
+  "source_sha256": "dd020ae635f999f0d5eed7c4e7ae4db49f44c5caef28c9a73bcfca7d9b6e695a",
+  "generated_not_studio_export": true,
+  "packages": [
+    {
+      "story": "ST-2222-2222-2222-EC6J",
+      "sha256": "b17efb747f941cdc302aad7345bd2ec0151a5bfa3ebc569466cfb3a5c9932a0b",
+      "bytes": 6320555,
+      "png_pixels_each": 1048576,
+      "png_count": 2,
+      "shared_audio": true
+    },
+    {
+      "story": "ST-2222-2222-2222-EC6K",
+      "sha256": "7ce98d903b8c7a305808e8721c1903eaec53bc2be65b551a752ce1ab2ff36854",
+      "bytes": 6320555,
+      "png_pixels_each": 1048576,
+      "png_count": 2,
+      "shared_audio": true
+    },
+    {
+      "story": "ST-2222-2222-2222-EC6L",
+      "sha256": "aa1dc0aa1bda46401b0c8ce60635a3ce602651f8d24890d5b3d5cba709c4aca1",
+      "bytes": 6320555,
+      "png_pixels_each": 1048576,
+      "png_count": 2,
+      "shared_audio": true
+    }
+  ]
+}

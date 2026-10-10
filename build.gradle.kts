@@ -2,6 +2,91 @@ plugins {
     id("com.gtnewhorizons.gtnhconvention")
 }
 
+tasks.register<JavaExec>("stabilityBaseline0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.forge.Stability0402Probe")
+    args("baseline")
+}
+
+tasks.register<JavaExec>("stability0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.forge.Stability0402Probe")
+    systemProperty("dgr0402.offline", providers.gradleProperty("offlineInstances").getOrElse("0"))
+}
+
+tasks.register<JavaExec>("mainThreadQueue0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.network.MainThreadQueue0402Probe")
+}
+
+tasks.register<JavaExec>("taskHotPath0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.task.instance.TaskHotPath0402Probe")
+}
+
+tasks.register<JavaExec>("mixedBusiness0402Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.task.forge.MixedBusiness0402Probe")
+}
+
+tasks.register<JavaExec>("mixedPackages0402Probe") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.project.packages.MixedPackages0402Probe")
+    args(providers.gradleProperty("mixedPackagesOutput").getOrElse(".tooling/0402/Fixtures/Generated-Mixed-v2"))
+}
+
+tasks.register<JavaExec>("storyRecovery0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.forge.StoryRecovery0402Probe")
+}
+
+tasks.register<JavaExec>("mediaLifecycle0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.media.MediaLifecycle0402Probe")
+}
+
+tasks.register<Jar>("stabilityServer0402DriverJar") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    from(layout.buildDirectory.dir("classes/java/test")) {
+        include("darkgrey/rpg/persistence/StabilityServer0402Driver*.class")
+        include("darkgrey/rpg/persistence/Stability0402*.class")
+        include("darkgrey/rpg/persistence/StabilityWorld0402*.class")
+        include("darkgrey/rpg/persistence/StabilityMixed0402*.class")
+        include("darkgrey/rpg/persistence/StabilityAuthored0402*.class")
+        include("darkgrey/rpg/persistence/StabilityBoundary0402*.class")
+        include("darkgrey/rpg/persistence/StabilityQualification0402*.class")
+        include("darkgrey/rpg/persistence/StabilityClient0402*.class")
+        include("darkgrey/rpg/task/forge/MixedBusiness0402Probe*.class")
+        include("darkgrey/rpg/story/canonical/forge/Stability0402Fixtures*.class")
+    }
+    archiveFileName.set("dgr0402-isolated-stability-driver.jar")
+    manifest.attributes["FMLCorePlugin"] = "darkgrey.rpg.persistence.Stability0402Core"
+    manifest.attributes["FMLCorePluginContainsFMLMod"] = "true"
+    destinationDirectory.set(layout.projectDirectory.dir(".tooling/0402/Fixtures"))
+}
+
+tasks.register<JavaExec>("stabilityBinding0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.story.canonical.forge.StabilityBinding0402Probe")
+}
+
 tasks.register<JavaExec>("storageBaseline0401Probe") {
     group = "verification"
     dependsOn(tasks.testClasses)
@@ -1056,6 +1141,14 @@ tasks.register<JavaExec>("runtimeFontResourceRows0336Probe") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("darkgrey.rpg.client.gui.RuntimeFontResourceRows0336Probe")
+}
+
+tasks.register<JavaExec>("runtimeFontPolicy0402Probe") {
+    group = "verification"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("darkgrey.rpg.client.gui.RuntimeFontPolicy0402Probe")
+    args(layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
 }
 
 tasks.register<JavaExec>("construction0337Probe") {

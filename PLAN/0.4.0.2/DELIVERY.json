@@ -1,0 +1,53 @@
+{
+  "status": "DEVELOPMENT_COMPLETE_WITH_RECORDED_LIMITS",
+  "version": "0.4.0.2",
+  "runtime": {
+    "file": "build/libs/darkgrey_rpg-0.4.0.2.jar",
+    "bytes": 1896860,
+    "sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC"
+  },
+  "studio_authority": [
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\DarkGreyRPGStudio.exe",
+      "productVersion": "0.4.0.2",
+      "size": 204288,
+      "sha256": "8E569CC39547BCA0BB9E537BFC4BD42E048318B5720657735176C8F30CB97829"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPGStudio.dll",
+      "productVersion": "0.4.0.2",
+      "size": 1458688,
+      "sha256": "CEA0089E4187FD5839ABF015B687CC3199EF50EB0B99CE4496774925526A538D"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Program\\DarkGreyRPG.Studio.Core.dll",
+      "productVersion": "0.4.0.2+3bd57b62c2e9a3a7eb6f409b755599470b39c41c",
+      "size": 1107968,
+      "sha256": "51155A4D6C0679AF75383C846EACC4AF8BB4D574A12A0C9DD43BB81791556FFB"
+    },
+    {
+      "path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\dist\\DarkGreyRPGStudio\\Docs\\StudioProgramFiles.json",
+      "productVersion": null,
+      "size": 19562,
+      "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
+    }
+  ],
+  "source_input_digest": "B2F377A3EEB926651DCD0E02612E7C6BD72EC4C6F3660CDBB46E56D64C5C6E3C",
+  "acceptance": "Acceptance.md",
+  "evidence": {
+    "file": "PLAN/0.4.0.2/evidence/summary.json",
+    "bytes": 24964,
+    "sha256": "470CF03580A93315FFD58D9EA37345385DE73AB015137E0FEA1B7EE30C4F2E24"
+  },
+  "preserved_items": {
+    "npc_identity_corrupt_file_special": "DEFERRED_BY_USER",
+    "manual_audio_perception": "NOT_RUN",
+    "old_development_cnpc_mapping": "BLOCKED_HISTORICAL"
+  },
+  "release": {
+    "push": false,
+    "tag": false,
+    "finished_product_package": false,
+    "github_release": false
+  }
+}

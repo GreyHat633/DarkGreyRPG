@@ -27,7 +27,7 @@ public final class C2SNominatorInventoryOpen implements IMessage {
         @Override
         public IMessage onMessage(final C2SNominatorInventoryOpen message, MessageContext context) {
             final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 @Override
                 public void run() {
@@ -51,7 +51,7 @@ public final class C2SNominatorInventoryOpen implements IMessage {
                         }
                     });
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectServer(player));
             return null;
         }
     }

@@ -13,14 +13,14 @@ public final class CanonicalSessionFrameHandler implements IMessageHandler<Canon
     @Override
     public IMessage onMessage(final CanonicalSessionFrame message, MessageContext context) {
         final Object connection = context.netHandler;
-        MainThreadScheduler.scheduleClient(new Runnable() {
+        MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
             @Override
             public void run() {
                 if (!darkgrey.rpg.DarkGreyRpg.proxy.isCurrentClientConnection(connection)) return;
                 CanonicalSessionClientController.acceptFrame(message);
             }
-        });
+        }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
         return null;
     }
 }

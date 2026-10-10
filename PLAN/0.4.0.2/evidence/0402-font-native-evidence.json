@@ -1,0 +1,151 @@
+{
+  "status": "PASS_FONT_FIX_NATIVE_AND_REGRESSION",
+  "runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48",
+  "runtime_bytes": 1891058,
+  "build_exit_code": 0,
+  "current_probe_count": 39,
+  "probe_exit_code": 0,
+  "font_policy_scanned_production_classes": 693,
+  "unscoped_raw_font_draw_entries": 1,
+  "native_ui_on_previous_3B": [
+    "diagnostic",
+    "text field selection/delete",
+    "item/entity nominator",
+    "gramophone",
+    "dialogue",
+    "history",
+    "choice 100/125%",
+    "task 100/125%",
+    "themes Dark/White/Azure",
+    "graph fractional zoom",
+    "authored title"
+  ],
+  "previous_ui_font_classes_same_bytes_as_final_except_notification_classes": true,
+  "changed_entries_after_3B": [
+    "darkgrey/rpg/client/TaskNotificationCards$1.class",
+    "darkgrey/rpg/client/TaskNotificationCards$Card.class",
+    "darkgrey/rpg/client/TaskNotificationCards.class"
+  ],
+  "final_native_notification_resize_rounds": 12,
+  "final_native_gui3_text125_actual_factor": 3,
+  "final_native_gui3_effective_text_scale": 1.3333333333333333,
+  "final_native_gui1_and_gui2_unicode150": true,
+  "nearest_sampling_and_restoration": true,
+  "hud_fixture_is_detached_presentation": true,
+  "fixture_server_mutation": false,
+  "known_failures_preserved": [
+    {
+      "time": "2026-10-09T22:23:01+08:00",
+      "runtime": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F",
+      "kind": "production notification resize null layout",
+      "fixed": true
+    },
+    {
+      "time": "2026-10-09T22:38:26+08:00",
+      "runtime": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48",
+      "kind": "test-only HUD request non-atomic JSON write",
+      "production_jar_contains_fixture": false,
+      "orchestration_fixed": true
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "font-final-3B-diagnostic.png",
+      "sha256": "33DF4CDE184142A819524EF8FD5AA5902590FFEA22B761ECD7861E8A851493D9",
+      "bytes": 32833,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-nominator-inventory.png",
+      "sha256": "D32287A343354B296A70723D74D5CA6F85BD0D3AD9855A078D4760A7866444BC",
+      "bytes": 36414,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-input-selected.png",
+      "sha256": "B4793C2F80F4AA4D6767A32D57ED19A9626390DFECD8ADE2C1BE9F429E3D8A98",
+      "bytes": 33552,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-gramophone.png",
+      "sha256": "C683B33AB27D43F47CF316CB15B620294CD930A55277E52455F82166BA3A845D",
+      "bytes": 79368,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-dialogue-entry.png",
+      "sha256": "9FAECD893D2D3DDCFD07E383DF83CFD2A69A90A1397E38BCD24F7D0C9D1D6F02",
+      "bytes": 113321,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-history.png",
+      "sha256": "31EEC4E7F8D62591F605CDDA6FEF25881C333880D03132817DA979E678B7BDD9",
+      "bytes": 43487,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-choice-125.png",
+      "sha256": "F7679BA75AD1A8E5596B8EA6D1FB092D5B80BECA6517DAA5EC9BBB641885A3DE",
+      "bytes": 84720,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-graph-fractional-zoom.png",
+      "sha256": "8CCC485DDFB43810B84322D494F9A90359820A5B64C25FF8D92074FE8A17702D",
+      "bytes": 74556,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-white.png",
+      "sha256": "8A20995CD2ED8E1E9B2BE96D9944260C5A1594D673D6E0B4517FED3662683AA2",
+      "bytes": 42530,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-azure.png",
+      "sha256": "D8367FE267D0153AB6E587F7E2A6ADEA4ED2941BF1E93D9D8E326F2727B18421",
+      "bytes": 43149,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-3B-task-125.png",
+      "sha256": "79E819CDB993032EF4756307E18F286F29A1939D9F3F4B5526A4E42FBF764398",
+      "bytes": 29709,
+      "client_runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F"
+    },
+    {
+      "file": "font-final-2629-hud-expanded-three.png",
+      "sha256": "6466EBADDAAD7988C74BC867D8FB126B780B90566025B7846B7838B5F016D6B0",
+      "bytes": 122559,
+      "client_runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48"
+    },
+    {
+      "file": "font-final-2629-hud-gui3-125-renderbuffer.png",
+      "sha256": "3D59793607E6CB3FA7FAF5AF6399B9593225CC3A2E41E0DE1D6FDF4F8B3D81BD",
+      "bytes": 107621,
+      "client_runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48"
+    },
+    {
+      "file": "font-final-2629-hud-gui1.png",
+      "sha256": "4B260DA533DD0571B6B08A04FEE27045F769BFFB8200FE4FB12068BACA23EB85",
+      "bytes": 151411,
+      "client_runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48"
+    },
+    {
+      "file": "font-final-2629-hud-gui2-unicode-150.png",
+      "sha256": "1BABAC051E84D5B1374ABD8D0CE9002CACA7EB68E62B89820BF1E2D4B69ADFB7",
+      "bytes": 128330,
+      "client_runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48"
+    },
+    {
+      "file": "font-final-2629-diagnostic.png",
+      "sha256": "FB3D4255D44F8F4ABB9F2BA2774BABB10AD385E1B531C46BC19DE6B249F4AB2C",
+      "bytes": 21613,
+      "client_runtime_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48"
+    }
+  ],
+  "overall_version_acceptance": "IN_PROGRESS",
+  "release_created": false
+}

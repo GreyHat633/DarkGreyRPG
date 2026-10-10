@@ -30,6 +30,13 @@ public final class TaskPresentationPage implements IMessage {
         this.data = (NBTTagCompound) data.copy();
     }
 
+    /** Same request identity, explicit failure; never represents an empty successful page. */
+    public static TaskPresentationPage failureResponse(NBTTagCompound request, String reason) {
+        NBTTagCompound result = (NBTTagCompound) request.copy();
+        result.setString("error", reason);
+        return new TaskPresentationPage(true, result);
+    }
+
     @Override
     public void toBytes(ByteBuf buffer) {
         try {
@@ -69,10 +76,10 @@ public final class TaskPresentationPage implements IMessage {
         public IMessage onMessage(final TaskPresentationPage message, MessageContext context) {
             if (!message.response) return null;
             final Object connection = context.netHandler;
-            MainThreadScheduler.scheduleClient(() -> {
+            MainThreadScheduler.scheduleClient(connection, () -> {
                 if (DarkGreyRpg.proxy.isCurrentClientConnection(connection))
                     darkgrey.rpg.client.TaskPresentationPages.accept(message.data);
-            });
+            }, () -> MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }
@@ -100,16 +107,30 @@ public final class TaskPresentationPage implements IMessage {
                     gate.window = now;
                     gate.requests = 0;
                 }
-                if (gate.requests >= 10 || gate.queued >= 2 || QUEUED.get() >= 64) return null;
+                if (gate.requests >= 10 || gate.queued >= 2 || QUEUED.get() >= 64) {
+                    reject(connection, player, message.data, "服务器繁忙，请稍后重试。");
+                    return null;
+                }
                 gate.requests++;
                 gate.queued++;
                 QUEUED.incrementAndGet();
             }
-            MainThreadScheduler.scheduleServer(() -> {
+            final java.util.concurrent.atomic.AtomicBoolean reserved = new java.util.concurrent.atomic.AtomicBoolean(
+                true);
+            Runnable release = () -> {
+                if (reserved.compareAndSet(true, false)) synchronized (GATES) {
+                    gate.queued--;
+                    QUEUED.decrementAndGet();
+                }
+            };
+            MainThreadScheduler.scheduleServer(player, () -> {
                 try {
                     if (player.playerNetServerHandler != connection || connection.playerEntity != player) return;
                     NBTTagCompound result = darkgrey.rpg.creator.TaskPageServer.project(player, message.data);
-                    if (result == null) return;
+                    if (result == null) {
+                        reject(connection, player, message.data, "此页的任务或资源状态已变化，请刷新后重试。");
+                        return;
+                    }
                     TaskPresentationPage packet = new TaskPresentationPage(true, result);
                     io.netty.buffer.ByteBuf bytes = io.netty.buffer.Unpooled.buffer();
                     try {
@@ -118,14 +139,24 @@ public final class TaskPresentationPage implements IMessage {
                         bytes.release();
                     }
                     DialogueNetwork.CHANNEL.sendTo(packet, player);
-                } catch (RuntimeException invalid) { /* Invalid/stale request cannot change gameplay. */ } finally {
-                    synchronized (GATES) {
-                        gate.queued--;
-                        QUEUED.decrementAndGet();
-                    }
+                } catch (RuntimeException invalid) {
+                    reject(connection, player, message.data, "此页读取失败，请稍后重试。");
+                    MainThreadScheduler.reportFailure("task-page", invalid);
+                } finally {
+                    release.run();
                 }
+            }, () -> {
+                release.run();
+                reject(connection, player, message.data, "本次请求未执行，请稍后重试。");
             });
             return null;
+        }
+
+        private static void reject(net.minecraft.network.NetHandlerPlayServer connection, EntityPlayerMP player,
+            NBTTagCompound request, String reason) {
+            if (player.playerNetServerHandler == connection && connection.playerEntity == player
+                && connection.netManager.isChannelOpen())
+                DialogueNetwork.CHANNEL.sendTo(failureResponse(request, reason), player);
         }
 
         private static final class Gate {

@@ -5,7 +5,7 @@ public final class DgrUiPalette {
 
     private DgrUiPalette() {}
 
-    public static int WINDOW_PANEL = 0xEE161616;
+    public static int WINDOW_PANEL = 0xFF161616;
     public static int PANEL = WINDOW_PANEL;
     public static int WINDOW_CONTENT = 0xCC202020;
     public static int SUB_PANEL = 0xFF202020;
@@ -27,7 +27,8 @@ public final class DgrUiPalette {
             .theme();
         boolean dark = theme == darkgrey.rpg.client.session.PlayerUiPreferences.Theme.CHARCOAL;
         boolean azure = theme == darkgrey.rpg.client.session.PlayerUiPreferences.Theme.AZURE;
-        WINDOW_PANEL = dark ? 0xEE161616 : azure ? 0xF0EAF7FC : 0xF0F5F5F5;
+        // Foreground windows must cover the text of lower HUDs and render-only dialogue underlays.
+        WINDOW_PANEL = dark ? 0xFF161616 : azure ? 0xFFEAF7FC : 0xFFF5F5F5;
         PANEL = WINDOW_PANEL;
         HUD_PANEL = 0x99000000 | (WINDOW_PANEL & 0xFFFFFF);
         WINDOW_CONTENT = dark ? 0xCC202020 : 0xEEFDFDFD;

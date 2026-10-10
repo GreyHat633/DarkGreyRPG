@@ -1,0 +1,99 @@
+{
+  "status": "MEASURED_PROFILE_WITH_CORRECTNESS_ASSERTIONS",
+  "case": "Final-mixed-driver-checkpoint-validation",
+  "stage": "final3756-profile-10",
+  "summary": {
+    "status": "PASS_DRIVER_ASSERTIONS_PERFORMANCE_RECORDED",
+    "exit_code": 0,
+    "at": "2026-10-10T02:38:27.8064533+08:00",
+    "inputs": {
+      "pid": 51384,
+      "started": "2026-10-10T02:28:20.1660156+08:00",
+      "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-mixed-driver-checkpoint-validation",
+      "stage": "final3756-profile-10",
+      "scenario": "MixedLifecycle",
+      "baseline": false,
+      "args": [
+        "-Xms128m",
+        "-Xmx512m",
+        "-Ddgr0402.ticks=12000",
+        "-Ddgr0402.warmupTicks=0",
+        "-Ddgr0402.active=10",
+        "-Ddgr0402.users=4",
+        "-Ddgr0402.nodes=20",
+        "-Ddgr0402.offline=0",
+        "-Ddgr0402.network=0",
+        "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-mixed-driver-checkpoint-validation\"",
+        "-Ddgr0402.profileDrivers=true",
+        "-Ddgr0402.scenario=MixedLifecycle",
+        "-jar",
+        "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+        "nogui"
+      ],
+      "runtime_sha256": "3756B66F2D81118960FC57FC1E7AE6902577B385CDC89F91A9D43E0BE0FEC178",
+      "driver_sha256": "A1E16F50AAD5B5D8F265EB57ED0E66227862739B994C354A7F9A66D2EA7EF27A",
+      "seed": 40202,
+      "logical_users": 4,
+      "actual_network_required": 0,
+      "active_tasks": 10,
+      "nodes": 20,
+      "offline_instances": 0,
+      "heap_mib": 512,
+      "measurement_minutes": 10,
+      "warmup_minutes": 0
+    },
+    "complete_tick": {
+      "samples": 12000,
+      "p95_ns": 1123500,
+      "p99_ns": 70620400,
+      "max_ns": 241148400,
+      "scope": "full MC tick entry through return"
+    },
+    "reference_gate_pass": false,
+    "has_250ms_spike": false,
+    "has_500ms_spike": false,
+    "world_data_deleted": false
+  },
+  "sample_count": 12000,
+  "p50_ms": 0.2387,
+  "at_least_250ms": 0,
+  "at_least_500ms": 0,
+  "peaks": [],
+  "raw": [
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-summary.json",
+      "bytes": 1725,
+      "sha256": "A8BEFE183C393D2CA306BF97380B02EC2DE4EBA3A94E2A7E5A8917E0525BD6FC"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-complete-tick-samples.csv",
+      "bytes": 145767,
+      "sha256": "BF6CE13D9C293BAD59AF5CA6ED194F3AFB583F4535800CA094E72AAD458A47AF"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-driver-tick-profile.csv",
+      "bytes": 20709,
+      "sha256": "1D4353731B6032C2FDCF71843576489CB84E89D81203CFD8883F4A0B8BF17E96"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-driver-tick-profile-inputs.json",
+      "bytes": 118,
+      "sha256": "5B71E67414D5808D45564E1188CEA32DB8AF06C95B5A93B55EA4F0931E5BC2DE"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-mixed-operations.csv",
+      "bytes": 63907,
+      "sha256": "96E3E335B5FED6C23DE0C185766AB5C9C6EEB4A3D38B1C42722F53D72B58381E"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-memory-queue.csv",
+      "bytes": 1857,
+      "sha256": "2879DF3D66FACA6234D1DA3E3F73EFD74D5BBA0D940ACA137C6C2126AC7DCAB3"
+    },
+    {
+      "path": ".tooling/0402/Worlds/Final-mixed-driver-checkpoint-validation/final3756-profile-10-inputs.json",
+      "bytes": 1213,
+      "sha256": "CCA15BC891CA13CCE105DB66FBC9A383D62DC8552C8E81F3BD74AF6D8135793D"
+    }
+  ]
+}

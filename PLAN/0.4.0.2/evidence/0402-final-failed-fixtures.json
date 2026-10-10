@@ -1,0 +1,181 @@
+{
+  "status": "FAILED_CASES_PRESERVED",
+  "cases": [
+    {
+      "status": "FAILED_FIXTURE_RETAINED",
+      "case": "Final1B-bounded-driver-check",
+      "stage": "queued-burst-check",
+      "inputs": {
+        "pid": 54848,
+        "started": "2026-10-10T04:48:24.7768450+08:00",
+        "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final1B-bounded-driver-check",
+        "stage": "queued-burst-check",
+        "scenario": "MixedLifecycle",
+        "baseline": false,
+        "args": [
+          "-Xms128m",
+          "-Xmx512m",
+          "-Ddgr0402.ticks=3600",
+          "-Ddgr0402.warmupTicks=1200",
+          "-Ddgr0402.active=10",
+          "-Ddgr0402.users=4",
+          "-Ddgr0402.nodes=20",
+          "-Ddgr0402.offline=0",
+          "-Ddgr0402.network=0",
+          "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final1B-bounded-driver-check\"",
+          "-Ddgr0402.submissionSpacingTicks=0",
+          "-Ddgr0402.profileDrivers=true",
+          "-Ddgr0402.prepareFromPlayerImages=true",
+          "-Ddgr0402.scenario=MixedLifecycle",
+          "-jar",
+          "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+          "nogui"
+        ],
+        "runtime_sha256": "1B764E139F073CADFC8B660EB28A1D5C89B6DB08A8BBBC8E2AF923DD11A7CD85",
+        "driver_sha256": "84AB57FEF141E056B4525B3D2A3C3442474083E70FC06CE10B3EC244F2254573",
+        "seed": 40202,
+        "logical_users": 4,
+        "actual_network_required": 0,
+        "active_tasks": 10,
+        "nodes": 20,
+        "offline_instances": 0,
+        "heap_mib": 512,
+        "measurement_minutes": 2,
+        "warmup_minutes": 1
+      },
+      "failure": "java.lang.IllegalArgumentException: Missing Task resource: ST-4EUB-29DN-V8J6-VTY3~task~journey",
+      "classification": "MixedLifecycle replaced the copied authored resource snapshot; an offline player still referenced the original journey Task.",
+      "not_a_current_production_pass": true,
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/queued-burst-check-inputs.json",
+          "bytes": 1278,
+          "sha256": "1BFF5B8F84D6AE7D6712F5514C63FF428E74FE5FB9F53E82664A0A8C9A055D50"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/queued-burst-check-stdout.log",
+          "bytes": 23173,
+          "sha256": "84D895B42463A31DD42ED0B403697110E86DE77A9FABE910AD93230FD8DCFAB3"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/queued-burst-check-stderr.log",
+          "bytes": 5161,
+          "sha256": "78834EB8F64FFF3EE42A3B89A763C7885982455FF938678415162936114E0C36"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/failure.txt",
+          "bytes": 94,
+          "sha256": "FE1B8C963C44DC8E9151F52FE62BA6E2837CAA1E7C5BBD0F266C16A9FF9DE67E"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/complete-tick-samples.csv",
+          "bytes": 24,
+          "sha256": "699339FF4CA10ACCA59BF845F0E721C5CA7714D50301E983B5AE82059F85182C"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/driver-tick-profile.csv",
+          "bytes": 414,
+          "sha256": "D71D721B04DB9989E08500E3AA9B77F41961DAD32EF6EAAF7DA97456E68DDBA2"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/driver-tick-profile-inputs.json",
+          "bytes": 114,
+          "sha256": "ECF8C50C1B29F5142B75DC362FC1A1ED3E964F5FFA38040E00EA1D6DAF00D356"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final1B-bounded-driver-check/mixed-operations.csv",
+          "bytes": 22,
+          "sha256": "E3C8287335304EE0A851D716BD1ABEF1E2F48B33480D00778F196C0D8A0B0706"
+        }
+      ]
+    },
+    {
+      "status": "FAILED_FIXTURE_RETAINED",
+      "case": "Final-fast-journal-burst-R1",
+      "stage": "final74-same-burst-3",
+      "inputs": {
+        "pid": 18544,
+        "started": "2026-10-10T04:07:39.7809715+08:00",
+        "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-fast-journal-burst-R1",
+        "stage": "final74-same-burst-3",
+        "scenario": "MixedAuthored",
+        "baseline": false,
+        "args": [
+          "-Xms128m",
+          "-Xmx512m",
+          "-Ddgr0402.ticks=4800",
+          "-Ddgr0402.warmupTicks=1200",
+          "-Ddgr0402.active=10",
+          "-Ddgr0402.users=4",
+          "-Ddgr0402.nodes=20",
+          "-Ddgr0402.offline=0",
+          "-Ddgr0402.network=2",
+          "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\Final-fast-journal-burst-R1\"",
+          "-Ddgr0402.submissionSpacingTicks=0",
+          "-Ddgr0402.profileDrivers=true",
+          "-Ddgr0402.prepareFromPlayerImages=true",
+          "-Ddgr0402.scenario=MixedAuthored",
+          "-jar",
+          "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+          "nogui"
+        ],
+        "runtime_sha256": "74B4D31E073891CFA5F5C9DBE426A46E3AF764FBA4BA7CD2EF83A15F4DA41030",
+        "driver_sha256": "7BACB733024A38FDE262E5F5200E5DA4F01B5C82656A303A0606F1454BAFC937",
+        "seed": 40202,
+        "logical_users": 4,
+        "actual_network_required": 2,
+        "active_tasks": 10,
+        "nodes": 20,
+        "offline_instances": 0,
+        "heap_mib": 512,
+        "measurement_minutes": 3,
+        "warmup_minutes": 1
+      },
+      "failure": "java.lang.AssertionError: Fresh native authored assertions must complete during this mixed run",
+      "classification": "Fresh native replay did not finish before the short mixed duration ended; per-tick logical assertions do not make the overall case pass.",
+      "not_a_current_production_pass": true,
+      "raw": [
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/final74-same-burst-3-inputs.json",
+          "bytes": 1276,
+          "sha256": "B51A5A3580B142537D9B4EF79FD6B491A064A2568CA938922A3DDC601AEB07A6"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/final74-same-burst-3-stdout.log",
+          "bytes": 24027,
+          "sha256": "8CF588C1678139C5D6919EC30DE16799EA7C9AF93E343BFE5A93DFEF306F6F75"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/final74-same-burst-3-stderr.log",
+          "bytes": 5161,
+          "sha256": "964EB5F408D794B92DD344A2CE526E1552FE3C562FDDBC558B95717470BEA9B1"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/failure.txt",
+          "bytes": 94,
+          "sha256": "B77F65B6D14081177F7A8FC787EEB6675DE5CF9F4C89CF60D63285404321969D"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/complete-tick-samples.csv",
+          "bytes": 45975,
+          "sha256": "3F952E70FEB4A9769310A4CC1D4A57E4255DE5DF2019A242149BBF90722E3525"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/driver-tick-profile.csv",
+          "bytes": 14212,
+          "sha256": "C5D1F518E3E9DAC68DEBE0213E9588AC3C3C31D8128A541DD1EDF345DEE9E9D3"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/driver-tick-profile-inputs.json",
+          "bytes": 120,
+          "sha256": "D765F4879A8F297F7A617A1A35574FA8EFB461DF7E8FC02756AB555716554C16"
+        },
+        {
+          "file": ".tooling/0402/Worlds/Final-fast-journal-burst-R1/mixed-operations.csv",
+          "bytes": 25482,
+          "sha256": "3F467B2BCC00454A36C0537CA01C43560C4935BEDF7A59FC0CEDE1539CE346DF"
+        }
+      ]
+    }
+  ]
+}

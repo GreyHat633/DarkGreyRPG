@@ -1,0 +1,2882 @@
+{
+  "status": "PASS_FINAL_BUILD_AND_COMPONENT_PROVENANCE",
+  "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "runtime_bytes": 1896860,
+  "font_and_reference_checkpoint_sha256": "2629CA06F85C1114438637EC8EF5F111E935827FF4FED041E167534D2FB6DD48",
+  "changes_after_reference_checkpoint": [
+    "darkgrey/rpg/DarkGreyRpg.class",
+    "darkgrey/rpg/diagnostics/PlayerStateInspection.class",
+    "darkgrey/rpg/diagnostics/PlayerStateSummary$1.class",
+    "darkgrey/rpg/diagnostics/PlayerStateSummary$2.class",
+    "darkgrey/rpg/diagnostics/PlayerStateSummary.class",
+    "darkgrey/rpg/session/persistence/CanonicalSessionWorldStateNbtCodec.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskForgeManager$3.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskForgeManager$4.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskForgeManager$Context.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskForgeManager.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskPlayerTransactions$1.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskPlayerTransactions$JournalContext.class",
+    "darkgrey/rpg/task/forge/CanonicalTaskPlayerTransactions.class",
+    "darkgrey/rpg/task/persistence/CanonicalTaskTransactionJournal$1.class",
+    "darkgrey/rpg/task/persistence/CanonicalTaskTransactionJournal$2.class",
+    "darkgrey/rpg/task/persistence/CanonicalTaskTransactionJournal$VerifiedRecord.class",
+    "darkgrey/rpg/task/persistence/CanonicalTaskTransactionJournal.class",
+    "darkgrey/rpg/task/persistence/TaskReceiptKey.class"
+  ],
+  "unlisted_production_entries_identical_to_reference": true,
+  "linear_history_delta_from_1B": [
+    "darkgrey/rpg/DarkGreyRpg.class",
+    "darkgrey/rpg/session/persistence/CanonicalSessionWorldStateNbtCodec.class"
+  ],
+  "main_mod_source_only_adds_stopped_event_fallback_to_existing_cleanup": true,
+  "task_manager_source_only_adds_transaction_cache_clear_on_stop": true,
+  "all_font_ui_classes_same_bytes": true,
+  "reference_performance_component_inheritance": "Diagnostic projection, receipt-key validation/encoding, journal gzip and verified-byte caching, linear terminal-route duplicate detection, and stopped-event fallback changed after frozen 2629. The Task manager adds only cache cleanup on stop; main-mod source only adds a stopped-event fallback to its existing cleanup. Tick/queue/index/media/font entries retain identical bytes. Storage, receipt transactions and stop lifecycle require current-hash regressions; historical measurements do not claim the new hash ran in those processes.",
+  "probe_count": 42,
+  "production_jar_has_no_test_driver_or_probes": true,
+  "source_input_digest": "B2F377A3EEB926651DCD0E02612E7C6BD72EC4C6F3660CDBB46E56D64C5C6E3C",
+  "source_inputs": [
+    {
+      "file": "build.gradle.kts",
+      "bytes": 51925,
+      "sha256": "CD6975261AEDF830BB650816142DAFB13B147BACBC538F163133D376C4EC4CBB"
+    },
+    {
+      "file": "gradle.properties",
+      "bytes": 1148,
+      "sha256": "B57EB8769915EF06878796EE247122CE974987C55DD6AC58BB92AA7485FFAEED"
+    },
+    {
+      "file": "scripts/0321-client-format.gradle",
+      "bytes": 407,
+      "sha256": "E77E610A0253427A9864FD490BE55E1B08C78B6FF12B547884DBEC6A9A7F9AD7"
+    },
+    {
+      "file": "scripts/0322-client-format.gradle",
+      "bytes": 720,
+      "sha256": "3D6B9AD30B93A589633AF688E99CD111C7FED108C30D40D598D10B61728DF08C"
+    },
+    {
+      "file": "scripts/0323-client-format.gradle",
+      "bytes": 2573,
+      "sha256": "E3508CD6C12AB8ECC19D4D209A7A7390009A19EE944BB398712F029C1C82C8E1"
+    },
+    {
+      "file": "scripts/0324-client-format.gradle",
+      "bytes": 663,
+      "sha256": "3C445440757D9F94E9068F2747DB5BDB7FA9BFBDB3C2E787E9A6376D198CBF1E"
+    },
+    {
+      "file": "scripts/0330-baseline-format.gradle",
+      "bytes": 377,
+      "sha256": "ED49F4CA61C50A9E43C1E27388C24A304707CBF6A7D06C9132D5EF35094CBF76"
+    },
+    {
+      "file": "scripts/0330-baseline-probes.gradle",
+      "bytes": 331,
+      "sha256": "A1A68CD2A9C9FEAA8D72651978823DD9569F404CE268CF1C51B0C932593B03BA"
+    },
+    {
+      "file": "scripts/0330-current-format.gradle",
+      "bytes": 11297,
+      "sha256": "19BEF30EFD0709B4B7136424BAC56B9C950899281273A4D0DDD7536E6B46D650"
+    },
+    {
+      "file": "scripts/0330-p1-format.gradle",
+      "bytes": 2079,
+      "sha256": "93A8FF99C3D5DE56FEE36FCF798857E0AAAA2111E4FD6FD29E1E5BC215ECADB0"
+    },
+    {
+      "file": "scripts/0330-p5-probes.gradle",
+      "bytes": 343,
+      "sha256": "69242F503442CCBF8F9229D155282AF9A67A4633C2CDD640A8B82FC2734410CD"
+    },
+    {
+      "file": "scripts/0334-format.gradle",
+      "bytes": 665,
+      "sha256": "78070D411C75AAEB77EA8B58A5A16A1FF5C9B4EC37BACCC90E5E48DB1951C1C2"
+    },
+    {
+      "file": "scripts/create-0401-filter-fixture.ps1",
+      "bytes": 2360,
+      "sha256": "98B750BD8D5D0FFB5350F602AEE07E274FBD76BFBE2E8CB4C894F85A1E92F7D4"
+    },
+    {
+      "file": "scripts/generate-dialogue-capacity-profile.py",
+      "bytes": 4551,
+      "sha256": "025B91A59B6CCA88DF3214CC3E1248B2327F199773A37D96E0B5345436017E97"
+    },
+    {
+      "file": "scripts/inventory-0330-legacy.ps1",
+      "bytes": 6498,
+      "sha256": "ADA2D9F33D183FB5EDBCBCD34269684B06ACFDEC7741E7B32373EDA086F3F127"
+    },
+    {
+      "file": "scripts/package-studio.ps1",
+      "bytes": 3040,
+      "sha256": "D22D00A6BE5FCFD4DFF3A0DA169D00867CF763C24AAD68599EE2CC8D1DF08544"
+    },
+    {
+      "file": "scripts/prepare-java-dependencies.ps1",
+      "bytes": 2712,
+      "sha256": "98505CC32620F524BE993BE61DA00DFC944595FBD9B13A7685CD7A85F2BB5295"
+    },
+    {
+      "file": "scripts/record-0401-delivery.ps1",
+      "bytes": 8504,
+      "sha256": "CE601BB48C8B919690BF9C1A6B6A577A9D78B0E284C4F844615259162E6D30BB"
+    },
+    {
+      "file": "scripts/record-0401-dynamic-evidence.ps1",
+      "bytes": 8207,
+      "sha256": "89B1E83642232E605B5B44AAAEFC3A5DF2B26033B364C801BB3EFDE23D17B880"
+    },
+    {
+      "file": "scripts/record-0401-evidence.ps1",
+      "bytes": 8951,
+      "sha256": "127AE59A85DF51B3F188CA2C3C987D2310A7380598C3F9C5E3BA4DBDE14A85CE"
+    },
+    {
+      "file": "scripts/record-0401-native-evidence.ps1",
+      "bytes": 9309,
+      "sha256": "3F7672A8220D4A5E99B1CFD4B2F0ACEA8BC25425FD96F09210244A4019360D60"
+    },
+    {
+      "file": "scripts/stress-0402.ps1",
+      "bytes": 13203,
+      "sha256": "B5D30772CA76BEE5B9E1FA97BF6B05BE385C3196081FD966D907AF3E6F6B4E7E"
+    },
+    {
+      "file": "scripts/verify-0321-freeze.ps1",
+      "bytes": 1951,
+      "sha256": "1AAF6ED64C6B0F04B4ED2410B4F71FB76FF998934F27EA2E266CAA9C4192A57E"
+    },
+    {
+      "file": "scripts/verify-0322-freeze.ps1",
+      "bytes": 891,
+      "sha256": "ABA21DE04E92E851B2C8952A927E6853F9D71BDBE1D434782A2818988757165B"
+    },
+    {
+      "file": "scripts/verify-0323-freeze.ps1",
+      "bytes": 1056,
+      "sha256": "05234A6002A1E0F2BCDC77AFCB13F19BF684EEDBA5BC70B2215AF9E1E3EBBCDA"
+    },
+    {
+      "file": "scripts/verify-0324-freeze.ps1",
+      "bytes": 2163,
+      "sha256": "53549BEAD5180C8EBC4CC09368A5141FD220B1F239484648DEB2B1315F348EB7"
+    },
+    {
+      "file": "scripts/verify-0330-scope.ps1",
+      "bytes": 14208,
+      "sha256": "63E5BD41C25FCD4A05E3AA1EBA58F38F52FC05B5A83436646748EB2D7AA438CD"
+    },
+    {
+      "file": "scripts/verify-0332-scope.ps1",
+      "bytes": 2576,
+      "sha256": "903D0BD7EF6DCC48C55451ECF01B7EA7F1937E3B6F3FFFB348F1538248A3D359"
+    },
+    {
+      "file": "scripts/verify-0401.ps1",
+      "bytes": 2385,
+      "sha256": "D84CDA3A4FBB0896229118444549BF1C6D32A3FC80BD76CAF246354BB60A88B0"
+    },
+    {
+      "file": "scripts/verify-0402.ps1",
+      "bytes": 2024,
+      "sha256": "EC0AA7E10E3FE130C962C9AB0A2E747554E3A015CC29D64F78D7D32C52E189D7"
+    },
+    {
+      "file": "scripts/verify-phase1.ps1",
+      "bytes": 4282,
+      "sha256": "F16532214E7C37538D792F8BE2212DFF8EA06CC3087E46B18D3BE40CD090CCF3"
+    },
+    {
+      "file": "scripts/verify-phase2.ps1",
+      "bytes": 4154,
+      "sha256": "0479E7ECA9FBBCD2948277271CA4AB5A7CA33C5C4FE50D27770B876F80DAEAD8"
+    },
+    {
+      "file": "scripts/verify-phase3.ps1",
+      "bytes": 6282,
+      "sha256": "48F19C6648B7E9A3454932E05A57C70D559AFCCD3106959B8FC84CB004BDCC3C"
+    },
+    {
+      "file": "scripts/verify-phase4.ps1",
+      "bytes": 6793,
+      "sha256": "32A82583ED9457AA6875031B002E46695FE20BA95D279304198E9B6ABEBADE9D"
+    },
+    {
+      "file": "scripts/verify-phase5.ps1",
+      "bytes": 4602,
+      "sha256": "F9ACD33D3E3D3143E6DC038E7D7A121E24436F0EB65D010F850131FAD785286A"
+    },
+    {
+      "file": "settings.gradle.kts",
+      "bytes": 490,
+      "sha256": "8E0EB4BFE9B11F17EBFEB9B4C2CBCE71FE7151D1B8A13FADC8DFE14D553D8574"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/CanonicalTaskClientStore.java",
+      "bytes": 6797,
+      "sha256": "00345154CA35D2DF72BDB180732036070EA6E5F77D3C807263377F821EA687F2"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/ClientPackageManager.java",
+      "bytes": 2166,
+      "sha256": "FABB8604886E4D49C23E6CDDD334ABAC3F11C65AEC16593B23E51393E30A580C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/ClientProxy.java",
+      "bytes": 7680,
+      "sha256": "91F59755E4AB0CC1A4A4D7C1F3E1D023E1E00607D461DBEB57A4B017AEE36E6C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/ClientQuestKeyHandler.java",
+      "bytes": 4393,
+      "sha256": "6D83A4D0E032E99E6CE3A73E388084FA08650C9CBA8E2A214DB930650BF0ACF6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/ClientResourceRevision.java",
+      "bytes": 2375,
+      "sha256": "D9EF002B7BEE8D4AC87ED15AE6F8B328B13975E4453A8A2FFA40E7714BD62CE5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/CreatorInspectClient.java",
+      "bytes": 7540,
+      "sha256": "A0209F421837B585179BDD3C0F23274908E86CBB41C9168F2A417D4C70F666E6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/CanonicalDialogueRenderer.java",
+      "bytes": 9298,
+      "sha256": "ABC63C7486B44905593EE434BEDC5EC2B4D1524B332D9BF37576595FDC197B92"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/CanonicalTaskLayout.java",
+      "bytes": 2952,
+      "sha256": "B953F9473D3013D28383EC0A3D84A277F87C835746023B264ABD8AE78B6222DD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/DgrUiPalette.java",
+      "bytes": 2517,
+      "sha256": "44BD31F584E6CD73376FFAF9E236E9A0B8188D09380ACB8B5F988D143128C191"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/DgrUiText.java",
+      "bytes": 1388,
+      "sha256": "47D4370E711532F474263F547DB573D4F643BD768180FE6C732A56036A19A4DE"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/DialogueFontDrawing.java",
+      "bytes": 7557,
+      "sha256": "DEC070FE18EA424B9C094EF6CF7F586427C4FE25339B8E0BC63A1E26A737E7BB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalSessionScreen.java",
+      "bytes": 20321,
+      "sha256": "AB4C8141F25583F86520D4DF8CCFA9E87AAF06952C6B6EDCACBCE05FDA01AEF7"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalStoryChooser.java",
+      "bytes": 5771,
+      "sha256": "E1C632E73EB3F9645E51042AF0015054B08329601D91520998AC70A93C7FF350"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskScreen.java",
+      "bytes": 40856,
+      "sha256": "C1432E0E4D7704B9408FD8D989DDB770331D099C6C6948B05B6D8B72BCB2F876"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiCanonicalTaskSubmitChooser.java",
+      "bytes": 9304,
+      "sha256": "2D4BA50B1E5A6129E317EB56DF7DB2C1C7291E83666680F7DA6F79E286AA9800"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiCopierTemplates.java",
+      "bytes": 11373,
+      "sha256": "0F985E8D730159ABD61733BD2423B76BE5F601B56277963FA41B0DD56DE72E1D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiDgrTextField.java",
+      "bytes": 4067,
+      "sha256": "D7AA2E0A7D6D86B892FC75F40A18EDC212A7464552DACCD7FD6C440E53941CD8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiDialogueHistory.java",
+      "bytes": 5765,
+      "sha256": "3770DFF12AAC4E3A49D40B5D261884120F6686C502905AD0A16150C87B7537EA"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiDialogueSettings.java",
+      "bytes": 16785,
+      "sha256": "F82914A74F1E9E6640CA84E867FD3F4442A05363137DEBC7BE947FE6A3E180E3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiItemCandidates.java",
+      "bytes": 2792,
+      "sha256": "AA45EF7F60F8A3785A05DA4EBDB371599B252EC432913926FD580889EAEB0327"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiModernButton.java",
+      "bytes": 2572,
+      "sha256": "6AE34A8AA8ADA7B148A65DA01CA934949851C2903E817126C9DB992266C19D8F"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiNominatorEntity.java",
+      "bytes": 10513,
+      "sha256": "52B66D01FA83142F0F4A9DC2B348C3C435E745556A48E556ADF33BD2A91E089D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiNominatorInventory.java",
+      "bytes": 15560,
+      "sha256": "7D07B454E9C1A5794AF14136B307C81A5D2CDE70E3B7146DA7083B14FD193206"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiPlayerStateInspection.java",
+      "bytes": 14053,
+      "sha256": "D3DB902FCEE2113CBA0A2363B735C53A2F21F8A7087F356AC87622008C27A9E9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiRpgButton.java",
+      "bytes": 2910,
+      "sha256": "AF27998777BCC2329EE73C9095709DC3E363A6A32BA5C10180D712F757497AE7"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiScrollClip.java",
+      "bytes": 1496,
+      "sha256": "884DF401E1EBFD9041FB96AB1B7692A02A1A21644E12E563E3F940E601260CFD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiStoryPackageManager.java",
+      "bytes": 37165,
+      "sha256": "41AC8796D91B56956A853D9182038387D6A48C94687CD0D0ED4293767B40B903"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/GuiWrappedChoiceButton.java",
+      "bytes": 4020,
+      "sha256": "1995A96548AC4D78192BD392CB4CC96E23B1236BBB4D788E44B0316C6CF824E9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/ItemCandidatePopover.java",
+      "bytes": 8130,
+      "sha256": "F751AD1C221FF792124526693DAB261E3AB1C9462DD4FB71D341EBF8B9B0D97F"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/ItemSlotStrip.java",
+      "bytes": 8923,
+      "sha256": "CC907661EA19D4016BD0CCE8CCD8FBB797510CA77370B6A748A1D63E19C161FC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/NominatorBrowser.java",
+      "bytes": 11996,
+      "sha256": "48BB82488E4E8BC2ACE9E07571D227914D9A8E43BBB5F90098F1DEDD300A4B27"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/NominatorControls.java",
+      "bytes": 4627,
+      "sha256": "D7AC33357F61236B475E8AA9624D5698C86E80EDBB40444BC0A716E616028A56"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/RuntimeDirectoryTree.java",
+      "bytes": 3559,
+      "sha256": "5DED62910AEB94B7A8572A646276609DEBD770BC2D6F0795B806DA167452B474"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/RuntimeDirectoryVisuals.java",
+      "bytes": 5041,
+      "sha256": "AC543347A8142D0E880C08FC62BF4F650DF897C47B1F4584C4A4C9DA1E8B0C7C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/RuntimeGraphViewport.java",
+      "bytes": 1662,
+      "sha256": "D1F047932C9972672BF31D7A0AF7E43DB32273492ABED42CD0515BDEC399F90B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/RuntimeRowText.java",
+      "bytes": 2362,
+      "sha256": "1C8F5BE1101111C8036831A66EF8B3353518C8F2FE5282F9CB5E57752698DEE8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/SmoothScroll.java",
+      "bytes": 1915,
+      "sha256": "F851D04640605359BFB0930757A8411544A0A75DE9A0898F3EB99F7CD5437712"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/TaskObjectiveText.java",
+      "bytes": 3502,
+      "sha256": "E92ACE40A1AE51C1DDEF13BE4AD0214E71BA0585F4B55AD9E63F158DCA01F2DA"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/TaskStoryRows.java",
+      "bytes": 2210,
+      "sha256": "3E2C368ECADE7A882D2B829EE10638F0263CFA53CF2F0754B491F384E07359A2"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/UtilityWindowChrome.java",
+      "bytes": 2637,
+      "sha256": "07041B1DA4CA05F77BD978389064A0E478AFC06077AE6EB054EADA09016D27A4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/UtilityWindowGeometry.java",
+      "bytes": 9476,
+      "sha256": "29A88369649870F47BFCCB5CB9741FBF3FE264619DA3C854E0B4B4EA526683E9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/gui/UtilityWindowSettings.java",
+      "bytes": 12039,
+      "sha256": "0261ED27C95DB0ADF9D7754A124A4D3F787E84FA0DBC722ACB9F6BD5186ED342"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/NominatorClientRuntime.java",
+      "bytes": 1702,
+      "sha256": "8563F77D0344CFAAE52CB63ADBAE9882D9CB807D901E69F542C3B4453493D8AC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/NominatorGlobalSearch.java",
+      "bytes": 2603,
+      "sha256": "0DD1CB295318FAC28E58D16B0FE99BC1809FB5125CD48BAC57C593A783FBF799"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/CanonicalDialogueLayout.java",
+      "bytes": 2420,
+      "sha256": "BA8B7429CBCF2BC513B03563AEB0D56619EC770BF0BAC674A048AC054F760DE7"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/CanonicalPresentationBridge.java",
+      "bytes": 2495,
+      "sha256": "8BF78C4C57CADA63100CA3EFC87C04DDE54BFFFB88FB0A43700529E814925347"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientController.java",
+      "bytes": 7206,
+      "sha256": "5311BCA92356D9441399A26C2C44229AB1D96CFE926A6DB50C83DDCB53C792C3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/CanonicalSessionClientModel.java",
+      "bytes": 13631,
+      "sha256": "595665CCDEBC19E347F99C1B1F0FB73268BFA2A20A7FC4D418D3933F64717394"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/DialogueBacklog.java",
+      "bytes": 2313,
+      "sha256": "B1945B30A64818238E1A358F9B1524910E49C54152AB4FDCC37B9633A8B42F83"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/DialogueDisplayPages.java",
+      "bytes": 3588,
+      "sha256": "C49F1E8E5001D99170B303574AEC546EE322ABA451679B0B107F62153D2C9A33"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/DialogueFontScale.java",
+      "bytes": 743,
+      "sha256": "8B17284FBD2233F90A07E23A00724FE13D29291072B4D829163A21BE51D64DBD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/DialogueHistoryClient.java",
+      "bytes": 3249,
+      "sha256": "A50F7914E4FD57E7EC6905F63441C96C6AC83F6DDD976F50454838FD97B9E09D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/DialoguePreferences.java",
+      "bytes": 1041,
+      "sha256": "8D7D9891124245C2408E89D4CC3847F97EB4D41EE745755E73972D6C7CAD54C7"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/DialogueTextReveal.java",
+      "bytes": 2438,
+      "sha256": "3E186A8BBA21D6FBF55AEB902912A8D93DA14E663239100E12D57AC481E29DA5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/PlayerReadingContext.java",
+      "bytes": 1149,
+      "sha256": "85AD39375CC681FE7E5B74307F3285858F878E09C3546057D131045533730118"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/session/PlayerUiPreferences.java",
+      "bytes": 3482,
+      "sha256": "3156A0F79DDEB886451CEC343ECDF2D111840F2F8B70A36CDFB283ECD8FA1327"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/TaskNotificationCards.java",
+      "bytes": 14300,
+      "sha256": "4AFA776CC9B82FB9261FD4BFDC1AE570BDBD95427879DA47E3E22DF565E8D4B8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/TaskPresentationPages.java",
+      "bytes": 8833,
+      "sha256": "BAB2B07715A00A8A230BC0FAD7646BDEC0CFC21F09887F87DD2BEB8A981C87B4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/TaskTrackerBodyLayout.java",
+      "bytes": 653,
+      "sha256": "B12132B785CAF034417FFE1B7011F81A7FF978177A9E490DDCB637E1378029BD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/TaskTrackerClient.java",
+      "bytes": 4284,
+      "sha256": "4643A0FE77A96516C8F4E70316689E21556D3EC6D6EBF5AC9CAC345B3114A591"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/TaskTrackerHud.java",
+      "bytes": 15159,
+      "sha256": "5382A5E4CD6C07B090E60BCD93359BBD6BF2EA186B88BF7FB5BC03C5DAE3C315"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/client/TaskTrackingSelection.java",
+      "bytes": 1366,
+      "sha256": "7F9B2F1A6EC046865E6F6EFFE80E3E22AFA379FB8C19C22C82544F9872BC8330"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/command/CommandDarkGreyRpg.java",
+      "bytes": 55822,
+      "sha256": "9E5C344D70714006B70B3F9C442E813DF72BAFD804DEFDB2223754FCF5542E60"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/compat/customnpcs/CustomNpcActorBinding.java",
+      "bytes": 2913,
+      "sha256": "DD6669F31B12BBF87192C6383F710F219DCD73CA9250372C36B7C5D93ADE61D6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/config/RpgConfiguration.java",
+      "bytes": 5904,
+      "sha256": "8C2A3C645E39BB6D891FF13D70F12E34CADA44D41B715B76CB32A778D8D7F8A8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/config/RpgRuntimeDirectories.java",
+      "bytes": 8307,
+      "sha256": "123597BFACF6EDB739CECD7E0DB982C47DA31640A1C5BA0BA191B0183C0CAC7F"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/content/ModCreativeTabs.java",
+      "bytes": 470,
+      "sha256": "3F33D6111B7AAD5A20352AE4B6FC5CFA63FB51857DA6C78771DBBBDB5366A896"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/content/ModItems.java",
+      "bytes": 2434,
+      "sha256": "AAFD1F77B726734E24C164FA00FA786488317E74714DEC243F6463FEEDA82D22"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CanonicalTaskHistoryProjection.java",
+      "bytes": 6024,
+      "sha256": "9E9A07307DBAF62C52698283E95718C850E3D5B0C7F04498F08FC496BCA4D86B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CanonicalTaskNotifications.java",
+      "bytes": 4328,
+      "sha256": "F9266501B43E60EA9AB14A6EF7E02154C93E2C72322F7AB71641B2D7D3BC7C02"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CanonicalTaskPresentationServer.java",
+      "bytes": 7541,
+      "sha256": "4C39316E3C2D343F229A5E5E005C82805B140C080EB43FF26AB51EDB62706A96"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CanonicalTaskUiProjection.java",
+      "bytes": 6855,
+      "sha256": "3791F5373B846D4F41BAB60E151E2374CF149CAFB382073664EBAF5866AC62F5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CanonicalTaskUiRequest.java",
+      "bytes": 2013,
+      "sha256": "599CA1DBA352C74E2C7A192A927F0FA50B97C94B6BE5469059681DD88B529776"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CreatorInspectSavedData.java",
+      "bytes": 2576,
+      "sha256": "6E7C9EC42E4E1DF1A27C5C864C1594C9009316A67E75B5B1E36C8A2906D4091E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CreatorInspectServer.java",
+      "bytes": 5390,
+      "sha256": "0D917AE256689D83CAEE160D33ACAD22911A8272E7263936F75D6D278C5E0438"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/CreatorSnapshot.java",
+      "bytes": 3256,
+      "sha256": "0F2A2FA48E75796B18C9746C8E9937C3F8D58FE96886706CD663A80D8E7ED980"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/ItemInspectorGoggles.java",
+      "bytes": 879,
+      "sha256": "30C2A58E575427AB2ECE7AAE74BC89DE1FF5D64E2B2F553385AC0C785CD58D02"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/TaskCandidateIndex.java",
+      "bytes": 8981,
+      "sha256": "8BC482AC718D08EAE974018EB3611CF8277A08C61902E569C0CAA9FFBB34291B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/TaskItemPreview.java",
+      "bytes": 3252,
+      "sha256": "1CB264D39D78981BC1E5DC602CB4D97A9FEA2F7196DE80AB8B6CD045F7ED2101"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/TaskPageServer.java",
+      "bytes": 9420,
+      "sha256": "413346B14F2691F4FF67135CA301A39AEAE153EAFD80B63FF1FAFAF21432E7F0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/TaskRewardPreview.java",
+      "bytes": 3398,
+      "sha256": "3800AAC916C81FE842CBDD87A2577DA4EA47C08248AA75464E4EA0D66C969FD0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/TaskSnapshotTransport.java",
+      "bytes": 2412,
+      "sha256": "984EEBF1A63AA26A1CE675E4F5EE27EC4E4CB23344E9DC7045A60038B24A2EBC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/creator/TaskStoryPresentation.java",
+      "bytes": 1757,
+      "sha256": "44713140848C0CF53523050C0E87D56A06EC4C3DB34A6371788D34F3E8C85AD0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/DarkGreyRpg.java",
+      "bytes": 12354,
+      "sha256": "691CDB13CCB37267B167DC809AA154E9693A18FA235A0CAC5547A82FC901DC85"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/diagnostics/PlayerNameIndex.java",
+      "bytes": 3626,
+      "sha256": "1B8A31747711C2E393B24DFBD93CAFED6F9063929EBFB844375442FC4425C274"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/diagnostics/PlayerStateInspection.java",
+      "bytes": 18376,
+      "sha256": "9F1E0F17370F9CFBE1D20F69EFCFF193D6C4169E383EFC076079705C52CE4B49"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/diagnostics/PlayerStatePacket.java",
+      "bytes": 5562,
+      "sha256": "D1D380B1248F03F936C16F7F94F2116D252D71E8A8216A56AD6150A1BD152E90"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/diagnostics/PlayerStateSummary.java",
+      "bytes": 13142,
+      "sha256": "0704018372027CF403C2333AFAF01BEAC557537E9F1269CF90E50E71F2F4FC75"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/diagnostics/ReadOnlyStateSource.java",
+      "bytes": 3371,
+      "sha256": "2E3D1D4CFD359444ED667EEF72505E18AC0C15AB9D62156168E5F49E5ACB4447"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/CopierState.java",
+      "bytes": 5422,
+      "sha256": "B0A46078A36A73D2A92C538CDA9BF1C5224558267F1520F33F28D91F1BF1D933"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/EntityCapture.java",
+      "bytes": 3757,
+      "sha256": "463B8049EC55D8952C7E8EA60A30F838EC95399327A186A6553BB047BBDF6FA1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/EntitySpawnSpec.java",
+      "bytes": 2620,
+      "sha256": "AC0F7DE9F27E08863587696AA7C55F8F2A13DBB54D225D0ACD457CD785DAE004"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/EntityTemplate.java",
+      "bytes": 4566,
+      "sha256": "28428B632D0D96B046BA760FCAAF331A6E68855D6A917C61642691C052620F78"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/EntityTemplateNbtCodec.java",
+      "bytes": 6524,
+      "sha256": "3BD2FF9A803587E0893812042F9E333A732BE0D2CAA35577ABB61C3015D69B1E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/EntityTemplateSanitizer.java",
+      "bytes": 3523,
+      "sha256": "14F626C97782856D2592F8D152241105318B7069F3FFC7307AA7ABDADB9AEC50"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/forge/EntityToolsForgeAdapter.java",
+      "bytes": 6384,
+      "sha256": "1A27A518BCB805980C8C94DE1900D01418B81A1F388979C3FFF2281A8829B990"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/forge/EntityToolsRuntime.java",
+      "bytes": 6196,
+      "sha256": "0BCD7E1BF8548F9F9CDF597789650C99C758F287414D63840556150533CDFA63"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/StorageBoxNbtCodec.java",
+      "bytes": 4857,
+      "sha256": "1E1F859A9FA4991A936B4EF18958CB6A2C05EF70F0ABBA5B0DE68EA59FA6ADF0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/StorageBoxState.java",
+      "bytes": 3840,
+      "sha256": "85D5F1D758038FB736441FC7F73778229131D76A018D8A34DFC802AF343AC27C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/StorageMode.java",
+      "bytes": 178,
+      "sha256": "47657B8D922327CF1C40C23969952174AA561386B9D311DF857B6B939B71D091"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/entitytools/StoragePayload.java",
+      "bytes": 3017,
+      "sha256": "EF818AF35ED7D19732AA4C37171C41B70947745DE1AC1AF34E469788800125FA"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/BlockGramophone.java",
+      "bytes": 2926,
+      "sha256": "EDDDA9933183F81763C7628DA7E2A089A3CF7C4306139365899BEE22BEA66A1C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/CodecGramophoneMp3.java",
+      "bytes": 4347,
+      "sha256": "757761C8776B533FBCB4BEC8FF786B4D00C330F06A366412AED53959130ECF47"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneAudio.java",
+      "bytes": 12067,
+      "sha256": "BF2AFDA6C2D5214E53BA7B083851F206D7DA8186217B70C8388FCC1915BA92B8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneBlobStore.java",
+      "bytes": 9110,
+      "sha256": "7B8E0F449EB8B2B07B03C423517E740EDEAED3ACAA74A82E3D00E7E6E7E5E9D3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneClient.java",
+      "bytes": 23904,
+      "sha256": "A0E50A7A961A5B572A6AF6130440364D2208F2ECF974194E73D71526161CA4CF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneDraft.java",
+      "bytes": 11852,
+      "sha256": "7D1C1F42720098FE3FF2976C3FB984FC4D2416A28C1CC9A1D5C2949372B05779"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneFiles.java",
+      "bytes": 8218,
+      "sha256": "F62481BA99071A1B1B3BF5AD363AA50C738B2DCC1A8729DB029A6C0EF1992984"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalClient.java",
+      "bytes": 12619,
+      "sha256": "146BF92DCD7182A67ECD43AB2FFD144074BABE0BA59B69870A1818422FE2074C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneLocalServer.java",
+      "bytes": 24110,
+      "sha256": "FBF109EA65693784DDB9ABA167148F9A5F77D9CA872C53B09516D1841A0D308C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneMediaInfo.java",
+      "bytes": 3991,
+      "sha256": "2BF01EAF986F6F44D58F626B0DB91AB7F5D01EACA335DCAFCA9979F6AC7EB58D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneMediaPacket.java",
+      "bytes": 3193,
+      "sha256": "C4C0FC2C3ED2AD55080F1FF782ED8F91281359429FC907B3DFE4C8AB8EA79227"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneNetwork.java",
+      "bytes": 5989,
+      "sha256": "775BDEDE8B28A4357DD8F3C6C6E83DE1A5000EE0BA4EC43CDAFFD72043977EDE"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophonePacket.java",
+      "bytes": 2649,
+      "sha256": "F1BB2E348AEE9E6B0D9680F9E26886E336727DE9229BD7CF7DAF75F476B9B1C1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophonePlayback.java",
+      "bytes": 2247,
+      "sha256": "ED79F5EFDE2120AB54A23AB9486A4CFBD4AA469B74430E6841C0CB73CC092B35"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneRenderer.java",
+      "bytes": 7322,
+      "sha256": "E7A216F44F97B033724E7C64BBA7122EDCBAC574F5D210839717A0957DB89DCA"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GramophoneServer.java",
+      "bytes": 8095,
+      "sha256": "AFE7B60B9A5DAD093FB071DF6631FDA2D03EF42299ED800741CC22EDF68F0C41"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/GuiGramophone.java",
+      "bytes": 17208,
+      "sha256": "D80D163DF481A7C1A75B6AF3DF658DBDE02BDFA6DC6CC8A3AAAC6963AC6A6854"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/ItemGramophone.java",
+      "bytes": 718,
+      "sha256": "18AD0F2720FBDDE35816247FE74734C14F46DD207432D24F43C6520525F072F4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/OnlineMusicResolver.java",
+      "bytes": 14509,
+      "sha256": "04854781A10570BD957693F41FD2157D2D70B859677B743CF683D07CD0190035"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/OnlineMusicSource.java",
+      "bytes": 2295,
+      "sha256": "7250AF3D2A6D5FD2BBA4FADF7FD0D36A3512FA90520DCDC20428C7712963CFFC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/gramophone/TileGramophone.java",
+      "bytes": 5095,
+      "sha256": "26276312AF1A84FA60101F66E1D009D31420F359BC493AE3890E392EF8159ED1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraph.java",
+      "bytes": 923,
+      "sha256": "46502A72A8F052E783122DE7E9C3587B83488D8EC44FDB3DD38EDF806714D126"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphConnection.java",
+      "bytes": 1863,
+      "sha256": "C0532FDBB62E6240FEAC9F2EF7356BC94949AC08AD285832CF6E6C14D0EF7291"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphExecutionOrder.java",
+      "bytes": 2682,
+      "sha256": "337EBA6A266AB68B2CF145B57920699299D79EC73AB33C22DB59FB7D49CBF42F"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphInterfaceKind.java",
+      "bytes": 729,
+      "sha256": "0297BEA74DED7D1EF8E48ADFC742F8E9D32409A19D8F563254D1A06CA8C43CB3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphNode.java",
+      "bytes": 3172,
+      "sha256": "F045CAFE95ECAD20394C106463496E9EC73E7011E1128FB1DFA87660076E27AC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphPort.java",
+      "bytes": 1369,
+      "sha256": "C31C29671288B0CCABDC1543331C4E1341A6CDD2D3329C64D20885CED33CCD15"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphPortDirection.java",
+      "bytes": 755,
+      "sha256": "072A857AE5B11DDDDC753A61D584D5255D868CF1D299DE72917718ECFD3E1208"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResource.java",
+      "bytes": 1907,
+      "sha256": "233B1C3FAC3A0D75279FB3C1C6235DF847BD764A9D74812729E0555708AEF91A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceException.java",
+      "bytes": 786,
+      "sha256": "BF4C998B1ECCEBCF0C8A634BA294C28870875B16183DA2290C718925D24CF317"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceKind.java",
+      "bytes": 853,
+      "sha256": "3F1A27FA39242BCC100432D03F158A2728BF6AAEF1B0EA4B2B3BE410D7EB92FF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoader.java",
+      "bytes": 35029,
+      "sha256": "1D7DDBCE47534EEA4428ABFFFB61C96A9B53443B81FE338DCC2073B21F5533DC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalMediaReference.java",
+      "bytes": 627,
+      "sha256": "85ED38B8B6099AC097386D15327353C13E363FE9BDD0CAEA7BC17762B993C8AA"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalProjectContent.java",
+      "bytes": 3753,
+      "sha256": "F57EBCFB72401FF5B6D34B28F024759AB2C9DE5F6F739DBA1B933A3877AF0497"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalProjectContentException.java",
+      "bytes": 788,
+      "sha256": "F82F8912347BF5149C7AF9C66D442BF19447CC9CAB052E4F5700804A6E0936B3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalProjectContentLoader.java",
+      "bytes": 38484,
+      "sha256": "E8C9C2217F9CC373A3F4D94561D78D6749A6C70D6C42777C8E51892747B46C3E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryLogicConnection.java",
+      "bytes": 3386,
+      "sha256": "49ECF7C6720EA042B55E6D054195C378F2CCAF48F1D3838CA944FC44776FD61B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryLogicGraph.java",
+      "bytes": 1524,
+      "sha256": "F1BDDAA1D0082CAC276AEA90104D234F48261653199C9DE21AE503F776734084"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryLogicGraphLoader.java",
+      "bytes": 21058,
+      "sha256": "2E6C946842639AA11CF0FDE0B697A65487D22CCA0F83F6D96C09308C6C9363FD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryMembership.java",
+      "bytes": 2200,
+      "sha256": "FCF83935DCF1FB5B0400FED0F9E191595F7793B1B0799E6CE7626629C88F969E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryMembershipException.java",
+      "bytes": 794,
+      "sha256": "294A0D19174B579DD196B3AEB3B39A68DC1CF0B5D02285B40ECAA954DB6C4638"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryMembershipLoader.java",
+      "bytes": 24772,
+      "sha256": "800B412D72A83D2B3C0EED97389B9B72E9A7AAE524993EBBA608D302CE44B79D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalStoryMembershipSet.java",
+      "bytes": 2251,
+      "sha256": "4A7BD18F729273A0BDBE127950C54F945DF53AD18C7F2BBEAF1FF59D7B438058"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/CanonicalTaskMetadata.java",
+      "bytes": 484,
+      "sha256": "6FDF34671F4734CA84685ED78B1A884B78393EDA0882A7EA2B7084B0EFE992B4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/graph/canonical/GraphResourceAddressCodec.java",
+      "bytes": 4944,
+      "sha256": "8C0E885C6A448A340704E2C8671AF03232E954B95570058DED8D9CD6F40C2319"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/BindingCapacity.java",
+      "bytes": 2259,
+      "sha256": "87DEC0A8BC77105DB6895EFA4EB15BEDFB924B508D769E8CEB6FF9D6331487F9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/CompactBindingMap.java",
+      "bytes": 1826,
+      "sha256": "0C0453E025160728119A5CCC5F1B36BBC43AEDBEEF8D2EB81E2D17F46F2BCDD4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/EntityDgrIdentityResolver.java",
+      "bytes": 6410,
+      "sha256": "F8F239B10B30412E26F6BF2FA3BE559860D6128B78DF9295BB70B40BB0663293"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/NpcHostIdentity.java",
+      "bytes": 2803,
+      "sha256": "62C6757553EFCFCD72A04B0183BD0937D52EAEAB7765B67B531E9D3B2101B707"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/NpcIdentityConflictException.java",
+      "bytes": 211,
+      "sha256": "B1EEA27D12C3D04A6E6D3AADA9B4CC148470182A23717C285A0CC394F83BD9A7"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/NpcIdentityRegistry.java",
+      "bytes": 7702,
+      "sha256": "0F08E5614DAAC214546BF3B4A64A0F7DEB03AAC518C8729DFB2935040D6A49F5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/NpcIdentitySavedData.java",
+      "bytes": 8868,
+      "sha256": "9DE8B620A5D2967EB324B17303EAFD04169D4D58B1D4A1013DA944B45658FFC0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/ResourceAddress.java",
+      "bytes": 4396,
+      "sha256": "76E149354D2714267314590F45B83FCE1D99982ED39EAE754A0D4BCC0D8BEC4D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/ResourceAddressJson.java",
+      "bytes": 3188,
+      "sha256": "F63BE803ED86DB94D1EA8A77C34654C630B7075766D1C7054F9A55277D312503"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/ResourceAddressNbt.java",
+      "bytes": 2731,
+      "sha256": "C3361B59C4DDAB43BE3A5AF2C8FECDEFEC0D626AD422566D03D50333F6D98507"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/identity/StoryUid.java",
+      "bytes": 2312,
+      "sha256": "DCD365AB0DDEB8DCE8A8210CDF24C4D00BE6BF40789B7D2DCEFB32249621665E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/identity/ItemGroupMember.java",
+      "bytes": 1387,
+      "sha256": "B40C775A4BF6FA866DDA0D3D8A1697B71116E02B73250B9A5F4EB54B1C8A080C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/identity/ItemIdentityRegistry.java",
+      "bytes": 9833,
+      "sha256": "85BFAB713DB00377E4248DA5E6900A3B43A21FE828F498C486E066D76710BDA3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/identity/ItemIdentitySavedData.java",
+      "bytes": 11586,
+      "sha256": "76B75C57A9B85002AC52E2BC1BAB40C4D62DA4668399E4BD09BBA2497025FB58"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/identity/ItemMatchMode.java",
+      "bytes": 551,
+      "sha256": "E7F43FBF63DFF901566C62132C0D2F7C825E17B26826C907E0B442F602DF66F4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/identity/ItemStackDefinition.java",
+      "bytes": 3672,
+      "sha256": "61B46DE5DC87A549B0C0CA960D1830E339B1EE9A81AAEBDCE220D44D9E89E753"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/ItemBody.java",
+      "bytes": 591,
+      "sha256": "2C5FA8A11B85193E11CE5FAD8C21466215A192CD0673F80711CD5091F1AB226E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/ItemCopier.java",
+      "bytes": 2731,
+      "sha256": "3D9E79564ED4F9B74070AEE1F4787A2DA97105E3E6A3F9E839558DDEDC7DDF68"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/ItemEditorTool.java",
+      "bytes": 646,
+      "sha256": "FE4264118CDA1C5EEC491D45C068C65007AA3F970D03575F2BEF76E5CDDEC7E3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/ItemNominator.java",
+      "bytes": 666,
+      "sha256": "FFD3DDECD653E224D67212A205ABFE6A081B0273D055235DE238471B07855239"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/item/ItemStorageBox.java",
+      "bytes": 3504,
+      "sha256": "A95A56A57E1A3BF766EEFA7058F97A0449CCB015B12BA241AF62DFB7379B74F0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/live/LiveBridgeController.java",
+      "bytes": 7573,
+      "sha256": "D0298975ED9656DEE7A588D2A84613FBF83FB5B88C0300E4F26733675A1EEF47"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/live/LiveBridgeServer.java",
+      "bytes": 5811,
+      "sha256": "BCD342B0F1E5903359A856976063D689DE34DF34D1429C708F17790B560A58EF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/live/LiveMessageSink.java",
+      "bytes": 145,
+      "sha256": "93B0F07A843F58123FD89AC7CD38BEF1A81DE64365F8B7F74231AE64D55EC3B3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/live/LivePickService.java",
+      "bytes": 8372,
+      "sha256": "8CCB1A98153144527B26AD325C2EC89BDC43C0A1E5879F42437FA1E611F8EB99"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/live/LiveStateSnapshotBuilder.java",
+      "bytes": 7869,
+      "sha256": "44664F78A711691BE2DBCD3B735C05FC14AA24358BDBA2DC1C77FCE2ED6EA79A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaClient.java",
+      "bytes": 38138,
+      "sha256": "34A0628A799955846CBA2AD068C1BC39D408A7AE01EBECE9C07AD954FC64F885"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaServer.java",
+      "bytes": 12713,
+      "sha256": "DABDB7B352EB46D86223A46A67C031281778BAACCA2A226D8BDEF46F2BEE5AED"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/CanonicalMediaTextures.java",
+      "bytes": 12626,
+      "sha256": "7972F0D68BF4B860793DE165A576FCCFBDE46E77D6E323D10A0ED619AB2D9D0B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/CanonicalSessionAudio.java",
+      "bytes": 5388,
+      "sha256": "C4E64E5654EE0242AB923C3C97006E5C90B51256CF71B4AB5C3BB9243A186EF5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/CanonicalSessionScene.java",
+      "bytes": 5783,
+      "sha256": "76FC4A8807C9A92CFED73443178A554651F1BF262ED5D87B1E127B984BF5263A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaCacheRetention.java",
+      "bytes": 4809,
+      "sha256": "0443E55A98F47443145189656603C2AB135924A0EAAF22E97635A294309FBDBD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaDownloadSelection.java",
+      "bytes": 1036,
+      "sha256": "CA7A283E2D399F18557CAFF5197789632FFADA587A72697347E38180FF0EDFBD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaLatencyTrace.java",
+      "bytes": 1476,
+      "sha256": "DDC01FFDDE686B9D5AC6E9ADD8E85E62513873A28C19059EDFE8F9E255E5DB56"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaPayloadValidation.java",
+      "bytes": 11189,
+      "sha256": "29D1EDAFD186A62A3C1BF20D520BE98377E6E7586381338F9DB93877DF779891"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaTransferReaders.java",
+      "bytes": 4964,
+      "sha256": "D348F649D82B0EA8E3A8DDA3CDD9AD01977F8A09D8F6E3185E1B318C3FEB7645"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaTransferWindow.java",
+      "bytes": 3120,
+      "sha256": "5F6B249332BC5F48FAA7170956A35995487488008902F68D5B686798A6C461B8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/MediaUploadBudget.java",
+      "bytes": 733,
+      "sha256": "3F9D8DF75216B552A9B9CB9BF7EC4FBE4ED75949D86A0FEAA8EBB6F075F665AC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/ScreenLayerAnimation.java",
+      "bytes": 5916,
+      "sha256": "92ADAF4321356E243F348575F2A43C9D4EF5E1DE93B59F27A35B6F2B4E607502"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/ScreenTransition.java",
+      "bytes": 10523,
+      "sha256": "AAEA4285A660AF16F6282984B6E1EDA1FB7950CEAAC6C561EEFC7BB5023A8662"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/SessionAudioPlayback.java",
+      "bytes": 5320,
+      "sha256": "9443BDA3EF9A783B77CD95671165662DE9BC4D06267B963635EE5C4E711F8410"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/StoryMediaCacheIndex.java",
+      "bytes": 20019,
+      "sha256": "0B648CD6176C8118AD824700C61C48B2B57D4858E2835F741721B859712A82EB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/StoryMediaServer.java",
+      "bytes": 15076,
+      "sha256": "EFFC0B5FD58555941A0B4043AA7AC471B2E0AA7209F440AC2AA1F2634E592189"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/media/VerifiedMediaCache.java",
+      "bytes": 7986,
+      "sha256": "E567923BFB9556405E83064B6CEEE4E02980A404316CADEE534568040C0A08B8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/DialogueNetwork.java",
+      "bytes": 7122,
+      "sha256": "4E31CD173E8514210A397EA92D727BA27257813D9CA0E09A10903334426D4EDB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/EntityToolsNetwork.java",
+      "bytes": 613,
+      "sha256": "8B4761245DF6AFADC8536A3D7CC070A9D3A4B8B98BE231E20F89B8D2B059E2C7"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/MainThreadQueue.java",
+      "bytes": 6877,
+      "sha256": "0D7F72934DE480BD66EDB5633A3FFDFD7CBE0DB8DF77A861E5071F63F9608B1A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/MainThreadScheduler.java",
+      "bytes": 6543,
+      "sha256": "86F9DE642C3051A22B82324DC8C6FF180A054EB46718339F249081E9B6392FD9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalChoiceReceipt.java",
+      "bytes": 1813,
+      "sha256": "316E4D47965BB9D92F981B9F760DCD168D63C9CC628A9D8D9750FF40AF243493"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalMediaChunk.java",
+      "bytes": 4122,
+      "sha256": "0D520553212415B64911DE6DD8390C53245E80D9AC417596F8ED9D5684647E3C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalMediaRequest.java",
+      "bytes": 2722,
+      "sha256": "41A981BECAD7F241209FF7EE49A4A6A5839793D83552E59B422C47A578158E23"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionAction.java",
+      "bytes": 5239,
+      "sha256": "E962832122070BE8EFD0C87BBC3FDB3D915AC5083A62F286B2D42E6EAAEB2934"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionChoiceOption.java",
+      "bytes": 1896,
+      "sha256": "10E5A5F64890FFD885098B4BAABC7488BAD48C0931E5782983F995AD2503C709"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionClose.java",
+      "bytes": 1950,
+      "sha256": "860AFEDA7E2290C6C2A7FBB3436C8CBCF084FA657D833F8DAA355A92B2CFB137"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionFrame.java",
+      "bytes": 17722,
+      "sha256": "435EB8FA11A636E7FC2362EEA6297065E8BCF46C42D616757F3C2BA2783A1433"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionNetworkCodec.java",
+      "bytes": 5352,
+      "sha256": "B72C1CDA8B0B679E6D3AACADB8F92C6A1FE42A89558EA842CB029B5A01A18247"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalSessionNotice.java",
+      "bytes": 2007,
+      "sha256": "3BEA219ADC600E3D02FF33A0A0EBA254D896607ECB4D4362C4F74D757FBDC50E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalStoryChooserFrame.java",
+      "bytes": 8168,
+      "sha256": "73357EE0C15034C523F3BC69F2238792B785557160C892A96F77EF378D4B9528"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalStoryChooserSelection.java",
+      "bytes": 2889,
+      "sha256": "330AB4E5B62E02A27C297B9DB1F4F1D6F24D813FD05F8E12CE30EA015A6504A2"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskSubmit.java",
+      "bytes": 3502,
+      "sha256": "9D23F487968BEBE0AA16B5CF1380ADAAB1B7D05BCE6288D1E9F7FDF0A4044AE6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskSubmitChoiceFrame.java",
+      "bytes": 8418,
+      "sha256": "109CB21E05106D8C374F91B77BF6BEE348FEBD3B7BCC3E049D24695F25C80C10"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskSubmitChoiceSelection.java",
+      "bytes": 2761,
+      "sha256": "F370911643A7A305761179DFC5930DA9114C8B4050347277137A98371654425B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTaskViewOpen.java",
+      "bytes": 1875,
+      "sha256": "CC90A34AEFFD78A63F512C45736635D2C2E6186017D16113ECB0373BC5624775"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTitleComplete.java",
+      "bytes": 1599,
+      "sha256": "61DA620382A62795941AFE360084DF1C186E08DAE5C88DDC3965BBB38B1B454C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/CanonicalTitleFrame.java",
+      "bytes": 3620,
+      "sha256": "55087B25040D6D1A2A8FE431EB4A0590416E1CEA9F5B4AC18D284E7706F565B6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/StoryMediaPlan.java",
+      "bytes": 10708,
+      "sha256": "C529CB29AEC68B43CE71D00AEF2B16E5D4E78A82FA961528C9BD46CC5C2D8DD9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/canonical/TaskPresentationPage.java",
+      "bytes": 7666,
+      "sha256": "7D7ABADA44BDDE5D4BFD128DEB28CECEBF400B1D682CB179C7F4E34BC1981358"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/entitytools/C2SCopierTemplateAction.java",
+      "bytes": 7215,
+      "sha256": "26D7E4775A4896C5BDD0CC6E8187A2FDDA3C658E886822D36FA3514BC31B4CB3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/C2SNominatorAction.java",
+      "bytes": 3098,
+      "sha256": "962CB5BEF1F584D3EA58F93A297157A801B2A8FEBD0B475C01C5E0EE426AEBA0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/C2SNominatorEntityOpen.java",
+      "bytes": 3127,
+      "sha256": "DAFA92A1186816B2073FDC4ACCCD5E3400F19BC54D99336DA54F331DBB6A4C70"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/C2SNominatorInventoryOpen.java",
+      "bytes": 2549,
+      "sha256": "9C122AD98650389D478B229E9BEC682AB1E3E9BB9E7D51B1CC99150A53B8902E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/NominatorCatalogCodec.java",
+      "bytes": 7911,
+      "sha256": "A95E370472EFAC024BC07EAFAA2E39B9EB1391124DE0F6A8BC62807C76075E09"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/NominatorIdentityCodec.java",
+      "bytes": 2878,
+      "sha256": "E61A046C2C006DEDF8853DBAEF55351D98AC80CE4754A4970FA8C8C700643F71"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/S2CNominatorActionResult.java",
+      "bytes": 1820,
+      "sha256": "48F0189CC45612D97C3D09CCECD4E9C5DD5CA852F104D2DD137DEF4DEBF10196"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/S2CNominatorEntityOpen.java",
+      "bytes": 9064,
+      "sha256": "28DD20520751310635D6F8C368B2A03A114A57E8CF72F760F0AEAE91A18F6B94"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/message/nominator/S2CNominatorInventoryOpen.java",
+      "bytes": 3405,
+      "sha256": "8FF0DB3E5E14B6A9857ED641F565ADF2E4ACEA2D470A15F1AEDC6B066643F632"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/network/NominatorNetwork.java",
+      "bytes": 1872,
+      "sha256": "432F4D79385B28D785A3643B056E9C3B5C871C989787766B3277AEFD5F8818E3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/container/ContainerNominatorInventory.java",
+      "bytes": 7755,
+      "sha256": "F0204DA45D7C61C69A9927525DA0C806120FF94633B2252570B1A7DE74B6999C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/container/InventoryNominatorTarget.java",
+      "bytes": 2946,
+      "sha256": "89B25DF3AA3BFAC250B82C04C3704108C8CE55DC6D41F058BBE968CFD95186D9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/container/NominatorGuiHandler.java",
+      "bytes": 918,
+      "sha256": "6C2331170C75F0CD7E5DA18F5F93FF165FF1E084DE43EB340DC61D58A8131F7E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorActions.java",
+      "bytes": 13904,
+      "sha256": "DEB7389AB3AA1C950C616B1CFB8D5530AA9D0F83E0C4CB508E2C0A0149DC2AB5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorCapacityMaintenance.java",
+      "bytes": 4266,
+      "sha256": "AC7EABEF36A8381663B7E87E2DFFB951579AEBB173E999C8C9C3C33D58FCFCA0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorCatalog.java",
+      "bytes": 19439,
+      "sha256": "EC9CCBEEC9BC889B68680086AFF25BBBC62FC018A7E4F6C0D070A75F4F022CA0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorDataUnavailableException.java",
+      "bytes": 789,
+      "sha256": "73535D1513E9166CA6B1FB98F9BD0AF6BDFBAF7D1A020ADB229EE336435362E9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorEntityBinding.java",
+      "bytes": 2141,
+      "sha256": "F2B8A8A8CA175B7EA9E44CDB81C3EF994D34F9BD17F655625C78C8F2967B37D1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorOpenBoundary.java",
+      "bytes": 1075,
+      "sha256": "10B1E68DEA784310C93849BE37346F0783F84160BEB07F51CF2DB201BA095952"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorPermission.java",
+      "bytes": 451,
+      "sha256": "FC081C65BFF24708852F93BA5FF44203CAACC6F8A104F0DC68104F0BCF4A83BF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorResult.java",
+      "bytes": 1077,
+      "sha256": "C82E2A1DF7E965339922C5A59354B78F9288510362912FBE2142F7E9BCDD8052"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorSavedData.java",
+      "bytes": 11331,
+      "sha256": "A2F220F167368BD0C4C2EC11127B07B53820B3BE378C328FC217DE12B0CDD3FF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorService.java",
+      "bytes": 14194,
+      "sha256": "CA8B96B5571D4CF3F08AE9FE5B9B8E47783AF9D1BD431BD21F01E6DB1296AB4A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/nominator/NominatorStorySearch.java",
+      "bytes": 14663,
+      "sha256": "BA8EE3E586773DD617F3E55094B01C93AA4BF8C5E34FB8B2A1EC3A4803635F1A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/player/PlayerRpgSavedData.java",
+      "bytes": 13938,
+      "sha256": "67D678F7BA2716B5D2A77F7C64A7BF7EFFD4DC7DAFB9B4CD8D92D84C0FB84B97"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ActorDefinition.java",
+      "bytes": 2404,
+      "sha256": "9ABA47DE99B7DE18484C0007A1DA0B93D76FE74D99AD769166187F8C2B42E2CD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ActorPortraits.java",
+      "bytes": 3476,
+      "sha256": "5DF4FD053ADEE2D2A7A1636AEFC563FC4F43427EEB9DB3927D3D0C9896CED7A4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ItemResourceDefinition.java",
+      "bytes": 1442,
+      "sha256": "D6FD6957CE77D8864F47521C8C1C98961A2115FAC83242DF47DDCD8DBEA0EE7D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/DgrsArchiveReader.java",
+      "bytes": 12170,
+      "sha256": "8BA589168BED5537E4F29BB669FFCD9EFBE5EAAEF98A09D00F8D0D8AAB6BE0EE"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/DgrsGenerationStore.java",
+      "bytes": 15216,
+      "sha256": "F5DC46FD0C93A2ABFCA531AA5DFA4E024B1DF91541FF7413EBF7DF48551D31D1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/LoadedStoryPackage.java",
+      "bytes": 10866,
+      "sha256": "F724DF66F1ABAB9A18471BA028198B9D2446711A759C7EB1E830D2E639344937"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/PackageGenerationKey.java",
+      "bytes": 2183,
+      "sha256": "29844F17CE0ACC1A0171E21DA2BE4D7D415DF6AA5B8FC7975E6D447C1B3B83F9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/PackageRuntimeMigration.java",
+      "bytes": 6021,
+      "sha256": "5FB6E6C271DE173EC2A4DB0A6734B96968A5584C5A1800C1CEEB238C0D0577C3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryGroupPackageReader.java",
+      "bytes": 12173,
+      "sha256": "6A7A72CFF814571B424952A22CB9869EFD44293792DFA4F913DF3FC21EE39805"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryMemberFingerprint.java",
+      "bytes": 8145,
+      "sha256": "725445FA9CA20F9C0DAA8FB39FB59C437CC31EF60B3CEEBC4244D2DDD1BE0445"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageConflictDiagnostics.java",
+      "bytes": 12102,
+      "sha256": "21AD44CB97BEDEF774D4FB3A340DDBDC9EAF8FDE9D0964462A75C17FA7BD00C0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageContentFingerprint.java",
+      "bytes": 11673,
+      "sha256": "B4D4D00D2BB86F0304E287C457CB5E56B7DE4FA415C86613F33537A5C8C6A8EE"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageErrorPage.java",
+      "bytes": 2234,
+      "sha256": "61FC1854D639C10732B95367D17F26EC7ABFCE3B4A8C2590AFCBFE2555E4D206"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageGenerationDelta.java",
+      "bytes": 3151,
+      "sha256": "02E4102F31D2183E65FBD84C095A09CFA4CBA769A1BEFD9D16DA9C21CA9FF925"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageGenerationLifecycle.java",
+      "bytes": 7442,
+      "sha256": "7554305C07615EBE3B1F8E41475CAA14550CE6B6D4817C785235A3EE9561D982"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageGenerationSavedData.java",
+      "bytes": 5373,
+      "sha256": "CA06352CFCBA62B4BBB406BD8AFE0D050610B2A27F12FFB9F9C60CB271838270"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageInventoryEntry.java",
+      "bytes": 3352,
+      "sha256": "012E95B07F4DBA19AA537E2D0DBD28559681D704BEA1414F6451CF2EE09FF321"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageLoader.java",
+      "bytes": 25134,
+      "sha256": "64D07002FDC1051B1231DBD65B34DE7DD5E54F2FBC1BB31DE58A229D8682CED8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageManagerPacket.java",
+      "bytes": 8365,
+      "sha256": "A7CF54DB58A9911960F483A08393E74A0F91072DFC43D991BC06E9C0DEB20F6F"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageManagerService.java",
+      "bytes": 14231,
+      "sha256": "0DEFEC0D97630153BC5F74467A3B12061F1CF56954102F4480DDA8FEF9EFE65B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageManifest.java",
+      "bytes": 15915,
+      "sha256": "B9F461E4597C43235346B23C65313D8958E38711B23C9EE80C722395DD88599D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageMediaValidation.java",
+      "bytes": 9108,
+      "sha256": "4E1DEBE31839FD6E1ADDAA51449E0B6D0F8598F007A7A02B04045E26B3C9CBF4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageMemberInfo.java",
+      "bytes": 2301,
+      "sha256": "D9138EFB2A80D0B8E3B95078AA14BE16BAA9CEDD4F1C4A7C4AD963241E4FC18B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageRuntimeReloader.java",
+      "bytes": 5753,
+      "sha256": "E1D7C7F3A86030A7B5EB298C25648379D0E48BB5E29E58CB258D2C29EA054638"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageSnapshotMerger.java",
+      "bytes": 11890,
+      "sha256": "22B0F7B91FC50FE12D30E449E50F06E795994BCBF8C5DF1188AE7631B27A5BFE"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StoryPackageSnapshotReader.java",
+      "bytes": 11609,
+      "sha256": "C05E55359B6B019BC70A36EDB6872E58F7EB605B95A0C794F769B311EBDEBFCD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/packages/StrictPackageJson.java",
+      "bytes": 2620,
+      "sha256": "E076A57E72C2BBCC64E12320ADE6D249BD21BFE53435740CF7240729C739542E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ProjectDefinition.java",
+      "bytes": 1330,
+      "sha256": "70943E2EB339D5BF491694CEA1B0D2338A9D653870B1D1902128F916D131F178"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ProjectLoadException.java",
+      "bytes": 291,
+      "sha256": "D01223093A50392D95C25ABF724E981F49D50C104DB01A1A547256A9DE57EB90"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ProjectRepository.java",
+      "bytes": 30451,
+      "sha256": "F2E8EEB63CACC39FFA27E3F4B58930A72027F7EDF3F2858B7A6CCB6B2149A038"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/project/ProjectSnapshot.java",
+      "bytes": 4225,
+      "sha256": "CA6149360D2C7139A1EE9344284BF55A736B20F4A5A8BDBECC15EA9FAAD5BD8D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/proxy/CommonProxy.java",
+      "bytes": 2104,
+      "sha256": "2187B7A103184FCB1C39C885B6BA376225660D866BF4D36BB69338AE1C9D139C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/runtime/ActorBindingActions.java",
+      "bytes": 4146,
+      "sha256": "F5775F20D8003B19C3FF11048F209C0AC75EBB0E53227602FE350E63717DCD61"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/runtime/ChatMessages.java",
+      "bytes": 939,
+      "sha256": "611A2C9B7DEA536E5F478A5D0B7A80F3971DB3F5D14DC319FEF19F05F225DCF0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/runtime/EditorSessionManager.java",
+      "bytes": 695,
+      "sha256": "2B13BAC113D5B53A4423ADC9F5388CE38441CAB3E1C0B4DBAF22FFC2687C32B6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/runtime/EditorToolEventHandler.java",
+      "bytes": 3238,
+      "sha256": "119A9D3A1F271B7B6CE3063FAEB97F4E472C060CE470497DC1F1DEC3DDF011E0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/runtime/EntityTargeting.java",
+      "bytes": 2520,
+      "sha256": "D58F8349EBD65C6BAA4C171E8C127DBE406B47FA013CD20B0D5D85B3B0D20602"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionActionHandler.java",
+      "bytes": 2138,
+      "sha256": "007B3EDC9B62FAEA5B20D5756BDF391737CC90E667FB6071605B164A7298E442"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionCloseHandler.java",
+      "bytes": 1203,
+      "sha256": "6EDA3366D2E036F8D661A99EC80DEC1BF5D36BABD0EE4D043CF7E51A7D8500A6"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionForgeManager.java",
+      "bytes": 18870,
+      "sha256": "6275223485BCE3D3DBFD1537FFDE1182E921D6B4C2D8ECBD2101A9D0268A9463"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/forge/CanonicalSessionFrameHandler.java",
+      "bytes": 1194,
+      "sha256": "E21CD03BAA1A1716C3CED64EC446C66C506D472A5D3F83E983820A5E4A55994B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/forge/DynamicContentResolver.java",
+      "bytes": 4580,
+      "sha256": "0202A3FFD725F0BA1FBD81020E5C1DEB6192B85BF5449FAB5BFDACD738C21E19"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/instance/CanonicalSessionInstance.java",
+      "bytes": 3944,
+      "sha256": "3F620752E38A166F7AB7267FFCE984B62C66251E778349D4D2EA43993890B267"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/instance/CanonicalSessionInstanceNbtCodec.java",
+      "bytes": 19342,
+      "sha256": "876AD584C3E33679D2E2E9F0FFF2A85508335DD231066244A576B2E24B6A31D4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/instance/CanonicalSessionInstanceSnapshot.java",
+      "bytes": 3455,
+      "sha256": "5ED28649EA498D194896ADE48CAAD35CB273F20C8BDCEE94AD2D717D463A9780"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/instance/CanonicalSessionInstanceStore.java",
+      "bytes": 12459,
+      "sha256": "4417D332304CA585AB106B0D6BB36268B1A604639F6D8F79367DAEB5161366A8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/instance/CanonicalSessionResourceResolver.java",
+      "bytes": 318,
+      "sha256": "6BE9DFB92847CD2CE51EF5C50CAEB6ADEFC470D80C2A24F633FF23B33B72150E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/persistence/CanonicalSessionDataUnavailableException.java",
+      "bytes": 767,
+      "sha256": "F46D84DC0B8E11F81D27737C73DA4677D63C155CFC29067827F6D7714D65204A"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/persistence/CanonicalSessionSavedData.java",
+      "bytes": 67693,
+      "sha256": "DCF759C4688BA37A0244ECE92F33368084690D2A532E77F45092C3C84BC2FFA1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/persistence/CanonicalSessionWorldStateNbtCodec.java",
+      "bytes": 30622,
+      "sha256": "2F1E881BA37CD8371B3BCE5996A9EC2BB25205605C8A5FC25882FE3D558A7008"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionChoiceOption.java",
+      "bytes": 1562,
+      "sha256": "C464FBCFAB1CE7FC6C6F5F52228C4742709C9413739A69B147B1777775F915AC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionPresentation.java",
+      "bytes": 19719,
+      "sha256": "20AD6E30BB9DC7CC4D5CA2ACAEFA2E5E9F8E7D2CA56DF5ABC8D00B4231EA4B24"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionRuntime.java",
+      "bytes": 57899,
+      "sha256": "6DC1053E57D68CA73150BCDA3C788DA8D6309A98BE6564111D8F2C2314BA8714"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionSnapshot.java",
+      "bytes": 11774,
+      "sha256": "2D5E9BF23CAD8C7AA475432F398DFCDEAEB29364328284FD819A6CD73F73F9B9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionStatus.java",
+      "bytes": 203,
+      "sha256": "CDBC9A2B3F72F914FFE37A257463D908760AFC7EE401D1B72C6912B06A796CB9"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/CanonicalSessionStep.java",
+      "bytes": 4552,
+      "sha256": "C399E335F27977DE3CAA5D2F008F19BB05BFDC2D7E407333B024A6F6C0A04180"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/runtime/DynamicContentText.java",
+      "bytes": 6029,
+      "sha256": "39AF85CEF243415F181DE8752BFE0EFE481EC23F43D1D6A809A4ADD8AFF0F517"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/server/CanonicalSessionCompletionResult.java",
+      "bytes": 3036,
+      "sha256": "EF89708D9AC820CDA52538C73CF16A9B7A36916438193FF3F7BF2EFD051D2683"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/server/CanonicalSessionDispatch.java",
+      "bytes": 4461,
+      "sha256": "0A62CA06AF9CE0FDEAAB91830E9741E2DA5E83C0C143F46BBBED3C198B1FE84B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/server/CanonicalSessionServerService.java",
+      "bytes": 24224,
+      "sha256": "823549F9CA8297BD267063949D454E9D118D94D031E6AAA3ECDD7663A41C7EBB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/session/server/SessionTextLimit.java",
+      "bytes": 834,
+      "sha256": "9DE39D7981F4B5820CA5AC069A64AF00E90E2998CEA804187C62EEEB104D27FF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/CanonicalStoryFlowTransition.java",
+      "bytes": 2218,
+      "sha256": "DC0D98BD614AEA623C48E6F6F2B754AD796527FE519B746BD71B209DB7D09F97"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/CanonicalStoryPendingContinuation.java",
+      "bytes": 6720,
+      "sha256": "1AF59BDBEA400AA5AC6E055ED74F28DBA8036E431DE9EE14B0074D7850D4EFFB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/CanonicalStoryPublicLogicSnapshot.java",
+      "bytes": 1352,
+      "sha256": "9570D38419F271ECCD32A7DECAE194C38D968E03495C81B7D38EED1C8E30B5DF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/CanonicalStorySessionCompletionRoute.java",
+      "bytes": 1505,
+      "sha256": "4FDB16C8A2DF1F5A9E10FD4C5C31F9525D55A59B640D9B97BC58D8098857855C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/CanonicalStorySessionCompletionRouter.java",
+      "bytes": 14873,
+      "sha256": "897BC5E218A9A241F4DED56878F6D0E718A1583EFEF8ACC2E60765E471F0321F"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalBuffCatalog.java",
+      "bytes": 6417,
+      "sha256": "12A1B38F7F9F2CCC50C480047E92A1D6102215AB180240F4864023A3253EACDC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryEventAdapter.java",
+      "bytes": 3450,
+      "sha256": "7119BC945FE0470C77AEB89C13F2A985FB42A003421AF76920A4A251C744B4CD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryForgeActionExecutor.java",
+      "bytes": 3715,
+      "sha256": "AC0B2D0AA03932CFB7BA73E5FECEF4B4E94D7E4590F46008D39E7D7051968D54"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryForgeManager.java",
+      "bytes": 51970,
+      "sha256": "D1EEE2302921F790C92C97301BCBFE04E880A47C09F46FEED15308E9B018E222"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryInstantActions.java",
+      "bytes": 5313,
+      "sha256": "E5500306059B82010A3AFB874B4326E65C82BF399DB2643252F8C25BEC9F0AB5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryCompletionHistory.java",
+      "bytes": 8309,
+      "sha256": "C79F335409961D76435CE6E537E3B3B1FDF2A12F3AF60F5F3134102B1B66D0C3"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstance.java",
+      "bytes": 6638,
+      "sha256": "02D8242F1A8C23CAF2002A024239422565F641B5712720C6CF32C84EFD4BA582"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstanceNbtCodec.java",
+      "bytes": 21876,
+      "sha256": "817A3E4A613FF9D1E1695064D36111CF3D8BEA38B785A056190CE5A8247F35B2"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstanceSnapshot.java",
+      "bytes": 2640,
+      "sha256": "B091715B6785A2B923360F2041922BD0A3714FAB958E952A961E0F0AB3CAA2C1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstanceStore.java",
+      "bytes": 10762,
+      "sha256": "5E46FF38A56EEBDCBDE41C82BD8F292D8DE13EE542484B6CAAA39236C63CC17B"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryResourceResolver.java",
+      "bytes": 321,
+      "sha256": "1C03EC5AD48D2CD72288756578C833DD323FCFFC858D3C6C4489F48C1E9CA86C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryActionConfiguration.java",
+      "bytes": 9335,
+      "sha256": "3E3E140CCA7C4AB9FABC57EFEDAD98927E75426E413F69DC61CD8A5787C1A117"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRegionEntryTracker.java",
+      "bytes": 1970,
+      "sha256": "E4E5819BBB08A8E5EBDB88C2113A727FB3D1009D9EEEFD34C3E58A655775B7BF"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRepeatCondition.java",
+      "bytes": 7470,
+      "sha256": "5C7BEBB5CB3E2853BD6FBAC8A2E7DB511B6C201ED09D997A6A2325B24A69B9E2"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRepeatEligibility.java",
+      "bytes": 2452,
+      "sha256": "500A4FBDF2B97CD4D2AD65DBB4E37FA9C23850DB8F57D2954F7ACF370BDD5E11"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRepeatPolicy.java",
+      "bytes": 561,
+      "sha256": "53C60D47E323488B332068B6C85AC2A7E93C33E553606596BA397744F16D4A29"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRuntime.java",
+      "bytes": 51687,
+      "sha256": "A1893B7188328213C3904FDADEC49B76DEDF51A598ADA004081C66094615B2B0"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStorySnapshot.java",
+      "bytes": 11078,
+      "sha256": "EB37FD2B41C3D6E1A8879B9394915B6FFB25BB7D8DEFB6BA9F2ED0F86164A345"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryStartConfiguration.java",
+      "bytes": 18829,
+      "sha256": "0FA7ED390F52A595A23487A192C0FACC51479367D6D67B7A103ECC69E522DEDC"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryStartDisposition.java",
+      "bytes": 465,
+      "sha256": "EB4AABF027DEF116AC55348B877D4AFD6467E7EC7C05C98F3FF22BFBF990E1E4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryStatus.java",
+      "bytes": 191,
+      "sha256": "C268EBEE33BC98874A366C5607B6EB8E1F99DE8664E23F437208B80FC2DA4422"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryTriggerIndex.java",
+      "bytes": 4881,
+      "sha256": "533BBD9723B53B72668D4FCC29FE0937851D61580E7424EBA0ADEBBA81717689"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryWaitKind.java",
+      "bytes": 328,
+      "sha256": "06B9841592EB170717C020218701CFFAA6631C61F3DDD22CA8537A43DD0D9B8C"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/runtime/CanonicalTitleConfiguration.java",
+      "bytes": 3562,
+      "sha256": "83E5B79FC3BD787F1BEE3446F4171565BA048DF7E3BA1432EA2DCD5588D70944"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/server/CanonicalActorCandidate.java",
+      "bytes": 3442,
+      "sha256": "931C434E200F78D30AB7440990DF53076D908101A677ABAE134BDABBD72C8893"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/server/CanonicalActorChoiceStore.java",
+      "bytes": 3543,
+      "sha256": "AEF6DE6427B742B67932B290B70FC3EF6D01606F46ADE22E367B1EDD06439B62"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/server/CanonicalNpcArbitration.java",
+      "bytes": 3413,
+      "sha256": "1836AC4AB85A1079049C0F89E82BD75D8D0A975F32071A14DCAF4EBB19BB13A8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryDispatch.java",
+      "bytes": 5630,
+      "sha256": "D8EC04307C408B879C1D77D12E64BC8AC5CAD6DFB72F2402DD7C4CFC750974D1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryDispatchKind.java",
+      "bytes": 260,
+      "sha256": "752C1FED53CB425DB8F25BA96CF4EC9E60B03C6ED5CDBB257E224528807F4A15"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/story/canonical/server/CanonicalStoryServerService.java",
+      "bytes": 23606,
+      "sha256": "335D94752F67F747CE157FBA75829BA65DE7BBB14F6EE8EEB74377FBBA1DF0A1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/event/CanonicalTaskDispatchResult.java",
+      "bytes": 3010,
+      "sha256": "FEBA40708E66EC5D1204DA54131672090D49C1470FB0E271F4F0A9DBC815537E"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/event/CanonicalTaskInstanceIdentity.java",
+      "bytes": 2540,
+      "sha256": "738A1B746160229232E59FBBFA544F6487FFB3AD123C6A2EF75A953C60A10874"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/event/CanonicalTaskSubscriptionIndex.java",
+      "bytes": 9001,
+      "sha256": "5E02C5404F481F83CAC251ACFC13F7AFA4797A0BA475378DEA116CC35D1E06E8"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/event/CanonicalTaskSubscriptionKey.java",
+      "bytes": 2354,
+      "sha256": "77166C1F0640197F8114575488DDDF316CF47435816D785CF546F006512DF535"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskEventAdapter.java",
+      "bytes": 4078,
+      "sha256": "138044C4B4DE059ED6C39593CACBF2FEA3FFB7E60CE0D4E3AA324B629A1BB720"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskForgeEventNormalizer.java",
+      "bytes": 2281,
+      "sha256": "9461D3B54520E97DF094C5DBBC371038BD1FB82C110ACD006EB3E713E06AB252"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskForgeManager.java",
+      "bytes": 38980,
+      "sha256": "B99584046491A43060136C9366BE718CA036A28C26E4C4B1FE04E60CFE46A4B4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskInventory.java",
+      "bytes": 3273,
+      "sha256": "F80228B41DC71163B91C2A642AF64F5E4F03E812800F931FB6FAD41CF2CD9C87"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskPlayerTransactions.java",
+      "bytes": 15191,
+      "sha256": "CEA68BBCACFCE43790ECEA88F94657126C427ECE14AD2DF9D24B7B0B7AB63819"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/forge/CanonicalTaskSubmitChoiceStore.java",
+      "bytes": 3802,
+      "sha256": "DF96CD3235E8B35BE6D648A5FBB21CAB1C4E9CA8D39BF7856A7A744EEB787366"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/instance/CanonicalTaskInstance.java",
+      "bytes": 9099,
+      "sha256": "79054E05A221385A61FE92B8F86B6B6D11CD476C29BDEF5399936AC905E33936"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/instance/CanonicalTaskInstanceNbtCodec.java",
+      "bytes": 17816,
+      "sha256": "CD598796E3D636BB813DA7A4EC436B0981618A778D62388961DE0653C5709E07"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/instance/CanonicalTaskInstanceSnapshot.java",
+      "bytes": 7231,
+      "sha256": "E87B183EF3382626C923ECC6B89965250ABB749E7EEC012E0E59960A9FF082CD"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/instance/CanonicalTaskInstanceStatus.java",
+      "bytes": 267,
+      "sha256": "34992ED1BF623A3E963FCABC2FD40DEFD1D46E94B1922266A48C8E041EDF7099"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/instance/CanonicalTaskInstanceStore.java",
+      "bytes": 15066,
+      "sha256": "F19EAA099474BC545F144E24ABDF43E9B2FB0BC16DDA03AB8A5F054C0DB0FE80"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/instance/CanonicalTaskResourceResolver.java",
+      "bytes": 307,
+      "sha256": "820C6AA42709C224568F048A2C2050A1E1945FAFC2E2685136B1309CF80F0F22"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/journal/CanonicalJournalService.java",
+      "bytes": 2553,
+      "sha256": "F808D6A8E8C6ABE4D503FCA69614351BDCB54C10C75FB5436A29BB00D1015DC1"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/journal/CanonicalTaskJournalEntry.java",
+      "bytes": 10499,
+      "sha256": "C258E40FEEE67E1DA17C4776B8F970ABACFFF6EEEE9FD462644508105F41114D"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/journal/CanonicalTaskJournalObjectiveRow.java",
+      "bytes": 6318,
+      "sha256": "C44A586EF0E96BCC02A93DB7719E47C512FFB80E8909C3CAD66EEB51961C2DC4"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/journal/CanonicalTaskJournalProjector.java",
+      "bytes": 16193,
+      "sha256": "A7CC8978D4090E4133FBEE904A153D1D7063A93FB335A82866350D1DD95124AB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/persistence/CanonicalTaskCompletionHistory.java",
+      "bytes": 9558,
+      "sha256": "EB45261B1FCDAAE29B85C80C4901B09DF7E2D6CB37CE24FBB7F6A3548F2CEA21"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/persistence/CanonicalTaskSavedData.java",
+      "bytes": 27689,
+      "sha256": "EC0B7F6E22BE6FA94568F2FA2E8CED74BFE24F7643253D5DF3D8827CBB677AA5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/persistence/CanonicalTaskTransactionJournal.java",
+      "bytes": 9012,
+      "sha256": "38DB71696ECDDE10954677B33C9DB50F6DCC36422D6154AB7CD606A1E6D11A20"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/persistence/TaskReceiptKey.java",
+      "bytes": 581,
+      "sha256": "E03C85871B9A0F0C35B8297D36D55B54BECBCCDE9A5C91272F5D40DE44D4D715"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskEvent.java",
+      "bytes": 4426,
+      "sha256": "41AB672F56741A02D4E4C150EA9C2215F3C018431A93AF8FE05294C134EB31DB"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskObjectiveStatus.java",
+      "bytes": 177,
+      "sha256": "BBA48556B5CBA68082A86DB21FA82C32B68976D2E51F8586E29B746396107827"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskRewardPackage.java",
+      "bytes": 3262,
+      "sha256": "A77384BFB99D63BD955EB59C38E120FEA08CE52B4C8B9C81209877E9FF000269"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskRuntime.java",
+      "bytes": 55661,
+      "sha256": "CDF0C4E2342E9FD13673904A982D34536638AC74F0803E91A835A8D03B7E1A05"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskSnapshot.java",
+      "bytes": 4241,
+      "sha256": "DEC32AF9799F6EF05AC150E0AB27AF47A4CA4AB27B4A7B0B3653CF9A97F263F5"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskStatus.java",
+      "bytes": 165,
+      "sha256": "D3022195770B52D0897E2A94F5392ECE607A9DC987657DFD511668CD5DFA5D88"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/task/runtime/CanonicalTaskWorldLogicBindings.java",
+      "bytes": 3376,
+      "sha256": "2CE38888E7A5458E106C1E4AD0EE6EE2ABC51CE8712C7DF7BAC47420EDFF9805"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/title/CanonicalTitleClient.java",
+      "bytes": 4214,
+      "sha256": "4A95FA7198B981228E838D22FBA600F64B78F9160D7EE82C18B53F13636C2234"
+    },
+    {
+      "file": "src/main/java/darkgrey/rpg/title/CanonicalTitleServer.java",
+      "bytes": 7480,
+      "sha256": "0FAB6DC4367CEE2084A3D9363B74CBEB3CA76CADAA15B2FFC970B33BB34B6722"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/lang/en_US.lang",
+      "bytes": 1852,
+      "sha256": "47EA9E26EBE750C262994C1A46B42593CBC6995D44453ADDC88C397AE8A1BB27"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/lang/zh_CN.lang",
+      "bytes": 1842,
+      "sha256": "41826C06E81A113EAEAAC5529BADCFC10E72ECA4BEC09E4CE207BCDBE2172140"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/blocks/gramophone.png",
+      "bytes": 77,
+      "sha256": "430C4A11827D224F42606ED8672BEEA2793F385DB93046A3FDF27B71873CA409"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/body.png",
+      "bytes": 1094,
+      "sha256": "5CA1DDC7542BF2F1A375EA523AC7B7F54CC2D79FE42AF84EAEB7B8EAA5F07928"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/copier.png",
+      "bytes": 1496,
+      "sha256": "587625E2C8A804E203164B383D992A40D0DB9396B964A3234637797E7835C412"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/editor.png",
+      "bytes": 1131,
+      "sha256": "4A9840E526AB44C4D31D46B8AC5972046785B5B32D784A07947B28D416FE9A57"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/inspector_goggles.png",
+      "bytes": 114,
+      "sha256": "75693A5098FB94D62BC6EC3959DECB39901F13612BB068097BC2FCF61D70D890"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/nominator.png",
+      "bytes": 1972,
+      "sha256": "8A0661AA86C3A5494ED2BF091634FAD0B04837A2A366A53D25BB9A020CA35867"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/storage_box_closed.png",
+      "bytes": 1382,
+      "sha256": "D5405FCD3FDFAC37989CF257D1DA5782635EEE7D5BC22362699D7B6B7BA11931"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/items/storage_box_open.png",
+      "bytes": 1519,
+      "sha256": "86FD931CB3F1BEFEBF86A053C3ABEA29D2E05E2EEE0BC03A37043AB7EE5F839B"
+    },
+    {
+      "file": "src/main/resources/assets/darkgrey_rpg/textures/models/armor/inspector_goggles.png",
+      "bytes": 140,
+      "sha256": "C96C728352AE344295FFCFE5FC670B24844ADC535F273A49E78873C12B080D68"
+    },
+    {
+      "file": "src/main/resources/mcmod.info",
+      "bytes": 431,
+      "sha256": "95B486B0FE2AB6A13165F68656DD81B808657CBEF7348CF8DFEE07B065CC048C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/Construction0337Probe.java",
+      "bytes": 6409,
+      "sha256": "EAB25679A1DFB910C82E81B7E6BC8606006FC8DCDC7FCFB269B82F552D0F405A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/Objective0324Probe.java",
+      "bytes": 5266,
+      "sha256": "DBC9223254854C81E52D79E3863DC39CA2612A6B79A30FDBA389D9E5EC2CD4E4"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/PlayerPreferences0332Probe.java",
+      "bytes": 3945,
+      "sha256": "F63CB234659E2642EE53632EF31B3B7384E3EFFE66AED3B7E28210699A91CCBE"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/RuntimeFontPolicy0402Probe.java",
+      "bytes": 5789,
+      "sha256": "55EE640CD766691DB1E8895C49656D973A68445EA11F192E84F35CD02A1FF8F4"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/RuntimeFontResourceRows0336Probe.java",
+      "bytes": 9715,
+      "sha256": "6134D1FCB68E49DA00671B512AB397ACFDF53D63DA85318DA2A3175D528F1432"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/SmoothScroll0324Probe.java",
+      "bytes": 1890,
+      "sha256": "E8C4B5594260BE7D58B4FAF715DC77DA1374EEAF617807B03C0728EB41A443C5"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/TaskLayout0322Probe.java",
+      "bytes": 2143,
+      "sha256": "408C628F70CF4CBEA0016DF0452A3320B16AD2B10D5BC79A5DFBE17D7371C70F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/gui/UtilityWindow0324Probe.java",
+      "bytes": 9563,
+      "sha256": "5F55BC682E63B74F6A8AE00482DB2ABF7D62631EE5B7B0A1893AD68570CEA2DB"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/LogicInputs0337Probe.java",
+      "bytes": 7501,
+      "sha256": "2DEF6114769E470201A1E883226CC3B014BAD6273E72BCBE51BF55F1CCBDB169"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/NetworkQueueRaceProbe.java",
+      "bytes": 3766,
+      "sha256": "61CF71DD2A697EDEF5905705BCB0DFF7ACCB8D148A9151D565AD5A57379239A0"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/Presentation0322Probe.java",
+      "bytes": 6794,
+      "sha256": "6DAFC46EFD155E577BEB392FCBF342C971EDDC4B2DE0949D581A0BD0A5C6EFD7"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/session/CanonicalSessionClientModelProbe.java",
+      "bytes": 14729,
+      "sha256": "5458B2BF34B51E16264D16090B38BA7BFE3157E7676BCFB32A20065E20C03AEA"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/session/Dialogue0333Probe.java",
+      "bytes": 9391,
+      "sha256": "619682AA3E2FB424FAAD828569957E3A583A385C63DB5BFF8DD4A91A6260B17A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/session/DialogueBacklog0332Probe.java",
+      "bytes": 2551,
+      "sha256": "B5FF98E899C4D69D9FE42A685E9AD7B4D1212FAD28B1346B23C7027BA04CD821"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/session/DialogueFontScaleProbe.java",
+      "bytes": 3191,
+      "sha256": "50D1E385A01BE0180CC4BA0CA4AB2958E6BE7B0B54120AF6482ABDB1A81EF05D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/client/TaskTracking0332Probe.java",
+      "bytes": 1902,
+      "sha256": "A91BE03982B5A8686047CB10CB0BAFD1D2E2592813AC56D9DF2413CEEB557D82"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/command/CanonicalSessionCommandProbe.java",
+      "bytes": 2243,
+      "sha256": "3E84CD775536576FEECD4955CF19D5F63203046E0E1DE8295B70D2299C53EFF8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/command/CanonicalStoryCommandProbe.java",
+      "bytes": 2381,
+      "sha256": "8A00BDC7F974759EE67ABCB17729A56194264E6A9767068EEB6AD437CE5963E7"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/command/CanonicalTaskStage4SurfaceProbe.java",
+      "bytes": 3901,
+      "sha256": "2ADA66F3A8A96DC7C3C8CE6D98DF6236D5B20A1C99079DAC422DA1CA5849AAF4"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/compat/customnpcs/CustomNpcActorBindingProbe.java",
+      "bytes": 5787,
+      "sha256": "09310DF8769289582EE792450B12CB8244B910C31EE9DFA334BC53FECB3E4DF5"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/config/RpgRuntimeDirectoriesProbe.java",
+      "bytes": 9029,
+      "sha256": "151592A87A2E0D8C001F806FB9EDB687415077D1F0A5136ACD39951E6ACD9A1A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/creator/CreatorNetworkDiscriminatorProbe.java",
+      "bytes": 4060,
+      "sha256": "A26DB8AC8C2EE06F6AD83E153A61240E90894D7CD82615B9275918983FEEC1DE"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/creator/CreatorUxProbe.java",
+      "bytes": 12358,
+      "sha256": "C61BB937B52EA2E9EAC8FB3D98683CD8A6399F4819888DDF5747B1C2BF89AA9A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/creator/RespawnPresentationCacheProbe.java",
+      "bytes": 1594,
+      "sha256": "C7E9F5007B6096A41E052B9037F28189B1B766233C8AA6A85C644E1C3116C62A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/creator/TaskCandidate0400Probe.java",
+      "bytes": 3057,
+      "sha256": "2838D1D725B81F2AD71C058F00F1D43890F4470C69F6A5123740782A07B3BD6D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/creator/TaskHistoryReferenceProbe.java",
+      "bytes": 10013,
+      "sha256": "86BA7318B5C59B86C858CDC52E97AFC566BF7A0812C60A1EA0D69EB1825EAE52"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/creator/TaskNotificationsPlanProbe.java",
+      "bytes": 17034,
+      "sha256": "66330335024B606E3BCABAC1DD6AEA50490FB56B18258EA2530AFA2EE75A5F19"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/diagnostics/Inspection0334Probe.java",
+      "bytes": 23463,
+      "sha256": "3C440E983AA70911D5A6205EE4C10997161413317696CEA65DC6B1C973123338"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/diagnostics/InspectionBoundary0334Probe.java",
+      "bytes": 8337,
+      "sha256": "285499F94D8774ADAB351AD63334511810E67F71F9B49B8A24BD49224C02724C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/diagnostics/InspectionClient0334Probe.java",
+      "bytes": 3286,
+      "sha256": "1D5FBDBE0ACCA1783041C9CACB81932555E425725D5456DD81DC0DBFCE08ABEF"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/entitytools/EntityToolsStage5Probe.java",
+      "bytes": 12066,
+      "sha256": "47AF6AA7A0D02ACAE9C1CBF2DFCBC3F677F9CB60F0DC3FB0A24A0556028890CA"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/gramophone/Gramophone0332Probe.java",
+      "bytes": 4741,
+      "sha256": "23AE5CAF80AD9EDEE4CF33D7D809E708C5BC1A0B3EA8B02EAF6CABE43F806A99"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/gramophone/GramophoneCachePolicyProbe.java",
+      "bytes": 8609,
+      "sha256": "3320E2239DB0F07A88837E4BC722F0D4002F4B8BF48E7316D727613B23D229D8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/gramophone/GramophoneDownloadCompletionProbe.java",
+      "bytes": 5081,
+      "sha256": "4F37C2991897B2B0197B947911EE02EABF97448024C8C6F70AE6DB0E0AF6215D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/gramophone/GramophoneRangeMetadataProbe.java",
+      "bytes": 1458,
+      "sha256": "C8104C702C7350A88FAC735432F91F99A7C0E6F8E5482922041DC8E860EBB983"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/gramophone/GramophoneRemovalProbe.java",
+      "bytes": 3056,
+      "sha256": "C1D48191897A7DDB8C2E6D82A670F008E0336F82A16AD60DB0D5C4CCAE90AA1F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/gramophone/GramophoneStorageProbe.java",
+      "bytes": 11661,
+      "sha256": "5252314826B3919ED56DB67C955AF6DFD8618E2CAFB91C22BC9644E07CE28488"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/graph/canonical/CanonicalGraphResourceLoaderProbe.java",
+      "bytes": 24390,
+      "sha256": "6B9F66A1E9885971ED2FCAA4D1BD549F7CDA3BAF41B5831FF009DCB2F94D6E2E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/graph/canonical/CanonicalProjectContentLoaderProbe.java",
+      "bytes": 20940,
+      "sha256": "73E3DAD0FBBA9D84A3B317E3A63A1F3441487306BCDD7A265E5477C7F2B424FB"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/graph/canonical/CanonicalStoryMembershipLoaderProbe.java",
+      "bytes": 15222,
+      "sha256": "FDBE3B56185020E8DE141EF5E826E2930D0ED34ADAE2D38E5B831D8B28E93C4E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/graph/canonical/StoryBoundary0331Probe.java",
+      "bytes": 8301,
+      "sha256": "AB2AE04433AB58F959A5FE01ED4067887AFFE9C444558DD474D114B681DC4675"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/graph/canonical/TaskTargetContract0400Probe.java",
+      "bytes": 5443,
+      "sha256": "FBED441012C17041FE05FA09157644016E7F3E418688E4449AAB9A01C762F99D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/CurrentDynamicContentProbe.java",
+      "bytes": 1727,
+      "sha256": "CE0D95F4B9E21BE290AF0898850E228ABD75519D79EAFF30BDCD5684E71DEF7D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/CurrentNominatorWireProbe.java",
+      "bytes": 4444,
+      "sha256": "A8146D2F3D9E15AF55F4720034142D5FDEEE6144BB42F6F8108E2B68D574DA3D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/CurrentResourceIdentityProbe.java",
+      "bytes": 8391,
+      "sha256": "2A934AD8A5287F3368518A30B2BA8A7AC6D62423116CCB7375DCED48C8CC16A9"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/CurrentWorldIdentityProbe.java",
+      "bytes": 5384,
+      "sha256": "063256C67F70F17BBADC0924196613EF281BAD4A6321C7FE7EE5CD92205B34AB"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/EntityDgrIdentityResolverProbe.java",
+      "bytes": 7066,
+      "sha256": "38DE9C7F6F1881FE32370E0A1A7A3C2DFBB5F7EAFC0705E8916E877635A4B220"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/NpcIdentitySavedDataProbe.java",
+      "bytes": 6331,
+      "sha256": "28DB42E1102BF2D929763C4C42FA8A3B2494D9DBA751849F1A92BEF8779875F9"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/identity/StoryIdentityContractProbe.java",
+      "bytes": 5132,
+      "sha256": "081304C49883650A0F74D3BC26DED145168F2331E3808A39A768A6AC421A4300"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/item/identity/ItemIdentitySavedDataProbe.java",
+      "bytes": 5353,
+      "sha256": "2F17DD7ADDA40EA6F0AB2AB44DD784DF457D84B9A2D2E4D3D0C713BB87B6B1FD"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/Construction0335Probe.java",
+      "bytes": 30283,
+      "sha256": "30AA00EFFE5C2963487E1F14F374D2ABFDECF4D5A096DC6AE5752894C2A8DA3B"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/MediaLifecycle0402Probe.java",
+      "bytes": 6592,
+      "sha256": "DE4716277D85F39D62D38176F30B93836217F3CFE16EE4D70299AA910B1B7D95"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/MediaQueue0334Probe.java",
+      "bytes": 2708,
+      "sha256": "9294F86D0B8111BF8393A73263098E210DF0B2D79E18DF9607EF13E2CB1A677D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/MediaTransfer0330Probe.java",
+      "bytes": 6251,
+      "sha256": "9E6485FF8D10F8AE7CB5887BE8FBE7F23D5FA1000CA53EDCA65DCD0344532F6B"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/MediaTransferWindowProbe.java",
+      "bytes": 3540,
+      "sha256": "9817F3335411D8CF2E25A04FADE4DB7FD4F09167812967BB99C8D2C3F0DA691F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/SessionPresentation0330Probe.java",
+      "bytes": 15167,
+      "sha256": "1884EA57146EACA2C366772E62782C25B68C16A5652CA991142FDB51C477194D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/StoryMediaCacheIndexProbe.java",
+      "bytes": 9946,
+      "sha256": "F8E0F7B0F266DA1A70F609373A8B492EFCFDD8891997EB3695ECA90052D86DF6"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/media/StoryMediaServerProbe.java",
+      "bytes": 4543,
+      "sha256": "BFD528B6F6A4D2A2EA40D2856D628C13456A38B3AA5B5B59363DD5E2519091D9"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/network/B4NetworkDiscriminatorProbe.java",
+      "bytes": 7143,
+      "sha256": "103374FC49601F8DC61A5327A6E1E9BFEA0A7C6B4DB5EAEC0CF82E92EEB36963"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/network/MainThreadQueue0402Probe.java",
+      "bytes": 6132,
+      "sha256": "9F857776FFEF802F8F9EF3D68116E7DB798DB67BC4087B4F04E21129E8F64A10"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/network/message/canonical/CanonicalSessionNetworkCodecProbe.java",
+      "bytes": 19557,
+      "sha256": "7D17E8139592A4EA82F11024B153AF330061D6A6B288D7BF5C28484E0A79FABA"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/network/message/canonical/CanonicalStoryChooserCodecProbe.java",
+      "bytes": 6313,
+      "sha256": "0AC93B8EB8F5592BEBF5D7A33CFA056FDF10C21E1BB9F1098CABA338D438DF2B"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/network/message/entitytools/CopierTemplateActionCodecProbe.java",
+      "bytes": 2165,
+      "sha256": "558BA1499A882F600FB34FE58210C7C64EAA7BB8CA23278809E16F7B8C9953DB"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/container/NominatorItemContainerProbe.java",
+      "bytes": 9591,
+      "sha256": "3166D9609A833073B6810478D73362476415D7E63ACEB65EB85F307F52097749"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/Nominator0323Probe.java",
+      "bytes": 11735,
+      "sha256": "661930C39E12CDCBFB7FEA2AF703B2D1CAF7A6569608B1FF81A5A304D4FF33B8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/Nominator0400Probe.java",
+      "bytes": 13043,
+      "sha256": "FDA61193455F2B9784DC341B3E9F719DE148FECB9A6D0144DD38A986049680D9"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/NominatorCapacity0401Probe.java",
+      "bytes": 17920,
+      "sha256": "0F5343FCF1ED374DFBF447282493A04602C5E9683158E22727170C3296C4C715"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/NominatorCurrentActions0400Probe.java",
+      "bytes": 15567,
+      "sha256": "3296863A88FD205DF4241D9AC6DD8FE14E608FC563BB546E679254671674B8C5"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/NominatorFailureBoundary0400Probe.java",
+      "bytes": 5796,
+      "sha256": "F54FAD3FFB8B65F42C885C5C6C74543C4E6F1DE1406382C0DE92503A09D4D61F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/NominatorStage4Probe.java",
+      "bytes": 12032,
+      "sha256": "281A3AAE4AE92BFCCB3EBA4591AD5E488CEE4066150B7E0DEF3D9EC2C66CCB94"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/nominator/StorageBaseline0401Probe.java",
+      "bytes": 3555,
+      "sha256": "AC602F78C588F2D4BC1B51CE9EB2E672DF11CA1E17188735DF415E86E998DB6D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Scoped0402TraversalGuard.java",
+      "bytes": 1459,
+      "sha256": "D23C1051CA17A32BE10B7B0EDC4E2270DE0E1BFCBFE7620DBC5270A4878BF183"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402ClientStats.java",
+      "bytes": 989,
+      "sha256": "C59E9B622111F035519668AD48ECE2A1B89D3A2CAC2009237338E94652129E4C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402Core.java",
+      "bytes": 811,
+      "sha256": "6B81591745688C237B2668CAF3F5FC87732E692A993341C6AEA35257938DF8E3"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402CrashStopVerifier.java",
+      "bytes": 1504,
+      "sha256": "3495A59394D7CC0AF4463DA458A3603B2023EC0133F3A63A85551E90504B01A9"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402InteractionStats.java",
+      "bytes": 2123,
+      "sha256": "75E03514FE0694DD6B9F5AE46B29674B5C4814170EFC26453AEE870C1D4BF7F5"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402PendingNativeVerifier.java",
+      "bytes": 14903,
+      "sha256": "7C66F58F09FE56885F76CBA7B0DF46B1A6D058618C1A39C53774C4871297C074"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402Reflect.java",
+      "bytes": 1263,
+      "sha256": "D453180F4690118CFA52DC99CF91640CF14D91885FF2CB3DB8C9B6373391F855"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402TestFiles.java",
+      "bytes": 1246,
+      "sha256": "ED99401CA28C705F8379B0E2D1FB1D65251C58BE51BFD8A205320A6D645A9011"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402TickStats.java",
+      "bytes": 2992,
+      "sha256": "F1C9888D83071A535298F261AAFE301A462F8215915BC13CBD67AAF4BDB9BC91"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/Stability0402Transformer.java",
+      "bytes": 12857,
+      "sha256": "81D051B3E099C190E320E5C182B6ACA9748A901B909F4C62C4DA71EA2AA6AA6E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityAuthored0402Verifier.java",
+      "bytes": 46770,
+      "sha256": "97222C4AB17390F91DC8452FAF9DC70D873E35DE34AF3A04C2C3AEFAF0F6A30D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityBoundary0402Verifier.java",
+      "bytes": 11153,
+      "sha256": "1ED6F20192426F309490A1078A60DA2D44FB94EEDFBBA190A44C5F22BD714EC0"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityClient0402HudFixture.java",
+      "bytes": 7954,
+      "sha256": "7BFBC63D61D225B46E82088941B50B87B58CA4838389CE780D84D47968333E3C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityClient0402Observer.java",
+      "bytes": 11902,
+      "sha256": "1F98ABA87253932A796639C4428C4A836C0B006456348D361FEA1E06AE95609F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityClient0402PacketFixture.java",
+      "bytes": 5340,
+      "sha256": "FEB2B591563494DA3DF8FF0A1D048AC138C1F48E90BB2E3C56C3579565C86914"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityMixed0402Fixtures.java",
+      "bytes": 8463,
+      "sha256": "8561188DFC5CDBA2F38B28DB832395035310583C1C187C9779B00C7A9B3E723F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityMixed0402Verifier.java",
+      "bytes": 29356,
+      "sha256": "32E86AC32FB54436F575204E9CC25ED9414835228F1524BFBD764DDDB29AD66A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityQualification0402Verifier.java",
+      "bytes": 16491,
+      "sha256": "075C19766D918CB77650B19CB279544DE0BF261B4F5E4724706AE4625EA95020"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityServer0402Driver.java",
+      "bytes": 30129,
+      "sha256": "E6A63C11C40F5A08B836CAC0A608AA7606631AA5B7F13F9B016DF1DC6694B856"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityWorld0402Verifier.java",
+      "bytes": 10192,
+      "sha256": "BC6BE4862F89061633DECEF9C31FF7C4D5A3B05728E1F21AF724DD6908DF2BE3"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StorageProbeSupport.java",
+      "bytes": 2995,
+      "sha256": "B677B05E092DA733C526B03319E516ABA4EC70448FDD55731200D0F2A7D650FA"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StorageServer0401Driver.java",
+      "bytes": 20024,
+      "sha256": "8738663A8180D3F9A0A60B099BF362BA12F6DD17BEAE887A74886031E6CF23BA"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/player/PlayerRpgSavedDataProbe.java",
+      "bytes": 2789,
+      "sha256": "A92B7FAB5A539930305F90CCCC9A853BB3D6D389B0B8A155382CD7D936CF3594"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/ActorSchema3ProjectRepositoryProbe.java",
+      "bytes": 4263,
+      "sha256": "0751CA22E6406FC621D280D56124A0FDB32437A3A47545D9E2703F66A1F0B24D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/CanonicalProjectRepositoryProbe.java",
+      "bytes": 6575,
+      "sha256": "5F258462E446D383644E22D20573F4A547A0DCA593BAF4B188CEDDA9E0DF3C7F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/B4ExternalArchiveSetProbe.java",
+      "bytes": 6579,
+      "sha256": "7FC5E989838BB0E9FF3D87B932876EEB839C28474C7536BA7AF5031B5F471130"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/B4ExternalPackageReferencesProbe.java",
+      "bytes": 17231,
+      "sha256": "8C676F8419A0458B22F116E763446D0D2D3209FEEB689A27A1F2E7E0F56588D8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/CanonicalOnly0400PackageProbe.java",
+      "bytes": 5124,
+      "sha256": "489FB389177D889F89B8F3831CA6F5ED3E4BE807FCEF1E4498B053DBF594FF13"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/CurrentPackageProbeFixtures.java",
+      "bytes": 5268,
+      "sha256": "DC1FB623B21A04EA70EB460FC82761A90F0581C9964FDDF17A6E3B4428B1945A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/DgrsArchiveReaderProbe.java",
+      "bytes": 10073,
+      "sha256": "EEF8B0278CF48562F06FB1C522C549C3EE68F6EC62356A7A305409DD8722C42F"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/DgrsMediaLifecycle0331Probe.java",
+      "bytes": 20137,
+      "sha256": "0707DF56DD4FB8143F2377B3D5FD97FE2BB02B7267DDD62C7F6B6BA0AC4FE8B8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/DgrsMediaStreaming0331Probe.java",
+      "bytes": 8865,
+      "sha256": "26174BB391C4F0C4DEAF4FAB614E75207C3DBD0F6B0BAA0942232400A331FF7B"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/DgrsPackageRuntimeProbe.java",
+      "bytes": 37457,
+      "sha256": "B8ADB96999E1999E85736FD11D1C9DE66C1B818E00C042F6CD776B699BBEA6A5"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/MediaLatency0334Probe.java",
+      "bytes": 7028,
+      "sha256": "9FA0A74C989A8158CAFD3943873C9560C4144BD286864614723DD8F909605483"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/MediaPackage0330Probe.java",
+      "bytes": 3901,
+      "sha256": "DBB56C3D5CE1427C667E1D695891DBBA32972FD6F94646E50B7C868A076D0B9E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/MixedPackages0402Probe.java",
+      "bytes": 10206,
+      "sha256": "A775E6A3129C9AD067D626CAAE2447279A9B0919AA0788A2AC5222A40555F9B2"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/OfflineOriginProbe.java",
+      "bytes": 3364,
+      "sha256": "925ADCD49432DD9F6541B36065CF041828F3C241201C240C6447C9855DC2A569"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/PackageRuntimeMigrationPlanProbe.java",
+      "bytes": 2359,
+      "sha256": "F8C6692BE14D712ACEC7FCA77E4F4EDA6CDAE5312F2C569D415EA5A6E13D86D8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/SessionPageMediaProbe.java",
+      "bytes": 4557,
+      "sha256": "02E8D043571C023FD721561BDE5B1AE6567A4980F37ECE710E0A2DAAE25AB0F0"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/StoryGroupPackageProbe.java",
+      "bytes": 26628,
+      "sha256": "028C7165CA44F7EABC68F48273B81B5851C338DFD5B6CB1C92D4845A9044BC03"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/StoryMemberFingerprintProbe.java",
+      "bytes": 3050,
+      "sha256": "A3B650C880B49E9FDE898B955494B9B3E2487FD6E4DAA998BF6118526D413AEB"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/StoryPackageDiagnosticsProbe.java",
+      "bytes": 19225,
+      "sha256": "7F925454FE355CD1BB72E0A41ECFBF371DEF27C537BB6B6416AA525E6AC52A2B"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/StoryPackageGenerationProbe.java",
+      "bytes": 9956,
+      "sha256": "0C1EAED3566797E99BCBC5DF4CC108997AC72B6C5A5D473E63928BDF9FF1B506"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/packages/StoryPackageLoaderProbe.java",
+      "bytes": 16733,
+      "sha256": "2E4357CF55EE95A248CCF7BAAE06FD4C353D5D667D8B3F233B8726DE9B13AE9C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/project/ProjectRepositoryProbe.java",
+      "bytes": 4557,
+      "sha256": "CDD5ADF6FC6BD6D68EE5F8DB069A40016E3C0709CB37F7B30C1F82966DFB04DB"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/forge/CanonicalSessionForgeProbeProject.java",
+      "bytes": 7020,
+      "sha256": "4708AB1D7C24FE8272BCF020D500F01F50F46F19C588BB73440D50C423D79860"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/forge/CanonicalSessionForgeRoutingProbe.java",
+      "bytes": 10349,
+      "sha256": "C79BA99C34507FEB115A39B60F7F9455CD688D49775B7326B4813834F9649BD1"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/instance/CanonicalSessionInstanceProbe.java",
+      "bytes": 22380,
+      "sha256": "38D91E3C731092CD0D3BF48D8BE341D4974EF00B62C200442C205EA707CB7FB0"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/persistence/CanonicalSessionSavedDataProbe.java",
+      "bytes": 34274,
+      "sha256": "FCC1D7F3B6F5D0248B10936A9763E0914EEA9B51ADBC063372C18B6829F77F23"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/persistence/SessionStorage0401Probe.java",
+      "bytes": 11652,
+      "sha256": "786244D9FD8CBE349DAAA8062C73946859366B5E9F7115D7A533A5EB8599EE2E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/runtime/CanonicalSessionRuntimeProbe.java",
+      "bytes": 51909,
+      "sha256": "401933BDCA5981C7D49DC13D88A58407719CB875BA66837041E9802D4FA32A89"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/session/server/CanonicalSessionServerServiceProbe.java",
+      "bytes": 35354,
+      "sha256": "D72387ED28CF4D93BB0ED30C05D010114B0FBF5E779115CAC82CEAE06F99CA96"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/CanonicalStorySessionCompletionRouterProbe.java",
+      "bytes": 15230,
+      "sha256": "4C28A8CE2C2CD144C8B5105498E9BB7D2EBD1A02B09ABEF1ED293D4827DD7B9E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/forge/CanonicalStoryForgeCoordinatorProbe.java",
+      "bytes": 62924,
+      "sha256": "E0A0C1FF0FF33521A3E10AE02B0358C9C245D79A0BDC97138ED451EBDF7ABA16"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/forge/Stability0402Fixtures.java",
+      "bytes": 12848,
+      "sha256": "03416209FA6AE7B881329DA1DC5A873B69EEE43F864AE88DB1000A33AFB1E508"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/forge/Stability0402Probe.java",
+      "bytes": 8262,
+      "sha256": "A20A32E767C1CEAE84BF6CCA9D9158FC8A3E5DBE8ACCF67CA0C015A6F3961DDF"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/forge/StabilityBinding0402Probe.java",
+      "bytes": 8427,
+      "sha256": "6FBD65C085ECCFBD1FEA70589FEB8CC596F23EF917AB4A56CB1F57168D1F384C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/forge/StoryAction0330Probe.java",
+      "bytes": 6485,
+      "sha256": "4B39A26310CEA6BD65DACCEE276457C76454088BF687446C5AB907A1532E723E"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/forge/StoryRecovery0402Probe.java",
+      "bytes": 15766,
+      "sha256": "C8DE9CCC8731496219FF776E456D6B5D211C9E2656FF0218818B53AC7FE62979"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/instance/CanonicalStoryInstanceProbe.java",
+      "bytes": 19763,
+      "sha256": "D194B50518C5759136D36C82332623013CF82F3A01B6A4EA80EC0578A02708E4"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryActionConfigurationProbe.java",
+      "bytes": 4577,
+      "sha256": "4562526FF950E7A323996F31B1BACB41EE82BD50C81A98FC3210A8A7BCFA8C31"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/runtime/CanonicalStoryRuntimeProbe.java",
+      "bytes": 23602,
+      "sha256": "C0AF96B8EBD2F4F7EECF4EC969D754872BE07391ED5CEBA796ECE3C7E5AD9473"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/runtime/Repeat0334Probe.java",
+      "bytes": 3487,
+      "sha256": "4F11D9D6B77EE74859852D388650E80246344B82326A61380787581A651FE3A4"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/runtime/Title0330Probe.java",
+      "bytes": 7855,
+      "sha256": "D55E051C55C6663C11B5EAF6C30AA1870DC4B8A0EFF34ED79C6099CD5B70052A"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/server/CanonicalActorArbitrationProbe.java",
+      "bytes": 12054,
+      "sha256": "664C80C7E6417D6C2E0D27C39410E4281C369272E4D9EBE0779051F0A088B3F5"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/server/CanonicalStoryServerServiceProbe.java",
+      "bytes": 41654,
+      "sha256": "2DAE756ADF9A20C3BF51840C1E47E2281C90E81CD23063F37ECEB60D20CB0309"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/server/RuntimeInteractionUi0336Probe.java",
+      "bytes": 20972,
+      "sha256": "B9AE084227FB5BABDC2CC6859741747A8D58D811E01E222D3E620997BA40F934"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/story/canonical/server/TavernRepeat0336Probe.java",
+      "bytes": 17393,
+      "sha256": "FB99C1F8792C6EC624BFED874D82F9EAE5B0FF14CBCE895CDE175D59E05CFF07"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/forge/CanonicalTaskForgeProbe.java",
+      "bytes": 21734,
+      "sha256": "1B2C318BAF77BB095E2CFF5BAFD35D18380D41BBC3C76C7E0C51D4A1C9EC4BB3"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/forge/MixedBusiness0402Probe.java",
+      "bytes": 23712,
+      "sha256": "A293008C4860152C34B308D877413422D847A34BB345557BB9F704DF679FB208"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/forge/Task0330Probe.java",
+      "bytes": 18217,
+      "sha256": "87EA9A4BD8F673CB754A5F57AC786EE161C6699A32EFA60F8C3E67D7DE59FA8C"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/forge/Task0331RuntimeProbe.java",
+      "bytes": 11660,
+      "sha256": "EC7B44F1EC0FEFAFF240B7E457795FD8DEF40869E4F9F115EAC992295CD450D2"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/forge/TaskReward0330Probe.java",
+      "bytes": 15695,
+      "sha256": "4DCB80584770C191D0394C652330A43235DEB4706D5AF7C43D63A5E9C99C4D94"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/instance/CanonicalTaskInstanceProbe.java",
+      "bytes": 26017,
+      "sha256": "2F458BED801EE35087736B8ADD53E71F6B361425CBA5C82E65CD6932BA7C3526"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/instance/TaskHotPath0402Probe.java",
+      "bytes": 11235,
+      "sha256": "04A417DE0662535264FD5D67EDD78574B8061AAFFC46EA6484C72DFC16C74DF8"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/journal/CanonicalTaskJournalProjectionProbe.java",
+      "bytes": 32234,
+      "sha256": "2258ACEE7F05842AFB3444596B2AB983B85A476C5FD7A6F05C2965026439C836"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/journal/CanonicalTaskView0400Probe.java",
+      "bytes": 1872,
+      "sha256": "7637F1CDDE4AF7DBEC0A0FC8231A9F7AC81A985CBC4F2073705303C5F167A2F0"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/persistence/CanonicalTaskEventPersistenceProbe.java",
+      "bytes": 40627,
+      "sha256": "676C776FD8CF9D0E1DE7DC60FD0FD7A3A44C68F2FAC43B39AD92C493D1EBAC76"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/runtime/CanonicalTaskRuntimeProbe.java",
+      "bytes": 51766,
+      "sha256": "585FE89F26A6A05B01F53865BBE4FD5D71B711D09CD26E97475838C086548B4D"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/task/runtime/PublicOutputPriority0336Probe.java",
+      "bytes": 15007,
+      "sha256": "2C34B03F122155F9FB6683EBE6B02B34576541F137D58A19E6840395A22BD3E0"
+    },
+    {
+      "file": "src/test/resources/dynamic-content-0334.json",
+      "bytes": 3902,
+      "sha256": "D8A12372B6CC6AA28A37496802B82BED0573281D2208B700D20AA5EF4646639B"
+    },
+    {
+      "file": "src/test/resources/gramophone/tone.mp3",
+      "bytes": 16761,
+      "sha256": "5B7DA878274DEFA96951DF0F41B08EE95A04DB8458F8A20EA40AF29043136978"
+    }
+  ],
+  "native_final_validation": "Recorded separately with exact process hashes",
+  "release_created": false
+}

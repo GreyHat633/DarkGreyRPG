@@ -356,17 +356,17 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         ItemCandidatePopover.begin();
         drawDetails(layout, mouseX, mouseY);
         updateFooterButtons();
-        if (!trackingMessage.isEmpty())
-            fontRendererObj.drawString(trackingMessage, layout.panelLeft + 10, layout.panelTop - 12, DgrUiPalette.TEXT);
+        if (!trackingMessage.isEmpty()) DgrUiText
+            .left(fontRendererObj, trackingMessage, layout.panelLeft + 10, layout.panelTop - 12, DgrUiPalette.TEXT);
         UtilityWindowChrome.drawGrip(windowGeometry);
         super.drawScreen(mouseX, mouseY, partialTicks);
         List<String> candidateTooltip = ItemCandidatePopover.draw(width, height, mouseX, mouseY);
         if (candidateTooltip != null) itemTooltip = candidateTooltip;
-        if (itemTooltip != null) drawHoveringText(itemTooltip, mouseX, mouseY, fontRendererObj);
-        if (historyFailed || detailFailed) fontRendererObj
-            .drawString("加载失败，点击重试", layout.panelLeft + 96, layout.panelBottom - 18, DgrUiPalette.SECONDARY);
-        else if (historyLoading && completedView || detailLoading && selectedTaskId != null)
-            fontRendererObj.drawString("正在加载…", layout.panelLeft + 96, layout.panelBottom - 18, DgrUiPalette.SECONDARY);
+        if (itemTooltip != null) DgrUiText.tooltip(fontRendererObj, itemTooltip, mouseX, mouseY, width, height);
+        if (historyFailed || detailFailed) DgrUiText
+            .left(fontRendererObj, "加载失败，点击重试", layout.panelLeft + 96, layout.panelBottom - 18, DgrUiPalette.SECONDARY);
+        else if (historyLoading && completedView || detailLoading && selectedTaskId != null) DgrUiText
+            .left(fontRendererObj, "正在加载…", layout.panelLeft + 96, layout.panelBottom - 18, DgrUiPalette.SECONDARY);
 
     }
 
@@ -449,8 +449,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private int listRowHeight(CanonicalTaskLayout layout) {
         return Math.max(
             layout.stacked ? STACKED_ROW_HEIGHT : ROW_HEIGHT,
-            (int) Math.ceil(fontRendererObj.FONT_HEIGHT * darkgrey.rpg.client.session.PlayerUiPreferences.textScale())
-                + 10);
+            (int) Math.ceil(fontRendererObj.FONT_HEIGHT * DialogueFontDrawing.scale()) + 10);
     }
 
     private void drawList(CanonicalTaskLayout layout, int mouseX, int mouseY) {
@@ -459,7 +458,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
         int visible = Math.max(1, (layout.listBottom - layout.listTop) / rowHeight);
         taskScroll.bounds(tasks.size() * rowHeight - (layout.listBottom - layout.listTop));
         if (tasks.size() == 0) {
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 completedView ? "暂无已完成任务" : "暂无进行中的任务",
                 layout.listLeft + 8,
                 layout.listTop + 20,
@@ -489,14 +489,15 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                     layout.listRight - 4,
                     top + rowHeight - 2,
                     DgrUiPalette.SUB_PANEL);
-                double textScale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
+                double textScale = DialogueFontDrawing.scale();
                 String title = task.getString("title");
                 if (title.length() == 0) title = "未命名任务";
                 int titleX = layout.listLeft + (story ? 22 : 28);
                 title = fontRendererObj
                     .trimStringToWidth(title, Math.max(1, (int) ((layout.listRight - titleX - 8) / textScale)));
                 int textY = top + (rowHeight - (int) Math.ceil(fontRendererObj.FONT_HEIGHT * textScale)) / 2;
-                if (story) fontRendererObj.drawString(
+                if (story) DgrUiText.left(
+                    fontRendererObj,
                     expandedStories.contains(TaskStoryRows.key(task)) ? "▾" : "▸",
                     layout.listLeft + 8,
                     top + (rowHeight - fontRendererObj.FONT_HEIGHT) / 2,
@@ -526,8 +527,12 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
             detailCacheKey = null;
             detailHeight = 0;
             detailScroll.jump(0);
-            fontRendererObj
-                .drawString("选择一个任务查看详情", layout.detailLeft + 8, layout.detailTop + 8, DgrUiPalette.SECONDARY);
+            DgrUiText.left(
+                fontRendererObj,
+                "选择一个任务查看详情",
+                layout.detailLeft + 8,
+                layout.detailTop + 8,
+                DgrUiPalette.SECONDARY);
             return;
         }
         if (completedView) {
@@ -573,8 +578,12 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                 }
             }
             if (detailRecord == null) {
-                fontRendererObj
-                    .drawString("正在读取目标…", layout.detailLeft + 8, layout.detailTop + 8, DgrUiPalette.SECONDARY);
+                DgrUiText.left(
+                    fontRendererObj,
+                    "正在读取目标…",
+                    layout.detailLeft + 8,
+                    layout.detailTop + 8,
+                    DgrUiPalette.SECONDARY);
                 return;
             }
             task = detailRecord;
@@ -734,18 +743,18 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                             block.text,
                             slotsWidth < contentWidth ? contentWidth - slotsWidth - 8 : contentWidth)) {
                             if (textY + fontRendererObj.FONT_HEIGHT > layout.detailTop && textY < layout.detailBottom)
-                                fontRendererObj.drawString((String) line, textX, textY, DgrUiPalette.SECONDARY);
+                                DgrUiText.left(fontRendererObj, (String) line, textX, textY, DgrUiPalette.SECONDARY);
                             textY += lineHeight;
                         }
                     }
                     y += blockHeight(block, contentWidth);
                 } else {
-                    if (y + fontRendererObj.FONT_HEIGHT > layout.detailTop && y < layout.detailBottom)
-                        fontRendererObj.drawString(
-                            block.text,
-                            layout.detailLeft + 8,
-                            y,
-                            block.text.startsWith("§l") ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.TEXT);
+                    if (y + fontRendererObj.FONT_HEIGHT > layout.detailTop && y < layout.detailBottom) DgrUiText.left(
+                        fontRendererObj,
+                        block.text,
+                        layout.detailLeft + 8,
+                        y,
+                        block.text.startsWith("§l") ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.TEXT);
                     y += lineHeight;
                 }
             }

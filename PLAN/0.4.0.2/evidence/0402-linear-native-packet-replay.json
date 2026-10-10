@@ -1,0 +1,190 @@
+{
+  "status": "PASS_REAL_CHANNEL_STALE_CHOICES",
+  "layer": "N/C/S",
+  "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "driver_sha256": "6AB1AA08CB2F7C9320ADB1CA5FC86C152BE2817CA5541774E339F20D973B81C5",
+  "method": "Capture an enabled CHOICE from the real authored frame; native click accepts it. Send three copies after 60 client ticks through DialogueNetwork.CHANNEL.sendToServer while ACTIVE, then again after actual CNPC settlement.",
+  "network_scope": "Application-layer delay and duplicate messages over the real channel; no TCP packet-loss claim.",
+  "phases": [
+    {
+      "phase": "active",
+      "players_before_and_after": [
+        {
+          "name": "DGR402ClientF",
+          "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+          "inventory": 0,
+          "receipts": 6,
+          "xp": 21,
+          "dimension": 0,
+          "task_status": "ACTIVE",
+          "task_run": 1791587215402,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 0,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 0,
+            "node_a96eeee3cca8417bab363bba391a36a5": 0,
+            "node_f576e9772cf04d3a84c911888744bd62": 0
+          },
+          "story_run": 1791587204076,
+          "story_status": "ACTIVE",
+          "entity_changes": 1,
+          "additional_stories": []
+        },
+        {
+          "name": "DGR402ClientG",
+          "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+          "inventory": 0,
+          "receipts": 4,
+          "xp": 14,
+          "dimension": 0,
+          "task_status": "SETTLED",
+          "task_run": 1791580077810,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+            "node_a96eeee3cca8417bab363bba391a36a5": 2,
+            "node_f576e9772cf04d3a84c911888744bd62": 2
+          },
+          "story_run": 1791580040948,
+          "story_status": "TERMINATED",
+          "entity_changes": 2,
+          "additional_stories": []
+        }
+      ],
+      "server_tick_before": 7010,
+      "server_tick_after": 7100,
+      "responses": 3,
+      "awaiting_server_after": false
+    },
+    {
+      "phase": "settled",
+      "players_before_and_after": [
+        {
+          "name": "DGR402ClientF",
+          "uuid": "4a7bcdc2-fb8f-3e0b-bdf3-86652bfa78e7",
+          "inventory": 0,
+          "receipts": 8,
+          "xp": 28,
+          "dimension": 0,
+          "task_status": "SETTLED",
+          "task_run": 1791587215402,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+            "node_a96eeee3cca8417bab363bba391a36a5": 2,
+            "node_f576e9772cf04d3a84c911888744bd62": 2
+          },
+          "story_run": 1791587204076,
+          "story_status": "TERMINATED",
+          "entity_changes": 1,
+          "additional_stories": []
+        },
+        {
+          "name": "DGR402ClientG",
+          "uuid": "863ebe45-8c0f-3a51-bf6a-1218ef52e196",
+          "inventory": 0,
+          "receipts": 4,
+          "xp": 14,
+          "dimension": 0,
+          "task_status": "SETTLED",
+          "task_run": 1791580077810,
+          "progress": {
+            "node_1712dd7bebc34d1f869c184183ff87a9": 1,
+            "node_77df1de4ac2e4881a0fa752aede081e4": 1,
+            "node_a96eeee3cca8417bab363bba391a36a5": 2,
+            "node_f576e9772cf04d3a84c911888744bd62": 2
+          },
+          "story_run": 1791580040948,
+          "story_status": "TERMINATED",
+          "entity_changes": 2,
+          "additional_stories": []
+        }
+      ],
+      "server_tick_before": 7240,
+      "server_tick_after": 7320,
+      "responses": 3,
+      "awaiting_server_after": false
+    }
+  ],
+  "normal_native_replay": "F XP21->28, receipts6->8, two apples consumed once; G unchanged.",
+  "raw": [
+    {
+      "file": ".tooling/0402/Worlds/ClientF/packet-proof-8B-frozen-linear-closed-native-packet-fixture-events.jsonl",
+      "bytes": 1325,
+      "sha256": "F30010CCD76F98A57D06AB430EADEB0E22A968DCBFAB3E80A8A17AA279D27E98",
+      "original_append_only_file": ".tooling/0402/Worlds/ClientF/linear-closed-native-packet-fixture-events.jsonl"
+    },
+    {
+      "file": ".tooling/0402/Worlds/ClientF/packet-proof-8B-frozen-linear-closed-native-stdout.log",
+      "bytes": 22509,
+      "sha256": "611E9E52EA99985D35393563465E18A733D52B6EB1E3629A789C53DBEED64690",
+      "original_append_only_file": ".tooling/0402/Worlds/ClientF/linear-closed-native-stdout.log"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/cold-native-initial-state.json",
+      "bytes": 1546,
+      "sha256": "F561AB392BD29D4B0982DB26496D3260F9F2AF0F6E05F35325195CC4F909E9EB"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-before-stale-active.json",
+      "bytes": 1546,
+      "sha256": "B4CFC44A0AAA4406E31BC21677641B4825EB45053FE167C4CE66E956CF14C771"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-after-stale-active.json",
+      "bytes": 1546,
+      "sha256": "5F3B90856B063C065232D0AD403CA1E43EDF359036533C338C7DA244BD16D714"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-active-client-before.json",
+      "bytes": 815,
+      "sha256": "D14D2EC62D7F180513220D813511AFB1CB7FF2BD832704A9609C7BCCFC07CFB0"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-active-client-after.json",
+      "bytes": 815,
+      "sha256": "A0D75C55E77DEA12922AFAA84AA616F9B5B352CAE4CA160858FB6BC62D961911"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-active-log-offset.json",
+      "bytes": 86,
+      "sha256": "0EEEAC5A07AB4D74FED9218A686E977C156D97D574B436C819A332A3BE9FF38E"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-before-stale-settled.json",
+      "bytes": 1551,
+      "sha256": "A4994A2093FE1B983048917212510B92D232CFDE7FDE18B1087222EEE8FC40E7"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-after-stale-settled.json",
+      "bytes": 1551,
+      "sha256": "F37341E6545BE9960361DF5AB9A25055D25C0136F7593B0FF2C68ECF648B58E6"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-settled-client-before.json",
+      "bytes": 815,
+      "sha256": "E6EA6E3157C4C842F2A666DBE8CDB7700316FF7F154290B041AA19DB74436752"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-settled-client-after.json",
+      "bytes": 815,
+      "sha256": "EBD8EB84D25E4E5616CC526ADA5316435CE523B3C2785066CB7EF3EEDA056685"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/packet-settled-log-offset.json",
+      "bytes": 86,
+      "sha256": "7D8175AC3A95FD5C00C289854C3A5F5B02F3523AC988AF2194302159401DE2D8"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/native-source-target-before-entry.json",
+      "bytes": 812,
+      "sha256": "0E79EEB780D5707103E95F41D7891E3FB4993B57C95701A874359BE9997DF5B5"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-closed-60/native-source-target-before-submit.json",
+      "bytes": 815,
+      "sha256": "8FB2C40C20BA3C11BE130864BF464FE3B7C0201FADFF5A4888076740454D37F3"
+    }
+  ],
+  "append_only_logs_frozen_at_original_receipt_boundary": true,
+  "native_target_guard": "Shared network entity id of the actual dual-bound CustomNPC host; client-generated mob UUID is not used as a cross-side identity."
+}

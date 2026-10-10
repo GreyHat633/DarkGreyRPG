@@ -46,10 +46,15 @@ public final class GuiGramophone extends GuiScreen {
         left = geometry.x;
         top = geometry.y;
         panelWidth = geometry.width;
-        radius = new GuiTextField(fontRendererObj, left + 90, top + 59, 65, 20);
+        radius = new darkgrey.rpg.client.gui.GuiDgrTextField(fontRendererObj, left + 90, top + 59, 65, 20);
         radius.setMaxStringLength(3);
         radius.setText(oldRadius);
-        source = new GuiTextField(fontRendererObj, left + 12, top + 115, panelWidth - 24, 18);
+        source = new darkgrey.rpg.client.gui.GuiDgrTextField(
+            fontRendererObj,
+            left + 12,
+            top + 115,
+            panelWidth - 24,
+            18);
         source.setMaxStringLength(2048);
         source.setText(oldSource);
     }
@@ -61,7 +66,7 @@ public final class GuiGramophone extends GuiScreen {
 
     private void button(int x, int y, int w, String text) {
         drawRect(x, y, x + w, y + 20, DgrUiPalette.SUB_PANEL);
-        fontRendererObj.drawString(text, x + 5, y + 6, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText.left(fontRendererObj, text, x + 5, y + 6, DgrUiPalette.TEXT);
     }
 
     @Override
@@ -90,12 +95,13 @@ public final class GuiGramophone extends GuiScreen {
         card(138, 178);
         button(left + 12, top + 30, 110, enabled ? "播放：开启" : "播放：关闭");
         button(left + 132, top + 30, panelWidth - 144, redstone ? "红石控制：开启" : "红石控制：关闭");
-        fontRendererObj.drawString("范围（0–128）", left + 12, top + 65, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText.left(fontRendererObj, "范围（0–128）", left + 12, top + 65, DgrUiPalette.TEXT);
         radius.drawTextBox();
         button(left + 170, top + 59, panelWidth - 182, showRange ? "隐藏范围" : "显示范围");
         button(left + 12, top + 87, 100, local ? "来源：本地" : "来源：在线");
         if (local) button(left + 122, top + 87, panelWidth - 134, "导入 MP3");
-        if (local) fontRendererObj.drawString(
+        if (local) darkgrey.rpg.client.gui.DgrUiText.left(
+            fontRendererObj,
             fontRendererObj.trimStringToWidth(
                 draft.media == null && config.source.startsWith("local:") ? "已保存本地音乐；可导入替换" : draft.label,
                 panelWidth - 24),
@@ -113,16 +119,19 @@ public final class GuiGramophone extends GuiScreen {
             }
             int position = waveLeft + (int) (draft.seconds() / draft.media.seconds * waveWidth);
             drawRect(position, top + 139, position + 1, top + 163, DgrUiPalette.TEXT);
-            fontRendererObj.drawString(
+            darkgrey.rpg.client.gui.DgrUiText.left(
+                fontRendererObj,
                 time(draft.seconds()) + " / " + time(draft.media.seconds) + "（拖动试听进度）",
                 waveLeft,
                 top + 165,
                 DgrUiPalette.SECONDARY);
         }
-        fontRendererObj.drawSplitString(status, left + 12, top + 180, panelWidth - 24, DgrUiPalette.TEXT);
+        darkgrey.rpg.client.gui.DgrUiText
+            .wrapped(fontRendererObj, status, left + 12, top + 180, panelWidth - 24, DgrUiPalette.TEXT);
         String playback = !local && draft.media == null && !draft.label.equals("尚未导入") ? draft.label
             : GramophoneClient.status(config.key());
-        fontRendererObj.drawString(
+        darkgrey.rpg.client.gui.DgrUiText.left(
+            fontRendererObj,
             fontRendererObj.trimStringToWidth(playback, panelWidth - 24),
             left + 12,
             top + 203,
@@ -142,8 +151,13 @@ public final class GuiGramophone extends GuiScreen {
         UtilityWindowChrome.drawGrip(geometry);
         if (confirming) {
             drawRect(left + 8, top + 80, left + panelWidth - 8, top + 186, DgrUiPalette.WINDOW_PANEL);
-            fontRendererObj
-                .drawSplitString("确认保存并上传这首本地音乐？完整校验成功后替换旧曲。", left + 20, top + 95, panelWidth - 40, DgrUiPalette.TEXT);
+            darkgrey.rpg.client.gui.DgrUiText.wrapped(
+                fontRendererObj,
+                "确认保存并上传这首本地音乐？完整校验成功后替换旧曲。",
+                left + 20,
+                top + 95,
+                panelWidth - 40,
+                DgrUiPalette.TEXT);
             button(left + 20, top + 148, 130, "确认保存并上传");
             button(left + panelWidth - 90, top + 148, 70, "取消");
         }

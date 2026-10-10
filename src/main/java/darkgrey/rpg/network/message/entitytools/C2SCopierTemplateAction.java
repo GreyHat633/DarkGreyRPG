@@ -97,7 +97,7 @@ public final class C2SCopierTemplateAction implements IMessage {
         @Override
         public IMessage onMessage(final C2SCopierTemplateAction message, MessageContext context) {
             final EntityPlayerMP player = context.getServerHandler().playerEntity;
-            MainThreadScheduler.scheduleServer(new Runnable() {
+            MainThreadScheduler.scheduleServer(player, new Runnable() {
 
                 @Override
                 public void run() {
@@ -132,7 +132,7 @@ public final class C2SCopierTemplateAction implements IMessage {
                                     .isEmpty() ? "请求无效" : detail)));
                     }
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectServer(player));
             return null;
         }
     }

@@ -20,6 +20,7 @@ import darkgrey.rpg.story.canonical.runtime.CanonicalStoryStatus;
 public final class CanonicalStoryInstanceStore {
 
     private final Map<Key, CanonicalStoryInstance> instances = new LinkedHashMap<Key, CanonicalStoryInstance>();
+    private final Map<UUID, Map<Key, CanonicalStoryInstance>> byPlayer = new LinkedHashMap<>();
 
     /**
      * Active re-entry returns the existing instance without moving its cursor. A terminal ONCE instance also remains
@@ -47,12 +48,23 @@ public final class CanonicalStoryInstanceStore {
         CanonicalStoryInstance created = CanonicalStoryInstance
             .start(playerUuid, resource, triggerPortId, repeatPolicy, logicInputs, activationTime);
         instances.put(key, created);
+        byPlayer.computeIfAbsent(playerUuid, ignored -> new LinkedHashMap<>())
+            .put(key, created);
         return created;
     }
 
     public synchronized CanonicalStoryInstance get(UUID playerUuid, String storyId) {
         if (playerUuid == null || blank(storyId)) return null;
         return instances.get(new Key(playerUuid, storyId));
+    }
+
+    /** Commits one already validated staged cursor without restoring unrelated players. */
+    public synchronized void replaceValidated(CanonicalStoryInstance instance) {
+        if (instance == null) throw new IllegalArgumentException("Canonical Story instance is required.");
+        Key key = new Key(instance.getPlayerUuid(), instance.getStoryId());
+        instances.put(key, instance);
+        byPlayer.computeIfAbsent(instance.getPlayerUuid(), ignored -> new LinkedHashMap<>())
+            .put(key, instance);
     }
 
     public synchronized CanonicalStoryStartDisposition startDisposition(UUID playerUuid, String storyId) {
@@ -108,9 +120,28 @@ public final class CanonicalStoryInstanceStore {
         return instances.size();
     }
 
+    /** Detached player view; idle polling never snapshots unrelated offline cursors. */
+    public synchronized List<CanonicalStoryInstanceSnapshot> snapshots(UUID playerUuid) {
+        List<CanonicalStoryInstanceSnapshot> result = new ArrayList<>();
+        Map<Key, CanonicalStoryInstance> owned = byPlayer.get(playerUuid);
+        if (owned != null) for (CanonicalStoryInstance instance : owned.values()) result.add(instance.snapshot());
+        result.sort(Comparator.comparing(CanonicalStoryInstanceSnapshot::getStoryId));
+        return Collections.unmodifiableList(result);
+    }
+
+    private void removeFromPlayer(Key key) {
+        Map<Key, CanonicalStoryInstance> owned = byPlayer.get(key.playerUuid);
+        if (owned == null) return;
+        owned.remove(key);
+        if (owned.isEmpty()) byPlayer.remove(key.playerUuid);
+    }
+
     public synchronized boolean discardByPlayerStory(UUID playerUuid, String storyId) {
         if (playerUuid == null || blank(storyId)) throw new IllegalArgumentException("Player and Story are required.");
-        return instances.remove(new Key(playerUuid, storyId)) != null;
+        Key key = new Key(playerUuid, storyId);
+        boolean removed = instances.remove(key) != null;
+        if (removed) removeFromPlayer(key);
+        return removed;
     }
 
     /** Permanently discards active and terminal instances for every player of the selected Stories. */
@@ -119,18 +150,22 @@ public final class CanonicalStoryInstanceStore {
         int removed = 0;
         java.util.Iterator<Map.Entry<Key, CanonicalStoryInstance>> iterator = instances.entrySet()
             .iterator();
-        while (iterator.hasNext()) if (storyIds.contains(
-            iterator.next()
-                .getKey().storyId)) {
-                    iterator.remove();
-                    removed++;
-                }
+        while (iterator.hasNext()) {
+            Map.Entry<Key, CanonicalStoryInstance> entry = iterator.next();
+            if (storyIds.contains(entry.getKey().storyId)) {
+                iterator.remove();
+                removeFromPlayer(entry.getKey());
+                removed++;
+            }
+        }
         return removed;
     }
 
     public synchronized int activeCount(UUID playerUuid) {
         int result = 0;
-        for (CanonicalStoryInstance instance : instances.values())
+        Map<Key, CanonicalStoryInstance> owned = byPlayer.get(playerUuid);
+        if (owned == null) return 0;
+        for (CanonicalStoryInstance instance : owned.values())
             if (playerUuid.equals(instance.getPlayerUuid()) && instance.getStatus() == CanonicalStoryStatus.ACTIVE)
                 result++;
         return result;
@@ -154,6 +189,10 @@ public final class CanonicalStoryInstanceStore {
         }
         instances.clear();
         instances.putAll(replacement);
+        byPlayer.clear();
+        for (Map.Entry<Key, CanonicalStoryInstance> entry : replacement.entrySet())
+            byPlayer.computeIfAbsent(entry.getKey().playerUuid, ignored -> new LinkedHashMap<>())
+                .put(entry.getKey(), entry.getValue());
     }
 
     private static boolean blank(String value) {

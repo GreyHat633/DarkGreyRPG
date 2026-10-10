@@ -102,7 +102,7 @@ public final class CanonicalDialogueRenderer {
         int textTop = layout.bodyTop();
         if (!speaker.isEmpty()) {
             int nameWidth = layout.speakerWidth(portraitRef != null);
-            String name = font.trimStringToWidth("§l" + speaker, Math.max(1, (int) (nameWidth / scale)));
+            String name = font.trimStringToWidth(speaker, Math.max(1, (int) (nameWidth / scale)));
             double nameLeft = layout.speakerLeft(portraitRef != null);
             if (portraitRef != null) nameLeft += (nameWidth - font.getStringWidth(name) * scale) / 2;
             DialogueFontDrawing
@@ -151,8 +151,8 @@ public final class CanonicalDialogueRenderer {
             int hintY = bottom - 12;
             org.lwjgl.opengl.GL11.glPushMatrix();
             try {
-                org.lwjgl.opengl.GL11.glTranslated(0, 1.5 * Math.sin(System.nanoTime() / 400000000.0), 0);
-                if (model.automatic()) font.drawString("…", hintX, hintY, DgrUiPalette.SECONDARY);
+                org.lwjgl.opengl.GL11.glTranslated(0, Math.round(1.5 * Math.sin(System.nanoTime() / 400000000.0)), 0);
+                if (model.automatic()) DgrUiText.left(font, "…", hintX, hintY, DgrUiPalette.SECONDARY);
                 else {
                     // Outline triangle drawn geometrically, independent of font glyph coverage.
                     for (int row = 0; row < 5; row++) {

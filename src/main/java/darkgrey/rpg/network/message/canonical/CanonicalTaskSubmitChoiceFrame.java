@@ -111,14 +111,15 @@ public final class CanonicalTaskSubmitChoiceFrame implements IMessage {
 
         @Override
         public IMessage onMessage(final CanonicalTaskSubmitChoiceFrame message, MessageContext context) {
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            final Object connection = context.netHandler;
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
                     Minecraft.getMinecraft()
                         .displayGuiScreen(new GuiCanonicalTaskSubmitChooser(message));
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

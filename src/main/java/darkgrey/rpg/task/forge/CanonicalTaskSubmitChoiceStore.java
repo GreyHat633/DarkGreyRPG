@@ -37,6 +37,10 @@ final class CanonicalTaskSubmitChoiceStore {
         pending.remove(player);
     }
 
+    synchronized void clear() {
+        pending.clear();
+    }
+
     static final class Candidate {
 
         private final String storyId;

@@ -1,0 +1,60 @@
+{
+  "status": "PASS_INIT_AND_VANILLA_SAVE_SCOPES_OBSERVED",
+  "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "scope": "These first-minute warmup rows remain in the raw profiler. Only >=50ms complete ticks receive scope rows; full warmup percentiles were not recorded by this non-mixed driver.",
+  "initialization": {
+    "full_tick_ns": 1232.0043,
+    "mixed_callback_ns": 0.0,
+    "authored_callback_ns": 0.0,
+    "fixture_validation_ns": 0.0,
+    "fixture_save_and_log_ns": 0.0,
+    "mixed_operations_ns": 0.0,
+    "fixture_initialization_ns": 1200.531,
+    "journal_persist_ns": 0.0,
+    "journal_read_ns": 0.0,
+    "player_checkpoint_ns": 0.0,
+    "mc_world_save_ns": 0.0,
+    "mc_players_save_ns": 0.0,
+    "player_image_validation_ns": 0.0,
+    "journal_compress_ns": 0.0,
+    "task_commit_ns": 0.0,
+    "journal_fsync_ns": 0.0,
+    "checkpoint_write_ns": 0.0,
+    "checkpoint_read_ns": 0.0,
+    "forge_player_save_event_ns": 0.0
+  },
+  "vanilla_tick_900_save": {
+    "full_tick_ns": 269.9397,
+    "mixed_callback_ns": 0.0,
+    "authored_callback_ns": 0.0,
+    "fixture_validation_ns": 0.0,
+    "fixture_save_and_log_ns": 0.0,
+    "mixed_operations_ns": 0.0,
+    "fixture_initialization_ns": 0.0,
+    "journal_persist_ns": 0.0,
+    "journal_read_ns": 0.0,
+    "player_checkpoint_ns": 0.0,
+    "mc_world_save_ns": 269.6757,
+    "mc_players_save_ns": 0.0063,
+    "player_image_validation_ns": 0.0,
+    "journal_compress_ns": 0.0,
+    "task_commit_ns": 0.0,
+    "journal_fsync_ns": 0.0,
+    "checkpoint_write_ns": 0.0,
+    "checkpoint_read_ns": 0.0,
+    "forge_player_save_event_ns": 0.0
+  },
+  "tick_900_scope_note": "Only ticks >=50ms receive scope rows. Absence of a tick-900 row means no >=50ms complete-tick scope was recorded at that index, not that vanilla save was disabled.",
+  "measured_after_1min_warmup": {
+    "samples": 1200,
+    "p95_ns": 217000,
+    "p99_ns": 1272500,
+    "max_ns": 44650800,
+    "scope": "MinecraftServer.tick entry through return, test-only ASM"
+  },
+  "raw": {
+    "file": ".tooling/0402/Worlds/Final-linear-idle10000/linear-idle-10000-driver-tick-profile.csv",
+    "bytes": 593,
+    "sha256": "63D5C55E871A5C5C078C72B1A5659EB1BA64515A9BFF923C3F21340B55563478"
+  }
+}

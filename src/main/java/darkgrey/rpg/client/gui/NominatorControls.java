@@ -73,15 +73,16 @@ public final class NominatorControls extends Gui {
         drawRect(x + 1, y + 1, x + w - 1, y + h - 1, DgrUiPalette.SUB_PANEL);
         String title = "group".equals(modal) ? "匹配方式"
             : "transfer".equals(modal) ? ("NPC".equals(request.getString("type")) ? "角色绑定已被占用" : "物品绑定已被占用") : "释放绑定";
-        font.drawString(title, x + 10, y + 10, DgrUiPalette.TEXT);
-        font.drawString(
+        DgrUiText.left(font, title, x + 10, y + 10, DgrUiPalette.TEXT);
+        DgrUiText.left(
+            font,
             font.trimStringToWidth(request.getString("label"), w - 20),
             x + 10,
             y + 29,
             DgrUiPalette.SECONDARY);
         String text = "group".equals(modal) ? "该物品以哪种方式加入此物品组？"
             : "transfer".equals(modal) ? "是否转移到当前宿主？" : "清除该资源的全部世界绑定，保留资源？";
-        font.drawString(font.trimStringToWidth(text, w - 20), x + 10, y + 47, DgrUiPalette.TEXT);
+        DgrUiText.left(font, font.trimStringToWidth(text, w - 20), x + 10, y + 47, DgrUiPalette.TEXT);
         int bw = (w - 30) / 2;
         left = new GuiRpgButton(
             90,

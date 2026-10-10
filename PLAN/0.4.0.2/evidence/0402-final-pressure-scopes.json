@@ -1,0 +1,141 @@
+{
+  "status": "FINAL_STRESS_SCOPES_AND_LIMITS_RECORDED",
+  "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "measured_long": {
+    "samples": 72000,
+    "at_least_250ms": 362,
+    "at_least_500ms": 17,
+    "all_500ms_peaks_on_200tick_fixture_batch_reset": true,
+    "worst": {
+      "sample": 64801,
+      "full_tick_index": 70801,
+      "driver_tick": 70800,
+      "complete_tick_ms": 607.8875,
+      "wall_ms": 1791592482367,
+      "overlapping_scopes_ms": {
+        "mixed_callback_ns": 605.1765,
+        "authored_callback_ns": 0.4358,
+        "fixture_validation_ns": 0.1475,
+        "fixture_save_and_log_ns": 213.4498,
+        "mixed_operations_ns": 386.6164,
+        "fixture_initialization_ns": 0.0,
+        "journal_persist_ns": 0.0,
+        "journal_read_ns": 0.0,
+        "player_checkpoint_ns": 0.0,
+        "mc_world_save_ns": 0.0,
+        "mc_players_save_ns": 0.0,
+        "player_image_validation_ns": 0.0,
+        "journal_compress_ns": 0.0,
+        "task_commit_ns": 0.0,
+        "journal_fsync_ns": 0.0,
+        "checkpoint_write_ns": 0.0,
+        "checkpoint_read_ns": 0.0,
+        "forge_player_save_event_ns": 40.4153
+      },
+      "scope_warning": "Callbacks include inner operations; do not add overlapping scopes."
+    },
+    "non_reset_250ms_peaks": [
+      {
+        "sample": 37981,
+        "full_tick_index": 43981,
+        "driver_tick": 43980,
+        "complete_tick_ms": 287.6183,
+        "wall_ms": 1791591141020,
+        "overlapping_scopes_ms": {
+          "mixed_callback_ns": 282.2381,
+          "authored_callback_ns": 0.4613,
+          "fixture_validation_ns": 0.1648,
+          "fixture_save_and_log_ns": 0.0,
+          "mixed_operations_ns": 275.0675,
+          "fixture_initialization_ns": 0.0,
+          "journal_persist_ns": 0.0,
+          "journal_read_ns": 37.4375,
+          "player_checkpoint_ns": 0.0,
+          "mc_world_save_ns": 0.0,
+          "mc_players_save_ns": 0.0,
+          "player_image_validation_ns": 0.0,
+          "journal_compress_ns": 0.0,
+          "task_commit_ns": 0.0,
+          "journal_fsync_ns": 0.0,
+          "checkpoint_write_ns": 0.0,
+          "checkpoint_read_ns": 0.0,
+          "forge_player_save_event_ns": 61.3163
+        },
+        "scope_warning": "Callbacks include inner operations; do not add overlapping scopes."
+      },
+      {
+        "sample": 40781,
+        "full_tick_index": 46781,
+        "driver_tick": 46780,
+        "complete_tick_ms": 266.1263,
+        "wall_ms": 1791591280996,
+        "overlapping_scopes_ms": {
+          "mixed_callback_ns": 263.4971,
+          "authored_callback_ns": 0.5271,
+          "fixture_validation_ns": 0.184,
+          "fixture_save_and_log_ns": 0.0,
+          "mixed_operations_ns": 255.681,
+          "fixture_initialization_ns": 0.0,
+          "journal_persist_ns": 0.0,
+          "journal_read_ns": 25.8437,
+          "player_checkpoint_ns": 0.0,
+          "mc_world_save_ns": 0.0,
+          "mc_players_save_ns": 0.0,
+          "player_image_validation_ns": 0.0,
+          "journal_compress_ns": 0.0,
+          "task_commit_ns": 0.0,
+          "journal_fsync_ns": 0.0,
+          "checkpoint_write_ns": 0.0,
+          "checkpoint_read_ns": 0.0,
+          "forge_player_save_event_ns": 55.1518
+        },
+        "scope_warning": "Callbacks include inner operations; do not add overlapping scopes."
+      }
+    ],
+    "non_reset_trigger": "At phase180 all four logical player entities are synchronously checkpointed, recreated/read from disk and journal-recovered. Overlapping scopes locate journal reads and Forge player-save callbacks; unmeasured inner causes are not assigned to GC."
+  },
+  "strict_cold_first_completion": {
+    "client_network_before_login": 0,
+    "per_logical_user_ns": [
+      77879200,
+      14142500,
+      12723200,
+      11358100
+    ],
+    "assertion": "Final saved cumulative history cold-start completed before native clients logged in; preserved runs, inventory, XP, receipts and progress passed independently."
+  },
+  "pressure_boundary": "Every200 ticks the fixture synchronously resets/starts twelve business instances and checkpoints/saves/logs them. This explicit cumulative stress exceeds the frozen formal reference workload; no all-load latency promise or overall performance-gate PASS is inferred.",
+  "scope_warning": "Parent callbacks include nested operations; do not add overlapping scopes. Warmup and >=250ms peaks are retained in their original profiles.",
+  "raw": [
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final-linear-robust-60-linear-final-60.json",
+      "bytes": 367451,
+      "sha256": "6F127DA33C7CAF40DD3EB2A5E3998AA32AA2B6698A39A50695D33426D8A54E66"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/profile-Final-linear-robust-60-linear-final-cold.json",
+      "bytes": 34702,
+      "sha256": "40F17390AD96A6E2777998995C8D161C7D3F8A7D37B93135F3AFEF4D7CF024EA"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/warmup-Final-linear-robust-60-linear-final-60.json",
+      "bytes": 27197,
+      "sha256": "C477EB3A3679A98D607D2871ED47577400EDAB5593757CF3E162845F7FD39184"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-before-client-login.json",
+      "bytes": 2835,
+      "sha256": "9EE06A36DFEB089E1B79E24EEDD6912655AF9220CDF35EC42CCDF6F17782C564"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-robust-60/linear-final-cold-mixed-operations.csv",
+      "bytes": 38161,
+      "sha256": "CBE6D3231533F42288C4219B128E1120F92945AF4074C36A80C3F96EEBEF33DA"
+    },
+    {
+      "file": "src/test/java/darkgrey/rpg/persistence/StabilityMixed0402Verifier.java",
+      "bytes": 29356,
+      "sha256": "32E86AC32FB54436F575204E9CC25ED9414835228F1524BFBD764DDDB29AD66A"
+    }
+  ]
+}

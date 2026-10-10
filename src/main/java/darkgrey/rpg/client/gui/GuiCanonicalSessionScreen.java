@@ -347,22 +347,24 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
         if (frame.getKind() == CanonicalSessionFrame.Kind.CHOICE) {
             boolean any = false;
             for (CanonicalSessionChoiceOption option : frame.getChoices()) any |= option.isEnabled();
-            if (!any) drawCenteredString(fontRendererObj, "当前没有可选项", width / 2, 6, DgrUiPalette.SECONDARY);
+            if (!any) DgrUiText.centered(fontRendererObj, "当前没有可选项", width / 2, 6, DgrUiPalette.SECONDARY);
         }
         if (mouseX >= speakerLayout.speakerLeft(CanonicalSessionClientController.getVisiblePortraitRef() != null)
             && mouseX < speakerLayout.speakerLeft(CanonicalSessionClientController.getVisiblePortraitRef() != null)
                 + speakerLayout.speakerWidth(CanonicalSessionClientController.getVisiblePortraitRef() != null)
             && mouseY >= speakerLayout.top + 4
             && mouseY < speakerLayout.dividerTop()
-            && fontRendererObj.getStringWidth("§l" + CanonicalSessionClientController.getVisibleSpeaker()) * scale
+            && fontRendererObj.getStringWidth(CanonicalSessionClientController.getVisibleSpeaker()) * scale
                 > speakerLayout.speakerWidth(CanonicalSessionClientController.getVisiblePortraitRef() != null))
-            drawHoveringText(
+            DgrUiText.tooltip(
+                fontRendererObj,
                 fontRendererObj.listFormattedStringToWidth(
                     CanonicalSessionClientController.getVisibleSpeaker(),
                     Math.max(40, width / 2)),
                 mouseX,
                 mouseY,
-                fontRendererObj);
+                width,
+                height);
         for (Object object : buttonList) {
             GuiButton button = (GuiButton) object;
             if (!choiceButtons.containsKey(button.id) || mouseX < button.xPosition
@@ -374,11 +376,13 @@ public final class GuiCanonicalSessionScreen extends GuiScreen {
                     .equals(choiceButtons.get(button.id))
                     && !option.getDisplayText()
                         .equals(button.displayString))
-                    drawHoveringText(
+                    DgrUiText.tooltip(
+                        fontRendererObj,
                         fontRendererObj.listFormattedStringToWidth(option.getDisplayText(), Math.max(40, width / 2)),
                         mouseX,
                         mouseY,
-                        fontRendererObj);
+                        width,
+                        height);
             }
         }
     }

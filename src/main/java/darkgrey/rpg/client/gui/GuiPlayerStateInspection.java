@@ -42,7 +42,7 @@ public final class GuiPlayerStateInspection extends GuiScreen {
         boolean focused = name == null || name.isFocused();
         int cursor = name == null ? 0 : name.getCursorPosition();
         int selection = name == null ? 0 : name.getSelectionEnd();
-        name = new GuiTextField(fontRendererObj, geometry.x + 12, geometry.y + 38, geometry.width - 92, 18);
+        name = new GuiDgrTextField(fontRendererObj, geometry.x + 12, geometry.y + 38, geometry.width - 92, 18);
         name.setMaxStringLength(16);
         name.setText(text);
         name.setCursorPosition(cursor);
@@ -236,15 +236,19 @@ public final class GuiPlayerStateInspection extends GuiScreen {
             layoutControls();
         }
         drawRect(geometry.x, geometry.y, geometry.x + geometry.width, geometry.y + geometry.height, DgrUiPalette.PANEL);
-        fontRendererObj.drawString("玩家状态检查 · 只读", geometry.x + 10, geometry.y + 6, DgrUiPalette.TEXT);
-        fontRendererObj.drawString("玩家 ID / 玩家名", geometry.x + 12, geometry.y + 25, DgrUiPalette.TEXT);
+        DgrUiText.left(fontRendererObj, "玩家状态检查 · 只读", geometry.x + 10, geometry.y + 6, DgrUiPalette.TEXT);
+        DgrUiText.left(fontRendererObj, "玩家 ID / 玩家名", geometry.x + 12, geometry.y + 25, DgrUiPalette.TEXT);
         name.drawTextBox();
         List<?> summary = fontRendererObj.listFormattedStringToWidth(message, geometry.width - 24);
-        for (int i = 0; i < Math.min(2, summary.size()); i++) fontRendererObj
-            .drawString((String) summary.get(i), geometry.x + 12, geometry.y + 64 + i * 11, DgrUiPalette.SECONDARY);
+        for (int i = 0; i < Math.min(2, summary.size()); i++) DgrUiText.left(
+            fontRendererObj,
+            (String) summary.get(i),
+            geometry.x + 12,
+            geometry.y + 64 + i * 11,
+            DgrUiPalette.SECONDARY);
         int nav = Math.max(100, geometry.width / 3), top = geometry.y + 102;
-        fontRendererObj.drawString("该玩家的内容", geometry.x + 12, top - 13, DgrUiPalette.TEXT);
-        fontRendererObj.drawString("状态详情", geometry.x + nav + 12, top - 13, DgrUiPalette.TEXT);
+        DgrUiText.left(fontRendererObj, "该玩家的内容", geometry.x + 12, top - 13, DgrUiPalette.TEXT);
+        DgrUiText.left(fontRendererObj, "状态详情", geometry.x + nav + 12, top - 13, DgrUiPalette.TEXT);
         drawRect(
             geometry.x + nav,
             top - 2,
@@ -267,7 +271,8 @@ public final class GuiPlayerStateInspection extends GuiScreen {
                     geometry.x + nav - 4,
                     y + 21,
                     i == selected ? DgrUiPalette.SELECTED_FILL : DgrUiPalette.SUB_PANEL);
-                fontRendererObj.drawString(
+                DgrUiText.left(
+                    fontRendererObj,
                     fontRendererObj.trimStringToWidth(
                         rows().getCompoundTagAt(i)
                             .getString("title"),
@@ -296,14 +301,16 @@ public final class GuiPlayerStateInspection extends GuiScreen {
                 String line = lines.get(i);
                 boolean heading = java.util.Arrays.asList("当前情况", "正在等待什么", "再次启动条件", "发现的问题", "技术详情")
                     .contains(line);
-                fontRendererObj.drawString(
+                DgrUiText.left(
+                    fontRendererObj,
                     (heading ? "\u00a7l" : "") + line,
                     geometry.x + nav + 12,
                     top + i * 12 - detailScroll.pixelOffset(),
-                    DgrUiPalette.TEXT);
+                    heading ? DgrUiPalette.STORY_TEXT : DgrUiPalette.TEXT);
             }
         }
-        fontRendererObj.drawString(
+        DgrUiText.left(
+            fontRendererObj,
             "第 " + (page + 1) + " 页",
             geometry.x + 155,
             geometry.y + geometry.height - 21,
@@ -311,7 +318,8 @@ public final class GuiPlayerStateInspection extends GuiScreen {
         if (snapshot.hasKey("queried", 4) && geometry.width >= 560) {
             String queried = new java.text.SimpleDateFormat("HH:mm:ss")
                 .format(new java.util.Date(snapshot.getLong("queried")));
-            fontRendererObj.drawString(
+            DgrUiText.left(
+                fontRendererObj,
                 "查询时间 " + queried,
                 geometry.x + geometry.width - 230,
                 geometry.y + geometry.height - 21,

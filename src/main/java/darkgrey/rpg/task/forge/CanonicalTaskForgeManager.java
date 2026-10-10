@@ -178,7 +178,7 @@ public final class CanonicalTaskForgeManager {
         UUID uuid = requirePlayerUuid(player);
         java.util.List<CanonicalTaskSubmitChoiceStore.Candidate> candidates = new ArrayList<CanonicalTaskSubmitChoiceStore.Candidate>();
         java.util.Map<String, net.minecraft.nbt.NBTTagCompound> previews = new java.util.HashMap<String, net.minecraft.nbt.NBTTagCompound>();
-        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots(uuid)) {
             if (storyId != null && (!storyId.equals(snapshot.getStoryInstanceId())
                 || !placementId.equals(snapshot.getTaskNodePlacementId()))) continue;
             if (!uuid.equals(snapshot.getPlayerUuid())
@@ -318,7 +318,7 @@ public final class CanonicalTaskForgeManager {
         CanonicalTaskPlayerTransactions.recover(player);
         Context context = context(player);
         UUID uuid = requirePlayerUuid(player);
-        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots(uuid)) {
             if (!uuid.equals(snapshot.getPlayerUuid())
                 || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
             CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
@@ -384,7 +384,7 @@ public final class CanonicalTaskForgeManager {
     public void synchronizeRewards(EntityPlayerMP player) {
         Context context = context(player);
         UUID uuid = requirePlayerUuid(player);
-        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots()) {
+        for (CanonicalTaskInstanceSnapshot snapshot : context.data.snapshots(uuid)) {
             if (!uuid.equals(snapshot.getPlayerUuid())
                 || snapshot.getStatus() != darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE) continue;
             CanonicalGraphResource resource = currentTask(context.project, snapshot.getTaskResourceId());
@@ -510,7 +510,7 @@ public final class CanonicalTaskForgeManager {
     public List<CanonicalTaskInstanceSnapshot> snapshots(EntityPlayerMP player) {
         UUID playerUuid = requirePlayerUuid(player);
         List<CanonicalTaskInstanceSnapshot> result = new ArrayList<CanonicalTaskInstanceSnapshot>();
-        for (CanonicalTaskInstanceSnapshot snapshot : context(player).data.snapshots())
+        for (CanonicalTaskInstanceSnapshot snapshot : context(player).data.snapshots(playerUuid))
             if (playerUuid.equals(snapshot.getPlayerUuid())) result.add(snapshot);
         return Collections.unmodifiableList(result);
     }
@@ -519,8 +519,7 @@ public final class CanonicalTaskForgeManager {
     public void synchronizeWorldLogic(EntityPlayerMP player) {
         Context context = context(player);
         UUID playerUuid = requirePlayerUuid(player);
-        List<CanonicalTaskInstanceSnapshot> snapshots = new ArrayList<CanonicalTaskInstanceSnapshot>(
-            context.data.snapshots());
+        List<CanonicalTaskInstanceSnapshot> snapshots = context.data.snapshots(playerUuid);
         for (CanonicalTaskInstanceSnapshot snapshot : snapshots) if (playerUuid.equals(snapshot.getPlayerUuid())
             && snapshot.getStatus() == darkgrey.rpg.task.instance.CanonicalTaskInstanceStatus.ACTIVE)
             synchronizeWorldLogic(player, context, snapshot);
@@ -533,8 +532,10 @@ public final class CanonicalTaskForgeManager {
     /** Canonical Journal projection; legacy Quest Journal remains untouched. */
     public List<CanonicalTaskJournalEntry> journal(EntityPlayerMP player) {
         Context context = context(player);
-        return CanonicalTaskJournalProjector
-            .projectForDisplay(requirePlayerUuid(player), context.data.snapshots(), context.resolver);
+        return CanonicalTaskJournalProjector.projectForDisplay(
+            requirePlayerUuid(player),
+            context.data.snapshots(requirePlayerUuid(player)),
+            context.resolver);
     }
 
     public List<CanonicalTaskJournalEntry> journalSnapshot(EntityPlayerMP player) {
@@ -555,6 +556,12 @@ public final class CanonicalTaskForgeManager {
     public int cancelByStory(EntityPlayerMP player, String storyId) {
         Context context = context(player);
         return context.data.cancelByStory(requirePlayerUuid(player), requireText(storyId, "Story ID"));
+    }
+
+    public void stop() {
+        CanonicalTaskPlayerTransactions.stop();
+        submitChoices.clear();
+        submitProjects.clear();
     }
 
     /** Permanently discards every Task placement for this exact player/Story identity. */
@@ -601,7 +608,7 @@ public final class CanonicalTaskForgeManager {
             throw new IllegalArgumentException("Trusted Task probe inputs are required.");
         bindIfNeeded(data, resolver(project));
         List<CanonicalTaskInstanceSnapshot> result = new ArrayList<CanonicalTaskInstanceSnapshot>();
-        for (CanonicalTaskInstanceSnapshot snapshot : data.snapshots())
+        for (CanonicalTaskInstanceSnapshot snapshot : data.snapshots(trustedPlayerUuid))
             if (trustedPlayerUuid.equals(snapshot.getPlayerUuid())) result.add(snapshot);
         return Collections.unmodifiableList(result);
     }
@@ -612,7 +619,7 @@ public final class CanonicalTaskForgeManager {
             throw new IllegalArgumentException("Trusted Task probe inputs are required.");
         CanonicalTaskResourceResolver resolver = resolver(project);
         bindIfNeeded(data, resolver);
-        return CanonicalTaskJournalProjector.project(trustedPlayerUuid, data.snapshots(), resolver);
+        return CanonicalTaskJournalProjector.project(trustedPlayerUuid, data.snapshots(trustedPlayerUuid), resolver);
     }
 
     CanonicalTaskInstanceSnapshot synchronizeWorldLogicTrustedForProbe(UUID trustedPlayerUuid, ProjectSnapshot project,

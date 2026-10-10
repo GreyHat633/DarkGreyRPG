@@ -33,7 +33,7 @@ public final class GuiDialogueHistory extends GuiScreen {
         drawDefaultBackground();
         int left = Math.max(8, width / 10), right = width - left;
         drawRect(left, 16, right, height - 16, DgrUiPalette.WINDOW_PANEL);
-        fontRendererObj.drawString("对话记录", left + 12, 26, DgrUiPalette.TEXT);
+        DgrUiText.left(fontRendererObj, "对话记录", left + 12, 26, DgrUiPalette.TEXT);
         double scale = DialogueFontDrawing.scale();
         int lineHeight = (int) Math.ceil(fontRendererObj.FONT_HEIGHT * scale) + 3;
         rowHeight = lineHeight;
@@ -85,7 +85,7 @@ public final class GuiDialogueHistory extends GuiScreen {
                 scale,
                 speakerLines.contains(i) ? DgrUiPalette.SELECTED_BORDER : DgrUiPalette.TEXT);
         }
-        fontRendererObj.drawString("滚轮阅读 · ESC 返回", left + 12, height - 30, DgrUiPalette.SECONDARY);
+        DgrUiText.left(fontRendererObj, "滚轮阅读 · ESC 返回", left + 12, height - 30, DgrUiPalette.SECONDARY);
         if (maximumScroll > 0) {
             int rail = height - 88, thumb = Math.max(6, rail * count / lines.size());
             int top = 44 + (int) ((rail - thumb) * scroll.position() / maximumScroll);

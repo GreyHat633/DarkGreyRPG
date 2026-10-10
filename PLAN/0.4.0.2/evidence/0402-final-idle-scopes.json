@@ -1,0 +1,59 @@
+{
+  "status": "PASS_INIT_AND_VANILLA_SAVE_SCOPES_OBSERVED",
+  "runtime_sha256": "1B764E139F073CADFC8B660EB28A1D5C89B6DB08A8BBBC8E2AF923DD11A7CD85",
+  "scope": "These first-minute warmup rows remain in the raw profiler. Only >=50ms complete ticks receive scope rows; full warmup percentiles were not recorded by this non-mixed driver.",
+  "initialization": {
+    "full_tick_ns": 1233.4664,
+    "mixed_callback_ns": 0.0,
+    "authored_callback_ns": 0.0,
+    "fixture_validation_ns": 0.0,
+    "fixture_save_and_log_ns": 0.0,
+    "mixed_operations_ns": 0.0,
+    "fixture_initialization_ns": 1197.0842,
+    "journal_persist_ns": 0.0,
+    "journal_read_ns": 0.0,
+    "player_checkpoint_ns": 0.0,
+    "mc_world_save_ns": 0.0,
+    "mc_players_save_ns": 0.0,
+    "player_image_validation_ns": 0.0,
+    "journal_compress_ns": 0.0,
+    "task_commit_ns": 0.0,
+    "journal_fsync_ns": 0.0,
+    "checkpoint_write_ns": 0.0,
+    "checkpoint_read_ns": 0.0,
+    "forge_player_save_event_ns": 0.0
+  },
+  "vanilla_tick_900_save": {
+    "full_tick_ns": 254.1697,
+    "mixed_callback_ns": 0.0,
+    "authored_callback_ns": 0.0,
+    "fixture_validation_ns": 0.0,
+    "fixture_save_and_log_ns": 0.0,
+    "mixed_operations_ns": 0.0,
+    "fixture_initialization_ns": 0.0,
+    "journal_persist_ns": 0.0,
+    "journal_read_ns": 0.0,
+    "player_checkpoint_ns": 0.0,
+    "mc_world_save_ns": 253.7881,
+    "mc_players_save_ns": 0.0087,
+    "player_image_validation_ns": 0.0,
+    "journal_compress_ns": 0.0,
+    "task_commit_ns": 0.0,
+    "journal_fsync_ns": 0.0,
+    "checkpoint_write_ns": 0.0,
+    "checkpoint_read_ns": 0.0,
+    "forge_player_save_event_ns": 0.0
+  },
+  "measured_after_1min_warmup": {
+    "samples": 1200,
+    "p95_ns": 184300,
+    "p99_ns": 692400,
+    "max_ns": 43260100,
+    "scope": "MinecraftServer.tick entry through return, test-only ASM"
+  },
+  "raw": {
+    "file": ".tooling/0402/Worlds/Final1B-idle10000-profile/idle-final1B-driver-tick-profile.csv",
+    "bytes": 593,
+    "sha256": "25D639DCA29D06BBFCB500BC9BCD90C97DF43D3A8F5EE94C70C48C8A87C7C19F"
+  }
+}

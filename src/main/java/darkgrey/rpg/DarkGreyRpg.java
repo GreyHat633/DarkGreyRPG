@@ -15,6 +15,7 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.event.FMLServerStoppedEvent;
 import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import darkgrey.rpg.command.CommandDarkGreyRpg;
 import darkgrey.rpg.config.RpgConfiguration;
@@ -62,6 +63,7 @@ public final class DarkGreyRpg {
     private static CanonicalSessionForgeManager canonicalSessionManager;
     private static CanonicalTaskForgeManager canonicalTaskManager;
     private static CanonicalStoryForgeManager canonicalStoryManager;
+    private static darkgrey.rpg.story.canonical.forge.CanonicalStoryEventAdapter storyEventAdapter;
     private static StoryPackageLoader storyPackageLoader;
     private static StoryPackageRuntimeReloader.Result packageStartup;
 
@@ -133,8 +135,7 @@ public final class DarkGreyRpg {
         cpw.mods.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(this, new NominatorGuiHandler());
         MinecraftForge.EVENT_BUS.register(new EditorToolEventHandler(projectRepository, editorSessions, livePicks));
         MinecraftForge.EVENT_BUS.register(new EntityToolsRuntime());
-        darkgrey.rpg.story.canonical.forge.CanonicalStoryEventAdapter storyEventAdapter = new darkgrey.rpg.story.canonical.forge.CanonicalStoryEventAdapter(
-            canonicalStoryManager);
+        storyEventAdapter = new darkgrey.rpg.story.canonical.forge.CanonicalStoryEventAdapter(canonicalStoryManager);
         MinecraftForge.EVENT_BUS.register(storyEventAdapter);
         CanonicalTaskEventAdapter canonicalTaskEvents = new CanonicalTaskEventAdapter(canonicalTaskManager);
         MinecraftForge.EVENT_BUS.register(canonicalTaskEvents);
@@ -179,6 +180,7 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        MainThreadScheduler.beginServer();
         darkgrey.rpg.story.canonical.forge.CanonicalBuffCatalog.rebuild();
         if (packageStartup != null && packageStartup.isPackageSetCommitted()) {
             try {
@@ -215,7 +217,24 @@ public final class DarkGreyRpg {
 
     @EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
+        stopServerServices();
+    }
+
+    @EventHandler
+    public void serverStopped(FMLServerStoppedEvent event) {
+        // A failed server tick can skip the stopping event; cleanup must also run after that path.
+        stopServerServices();
+    }
+
+    private void stopServerServices() {
+        MainThreadScheduler.stopServer();
+        darkgrey.rpg.gramophone.GramophoneLocalServer.stop();
+        darkgrey.rpg.media.CanonicalMediaServer.stop();
+        darkgrey.rpg.title.CanonicalTitleServer.stop();
         darkgrey.rpg.nominator.NominatorCapacityMaintenance.clear();
+        storyEventAdapter.stop();
+        canonicalTaskManager.stop();
+        livePicks.stop();
         if (liveBridge != null) {
             liveBridge.stop();
             liveBridge = null;

@@ -95,7 +95,7 @@ public final class ItemCandidatePopover {
         Gui.drawRect(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + panelH - 1, DgrUiPalette.WINDOW_PANEL);
         Minecraft mc = Minecraft.getMinecraft();
 
-        if (page == null) mc.fontRenderer.drawString("加载中…", panelX + 8, panelY + 8, DgrUiPalette.SECONDARY);
+        if (page == null) DgrUiText.left(mc.fontRenderer, "加载中…", panelX + 8, panelY + 8, DgrUiPalette.SECONDARY);
         else {
             NBTTagList values = page.getTagList("items", 10);
             NBTTagList subset = new NBTTagList();
@@ -118,8 +118,8 @@ public final class ItemCandidatePopover {
                 mouseX,
                 mouseY);
         }
-        if (paged) mc.fontRenderer.drawString("‹", panelX + 10, panelY + panelH - 17, DgrUiPalette.TEXT);
-        if (paged) mc.fontRenderer.drawString("›", panelX + panelW - 16, panelY + panelH - 17, DgrUiPalette.TEXT);
+        if (paged) DgrUiText.left(mc.fontRenderer, "‹", panelX + 10, panelY + panelH - 17, DgrUiPalette.TEXT);
+        if (paged) DgrUiText.left(mc.fontRenderer, "›", panelX + panelW - 16, panelY + panelH - 17, DgrUiPalette.TEXT);
         return grid == null ? null : grid.tooltip;
     }
 

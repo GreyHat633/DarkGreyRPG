@@ -79,7 +79,8 @@ public final class S2CNominatorInventoryOpen implements IMessage {
 
         @Override
         public IMessage onMessage(final S2CNominatorInventoryOpen message, MessageContext context) {
-            MainThreadScheduler.scheduleClient(new Runnable() {
+            final Object connection = context.netHandler;
+            MainThreadScheduler.scheduleClient(connection, new Runnable() {
 
                 @Override
                 public void run() {
@@ -89,7 +90,7 @@ public final class S2CNominatorInventoryOpen implements IMessage {
                         message.catalogRevision,
                         message.selectedSlot);
                 }
-            });
+            }, () -> darkgrey.rpg.network.MainThreadScheduler.rejectClient(connection));
             return null;
         }
     }

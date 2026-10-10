@@ -1,0 +1,217 @@
+{
+  "status": "PASS",
+  "runtime_sha256": "3B4665096AB0484B901EEE580AF8F0E07158DB9B597B1317921B1D9B825A885F",
+  "layer": "N+C+S",
+  "operation": "native /dgr debug then 50 actual GUI query button clicks",
+  "scope": "same client monotonic clock, pre-request encoding to accepted matching response; excludes physical mouse-down prelude",
+  "samples": 50,
+  "p50_ms": 149.6254,
+  "p95_ms": 199.7119,
+  "p99_ms": 199.8158,
+  "max_ms": 199.8158,
+  "correct_response_ids": true,
+  "all_errors_empty": true,
+  "reference_gate_pass": true,
+  "rows": [
+    {
+      "request": 1,
+      "elapsed_ms": 148.5436
+    },
+    {
+      "request": 2,
+      "elapsed_ms": 199.5589
+    },
+    {
+      "request": 3,
+      "elapsed_ms": 148.7415
+    },
+    {
+      "request": 4,
+      "elapsed_ms": 149.5277
+    },
+    {
+      "request": 5,
+      "elapsed_ms": 149.5116
+    },
+    {
+      "request": 6,
+      "elapsed_ms": 199.6501
+    },
+    {
+      "request": 7,
+      "elapsed_ms": 149.6175
+    },
+    {
+      "request": 8,
+      "elapsed_ms": 149.6705
+    },
+    {
+      "request": 9,
+      "elapsed_ms": 149.5785
+    },
+    {
+      "request": 10,
+      "elapsed_ms": 133.7594
+    },
+    {
+      "request": 11,
+      "elapsed_ms": 149.6151
+    },
+    {
+      "request": 12,
+      "elapsed_ms": 134.601
+    },
+    {
+      "request": 13,
+      "elapsed_ms": 151.0275
+    },
+    {
+      "request": 14,
+      "elapsed_ms": 149.0203
+    },
+    {
+      "request": 15,
+      "elapsed_ms": 199.6935
+    },
+    {
+      "request": 16,
+      "elapsed_ms": 149.6753
+    },
+    {
+      "request": 17,
+      "elapsed_ms": 199.6698
+    },
+    {
+      "request": 18,
+      "elapsed_ms": 133.2293
+    },
+    {
+      "request": 19,
+      "elapsed_ms": 134.5682
+    },
+    {
+      "request": 20,
+      "elapsed_ms": 149.6859
+    },
+    {
+      "request": 21,
+      "elapsed_ms": 134.4617
+    },
+    {
+      "request": 22,
+      "elapsed_ms": 149.7585
+    },
+    {
+      "request": 23,
+      "elapsed_ms": 149.4234
+    },
+    {
+      "request": 24,
+      "elapsed_ms": 149.7357
+    },
+    {
+      "request": 25,
+      "elapsed_ms": 149.6254
+    },
+    {
+      "request": 26,
+      "elapsed_ms": 149.5449
+    },
+    {
+      "request": 27,
+      "elapsed_ms": 149.4117
+    },
+    {
+      "request": 28,
+      "elapsed_ms": 199.6053
+    },
+    {
+      "request": 29,
+      "elapsed_ms": 149.8328
+    },
+    {
+      "request": 30,
+      "elapsed_ms": 199.8158
+    },
+    {
+      "request": 31,
+      "elapsed_ms": 149.7384
+    },
+    {
+      "request": 32,
+      "elapsed_ms": 99.77
+    },
+    {
+      "request": 33,
+      "elapsed_ms": 199.6631
+    },
+    {
+      "request": 34,
+      "elapsed_ms": 149.6369
+    },
+    {
+      "request": 35,
+      "elapsed_ms": 199.5465
+    },
+    {
+      "request": 36,
+      "elapsed_ms": 149.171
+    },
+    {
+      "request": 37,
+      "elapsed_ms": 101.7327
+    },
+    {
+      "request": 38,
+      "elapsed_ms": 149.8039
+    },
+    {
+      "request": 39,
+      "elapsed_ms": 149.8561
+    },
+    {
+      "request": 40,
+      "elapsed_ms": 199.7119
+    },
+    {
+      "request": 41,
+      "elapsed_ms": 199.5804
+    },
+    {
+      "request": 42,
+      "elapsed_ms": 199.5449
+    },
+    {
+      "request": 43,
+      "elapsed_ms": 149.3021
+    },
+    {
+      "request": 44,
+      "elapsed_ms": 149.7509
+    },
+    {
+      "request": 45,
+      "elapsed_ms": 149.5868
+    },
+    {
+      "request": 46,
+      "elapsed_ms": 149.6149
+    },
+    {
+      "request": 47,
+      "elapsed_ms": 149.5263
+    },
+    {
+      "request": 48,
+      "elapsed_ms": 149.6391
+    },
+    {
+      "request": 49,
+      "elapsed_ms": 199.771
+    },
+    {
+      "request": 50,
+      "elapsed_ms": 99.6576
+    }
+  ]
+}

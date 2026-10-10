@@ -45,6 +45,10 @@ public final class CanonicalActorChoiceStore {
         pending.remove(player);
     }
 
+    public synchronized void clear() {
+        pending.clear();
+    }
+
     public static final class Choice {
 
         private final long token;

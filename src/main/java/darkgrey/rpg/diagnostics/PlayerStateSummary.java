@@ -12,6 +12,7 @@ import net.minecraft.nbt.NBTTagString;
 
 import darkgrey.rpg.graph.canonical.CanonicalGraphNode;
 import darkgrey.rpg.graph.canonical.CanonicalGraphResource;
+import darkgrey.rpg.identity.ResourceAddress;
 import darkgrey.rpg.project.ProjectSnapshot;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatCondition;
 import darkgrey.rpg.story.canonical.runtime.CanonicalStoryRepeatEligibility;
@@ -54,7 +55,10 @@ final class PlayerStateSummary {
                                 : "Session".equals(kind) ? "等待玩家推进当前会话"
                                     : "Task".equals(kind) ? "等待任务目标达成" : "当前没有记录外部等待";
             lines.add(waiting);
-            String id = state.getString("wait_resource_id");
+            String id = PlayerStateInspection.resourceId(
+                state,
+                "wait_resource_id",
+                "SESSION".equals(wait) ? ResourceAddress.Kind.SESSION : ResourceAddress.Kind.TASK);
             if (!id.isEmpty()) {
                 CanonicalGraphResource target = "SESSION".equals(wait) ? project.getCanonicalSession(id)
                     : "TASK".equals(wait) ? project.getCanonicalTask(id) : null;

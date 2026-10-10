@@ -1,0 +1,165 @@
+{
+  "status": "PASS_CURRENT_RUNTIME_HISTORY_AND_STOP_FIXES",
+  "runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "linear_decode": {
+    "entries": 60000,
+    "terminal_entries": 40000,
+    "pending_entries": 20000,
+    "observed_decode_ns": 46126800,
+    "assertions": [
+      "Input order and all keys retained",
+      "Exact source NBT unchanged",
+      "Unbound read remains clean",
+      "Duplicate keys rejected at positions 0, 10000 and 19999 in both lists"
+    ],
+    "historical_root_cause": "ArrayList.contains for each terminal-route key; synchronous quadratic duplicate detection verified by cold first-completion thread dump before native client startup."
+  },
+  "expected_crash_stop": {
+    "status": "PASS_EXPECTED_CRASH_STOP_CLEANUP",
+    "before": {
+      "status": "ARMED_EXPECTED_CRASH",
+      "journal_contexts_before": 8
+    },
+    "after": {
+      "status": "PASS",
+      "journal_contexts": 0,
+      "recovered_contexts": 0
+    },
+    "process_exit_code": 0,
+    "expected_uncaught_error": "DGR0402_EXPECTED_ISOLATED_CRASH_STOP",
+    "exception_not_swallowed": true,
+    "at": "2026-10-10T06:35:24.6640319+08:00"
+  },
+  "same_jvm_world_switch": {
+    "switches": [
+      {
+        "at": "2026-10-10T07:11:21.6924418+08:00",
+        "stage": "linear-stop-worlds",
+        "pid": 46760,
+        "before": {
+          "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+          "world": "WorldA0402",
+          "generations": 1,
+          "source_run": 1791528069496,
+          "task_run": 1791528069556,
+          "events": 616,
+          "tick": 200
+        },
+        "after": {
+          "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+          "world": "WorldB0402",
+          "generations": 2,
+          "source_run": 1791528146739,
+          "task_run": 1791528146741,
+          "events": 104,
+          "tick": 20
+        },
+        "status": "PASS_ASSERTIONS"
+      },
+      {
+        "at": "2026-10-10T07:11:29.5486341+08:00",
+        "stage": "linear-stop-worlds",
+        "pid": 46760,
+        "before": {
+          "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+          "world": "WorldB0402",
+          "generations": 2,
+          "source_run": 1791528146739,
+          "task_run": 1791528146741,
+          "events": 105,
+          "tick": 40
+        },
+        "after": {
+          "status": "PASS_CURRENT_WORLD_ASSERTIONS",
+          "world": "WorldA0402",
+          "generations": 3,
+          "source_run": 1791528069496,
+          "task_run": 1791528069556,
+          "events": 617,
+          "tick": 20
+        },
+        "status": "PASS_ASSERTIONS"
+      }
+    ],
+    "loads": 3,
+    "normal_native_menu_quit": true,
+    "scope": "Two current-hash switches supplement the historical 3756 20-switch test for the newly added stopped-event fallback."
+  },
+  "raw": [
+    {
+      "file": ".tooling/0402/Final/AfterLinearHistory/commands.json",
+      "bytes": 2462,
+      "sha256": "96413BA9402DA78EAC4EA04DCF1082E18B3BCA26FBF34280DD998B1D63EE7547"
+    },
+    {
+      "file": ".tooling/0402/Final/AfterLinearHistory/build.log",
+      "bytes": 3243,
+      "sha256": "B174B7DA05B0BE8EFB0725A42A3B3112D1EAE4C66E49A02B185FF1F48434A61F"
+    },
+    {
+      "file": ".tooling/0402/Final/AfterLinearHistory/probes.log",
+      "bytes": 76373,
+      "sha256": "A79FDE7BC4FDD10003C8091879918C2605225F9D192CC503DD546B0337A4DE21"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-crash-stop/owned-process.json",
+      "bytes": 822,
+      "sha256": "EF340A2FD2716374356DBDACFCAA6768CB58DA489D802E6687FDFCAAC2A2AA37"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-before.json",
+      "bytes": 61,
+      "sha256": "B67BAED7E667DF297C0D74AF74AFF1C7BD9460913F9632DCEF8FBF9058B1FB55"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-result.json",
+      "bytes": 427,
+      "sha256": "9CBD0F70849D4120453778970DB32019C078D06C2C7092C43D685259FD9234AA"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-crash-stop/journal-cache-stop.json",
+      "bytes": 61,
+      "sha256": "FE9C4F313694BA83566FE3D7F0B2B802E1ECDBA536E3FAAA00A820FC1CA38BD7"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-stdout.log",
+      "bytes": 24810,
+      "sha256": "120D22D232DADBA760824AE99B423B71C14A9F9DEE8C4480BB67EC430C5687FC"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final-linear-crash-stop/expected-crash-stderr.log",
+      "bytes": 5161,
+      "sha256": "C27809491998E07B3E06FAEEFDB71BEED6F1AE1FD718A75A3D67436E0C02C5F2"
+    },
+    {
+      "file": ".tooling/0402/Worlds/ClientC/owned-client.json",
+      "bytes": 8098,
+      "sha256": "4BA16111E0247DA524CC78C4D67843B7358CFAEF99A2D757EB31F091F9B194F5"
+    },
+    {
+      "file": ".tooling/0402/Worlds/ClientC/linear-stop-worlds-stdout.log",
+      "bytes": 24657,
+      "sha256": "1CD2BF054DCBF57EA3D92182BA03707B493C725B0F482508736432AA9E136F3A"
+    },
+    {
+      "file": ".tooling/0402/Worlds/ClientC/linear-stop-worlds-stderr.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "file": ".tooling/0402/Worlds/ClientC/native-world-state.json",
+      "bytes": 154,
+      "sha256": "9E891388A160AEA5F1C1B8B5E5951C7A247D4CA20CE1AC73704CD9AF68759BA5"
+    },
+    {
+      "file": ".tooling/0402/Logs/native-world-switches.jsonl",
+      "bytes": 25077,
+      "sha256": "D78D32649CCBB8E69CB728804F8771BAD1DB5C5E9B5877CDD8D72F3CFAF87D23"
+    },
+    {
+      "file": ".tooling/0402/Worlds/Final1B-cold-stack-profile/first-completion-thread-dump.txt",
+      "bytes": 11533,
+      "sha256": "C4B70FE15DC796F37F91D4A519B3B124E2F2D16A3F522C7E38FADD741AB2BCC0"
+    }
+  ]
+}
