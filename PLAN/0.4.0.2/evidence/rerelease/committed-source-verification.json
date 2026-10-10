@@ -1,0 +1,22 @@
+{
+  "commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
+  "branch": "codex/0.4.0.2",
+  "committed_inputs_checked": 1086,
+  "runtime_verified_inputs": 571,
+  "runtime_input_digest": "BCF2C3A89C19B5D44D2009321204223E9CAFEAC78149881432C705A26AC23F6C",
+  "studio_inputs_checked": 516,
+  "studio_changes_from_0401": [
+    "studio/src/DarkGreyRPG.Studio.Core/DarkGreyRPG.Studio.Core.csproj",
+    "studio/src/DarkGreyRPG.Studio/DarkGreyRPG.Studio.csproj"
+  ],
+  "ignored_non_source_markers": [
+    {
+      "file": "studio/src/DarkGreyRPG.Studio/Settings/_probe.txt",
+      "bytes": 136,
+      "sha256": "5D965630F3F1812FA48B074486D51E00FBA840656862E81627544AF980833028"
+    }
+  ],
+  "git_line_ending_normalized_files": 863,
+  "git_content_matches_built_sources": true,
+  "binary_provenance": "Verified corrected Runtime JAR retained byte-for-byte. All Studio program binaries match authoritative dist; unchanged Studio source retains its original build informational version. Historical business and performance checks keep their exact process hashes and are not new whole-JAR runs."
+}

@@ -1,5 +1,7 @@
 # 0.4.0.2 Runtime 分数缩放字体采样修正
 
+当前修正版已重新发布，见 [Rerelease.md](Rerelease.md)。以下保留此前阶段的来源、哈希与当时状态。
+
 2026-10-10。对应用户截图中任务通知标签和正文笔画粗细不一的问题。该记录接续 [UiSizeCorrection.md](UiSizeCorrection.md) 的尺寸恢复，之前的 `00D03FC1…` 证据保留为修正前对照。
 
 ## 原因与处理

@@ -1,0 +1,15 @@
+{
+  "status": "PASS_UNCHANGED_DURING_REPACKAGING",
+  "authority_updated_this_packaging": false,
+  "all_file_paths_sizes_sha256_equal": true,
+  "before": {
+    "file_count": 2690,
+    "bytes": 68773074,
+    "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+  },
+  "after": {
+    "file_count": 2690,
+    "bytes": 68773074,
+    "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+  }
+}

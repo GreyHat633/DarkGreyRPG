@@ -1,0 +1,10 @@
+{
+  "zip_sha256": "fb7556766fda946d3b19600fb49db20ff7c2efbbf12f08feb7518ab1a97fe91c",
+  "extracted_path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Extracted",
+  "file_count": 411,
+  "all_extracted_hashes_match_contents_manifest": true,
+  "data_absent_before_first_launch": true,
+  "root_files": [
+    "DarkGreyRPGStudio.exe"
+  ]
+}

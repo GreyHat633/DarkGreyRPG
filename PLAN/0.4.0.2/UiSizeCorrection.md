@@ -1,5 +1,7 @@
 # 0.4.0.2 Runtime UI 尺寸自查与修复
 
+当前修正版已重新发布，见 [Rerelease.md](Rerelease.md)。以下保留此前阶段的来源、哈希与当时状态。
+
 2026-10-10。对应用户要求：“那其他的 ui 呢？有没有大小窗口被你波及到？自查并修复”。
 
 本页记录 `00D03FC1…` 尺寸恢复检查点；后续分数缩放笔画粗细修正和当前本地产物见 [FontCoverageCorrection.md](FontCoverageCorrection.md)。本页原始哈希及证据保留为对照。

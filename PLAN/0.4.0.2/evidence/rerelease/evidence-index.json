@@ -1,0 +1,59 @@
+{
+  "files": [
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/archive-verification.json",
+      "bytes": 786,
+      "sha256": "2EAF01A910FEC033F29EAA8965CBD50D6A93E03C153A3761CFE6FAF67A9BA19F"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/authority-data-preservation.json",
+      "bytes": 468,
+      "sha256": "ED8EDCD0B961F9AFDDC010614E39AE5F6236891F34EE3BA1A8C75F4F845D98DA"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/committed-source-verification.json",
+      "bytes": 1103,
+      "sha256": "2A4EC8F84E0B3223C0D07496BD8C68C1DC252814A67C1563B1F6A220C42C554F"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/extraction-verification.json",
+      "bytes": 373,
+      "sha256": "BE7F91B65CB6C06F988F92B601019BD5B154683EBD7647C388A574D9494B6675"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/github-release.json",
+      "bytes": 2452,
+      "sha256": "66EFCFC840E181999E29785B1D3F4FFBAA33D8BE7F4162E94E50542A5D2072B3"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/independent-startup.json",
+      "bytes": 1898,
+      "sha256": "385CF650C4C7C894552310E0E94BE7C6FB2E05FAD05B420AEEF2F33C0B33B286"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/local-replacement.json",
+      "bytes": 358,
+      "sha256": "6201632D314BE3118010F2277A71858984772119A6D26AA3D38DFC43C4D8EADC"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/previous-delivery.json",
+      "bytes": 2847,
+      "sha256": "324528176551FE491C067DE83EFBCED57851E62919B448A6707CFF7F31976411"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/release-manifest.json",
+      "bytes": 8410,
+      "sha256": "273582F91CCAC20BDF61C3C64770623A328D8E66ED2AC908BDAB2464C78A61D3"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/runtime-component-inheritance.json",
+      "bytes": 1413,
+      "sha256": "D9972D5A760EA5C8F7BB3213C70ED7E3D3CEAA2D529EACA66FE118F5EE31AEDF"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/rerelease/source-upload.json",
+      "bytes": 306,
+      "sha256": "2610AF71B61A8555820E4F6AD3D7985F55A5F2B6F6D4BA360CE33ECC2CB41010"
+    }
+  ]
+}

@@ -3,8 +3,8 @@
   "version": "0.4.0.2",
   "runtime": {
     "file": "build/libs/darkgrey_rpg-0.4.0.2.jar",
-    "bytes": 1901883,
-    "sha256": "CDBD9E556D48C91603BC491AE689AE1052B11F7E813B150BE958245D43D17594"
+    "bytes": 1896860,
+    "sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC"
   },
   "studio_authority": [
     {
@@ -32,12 +32,12 @@
       "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
     }
   ],
-  "source_input_digest": "BCF2C3A89C19B5D44D2009321204223E9CAFEAC78149881432C705A26AC23F6C",
+  "source_input_digest": "B2F377A3EEB926651DCD0E02612E7C6BD72EC4C6F3660CDBB46E56D64C5C6E3C",
   "acceptance": "Acceptance.md",
   "evidence": {
-    "file": "PLAN/0.4.0.2/evidence/font-coverage/summary.json",
-    "bytes": 1824,
-    "sha256": "27A7270DA4AE0A7904C407D9068F53B6DC7D0398649F91B12279EF01BE0D8081"
+    "file": "PLAN/0.4.0.2/evidence/summary.json",
+    "bytes": 26205,
+    "sha256": "08E944F4718DDD21E5AF2F9BF86E367634BA4C57F0BDC751A2EE5FB233F27235"
   },
   "preserved_items": {
     "npc_identity_corrupt_file_special": "DEFERRED_BY_USER",
@@ -46,14 +46,14 @@
   },
   "release": {
     "authorized": true,
-    "authorization": "User: 重新打包并releas至github和artifact",
+    "authorization": "User: 上传github并打包release",
     "push": true,
     "tag": true,
     "finished_product_package": true,
     "github_release": true,
-    "existing_tag_moved": true,
-    "existing_release_modified": true,
-    "source_commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
+    "existing_tag_moved": false,
+    "existing_release_modified": false,
+    "source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
     "source_branch": "codex/0.4.0.2",
     "local_product_directory": "artifacts/DGR0.4.0.2",
     "release_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.2",
@@ -62,21 +62,10 @@
     "published_at": "2026-10-10T03:47:06Z",
     "assets_verified": 5,
     "latest": true,
-    "record": "Rerelease.md",
-    "remote_receipt": "evidence/rerelease/github-release.json",
-    "user_accepted_full_version": false,
-    "push_transport": "GitHub Git Data API, exact local commit SHA preserved",
-    "previous_source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
-    "previous_product_directory": ".tooling/0402-rerelease-20261010/PreviousProduct",
-    "original_published_at": "2026-10-10T03:47:06Z",
-    "replaced_at": "2026-10-10T05:47:05.395977+00:00"
+    "record": "Release.md",
+    "remote_receipt": "evidence/github-release.json",
+    "user_accepted_full_version": false
   },
-  "delivery_status": "CORRECTED_FINISHED_PRODUCT_LOCAL_AND_GITHUB_RELEASE_PUBLISHED",
-  "recorded_at": "2026-10-10T05:48:10.401449+00:00",
-  "source_commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
-  "baseline_business_evidence": {
-    "file": "PLAN/0.4.0.2/evidence/summary.json",
-    "bytes": 26205,
-    "sha256": "08E944F4718DDD21E5AF2F9BF86E367634BA4C57F0BDC751A2EE5FB233F27235"
-  }
+  "delivery_status": "FINISHED_PRODUCT_LOCAL_AND_GITHUB_RELEASE_PUBLISHED",
+  "recorded_at": "2026-10-10T03:47:55.444033+00:00"
 }

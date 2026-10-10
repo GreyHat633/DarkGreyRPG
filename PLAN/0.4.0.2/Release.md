@@ -1,5 +1,7 @@
 # 0.4.0.2 成品与 GitHub Release
 
+当前修正版已重新发布，见 [Rerelease.md](Rerelease.md)。以下保留此前阶段的来源、哈希与当时状态。
+
 2026-10-10，按用户明确要求“上传github并打包release”完成源码上传、本地成品和远端正式发布。开发阶段记录中的“未发布”保留其当时时点；本记录和 DELIVERY.json 的 release 字段为当前发布状态。
 
 - 本地成品：`artifacts/DGR0.4.0.2`，根目录仅含 Mod、Studio、Docs、Verification。

@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "baseline_runtime_sha256": "8b416c270c017873d5d18f96cbb5ca89f67ec88643809731e185776bb62043fc",
+  "corrected_runtime_sha256": "cdbd9e556d48c91603bc491ae689ae1052b11f7e813b150be958245d43d17594",
+  "changed_entries": [
+    "darkgrey/rpg/client/TaskNotificationCards$1.class",
+    "darkgrey/rpg/client/TaskNotificationCards$Card.class",
+    "darkgrey/rpg/client/TaskNotificationCards.class",
+    "darkgrey/rpg/client/TaskTrackerHud.class",
+    "darkgrey/rpg/client/gui/DgrUiText.class",
+    "darkgrey/rpg/client/gui/DialogueFontDrawing$Filter.class",
+    "darkgrey/rpg/client/gui/DialogueFontDrawing.class",
+    "darkgrey/rpg/client/gui/GuiCanonicalTaskScreen.class",
+    "darkgrey/rpg/client/gui/GuiStoryPackageManager.class",
+    "darkgrey/rpg/client/gui/GuiWrappedChoiceButton.class",
+    "darkgrey/rpg/title/CanonicalTitleClient.class"
+  ],
+  "added_entries": [
+    "assets/darkgrey_rpg/shaders/",
+    "assets/darkgrey_rpg/shaders/font_coverage.frag",
+    "assets/darkgrey_rpg/shaders/font_coverage.vert",
+    "darkgrey/rpg/client/gui/FontCoverageDrawing.class"
+  ],
+  "removed_entries": [],
+  "all_unlisted_entries_byte_identical": true,
+  "inherited_scope": "Historical server business/persistence/tick/queue/media measurements retain their exact process hashes; no new 60-minute whole-JAR run claimed. Current font/layout rendering acceptance is separate."
+}

@@ -1,0 +1,43 @@
+{
+  "Version": "0.4.0.2",
+  "DotnetRoot": "Nonexistent task directory",
+  "WorkingDirectory": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010",
+  "FirstTitle": "DarkGrey RPG Studio 0.4.0.2",
+  "BundledRuntimeModules": [
+    {
+      "Name": "hostfxr.dll",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Extracted\\Program\\hostfxr.dll"
+    },
+    {
+      "Name": "hostpolicy.dll",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Extracted\\Program\\hostpolicy.dll"
+    },
+    {
+      "Name": "coreclr.dll",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Extracted\\Program\\coreclr.dll"
+    },
+    {
+      "Name": "wpfgfx_cor3.dll",
+      "Path": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Extracted\\Program\\wpfgfx_cor3.dll"
+    }
+  ],
+  "DefaultProjectDestination": "Data/Projects/Project",
+  "FirstLaunchTheme": "Dark",
+  "SettingsProjectPath": "Data\\Projects\\Project",
+  "SharedSettingsImported": false,
+  "MovedWindowTitle": "0.4.0.2 解压便携验证 — DarkGrey RPG Studio 0.4.0.2",
+  "MovedDirectoryProjectRestored": true,
+  "ffmpeg": {
+    "ExitCode": 0,
+    "Version": "ffmpeg version 9.0-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "Executable": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Moved\\Tools\\FFmpeg\\ffmpeg.exe"
+  },
+  "ffprobe": {
+    "ExitCode": 0,
+    "Version": "ffprobe version 9.0-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+    "Executable": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\Moved\\Tools\\FFmpeg\\ffprobe.exe"
+  },
+  "IndependentStartup": true,
+  "Status": "PASS",
+  "RecordedAt": "2026-10-10T13:31:34.8837587+08:00"
+}

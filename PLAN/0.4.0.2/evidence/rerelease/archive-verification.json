@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-10-10T05:30:45.636940+00:00",
+  "source_commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
+  "jar_version": "0.4.0.2",
+  "jar_crc": "PASS",
+  "zip_crc": "PASS",
+  "program_file_count": 410,
+  "archive_file_count": 411,
+  "program_hashes_match_authority": true,
+  "contains_data": false,
+  "formal_runtime_has_no_acceptance_driver_or_minecraft_replacements": true,
+  "archives": [
+    {
+      "file": "Mod/darkgrey_rpg-0.4.0.2.jar",
+      "bytes": 1901883,
+      "sha256": "cdbd9e556d48c91603bc491ae689ae1052b11f7e813b150be958245d43d17594"
+    },
+    {
+      "file": "Studio/DarkGreyRPGStudio-0.4.0.2-win-x64.zip",
+      "bytes": 236964422,
+      "sha256": "fb7556766fda946d3b19600fb49db20ff7c2efbbf12f08feb7518ab1a97fe91c"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "status": "PASS_REPLACED_RELEASE_ALL_FIVE_ASSETS_AND_TAG_VERIFIED",
+  "recorded_at": "2026-10-10T05:47:05.395977+00:00",
+  "release_id": 408610614,
+  "tag": "v0.4.0.2",
+  "source_commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
+  "url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.2",
+  "original_published_at": "2026-10-10T03:47:06Z",
+  "updated_at": "2026-10-10T05:47:00Z",
+  "draft": false,
+  "prerelease": false,
+  "latest": true,
+  "existing_release_replaced": true,
+  "previous_source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+  "local_previous_product": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402-rerelease-20261010\\PreviousProduct",
+  "assets": [
+    {
+      "id": 627117786,
+      "name": "DarkGreyRPGStudio-0.4.0.2-win-x64.zip",
+      "size": 236964422,
+      "digest": "sha256:fb7556766fda946d3b19600fb49db20ff7c2efbbf12f08feb7518ab1a97fe91c",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.2/DarkGreyRPGStudio-0.4.0.2-win-x64.zip"
+    },
+    {
+      "id": 627117635,
+      "name": "darkgrey_rpg-0.4.0.2.jar",
+      "size": 1901883,
+      "digest": "sha256:cdbd9e556d48c91603bc491ae689ae1052b11f7e813b150be958245d43d17594",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.2/darkgrey_rpg-0.4.0.2.jar"
+    },
+    {
+      "id": 627123555,
+      "name": "README.md",
+      "size": 4135,
+      "digest": "sha256:3f71883416c5f20c1d28eb9d7540723d0604731fd4cd861a72d2645c092296f9",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.2/README.md"
+    },
+    {
+      "id": 627123616,
+      "name": "ReleaseManifest.json",
+      "size": 8410,
+      "digest": "sha256:273582f91ccac20bdf61c3c64770623a328d8e66ed2ac908bdab2464c78a61d3",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.2/ReleaseManifest.json"
+    },
+    {
+      "id": 627123704,
+      "name": "SHA256SUMS.txt",
+      "size": 383,
+      "digest": "sha256:f9d8e6c7744e8b313e4200b35f92b43fba3295f2addc999e884527d96faccbcb",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/download/v0.4.0.2/SHA256SUMS.txt"
+    }
+  ]
+}

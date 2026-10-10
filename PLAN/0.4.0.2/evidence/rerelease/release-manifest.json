@@ -1,0 +1,181 @@
+{
+  "product_version": "0.4.0.2",
+  "created_at": "2026-10-10T05:33:25.167983+00:00",
+  "source_commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
+  "source_branch": "codex/0.4.0.2",
+  "source_tag": "v0.4.0.2",
+  "source_url": "https://github.com/GreyHat633/DarkGreyRPG/tree/c184e8fa7ea5da05c4123f39001253c8f144577d",
+  "github_release_url": "https://github.com/GreyHat633/DarkGreyRPG/releases/tag/v0.4.0.2",
+  "artifacts": [
+    {
+      "file": "Mod/darkgrey_rpg-0.4.0.2.jar",
+      "bytes": 1901883,
+      "sha256": "cdbd9e556d48c91603bc491ae689ae1052b11f7e813b150be958245d43d17594"
+    },
+    {
+      "file": "Studio/DarkGreyRPGStudio-0.4.0.2-win-x64.zip",
+      "bytes": 236964422,
+      "sha256": "fb7556766fda946d3b19600fb49db20ff7c2efbbf12f08feb7518ab1a97fe91c"
+    }
+  ],
+  "minecraft_version": "1.7.10",
+  "forge_version": "10.13.4.1614",
+  "studio_configuration": "self-contained Windows x64 Release directory deployment",
+  "studio_product_version": "0.4.0.2",
+  "studio_zip_contains_personal_data": false,
+  "studio_archive_entries": 411,
+  "program_whitelist_files_checked": 410,
+  "studio_authority": [
+    {
+      "path": "dist/DarkGreyRPGStudio/DarkGreyRPGStudio.exe",
+      "productVersion": "0.4.0.2",
+      "size": 204288,
+      "sha256": "8E569CC39547BCA0BB9E537BFC4BD42E048318B5720657735176C8F30CB97829"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPGStudio.dll",
+      "productVersion": "0.4.0.2",
+      "size": 1458688,
+      "sha256": "CEA0089E4187FD5839ABF015B687CC3199EF50EB0B99CE4496774925526A538D"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Program/DarkGreyRPG.Studio.Core.dll",
+      "productVersion": "0.4.0.2+3bd57b62c2e9a3a7eb6f409b755599470b39c41c",
+      "size": 1107968,
+      "sha256": "51155A4D6C0679AF75383C846EACC4AF8BB4D574A12A0C9DD43BB81791556FFB"
+    },
+    {
+      "path": "dist/DarkGreyRPGStudio/Docs/StudioProgramFiles.json",
+      "productVersion": null,
+      "size": 19562,
+      "sha256": "C5F4CE07280CEFF0811BD31B82F1329A20390515E6F077AC87B2138A6F007FD5"
+    }
+  ],
+  "build_provenance": {
+    "commit": "c184e8fa7ea5da05c4123f39001253c8f144577d",
+    "branch": "codex/0.4.0.2",
+    "committed_inputs_checked": 1086,
+    "runtime_verified_inputs": 571,
+    "runtime_input_digest": "BCF2C3A89C19B5D44D2009321204223E9CAFEAC78149881432C705A26AC23F6C",
+    "studio_inputs_checked": 516,
+    "studio_changes_from_0401": [
+      "studio/src/DarkGreyRPG.Studio.Core/DarkGreyRPG.Studio.Core.csproj",
+      "studio/src/DarkGreyRPG.Studio/DarkGreyRPG.Studio.csproj"
+    ],
+    "ignored_non_source_markers": [
+      {
+        "file": "studio/src/DarkGreyRPG.Studio/Settings/_probe.txt",
+        "bytes": 136,
+        "sha256": "5D965630F3F1812FA48B074486D51E00FBA840656862E81627544AF980833028"
+      }
+    ],
+    "git_line_ending_normalized_files": 863,
+    "git_content_matches_built_sources": true,
+    "binary_provenance": "Verified corrected Runtime JAR retained byte-for-byte. All Studio program binaries match authoritative dist; unchanged Studio source retains its original build informational version. Historical business and performance checks keep their exact process hashes and are not new whole-JAR runs."
+  },
+  "validation": {
+    "archive": "Verification/ArchiveVerification.json",
+    "extraction": "Verification/ExtractionVerification.json",
+    "independent_startup": "Verification/ExtractedSmoke.json",
+    "core": {
+      "passed": 510,
+      "failed": 0,
+      "skipped": 0,
+      "report": "Verification/Tests/core-complete.trx",
+      "status": "REUSED_UNCHANGED_STUDIO_BINARY_AND_SOURCE"
+    },
+    "wpf": {
+      "passed": 667,
+      "failed": 0,
+      "skipped": 1,
+      "report": "Verification/Tests/wpf-complete.trx",
+      "status": "REUSED_UNCHANGED_STUDIO_BINARY_AND_SOURCE"
+    },
+    "runtime": {
+      "build": "PASS",
+      "current_probes_passed": 42,
+      "current_runtime_sha256": "cdbd9e556d48c91603bc491ae689ae1052b11f7e813b150be958245d43d17594",
+      "logs": [
+        "Verification/Tests/build.log",
+        "Verification/Tests/probes.log"
+      ],
+      "current_hash_native_cases": 14,
+      "gui_factors": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "font_coverage": "Verification/font-coverage/summary.json",
+      "prior_size_correction_cases": 19,
+      "prior_size_correction_runtime_sha256": "00d03fc1ae15ab9e4f06b3840d5482ed456f943392e2b7c009e3b20869457538",
+      "size_correction": "Verification/ui-size-correction/summary.json",
+      "layout_byte_identity_to_size_correction": true,
+      "historical_whole_jar_run": {
+        "runtime_sha256": "8b416c270c017873d5d18f96cbb5ca89f67ec88643809731e185776bb62043fc",
+        "source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+        "results": {
+          "build": "PASS",
+          "current_probes_passed": 42,
+          "logs": [
+            "Verification/Tests/build.log",
+            "Verification/Tests/probes.log"
+          ],
+          "final_60min_real_clients": 2,
+          "final_60min_measured_ticks": 72000,
+          "production_queue_jobs_offered_and_executed": 76440,
+          "strict_cold_restart_ticks": 6000,
+          "cold_first_completion_before_login_ms": 77.8792,
+          "linear_history_records": 60000,
+          "maintenance_refs_after_stop": [
+            0,
+            0
+          ]
+        },
+        "inherited_components": "Verification/RuntimeComponentInheritance.json",
+        "not_repeated_for_corrected_jar": true
+      }
+    },
+    "jar_crc": "PASS",
+    "studio_zip_crc": "PASS",
+    "all_program_hashes_match_authority": true,
+    "bundled_runtime_loaded": true,
+    "first_launch_dark_and_empty": true,
+    "default_project_under_data": true,
+    "moved_directory_restores_project": true,
+    "ffmpeg_exit_code": 0,
+    "ffprobe_exit_code": 0,
+    "authority_data_preserved_during_packaging": {
+      "file_count": 2690,
+      "bytes": 68773074,
+      "manifest_sha256": "1235f2f49819ec3eda505002d13826c3fd1949b28de85d3ecb6a0855baa85c7d"
+    },
+    "authority_data_preservation_receipt": "Verification/AuthorityDataPreservation.json"
+  },
+  "acceptance_limits": [
+    "NpcIdentity corrupt-file special verification remains DEFERRED_BY_USER.",
+    "Manual audio perception remains NOT_RUN; logs do not constitute listening acceptance.",
+    "Old development CNPC mapping startup remains BLOCKED_HISTORICAL; formal CNPC tests have separate passing evidence.",
+    "Current cumulative stress forces 12 task restarts and synchronous checkpoint/save/log every 200 ticks. Long-run full-tick max 607.8875ms; cold-run max 653.2519ms. These stress peaks remain disclosed, outside the fixed formal reference gates.",
+    "1000/5000 ACTIVE and 300-objective exploration include reference-gate exceedances; no unlimited player scale or universal frame-rate guarantee.",
+    "Three formal server reference pairs ran frozen Runtime2629 and one native frame comparison ran frozen Runtime1B. Their metrics are inherited only across verified unchanged components; changed recovery/journal/diagnostic/stop code has current-hash regressions.",
+    "Release publication does not assert full user acceptance or close preserved manual/deferred items.",
+    "Corrected font acceptance uses one NVIDIA RTX2060 OpenGL4.6 host; unsupported GL3, foreign programs, perspective world labels and decorated lines preserve the original renderer.",
+    "Existing historical dialogue0333Probe profile assertion failure remains recorded in UiSizeCorrection.md; not changed to force a pass."
+  ],
+  "user_accepted_full_version": false,
+  "public_assets": [
+    "darkgrey_rpg-0.4.0.2.jar",
+    "DarkGreyRPGStudio-0.4.0.2-win-x64.zip",
+    "README.md",
+    "ReleaseManifest.json",
+    "SHA256SUMS.txt"
+  ],
+  "raw_verification_reports_not_uploaded_as_release_assets": true,
+  "release_revision": "UI dimensions and fractional bitmap font sampling correction",
+  "replaces_source_commit": "5a116c96ad0aba2c3c1a6b21ccd29a991f3ce881",
+  "replaces_runtime_sha256": "8b416c270c017873d5d18f96cbb5ca89f67ec88643809731e185776bb62043fc",
+  "replacement_authorization": "User: 重新打包并releas至github和artifact",
+  "studio_source_unchanged_from_previous_release": true,
+  "studio_program_binary_hashes_unchanged": true
+}
