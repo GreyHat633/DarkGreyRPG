@@ -1,0 +1,140 @@
+{
+  "files": [
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/build.log",
+      "bytes": 3136,
+      "sha256": "FF11945781D001BE5092E4A3E5811FB4EED5F509A448A7DC9621F70ABBB317B9"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/commands.json",
+      "bytes": 2389,
+      "sha256": "BA486E1D6F8CB0D900ABDAB7D4F12AF6D96C55812B0DC08179402238ECB040CD"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/component-audit.json",
+      "bytes": 820,
+      "sha256": "0C3942503C29DEEBAEE03D9314745F47287C41995CEE07E0230C677EE75458A3"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/driver-build.log",
+      "bytes": 3243,
+      "sha256": "137410BAD41B51F7CB367D0309A7E09F3C2C881910FCDDD24E6752D9841008C0"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/font-diagnostics.json",
+      "bytes": 10661,
+      "sha256": "7CABE449793AA8C8643DCFF821CC5C08DCF542B5EDA1B1177FBB9A1EFC2CD2F6"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/geometry-comparisons.json",
+      "bytes": 3509,
+      "sha256": "8C100813072E5726B083A614CDE6FCD09B79DCB10F581D3E96A53C07AB653727"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/native-cases.json",
+      "bytes": 15666,
+      "sha256": "6EA7FD92FF5702C8F0C6DB611CB766B0CD2AFF54761875C30D00CC57B4CD77D9"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/native-cleanup.json",
+      "bytes": 1041,
+      "sha256": "1ADA600E73F5CB5EC15F28B4DBF4421FBA862525D4B36E1D6C22F931A08F4AB7"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/notification-pixels.json",
+      "bytes": 248,
+      "sha256": "FB812A45A0659DC3179F06A7863DCF432B7E338F73A1EDC39399BA67AD302458"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/probes.log",
+      "bytes": 76370,
+      "sha256": "4E43A10700A899B29A7C5B86F4FBA1DE4A015556C9CDDE90894D66F144C77C70"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-choice-after-125-gui2.png",
+      "bytes": 124182,
+      "sha256": "79A0D29F5D1A3F168709BCC019170964834730A770D894B19C77C263B628F111"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-choice-before-125-gui2.png",
+      "bytes": 110617,
+      "sha256": "0C7CB1EEF3217FC1977843F1757E6BB2BFF50AA590CE101B4D020BD6DFDF9094"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-after-gui1.png",
+      "bytes": 39665,
+      "sha256": "6368C9FDB7F56CD18F96E72BCAAA23804B3CC4DF4E63C193853320EDF9763EC1"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-after-gui2.png",
+      "bytes": 43269,
+      "sha256": "DBF97D1462D558311492AED516B75FC2366BFB980DD4DCBB199C60187D9D2743"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-after-gui3.png",
+      "bytes": 80864,
+      "sha256": "FB9CE33CF5A5B18161447579C9827F45BC4EBF06A53892A965D4F61A61DE3752"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-after-gui4.png",
+      "bytes": 86793,
+      "sha256": "A538D5A18042D99E2FCEC2AB31C467B1465A0B77A0C079D917FEE8C7A00338A9"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-after-unicode-off-gui2.png",
+      "bytes": 43361,
+      "sha256": "47BEDA47A4166C97AF51C650F71CFDF8FFFC92B47C0F3CC95D7F1430686E61BF"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-before-gui1.png",
+      "bytes": 28727,
+      "sha256": "54F58A3AD5F20D5658D782B27AFC9ED0F536B198BB11F4D94CC66472FD007873"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-before-gui2.png",
+      "bytes": 32469,
+      "sha256": "0435E18B190B238E7E333125845063A40B0E899A2162B07C44C9EF8DA5020835"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-before-gui3.png",
+      "bytes": 53775,
+      "sha256": "4B00CEC5A49ECE7111E8C87F095E95319F654B226A89AC48811BB4A6D96A1957"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-before-gui4.png",
+      "bytes": 63370,
+      "sha256": "49E08B5F91C39741389964AB545E5879F2D360B11D032EDEECF5DF56846621B6"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-coverage-before-unicode-off-gui2.png",
+      "bytes": 32949,
+      "sha256": "29FE5BBE6EEBB63EB8ADCA96D3F5FD9AB6D6C61B7B52B06CA94773ED44E958FC"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-hud-after-gui4.png",
+      "bytes": 406475,
+      "sha256": "51D9A313FC43AF4A007B11ED6BD6BCA1DEB6DB60F87DFF7E4B0C39A51C4FA0A3"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/Screenshots/ui-size-final-hud-before-gui4.png",
+      "bytes": 418510,
+      "sha256": "2D97DF865A1D06EF709E68A8DCE48C219535E8573F6D56E08E4B115B31B9E497"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/source-provenance.json",
+      "bytes": 118463,
+      "sha256": "A3CC4C4BAC26FE3590E163974F9CEEBA473CEA1E2547DB4355D5441E6CCF4B37"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/stroke-widths.json",
+      "bytes": 5774,
+      "sha256": "7A26BCDA64345542C6841E2D41A4C8D7444EBA67621966010382B1BB185A9BE4"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/font-coverage/summary.json",
+      "bytes": 1824,
+      "sha256": "27A7270DA4AE0A7904C407D9068F53B6DC7D0398649F91B12279EF01BE0D8081"
+    }
+  ],
+  "file_count": 27
+}

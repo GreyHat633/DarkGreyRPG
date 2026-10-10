@@ -1,0 +1,160 @@
+{
+  "files": [
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/additional-probes.log",
+      "bytes": 2946,
+      "sha256": "D9E69785880ADD0D561214CF57D4306A61B698F77B84A3019975AED8D83A6440"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/build.log",
+      "bytes": 3114,
+      "sha256": "A3DAF54BCC039B1EAC652E184C52ACE7B647ADEFE6B776F053F0778D405DFBDB"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/commands.json",
+      "bytes": 2395,
+      "sha256": "1E08238BA731CC957CDEEE78207C50AC7141DD63F406B883A85235E123788DBD"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/component-audit.json",
+      "bytes": 2295,
+      "sha256": "80F9D75F9E5B84F42672494D1F1BE3C0C57DB2B2FD631ED085AEA6A59660E354"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/final-build.log",
+      "bytes": 3408,
+      "sha256": "FDE415E39BAF10A8041BE3E548AEEA13DD55DEFCC5491264A7182D130A16D10F"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/font-diagnostics.json",
+      "bytes": 1691,
+      "sha256": "D08B9EA3A4A5553B20F57382D72FE330D7F1301D61A9EB67759FD3D7C0D79B85"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/historical-dialogue-probe-failure.log",
+      "bytes": 4305,
+      "sha256": "CD96DE9E17C39630F008079F098A8B42C0CCA9BFCA63D00584B1DBB2292E70CA"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/native-cases.json",
+      "bytes": 22355,
+      "sha256": "6832747FDECA90229F5978F8A5565A6B835C3DE5EFD38F992E23B7D430E86C11"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/native-cleanup.json",
+      "bytes": 262,
+      "sha256": "418A89E2D9FB9783F11FC684615FDA6FCD16A8AEE46F7390D22090AF4890089A"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/probes.log",
+      "bytes": 76371,
+      "sha256": "D2CED1014BD5521BBC8645B5418D2FC71E64A68C3D33CE49588B3EE4E0D61E58"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-choice125-gui2.png",
+      "bytes": 98403,
+      "sha256": "4F73E54BAF6EAFA2BA8256E60E18E33E48522F1F0089D437486E16A249698CD5"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-choice125-gui4.png",
+      "bytes": 246292,
+      "sha256": "188291E121E6766E3656ABFFC82AC79866CAC397CC2EF57F581812D86E447B81"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-choice150-gui1.png",
+      "bytes": 130886,
+      "sha256": "AD2F2BE260F288A341DD000E8120B8E2B8496988DE50F52A4933EACD22AEC7E1"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-choice150-gui3.png",
+      "bytes": 322818,
+      "sha256": "04439FDE010D26466592121288E6F5D984A9F92C1DD9CD41561BC0018802E68C"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-final-normal-hud.png",
+      "bytes": 126736,
+      "sha256": "D25586C66B6988935E256506F44D6FBEC66D75C0E0492F28F4AA8A9E858A4BCF"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-GuiCanonicalTaskScreen-gui2.png",
+      "bytes": 29783,
+      "sha256": "C138B7F543CEA079C53884A5C4B2CD4B1448BB643D97100256FDFE293FC39158"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-GuiDialogueSettings-gui2.png",
+      "bytes": 41770,
+      "sha256": "710BD25C4A3767D8482270409498EBEB69A6A98B7D0F0620F7CE19E085636AAB"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-GuiPlayerStateInspection-gui2.png",
+      "bytes": 27178,
+      "sha256": "A1A0EC132D73ECDE247E06E59F6CB9FADEE2E42EEC21375C85889834CD25DF21"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-GuiStoryPackageManager-gui2.png",
+      "bytes": 58365,
+      "sha256": "CC5E5B71B458A7A2AEA517F58F7749F9E83FFDD12F94BE280FD8F75A17C51CFA"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-hud-gui4.png",
+      "bytes": 255071,
+      "sha256": "B09D7C3D9EADBF9775D1DFB0939AD0D78F1B814D2F5DBB879D9566095B58A051"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-fixed-hud-small-gui2.png",
+      "bytes": 119401,
+      "sha256": "1EE4C618C4BA61DA3D5C93545B111B7E7F91589E08DAA04668F43BBC912AE1EE"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-choice125-gui2.png",
+      "bytes": 112981,
+      "sha256": "4CB8E1DCC98E9C9060DEC4DD581037FE96EC7D29CADE68DF24323831313D6F9F"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-choice125-gui4.png",
+      "bytes": 274198,
+      "sha256": "63A2298CE42F598F619BA91590BFDF6E8E388382F024BF8D4DAB9E60DAC04F30"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-final-normal-hud.png",
+      "bytes": 166800,
+      "sha256": "9B5F130BA1C05F3825CCAEFF4C7E9F871E951480817502575D7A311D976C506D"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-GuiCanonicalTaskScreen-gui2.png",
+      "bytes": 30105,
+      "sha256": "FA00F726817DDD544D5328A256B6A3DA05754D01F0397AB389CC01691F400EBE"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-GuiDialogueSettings-gui2.png",
+      "bytes": 42697,
+      "sha256": "59DDD8A44E1188B27F09CF68635045740B3366918347415E3D957D1C36FF0F82"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-GuiPlayerStateInspection-gui2.png",
+      "bytes": 27156,
+      "sha256": "6666ED31E4316E4BD2DB963396581333B81F50F33023A34408CFCCA49CAF0A26"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-GuiStoryPackageManager-gui2.png",
+      "bytes": 58736,
+      "sha256": "B1C23635334D2B2CAAF4AC97814B76CBD527189118B8898DF675FAB12441B77E"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/Screenshots/ui-size-release-hud-gui4.png",
+      "bytes": 275265,
+      "sha256": "C975240085F6AEF9E5B541BF3E26779BF5E8D8EE0197914468B6302394720390"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/source-provenance.json",
+      "bytes": 118208,
+      "sha256": "0BB4B4C430F6AA96ABD26549D859C9E6C5227B7D0E65E875B6CC3D5F70ABEEAC"
+    },
+    {
+      "file": "PLAN/0.4.0.2/evidence/ui-size-correction/summary.json",
+      "bytes": 3261,
+      "sha256": "F694D93D21B5EA727DDD5F8C4DABBEDF7A4DE27057C4A605E2140B3E257F4BF6"
+    }
+  ],
+  "file_count": 31
+}

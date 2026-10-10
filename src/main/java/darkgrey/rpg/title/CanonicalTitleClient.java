@@ -66,39 +66,25 @@ public final class CanonicalTitleClient {
             GL11.glEnable(GL11.GL_BLEND);
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             GL11.glDisable(GL11.GL_DEPTH_TEST);
-            int mainHeight = line(title.main, scaled.getScaledWidth(), scaled.getScaledHeight() * 0.40f, 3, alpha);
-            if (!title.subtitle.isEmpty()) line(
-                title.subtitle,
-                scaled.getScaledWidth(),
-                scaled.getScaledHeight() * 0.40f + mainHeight + 8,
-                1.5f,
-                alpha);
+            line(title.main, scaled.getScaledWidth(), scaled.getScaledHeight() * 0.40f, 3, alpha);
+            if (!title.subtitle.isEmpty())
+                line(title.subtitle, scaled.getScaledWidth(), scaled.getScaledHeight() * 0.40f + 35, 1.5f, alpha);
         } finally {
             GL11.glPopMatrix();
             GL11.glPopAttrib();
         }
     }
 
-    private static int line(String text, int width, float y, float desiredScale, int alpha) {
+    private static void line(String text, int width, float y, float desiredScale, int alpha) {
         Minecraft mc = Minecraft.getMinecraft();
         text = darkgrey.rpg.client.gui.DgrUiText.label(text);
-        int factor = darkgrey.rpg.client.gui.DialogueFontDrawing.guiFactor();
-        double desired = darkgrey.rpg.client.session.DialogueFontScale.effective(desiredScale, factor);
-        double fit = width * 0.9 / Math.max(1, mc.fontRenderer.getStringWidth(text));
-        double scale = fit >= desired ? desired : Math.max(1, Math.floor(fit * factor / 2) * 2 / factor);
-        int lineHeight = (int) Math.ceil(mc.fontRenderer.FONT_HEIGHT * scale);
-        int rows = 0;
-        for (Object value : mc.fontRenderer
-            .listFormattedStringToWidth(text, Math.max(1, (int) (width * 0.9 / scale)))) {
-            String line = (String) value;
-            darkgrey.rpg.client.gui.DialogueFontDrawing.draw(
-                mc.fontRenderer,
-                line,
-                (width - mc.fontRenderer.getStringWidth(line) * scale) / 2,
-                y + rows++ * lineHeight,
-                scale,
-                (alpha << 24) | 0xFFFFFF);
-        }
-        return rows * lineHeight;
+        float scale = Math.min(desiredScale, width * 0.9f / Math.max(1, mc.fontRenderer.getStringWidth(text)));
+        darkgrey.rpg.client.gui.DialogueFontDrawing.draw(
+            mc.fontRenderer,
+            text,
+            width / 2f - mc.fontRenderer.getStringWidth(text) / 2 * scale,
+            y,
+            scale,
+            (alpha << 24) | 0xFFFFFF);
     }
 }

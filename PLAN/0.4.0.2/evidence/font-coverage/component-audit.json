@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "before_runtime_sha256": "00D03FC1AE15AB9E4F06B3840D5482ED456F943392E2B7C009E3B20869457538",
+  "runtime_sha256": "CDBD9E556D48C91603BC491AE689AE1052B11F7E813B150BE958245D43D17594",
+  "runtime_bytes": 1901883,
+  "changed_entries": [
+    "darkgrey/rpg/client/gui/DialogueFontDrawing$Filter.class",
+    "darkgrey/rpg/client/gui/DialogueFontDrawing.class"
+  ],
+  "added_entries": [
+    "assets/darkgrey_rpg/shaders/",
+    "assets/darkgrey_rpg/shaders/font_coverage.frag",
+    "assets/darkgrey_rpg/shaders/font_coverage.vert",
+    "darkgrey/rpg/client/gui/FontCoverageDrawing.class"
+  ],
+  "removed_entries": [],
+  "all_existing_layout_entries_byte_identical": true,
+  "test_driver_absent": true,
+  "production_classes": 700,
+  "filter_inner_class_instructions_unchanged": true
+}

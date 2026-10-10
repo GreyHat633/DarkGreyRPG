@@ -17,6 +17,13 @@ public final class RuntimeFontPolicy0402Probe {
 
     public static void main(String[] args) throws Exception {
         require(
+            !FontCoverageDrawing.fractional(1, 4) && !FontCoverageDrawing.fractional(1.5, 4),
+            "integer source texels keep bitmap rendering");
+        require(
+            FontCoverageDrawing.fractional(.629, 4) && FontCoverageDrawing.fractional(.74, 4)
+                && FontCoverageDrawing.fractional(1.25, 2),
+            "fractional texels need coverage without changing scale");
+        require(
             DgrUiText.label("§l当前情况 §L文字§r §a颜色")
                 .equals("当前情况 文字§r §a颜色"),
             "UI emphasis avoids duplicated strokes");
@@ -24,6 +31,15 @@ public final class RuntimeFontPolicy0402Probe {
             DgrUiText.label("中文 A😀 123")
                 .equals("中文 A😀 123"),
             "glyph content remains intact");
+        java.lang.reflect.Method hover = DgrUiText.class
+            .getDeclaredMethod("tooltipBounds", int.class, int.class, int.class, int.class, int.class, int.class);
+        hover.setAccessible(true);
+        require(
+            java.util.Arrays.equals((int[]) hover.invoke(null, 100, 100, 480, 251, 300, 1), new int[] { 112, 88, 8 }),
+            "hover keeps its existing long single line, not a 240-unit rewrap");
+        require(
+            java.util.Arrays.equals((int[]) hover.invoke(null, 470, 240, 480, 251, 100, 3), new int[] { 354, 215, 30 }),
+            "hover retains original edge placement and row heights");
         darkgrey.rpg.client.session.PlayerUiPreferences.Theme previous = darkgrey.rpg.client.session.PlayerUiPreferences
             .theme();
         double opacity = darkgrey.rpg.client.session.PlayerUiPreferences.opacity();
@@ -69,6 +85,13 @@ public final class RuntimeFontPolicy0402Probe {
                             @Override
                             public void visitMethodInsn(int opcode, String owner, String target, String descriptor,
                                 boolean isInterface) {
+                                if (owner.equals("darkgrey/rpg/client/gui/DialogueFontDrawing")
+                                    && target.equals("scale")
+                                    && (name.equals("darkgrey/rpg/client/TaskTrackerHud")
+                                        || name.equals("darkgrey/rpg/client/gui/GuiCanonicalTaskScreen")
+                                        || name.equals("darkgrey/rpg/client/gui/GuiWrappedChoiceButton")))
+                                    violations
+                                        .add(name + "." + method + " rounds up the established UI size preference");
                                 boolean rawFont = owner.equals("net/minecraft/client/gui/FontRenderer")
                                     && (target.startsWith("drawString") || target.equals("drawSplitString"));
                                 if (rawFont) {

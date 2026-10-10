@@ -1,0 +1,17 @@
+{
+  "lines": [
+    "[12:28:19] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT_SAMPLING_PROBE linearRestore=true",
+    "[12:28:19] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=4 requested=1.0 effective=1.0 nearest=true filtersBindingBlendRestored=true",
+    "[12:28:51] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=4 requested=1.25 effective=1.25 nearest=true filtersBindingBlendRestored=true",
+    "[12:28:56] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=2 requested=1.25 effective=1.25 nearest=true filtersBindingBlendRestored=true",
+    "[12:29:12] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=2 requested=1.0 effective=1.25 nearest=true filtersBindingBlendRestored=true",
+    "[12:32:15] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT_SAMPLING_PROBE linearRestore=true",
+    "[12:32:15] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=2 requested=1.25 effective=1.25 nearest=true filtersBindingBlendRestored=true",
+    "[12:32:21] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=1 requested=1.5 effective=1.5 nearest=true filtersBindingBlendRestored=true",
+    "[12:32:24] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=3 requested=1.5 effective=1.5 nearest=true filtersBindingBlendRestored=true",
+    "[12:32:27] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=2 requested=1.5 effective=1.5 nearest=true filtersBindingBlendRestored=true",
+    "[12:32:28] [Client thread/INFO] [DarkGrey RPG]: DIALOGUE_FONT factor=2 requested=1.0 effective=1.0 nearest=true filtersBindingBlendRestored=true"
+  ],
+  "sampling_restoration": true,
+  "nearest_and_state_restoration": true
+}

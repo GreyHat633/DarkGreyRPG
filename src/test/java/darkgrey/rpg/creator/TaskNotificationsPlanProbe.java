@@ -225,28 +225,24 @@ public final class TaskNotificationsPlanProbe {
         accept(0, event("f", "t", "failed", ""));
         require(field(state("cards").get("t"), "terminal").equals("任务失败"), "failure result");
         darkgrey.rpg.client.TaskNotificationCards.clear();
-        java.lang.reflect.Field slots = darkgrey.rpg.client.TaskNotificationCards.class
-            .getDeclaredField("visibleSlots");
-        slots.setAccessible(true);
-        slots.setInt(null, 2);
         accept(
             0,
             event("short-a", "a", "received", ""),
             event("short-b", "b", "received", ""),
             event("short-c", "c", "received", ""),
             event("short-d", "d", "received", ""));
-        require(state("cards").size() == 2 && state("pending").size() == 2, "short viewport queues both extra cards");
-        accept(1000000000L, event("short-c-update", "c", "objective_active", "排队目标"));
         require(
-            ((Map<?, ?>) field(state("pending").get("c"), "active")).containsKey("排队目标"),
+            state("cards").size() == 3 && state("pending").size() == 1,
+            "original three cards regardless of viewport");
+        accept(1000000000L, event("short-d-update", "d", "objective_active", "排队目标"));
+        require(
+            ((Map<?, ?>) field(state("pending").get("d"), "active")).containsKey("排队目标"),
             "queued card retains its incoming update");
         accept(5200000000L);
+        require(state("cards").containsKey("d") && state("pending").isEmpty(), "fourth card admitted after departure");
         require(
-            state("cards").containsKey("c") && state("cards").containsKey("d") && state("pending").isEmpty(),
-            "both queued cards admitted in order after departure");
-        require(
-            ((Long) field(state("cards").get("c"), "entered")) == 5200000000L
-                && ((Long) field(state("cards").get("c"), "exitAt")) == 9800000000L,
+            ((Long) field(state("cards").get("d"), "entered")) == 5200000000L
+                && ((Long) field(state("cards").get("d"), "exitAt")) == 9800000000L,
             "queued card gets its complete animation and four-second reading period");
         darkgrey.rpg.client.TaskNotificationCards.clear();
         viewportResizeChecks();
@@ -284,18 +280,17 @@ public final class TaskNotificationsPlanProbe {
                 event("resize-c", "c", "received", ""),
                 event("resize-d", "d", "received", ""));
             prepareFrame(100000000L, shortHeight);
-            int shortSlots = shortHeight == 220 ? 2 : 1;
             require(
-                state("cards").size() == shortSlots && state("pending").size() == 4 - shortSlots,
-                "shrinking viewport defers excess cards");
+                state("cards").size() == 3 && state("pending").size() == 1,
+                "shrinking viewport retains original three-card capacity");
             accept(200000000L, event("resize-d-update", "d", "objective_active", "排队目标"));
             prepareFrame(300000000L, 340);
             require(
                 state("cards").size() == 3 && state("pending").containsKey("d"),
                 "expanded viewport admits waiting cards in FIFO order");
             require(
-                ((Long) field(state("cards").get("c"), "entered")) == 300000000L,
-                "newly visible card starts reading at admission");
+                ((Long) field(state("cards").get("c"), "entered")) == 0L,
+                "resize never restarts visible card reading");
             prepareFrame(5200000000L, 340);
             require(
                 state("cards").containsKey("d") && state("pending").isEmpty(),
@@ -307,6 +302,16 @@ public final class TaskNotificationsPlanProbe {
                 "queued update is present in the first visible frame");
             require(((Long) field(last, "exitAt")) == 9800000000L, "replacement retains its complete reading period");
         }
+        java.lang.reflect.Method scale = darkgrey.rpg.client.TaskNotificationCards.class
+            .getDeclaredMethod("layoutScale", int.class);
+        scale.setAccessible(true);
+        require(
+            Math.abs((Double) scale.invoke(null, 251) - 227.0 / 300) < 1e-12,
+            "GUI4 1920x1002 viewport retains the original 575px card width instead of 760px");
+        require(Math.abs((Double) scale.invoke(null, 120) - .32) < 1e-12, "short viewport preserves original scale");
+        require(
+            (Double) scale.invoke(null, 64) == .25 && (Double) scale.invoke(null, 340) == 1,
+            "original minimum and full-size scale limits");
         darkgrey.rpg.client.TaskNotificationCards.clear();
     }
 

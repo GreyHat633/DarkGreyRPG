@@ -813,16 +813,15 @@ public final class GuiStoryPackageManager extends GuiScreen {
             } finally {
                 GL11.glPopMatrix();
             }
-            // Geometry zoom remains continuous; glyphs are drawn in screen space on the font pixel grid.
-            double textScale = darkgrey.rpg.client.session.DialogueFontScale.effective(zoom, scale);
+            // Retain the camera's original label size while painting outside its matrix.
+            double textScale = zoom;
             for (Map.Entry<String, NBTTagCompound> entry : graphNodes.entrySet()) {
                 double[] p = point(entry.getKey());
-                if (!viewport.intersects(p[0], p[1], 125, 40)
-                    || 40 * zoom < fontRendererObj.FONT_HEIGHT * textScale + 2) continue;
+                if (!viewport.intersects(p[0], p[1], 125, 40)) continue;
                 String label = DgrUiText.label(
                     entry.getValue()
                         .getString("name"));
-                label = fontRendererObj.trimStringToWidth(label, Math.max(1, (int) (117 * zoom / textScale)));
+                label = fontRendererObj.trimStringToWidth(label, 117);
                 DialogueFontDrawing.draw(
                     fontRendererObj,
                     label,

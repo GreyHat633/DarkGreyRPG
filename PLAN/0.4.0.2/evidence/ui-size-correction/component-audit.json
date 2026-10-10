@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "reference_tag": "v0.4.0.1",
+  "published_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC",
+  "corrected_runtime_sha256": "00D03FC1AE15AB9E4F06B3840D5482ED456F943392E2B7C009E3B20869457538",
+  "corrected_runtime_bytes": 1897412,
+  "changed_jar_entries": [
+    "darkgrey/rpg/client/TaskNotificationCards$1.class",
+    "darkgrey/rpg/client/TaskNotificationCards$Card.class",
+    "darkgrey/rpg/client/TaskNotificationCards.class",
+    "darkgrey/rpg/client/TaskTrackerHud.class",
+    "darkgrey/rpg/client/gui/DgrUiText.class",
+    "darkgrey/rpg/client/gui/GuiCanonicalTaskScreen.class",
+    "darkgrey/rpg/client/gui/GuiStoryPackageManager.class",
+    "darkgrey/rpg/client/gui/GuiWrappedChoiceButton.class",
+    "darkgrey/rpg/title/CanonicalTitleClient.class"
+  ],
+  "all_other_jar_entries_identical": true,
+  "driver_absent_from_product": true,
+  "unchanged_geometry_sources": [
+    {
+      "path": "src/main/java/darkgrey/rpg/client/gui/UtilityWindowGeometry.java",
+      "normalized_sha256": "646C9255C796F13A0F8968803C0EFDB3B56F9F8229DCE0BFB53231752E4755FD",
+      "matches_v0401": true
+    },
+    {
+      "path": "src/main/java/darkgrey/rpg/client/gui/UtilityWindowChrome.java",
+      "normalized_sha256": "B0CAD579C68F9AF0D6BBC7B2781851433021E73E97530E00E03196EC27CAB074",
+      "matches_v0401": true
+    },
+    {
+      "path": "src/main/java/darkgrey/rpg/client/gui/CanonicalTaskLayout.java",
+      "normalized_sha256": "0DDA433A6733CE0BCFE3CFA8E2B60120BA43F55B544F763CD307EBACFE863D62",
+      "matches_v0401": true
+    },
+    {
+      "path": "src/main/java/darkgrey/rpg/client/session/CanonicalDialogueLayout.java",
+      "normalized_sha256": "9BC5AA2893CE9445FC5FC9F7356CACFB196F77631861F8187E1A76EDC9682A7E",
+      "matches_v0401": true
+    },
+    {
+      "path": "src/main/java/darkgrey/rpg/client/gui/RuntimeGraphViewport.java",
+      "normalized_sha256": "0C5503FADC256418AD0B7E10D658ACFC85D247F7C46019F587FEF209D1DB9D3F",
+      "matches_v0401": true
+    },
+    {
+      "path": "src/main/java/darkgrey/rpg/client/TaskTrackerBodyLayout.java",
+      "normalized_sha256": "F1534212C3D379D7132D85738AB90B1FFE5AC2A106BD1B91A8EC1A95D87FBD1B",
+      "matches_v0401": true
+    }
+  ]
+}

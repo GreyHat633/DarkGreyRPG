@@ -1,0 +1,78 @@
+[
+  {
+    "phase": "build",
+    "tasks": [
+      "build"
+    ],
+    "args": [
+      "--no-daemon",
+      "--no-configuration-cache",
+      "--max-workers=1",
+      "--console=plain",
+      "--offline"
+    ],
+    "started": "2026-10-10T12:14:23.3215412+08:00",
+    "finished": "2026-10-10T12:14:47.8394456+08:00",
+    "exit_code": 0,
+    "log": ".tooling\\0402\\UiSizeCorrection\\Final\\build.log"
+  },
+  {
+    "phase": "probes",
+    "tasks": [
+      "nominatorCapacity0401Probe",
+      "sessionStorage0401Probe",
+      "canonicalTaskRuntimeProbe",
+      "canonicalStoryServerServiceProbe",
+      "b4NetworkDiscriminatorProbe",
+      "canonicalOnly0400PackageProbe",
+      "canonicalSessionClientModelProbe",
+      "canonicalSessionForgeRoutingProbe",
+      "canonicalSessionNetworkCodecProbe",
+      "canonicalSessionRuntimeProbe",
+      "canonicalSessionSavedDataProbe",
+      "canonicalSessionServerServiceProbe",
+      "canonicalTaskView0400Probe",
+      "copierTemplateActionCodecProbe",
+      "currentProject0400Probe",
+      "entityDgrIdentityResolverProbe",
+      "entityToolsStage5Probe",
+      "itemIdentitySavedDataProbe",
+      "nominator0400Probe",
+      "nominatorCurrentActions0400Probe",
+      "nominatorFailureBoundary0400Probe",
+      "nominatorItemContainerProbe",
+      "nominatorStage4Probe",
+      "npcIdentitySavedDataProbe",
+      "runtimeFontResourceRows0336Probe",
+      "taskCandidate0400Probe",
+      "canonicalTaskForgeProbe",
+      "publicOutputPriority0336Probe",
+      "construction0337Probe",
+      "taskLayout0337Probe",
+      "stability0402Probe",
+      "stabilityBinding0402Probe",
+      "mainThreadQueue0402Probe",
+      "taskHotPath0402Probe",
+      "storyRecovery0402Probe",
+      "mediaLifecycle0402Probe",
+      "mixedBusiness0402Probe",
+      "runtimeFontPolicy0402Probe",
+      "taskNotificationsPlanProbe",
+      "inspection0334Probe",
+      "inspectionBoundary0334Probe",
+      "inspectionClient0334Probe",
+      "--continue"
+    ],
+    "args": [
+      "--no-daemon",
+      "--no-configuration-cache",
+      "--max-workers=1",
+      "--console=plain",
+      "--offline"
+    ],
+    "started": "2026-10-10T12:14:47.8851642+08:00",
+    "finished": "2026-10-10T12:16:45.8796080+08:00",
+    "exit_code": 0,
+    "log": ".tooling\\0402\\UiSizeCorrection\\Final\\probes.log"
+  }
+]

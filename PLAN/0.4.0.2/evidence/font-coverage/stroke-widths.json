@@ -1,0 +1,286 @@
+{
+  "status": "PASS",
+  "method": "Actual native screenshot pixel coverage of four repeated identical glyphs at a central row; no rescaling of the evidence images. Integer-path comparison excludes the window border and pixels outside the game client.",
+  "rows": [
+    {
+      "factor": 2,
+      "scale": 0.629,
+      "sample_y": 66,
+      "before": {
+        "coverage_widths": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          0.6274509803921569,
+          0.6274509803921569,
+          0.6274509803921569,
+          0.6274509803921569
+        ],
+        "spread": 0.0
+      }
+    },
+    {
+      "factor": 2,
+      "scale": 0.74,
+      "sample_y": 127,
+      "before": {
+        "coverage_widths": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          0.7411764705882353,
+          0.7372549019607844,
+          0.7411764705882353,
+          0.7411764705882353
+        ],
+        "spread": 0.0039215686274509665
+      }
+    },
+    {
+      "factor": 2,
+      "scale": 0.925,
+      "sample_y": 188,
+      "before": {
+        "coverage_widths": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          0.9254901960784314,
+          0.9215686274509804,
+          0.9254901960784313,
+          0.9254901960784313
+        ],
+        "spread": 0.0039215686274509665
+      }
+    },
+    {
+      "factor": 2,
+      "scale": 1,
+      "sample_y": 249,
+      "before": {
+        "coverage_widths": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "spread": 0.0
+      }
+    },
+    {
+      "factor": 2,
+      "scale": 1.25,
+      "sample_y": 311,
+      "before": {
+        "coverage_widths": [
+          1.0,
+          2.0,
+          1.0,
+          2.0
+        ],
+        "spread": 1.0
+      },
+      "after": {
+        "coverage_widths": [
+          1.2509803921568627,
+          1.2509803921568627,
+          1.2509803921568627,
+          1.2509803921568627
+        ],
+        "spread": 0.0
+      }
+    },
+    {
+      "factor": 2,
+      "scale": 1.5,
+      "sample_y": 373,
+      "before": {
+        "coverage_widths": [
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          1.5019607843137255,
+          1.5019607843137255,
+          1.5019607843137255,
+          1.5019607843137255
+        ],
+        "spread": 0.0
+      }
+    },
+    {
+      "factor": 4,
+      "scale": 0.629,
+      "sample_y": 95,
+      "before": {
+        "coverage_widths": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ],
+        "spread": 1.0
+      },
+      "after": {
+        "coverage_widths": [
+          1.2588235294117647,
+          1.2549019607843137,
+          1.2588235294117647,
+          1.2549019607843137
+        ],
+        "spread": 0.0039215686274509665
+      }
+    },
+    {
+      "factor": 4,
+      "scale": 0.74,
+      "sample_y": 217,
+      "before": {
+        "coverage_widths": [
+          2.0,
+          1.0,
+          1.0,
+          2.0
+        ],
+        "spread": 1.0
+      },
+      "after": {
+        "coverage_widths": [
+          1.4784313725490197,
+          1.4784313725490197,
+          1.4823529411764707,
+          1.4784313725490197
+        ],
+        "spread": 0.0039215686274509665
+      }
+    },
+    {
+      "factor": 4,
+      "scale": 0.925,
+      "sample_y": 340,
+      "before": {
+        "coverage_widths": [
+          2.0,
+          2.0,
+          1.0,
+          2.0
+        ],
+        "spread": 1.0
+      },
+      "after": {
+        "coverage_widths": [
+          1.8509803921568628,
+          1.8509803921568628,
+          1.8470588235294119,
+          1.8470588235294116
+        ],
+        "spread": 0.0039215686274511885
+      }
+    },
+    {
+      "factor": 4,
+      "scale": 1,
+      "sample_y": 461,
+      "before": {
+        "coverage_widths": [
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "spread": 0.0
+      }
+    },
+    {
+      "factor": 4,
+      "scale": 1.25,
+      "sample_y": 585,
+      "before": {
+        "coverage_widths": [
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          2.5019607843137255,
+          2.5019607843137255,
+          2.5019607843137255,
+          2.5019607843137255
+        ],
+        "spread": 0.0
+      }
+    },
+    {
+      "factor": 4,
+      "scale": 1.5,
+      "sample_y": 709,
+      "before": {
+        "coverage_widths": [
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "spread": 0.0
+      },
+      "after": {
+        "coverage_widths": [
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "spread": 0.0
+      }
+    }
+  ],
+  "integer_opaque_rows_pixel_identical": true,
+  "decorated_line_pixel_identical": true,
+  "formatted_red_pixel_count": 679,
+  "half_alpha_min_rgb": 127
+}

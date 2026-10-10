@@ -1,0 +1,141 @@
+[
+  {
+    "name": "coverage-gui1",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.0,
+      "screen_type": "",
+      "display_width": 1902,
+      "display_height": 984,
+      "gui_factor": 1,
+      "scaled_width": 1902,
+      "scaled_height": 984,
+      "choice_width": 160,
+      "choice_height": 39,
+      "choice_scale": 1.0,
+      "choice_lines": 3
+    }
+  },
+  {
+    "name": "coverage-gui2",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.0,
+      "screen_type": "",
+      "display_width": 900,
+      "display_height": 640,
+      "gui_factor": 2,
+      "scaled_width": 450,
+      "scaled_height": 320,
+      "choice_width": 160,
+      "choice_height": 39,
+      "choice_scale": 1.0,
+      "choice_lines": 3
+    }
+  },
+  {
+    "name": "coverage-gui3",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.0,
+      "screen_type": "",
+      "display_width": 1902,
+      "display_height": 984,
+      "gui_factor": 3,
+      "scaled_width": 634,
+      "scaled_height": 328,
+      "choice_width": 160,
+      "choice_height": 39,
+      "choice_scale": 1.0,
+      "choice_lines": 3
+    }
+  },
+  {
+    "name": "coverage-gui4",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.0,
+      "screen_type": "",
+      "display_width": 1902,
+      "display_height": 984,
+      "gui_factor": 4,
+      "scaled_width": 476,
+      "scaled_height": 246,
+      "choice_width": 160,
+      "choice_height": 39,
+      "choice_scale": 1.0,
+      "choice_lines": 3
+    }
+  },
+  {
+    "name": "coverage-unicode-off-gui2",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.0,
+      "screen_type": "",
+      "display_width": 900,
+      "display_height": 640,
+      "gui_factor": 2,
+      "scaled_width": 450,
+      "scaled_height": 320,
+      "choice_width": 160,
+      "choice_height": 39,
+      "choice_scale": 1.0,
+      "choice_lines": 3
+    }
+  },
+  {
+    "name": "hud-gui4",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.0,
+      "display_width": 1902,
+      "display_height": 984,
+      "gui_factor": 4,
+      "scaled_width": 476,
+      "scaled_height": 246,
+      "choice_width": 160,
+      "choice_height": 39,
+      "choice_scale": 1.0,
+      "choice_lines": 3
+    }
+  },
+  {
+    "name": "choice-125-gui2",
+    "all_reported_geometry_matches": true,
+    "metrics": {
+      "status": "VISUAL_FIXTURE_RENDERING",
+      "server_mutated": false,
+      "cards": 1,
+      "scale": 1.25,
+      "screen_type": "",
+      "display_width": 900,
+      "display_height": 640,
+      "gui_factor": 2,
+      "scaled_width": 450,
+      "scaled_height": 320,
+      "choice_width": 160,
+      "choice_height": 60,
+      "choice_scale": 1.25,
+      "choice_lines": 4
+    }
+  }
+]

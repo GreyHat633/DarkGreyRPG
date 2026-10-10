@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "method": "Longest opaque notification interior span in actual native screenshots; x/y/width are pixel coordinates.",
+  "before": [
+    557,
+    1329,
+    122
+  ],
+  "after": [
+    557,
+    1329,
+    122
+  ]
+}

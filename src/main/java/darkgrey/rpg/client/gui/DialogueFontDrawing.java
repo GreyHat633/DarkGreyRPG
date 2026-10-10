@@ -49,6 +49,8 @@ public final class DialogueFontDrawing {
         int previousBinding = diagnostic ? GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D) : 0;
         boolean previousBlend = diagnostic && GL11.glIsEnabled(GL11.GL_BLEND);
         boolean sampledNearest = true;
+        int previousProgram = -1;
+        boolean coverage = false;
         GL11.glPushAttrib(GL11.GL_TEXTURE_BIT | GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT);
         GL11.glPushMatrix();
         List<Filter> filters = new ArrayList<Filter>();
@@ -84,8 +86,11 @@ public final class DialogueFontDrawing {
             int factor = guiFactor();
             GL11.glTranslated(DialogueFontScale.snap(x, factor), DialogueFontScale.snap(y, factor), 0);
             GL11.glScaled(scale, scale, 1);
+            previousProgram = FontCoverageDrawing.begin(scale, factor, text);
+            coverage = previousProgram >= 0;
             font.drawString(text, 0, 0, color);
         } finally {
+            FontCoverageDrawing.end(previousProgram);
             boolean restored = true;
             for (Filter filter : filters) {
                 filter.restore();
@@ -96,15 +101,23 @@ public final class DialogueFontDrawing {
             if (diagnostic) {
                 restored &= GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D) == previousBinding
                     && GL11.glIsEnabled(GL11.GL_BLEND) == previousBlend;
-                String key = guiFactor() + ":" + PlayerUiPreferences.textScale() + ":" + font.getUnicodeFlag();
+                if (coverage)
+                    restored &= GL11.glGetInteger(org.lwjgl.opengl.GL20.GL_CURRENT_PROGRAM) == previousProgram;
+                String key = guiFactor() + ":"
+                    + PlayerUiPreferences.textScale()
+                    + ":"
+                    + font.getUnicodeFlag()
+                    + ":"
+                    + scale;
                 if (!restored || !sampledNearest) throw new IllegalStateException("Font texture sampling leaked");
                 if (REPORTED.size() < 64 && REPORTED.add(key)) darkgrey.rpg.DarkGreyRpg.LOG.info(
-                    "DIALOGUE_FONT factor={} requested={} effective={} nearest={} filtersBindingBlendRestored={}",
+                    "DIALOGUE_FONT factor={} requested={} effective={} nearest={} filtersBindingBlendRestored={} coverage={}",
                     guiFactor(),
                     PlayerUiPreferences.textScale(),
                     scale,
                     sampledNearest,
-                    restored);
+                    restored,
+                    coverage);
             }
         }
     }

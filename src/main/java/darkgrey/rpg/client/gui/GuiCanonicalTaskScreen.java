@@ -449,7 +449,8 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
     private int listRowHeight(CanonicalTaskLayout layout) {
         return Math.max(
             layout.stacked ? STACKED_ROW_HEIGHT : ROW_HEIGHT,
-            (int) Math.ceil(fontRendererObj.FONT_HEIGHT * DialogueFontDrawing.scale()) + 10);
+            (int) Math.ceil(fontRendererObj.FONT_HEIGHT * darkgrey.rpg.client.session.PlayerUiPreferences.textScale())
+                + 10);
     }
 
     private void drawList(CanonicalTaskLayout layout, int mouseX, int mouseY) {
@@ -489,7 +490,7 @@ public final class GuiCanonicalTaskScreen extends GuiScreen {
                     layout.listRight - 4,
                     top + rowHeight - 2,
                     DgrUiPalette.SUB_PANEL);
-                double textScale = DialogueFontDrawing.scale();
+                double textScale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
                 String title = task.getString("title");
                 if (title.length() == 0) title = "未命名任务";
                 int titleX = layout.listLeft + (story ? 22 : 28);

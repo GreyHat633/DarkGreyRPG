@@ -1,0 +1,36 @@
+{
+  "status": "LOCAL_FONT_COVERAGE_CORRECTION_COMPLETE",
+  "recorded_at": "2026-10-10T05:17:37.813123+00:00",
+  "runtime_file": "build/libs/darkgrey_rpg-0.4.0.2.jar",
+  "runtime_bytes": 1901883,
+  "runtime_sha256": "CDBD9E556D48C91603BC491AE689AE1052B11F7E813B150BE958245D43D17594",
+  "source_input_digest": "BCF2C3A89C19B5D44D2009321204223E9CAFEAC78149881432C705A26AC23F6C",
+  "changed_existing_jar_entries": [
+    "darkgrey/rpg/client/gui/DialogueFontDrawing$Filter.class",
+    "darkgrey/rpg/client/gui/DialogueFontDrawing.class"
+  ],
+  "added_jar_entries": [
+    "assets/darkgrey_rpg/shaders/",
+    "assets/darkgrey_rpg/shaders/font_coverage.frag",
+    "assets/darkgrey_rpg/shaders/font_coverage.vert",
+    "darkgrey/rpg/client/gui/FontCoverageDrawing.class"
+  ],
+  "ui_layouts_and_sizes_unchanged_from_size_correction": true,
+  "build": "PASS",
+  "release_suite_probe_count": 42,
+  "release_suite_probes": "PASS",
+  "native_case_count": 14,
+  "gui_factors_checked": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "native_coverage": "Paired bitmap coverage screen at GUI1-4 and Unicode off; notification/tracker and 125% choice; color, alpha, decorations and very small glyphs.",
+  "limitations": "One NVIDIA RTX2060 OpenGL4.6 host. Unsupported GL3, foreign programs, perspective/world labels and decorated lines keep the original renderer. No third-party resource pack or shader compatibility acceptance claimed. Subpixel text remains subject to the original glyph quad rasterization.",
+  "historical_dialogue0333_probe_status": "Existing recorded profile assertion failure, unchanged; see UiSizeCorrection.md.",
+  "studio_modified": false,
+  "finished_product_packages_modified": false,
+  "github_release_modified": false,
+  "original_manual_audio_and_deferred_acceptance_items": "UNCHANGED"
+}

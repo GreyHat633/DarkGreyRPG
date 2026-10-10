@@ -1,0 +1,28 @@
+{
+  "server_owned": {
+    "pid": 56892,
+    "root": "E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\UiSizeAudit",
+    "stage": "font-coverage-final",
+    "started": "2026-10-10T13:11:05.4771402+08:00",
+    "args": [
+      "-Ddgr0402.authoredStoryCount=4",
+      "-Ddgr0402.authoredGroup=true",
+      "-Xms128m",
+      "-Xmx512m",
+      "-Ddgr0402.scenario=NormalAuthored",
+      "-Ddgr0402.root=\"E:\\Java\\MinecraftMod\\DarkGreyRPG\\.tooling\\0402\\Worlds\\UiSizeAudit\"",
+      "-jar",
+      "forge-1.7.10-10.13.4.1614-1.7.10-universal.jar",
+      "nogui"
+    ],
+    "runtime_sha256": "CDBD9E556D48C91603BC491AE689AE1052B11F7E813B150BE958245D43D17594",
+    "driver_sha256": "67A464D93F678BD6EDE11B6D9F48B753A16F77C40C4DC1C8624EC9F8BF78D1E4"
+  },
+  "server_stop": {
+    "status": "PASS",
+    "network_peak": 2,
+    "assertions": "explicit generated-media boundary stop with zero in-flight and queue"
+  },
+  "owned_clients_quit_using_native_menus": true,
+  "unrelated_processes_not_touched": true
+}

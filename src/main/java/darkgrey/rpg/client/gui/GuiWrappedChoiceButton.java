@@ -28,7 +28,7 @@ public final class GuiWrappedChoiceButton extends GuiButton {
 
     public GuiWrappedChoiceButton(int id, int x, int y, int width, int maximumHeight, String text, FontRenderer font) {
         super(id, x, y, width, 20, text);
-        scale = DialogueFontDrawing.scale();
+        scale = darkgrey.rpg.client.session.PlayerUiPreferences.textScale();
         lineHeight = (int) Math.ceil(font.FONT_HEIGHT * scale);
         lines = font.listFormattedStringToWidth(text, Math.max(1, (int) ((width - 24) / scale)));
         int naturalHeight = Math.max(20, lines.size() * lineHeight + 12);

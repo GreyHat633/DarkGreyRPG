@@ -1,0 +1,9 @@
+{
+  "server_stop": {
+    "status": "PASS",
+    "network_peak": 2,
+    "assertions": "explicit generated-media boundary stop with zero in-flight and queue"
+  },
+  "owned_clients_quit_using_native_menus": true,
+  "unrelated_processes_not_touched": true
+}

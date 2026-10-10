@@ -138,7 +138,7 @@ public final class TaskTrackerHud {
         }
         int panelWidth = Math.min(Math.min(200, width / 4), right - 8);
         if (panelWidth < 30) return;
-        double nextScale = DialogueFontDrawing.scale();
+        double nextScale = PlayerUiPreferences.textScale();
         int nextWrap = Math.max(1, (int) ((panelWidth - 24) / nextScale));
         if (snapshotRevision != CanonicalTaskClientStore.getRevision()
             || selectionRevision != TaskTrackerClient.revision()

@@ -1,0 +1,99 @@
+{
+  "status": "LOCAL_RUNTIME_CORRECTION_COMPLETE_WITH_RECORDED_HISTORICAL_PROBE_FAILURE",
+  "recorded_at": "2026-10-10T04:37:27.808957+00:00",
+  "runtime_file": "build/libs/darkgrey_rpg-0.4.0.2.jar",
+  "runtime_bytes": 1897412,
+  "runtime_sha256": "00D03FC1AE15AB9E4F06B3840D5482ED456F943392E2B7C009E3B20869457538",
+  "source_input_digest": "143D2067426E324545E08497D18073D7301241EA86D7587507A38EC999B079D3",
+  "production_ui_classes_changed": 7,
+  "production_jar_entries_changed": 9,
+  "build": "PASS",
+  "release_suite_probe_count": 42,
+  "release_suite_probes": "PASS",
+  "extra_unique_probe": "utilityWindow0324Probe PASS",
+  "affected_probes_repeated_after_final_test_driver_changes": "PASS",
+  "native_case_count": 19,
+  "gui_factors_checked": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "matched_tool_window_bounds": [
+    {
+      "screen": "GuiDialogueSettings",
+      "published_and_corrected_bounds_match": true,
+      "bounds": [
+        31,
+        0,
+        380,
+        320
+      ]
+    },
+    {
+      "screen": "GuiCanonicalTaskScreen",
+      "published_and_corrected_bounds_match": true,
+      "bounds": [
+        0,
+        10,
+        441,
+        300
+      ]
+    },
+    {
+      "screen": "GuiPlayerStateInspection",
+      "published_and_corrected_bounds_match": true,
+      "bounds": [
+        0,
+        0,
+        441,
+        320
+      ]
+    },
+    {
+      "screen": "GuiStoryPackageManager",
+      "published_and_corrected_bounds_match": true,
+      "bounds": [
+        45,
+        32,
+        352,
+        256
+      ]
+    }
+  ],
+  "notification_measured_native_panel_interiors": {
+    "fixed": {
+      "panel_interior_width": 557,
+      "sample_x": 1329,
+      "sample_y": 122
+    },
+    "release": {
+      "panel_interior_width": 752,
+      "sample_x": 1125,
+      "sample_y": 108
+    }
+  },
+  "choice_125_gui2": {
+    "published_scale": 2.0,
+    "corrected_scale": 1.25,
+    "published_height": 138,
+    "corrected_height": 60
+  },
+  "native_coverage": "HUD notification/tracker, production choice button and tooltip in a test-only screen, settings/task/inspection/package production windows. Empty package snapshot exercises window bounds, not populated graph labels. Native fixtures are presentation checks, not business acceptance.",
+  "historical_probe": {
+    "task": "dialogue0333Probe",
+    "status": "FAIL_PREEXISTING_PROFILE_ASSERTION",
+    "assertion": "shared profile geometry including rounded quote gutters",
+    "all_relevant_files_identical_to_v0401": [
+      "src/main/java/darkgrey/rpg/client/session/CanonicalDialogueLayout.java",
+      "src/test/java/darkgrey/rpg/client/session/Dialogue0333Probe.java",
+      "schema/dialogue-capacity-profile.json",
+      "scripts/generate-dialogue-capacity-profile.py"
+    ],
+    "reason": "Probe assumes 320x240 and scale 1.5; current profile generator calibrates 640x360 with effective font scale 2.0. No production geometry changed to make the obsolete assertion pass."
+  },
+  "studio_modified": false,
+  "finished_product_packages_modified": false,
+  "github_release_modified": false,
+  "published_runtime_sha256": "8B416C270C017873D5D18F96CBB5CA89F67EC88643809731E185776BB62043FC"
+}
